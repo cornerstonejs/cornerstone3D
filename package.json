@@ -14,7 +14,7 @@
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
-    "serve-static-examples": "npx serve static-examples",
+    "serve-static-examples": "npx serve .static-examples",
     "dev": "lerna run dev:demo --stream",
     "docs": "lerna run docs",
     "docs:watch": "lerna run docs:watch",

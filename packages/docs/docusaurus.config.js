@@ -126,6 +126,10 @@ module.exports = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
+        blog: false,
+        googleAnalytics: {
+          trackingID: 'UA-110573590-1'
+        }
       },
     ],
   ],
