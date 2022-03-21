@@ -1,7 +1,7 @@
-import EVENTS from './enums/events'
-import REQUEST_TYPE from './enums/requestType'
-import VIEWPORT_TYPE from './enums/viewportType'
-import INTERPOLATION_TYPE from './enums/interpolationType'
+import Events from './enums/Events'
+import RequestType from './enums/RequestType'
+import ViewportType from './enums/ViewportType'
+import InterpolationType from './enums/InterpolationType'
 //
 import ORIENTATION from './constants/orientation'
 //
@@ -57,12 +57,12 @@ import {
 } from './RenderingEngine/helpers'
 
 const Enums = {
-  EVENTS,
-  VIEWPORT_TYPE,
+  Events,
+  ViewportType,
   // constants
   ORIENTATION,
-  INTERPOLATION_TYPE,
-  REQUEST_TYPE,
+  InterpolationType,
+  RequestType,
 }
 
 export type { Types }
@@ -72,7 +72,7 @@ export {
   isCornerstoneInitialized,
   // enums
   Enums,
-  EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
+  Events, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
   Settings,
   // Rendering Engine

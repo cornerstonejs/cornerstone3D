@@ -15,7 +15,7 @@ import {
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const renderingEngineUID = 'myRenderingEngine'
 const viewportUID = 'CT_SAGITTAL_STACK'
@@ -66,7 +66,7 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.EVENTS
+const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.Events
 
 element.addEventListener(
   IMAGE_RENDERED,
@@ -192,7 +192,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,

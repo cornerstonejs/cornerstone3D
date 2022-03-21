@@ -14,7 +14,7 @@ import {
 // Auto registers volume loader
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
@@ -117,7 +117,7 @@ async function run() {
   const viewportUID = 'CT_SAGITTAL_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION.SAGITTAL,

@@ -26,7 +26,7 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
-const { VIEWPORT_TYPE } = Enums
+const { ViewportType } = Enums
 
 let stackDXViewportToolGroup
 
@@ -100,7 +100,7 @@ class CalibrationExample extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.DX,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0, 0, 0],

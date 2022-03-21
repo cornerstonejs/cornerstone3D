@@ -1,4 +1,4 @@
-import INTERPOLATION_TYPE from '../enums/interpolationType'
+import InterpolationType from '../enums/InterpolationType'
 import { VOIRange } from './voi'
 
 /**
@@ -10,7 +10,7 @@ type StackViewportProperties = {
   /** invert flag - whether the image is inverted */
   invert?: boolean
   /** interpolation type - linear or nearest neighbor */
-  interpolationType?: INTERPOLATION_TYPE
+  interpolationType?: InterpolationType
   /** image rotation */
   rotation?: number
   /** flip horizontal flag */

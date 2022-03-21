@@ -18,13 +18,13 @@ const {
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
   segmentation,
-  CornerstoneTools3DEvents: EVENTS,
+  CornerstoneTools3DEvents: Events,
   RectangleScissorsTool,
 } = csTools3d
 
@@ -58,7 +58,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -122,7 +122,7 @@ describe('Segmentation Tools --', () => {
       const vp = this.renderingEngine.getViewport(viewportUID1)
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -130,7 +130,7 @@ describe('Segmentation Tools --', () => {
       )
 
       // wait until the render loop is done before we say done
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         done()
       })
 
@@ -169,7 +169,7 @@ describe('Segmentation Tools --', () => {
 
       const drawRectangle = () => {
         eventTarget.addEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           compareImageCallback
         )
 
@@ -224,7 +224,7 @@ describe('Segmentation Tools --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -247,12 +247,12 @@ describe('Segmentation Tools --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -301,11 +301,11 @@ describe('Segmentation Tools --', () => {
 
       const drawRectangle = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           drawRectangle
         )
         eventTarget.addEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           compareImageCallback
         )
 
@@ -367,7 +367,7 @@ describe('Segmentation Tools --', () => {
         }
 
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -408,12 +408,12 @@ describe('Segmentation Tools --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)

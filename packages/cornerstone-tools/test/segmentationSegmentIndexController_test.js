@@ -19,13 +19,13 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
   segmentation,
-  CornerstoneTools3DEvents: EVENTS,
+  CornerstoneTools3DEvents: Events,
   RectangleScissorsTool,
 } = csTools3d
 
@@ -59,7 +59,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -171,7 +171,7 @@ describe('Segmentation Index Controller --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -181,7 +181,7 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
           eventTarget.addEventListener(
-            EVENTS.SEGMENTATION_RENDERED,
+            Events.SEGMENTATION_RENDERED,
             compareImageCallback
           )
           drawRectangle([30, 30, 0], [50, 50, 0])
@@ -200,12 +200,12 @@ describe('Segmentation Index Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -294,7 +294,7 @@ describe('Segmentation Index Controller --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -306,7 +306,7 @@ describe('Segmentation Index Controller --', () => {
           segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_UID, 2)
 
           eventTarget.addEventListener(
-            EVENTS.SEGMENTATION_RENDERED,
+            Events.SEGMENTATION_RENDERED,
             compareImageCallback
           )
           drawRectangle([30, 30, 0], [50, 50, 0])
@@ -346,12 +346,12 @@ describe('Segmentation Index Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)
@@ -440,7 +440,7 @@ describe('Segmentation Index Controller --', () => {
 
       const newSegRenderedCallback = () => {
         eventTarget.removeEventListener(
-          EVENTS.SEGMENTATION_RENDERED,
+          Events.SEGMENTATION_RENDERED,
           newSegRenderedCallback
         )
 
@@ -458,7 +458,7 @@ describe('Segmentation Index Controller --', () => {
           )
 
           eventTarget.addEventListener(
-            EVENTS.SEGMENTATION_RENDERED,
+            Events.SEGMENTATION_RENDERED,
             compareImageCallback
           )
           drawRectangle([30, 30, 0], [50, 50, 0])
@@ -520,12 +520,12 @@ describe('Segmentation Index Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         newSegRenderedCallback
       )
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const { segmentationUID } = evt.detail
           expect(segmentationUID.includes(volumeId)).toBe(true)

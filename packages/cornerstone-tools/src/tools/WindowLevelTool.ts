@@ -98,7 +98,7 @@ export default class WindowLevelTool extends BaseTool {
       range: newRange,
     }
 
-    triggerEvent(element, Enums.EVENTS.VOI_MODIFIED, eventDetail)
+    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail)
 
     if (viewport instanceof StackViewport) {
       viewport.setProperties({

@@ -14,7 +14,7 @@ const {
   imageLoader,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const { unregisterAllImageLoaders } = imageLoader
 const { createAndCacheVolume, registerVolumeLoader } = volumeLoader
@@ -105,7 +105,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.setViewports([
       {
         viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -114,7 +114,7 @@ describe('Synchronizer Manager: ', () => {
       },
       {
         viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -157,8 +157,8 @@ describe('Synchronizer Manager: ', () => {
       done()
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -249,7 +249,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.setViewports([
       {
         viewportUID: viewportUID1,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -258,7 +258,7 @@ describe('Synchronizer Manager: ', () => {
       },
       {
         viewportUID: viewportUID2,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -272,7 +272,7 @@ describe('Synchronizer Manager: ', () => {
     const [pageX2, pageY2] = [211, 20]
 
     const addEventListenerForVOI = () => {
-      element2.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element2.addEventListener(Events.IMAGE_RENDERED, () => {
         const vp2 = this.renderingEngine.getViewport(viewportUID2)
         const canvas2 = vp2.getCanvas()
         const image2 = canvas2.toDataURL('image/png')
@@ -324,8 +324,8 @@ describe('Synchronizer Manager: ', () => {
       document.dispatchEvent(evt3)
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)

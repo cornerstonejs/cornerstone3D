@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix'
 
 import cache from '../cache'
-import VIEWPORT_TYPE from '../enums/viewportType'
+import ViewportType from '../enums/ViewportType'
 import Viewport from './Viewport'
 import { Point2, Point3, IImageData, IVolumeInput } from '../types'
 import { ViewportInput } from '../types/IViewport'
@@ -44,10 +44,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     renderer.setActiveCamera(camera)
 
     switch (this.type) {
-      case VIEWPORT_TYPE.ORTHOGRAPHIC:
+      case ViewportType.ORTHOGRAPHIC:
         camera.setParallelProjection(true)
         break
-      case VIEWPORT_TYPE.PERSPECTIVE:
+      case ViewportType.PERSPECTIVE:
         camera.setParallelProjection(false)
         break
       default:
@@ -343,7 +343,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     // volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))
 
     let slabThickness = null
-    if (this.type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
+    if (this.type === ViewportType.ORTHOGRAPHIC) {
       volumeActorEntries.forEach((va) => {
         if (va.slabThickness && va.slabThickness > slabThickness) {
           slabThickness = va.slabThickness

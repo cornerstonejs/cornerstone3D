@@ -26,7 +26,7 @@ const {
   SynchronizerManager,
 } = cornerstoneTools
 
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
@@ -208,7 +208,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -217,7 +217,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -226,7 +226,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,

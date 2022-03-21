@@ -28,11 +28,11 @@ const onCameraModified = function (evt: Types.EventTypes.CameraModifiedEvent) {
 }
 
 const enable = function (element) {
-  element.addEventListener(Enums.EVENTS.CAMERA_MODIFIED, onCameraModified)
+  element.addEventListener(Enums.Events.CAMERA_MODIFIED, onCameraModified)
 }
 
 const disable = function (element) {
-  element.removeEventListener(Enums.EVENTS.CAMERA_MODIFIED, onCameraModified)
+  element.removeEventListener(Enums.Events.CAMERA_MODIFIED, onCameraModified)
 }
 
 export default {

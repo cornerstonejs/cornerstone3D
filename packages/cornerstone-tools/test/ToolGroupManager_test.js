@@ -13,7 +13,7 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader } = volumeLoader
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
@@ -89,7 +89,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -98,7 +98,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -159,7 +159,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -168,7 +168,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -204,7 +204,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -213,7 +213,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -250,7 +250,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -259,7 +259,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -287,7 +287,7 @@ describe('ToolGroup Manager: ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: viewportUID1,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
@@ -296,7 +296,7 @@ describe('ToolGroup Manager: ', () => {
         },
         {
           viewportUID: viewportUID2,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background

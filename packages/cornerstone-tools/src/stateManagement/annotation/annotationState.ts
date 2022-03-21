@@ -4,7 +4,7 @@ import {
   eventTarget,
   utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { CornerstoneTools3DEvents as Events } from '../../enums'
 import { Types } from '@precisionmetrics/cornerstone-render'
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager'
 import { Annotations, Annotation } from '../../types/AnnotationTypes'
@@ -76,7 +76,7 @@ function addAnnotation(element: HTMLElement, annotation: Annotation): void {
   const { renderingEngine } = enabledElement
   const { viewportUID } = enabledElement
 
-  const eventType = EVENTS.ANNOTATION_ADDED
+  const eventType = Events.ANNOTATION_ADDED
 
   const eventDetail: AnnotationAddedEventDetail = {
     annotation,
@@ -103,7 +103,7 @@ function removeAnnotation(element: HTMLElement, annotationUID: string): void {
   const { renderingEngine } = enabledElement
   const { viewportUID } = enabledElement
 
-  const eventType = EVENTS.ANNOTATION_REMOVED
+  const eventType = Events.ANNOTATION_REMOVED
 
   const eventDetail: AnnotationRemovedEventDetail = {
     annotation,

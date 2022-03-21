@@ -34,7 +34,7 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
-const { VIEWPORT_TYPE } = Enums
+const { ViewportType } = Enums
 
 let stackCTViewportToolGroup
 
@@ -109,7 +109,7 @@ class ModifierKeysExample extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],

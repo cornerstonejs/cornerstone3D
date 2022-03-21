@@ -14,7 +14,7 @@ import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 const { LengthTool, ToolGroupManager, ToolBindings, ToolModes } =
   cornerstoneTools
 
-const { VIEWPORT_TYPE } = Enums
+const { ViewportType } = Enums
 
 // ======== Set up page ======== //
 setTitleAndDescription('Annotation Tool Modes', 'Annotation tools mode')
@@ -118,7 +118,7 @@ async function run() {
   const viewportUID = 'CT_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

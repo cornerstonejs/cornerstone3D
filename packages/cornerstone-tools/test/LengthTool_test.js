@@ -13,7 +13,7 @@ const {
   setVolumesForViewports,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const {
   LengthTool,
@@ -118,7 +118,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool on a canvas with mouse drag - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -163,7 +163,7 @@ describe('LengthTool:', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -231,7 +231,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.ORTHOGRAPHIC,
+        ViewportType.ORTHOGRAPHIC,
         512,
         128
       )
@@ -273,7 +273,7 @@ describe('LengthTool:', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 4]
         const index2 = [10, 1, 4]
 
@@ -346,7 +346,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool and modify its handle', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -391,7 +391,7 @@ describe('LengthTool:', () => {
           }
         )
       }
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [50, 50, 0]
         const index2 = [5, 5, 0]
         const index3 = [33, 33, 0]
@@ -492,7 +492,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool and select but not move it', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -538,7 +538,7 @@ describe('LengthTool:', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [20, 20, 0]
         const index2 = [20, 30, 0]
 
@@ -630,7 +630,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool and select AND move it', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -715,7 +715,7 @@ describe('LengthTool:', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [20, 20, 0]
         const index2 = [20, 30, 0]
 
@@ -830,7 +830,7 @@ describe('LengthTool:', () => {
     it('Should successfully create a length tool on a canvas and remove it after', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -883,7 +883,7 @@ describe('LengthTool:', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -989,7 +989,7 @@ describe('LengthTool:', () => {
     it('Should cancel drawing of a LengthTool annotation', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -1000,7 +1000,7 @@ describe('LengthTool:', () => {
 
       let p1, p2
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -1158,7 +1158,7 @@ describe('LengthTool:', () => {
     it('Should be able to calibrate an image and update the tool', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -1189,8 +1189,8 @@ describe('LengthTool:', () => {
       }
 
       const firstCallback = () => {
-        element.removeEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
-        element.addEventListener(EVENTS.IMAGE_RENDERED, secondCallback)
+        element.removeEventListener(Events.IMAGE_RENDERED, firstCallback)
+        element.addEventListener(Events.IMAGE_RENDERED, secondCallback)
         const index1 = [32, 32, 0]
         const index2 = [10, 1, 0]
 
@@ -1244,7 +1244,7 @@ describe('LengthTool:', () => {
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, firstCallback)
+      element.addEventListener(Events.IMAGE_RENDERED, firstCallback)
 
       this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 

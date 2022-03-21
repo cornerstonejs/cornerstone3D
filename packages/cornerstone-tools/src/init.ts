@@ -67,8 +67,8 @@ function _addCornerstoneEventListeners(): void {
   // Clear any listeners that may already be set
   _removeCornerstoneEventListeners()
 
-  const elementEnabledEvent = Enums.EVENTS.ELEMENT_ENABLED
-  const elementDisabledEvent = Enums.EVENTS.ELEMENT_DISABLED
+  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED
+  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED
 
   eventTarget.addEventListener(elementEnabledEvent, addEnabledElement)
   eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement)
@@ -80,8 +80,8 @@ function _addCornerstoneEventListeners(): void {
  *
  */
 function _removeCornerstoneEventListeners(): void {
-  const elementEnabledEvent = Enums.EVENTS.ELEMENT_ENABLED
-  const elementDisabledEvent = Enums.EVENTS.ELEMENT_DISABLED
+  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED
+  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED
 
   eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement)
   eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement)

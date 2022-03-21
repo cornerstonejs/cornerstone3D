@@ -22,7 +22,7 @@ const {
 } = cornerstoneTools
 
 const { locking, selection } = annotation
-const { VIEWPORT_TYPE } = Enums
+const { ViewportType } = Enums
 
 const defaultFrameOfReferenceSpecificAnnotationManager =
   annotation.state.getDefaultAnnotationManager()
@@ -135,7 +135,7 @@ async function run() {
   const viewportUID = 'CT_STACK'
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

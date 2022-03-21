@@ -5,7 +5,7 @@ import cloneDeep from 'lodash.clonedeep'
 import { ImageVolume } from './cache/classes/ImageVolume'
 import * as Types from './types'
 import cache from './cache/cache'
-import EVENTS from './enums/events'
+import Events from './enums/Events'
 import eventTarget from './eventTarget'
 import triggerEvent from './utilities/triggerEvent'
 import { uuidv4 } from './utilities'
@@ -104,7 +104,7 @@ function loadVolumeFromVolumeLoader(
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
     function (volume) {
-      triggerEvent(eventTarget, EVENTS.VOLUME_LOADED, { volume })
+      triggerEvent(eventTarget, Events.VOLUME_LOADED, { volume })
     },
     function (error) {
       const errorObject: EventTypes.VolumeLoadedFailedEventDetail = {
@@ -112,7 +112,7 @@ function loadVolumeFromVolumeLoader(
         error,
       }
 
-      triggerEvent(eventTarget, EVENTS.VOLUME_LOADED_FAILED, errorObject)
+      triggerEvent(eventTarget, Events.VOLUME_LOADED_FAILED, errorObject)
     }
   )
 
@@ -244,7 +244,7 @@ export function createAndCacheDerivedVolume(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(numBytes)
   if (!isCacheable) {
-    throw new Error(EVENTS.CACHE_SIZE_EXCEEDED)
+    throw new Error(Events.CACHE_SIZE_EXCEEDED)
   }
 
   const volumeScalarData = new TypedArray(scalarLength)
@@ -330,7 +330,7 @@ export function createLocalVolume(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(numBytes)
   if (!isCacheable) {
-    throw new Error(EVENTS.CACHE_SIZE_EXCEEDED)
+    throw new Error(Events.CACHE_SIZE_EXCEEDED)
   }
 
   const scalarArray = vtkDataArray.newInstance({

@@ -12,7 +12,7 @@ import {
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
 
-const { VIEWPORT_TYPE } = Enums
+const { ViewportType } = Enums
 
 // ======== Constants ======= //
 const renderingEngineUID = 'myRenderingEngine'
@@ -223,7 +223,7 @@ async function run() {
 
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

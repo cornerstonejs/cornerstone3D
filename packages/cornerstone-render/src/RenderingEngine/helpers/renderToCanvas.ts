@@ -1,10 +1,10 @@
 import RenderingEngine from '../RenderingEngine'
 import { getRenderingEngine } from '../getRenderingEngine'
 import getOrCreateCanvas from './getOrCreateCanvas'
-import VIEWPORT_TYPE from '../../enums/viewportType'
+import ViewportType from '../../enums/ViewportType'
 import ORIENTATION from '../../constants/orientation'
 import StackViewport from '../StackViewport'
-import Events from '../../enums/events'
+import Events from '../../enums/Events'
 
 /**
  * Renders an imageId to a Canvas. This method will handle creation
@@ -79,7 +79,7 @@ export default function renderToCanvas(
 
     const stackViewportInput = {
       viewportUID,
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element,
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,

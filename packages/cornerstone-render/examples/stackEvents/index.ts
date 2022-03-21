@@ -12,7 +12,7 @@ import {
 } from '../../../../utils/demo/helpers'
 import { vec3 } from 'gl-matrix'
 
-const { VIEWPORT_TYPE } = Enums
+const { ViewportType } = Enums
 
 // ======== Constants ======= //
 const renderingEngineUID = 'myRenderingEngine'
@@ -59,7 +59,7 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.EVENTS
+const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.Events
 
 element.addEventListener(
   IMAGE_RENDERED,
@@ -252,7 +252,7 @@ async function run() {
 
   const viewportInput = {
     viewportUID,
-    type: VIEWPORT_TYPE.STACK,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

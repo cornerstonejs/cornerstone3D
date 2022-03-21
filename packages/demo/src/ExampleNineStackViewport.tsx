@@ -15,7 +15,7 @@ import { ctStackUID, VIEWPORT_IDS } from './constants'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 const renderingEngineUID = 'renderingEngineUID'
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 window.cache = cache
 
@@ -93,7 +93,7 @@ class NineStackViewportExample extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--0',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -101,7 +101,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--1',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -109,7 +109,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--2',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -117,7 +117,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--3',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -125,7 +125,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--4',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(4),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -133,7 +133,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--5',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(5),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -141,7 +141,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--6',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(6),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -149,7 +149,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--7',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(7),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -157,7 +157,7 @@ class NineStackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.STACK.CT + '--8',
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(8),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,

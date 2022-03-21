@@ -11,7 +11,7 @@ import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { addAnnotation, getAnnotations } from '../../stateManagement'
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { CornerstoneTools3DEvents as Events } from '../../enums'
 
 import {
   drawHandles as drawHandlesSvg,
@@ -242,7 +242,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       // Todo: This is not correct way to add the event trigger,
       // this will trigger on all mouse hover too. Problem is that we don't
       // have a cached stats mechanism for this tool yet?
-      const eventType = EVENTS.ANNOTATION_MODIFIED
+      const eventType = Events.ANNOTATION_MODIFIED
 
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,

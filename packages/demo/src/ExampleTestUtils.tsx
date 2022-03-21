@@ -32,7 +32,7 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 const { fakeImageLoader, fakeMetaDataProvider } = utilities.testUtils
 
@@ -102,7 +102,7 @@ class testUtil extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [1, 0, 1],

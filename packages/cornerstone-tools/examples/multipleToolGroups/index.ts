@@ -18,7 +18,7 @@ const {
   ToolBindings,
 } = cornerstoneTools
 
-const { VIEWPORT_TYPE } = Enums
+const { ViewportType } = Enums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -141,7 +141,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -149,7 +149,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -157,7 +157,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.STACK,
+      type: ViewportType.STACK,
       element: element3,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],

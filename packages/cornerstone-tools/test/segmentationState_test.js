@@ -15,14 +15,14 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
   SegmentationRepresentations,
   segmentation,
-  CornerstoneTools3DEvents: EVENTS,
+  CornerstoneTools3DEvents: Events,
   utilities: { segmentation: segUtils },
 } = csTools3d
 
@@ -48,7 +48,7 @@ function createViewport(renderingEngine, orientation) {
   renderingEngine.setViewports([
     {
       viewportUID: viewportUID,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
         orientation: ORIENTATION[orientation],
@@ -109,7 +109,7 @@ describe('Segmentation State -- ', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const globalState =
             segmentation.state.getGlobalSegmentationDataByUID(segVolumeId)
@@ -124,7 +124,7 @@ describe('Segmentation State -- ', () => {
         }
       )
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_STATE_MODIFIED,
+        Events.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
           const stateManager =
             segmentation.state.getDefaultSegmentationStateManager(segVolumeId)
@@ -195,7 +195,7 @@ describe('Segmentation State -- ', () => {
       const vp = this.renderingEngine.getViewport(viewportUID)
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
           const globalConfig = segmentation.state.getGlobalSegmentationConfig()
 

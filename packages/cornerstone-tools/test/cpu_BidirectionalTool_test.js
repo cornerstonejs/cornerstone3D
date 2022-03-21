@@ -14,7 +14,7 @@ const {
   resetUseCPURendering,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const {
   BidirectionalTool,
@@ -116,7 +116,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a Bidirectional tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -160,7 +160,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 0]
       const index2 = [10, 1, 0]
 
@@ -226,7 +226,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and modify its handle', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -273,7 +273,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       // Not not to move the handle too much since the length become width and it would fail
       const index1 = [50, 50, 0]
       const index2 = [5, 5, 0]
@@ -374,7 +374,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select but not move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -421,7 +421,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 
@@ -512,7 +512,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -599,7 +599,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 
@@ -713,7 +713,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully cancel drawing of a bidirectional on a cpu stack viewport', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -724,7 +724,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
     let p1, p2
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [32, 32, 4]
       const index2 = [10, 1, 4]
 

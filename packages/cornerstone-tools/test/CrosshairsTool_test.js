@@ -12,7 +12,7 @@ const {
   imageLoader,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
@@ -127,7 +127,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully initialize the crosshairs to the middle of the image and canvas', function (done) {
     const [element1, element2, element3] = createViewports(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -210,9 +210,9 @@ describe('Cornerstone Tools: ', () => {
       })
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-    element3.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
+    element3.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
 
     this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -235,7 +235,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully jump to move the crosshairs', function (done) {
     const [element1, element2, element3] = createViewports(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -354,9 +354,9 @@ describe('Cornerstone Tools: ', () => {
       document.dispatchEvent(evt)
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
@@ -379,7 +379,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully drag and move the crosshairs', function (done) {
     const [element1, element2, element3] = createViewports(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -496,9 +496,9 @@ describe('Cornerstone Tools: ', () => {
       }, 50)
     }
 
-    element1.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
-    element3.addEventListener(EVENTS.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
     this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
     this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)

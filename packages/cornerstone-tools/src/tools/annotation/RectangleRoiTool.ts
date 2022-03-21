@@ -26,7 +26,7 @@ import {
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { CornerstoneTools3DEvents as Events } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import rectangle from '../../utilities/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
@@ -585,13 +585,13 @@ export default class RectangleRoiTool extends AnnotationTool {
   _activateDraw = (element) => {
     state.isInteractingWithTool = true
 
-    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragCallback)
-    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.MOUSE_MOVE, this._mouseDragCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
@@ -600,13 +600,13 @@ export default class RectangleRoiTool extends AnnotationTool {
   _deactivateDraw = (element) => {
     state.isInteractingWithTool = false
 
-    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(EVENTS.MOUSE_MOVE, this._mouseDragCallback)
-    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
@@ -615,12 +615,12 @@ export default class RectangleRoiTool extends AnnotationTool {
   _activateModify = (element) => {
     state.isInteractingWithTool = true
 
-    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
@@ -629,12 +629,12 @@ export default class RectangleRoiTool extends AnnotationTool {
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false
 
-    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   }
 
   /**
@@ -1027,7 +1027,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     annotation.invalidated = false
 
     // Dispatching annotation modified
-    const eventType = EVENTS.ANNOTATION_MODIFIED
+    const eventType = Events.ANNOTATION_MODIFIED
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,

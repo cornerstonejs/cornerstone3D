@@ -33,7 +33,7 @@ import {
 const VOLUME = 'volume'
 
 window.cache = cache
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 let ctSceneToolGroup
 
@@ -107,7 +107,7 @@ class OneVolumeExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -116,7 +116,7 @@ class OneVolumeExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -125,7 +125,7 @@ class OneVolumeExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,

@@ -15,7 +15,7 @@ const {
   setVolumesForViewports,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION, INTERPOLATION_TYPE } = Enums
+const { Events, ViewportType, ORIENTATION, InterpolationType } = Enums
 
 const { registerVolumeLoader } = volumeLoader
 const { StackScrollMouseWheelTool, ToolGroupManager, StackScrollTool } =
@@ -99,7 +99,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   it('Should successfully scroll through a volume', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.ORTHOGRAPHIC,
+      ViewportType.ORTHOGRAPHIC,
       512,
       128
     )
@@ -139,8 +139,8 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     const attachEventHandler = () => {
       const canvas = vp.getCanvas()
 
-      element.removeEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.removeEventListener(Events.IMAGE_RENDERED, renderEventHandler)
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -150,7 +150,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
 
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
@@ -171,7 +171,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   it('Should successfully scroll through stack of images', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -213,8 +213,8 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     const attachEventHandler = () => {
       const canvas = vp.getCanvas()
 
-      element.removeEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.removeEventListener(Events.IMAGE_RENDERED, renderEventHandler)
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         // Second render is as a result of scrolling
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -225,13 +225,13 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       })
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, renderEventHandler)
+    element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
 
     this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
 
     try {
       vp.setStack([imageId1, imageId2], 0).then(() => {
-        vp.setProperties({ interpolationType: INTERPOLATION_TYPE.NEAREST })
+        vp.setProperties({ interpolationType: InterpolationType.NEAREST })
         vp.render()
       })
     } catch (e) {

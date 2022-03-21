@@ -6,7 +6,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 
 const NUM_VIEWPORTS = 25
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 class TwentyFiveCanvasExample extends Component {
   state = {
@@ -47,7 +47,7 @@ class TwentyFiveCanvasExample extends Component {
       viewports.push({
         sceneUID,
         viewportUID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.containers[i].current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,

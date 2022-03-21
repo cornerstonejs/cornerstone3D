@@ -13,7 +13,7 @@ const {
   setVolumesForViewports,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const {
   EllipticalRoiTool,
@@ -104,7 +104,7 @@ describe('Ellipse Tool: ', () => {
     it('Should successfully create a ellipse tool on a canvas with mouse drag - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -151,7 +151,7 @@ describe('Ellipse Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         // Since ellipse draws from center to out, we are picking a very center
         // point in the image  (strip is 255 from 10-15 in X and from 0-64 in Y)
         const index1 = [12, 30, 0]
@@ -217,7 +217,7 @@ describe('Ellipse Tool: ', () => {
     it('Should successfully create a ellipse tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.ORTHOGRAPHIC,
+        ViewportType.ORTHOGRAPHIC,
         512,
         128
       )
@@ -259,7 +259,7 @@ describe('Ellipse Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [60, 50, 2]
         const index2 = [65, 60, 2]
 
@@ -368,7 +368,7 @@ describe('Ellipse Tool: ', () => {
     it('Should cancel drawing of a EllipseTool annotation', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -377,7 +377,7 @@ describe('Ellipse Tool: ', () => {
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         // Since ellipse draws from center to out, we are picking a very center
         // point in the image  (strip is 255 from 10-15 in X and from 0-64 in Y)
         const index1 = [12, 30, 0]

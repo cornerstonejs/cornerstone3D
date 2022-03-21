@@ -9,7 +9,7 @@ import { vec2, vec3, mat4 } from 'gl-matrix'
 import metaData from '../metaData'
 import Viewport from './Viewport'
 import eventTarget from '../eventTarget'
-import EVENTS from '../enums/events'
+import Events from '../enums/Events'
 import {
   triggerEvent,
   isEqual,
@@ -41,7 +41,7 @@ import { getColormap } from './helpers/cpuFallback/colors/index'
 
 import { loadAndCacheImage } from '../imageLoader'
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager'
-import INTERPOLATION_TYPE from '../enums/interpolationType'
+import InterpolationType from '../enums/InterpolationType'
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel'
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas'
 import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport'
@@ -51,7 +51,7 @@ import resize from './helpers/cpuFallback/rendering/resize'
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera'
 import { Transform } from './helpers/cpuFallback/rendering/transform'
 import { getShouldUseCPURendering } from '../init'
-import REQUEST_TYPE from '../enums/requestType'
+import RequestType from '../enums/RequestType'
 
 const EPSILON = 1 // Slice Thickness
 
@@ -88,7 +88,7 @@ class StackViewport extends Viewport implements IStackViewport {
   // Viewport Properties
   private voiRange: VOIRange
   private invert = false
-  private interpolationType: INTERPOLATION_TYPE
+  private interpolationType: InterpolationType
   private rotation = 0
 
   // Helpers
@@ -584,7 +584,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.setProperties({
       voiRange: undefined,
       rotation: 0,
-      interpolationType: INTERPOLATION_TYPE.LINEAR,
+      interpolationType: InterpolationType.LINEAR,
       invert: false,
       flipHorizontal: false,
       flipVertical: false,
@@ -678,7 +678,7 @@ class StackViewport extends Viewport implements IStackViewport {
       renderingEngineUID: this.renderingEngineUID,
     }
 
-    triggerEvent(this.element, EVENTS.CAMERA_MODIFIED, eventDetail)
+    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
   }
 
   private setFlipDirection(flipDirection: FlipDirection): void {
@@ -718,7 +718,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.setRotationGPU(rotationCache, rotation)
   }
 
-  private setInterpolationType(interpolationType: INTERPOLATION_TYPE): void {
+  private setInterpolationType(interpolationType: InterpolationType): void {
     if (this.useCPURendering) {
       this.setInterpolationTypeCPU(interpolationType)
       return
@@ -754,7 +754,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.rotation = rotation
   }
 
-  private setInterpolationTypeGPU(interpolationType: INTERPOLATION_TYPE): void {
+  private setInterpolationTypeGPU(interpolationType: InterpolationType): void {
     const actor = this.getDefaultActor()
 
     if (!actor) {
@@ -769,10 +769,10 @@ class StackViewport extends Viewport implements IStackViewport {
     this.interpolationType = interpolationType
   }
 
-  private setInterpolationTypeCPU(interpolationType: INTERPOLATION_TYPE): void {
+  private setInterpolationTypeCPU(interpolationType: InterpolationType): void {
     const { viewport } = this._cpuFallbackEnabledElement
 
-    if (interpolationType === INTERPOLATION_TYPE.LINEAR) {
+    if (interpolationType === InterpolationType.LINEAR) {
       viewport.pixelReplication = false
     } else {
       viewport.pixelReplication = true
@@ -1228,7 +1228,7 @@ class StackViewport extends Viewport implements IStackViewport {
           renderingEngineUID: this.renderingEngineUID,
         }
 
-        triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, eventDetail)
+        triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail)
 
         const metadata = this._getImageDataMetadata(image) as ImageDataMetaData
 
@@ -1299,7 +1299,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         if (!this.suppressEvents) {
-          triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_ERROR, eventDetail)
+          triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail)
         }
 
         reject(error)
@@ -1334,7 +1334,7 @@ class StackViewport extends Viewport implements IStackViewport {
       const type = 'Float32Array'
 
       const priority = -5
-      const requestType = REQUEST_TYPE.Interaction
+      const requestType = RequestType.Interaction
       const additionalDetails = { imageId }
       const options = {
         targetBuffer: {
@@ -1367,7 +1367,7 @@ class StackViewport extends Viewport implements IStackViewport {
           renderingEngineUID: this.renderingEngineUID,
         }
 
-        triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, eventDetail)
+        triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail)
 
         this._updateActorToDisplayImageId(image)
 
@@ -1397,7 +1397,7 @@ class StackViewport extends Viewport implements IStackViewport {
           imageId,
         }
 
-        triggerEvent(eventTarget, EVENTS.IMAGE_LOAD_ERROR, eventDetail)
+        triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail)
         reject(error)
       }
 
@@ -1430,7 +1430,7 @@ class StackViewport extends Viewport implements IStackViewport {
       const type = 'Float32Array'
 
       const priority = -5
-      const requestType = REQUEST_TYPE.Interaction
+      const requestType = RequestType.Interaction
       const additionalDetails = { imageId }
       const options = {
         targetBuffer: {
@@ -1714,7 +1714,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     if (!this.suppressEvents) {
       // For crosshairs to adapt to new viewport size
-      triggerEvent(this.element, EVENTS.CAMERA_MODIFIED, eventDetail)
+      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
     }
   }
 
@@ -1735,7 +1735,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     if (!this.suppressEvents) {
       // Let the tools know the image spacing has been calibrated
-      triggerEvent(this.element, EVENTS.IMAGE_SPACING_CALIBRATED, eventDetail)
+      triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, eventDetail)
     }
 
     this._publishCalibratedEvent = false

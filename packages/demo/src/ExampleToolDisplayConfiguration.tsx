@@ -46,7 +46,7 @@ const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 let ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup
 
@@ -145,7 +145,7 @@ class ToolDisplayConfigurationExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -153,7 +153,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -162,7 +162,7 @@ class ToolDisplayConfigurationExample extends Component {
       // stack CT
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -171,7 +171,7 @@ class ToolDisplayConfigurationExample extends Component {
       // dx
       {
         viewportUID: VIEWPORT_IDS.STACK.DX,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,

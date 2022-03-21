@@ -14,7 +14,7 @@ const {
   resetUseCPURendering,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const {
   EllipticalRoiTool,
@@ -110,7 +110,7 @@ describe('EllipticalRoiTool (CPU):', () => {
   it('Should successfully create a ellipse tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -157,7 +157,7 @@ describe('EllipticalRoiTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       // Since ellipse draws from center to out, we are picking a very center
       // point in the image  (strip is 255 from 10-15 in X and from 0-64 in Y)
       const index1 = [12, 30, 0]
@@ -223,7 +223,7 @@ describe('EllipticalRoiTool (CPU):', () => {
   it('Should cancel drawing of a EllipseTool annotation on a cpu stack viewport', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -234,7 +234,7 @@ describe('EllipticalRoiTool (CPU):', () => {
 
     let p1, p2
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       // Since ellipse draws from center to out, we are picking a very center
       // point in the image  (strip is 255 from 10-15 in X and from 0-64 in Y)
       const index1 = [12, 30, 0]

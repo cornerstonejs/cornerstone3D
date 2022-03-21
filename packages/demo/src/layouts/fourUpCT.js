@@ -5,7 +5,7 @@ import {
   setCTVRTransferFunction,
 } from '../helpers/transferFunctionHelpers'
 
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 function setLayout(
   renderingEngine,
@@ -16,7 +16,7 @@ function setLayout(
     // CT
     {
       viewportUID: VIEWPORT_IDS.CT.AXIAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
@@ -24,7 +24,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -32,7 +32,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.CT.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -40,7 +40,7 @@ function setLayout(
     },
     {
       viewportUID: VIEWPORT_IDS.CTVR.VR,
-      type: VIEWPORT_TYPE.PERSPECTIVE,
+      type: ViewportType.PERSPECTIVE,
       canvas: canvasContainers.get(3),
       defaultOptions: {
         orientation: {

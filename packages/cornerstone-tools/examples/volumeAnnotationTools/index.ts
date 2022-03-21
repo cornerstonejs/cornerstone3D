@@ -21,7 +21,7 @@ const {
   ToolBindings,
 } = cornerstoneTools
 
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -123,7 +123,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.AXIAL,
@@ -132,7 +132,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -141,7 +141,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
         orientation: {

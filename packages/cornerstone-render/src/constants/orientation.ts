@@ -23,7 +23,7 @@ import { Orientation, Point3 } from '../types'
  * renderingEngine.setViewports([
  *  {
  *    viewportUID: 'a-viewport-uid',
- *    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+ *    type: ViewportType.ORTHOGRAPHIC,
  *    element: document.querySelector('div'),
  *    defaultOptions: {
  *      // 👇 Leveraging our reference constant

@@ -19,13 +19,13 @@ const {
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
   segmentation,
-  CornerstoneTools3DEvents: EVENTS,
+  CornerstoneTools3DEvents: Events,
   SegmentationRepresentations,
   RectangleScissorsTool,
 } = csTools3d
@@ -55,7 +55,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -183,7 +183,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 
@@ -244,7 +244,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 
@@ -324,7 +324,7 @@ describe('Segmentation Controller --', () => {
       }
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_RENDERED,
+        Events.SEGMENTATION_RENDERED,
         compareImageCallback
       )
 

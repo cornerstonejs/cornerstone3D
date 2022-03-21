@@ -49,7 +49,7 @@ export default class FrameOfReferenceSpecificAnnotationManager {
 
     // Listen to the IMAGE_VOLUME_MODIFIED event to invalidate data.
     eventTarget.addEventListener(
-      Enums.EVENTS.IMAGE_VOLUME_MODIFIED,
+      Enums.Events.IMAGE_VOLUME_MODIFIED,
       this._imageVolumeModifiedHandler
     )
   }

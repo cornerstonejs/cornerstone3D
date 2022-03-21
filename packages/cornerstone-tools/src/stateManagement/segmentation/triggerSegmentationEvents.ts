@@ -1,6 +1,6 @@
 import { triggerEvent, eventTarget } from '@precisionmetrics/cornerstone-render'
 
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { CornerstoneTools3DEvents as Events } from '../../enums'
 import {
   getToolGroupsWithSegmentation,
   getToolGroups,
@@ -22,7 +22,7 @@ function triggerSegmentationStateModified(toolGroupUID: string): void {
     toolGroupUID,
   }
 
-  triggerEvent(eventTarget, EVENTS.SEGMENTATION_STATE_MODIFIED, eventDetail)
+  triggerEvent(eventTarget, Events.SEGMENTATION_STATE_MODIFIED, eventDetail)
 }
 
 /**
@@ -57,7 +57,7 @@ function triggerSegmentationGlobalStateModified(
     }
     triggerEvent(
       eventTarget,
-      EVENTS.SEGMENTATION_GLOBAL_STATE_MODIFIED,
+      Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
       eventDetail
     )
   })
@@ -83,7 +83,7 @@ function triggerSegmentationDataModified(
     segmentationDataUID,
   }
 
-  triggerEvent(eventTarget, EVENTS.SEGMENTATION_DATA_MODIFIED, eventDetail)
+  triggerEvent(eventTarget, Events.SEGMENTATION_DATA_MODIFIED, eventDetail)
 }
 
 export {

@@ -13,7 +13,7 @@ const {
   setVolumesForViewports,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const {
   ProbeTool,
@@ -103,7 +103,7 @@ describe('Probe Tool: ', () => {
     it('Should successfully click to put a probe tool on a canvas - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         512,
         128
       )
@@ -147,7 +147,7 @@ describe('Probe Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [11, 20, 0]
 
         const { imageData } = vp.getImageData()
@@ -193,7 +193,7 @@ describe('Probe Tool: ', () => {
     it('Should successfully click to put two probe tools on a canvas - 256 x 256', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -259,7 +259,7 @@ describe('Probe Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [11, 20, 0] // 255
         const index2 = [20, 20, 0] // 0
 
@@ -327,7 +327,7 @@ describe('Probe Tool: ', () => {
     it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         512
       )
@@ -371,7 +371,7 @@ describe('Probe Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [150, 100, 0] // 255
 
         const { imageData } = vp.getImageData()
@@ -415,7 +415,7 @@ describe('Probe Tool: ', () => {
     it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         512
       )
@@ -459,7 +459,7 @@ describe('Probe Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [35, 35, 0] // 0
 
         const { imageData } = vp.getImageData()
@@ -503,7 +503,7 @@ describe('Probe Tool: ', () => {
     it('Should successfully create a prob tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.ORTHOGRAPHIC,
+        ViewportType.ORTHOGRAPHIC,
         512,
         128
       )
@@ -542,7 +542,7 @@ describe('Probe Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [50, 50, 4]
 
         const { imageData } = vp.getImageData()
@@ -594,7 +594,7 @@ describe('Probe Tool: ', () => {
     it('Should successfully create a Probe tool and select AND move it', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -644,7 +644,7 @@ describe('Probe Tool: ', () => {
         )
       }
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [11, 20, 0] // 255
         const index2 = [40, 40, 0] // 0
 
@@ -761,7 +761,7 @@ describe('Probe Tool: ', () => {
     it('Should successfully cancel drawing of a ProbeTool', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        VIEWPORT_TYPE.STACK,
+        ViewportType.STACK,
         256,
         256
       )
@@ -772,7 +772,7 @@ describe('Probe Tool: ', () => {
 
       let p2
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [11, 20, 0] // 255
         const index2 = [40, 40, 0] // 0
 

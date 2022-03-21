@@ -3,7 +3,7 @@ import * as cornerstone3D from '../src/index'
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { RenderingEngine, cache, utilities, Enums } = cornerstone3D
 
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const renderingEngineUID = utilities.uuidv4()
 
@@ -38,7 +38,7 @@ describe('RenderingEngineAPI -- ', () => {
       this.renderingEngine.setViewports([
         {
           viewportUID: axialViewportUID,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this.elementAxial,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
@@ -46,7 +46,7 @@ describe('RenderingEngineAPI -- ', () => {
         },
         {
           viewportUID: sagittalViewportUID,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this.elementSagittal,
           defaultOptions: {
             orientation: ORIENTATION.SAGITTAL,
@@ -54,7 +54,7 @@ describe('RenderingEngineAPI -- ', () => {
         },
         {
           viewportUID: customOrientationViewportUID,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustom,
           defaultOptions: {
             orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
@@ -153,7 +153,7 @@ describe('RenderingEngineAPI -- ', () => {
       const viewportInputEntries = [
         {
           viewportUID: axialViewportUID,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this.elementAxial,
           defaultOptions: {
             orientation: ORIENTATION.AXIAL,
@@ -161,7 +161,7 @@ describe('RenderingEngineAPI -- ', () => {
         },
         {
           viewportUID: sagittalViewportUID,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this.elementSagittal,
           defaultOptions: {
             orientation: ORIENTATION.SAGITTAL,
@@ -169,7 +169,7 @@ describe('RenderingEngineAPI -- ', () => {
         },
         {
           viewportUID: customOrientationViewportUID,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustomOrientation,
           defaultOptions: {
             orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
@@ -190,7 +190,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should not enable element without an element', function () {
       const entry = {
         viewportUID: axialViewportUID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
@@ -205,7 +205,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should successfully use disable element API', function () {
       const entry = {
         viewportUID: axialViewportUID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.elementAxial,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -224,7 +224,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should successfully get StackViewports', function () {
       const entry = {
         viewportUID: axialViewportUID,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this.elementAxial,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,

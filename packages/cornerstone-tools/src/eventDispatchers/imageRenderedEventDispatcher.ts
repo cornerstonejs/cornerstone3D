@@ -18,11 +18,11 @@ const onImageRendered = function (evt: Types.EventTypes.ImageRenderedEvent) {
 }
 
 const enable = function (element: HTMLElement): void {
-  element.addEventListener(Enums.EVENTS.IMAGE_RENDERED, onImageRendered)
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered)
 }
 
 const disable = function (element: HTMLElement): void {
-  element.removeEventListener(Enums.EVENTS.IMAGE_RENDERED, onImageRendered)
+  element.removeEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered)
 }
 
 export default {

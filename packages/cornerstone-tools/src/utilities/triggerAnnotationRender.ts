@@ -3,7 +3,7 @@ import {
   triggerEvent,
   getRenderingEngine,
 } from '@precisionmetrics/cornerstone-render'
-import { CornerstoneTools3DEvents as EVENTS, ToolModes } from '../enums'
+import { CornerstoneTools3DEvents as Events, ToolModes } from '../enums'
 import { draw as drawSvg } from '../drawingSvg'
 import getToolsWithModesForElement from './getToolsWithModesForElement'
 import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
@@ -175,7 +175,7 @@ class AnnotationRenderingEngine {
           tool.renderAnnotation
         ) {
           tool.renderAnnotation(enabledElement, svgDrawingHelper)
-          triggerEvent(element, EVENTS.ANNOTATION_RENDERED, { ...eventDetail })
+          triggerEvent(element, Events.ANNOTATION_RENDERED, { ...eventDetail })
         }
       }
 

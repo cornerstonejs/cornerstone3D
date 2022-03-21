@@ -21,13 +21,13 @@ const {
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
   segmentation,
-  CornerstoneTools3DEvents: EVENTS,
+  CornerstoneTools3DEvents: Events,
   SegmentationRepresentations,
 } = csTools3d
 
@@ -61,7 +61,7 @@ function createViewport(
 
   renderingEngine.enableElement({
     viewportUID: viewportUID,
-    type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
       orientation: ORIENTATION[orientation],
@@ -120,7 +120,7 @@ describe('Segmentation Render -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID1)
 
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
@@ -173,7 +173,7 @@ describe('Segmentation Render -- ', () => {
       const vp3 = this.renderingEngine.getViewport(viewportUID3)
 
       let renderedViewportCounts = 0
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         renderedViewportCounts++
 
         if (renderedViewportCounts !== 3) {
@@ -245,7 +245,7 @@ describe('Segmentation Render -- ', () => {
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_60_60_2_80_80_7'
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
 
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
 
@@ -302,7 +302,7 @@ describe('Segmentation Render -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp1 = this.renderingEngine.getViewport(viewportUID1)
 
-      eventTarget.addEventListener(EVENTS.SEGMENTATION_RENDERED, (evt) => {
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
         expect(evt.detail.toolGroupUID).toBe('segToolGroup')
@@ -315,7 +315,7 @@ describe('Segmentation Render -- ', () => {
       })
 
       eventTarget.addEventListener(
-        EVENTS.SEGMENTATION_STATE_MODIFIED,
+        Events.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
           const toolGroupState = segmentation.state.getSegmentationState(
             this.segToolGroup.uid

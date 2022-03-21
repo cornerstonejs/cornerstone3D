@@ -29,7 +29,7 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 let stackCTViewportToolGroup, stackPTViewportToolGroup
 
@@ -119,7 +119,7 @@ class OneStackExampleCPU extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
           background: [0.2, 0, 0.2],
@@ -176,7 +176,7 @@ class OneStackExampleCPU extends Component {
     await ctStackViewport.setStack(stacks.ct, 0)
     ctStackViewport.setProperties({
       voiRange: { lower: -160, upper: 240 },
-      // interpolationType: INTERPOLATION_TYPE.NEAREST,
+      // interpolationType: InterpolationType.NEAREST,
     })
 
     // Start listening for resize

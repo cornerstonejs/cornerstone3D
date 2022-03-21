@@ -126,7 +126,7 @@ class SegmentationRenderingEngine {
       const { element, viewportUID, renderingEngineUID } = evt.detail
 
       element.removeEventListener(
-        Enums.EVENTS.IMAGE_RENDERED,
+        Enums.Events.IMAGE_RENDERED,
         onSegmentationRender
       )
 
@@ -155,7 +155,7 @@ class SegmentationRenderingEngine {
 
     viewports.forEach(({ element }) => {
       element.addEventListener(
-        Enums.EVENTS.IMAGE_RENDERED,
+        Enums.Events.IMAGE_RENDERED,
         onSegmentationRender
       )
     })

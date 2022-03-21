@@ -1,9 +1,9 @@
-import EVENTS from '../enums/events'
+import Events from '../enums/Events'
 import renderingEngineCache from './renderingEngineCache'
 import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from '../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
-import VIEWPORT_TYPE from '../enums/viewportType'
+import ViewportType from '../enums/ViewportType'
 import {
   PublicViewportInput,
   EventTypes,
@@ -126,7 +126,7 @@ class RenderingEngine implements IRenderingEngine {
    * ```typescript
    * renderingEngine.enableElement({
    *  viewportUID: viewportUID,
-   *  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *  type: ViewportType.ORTHOGRAPHIC,
    *  element,
    *  defaultOptions: {
    *    orientation: ORIENTATION[orientation],
@@ -135,7 +135,7 @@ class RenderingEngine implements IRenderingEngine {
    * })
    * ```
    *
-   * @fires EVENTS.ELEMENT_ENABLED
+   * @fires Events.ELEMENT_ENABLED
    *
    * @param viewportInputEntry - viewport specifications
    */
@@ -192,7 +192,7 @@ class RenderingEngine implements IRenderingEngine {
    * 3) resetting the viewport to remove the canvas attributes and canvas data
    * 4) resize the offScreen appropriately (if using vtk.js driven rendering pipeline)
    *
-   * @fires EVENTS.ELEMENT_ENABLED
+   * @fires Events.ELEMENT_ENABLED
    *
    * @param viewportUID - viewport UID
    *
@@ -244,7 +244,7 @@ class RenderingEngine implements IRenderingEngine {
    *renderingEngine.setViewports([
    *   {
    *     viewportUID: axialViewportUID,
-   *     type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('axialDiv'),
    *     defaultOptions: {
    *       orientation: ORIENTATION.AXIAL,
@@ -252,7 +252,7 @@ class RenderingEngine implements IRenderingEngine {
    *   },
    *   {
    *     viewportUID: sagittalViewportUID,
-   *     type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('sagittalDiv'),
    *     defaultOptions: {
    *       orientation: ORIENTATION.SAGITTAL,
@@ -260,7 +260,7 @@ class RenderingEngine implements IRenderingEngine {
    *   },
    *   {
    *     viewportUID: customOrientationViewportUID,
-   *     type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+   *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('customOrientationDiv'),
    *     defaultOptions: {
    *       orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
@@ -269,7 +269,7 @@ class RenderingEngine implements IRenderingEngine {
    * ])
    * ```
    *
-   * @fires EVENTS.ELEMENT_ENABLED
+   * @fires Events.ELEMENT_ENABLED
    *
    * @param viewportInputEntries - Array<PublicViewportInput>
    */
@@ -396,7 +396,7 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * Renders all viewports on the next animation frame.
    *
-   * @fires EVENTS.IMAGE_RENDERED
+   * @fires Events.IMAGE_RENDERED
    */
   public render(): void {
     const viewports = this.getViewports()
@@ -676,10 +676,10 @@ class RenderingEngine implements IRenderingEngine {
 
     // 4. Create a proper viewport based on the type of the viewport
     let viewport
-    if (type === VIEWPORT_TYPE.STACK) {
+    if (type === ViewportType.STACK) {
       // 4.a Create stack viewport
       viewport = new StackViewport(viewportInput)
-    } else if (type === VIEWPORT_TYPE.ORTHOGRAPHIC) {
+    } else if (type === ViewportType.ORTHOGRAPHIC) {
       // 4.b Create a volume viewport
       viewport = new VolumeViewport(viewportInput)
     } else {
@@ -696,7 +696,7 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     if (!viewport.suppressEvents) {
-      triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventDetail)
+      triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail)
     }
   }
 
@@ -738,7 +738,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 4. Create a proper viewport based on the type of the viewport
 
-    if (type !== VIEWPORT_TYPE.STACK) {
+    if (type !== ViewportType.STACK) {
       // In the future these will need to be pluggable, but we aren't there yet
       // and these are just Stacks for now.
       throw new Error('Support for fully custom viewports not yet implemented')
@@ -756,7 +756,7 @@ class RenderingEngine implements IRenderingEngine {
       renderingEngineUID: this.uid,
     }
 
-    triggerEvent(eventTarget, EVENTS.ELEMENT_ENABLED, eventDetail)
+    triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail)
   }
 
   /**
@@ -1028,7 +1028,7 @@ class RenderingEngine implements IRenderingEngine {
     this._animationFrameHandle = null
 
     eventDetailArray.forEach((eventDetail) => {
-      triggerEvent(eventDetail.element, EVENTS.IMAGE_RENDERED, eventDetail)
+      triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail)
     })
   }
 
@@ -1167,7 +1167,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
-    triggerEvent(eventTarget, EVENTS.ELEMENT_DISABLED, eventDetail)
+    triggerEvent(eventTarget, Events.ELEMENT_DISABLED, eventDetail)
 
     element.removeAttribute('data-viewport-uid')
     element.removeAttribute('data-rendering-engine-uid')

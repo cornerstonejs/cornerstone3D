@@ -33,7 +33,7 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 const VOLUME = 'volume'
 
 window.cache = cache
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 let ctSceneToolGroup,
   stackCTViewportToolGroup,
@@ -138,7 +138,7 @@ class EnableDisableViewportExample extends Component {
         {
           // CT volume axial
           viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(0),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
@@ -148,7 +148,7 @@ class EnableDisableViewportExample extends Component {
         {
           // stack CT
           viewportUID: VIEWPORT_IDS.STACK.CT,
-          type: VIEWPORT_TYPE.STACK,
+          type: ViewportType.STACK,
           element: this._elementNodes.get(1),
           toolGroup: stackCTViewportToolGroup,
           defaultOptions: {
@@ -158,7 +158,7 @@ class EnableDisableViewportExample extends Component {
         {
           // dx
           viewportUID: VIEWPORT_IDS.STACK.DX,
-          type: VIEWPORT_TYPE.STACK,
+          type: ViewportType.STACK,
           element: this._elementNodes.get(2),
           toolGroup: stackDXViewportToolGroup,
           defaultOptions: {
@@ -168,7 +168,7 @@ class EnableDisableViewportExample extends Component {
         {
           // CT volume Coronal
           viewportUID: VIEWPORT_IDS.CT.CORONAL,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(3),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {
@@ -177,7 +177,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           viewportUID: VIEWPORT_IDS.CT.AXIAL,
-          type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+          type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(4),
           toolGroup: ctSceneToolGroup,
           defaultOptions: {

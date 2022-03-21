@@ -16,7 +16,7 @@ export default function createVOISynchronizer(
 ): Synchronizer {
   const VOISynchronizer = createSynchronizer(
     synchronizerName,
-    Enums.EVENTS.VOI_MODIFIED,
+    Enums.Events.VOI_MODIFIED,
     voiSyncCallback
   )
 

@@ -14,7 +14,7 @@ const {
   resetUseCPURendering,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const {
   RectangleRoiTool,
@@ -108,7 +108,7 @@ describe('RectangleRoiTool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -155,7 +155,7 @@ describe('RectangleRoiTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 5, 0]
       const index2 = [14, 10, 0]
 
@@ -219,7 +219,7 @@ describe('RectangleRoiTool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport and modify its handle', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -265,7 +265,7 @@ describe('RectangleRoiTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 5, 0]
       const index2 = [14, 10, 0]
       const index3 = [11, 30, 0]
@@ -364,7 +364,7 @@ describe('RectangleRoiTool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport and select but not move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       256
     )
@@ -410,7 +410,7 @@ describe('RectangleRoiTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 5, 0]
       const index2 = [14, 30, 0]
 
@@ -500,7 +500,7 @@ describe('RectangleRoiTool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -585,7 +585,7 @@ describe('RectangleRoiTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 5, 0]
       const index2 = [14, 30, 0]
 
@@ -701,7 +701,7 @@ describe('RectangleRoiTool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -712,7 +712,7 @@ describe('RectangleRoiTool (CPU):', () => {
 
     let p1, p2, p3, p4
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 5, 0]
       const index2 = [14, 30, 0]
 

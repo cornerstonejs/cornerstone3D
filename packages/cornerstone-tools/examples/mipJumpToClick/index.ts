@@ -17,7 +17,7 @@ import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 const { BlendMode } = vtkConstants
 
-const { VIEWPORT_TYPE, ORIENTATION } = Enums
+const { ViewportType, ORIENTATION } = Enums
 
 const {
   ToolGroupManager,
@@ -145,7 +145,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportUID: viewportUIDs[0],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
@@ -154,7 +154,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[1],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -163,7 +163,7 @@ async function run() {
     },
     {
       viewportUID: viewportUIDs[2],
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,

@@ -326,7 +326,7 @@ describe('Cache', () => {
 
       await expectAsync(
         cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-      ).toBeRejectedWithError(Enums.EVENTS.CACHE_SIZE_EXCEEDED)
+      ).toBeRejectedWithError(Enums.Events.CACHE_SIZE_EXCEEDED)
 
       expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined()
 
@@ -655,7 +655,7 @@ describe('Cache', () => {
 
       await expectAsync(
         cache.putImageLoadObject(volume2.uid, volumeLoadObject2)
-      ).toBeRejectedWithError(Enums.EVENTS.CACHE_SIZE_EXCEEDED)
+      ).toBeRejectedWithError(Enums.Events.CACHE_SIZE_EXCEEDED)
 
       expect(cache.getVolumeLoadObject(volume2.uid)).not.toBeDefined()
 

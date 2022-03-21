@@ -13,7 +13,7 @@ import {
 
 import { scaleArray, autoLoad } from './helpers'
 
-const requestType = Enums.REQUEST_TYPE.Prefetch
+const requestType = Enums.RequestType.Prefetch
 const { getMinMax } = cornerstoneUtils
 
 // TODO James wants another layer in between ImageVolume and SliceStreamingImageVolume
@@ -292,7 +292,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageVolume: volume,
       }
 
-      triggerEvent(eventTarget, Enums.EVENTS.IMAGE_VOLUME_MODIFIED, eventDetail)
+      triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail)
 
       if (framesProcessed === numFrames) {
         loadStatus.loaded = true
@@ -356,7 +356,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageId,
       }
 
-      triggerEvent(eventTarget, Enums.EVENTS.IMAGE_LOAD_ERROR, eventDetail)
+      triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail)
     }
 
     const requests = imageIds.map((imageId, imageIdIndex) => {

@@ -32,7 +32,7 @@ async function setup() {
   const viewportInput = [
     {
       viewportUID: 'CT_STACK',
-      type: Enums.VIEWPORT_TYPE.STACK,
+      type: Enums.ViewportType.STACK,
       element,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],

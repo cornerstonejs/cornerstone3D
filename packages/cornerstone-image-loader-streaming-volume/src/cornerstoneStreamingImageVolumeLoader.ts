@@ -91,7 +91,7 @@ function cornerstoneStreamingImageVolumeLoader(
   // check if there is enough space in unallocated + image Cache
   const isCacheable = cache.isCacheable(sizeInBytes)
   if (!isCacheable) {
-    throw new Error(Enums.EVENTS.CACHE_SIZE_EXCEEDED)
+    throw new Error(Enums.Events.CACHE_SIZE_EXCEEDED)
   }
 
   cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes)

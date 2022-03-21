@@ -37,7 +37,7 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } =
   utilities.testUtils
@@ -105,7 +105,7 @@ class testUtilVolume extends Component {
     const viewportInput = [
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -114,7 +114,7 @@ class testUtilVolume extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -123,7 +123,7 @@ class testUtilVolume extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,

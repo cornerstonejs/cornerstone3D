@@ -25,7 +25,7 @@ const {
   getVolumeViewportsContainingVolumeUID,
 } = cornerstone3D
 
-const { VIEWPORT_TYPE, ORIENTATION, EVENTS } = Enums
+const { ViewportType, ORIENTATION, Events } = Enums
 
 const { registerVolumeLoader } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader
@@ -51,7 +51,7 @@ function createViewport(renderingEngine, orientation) {
   renderingEngine.setViewports([
     {
       viewportUID: viewportUID,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
         orientation: ORIENTATION[orientation],
@@ -99,7 +99,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -136,7 +136,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -196,7 +196,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -233,7 +233,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -296,7 +296,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -335,7 +335,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -395,7 +395,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -435,7 +435,7 @@ describe('Volume Viewport GPU -- ', () => {
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const viewport = this.renderingEngine.getViewport(viewportUID)
         const viewports = getVolumeViewportsContainingVolumeUID(
           volumeId,
@@ -481,7 +481,7 @@ describe('Volume Viewport GPU -- ', () => {
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const image = canvas.toDataURL('image/png')
         compareImages(
           image,
@@ -521,7 +521,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -562,7 +562,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         const offScreen = this.renderingEngine._debugRender()
@@ -601,7 +601,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -670,7 +670,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(
@@ -711,7 +711,7 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
       const vp = this.renderingEngine.getViewport(viewportUID)
 
-      element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
         compareImages(

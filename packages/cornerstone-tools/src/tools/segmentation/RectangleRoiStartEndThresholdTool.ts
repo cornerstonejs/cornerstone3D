@@ -11,7 +11,7 @@ import {
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
 import { vec3 } from 'gl-matrix'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { CornerstoneTools3DEvents as Events } from '../../enums'
 import { addAnnotation, getAnnotations } from '../../stateManagement'
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
 import {
@@ -310,7 +310,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     annotation.invalidated = false
 
     // Dispatching annotation modified
-    const eventType = EVENTS.ANNOTATION_MODIFIED
+    const eventType = Events.ANNOTATION_MODIFIED
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,

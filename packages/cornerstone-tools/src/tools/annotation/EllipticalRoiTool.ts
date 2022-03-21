@@ -25,7 +25,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { CornerstoneTools3DEvents as EVENTS } from '../../enums'
+import { CornerstoneTools3DEvents as Events } from '../../enums'
 import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints'
@@ -687,27 +687,27 @@ export default class EllipticalRoiTool extends AnnotationTool {
   _activateModify = (element) => {
     state.isInteractingWithTool = true
 
-    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragModifyCallback)
-    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragModifyCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragModifyCallback)
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragModifyCallback)
   }
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false
 
-    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
     element.removeEventListener(
-      EVENTS.MOUSE_DRAG,
+      Events.MOUSE_DRAG,
       this._mouseDragModifyCallback
     )
-    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.removeEventListener(
-    //   EVENTS.TOUCH_DRAG,
+    //   Events.TOUCH_DRAG,
     //   this._mouseDragModifyCallback
     // )
   }
@@ -715,25 +715,25 @@ export default class EllipticalRoiTool extends AnnotationTool {
   _activateDraw = (element) => {
     state.isInteractingWithTool = true
 
-    element.addEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback)
-    element.addEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback)
-    element.addEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback)
+    element.addEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.addEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
   _deactivateDraw = (element) => {
     state.isInteractingWithTool = false
 
-    element.removeEventListener(EVENTS.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(EVENTS.MOUSE_DRAG, this._mouseDragDrawCallback)
-    element.removeEventListener(EVENTS.MOUSE_MOVE, this._mouseDragDrawCallback)
-    element.removeEventListener(EVENTS.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback)
+    element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
-    // element.removeEventListener(EVENTS.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(EVENTS.TOUCH_DRAG, this._mouseDragDrawCallback)
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
   /**
@@ -1119,7 +1119,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     annotation.invalidated = false
 
     // Dispatching annotation modified
-    const eventType = EVENTS.ANNOTATION_MODIFIED
+    const eventType = Events.ANNOTATION_MODIFIED
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,

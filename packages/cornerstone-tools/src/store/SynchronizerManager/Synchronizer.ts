@@ -253,8 +253,8 @@ class Synchronizer {
         vUid.renderingEngineUID
       ).getViewport(vUid.viewportUID)
 
-      element.removeEventListener(Enums.EVENTS.ELEMENT_DISABLED, disableHandler)
-      element.addEventListener(Enums.EVENTS.ELEMENT_DISABLED, disableHandler)
+      element.removeEventListener(Enums.Events.ELEMENT_DISABLED, disableHandler)
+      element.addEventListener(Enums.Events.ELEMENT_DISABLED, disableHandler)
     })
   }
 }

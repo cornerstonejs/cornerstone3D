@@ -14,7 +14,7 @@ const {
   resetUseCPURendering,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const {
   ProbeTool,
@@ -109,7 +109,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put a probe tool on a cpu stack viewport - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       512,
       128
     )
@@ -153,7 +153,7 @@ describe('ProbeTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0]
 
       const { imageData } = vp.getImageData()
@@ -199,7 +199,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put two probe tools on a cpu stack viewport - 256 x 256', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -265,7 +265,7 @@ describe('ProbeTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0] // 255
       const index2 = [20, 20, 0] // 0
 
@@ -333,7 +333,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put a probe tool on a cpu stack viewport - 256 x 512', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       512
     )
@@ -377,7 +377,7 @@ describe('ProbeTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [150, 100, 0] // 255
 
       const { imageData } = vp.getImageData()
@@ -421,7 +421,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put a probe tool on a cpu stack viewport - 256 x 512', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       512
     )
@@ -465,7 +465,7 @@ describe('ProbeTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [35, 35, 0] // 0
 
       const { imageData } = vp.getImageData()
@@ -509,7 +509,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully create a Probe tool on a cpu stack viewport and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -561,7 +561,7 @@ describe('ProbeTool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0] // 255
       const index2 = [40, 40, 0] // 0
 
@@ -640,7 +640,7 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully cancel drawing of a ProbeTool on a cpu stack viewport', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -651,7 +651,7 @@ describe('ProbeTool (CPU):', () => {
 
     let p2
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [11, 20, 0] // 255
       const index2 = [40, 40, 0] // 0
 

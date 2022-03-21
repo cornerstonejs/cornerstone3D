@@ -1,7 +1,7 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
 import { Enums, utilities, cache } from '@precisionmetrics/cornerstone-render'
 
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 function setLayout(
   renderingEngine,
@@ -13,7 +13,7 @@ function setLayout(
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BW,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -24,7 +24,7 @@ function setLayout(
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_LBM,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(1),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,
@@ -35,7 +35,7 @@ function setLayout(
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BSA,
       viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(2),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,

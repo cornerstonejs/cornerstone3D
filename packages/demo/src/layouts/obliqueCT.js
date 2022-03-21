@@ -5,7 +5,7 @@ import {
   setCTVRTransferFunction,
 } from '../helpers/transferFunctionHelpers'
 
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
   const viewportInput = [
@@ -13,7 +13,7 @@ function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
     {
       sceneUID: SCENE_IDS.CTOBLIQUE,
       viewportUID: VIEWPORT_IDS.CTOBLIQUE.OBLIQUE,
-      type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+      type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(0),
       defaultOptions: {
         orientation: ORIENTATION.CORONAL,

@@ -17,7 +17,7 @@ import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { initToolGroups } from './initToolGroups'
 
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 const axialViewportID = 'AXIAL'
 const sagittalViewportID = 'SAGITTAL'
@@ -79,7 +79,7 @@ class ColorExample extends Component {
     renderingEngine.setViewports([
       {
         viewportUID: axialViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.axialContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -87,7 +87,7 @@ class ColorExample extends Component {
       },
       {
         viewportUID: sagittalViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.sagittalContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -95,7 +95,7 @@ class ColorExample extends Component {
       },
       {
         viewportUID: coronalViewportID,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this.coronalContainer.current,
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,

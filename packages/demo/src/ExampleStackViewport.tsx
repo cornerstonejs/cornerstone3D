@@ -48,7 +48,7 @@ import getToolDetailForDisplay from './helpers/getToolDetailForDisplay'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
-const { ORIENTATION, VIEWPORT_TYPE, INTERPOLATION_TYPE } = Enums
+const { ORIENTATION, ViewportType, InterpolationType } = Enums
 
 window.cache = cache
 
@@ -163,7 +163,7 @@ class StackViewportExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -171,7 +171,7 @@ class StackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -180,7 +180,7 @@ class StackViewportExample extends Component {
       // stack CT
       {
         viewportUID: VIEWPORT_IDS.STACK.CT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -189,7 +189,7 @@ class StackViewportExample extends Component {
       // pt volume
       {
         viewportUID: VIEWPORT_IDS.PT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -198,7 +198,7 @@ class StackViewportExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -208,7 +208,7 @@ class StackViewportExample extends Component {
       // dx
       // {
       //   viewportUID: VIEWPORT_IDS.STACK.DX,
-      //   type: VIEWPORT_TYPE.STACK,
+      //   type: ViewportType.STACK,
       //   element: this._elementNodes.get(4),
       //   defaultOptions: {
       //     orientation: ORIENTATION.AXIAL,
@@ -217,7 +217,7 @@ class StackViewportExample extends Component {
       // PT stack
       {
         viewportUID: VIEWPORT_IDS.STACK.PT,
-        type: VIEWPORT_TYPE.STACK,
+        type: ViewportType.STACK,
         element: this._elementNodes.get(5),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -271,7 +271,7 @@ class StackViewportExample extends Component {
 
     ctStackViewport.setProperties({
       voiRange: { lower: -160, upper: 240 },
-      interpolationType: INTERPOLATION_TYPE.LINEAR,
+      interpolationType: InterpolationType.LINEAR,
     })
 
     const ptStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.PT)

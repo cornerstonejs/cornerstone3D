@@ -39,7 +39,7 @@ import {
 const VOLUME = 'volume'
 
 window.cache = cache
-const { ORIENTATION, VIEWPORT_TYPE } = Enums
+const { ORIENTATION, ViewportType } = Enums
 
 let ctSceneToolGroup, prostateSceneToolGroup
 
@@ -115,7 +115,7 @@ class CrosshairsExample extends Component {
       // CT volume axial
       {
         viewportUID: VIEWPORT_IDS.CT.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -124,7 +124,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
@@ -133,7 +133,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.CT.CORONAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
@@ -142,7 +142,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PROSTATE.AXIAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -151,7 +151,7 @@ class CrosshairsExample extends Component {
       },
       {
         viewportUID: VIEWPORT_IDS.PROSTATE.SAGITTAL,
-        type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+        type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,

@@ -34,7 +34,7 @@ import { SynchronizerManager } from '@ohif/cornerstone-tools'
 
 const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
   synchronizerName,
-  Enums.EVENTS.CAMERA_MODIFIED,
+  Enums.Events.CAMERA_MODIFIED,
   (
     synchronizerInstance,
     sourceViewport,
@@ -64,7 +64,7 @@ It synchronize the camera properties including the zoom, pan and scrolling betwe
 const ctAxial = {
   sceneUID: SCENE_IDS.CT,
   viewportUID: VIEWPORT_IDS.CT.AXIAL,
-  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+  type: ViewportType.ORTHOGRAPHIC,
   canvas: canvasContainers.get(0),
   defaultOptions: {
     orientation: ORIENTATION.AXIAL,
@@ -74,7 +74,7 @@ const ctAxial = {
 const ptAxial = {
   sceneUID: SCENE_IDS.PT,
   viewportUID: VIEWPORT_IDS.PT.AXIAL,
-  type: VIEWPORT_TYPE.ORTHOGRAPHIC,
+  type: ViewportType.ORTHOGRAPHIC,
   canvas: canvasContainers.get(3),
   defaultOptions: {
     orientation: ORIENTATION.AXIAL,

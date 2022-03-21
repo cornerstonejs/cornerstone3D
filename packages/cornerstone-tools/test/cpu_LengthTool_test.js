@@ -14,7 +14,7 @@ const {
   resetUseCPURendering,
 } = cornerstone3D
 
-const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
+const { Events, ViewportType, ORIENTATION } = Enums
 
 const { LengthTool, ToolGroupManager, CornerstoneTools3DEvents, annotation } =
   csTools3d
@@ -111,7 +111,7 @@ describe('Length Tool (CPU):', () => {
   it('Should successfully create a length tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -155,7 +155,7 @@ describe('Length Tool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [30, 30, 0]
       const index2 = [60, 60, 0]
 
@@ -223,7 +223,7 @@ describe('Length Tool (CPU):', () => {
   it('Should successfully create a length tool on a cpu stack viewport and modify its handle', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -268,7 +268,7 @@ describe('Length Tool (CPU):', () => {
         }
       )
     }
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [50, 50, 0]
       const index2 = [5, 5, 0]
       const index3 = [33, 33, 0]
@@ -369,7 +369,7 @@ describe('Length Tool (CPU):', () => {
   it('Should successfully create a length tool on a cpu stack viewport and select but not move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -415,7 +415,7 @@ describe('Length Tool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 
@@ -507,7 +507,7 @@ describe('Length Tool (CPU):', () => {
   it('Should successfully create a length tool on a cpu stack viewport and select AND move it', function (done) {
     const element = createViewport(
       this.renderingEngine,
-      VIEWPORT_TYPE.STACK,
+      ViewportType.STACK,
       256,
       256
     )
@@ -592,7 +592,7 @@ describe('Length Tool (CPU):', () => {
       )
     }
 
-    element.addEventListener(EVENTS.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
       const index1 = [20, 20, 0]
       const index2 = [20, 30, 0]
 

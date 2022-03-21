@@ -32,14 +32,14 @@ const onImageSpacingCalibrated = function (
 
 const enable = function (element: HTMLElement) {
   element.addEventListener(
-    Enums.EVENTS.IMAGE_SPACING_CALIBRATED,
+    Enums.Events.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated
   )
 }
 
 const disable = function (element: HTMLElement) {
   element.removeEventListener(
-    Enums.EVENTS.IMAGE_SPACING_CALIBRATED,
+    Enums.Events.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated
   )
 }
