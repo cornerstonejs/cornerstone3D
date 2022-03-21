@@ -13,6 +13,7 @@
 
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": false,
     "jsx": "react-jsx",
     "lib": ["ES6", "dom"], // "ES6", "DOM" | "es2015", "dom"
     "module": "esnext", // esnext | commonjs
@@ -29,8 +30,5 @@
     "target": "es5", // esnext | es5
     "downlevelIteration": true,
   },
-  // typedoc (yarn run docs) picks these up when running
-  // @TODO: so either `examples/**` needs to have valid tsx
-  // or we need separate tsconfig files for these "separate" projects
   "exclude": ["node_modules", "dist", "packages/**/dist", "packages/**/lib", "packages/**/lib-esm", "packages/demo", "packages/docs", "snippets", "examples"]
 }

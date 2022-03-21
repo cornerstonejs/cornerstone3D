@@ -5,7 +5,7 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: cimg/node:14.17.0-browsers
+    - image: cimg/node:16.14.2-browsers
       environment:
         TERM: xterm # Enable colors in term
 
@@ -99,20 +99,33 @@ jobs:
           # NETLIFY_SITE_ID
           command: ./node_modules/netlify-cli/bin/run deploy --dir=./packages/docs/build --alias ${CIRCLE_BRANCH}
 
+  DEPLOY_DOCS_TO_PROD:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Deploy to Netlify
+          # This uses environment variables in the CircleCI
+          # NETLIFY_AUTH_TOKEN
+          # NETLIFY_SITE_ID
+          command: ./node_modules/netlify-cli/bin/run deploy --dir=./packages/docs/build --prod
 
-  # NPM_PUBLISH:
-  #   <<: *defaults
-  #   steps:
-  #     - attach_workspace:
-  #         at: ~/repo
-  #     - run:
-  #         name: Avoid hosts unknown for github
-  #         command:
-  #           mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
-  #           no\n" > ~/.ssh/config
-  #     - run:
-  #         name: Publish using Semantic Release
-  #         command: npx semantic-release@15.13.24 --debug
+  NPM_PUBLISH:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Avoid hosts unknown for github
+          command:
+            mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
+            no\n" > ~/.ssh/config
+      - run:
+          name: Publish using Semantic Release
+          command: npx semantic-release@19.0.2 --debug
 
 workflows:
   version: 2
@@ -124,7 +137,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - master
+                - main
                 - feature/*
                 - hotfix/*
       - BUILD:
@@ -140,16 +153,25 @@ workflows:
           requires:
             - BUILD_DOCS
 
-  # MERGE TO MASTER
-  # TEST_AND_RELEASE:
-  #   jobs:
-  #     - CHECKOUT:
-  #         filters:
-  #           branches:
-  #             only: master
-  #     - BUILD:
-  #         requires:
-  #           - CHECKOUT
-  #     - NPM_PUBLISH:
-  #         requires:
-  #           - BUILD
+  # MERGE TO MAIN
+  TEST_AND_RELEASE:
+    jobs:
+      - CHECKOUT:
+          filters:
+            branches:
+              only: main
+      - BUILD:
+          requires:
+            - CHECKOUT
+      - TEST:
+          requires:
+            - CHECKOUT
+      - NPM_PUBLISH:
+          requires:
+            - BUILD
+      - BUILD_DOCS:
+          requires:
+            - TEST
+      - DEPLOY_DOCS_TO_PROD:
+          requires:
+            - BUILD_DOCS

@@ -1,5 +1,5 @@
 import * as cornerstoneStreamingImageVolumeLoader from '../src'
-import * as cornerstone from '@precisionmetrics/cornerstone-render'
+import * as cornerstone from '../../cornerstone-render/src/index'
 
 const { cache, metaData, utilities, imageLoader, volumeLoader } = cornerstone
 const { testUtils } = utilities

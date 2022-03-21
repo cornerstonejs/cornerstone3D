@@ -1,5 +1,5 @@
-import * as cornerstoneStreamingImageVolumeLoader from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
-import * as cornerstone from '@precisionmetrics/cornerstone-render'
+import * as cornerstoneStreamingImageVolumeLoader from '../../cornerstone-image-loader-streaming-volume/src/index'
+import * as cornerstone from '../src/index'
 import { createFloat32SharedArray } from '../src/utilities'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up

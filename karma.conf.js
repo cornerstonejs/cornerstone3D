@@ -98,22 +98,6 @@ module.exports = function (config) {
             use: ['babel-loader'],
           },
           {
-            test: /\.css$/,
-            exclude: /\.module\.css$/,
-            use: [
-              'style-loader',
-              'css-loader',
-              {
-                loader: 'postcss-loader',
-                options: {
-                  postcssOptions: {
-                    plugins: () => [autoprefixer('last 2 version', 'ie >= 10')],
-                  },
-                },
-              },
-            ],
-          },
-          {
             test: /\.png$/i,
             use: [
               {
@@ -137,6 +121,18 @@ module.exports = function (config) {
         fallback: {
           fs: false,
           path: require.resolve('path-browserify'),
+        },
+        alias: {
+          '@precisionmetrics/cornerstone-render': path.resolve(
+            'packages/cornerstone-render/src/index'
+          ),
+          '@precisionmetrics/cornerstone-tools': path.resolve(
+            'packages/cornerstone-tools/src/index'
+          ),
+          '@precisionmetrics/@precisionmetrics/cornerstone-image-loader-streaming-volume':
+            path.resolve(
+              'packages/@precisionmetrics/cornerstone-image-loader-streaming-volume/src/index'
+            ),
         },
       },
     },

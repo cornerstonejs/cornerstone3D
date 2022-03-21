@@ -1,5 +1,6 @@
 {
   "name": "root",
+  "description": "Cornerstone.js Monorepo Root - Not published",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -9,7 +10,7 @@
     "yarn": ">=1.19.1"
   },
   "scripts": {
-    "build": "lerna run build:package --stream",
+    "build": "lerna run build --stream",
     "build:demo": "lerna run build:demo --stream",
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
@@ -26,10 +27,7 @@
     "test": "karma start",
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
-    "lint": "eslint --quiet -c .eslintrc.json packages/**/src",
-    "predeploy": "yarn install && yarn run build:release",
-    "prepublishOnly": "yarn run build && yarn run build:release",
-    "compile": "tsc -p tsconfig.build.json"
+    "lint": "eslint --quiet -c .eslintrc.json packages/**/src"
   },
   "dependencies": {
     "classnames": "^2.3.0",
@@ -125,10 +123,5 @@
     "not dead",
     "not ie < 11",
     "not op_mini all"
-  ],
-  "files": [
-    "dist",
-    "package.json",
-    "README.md"
   ]
 }
