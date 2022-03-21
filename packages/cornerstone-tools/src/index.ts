@@ -63,6 +63,7 @@ export {
   destroy,
   addTool,
   removeTool,
+  cancelActiveManipulations,
   // Base Tools
   BaseTool,
   AnnotationTool,
@@ -102,7 +103,6 @@ export {
   drawing,
   // Annotation
   annotation,
-  cancelActiveManipulations,
   // Segmentations
   segmentation,
   // Utilities

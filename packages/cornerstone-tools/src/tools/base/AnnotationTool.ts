@@ -20,8 +20,8 @@ import {
 } from '../../types'
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender'
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay'
-import { getStyleProperty } from '../../stateManagement/annotation/style/annotationStyle'
-import { getState } from '../../stateManagement/annotation/style'
+import { getStyleProperty } from '../../stateManagement/annotation/config/annotationStyle'
+import { getState } from '../../stateManagement/annotation/config'
 
 /**
  * Abstract class for tools which create and display annotations on the

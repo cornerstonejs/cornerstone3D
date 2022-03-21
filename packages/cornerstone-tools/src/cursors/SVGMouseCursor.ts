@@ -1,5 +1,5 @@
 import { ToolModes, AnnotationStyleStates } from '../enums'
-import { getDefaultStyleProperty } from '../stateManagement/annotation/style/annotationStyle'
+import { getDefaultStyleProperty } from '../stateManagement/annotation/config/annotationStyle'
 import MouseCursor from './MouseCursor'
 import ImageMouseCursor from './ImageMouseCursor'
 import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor'
