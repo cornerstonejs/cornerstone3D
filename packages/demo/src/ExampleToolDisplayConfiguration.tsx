@@ -14,7 +14,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import {
   Enums as csToolsEnums,
-  annotation as csToolsAnnotation
+  annotation as csToolsAnnotation,
   WindowLevelTool,
   LengthTool,
   BidirectionalTool,

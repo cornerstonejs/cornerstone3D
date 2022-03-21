@@ -47,7 +47,6 @@ import {
   ToolModes,
   Events,
   SegmentationRepresentations,
-  BlendModes,
 } from './enums'
 
 const Enums = {
@@ -56,7 +55,6 @@ const Enums = {
   ToolModes,
   Events,
   SegmentationRepresentations,
-  // BlendModes,
 }
 
 export {

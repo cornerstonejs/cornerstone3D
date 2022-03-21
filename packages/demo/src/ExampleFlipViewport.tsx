@@ -11,7 +11,6 @@ import {
 import {
   synchronizers,
   Enums as csToolsEnums,
-  BlendModes,
   WindowLevelTool,
 } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -234,7 +233,7 @@ class FlipViewportExample extends Component {
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]

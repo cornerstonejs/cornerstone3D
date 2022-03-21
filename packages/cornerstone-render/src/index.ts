@@ -2,6 +2,7 @@ import Events from './enums/Events'
 import RequestType from './enums/RequestType'
 import ViewportType from './enums/ViewportType'
 import InterpolationType from './enums/InterpolationType'
+import BlendModes from './enums/BlendModes'
 //
 import ORIENTATION from './constants/orientation'
 //
@@ -61,6 +62,7 @@ const Enums = {
   ViewportType,
   InterpolationType,
   RequestType,
+  BlendModes,
 }
 
 const CONSTANTS = {
@@ -76,7 +78,7 @@ export {
   // enums
   Enums,
   CONSTANTS,
-  Events, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
+  Events as EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
   Settings,
   // Rendering Engine

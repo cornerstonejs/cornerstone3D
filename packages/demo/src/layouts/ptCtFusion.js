@@ -4,7 +4,6 @@ import {
   setVolumesForViewports,
   CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
-import { BlendModes } from '@precisionmetrics/cornerstone-tools'
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
 import {
   setCTWWWC,
@@ -236,7 +235,7 @@ async function setVolumes(
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
@@ -248,7 +247,7 @@ async function setVolumes(
       {
         volumeUID: ptVolumeUID,
         callback: setPetTransferFunction,
-        blendMode: BlendModes.COMPOSITE,
+        blendMode: Enums.BlendModes.COMPOSITE,
       },
     ],
     [VIEWPORT_IDS.PT.AXIAL, VIEWPORT_IDS.PT.SAGITTAL, VIEWPORT_IDS.PT.CORONAL]
@@ -260,12 +259,12 @@ async function setVolumes(
       {
         volumeUID: ctVolumeUID,
         callback: setCTWWWC,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
       {
         volumeUID: ptVolumeUID,
         callback: getSetPetColorMapTransferFunction(petColorMap),
-        blendMode: BlendModes.COMPOSITE,
+        blendMode: Enums.BlendModes.COMPOSITE,
       },
     ],
     [
@@ -305,7 +304,7 @@ async function setVolumes(
       {
         volumeUID: ptVolumeUID,
         callback: setPetTransferFunction,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },
     ],

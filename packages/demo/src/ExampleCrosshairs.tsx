@@ -10,7 +10,6 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import {
   Enums as csToolsEnums,
-  BlendModes,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -212,7 +211,7 @@ class CrosshairsExample extends Component {
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
@@ -222,7 +221,7 @@ class CrosshairsExample extends Component {
       [
         {
           volumeUID: prostateVolumeUID,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       [VIEWPORT_IDS.PROSTATE.AXIAL, VIEWPORT_IDS.PROSTATE.SAGITTAL]

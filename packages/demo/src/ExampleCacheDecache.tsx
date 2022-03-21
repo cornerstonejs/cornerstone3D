@@ -4,7 +4,7 @@ import {
   RenderingEngine,
   volumeLoader,
   Enums,
-  CONSTANTS
+  CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'

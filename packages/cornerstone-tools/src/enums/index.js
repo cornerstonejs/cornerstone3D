@@ -3,7 +3,6 @@ import ToolModes from './ToolModes'
 import AnnotationStyleStates from './AnnotationStyleStates'
 import Events from './Events'
 import SegmentationRepresentations from './SegmentationRepresentations'
-import BlendModes from './BlendModes'
 
 export {
   MouseBindings,
@@ -12,5 +11,4 @@ export {
   AnnotationStyleStates,
   Events,
   SegmentationRepresentations,
-  BlendModes,
 }

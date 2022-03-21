@@ -10,7 +10,6 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import {
   Enums as csToolsEnums,
-  BlendModes,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -175,7 +174,7 @@ class ApplyPresetExample extends Component {
         {
           volumeUID: ctVolumeUID,
           callback: setCTWWWC,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
       viewportInput.map(({ viewportUID }) => viewportUID)
