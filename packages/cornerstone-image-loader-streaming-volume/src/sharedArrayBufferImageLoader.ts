@@ -11,10 +11,17 @@ function getImageRetrievalPool() {
 }
 
 /**
- * Small stripped down loader from cornerstoneWADOImageLoader
- * Which doesn't create cornerstone images that we don't need
+ * Small stripped image loader from cornerstoneWADOImageLoader
+ * Which doesn't create cornerstone images that we don't need. It it mainly
+ * used (currently) by StreamingImageVolume to load each imageId and
+ * insert the image into the volume at the correct location. Note: the reason
+ * we don't use CornerstoneImageLoader (e.g., wadors image loader) is because
+ * we don't need to create cornerstone image instance, since we treat a volume
+ * as a whole which has one metadata and one 3D image.
  *
- * @private
+ * @param imageId - The imageId to load
+ * @param options - options for loading
+ *
  */
 function sharedArrayBufferImageLoader(
   imageId: string,
@@ -66,7 +73,6 @@ function sharedArrayBufferImageLoader(
 
     // TODO: These probably need to be pulled from somewhere?
     // TODO: Make sure volume ID is also included?
-    // TODO: Use ENUM for requestType? Or nuke the types entirely
     const requestType = options.requestType || Enums.RequestType.Interaction
     const additionalDetails = options.additionalDetails || { imageId }
     const priority = options.priority === undefined ? 5 : options.priority
@@ -77,8 +83,6 @@ function sharedArrayBufferImageLoader(
       additionalDetails,
       priority
     )
-
-    // console.warn(imageRetrievalPool.numRequests.interaction)
   })
 
   return {
@@ -90,7 +94,7 @@ function sharedArrayBufferImageLoader(
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
  *
- * @param contentType The value of the content-type header as returned by a WADO-RS server.
+ * @param contentType - The value of the content-type header as returned by a WADO-RS server.
  */
 function getTransferSyntaxForContentType(contentType: string): string {
   const defaultTransferSyntax = '1.2.840.10008.1.2' // Default is Implicit Little Endian.

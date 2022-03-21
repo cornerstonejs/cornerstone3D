@@ -1,5 +1,12 @@
 import { metaData, Types } from '@precisionmetrics/cornerstone-render'
 
+/**
+ * It creates a metadata object for a volume given the imageIds that compose it.
+ * It uses the first imageId to get the metadata.
+ *
+ * @param imageIds - array of imageIds
+ * @returns The volume metadata
+ */
 export default function makeVolumeMetadata(
   imageIds: Array<string>
 ): Types.Metadata {
