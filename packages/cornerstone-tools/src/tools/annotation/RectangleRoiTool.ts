@@ -88,7 +88,7 @@ interface RectangleRoiCachedStats {
  * toolGroup.setToolActive(RectangleRoiAnnotation.toolName, {
  *   bindings: [
  *    {
- *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *       mouseButton: MouseBindings.Primary, // Left Click
  *     },
  *   ],
  * })

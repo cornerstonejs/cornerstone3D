@@ -15,10 +15,11 @@ const {
   WindowLevelTool,
   StackScrollMouseWheelTool,
   ToolGroupManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
 
 const { ViewportType } = Enums
+const { MouseBindings } = csToolsEnums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -83,7 +84,7 @@ async function run() {
   toolGroup1.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
@@ -100,7 +101,7 @@ async function run() {
   toolGroup2.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })

@@ -11,9 +11,9 @@ import {
 } from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 
-const { LengthTool, ToolGroupManager, ToolBindings, ToolModes } =
-  cornerstoneTools
+const { LengthTool, ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools
 
+const { MouseBindings, ToolModes } = csToolsEnums
 const { ViewportType } = Enums
 
 // ======== Set up page ======== //
@@ -64,7 +64,7 @@ addDropdownToToolbar(
     toolGroup[`setTool${newToolMode}`](LengthTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary, // Left Click (only applies if active)
+          mouseButton: MouseBindings.Primary, // Left Click (only applies if active)
         },
       ],
     })
@@ -95,7 +95,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })

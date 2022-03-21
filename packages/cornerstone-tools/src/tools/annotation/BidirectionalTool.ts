@@ -100,7 +100,7 @@ interface BidirectionalAnnotation extends Annotation {
  * toolGroup.setToolActive(BidirectionalTool.toolName, {
  *   bindings: [
  *    {
- *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *       mouseButton: MouseBindings.Primary, // Left Click
  *     },
  *   ],
  * })

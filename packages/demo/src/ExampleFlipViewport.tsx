@@ -10,7 +10,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import {
   synchronizers,
-  ToolBindings,
+  Enums as csToolsEnums,
   BlendModes,
   WindowLevelTool,
 } from '@precisionmetrics/cornerstone-tools'
@@ -288,7 +288,7 @@ class FlipViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

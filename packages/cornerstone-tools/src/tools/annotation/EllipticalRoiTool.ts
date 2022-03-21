@@ -113,7 +113,7 @@ export interface EllipticalRoiAnnotation extends Annotation {
  * toolGroup.setToolActive(EllipticalRoiTool.toolName, {
  *   bindings: [
  *    {
- *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *       mouseButton: MouseBindings.Primary, // Left Click
  *     },
  *   ],
  * })

@@ -28,11 +28,12 @@ const {
   SegmentationDisplayTool,
   segmentation,
   CornerstoneTools3DEvents: Events,
-  SegmentationRepresentations,
+  Enums: csToolsEnums,
   RectangleScissorsTool,
 } = csTools3d
 
 const { addSegmentationsForToolGroup } = segmentation
+const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils

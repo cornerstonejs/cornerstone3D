@@ -9,7 +9,7 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -190,13 +190,13 @@ class OneStackExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -213,7 +213,8 @@ class OneStackExample extends Component {
         mode === 'Active' &&
         bindings.length &&
         bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+          (binding) =>
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary
         )
     )
 
@@ -226,7 +227,7 @@ class OneStackExample extends Component {
     stackCTViewportToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
+        { mouseButton: csToolsEnums.MouseBindings.Primary },
       ],
     })
 

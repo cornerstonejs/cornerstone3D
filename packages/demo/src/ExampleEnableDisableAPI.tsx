@@ -9,7 +9,7 @@ import {
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import { Enums as csToolsEnums } from '@precisionmetrics/cornerstone-tools'
 import * as cs from '@precisionmetrics/cornerstone-render'
 
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -401,7 +401,7 @@ class EnableDisableViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

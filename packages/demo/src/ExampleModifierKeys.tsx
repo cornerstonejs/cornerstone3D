@@ -7,7 +7,7 @@ import {
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeAnnotation,
@@ -130,8 +130,8 @@ class ModifierKeysExample extends Component {
     stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
-          modifierKey: ToolBindings.Keyboard.Shift,
+          mouseButton: csToolsEnums.MouseBindings.Primary,
+          modifierKey: csToolsEnums.KeyboardBindings.Shift,
         },
       ],
     })
@@ -215,13 +215,13 @@ class ModifierKeysExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -238,7 +238,7 @@ class ModifierKeysExample extends Component {
         mode === 'Active' &&
         bindings.some(
           (binding) =>
-            binding.mouseButton === ToolBindings.Mouse.Primary &&
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary &&
             binding.modifierKey === undefined
         )
     )
@@ -248,8 +248,8 @@ class ModifierKeysExample extends Component {
     stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
-          modifierKey: ToolBindings.Keyboard.Shift,
+          mouseButton: csToolsEnums.MouseBindings.Primary,
+          modifierKey: csToolsEnums.KeyboardBindings.Shift,
         },
       ],
     })
@@ -262,7 +262,7 @@ class ModifierKeysExample extends Component {
       bindings: [
         ...currentBindings,
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: csToolsEnums.MouseBindings.Primary,
         },
       ],
     })

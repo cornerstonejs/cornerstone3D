@@ -9,8 +9,7 @@ import {
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
-  ToolModes,
+  Enums as csToolsEnums,
   BlendModes,
   WindowLevelTool,
   PanTool,
@@ -256,20 +255,20 @@ class CrosshairsExample extends Component {
 
   setToolMode = (toolMode) => {
     const toolGroup = this.state.toolGroups[this.state.toolGroupName]
-    if (toolMode === ToolModes.Active) {
+    if (toolMode === csToolsEnums.ToolModes.Active) {
       const activeTool = toolGroup.getActivePrimaryMouseButtonTool()
       if (activeTool) {
         toolGroup.setToolPassive(activeTool)
       }
 
       toolGroup.setToolActive(this.state.leftClickTool, {
-        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+        bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
       })
-    } else if (toolMode === ToolModes.Passive) {
+    } else if (toolMode === csToolsEnums.ToolModes.Passive) {
       toolGroup.setToolPassive(this.state.leftClickTool)
-    } else if (toolMode === ToolModes.Enabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Enabled) {
       toolGroup.setToolEnabled(this.state.leftClickTool)
-    } else if (toolMode === ToolModes.Disabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Disabled) {
       toolGroup.setToolDisabled(this.state.leftClickTool)
     }
   }
@@ -340,25 +339,25 @@ class CrosshairsExample extends Component {
         </select>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Active)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Active)}
         >
           Active
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Passive)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Passive)}
         >
           Passive
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Enabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Enabled)}
         >
           Enabled
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Disabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Disabled)}
         >
           Disabled
         </button>

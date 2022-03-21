@@ -22,13 +22,14 @@ const { ORIENTATION } = CONSTANTS
 const {
   ToolGroupManager,
   SegmentationDisplayTool,
-  SegmentationRepresentations,
+  Enums: csToolsEnums,
   segmentation,
   CornerstoneTools3DEvents: Events,
   utilities: { segmentation: segUtils },
 } = csTools3d
 
 const { addSegmentationsForToolGroup } = segmentation
+const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 

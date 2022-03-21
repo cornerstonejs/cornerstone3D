@@ -96,7 +96,7 @@ interface LengthAnnotation extends Annotation {
  * toolGroup.setToolActive(LengthTool.toolName, {
  *   bindings: [
  *    {
- *       mouseButton: ToolBindings.Mouse.Primary, // Left Click
+ *       mouseButton: MouseBindings.Primary, // Left Click
  *     },
  *   ],
  * })

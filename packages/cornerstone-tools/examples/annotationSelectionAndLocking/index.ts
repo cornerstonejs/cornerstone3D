@@ -17,7 +17,7 @@ const {
   LengthTool,
   BidirectionalTool,
   ToolGroupManager,
-  ToolBindings,
+  Enums: { MouseBindings },
   annotation,
 } = cornerstoneTools
 
@@ -112,7 +112,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })

@@ -9,7 +9,7 @@ import {
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
@@ -159,7 +159,7 @@ class testUtil extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active

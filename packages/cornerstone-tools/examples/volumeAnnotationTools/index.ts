@@ -19,11 +19,12 @@ const {
   LengthTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
+const { MouseBindings } = csToolsEnums
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -93,7 +94,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })

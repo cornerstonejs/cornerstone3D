@@ -16,10 +16,11 @@ const {
   StackScrollMouseWheelTool,
   ZoomTool,
   ToolGroupManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
 
 const { ViewportType } = Enums
+const { MouseBindings } = csToolsEnums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -76,21 +77,21 @@ async function run() {
   toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Auxiliary, // Middle Click
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
     ],
   })
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Secondary, // Right Click
+        mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   })

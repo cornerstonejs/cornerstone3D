@@ -30,10 +30,11 @@ const {
   SegmentationDisplayTool,
   segmentation,
   CornerstoneTools3DEvents: Events,
-  SegmentationRepresentations,
+  Enums: csToolsEnums,
 } = csTools3d
 
 const { addSegmentationsForToolGroup } = segmentation
+const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   utilities.testUtils

@@ -42,12 +42,25 @@ import {
 } from './tools'
 
 import {
-  ToolBindings,
+  MouseBindings,
+  KeyboardBindings,
   ToolModes,
   CornerstoneTools3DEvents,
   SegmentationRepresentations,
   BlendModes,
 } from './enums'
+
+const Enums = {
+  MouseBindings,
+  KeyboardBindings,
+  ToolModes,
+  EVENTS: CornerstoneTools3DEvents,
+  SegmentationRepresentations,
+  // BlendModes,
+  // ToolModes,
+  // CornerstoneTools3DEvents,
+  // SegmentationRepresentations,
+}
 
 export {
   //
@@ -89,11 +102,7 @@ export {
   // ToolGroups
   ToolGroupManager,
   // Enums
-  ToolBindings,
-  BlendModes,
-  ToolModes,
-  CornerstoneTools3DEvents,
-  SegmentationRepresentations,
+  Enums,
   // Drawing API
   drawing,
   // Annotation

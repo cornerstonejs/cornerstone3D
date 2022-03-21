@@ -25,8 +25,10 @@ const {
   ToolGroupManager,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
+
+const { MouseBindings } = csToolsEnums
 // Define a unique id for each volume
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -104,7 +106,7 @@ async function run() {
   mipToolGroup.setToolActive('MIPJumpToClickTool', {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })

@@ -1,5 +1,5 @@
 import { ToolGroupManager } from '../../store'
-import { ToolBindings, ToolModes } from '../../enums'
+import { MouseBindings, ToolModes } from '../../enums'
 import { keyEventListener } from '../../eventListeners'
 import { EventTypes } from '../../types'
 
@@ -46,7 +46,7 @@ export default function getActiveToolForMouseEvent(
       toolOptions.bindings.some(
         (binding) =>
           binding.mouseButton ===
-            (mouseEvent ? mouseEvent.buttons : ToolBindings.Mouse.Primary) &&
+            (mouseEvent ? mouseEvent.buttons : MouseBindings.Primary) &&
           binding.modifierKey === modifierKey
       )
 

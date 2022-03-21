@@ -14,9 +14,8 @@ import {
 } from '@precisionmetrics/cornerstone-render'
 import {
   CornerstoneTools3DEvents,
-  ToolBindings,
-  annotationLocking,
-  annotationSelection,
+  Enums as csToolsEnums,
+  annotation as csToolsAnnotation
   WindowLevelTool,
   LengthTool,
   BidirectionalTool,
@@ -288,7 +287,7 @@ class ToolDisplayConfigurationExample extends Component {
       stackDXViewportToolGroup,
     ].forEach((toolGroup) => {
       toolGroup.setToolActive(WindowLevelTool.toolName, {
-        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+        bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
       })
     })
   }
@@ -336,7 +335,7 @@ class ToolDisplayConfigurationExample extends Component {
     const defaultTool = WindowLevelTool.toolName
     const activeTools = new Set()
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
 
     ;[
@@ -495,15 +494,15 @@ function onExportSettings(e: React.MouseEvent<HTMLElement>) {
 }
 
 function onLockSelected() {
-  const annotations = annotationSelection.getAnnotationsSelected()
+  const annotations = csToolsAnnotation.selection.getAnnotationsSelected()
 
   annotations.forEach((annotation) => {
-    annotationLocking.setAnnotationLocked(annotation)
+    csToolsAnnotation.locking.setAnnotationLocked(annotation)
   })
 }
 
 function onUnlockAll() {
-  annotationLocking.unlockAllAnnotations()
+  csToolsAnnotation.locking.unlockAllAnnotations()
 }
 
 function onLockedAnnotationChange(e: CustomEvent) {
@@ -611,7 +610,7 @@ function getTargetFromTargetId(id: string): unknown {
   const annotationRegex = /^annotation:(.+)$/
   let match
   if ((match = annotationRegex.exec(id)) !== null) {
-    return annotationSelection.getAnnotationSelected(match[1])
+    return csToolsAnnotation.selection.getAnnotationSelected(match[1])
   }
 }
 

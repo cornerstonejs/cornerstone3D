@@ -12,12 +12,10 @@ import {
 import {
   // Segmentation
   synchronizers,
-  ToolBindings,
-  ToolModes,
+  Enums as csToolsEnums,
   CornerstoneTools3DEvents,
   annotation,
   utilities as csToolsUtils,
-  SegmentationRepresentations,
   segmentation,
   WindowLevelTool,
   PanTool,
@@ -450,20 +448,20 @@ class SegmentationExample extends Component {
       this.setState({ segmentationToolActive: true })
     }
     const toolGroup = toolGroups[this.state.selectedToolGroupName]
-    if (toolMode === ToolModes.Active) {
+    if (toolMode === csToolsEnums.ToolModes.Active) {
       const activeTool = toolGroup.getActivePrimaryMouseButtonTool()
       if (activeTool) {
         toolGroup.setToolPassive(activeTool)
       }
 
       toolGroup.setToolActive(toolName, {
-        bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+        bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
       })
-    } else if (toolMode === ToolModes.Passive) {
+    } else if (toolMode === csToolsEnums.ToolModes.Passive) {
       toolGroup.setToolPassive(toolName)
-    } else if (toolMode === ToolModes.Enabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Enabled) {
       toolGroup.setToolEnabled(toolName)
-    } else if (toolMode === ToolModes.Disabled) {
+    } else if (toolMode === csToolsEnums.ToolModes.Disabled) {
       toolGroup.setToolDisabled(toolName)
     }
   }
@@ -557,7 +555,7 @@ class SegmentationExample extends Component {
           volumeUID: segmentationUID,
           active: true,
           representation: {
-            type: SegmentationRepresentations.Labelmap,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
           },
         },
       ])
@@ -569,13 +567,13 @@ class SegmentationExample extends Component {
             volumeUID: segmentationUID,
             active: true,
             representation: {
-              type: SegmentationRepresentations.Labelmap,
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
             },
           },
         ],
         {
           representations: {
-            [SegmentationRepresentations.Labelmap]: {
+            [csToolsEnums.SegmentationRepresentations.Labelmap]: {
               renderOutline: false,
             },
           },
@@ -1097,25 +1095,25 @@ class SegmentationExample extends Component {
         </select>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Active)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Active)}
         >
           Active
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Passive)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Passive)}
         >
           Passive
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Enabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Enabled)}
         >
           Enabled
         </button>
         <button
           style={{ marginLeft: '4px' }}
-          onClick={() => this.setToolMode(ToolModes.Disabled)}
+          onClick={() => this.setToolMode(csToolsEnums.ToolModes.Disabled)}
         >
           Disabled
         </button>
@@ -1374,7 +1372,7 @@ class SegmentationExample extends Component {
                   onChange={(evt) => {
                     const fillAlpha = Number(evt.target.value)
                     const representationType =
-                      SegmentationRepresentations.Labelmap
+                      csToolsEnums.SegmentationRepresentations.Labelmap
 
                     this.setState({ fillAlphaToolGroup: fillAlpha })
                   }}
@@ -1407,7 +1405,7 @@ class SegmentationExample extends Component {
                       renderInactiveSegmentations:
                         this.state.renderInactiveSegmentationsToolGroup,
                       representations: {
-                        [SegmentationRepresentations.Labelmap]: {
+                        [csToolsEnums.SegmentationRepresentations.Labelmap]: {
                           renderOutline: this.state.renderOutlineToolGroup,
                           fillAlpha: this.state.fillAlphaToolGroup,
                           fillAlphaInactive:
@@ -1432,7 +1430,8 @@ class SegmentationExample extends Component {
               onChange={() => {
                 const renderOutline = !this.state.renderOutlineGlobal
 
-                const representationType = SegmentationRepresentations.Labelmap
+                const representationType =
+                  csToolsEnums.SegmentationRepresentations.Labelmap
                 segmentation.segmentationConfig.updateGlobalRepresentationConfig(
                   representationType,
                   { renderOutline }
@@ -1483,7 +1482,7 @@ class SegmentationExample extends Component {
                   onChange={(evt) => {
                     const fillAlpha = Number(evt.target.value)
                     const representationType =
-                      SegmentationRepresentations.Labelmap
+                      csToolsEnums.SegmentationRepresentations.Labelmap
 
                     segmentation.segmentationConfig.updateGlobalRepresentationConfig(
                       representationType,
@@ -1509,7 +1508,7 @@ class SegmentationExample extends Component {
                   onChange={(evt) => {
                     const fillAlphaInactive = Number(evt.target.value)
                     const representationType =
-                      SegmentationRepresentations.Labelmap
+                      csToolsEnums.SegmentationRepresentations.Labelmap
 
                     segmentation.segmentationConfig.updateGlobalRepresentationConfig(
                       representationType,

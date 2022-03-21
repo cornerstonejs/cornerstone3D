@@ -17,8 +17,15 @@ const { registerVolumeLoader } = volumeLoader
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
-const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
+const {
+  ProbeTool,
+  LengthTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = csTools3d
+
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
+const { MouseBindings } = csToolsEnums
 
 const renderingEngineUID = utilities.uuidv4()
 
@@ -58,7 +65,7 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [
           {
-            mouseButton: ToolBindings.Mouse.Primary,
+            mouseButton: MouseBindings.Primary,
           },
         ],
       })
@@ -128,7 +135,7 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.setToolActive(ProbeTool.toolName, {
         bindings: [
           {
-            mouseButton: ToolBindings.Mouse.Primary,
+            mouseButton: MouseBindings.Primary,
           },
         ],
       })

@@ -10,7 +10,7 @@ import {
   setVolumesForViewports,
   CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
-import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
+import { Enums as csToolsEnums } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
@@ -120,13 +120,13 @@ class ColorExample extends Component {
 
     colorSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
     colorSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     colorSceneToolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     colorSceneToolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
 
     await setVolumesForViewports(

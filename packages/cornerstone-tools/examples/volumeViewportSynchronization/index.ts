@@ -22,13 +22,14 @@ const {
   ZoomTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
-  ToolBindings,
+  Enums: csToolsEnums,
   synchronizers,
   SynchronizerManager,
 } = cornerstoneTools
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
+const { MouseBindings } = csToolsEnums
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
@@ -166,21 +167,21 @@ async function run() {
   toolGroup.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Auxiliary, // Middle Click
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
     ],
   })
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Secondary, // Right Click
+        mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   })

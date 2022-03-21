@@ -18,10 +18,11 @@ const {
   EllipticalRoiTool,
   BidirectionalTool,
   ToolGroupManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = cornerstoneTools
 
 const { ViewportType } = Enums
+const { MouseBindings } = csToolsEnums
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -67,7 +68,7 @@ addDropdownToToolbar(
     toolGroup.setToolActive(newSelectedToolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary, // Left Click
+          mouseButton: MouseBindings.Primary, // Left Click
         },
       ],
     })
@@ -109,7 +110,7 @@ async function run() {
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
-        mouseButton: ToolBindings.Mouse.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   })

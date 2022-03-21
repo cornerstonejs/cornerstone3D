@@ -27,8 +27,10 @@ const {
   ToolGroupManager,
   synchronizers,
   SynchronizerManager,
-  ToolBindings,
+  Enums: csToolsEnums,
 } = csTools3d
+
+const { MouseBindings } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } =
   utilities.testUtils
@@ -216,7 +218,7 @@ describe('Synchronizer Manager: ', () => {
     this.firstToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
         {
-          mouseButton: ToolBindings.Mouse.Primary,
+          mouseButton: MouseBindings.Primary,
         },
       ],
     })

@@ -9,7 +9,7 @@ import {
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  ToolBindings,
+  Enums as csToolsEnums,
   BlendModes,
   WindowLevelTool,
   PanTool,
@@ -224,13 +224,13 @@ class OneVolumeExample extends Component {
       toolGroup.setToolPassive(toolName)
     })
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     })
     toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Auxiliary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
     })
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Secondary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
     })
   }
 
@@ -247,7 +247,8 @@ class OneVolumeExample extends Component {
         mode === 'Active' &&
         bindings.length &&
         bindings.some(
-          (binding) => binding.mouseButton === ToolBindings.Mouse.Primary
+          (binding) =>
+            binding.mouseButton === csToolsEnums.MouseBindings.Primary
         )
     )
 
@@ -260,7 +261,7 @@ class OneVolumeExample extends Component {
     ctSceneToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
-        { mouseButton: ToolBindings.Mouse.Primary },
+        { mouseButton: csToolsEnums.MouseBindings.Primary },
       ],
     })
 

@@ -11,10 +11,8 @@ import {
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
 import {
-  SynchronizerManager,
+  Enums as csToolsEnums,
   synchronizers,
-  ToolGroupManager,
-  ToolBindings,
   CornerstoneTools3DEvents,
   cancelActiveManipulations,
   removeAnnotation,
@@ -474,7 +472,7 @@ class StackViewportExample extends Component {
 
     const isAnnotationToolOn = toolName !== 'Levels' ? true : false
     const options = {
-      bindings: [{ mouseButton: ToolBindings.Mouse.Primary }],
+      bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
     }
     if (isAnnotationToolOn) {
       // Set tool active
