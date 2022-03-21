@@ -25,7 +25,7 @@ import { ImageVolume } from './cache/classes/ImageVolume'
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager'
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
-import cpuColormaps from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
+import CPU_COLORMAPS from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 
 import getEnabledElement, { getEnabledElementByUIDs } from './getEnabledElement'
 import metaData from './metaData'
@@ -65,6 +65,7 @@ const Enums = {
 
 const CONSTANTS = {
   ORIENTATION,
+  CPU_COLORMAPS,
 }
 
 export type { Types }
@@ -120,5 +121,4 @@ export {
   getShouldUseCPURendering,
   setUseCPURendering,
   resetUseCPURendering,
-  cpuColormaps,
 }

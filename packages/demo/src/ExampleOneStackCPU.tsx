@@ -6,7 +6,7 @@ import {
   setUseCPURendering,
   init as csRenderInit,
   metaData,
-  cpuColormaps,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
@@ -29,7 +29,7 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
-const {  ViewportType } = Enums
+const { ViewportType } = Enums
 
 let stackCTViewportToolGroup, stackPTViewportToolGroup
 
@@ -361,7 +361,7 @@ class OneStackExampleCPU extends Component {
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
 
     if (falseColor) {
-      vp.setColormap(cpuColormaps.hotIron)
+      vp.setColormap(CONSTANTS.CPU_COLORMAPS.hotIron)
     } else {
       vp.unsetColormap()
     }

@@ -21,10 +21,11 @@ const {
   Enums,
   setUseCPURendering,
   resetUseCPURendering,
-  cpuColormaps,
+  CONSTANTS,
 } = cornerstone3D
 
 const { Events, ViewportType } = Enums
+const { CPU_COLORMAPS } = CONSTANTS
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
@@ -465,7 +466,7 @@ describe('StackViewport CPU -- ', () => {
 
       try {
         vp.setStack([imageId], 0).then(() => {
-          vp.setColormap(cpuColormaps.hotIron)
+          vp.setColormap(CPU_COLORMAPS.hotIron)
           vp.render()
         })
       } catch (e) {

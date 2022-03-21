@@ -6,7 +6,6 @@ import {
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
-  cpuColormaps,
 } from '@precisionmetrics/cornerstone-render'
 import * as cs from '@precisionmetrics/cornerstone-render'
 import {
