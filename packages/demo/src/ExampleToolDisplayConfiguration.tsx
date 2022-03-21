@@ -8,6 +8,7 @@ import {
   metaData,
   eventTarget,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -46,7 +47,8 @@ const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup
 

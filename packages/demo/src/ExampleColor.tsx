@@ -8,6 +8,7 @@ import {
   volumeLoader,
   init as csRenderInit,
   setVolumesForViewports,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import { ToolBindings } from '@precisionmetrics/cornerstone-tools'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
@@ -17,7 +18,8 @@ import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 import { initToolGroups } from './initToolGroups'
 
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const axialViewportID = 'AXIAL'
 const sagittalViewportID = 'SAGITTAL'

@@ -4,6 +4,7 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -21,7 +22,8 @@ const {
   ToolBindings,
 } = cornerstoneTools
 
-const { ViewportType, ORIENTATION } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix

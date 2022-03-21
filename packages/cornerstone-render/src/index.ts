@@ -59,10 +59,12 @@ import {
 const Enums = {
   Events,
   ViewportType,
-  // constants
-  ORIENTATION,
   InterpolationType,
   RequestType,
+}
+
+const CONSTANTS = {
+  ORIENTATION,
 }
 
 export type { Types }
@@ -72,6 +74,7 @@ export {
   isCornerstoneInitialized,
   // enums
   Enums,
+  CONSTANTS,
   Events, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
   Settings,

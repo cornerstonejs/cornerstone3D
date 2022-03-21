@@ -3,6 +3,7 @@ import {
   cache,
   RenderingEngine,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
@@ -15,7 +16,8 @@ import { ctStackUID, VIEWPORT_IDS } from './constants'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
 const renderingEngineUID = 'renderingEngineUID'
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 window.cache = cache
 

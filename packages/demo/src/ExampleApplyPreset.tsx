@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   volumeLoader,
   Enums,
+  CONSTANTS,
   init,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -33,7 +34,8 @@ import {
 } from './constants'
 
 const VOLUME = 'volume'
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 window.cache = cache
 

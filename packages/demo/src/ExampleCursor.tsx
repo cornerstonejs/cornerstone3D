@@ -3,6 +3,7 @@ import {
   cache,
   RenderingEngine,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
@@ -28,7 +29,8 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let stackCTViewportToolGroup
 

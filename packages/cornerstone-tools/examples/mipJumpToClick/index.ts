@@ -6,6 +6,7 @@ import {
   setVolumesForViewports,
   Types,
   utilities,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import {
   initDemo,
@@ -17,7 +18,8 @@ import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
 import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
 const { BlendMode } = vtkConstants
 
-const { ViewportType, ORIENTATION } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,

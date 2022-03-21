@@ -6,6 +6,7 @@ import {
   volumeLoader,
   metaData,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -48,7 +49,8 @@ import getToolDetailForDisplay from './helpers/getToolDetailForDisplay'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
-const { ORIENTATION, ViewportType, InterpolationType } = Enums
+const { ViewportType, InterpolationType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 window.cache = cache
 

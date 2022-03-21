@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   volumeLoader,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -33,7 +34,8 @@ import {
 const VOLUME = 'volume'
 
 window.cache = cache
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let ctSceneToolGroup
 

@@ -31,7 +31,7 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
 
 let stackCTViewportToolGroup
 

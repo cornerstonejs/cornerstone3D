@@ -23,9 +23,11 @@ const {
   utilities,
   setVolumesForViewports,
   getVolumeViewportsContainingVolumeUID,
+  CONSTANTS,
 } = cornerstone3D
 
-const { ViewportType, ORIENTATION, Events } = Enums
+const { ViewportType, Events } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const { registerVolumeLoader } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader

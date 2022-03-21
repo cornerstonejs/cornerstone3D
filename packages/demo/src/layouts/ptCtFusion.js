@@ -2,6 +2,7 @@ import {
   Enums,
   cache,
   setVolumesForViewports,
+  CONSTANTS,
 } from '@precisionmetrics/cornerstone-render'
 import { BlendModes } from '@precisionmetrics/cornerstone-tools'
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
@@ -11,7 +12,8 @@ import {
   getSetPetColorMapTransferFunction,
 } from '../helpers/transferFunctionHelpers'
 
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 function setLayout(
   renderingEngine,

@@ -13,9 +13,11 @@ const {
   metaData,
   volumeLoader,
   setVolumesForViewports,
+  CONSTANTS,
 } = cornerstone3D
 
-const { Events, ViewportType, ORIENTATION, InterpolationType } = Enums
+const { Events, ViewportType, InterpolationType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const { registerVolumeLoader } = volumeLoader
 const { StackScrollMouseWheelTool, ToolGroupManager, StackScrollTool } =

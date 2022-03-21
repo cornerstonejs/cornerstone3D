@@ -17,15 +17,8 @@ import {
 } from './annotation/annotationState'
 
 import {
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
   addSegmentationsForToolGroup,
   removeSegmentationsFromToolGroup,
-  getGlobalSegmentationState,
-  getSegmentationDataByUID,
-  getToolGroupsWithSegmentation,
-  SegmentationState,
 } from './segmentation'
 
 export {
@@ -45,12 +38,5 @@ export {
   getAnnotation,
   // segmentations
   addSegmentationsForToolGroup,
-  getGlobalSegmentationDataByUID,
-  getSegmentationState,
-  getColorLut,
   removeSegmentationsFromToolGroup,
-  getGlobalSegmentationState,
-  getToolGroupsWithSegmentation,
-  getSegmentationDataByUID,
-  SegmentationState,
 }

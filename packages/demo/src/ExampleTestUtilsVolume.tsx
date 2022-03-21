@@ -5,6 +5,7 @@ import {
   volumeLoader,
   metaData,
   Enums,
+  CONSTANTS,
   utilities,
   init as csRenderInit,
   setVolumesForViewports,
@@ -37,7 +38,8 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } =
   utilities.testUtils

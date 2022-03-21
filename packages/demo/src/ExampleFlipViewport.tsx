@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   volumeLoader,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -34,7 +35,9 @@ import { setCTWWWC } from './helpers/transferFunctionHelpers'
 const VOLUME = 'volume'
 const STACK = 'stack'
 
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
+
 window.cache = cache
 
 let ctSceneToolGroup, stackCTViewportToolGroup

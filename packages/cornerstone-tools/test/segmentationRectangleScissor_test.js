@@ -14,11 +14,13 @@ const {
   utilities,
   setVolumesForViewports,
   eventTarget,
+  CONSTANTS,
 } = cornerstone3D
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
 const { unregisterAllImageLoaders } = imageLoader
-const { ViewportType, ORIENTATION } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   ToolGroupManager,

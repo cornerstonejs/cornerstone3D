@@ -2,11 +2,13 @@ import React, { Component } from 'react'
 import {
   RenderingEngine,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
 } from '@precisionmetrics/cornerstone-render'
 
 const NUM_VIEWPORTS = 25
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 class TwentyFiveCanvasExample extends Component {
   state = {

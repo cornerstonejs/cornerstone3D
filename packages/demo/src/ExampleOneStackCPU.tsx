@@ -29,7 +29,7 @@ import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, ViewportType } = Enums
+const {  ViewportType } = Enums
 
 let stackCTViewportToolGroup, stackPTViewportToolGroup
 

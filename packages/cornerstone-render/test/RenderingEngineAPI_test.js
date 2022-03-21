@@ -1,9 +1,10 @@
 import * as cornerstone3D from '../src/index'
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const { RenderingEngine, cache, utilities, Enums } = cornerstone3D
+const { RenderingEngine, cache, utilities, Enums, CONSTANTS } = cornerstone3D
 
-const { ViewportType, ORIENTATION } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const renderingEngineUID = utilities.uuidv4()
 

@@ -5,6 +5,7 @@ import {
   volumeLoader,
   metaData,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
 } from '@precisionmetrics/cornerstone-render'
@@ -33,7 +34,8 @@ import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 const VOLUME = 'volume'
 
 window.cache = cache
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 let ctSceneToolGroup,
   stackCTViewportToolGroup,

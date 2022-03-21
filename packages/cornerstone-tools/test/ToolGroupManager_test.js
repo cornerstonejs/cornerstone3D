@@ -9,11 +9,13 @@ const {
   metaData,
   volumeLoader,
   imageLoader,
+  CONSTANTS,
 } = cornerstone3D
 
 const { unregisterAllImageLoaders } = imageLoader
 const { registerVolumeLoader } = volumeLoader
-const { ViewportType, ORIENTATION } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const { ProbeTool, LengthTool, ToolGroupManager, ToolBindings } = csTools3d
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils

@@ -11,9 +11,11 @@ const {
   eventTarget,
   volumeLoader,
   setVolumesForViewports,
+  CONSTANTS,
 } = cornerstone3D
 
-const { Events, ViewportType, ORIENTATION } = Enums
+const { Events, ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 const {
   EllipticalRoiTool,

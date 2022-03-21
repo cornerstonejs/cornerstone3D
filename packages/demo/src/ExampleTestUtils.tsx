@@ -32,7 +32,7 @@ const VOLUME = 'volume'
 const STACK = 'stack'
 
 window.cache = cache
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
 
 const { fakeImageLoader, fakeMetaDataProvider } = utilities.testUtils
 

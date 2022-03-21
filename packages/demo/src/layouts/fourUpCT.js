@@ -1,11 +1,12 @@
 import { VIEWPORT_IDS } from '../constants'
-import { Enums } from '@precisionmetrics/cornerstone-render'
+import { Enums, CONSTANTS } from '@precisionmetrics/cornerstone-render'
 import {
   setCTWWWC,
   setCTVRTransferFunction,
 } from '../helpers/transferFunctionHelpers'
 
-const { ORIENTATION, ViewportType } = Enums
+const { ViewportType } = Enums
+const { ORIENTATION } = CONSTANTS
 
 function setLayout(
   renderingEngine,
