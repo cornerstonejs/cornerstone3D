@@ -1,6 +1,6 @@
 import addSegmentationsForToolGroup from './addSegmentationsForToolGroup'
 import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup'
-import createNewSegmentationForViewport from './createNewSegmentationForViewport'
+import createNewSegmentationForToolGroup from './createNewSegmentationForToolGroup'
 
 import * as activeSegmentation from './activeSegmentation'
 import * as segmentLocking from './segmentLocking'
@@ -16,7 +16,7 @@ export {
   activeSegmentation,
   addSegmentationsForToolGroup,
   removeSegmentationsFromToolGroup,
-  createNewSegmentationForViewport,
+  createNewSegmentationForToolGroup,
   segmentLocking,
   segmentationColor,
   segmentationConfig,

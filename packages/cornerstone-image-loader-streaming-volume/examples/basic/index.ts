@@ -7,7 +7,7 @@ import {
 import * as cs from '@precisionmetrics/cornerstone-render'
 import * as csTools3d from '@precisionmetrics/cornerstone-tools'
 
-import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+// import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
 
 const content = document.getElementById('content')
 
@@ -18,13 +18,12 @@ element.style.height = '500px'
 
 content.appendChild(element)
 
-console.warn('hello!! - ERIK')
 async function setup() {
   await csRenderInit()
 
   csTools3d.init()
 
-  registerWebImageLoader(cs)
+  // registerWebImageLoader(cs)
 
   const renderingEngineUID = 'myRenderingEngine'
   const renderingEngine = new RenderingEngine(renderingEngineUID)

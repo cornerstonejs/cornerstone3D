@@ -424,7 +424,7 @@ class SegmentationExample extends Component {
     const viewport = this.renderingEngine.getViewport(viewportUID)
 
     segmentation
-      .createNewSegmentationForViewport(viewport)
+      .createNewSegmentationForToolGroup(this.state.selectedToolGroupName)
       .then((segmentationUID) => {
         segmentation.addSegmentationsForToolGroup(
           this.state.selectedToolGroupName,

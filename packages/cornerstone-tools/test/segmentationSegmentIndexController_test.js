@@ -228,7 +228,7 @@ describe('Segmentation Index Controller --', () => {
             vp1.render()
 
             segmentation
-              .createNewSegmentationForViewport(vp1)
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
@@ -374,7 +374,7 @@ describe('Segmentation Index Controller --', () => {
             vp1.render()
 
             segmentation
-              .createNewSegmentationForViewport(vp1)
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
@@ -548,7 +548,7 @@ describe('Segmentation Index Controller --', () => {
             vp1.render()
 
             segmentation
-              .createNewSegmentationForViewport(vp1)
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },

@@ -150,7 +150,7 @@ describe('Segmentation Tools --', () => {
             vp.render()
 
             segmentation
-              .createNewSegmentationForViewport(vp)
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
@@ -275,7 +275,7 @@ describe('Segmentation Tools --', () => {
             vp.render()
 
             segmentation
-              .createNewSegmentationForViewport(vp)
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },
@@ -438,7 +438,7 @@ describe('Segmentation Tools --', () => {
             vp2.render()
 
             segmentation
-              .createNewSegmentationForViewport(vp1)
+              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
                   { volumeUID: segmentationUID },

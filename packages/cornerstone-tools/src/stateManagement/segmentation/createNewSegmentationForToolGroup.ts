@@ -1,23 +1,25 @@
 import { _cloneDeep } from 'lodash.clonedeep'
 import {
-  getEnabledElement,
+  getEnabledElementByUIDs,
   volumeLoader,
   VolumeViewport,
   utilities as csUtils,
 } from '@precisionmetrics/cornerstone-render'
 import type { Types } from '@precisionmetrics/cornerstone-render'
 
+import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
+
 /**
- * Create a new 3D segmentation volume from the default imageData presented in the
- * viewport. It looks at the metadata of the imageData to determine the volume
- * dimensions and spacing if particular options are not provided.
+ * Create a new 3D segmentation volume from the default imageData presented in
+ * the first viewport of the toolGroup. It looks at the metadata of the imageData
+ * to determine the volume dimensions and spacing if particular options are not provided.
  *
- * @param viewport - VolumeViewport
+ * @param toolGroupUID - The UID of the toolGroup
  * @param options - LabelmapOptions
  * @returns A promise that resolves to the UID of the new labelmap.
  */
-async function createNewSegmentationForViewport(
-  viewport: VolumeViewport,
+async function createNewSegmentationForToolGroup(
+  toolGroupUID: string,
   options?: {
     volumeUID?: string
     scalarData?: Float32Array | Uint8Array
@@ -31,13 +33,24 @@ async function createNewSegmentationForViewport(
     direction?: Float32Array
   }
 ): Promise<string> {
-  const { element } = viewport
-  const enabledElement = getEnabledElement(element)
+  const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
+
+  if (!toolGroup) {
+    throw new Error(`ToolGroup with UID ${toolGroupUID} not found`)
+  }
+
+  const { viewportUID, renderingEngineUID } = toolGroup.viewportsInfo[0]
+
+  const enabledElement = getEnabledElementByUIDs(
+    viewportUID,
+    renderingEngineUID
+  )
 
   if (!enabledElement) {
     throw new Error('element disabled')
   }
 
+  const { viewport } = enabledElement
   if (!(viewport instanceof VolumeViewport)) {
     throw new Error('Segmentation not ready for stackViewport')
   }
@@ -64,4 +77,4 @@ async function createNewSegmentationForViewport(
   return segmentationUID
 }
 
-export default createNewSegmentationForViewport
+export default createNewSegmentationForToolGroup
