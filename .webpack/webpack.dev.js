@@ -43,9 +43,6 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
     output: {
       path: OUT_PATH,
       clean: true,
-      //filename: '[name].bundle.[contenthash].js',
-      //library: 'Cornerstone3DAlphaDEMO',
-      // libraryTarget: 'umd',
       globalObject: 'this',
     },
     optimization: {
@@ -53,9 +50,7 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
         // include all types of chunks
         chunks: 'all',
       },
-      //runtimeChunk: 'single',
       minimize: mode === 'production',
-      // sideEffects: true,
     },
     module: {
       rules: [
