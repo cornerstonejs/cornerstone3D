@@ -41,7 +41,7 @@ function createViewports(width, height) {
 
 describe('ToolGroup Manager: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('ToolGroup Manager: ', () => {

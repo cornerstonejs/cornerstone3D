@@ -10,8 +10,8 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
 } = cornerstone3D
 
 const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
@@ -65,11 +65,11 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 describe('Length Tool (CPU):', () => {
   beforeAll(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
   })
 
   afterAll(() => {
-    resetCPURenderingOnlyForDebugOrTests()
+    resetUseCPURendering()
   })
 
   beforeEach(function () {

@@ -3,7 +3,7 @@ import {
   cache,
   RenderingEngine,
   Enums,
-  setUseCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
   init as csRenderInit,
   metaData,
   cpuColormaps,
@@ -64,7 +64,7 @@ class OneStackExampleCPU extends Component {
   constructor(props) {
     super(props)
 
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
     this._elementNodes = new Map()
     this._offScreenRef = React.createRef()
 

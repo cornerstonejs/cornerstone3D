@@ -4,7 +4,7 @@ const { imageLoader, cache } = cornerstone3D
 
 describe('imageLoader -- ', function () {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {

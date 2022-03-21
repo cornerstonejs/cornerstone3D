@@ -70,7 +70,7 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 describe('Cornerstone Tools: ', () => {
   beforeAll(() => {
     // initialize the library
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {

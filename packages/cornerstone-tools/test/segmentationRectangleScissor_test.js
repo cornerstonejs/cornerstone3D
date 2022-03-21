@@ -70,7 +70,7 @@ function createViewport(
 
 describe('Segmentation Tools --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Rectangle Scissor:', function () {

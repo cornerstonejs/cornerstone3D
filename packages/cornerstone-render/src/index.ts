@@ -35,8 +35,8 @@ import {
   init,
   getShouldUseCPURendering,
   isCornerstoneInitialized,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
 } from './init'
 
 // Classes
@@ -115,11 +115,10 @@ export {
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
   imageLoadPoolManager,
-  RequestPoolManager,
   setMaxSimultaneousRequests,
   // CPU Rendering
   getShouldUseCPURendering,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
   cpuColormaps,
 }

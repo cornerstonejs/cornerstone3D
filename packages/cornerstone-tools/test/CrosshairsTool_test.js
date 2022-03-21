@@ -89,7 +89,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
 describe('Cornerstone Tools: ', () => {
   beforeAll(() => {
     // initialize the library
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {

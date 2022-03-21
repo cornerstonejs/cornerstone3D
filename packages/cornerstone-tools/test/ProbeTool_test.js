@@ -60,7 +60,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 }
 describe('Probe Tool: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Cornerstone Tools: ', () => {

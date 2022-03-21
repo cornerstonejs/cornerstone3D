@@ -64,7 +64,7 @@ function createViewport(renderingEngine, orientation) {
 
 describe('Volume Viewport GPU -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Volume Viewport Axial Nearest Neighbor and Linear Interpolation --- ', function () {

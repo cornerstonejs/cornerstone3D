@@ -74,7 +74,7 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 
 describe('LengthTool:', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Cornerstone Tools: -- Length ', () => {

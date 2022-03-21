@@ -71,7 +71,7 @@ function createViewport(
 
 describe('Segmentation Index Controller --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Index/Lock Controller', function () {

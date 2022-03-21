@@ -19,8 +19,8 @@ const {
   imageLoader,
   metaData,
   Enums,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
   cpuColormaps,
 } = cornerstone3D
 
@@ -55,11 +55,11 @@ function createViewport(renderingEngine, orientation, width, height) {
 
 describe('StackViewport CPU -- ', () => {
   beforeEach(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
   })
 
   afterEach(() => {
-    resetCPURenderingOnlyForDebugOrTests()
+    resetUseCPURendering()
   })
 
   describe('Basic Rendering --- ', function () {

@@ -62,7 +62,7 @@ function createViewports(width, height) {
 
 describe('Synchronizer Manager: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {
@@ -198,7 +198,7 @@ describe('Synchronizer Manager: ', () => {
 
 describe('Synchronizer Manager: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   beforeEach(function () {

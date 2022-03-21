@@ -73,7 +73,7 @@ function createViewport(
 
 describe('Segmentation Render -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Rendering', function () {

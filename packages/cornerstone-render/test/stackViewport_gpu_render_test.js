@@ -63,7 +63,7 @@ function createViewport(renderingEngine, orientation, width, height) {
 describe('renderingCore -- Stack', () => {
   beforeAll(() => {
     // initialize cornerstone
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
   describe('Stack Viewport Nearest Neighbor Interpolation --- ', function () {
     beforeEach(function () {

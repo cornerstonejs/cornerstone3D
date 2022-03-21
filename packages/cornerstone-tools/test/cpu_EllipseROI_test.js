@@ -10,8 +10,8 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
 } = cornerstone3D
 
 const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
@@ -62,11 +62,11 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`
 
 describe('EllipticalRoiTool (CPU):', () => {
   beforeAll(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
   })
 
   afterAll(() => {
-    resetCPURenderingOnlyForDebugOrTests()
+    resetUseCPURendering()
   })
 
   beforeEach(function () {

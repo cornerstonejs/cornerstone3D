@@ -13,7 +13,7 @@ const customOrientationViewportUID = 'OFF_AXIS_VIEWPORT'
 
 describe('RenderingEngineAPI -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('RenderingEngine API:', function () {

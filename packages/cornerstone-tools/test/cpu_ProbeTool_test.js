@@ -10,8 +10,8 @@ const {
   metaData,
   Enums,
   volumeLoader,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
 } = cornerstone3D
 
 const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
@@ -62,11 +62,11 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
 describe('ProbeTool (CPU):', () => {
   beforeAll(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
   })
 
   afterAll(() => {
-    resetCPURenderingOnlyForDebugOrTests()
+    resetUseCPURendering()
   })
 
   beforeEach(function () {

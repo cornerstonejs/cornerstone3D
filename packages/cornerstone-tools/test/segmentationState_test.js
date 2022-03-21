@@ -61,7 +61,7 @@ function createViewport(renderingEngine, orientation) {
 
 describe('Segmentation State -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('State', function () {

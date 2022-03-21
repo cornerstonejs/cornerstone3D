@@ -60,7 +60,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`
 describe('Rectangle Roi Tool: ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Cornerstone Tools: ', () => {

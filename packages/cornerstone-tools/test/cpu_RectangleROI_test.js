@@ -10,8 +10,8 @@ const {
   eventTarget,
   metaData,
   volumeLoader,
-  setUseCPURenderingOnlyForDebugOrTests,
-  resetCPURenderingOnlyForDebugOrTests,
+  setUseCPURendering,
+  resetUseCPURendering,
 } = cornerstone3D
 
 const { EVENTS, VIEWPORT_TYPE, ORIENTATION } = Enums
@@ -62,11 +62,11 @@ const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`
 
 describe('RectangleRoiTool (CPU):', () => {
   beforeAll(() => {
-    setUseCPURenderingOnlyForDebugOrTests(true)
+    setUseCPURendering(true)
   })
 
   afterAll(() => {
-    resetCPURenderingOnlyForDebugOrTests()
+    resetUseCPURendering()
   })
 
   beforeEach(function () {

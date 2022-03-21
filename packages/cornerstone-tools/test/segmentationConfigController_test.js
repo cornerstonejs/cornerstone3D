@@ -67,7 +67,7 @@ function createViewport(
 
 describe('Segmentation Controller --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
   })
 
   describe('Config Controller', function () {

@@ -59,7 +59,7 @@ function addAndReturnToolName1Annotation() {
 
 describe('FrameOfReferenceSpecificAnnotationManager:', () => {
   beforeAll(function () {
-    cornerstone3D.setUseCPURenderingOnlyForDebugOrTests(false)
+    cornerstone3D.setUseCPURendering(false)
     csTools.init()
   })
 
