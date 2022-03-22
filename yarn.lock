@@ -2867,9 +2867,9 @@
     rollup-plugin-terser "^7.0.2"
 
 "@netlify/plugins-list@^6.16.0", "@netlify/plugins-list@^6.16.1":
-  version "6.16.1"
-  resolved "https://registry.yarnpkg.com/@netlify/plugins-list/-/plugins-list-6.16.1.tgz#6e8ba9fad984133c4492959a054b93e5a61537f8"
-  integrity sha512-DCgAJvCniSmXghDVvWSa5dgAWYVpOUfRLTVvv0V/GXDd1VkvpHtmZ0FD+AE8hxqSfmY8FLuagh6USi8xeBfwaA==
+  version "6.17.0"
+  resolved "https://registry.yarnpkg.com/@netlify/plugins-list/-/plugins-list-6.17.0.tgz#fd6ff86a81de0f2b4bc14ec2f0f5f9431ec54bd6"
+  integrity sha512-XQMijnVOxbZwkOeSzUZ8Hwon8WIv9uka5R6+mjJs25lcFiTscA8HqHWjhSHf2xPSrcKopJm4BNJZja5YHV3NQg==
 
 "@netlify/routing-local-proxy-darwin-arm64@^0.34.1":
   version "0.34.1"
@@ -5518,8 +5518,8 @@ cachedir@^2.3.0:
   integrity sha512-A+Fezp4zxnit6FanDmv9EqXNAi3vt9DWp51/71UEhXukb7QUuvtv9344h91dyAxuTLoSYJFU299qzR3tzwPAhw==
 
 "calculate-suv@git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main":
-  version "0.1.0"
-  resolved "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#fb299f0897d274b458fbdb98187e9a5f13b152e7"
+  version "0.0.0-semantic-release"
+  resolved "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#555a2b4085cc81ad6a95a3bf1456e00fc4a63856"
 
 call-bind@^1.0.0, call-bind@^1.0.2:
   version "1.0.2"
@@ -13226,7 +13226,7 @@ nested-error-stacks@^2.0.0, nested-error-stacks@^2.1.0:
   resolved "https://registry.yarnpkg.com/nested-error-stacks/-/nested-error-stacks-2.1.0.tgz#0fbdcf3e13fe4994781280524f8b96b0cdff9c61"
   integrity sha512-AO81vsIO1k1sM4Zrd6Hu7regmJN1NSiAja10gc4bX3F0wd+9rQmcuHQaHVQCYIEC8iFXnE+mavh23GOt7wBgug==
 
-netlify-cli@^9.13.2:
+netlify-cli@^9.13.3:
   version "9.13.3"
   resolved "https://registry.yarnpkg.com/netlify-cli/-/netlify-cli-9.13.3.tgz#61183a7e2d780fc6ec44ef35f377a7fed0afb9b2"
   integrity sha512-kxaRPiVUikPXmmOX+w8qAqN69zC0Wqe12xhDfcKntS5GbMp1BpDwzqAlQCB76n36HJxzsBTjDR5KRM2Vo86HvA==
@@ -14926,9 +14926,9 @@ postcss-image-set-function@^4.0.6:
     postcss-value-parser "^4.2.0"
 
 postcss-import@^14.0.2:
-  version "14.0.2"
-  resolved "https://registry.yarnpkg.com/postcss-import/-/postcss-import-14.0.2.tgz#60eff77e6be92e7b67fe469ec797d9424cae1aa1"
-  integrity sha512-BJ2pVK4KhUyMcqjuKs9RijV5tatNzNa73e/32aBVE/ejYPe37iH+6vAu9WvqUkB5OAYgLHzbSvzHnorybJCm9g==
+  version "14.1.0"
+  resolved "https://registry.yarnpkg.com/postcss-import/-/postcss-import-14.1.0.tgz#a7333ffe32f0b8795303ee9e40215dac922781f0"
+  integrity sha512-flwI+Vgm4SElObFVPpTIT7SU7R3qk2L7PyduMcokiaVKuWv9d/U+Gm/QAd8NDLuykTWTkcrjOeD2Pp1rMeBTGw==
   dependencies:
     postcss-value-parser "^4.0.0"
     read-cache "^1.0.0"
