@@ -1,5 +1,5 @@
-import { ImageVolume } from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import { ImageVolume } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
 import { pointInShapeCallback } from '../../../utilities'

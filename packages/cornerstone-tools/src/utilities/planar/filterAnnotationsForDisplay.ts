@@ -3,7 +3,7 @@ import {
   VolumeViewport,
   Types,
   utilities as csUtils,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice'
 import { Annotations } from '../../types'

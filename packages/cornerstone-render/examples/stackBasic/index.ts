@@ -1,8 +1,4 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-} from '@precisionmetrics/cornerstone-render'
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,

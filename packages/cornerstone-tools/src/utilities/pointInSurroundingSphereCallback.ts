@@ -1,7 +1,7 @@
 import type {
   Types,
   VolumeViewport,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 import { vec3 } from 'gl-matrix'

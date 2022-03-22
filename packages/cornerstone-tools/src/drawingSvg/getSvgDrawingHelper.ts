@@ -1,5 +1,5 @@
 import { state } from '../store'
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement } from '@cornerstonejs/core'
 
 /**
  * Returns the SVG drawing helper for the given HTML element.

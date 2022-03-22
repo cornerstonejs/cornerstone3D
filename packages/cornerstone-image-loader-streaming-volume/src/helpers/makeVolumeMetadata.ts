@@ -1,4 +1,4 @@
-import { metaData, Types } from '@precisionmetrics/cornerstone-render'
+import { metaData, Types } from '@cornerstonejs/core'
 
 /**
  * It creates a metadata object for a volume given the imageIds that compose it.

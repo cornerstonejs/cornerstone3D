@@ -4,7 +4,7 @@ import {
   getRenderingEngine,
   Enums,
   Types,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import { Events as csToolsEvents } from '../enums'
 import {
   getToolGroupByToolGroupUID,

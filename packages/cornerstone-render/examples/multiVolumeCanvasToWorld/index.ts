@@ -5,7 +5,7 @@ import {
   Enums,
   utilities as csUtils,
   CONSTANTS,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
 import {
   initDemo,
@@ -14,7 +14,7 @@ import {
   setPetColorMapTransferFunction,
 } from '../../../../utils/demo/helpers'
 // Auto registers volume loader
-import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
+import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS

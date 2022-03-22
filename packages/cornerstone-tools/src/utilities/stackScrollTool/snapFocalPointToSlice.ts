@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix'
 
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * Given a number of frames, `deltaFrames`,

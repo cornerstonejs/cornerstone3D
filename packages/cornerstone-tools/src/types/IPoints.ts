@@ -1,4 +1,4 @@
-import { Types } from '@precisionmetrics/cornerstone-render'
+import { Types } from '@cornerstonejs/core'
 
 /**
  * Points in page, client, canvas and world

@@ -1,4 +1,4 @@
-import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
+import { utilities as csUtils } from '@cornerstonejs/core'
 
 import _cloneDeep from 'lodash.clonedeep'
 import {

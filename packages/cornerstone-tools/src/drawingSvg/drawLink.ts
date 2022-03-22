@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 import drawLine from './drawLine'
 import findClosestPoint from '../utilities/math/vec2/findClosestPoint'

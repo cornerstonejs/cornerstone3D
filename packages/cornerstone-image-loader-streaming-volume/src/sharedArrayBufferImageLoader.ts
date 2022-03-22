@@ -1,4 +1,4 @@
-import { imageLoader, Enums } from '@precisionmetrics/cornerstone-render'
+import { imageLoader, Enums } from '@cornerstonejs/core'
 import {
   getPixelData,
   decodeImageFrame,

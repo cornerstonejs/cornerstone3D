@@ -3,11 +3,11 @@ import {
   Enums,
   init as csRenderInit,
   Types,
-} from '@precisionmetrics/cornerstone-render'
-import * as cs from '@precisionmetrics/cornerstone-render'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/core'
+import * as cs from '@cornerstonejs/core'
+import * as csTools3d from '@cornerstonejs/tools'
 
-// import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+// import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 
 const content = document.getElementById('content')
 

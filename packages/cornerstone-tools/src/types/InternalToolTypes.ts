@@ -1,4 +1,4 @@
-import { Types } from '@precisionmetrics/cornerstone-render'
+import { Types } from '@cornerstonejs/core'
 import { AnnotationTool } from '../tools'
 import { Annotation, Annotations } from './AnnotationTypes'
 

@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 import _getHash from './_getHash'
 

@@ -9,7 +9,7 @@ import {
   Types,
   imageLoader,
   utilities as cornerstoneUtils,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 import { scaleArray, autoLoad } from './helpers'
 

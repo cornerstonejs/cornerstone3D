@@ -4,7 +4,7 @@ import {
   utilities,
   Enums,
   Types,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
 import StreamingImageVolume from './StreamingImageVolume'

@@ -1,5 +1,5 @@
 import { BaseTool } from '../base'
-import { getEnabledElementByUIDs } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElementByUIDs } from '@cornerstonejs/core'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
 import { LabelmapDisplay } from './Labelmap'

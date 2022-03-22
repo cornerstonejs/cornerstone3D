@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 type Annotation = {
   /** A unique identifier for this annotation */

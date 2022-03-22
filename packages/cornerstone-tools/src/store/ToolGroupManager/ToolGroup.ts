@@ -2,7 +2,7 @@ import { MouseBindings, ToolModes } from '../../enums'
 import {
   getRenderingEngine,
   getRenderingEngines,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import { state } from '../index'
 import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types'
 

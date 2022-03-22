@@ -3,7 +3,7 @@ import {
   StackViewport,
   VolumeViewport,
   utilities as csUtils,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import clip from '../clip'
 import getSliceRange from './getSliceRange'
 import snapFocalPointToSlice from './snapFocalPointToSlice'

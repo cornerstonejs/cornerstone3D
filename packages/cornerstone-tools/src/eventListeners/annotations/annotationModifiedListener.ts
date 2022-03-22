@@ -1,4 +1,4 @@
-import { getRenderingEngine } from '@precisionmetrics/cornerstone-render'
+import { getRenderingEngine } from '@cornerstonejs/core'
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
 
 /**

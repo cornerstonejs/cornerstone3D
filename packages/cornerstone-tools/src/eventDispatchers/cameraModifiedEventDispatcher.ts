@@ -1,4 +1,4 @@
-import { Enums, Types } from '@precisionmetrics/cornerstone-render'
+import { Enums, Types } from '@cornerstonejs/core'
 import { ToolModes } from '../enums'
 import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
 

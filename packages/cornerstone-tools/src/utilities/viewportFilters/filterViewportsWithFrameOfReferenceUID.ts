@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * Given an array of viewports, returns a list of viewports that are viewing a

@@ -1,4 +1,4 @@
-import { Types } from '@precisionmetrics/cornerstone-render'
+import { Types } from '@cornerstonejs/core'
 
 // Returns sign of number
 function sign(x: any) {

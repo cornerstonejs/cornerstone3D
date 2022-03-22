@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 /** Handle position in the world coordinates */
 type AnnotationHandle = Types.Point3

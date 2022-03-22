@@ -3,8 +3,8 @@ import {
   Types,
   VolumeViewport,
   cache,
-} from '@precisionmetrics/cornerstone-render'
-import type { RenderingEngine } from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import type { RenderingEngine } from '@cornerstonejs/core'
 import deepMerge from '../../utilities/deepMerge'
 import { ToolModes } from '../../enums'
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'

@@ -1,4 +1,4 @@
-import { getEnabledElementByUIDs } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElementByUIDs } from '@cornerstonejs/core'
 import { BaseTool } from './base'
 import { scrollThroughStack } from '../utilities/stackScrollTool'
 import { PublicToolProps, ToolProps, EventTypes } from '../types'

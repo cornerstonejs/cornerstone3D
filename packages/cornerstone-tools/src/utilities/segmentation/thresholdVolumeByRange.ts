@@ -1,5 +1,5 @@
-import { cache } from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import { cache } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import {
   getBoundingBoxAroundShape,

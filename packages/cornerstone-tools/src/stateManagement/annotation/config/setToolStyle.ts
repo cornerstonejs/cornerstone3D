@@ -1,4 +1,4 @@
-import { Settings } from '@precisionmetrics/cornerstone-render'
+import { Settings } from '@cornerstonejs/core'
 import state from '../../../store/state'
 
 /**

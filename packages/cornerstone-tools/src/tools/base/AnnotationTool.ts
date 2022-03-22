@@ -3,8 +3,8 @@ import {
   getEnabledElement,
   VolumeViewport,
   Settings,
-} from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { vec4, vec2 } from 'gl-matrix'
 

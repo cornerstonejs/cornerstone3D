@@ -4,8 +4,8 @@ import {
   volumeLoader,
   VolumeViewport,
   utilities as csUtils,
-} from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
 

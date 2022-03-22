@@ -1,7 +1,7 @@
 import {
   getEnabledElement,
   triggerEvent,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import normalizeWheel from './normalizeWheel'
 import Events from '../../enums/Events'
 // ~~ VIEWPORT LIBRARY

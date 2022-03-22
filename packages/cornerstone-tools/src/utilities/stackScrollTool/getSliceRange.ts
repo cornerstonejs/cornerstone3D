@@ -1,5 +1,5 @@
-import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import { utilities as csUtils } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
 
 /**

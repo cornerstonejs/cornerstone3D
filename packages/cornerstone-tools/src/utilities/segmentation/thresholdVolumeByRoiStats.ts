@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import { getBoundingBoxAroundShape } from '../segmentation'
@@ -8,7 +8,7 @@ import thresholdVolumeByRange, {
   extendBoundingBoxInSliceAxisIfNecessary,
 } from './thresholdVolumeByRange'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
-import { cache } from '@precisionmetrics/cornerstone-render'
+import { cache } from '@cornerstonejs/core'
 
 export type ThresholdRoiStatsOptions = {
   statistic: 'max' | 'min'

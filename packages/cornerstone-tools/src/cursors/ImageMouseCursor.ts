@@ -1,4 +1,4 @@
-import { utilities } from '@precisionmetrics/cornerstone-render'
+import { utilities } from '@cornerstonejs/core'
 import MouseCursor from './MouseCursor'
 
 const DEFAULT_NAME = 'image-cursor'

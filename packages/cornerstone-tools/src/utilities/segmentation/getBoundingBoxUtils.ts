@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * With a given vertices coordinates in IJK, it calculates the minimum and maximum

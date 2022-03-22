@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
 
 export type PointInShapeCallback = ({

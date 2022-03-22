@@ -2,7 +2,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import {
   getEnabledElement,
   triggerEvent,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import Events from '../../enums/Events'
 import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes'
 

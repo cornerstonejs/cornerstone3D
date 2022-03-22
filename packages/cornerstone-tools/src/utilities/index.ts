@@ -24,7 +24,7 @@ import * as stackScrollTool from './stackScrollTool'
 import * as viewportFilters from './viewportFilters'
 
 // Events
-import { triggerEvent } from '@precisionmetrics/cornerstone-render'
+import { triggerEvent } from '@cornerstonejs/core'
 
 export {
   math,

@@ -1,8 +1,8 @@
-import { Types } from '@precisionmetrics/cornerstone-render'
+import { Types } from '@cornerstonejs/core'
 import {
   volumeLoader,
   utilities as csUtils,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 /**
  * Given a list of labelmaps (with the possibility of overlapping regions), and

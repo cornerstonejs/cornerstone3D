@@ -1,4 +1,4 @@
-import { getEnabledElement, Types } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement, Types } from '@cornerstonejs/core'
 import {
   mouseEventListeners,
   wheelEventListener,

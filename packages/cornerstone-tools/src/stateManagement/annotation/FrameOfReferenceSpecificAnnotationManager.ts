@@ -11,7 +11,7 @@ import {
   eventTarget,
   Types,
   utilities,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 import { checkAndDefineIsLockedProperty } from './annotationLocking'
 

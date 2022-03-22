@@ -1,4 +1,4 @@
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * Given a pixel array, rescale the pixel values using the rescale slope and

@@ -3,9 +3,9 @@
   "compilerOptions": {
     "baseUrl": "./packages",
     "paths": {
-      "@precisionmetrics/cornerstone-image-loader-streaming-volume": ["cornerstone-image-loader-streaming-volume/src"],
-      "@precisionmetrics/cornerstone-render": ["cornerstone-render/src"],
-      "@precisionmetrics/cornerstone-tools": ["cornerstone-tools/src"],
+      "@cornerstonejs/streaming-image-volume-loader": ["cornerstone-image-loader-streaming-volume/src"],
+      "@cornerstonejs/core": ["cornerstone-render/src"],
+      "@cornerstonejs/tools": ["cornerstone-tools/src"],
       "@precisionmetrics/*": ["*/src"]
     }
   }

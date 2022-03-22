@@ -2,7 +2,7 @@ import { BaseTool } from './base'
 import {
   getEnabledElement,
   VolumeViewport,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar'
 import jumpToWorld from '../utilities/viewport/jumpToWorld'
 import { PublicToolProps, ToolProps } from '../types'

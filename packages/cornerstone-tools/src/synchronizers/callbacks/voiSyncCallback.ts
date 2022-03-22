@@ -3,7 +3,7 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 /**
  * Synchronizer callback to synchronize the voi of volumeActors of identical volumes

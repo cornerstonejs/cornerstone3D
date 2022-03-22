@@ -2,7 +2,7 @@ import {
   getRenderingEngines,
   RenderingEngine,
   utilities,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 type RenderingEngineAndViewportUIDs = {
   renderingEngine: RenderingEngine | undefined

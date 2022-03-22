@@ -5,16 +5,16 @@ import {
   volumeLoader,
   setVolumesForViewports,
   CONSTANTS,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
+import * as cornerstoneTools from '@cornerstonejs/tools'
 // Auto registers volume loader
-import '@precisionmetrics/cornerstone-image-loader-streaming-volume' // Registers volume loader
+import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
 const {
   PanTool,

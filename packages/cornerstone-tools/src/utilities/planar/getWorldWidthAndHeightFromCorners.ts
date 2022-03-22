@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * Given two world positions and an orthogonal view to an `imageVolume` defined

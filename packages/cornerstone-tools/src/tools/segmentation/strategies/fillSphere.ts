@@ -1,7 +1,7 @@
 import type {
   Types,
   VolumeViewport,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
 import { pointInSurroundingSphereCallback } from '../../../utilities'

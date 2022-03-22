@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement } from '@cornerstonejs/core'
 import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID'
 import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled'
 import filterViewportsWithSameOrientation from './filterViewportsWithSameOrientation'

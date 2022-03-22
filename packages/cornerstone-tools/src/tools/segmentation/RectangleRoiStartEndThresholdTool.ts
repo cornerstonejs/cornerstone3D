@@ -7,8 +7,8 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
-} from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { vec3 } from 'gl-matrix'
 import { Events } from '../../enums'

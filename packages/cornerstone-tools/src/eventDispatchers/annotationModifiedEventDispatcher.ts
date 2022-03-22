@@ -1,7 +1,7 @@
 import {
   eventTarget,
   getRenderingEngine,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import Events from '../enums/Events'
 import triggerAnnotationRenderForViewportUIDs from '../utilities/triggerAnnotationRenderForViewportUIDs'
 import { AnnotationModifiedEventType } from '../types/EventTypes'

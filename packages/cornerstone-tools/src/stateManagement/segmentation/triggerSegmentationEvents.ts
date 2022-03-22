@@ -1,4 +1,4 @@
-import { triggerEvent, eventTarget } from '@precisionmetrics/cornerstone-render'
+import { triggerEvent, eventTarget } from '@cornerstonejs/core'
 
 import { Events } from '../../enums'
 import {

@@ -1,7 +1,7 @@
 import {
   getEnabledElement,
   addVolumesToViewports,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations'
 import { ToolGroupSpecificSegmentationData } from '../../../types/SegmentationStateTypes'

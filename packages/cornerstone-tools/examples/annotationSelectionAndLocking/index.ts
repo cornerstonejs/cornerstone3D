@@ -3,7 +3,7 @@ import {
   Types,
   Enums,
   getRenderingEngine,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -11,7 +11,7 @@ import {
   addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
+import * as cornerstoneTools from '@cornerstonejs/tools'
 
 const {
   LengthTool,

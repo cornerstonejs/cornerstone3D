@@ -1,4 +1,4 @@
-import { Settings } from '@precisionmetrics/cornerstone-render'
+import { Settings } from '@cornerstonejs/core'
 
 /**
  * Takes a `style` object and sets it as the

@@ -8,7 +8,7 @@ import {
   utilities,
   cache,
   Types,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 // Todo: should move to configuration
 const DEFAULT_MULTIPLIER = 4

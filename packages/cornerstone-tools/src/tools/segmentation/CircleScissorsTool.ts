@@ -2,8 +2,8 @@ import {
   cache,
   getEnabledElement,
   StackViewport,
-} from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { BaseTool } from '../base'
 import { PublicToolProps, ToolProps, EventTypes } from '../../types'

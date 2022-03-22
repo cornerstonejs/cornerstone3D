@@ -1,8 +1,8 @@
 import {
   getEnabledElement,
   triggerEvent,
-} from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import Events from '../../enums/Events'
 import mouseMoveListener from './mouseMoveListener'

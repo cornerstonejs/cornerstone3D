@@ -1,6 +1,6 @@
 import { BaseTool } from './base'
-import { getEnabledElement } from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import { getEnabledElement } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { mat4, vec3 } from 'gl-matrix'
 import { PublicToolProps, ToolProps } from '../types'

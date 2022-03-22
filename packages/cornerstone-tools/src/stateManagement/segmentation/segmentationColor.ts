@@ -1,4 +1,4 @@
-import { utilities } from '@precisionmetrics/cornerstone-render'
+import { utilities } from '@cornerstonejs/core'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
 import { Color } from '../../types/SegmentationStateTypes'
 import { ColorLUT } from '../../types/SegmentationStateTypes'

@@ -5,7 +5,7 @@ import {
   cache,
   getEnabledElementByUIDs,
   Types,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import { LabelmapRepresentation } from '../../../types/SegmentationRepresentationTypes'

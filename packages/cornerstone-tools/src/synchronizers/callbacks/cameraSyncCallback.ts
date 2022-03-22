@@ -1,4 +1,4 @@
-import { getRenderingEngine, Types } from '@precisionmetrics/cornerstone-render'
+import { getRenderingEngine, Types } from '@cornerstonejs/core'
 
 /**
  * Synchronizer callback to synchronize the camera. Synchronization

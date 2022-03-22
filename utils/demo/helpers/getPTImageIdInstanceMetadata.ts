@@ -1,4 +1,4 @@
-import { metaData } from '@precisionmetrics/cornerstone-render'
+import { metaData } from '@cornerstonejs/core'
 import {
   InstanceMetadata,
   PhilipsPETPrivateGroup,

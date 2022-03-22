@@ -3,9 +3,9 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import { Events } from '../../enums'
-import { Types } from '@precisionmetrics/cornerstone-render'
+import { Types } from '@cornerstonejs/core'
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager'
 import { Annotations, Annotation } from '../../types/AnnotationTypes'
 

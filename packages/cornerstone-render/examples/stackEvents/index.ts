@@ -3,7 +3,7 @@ import {
   Types,
   getRenderingEngine,
   Enums,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,

@@ -1,5 +1,5 @@
-import { VolumeViewport } from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+import { VolumeViewport } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { vec3 } from 'gl-matrix'
 

@@ -1,4 +1,4 @@
-import { cache } from '@precisionmetrics/cornerstone-render'
+import { cache } from '@cornerstonejs/core'
 
 import triggerSegmentationRender from '../../utilities/triggerSegmentationRender'
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations'

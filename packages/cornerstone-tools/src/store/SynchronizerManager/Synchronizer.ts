@@ -3,7 +3,7 @@ import {
   getEnabledElement,
   Enums,
   Types,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 export interface ISynchronizerEventHandler {
   (

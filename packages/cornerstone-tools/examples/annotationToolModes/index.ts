@@ -1,15 +1,11 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-} from '@precisionmetrics/cornerstone-render'
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@precisionmetrics/cornerstone-tools'
+import * as cornerstoneTools from '@cornerstonejs/tools'
 
 const { LengthTool, ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools
 

@@ -2,8 +2,8 @@ import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import {
   VolumeViewport,
   utilities as csUtils,
-} from '@precisionmetrics/cornerstone-render'
-import type { Types } from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * Returns a point based on some criteria (e.g., minimum or maximum intensity) in
