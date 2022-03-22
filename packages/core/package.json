@@ -25,11 +25,11 @@
     "detect-gpu": "^4.0.7"
   },
   "dependencies": {
-    "resemblejs": "^3.2.5"
+    "resemblejs": "^4.1.0"
   },
   "devDependencies": {
     "gl-matrix": "^3.4.3",
-    "resemblejs": "^3.2.5",
+    "resemblejs": "^4.1.0",
     "detect-gpu": "^4.0.7",
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
