@@ -6,7 +6,7 @@ import IImage from './IImage'
 import IImageVolume from './IImageVolume'
 import { VOIRange } from './voi'
 import type { mat4 } from 'gl-matrix'
-import type vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
+import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
 
 /**
  * CAMERA_MODIFIED Event's data

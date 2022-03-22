@@ -1,11 +1,7 @@
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 
-import {
-  cache,
-  getEnabledElementByUIDs,
-  Types,
-} from '@cornerstonejs/core'
+import { cache, getEnabledElementByUIDs, Types } from '@cornerstonejs/core'
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import { LabelmapRepresentation } from '../../../types/SegmentationRepresentationTypes'

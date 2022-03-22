@@ -8,6 +8,7 @@ import { ViewportInput } from '../types/IViewport'
 import { createVolumeActor } from './helpers'
 import { loadVolume } from '../volumeLoader'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
+import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera'
 import { ActorEntry, FlipDirection } from '../types'
 import { getShouldUseCPURendering } from '../init'
 import IVolumeViewport from '../types/IVolumeViewport'
@@ -382,7 +383,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
-    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCamera
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType
 
     const slabThicknessActive = vtkCamera.getSlabThicknessActive()
     // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
@@ -425,7 +426,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCamera
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType
 
     const slabThicknessActive = vtkCamera.getSlabThicknessActive()
     // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,

@@ -6,11 +6,11 @@ import {
   triggerEvent,
   ImageVolume,
   cache,
-  Types,
   imageLoader,
   utilities as cornerstoneUtils,
 } from '@cornerstonejs/core'
 
+import type { Types } from '@cornerstonejs/core'
 import { scaleArray, autoLoad } from './helpers'
 
 const requestType = Enums.RequestType.Prefetch

@@ -1,8 +1,12 @@
 import {
   getRenderingEngines,
-  RenderingEngine,
+  // RenderingEngine,
   utilities,
 } from '@cornerstonejs/core'
+
+import type { RenderingEngine } from '@cornerstonejs/core'
+// TODO: Add RenderingEngine to types?
+// import type { Types } from '@cornerstonejs/core'
 
 type RenderingEngineAndViewportUIDs = {
   renderingEngine: RenderingEngine | undefined
