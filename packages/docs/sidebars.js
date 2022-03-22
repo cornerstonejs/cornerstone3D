@@ -2,6 +2,7 @@
 
 module.exports = {
   docs: [
+    'overview',
     {
       type: 'category',
       label: 'Getting Started',
@@ -74,12 +75,7 @@ module.exports = {
     {
       type: 'link',
       label: 'Test Coverage Report',
-      href: 'pathname:///test-coverage',
-    },
-    {
-      type: 'link',
-      label: 'Live Examples',
-      href: 'pathname:///examples',
+      href: '/coverage',
     },
     'faq',
   ],
