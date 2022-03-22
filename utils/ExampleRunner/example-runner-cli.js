@@ -98,10 +98,6 @@ if (configuration.examples) {
       }
     });
 
-    // console.log(exampleName, ' => ', exBasePath, examples[exBasePath][exampleName]);
-    console.log('arg2', validPath(examples[exBasePath][exampleName]))
-    console.log('rootPath', validPath(rootPath))
-    console.log('exBasePath', validPath(exBasePath))
     const conf = buildConfig(exampleName, validPath(examples[exBasePath][exampleName]), distDir, validPath(rootPath), validPath(exBasePath));
     shell.ShellString(conf).to(webpackConfigPath);
     shell.cd(exBasePath);

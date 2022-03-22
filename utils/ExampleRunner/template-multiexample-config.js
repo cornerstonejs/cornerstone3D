@@ -3,10 +3,10 @@ const path = require('path')
 // TODO: If we want to be able to run all examples from within one package,
 // this needs to be configured or part of the function. THese used to be ../cornerstone-render,
 // etc...
-const csRenderBasePath = path.resolve('./packages/core')
-const csToolsBasePath = path.resolve('./packages/tools')
+const csRenderBasePath = path.resolve('./packages/core/src/index')
+const csToolsBasePath = path.resolve('./packages/tools/src/index')
 const csStreamingBasePath = path.resolve(
-  './packages/streaming-image-volume-loader'
+  './packages/streaming-image-volume-loader/src/index'
 )
 
 module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
