@@ -1257,6 +1257,11 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
+"@cornerstonejs/calculate-suv@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/calculate-suv/-/calculate-suv-1.0.1.tgz#03981a3cedeb58c68b2103b682e0c66d058f814a"
+  integrity sha512-N3pzkaSAAbO0UEijOJQoLuQXwtUYVIChpAkgvzOvj9JOreV2gE5D9ogOb7ueeiPN3jMYMYxU390DQ9A1YiuEzQ==
+
 "@cornerstonejs/codec-charls@^0.1.1":
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-charls/-/codec-charls-0.1.1.tgz#e55d4aa908732d0cc902888b7f3856c5a996df7f"
@@ -3175,11 +3180,6 @@
   version "1.0.0-next.21"
   resolved "https://registry.yarnpkg.com/@polka/url/-/url-1.0.0-next.21.tgz#5de5a2385a35309427f6011992b544514d559aa1"
   integrity sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==
-
-"@precisionmetrics/calculate-suv@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@precisionmetrics/calculate-suv/-/calculate-suv-0.1.0.tgz#a95d3db6d748ebca2c75c3bdff49994cd38e63ac"
-  integrity sha512-pVOpLMEP7lGYhRznL2t/YQM42QnFMaYFfCf3MHUc7LU8Al/5g/iogl317XvGZGnzNh0OXLH2vVpy6Xg8qB7YqQ==
 
 "@rollup/plugin-babel@^5.2.0":
   version "5.3.1"
@@ -5516,10 +5516,6 @@ cachedir@^2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/cachedir/-/cachedir-2.3.0.tgz#0c75892a052198f0b21c7c1804d8331edfcae0e8"
   integrity sha512-A+Fezp4zxnit6FanDmv9EqXNAi3vt9DWp51/71UEhXukb7QUuvtv9344h91dyAxuTLoSYJFU299qzR3tzwPAhw==
-
-"calculate-suv@git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#main":
-  version "0.0.0-semantic-release"
-  resolved "git+ssh://git@github.com/PrecisionMetrics/calculate-suv.git#555a2b4085cc81ad6a95a3bf1456e00fc4a63856"
 
 call-bind@^1.0.0, call-bind@^1.0.2:
   version "1.0.2"
