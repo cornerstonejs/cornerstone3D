@@ -71,9 +71,9 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    * Not implemented yet
-   * @param {vtkCamera} sourceCamera
+   * @param {vtkSlabCamera} sourceCamera
    */
-  deepCopy(sourceCamera: vtkCamera): void
+  deepCopy(sourceCamera: vtkSlabCamera): void
 
   /**
    * Move the position of the camera along the view plane normal. Moving
@@ -163,6 +163,8 @@ export interface vtkSlabCamera extends VtkObject {
    * @default false
    */
   getFreezeFocalPoint(): boolean
+
+  setFreezeFocalPoint(freeze: boolean): void
 
   /**
    * Not implemented yet
@@ -774,7 +776,7 @@ export function extend(
  * and the clipping range is (.1,1000).
  * @param {ICameraInitialValues} [initialValues] for pre-setting some of its content
  */
-export function newInstance(initialValues?: ICameraInitialValues): vtkCamera
+export function newInstance(initialValues?: ICameraInitialValues): vtkSlabCamera
 
 /**
  * vtkCamera is a virtual camera for 3D rendering. It provides methods

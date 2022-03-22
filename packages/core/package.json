@@ -12,10 +12,13 @@
     "test": "test"
   },
   "scripts": {
-    "build": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build:all": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
+    "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/cjs && copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
+    "build": "yarn run build:all && yarn run copy-dts && api-extractor run",
+    "build:update-api": "yarn run build:all && api-extractor run --local",
     "prepublishOnly": "yarn run build",
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },

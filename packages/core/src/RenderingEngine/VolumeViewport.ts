@@ -61,7 +61,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       -sliceNormal[1],
       -sliceNormal[2]
     )
-    camera.setViewUp(...viewUp)
+    camera.setViewUpFrom(viewUp)
     camera.setFreezeFocalPoint(true)
 
     this.resetCamera()
