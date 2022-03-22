@@ -1,8 +1,8 @@
 import { metaData } from '@cornerstonejs/core'
-import {
+import type {
   InstanceMetadata,
   PhilipsPETPrivateGroup,
-} from '@precisionmetrics/calculate-suv/src/types'
+} from '@cornerstonejs/calculate-suv'
 
 export default function getPTImageIdInstanceMetadata(
   imageId: string
