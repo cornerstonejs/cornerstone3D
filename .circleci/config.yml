@@ -123,9 +123,8 @@ jobs:
           command:
             mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
             no\n" > ~/.ssh/config
-      - run:
-          name: Publish using Semantic Release
-          command: npx semantic-release@19.0.2 --debug
+      - run: npx lerna version
+      - run: npx lerna publish from-package
 
 workflows:
   version: 2
