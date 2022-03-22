@@ -26,7 +26,7 @@ interface IVolumeLoader {
 function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,
   options: {
-    imageIds: Array<string>
+    imageIds: string[]
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
