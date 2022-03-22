@@ -2,17 +2,22 @@
 id: tests
 ---
 
-# Rendering Tests
+# Writing Tests
 
-To make sure our rendering pipeline doesn't break upon future modifications, we have
-introduced the rendering tests for StackViewport and VolumeViewports.
+To make sure our rendering and tools don't break upon future modifications, we have
+written tests for them. Rendering tests includes comparing the rendered images
+with the expected images. Tools tests includes comparing the output of the tools
+with the expected output.
 
-Basically, when a new feature is introduced to the library, we take a screenshot of
-how each viewport should render a sample data with various sized, interpolation and colors.
-At testing, we compare the canvas output to the saved screenshots and throw an error if they don't match.
+### Running Tests Locally
+You can run `yarn run test` to run all tests locally.
+By default, `karma.conf.js` will run the tests in a headless chrome browser to make
+sure our tests can run in any servers. Therefore, you cannot visualize it by default. In order
+to run the tests and visually inspect the results, you can run the tests by changing the
+`karma.conf.js` file to have `browsers: ['Chrome']` instead of `browsers: ['ChromeHeadless']`.
 
 ![renderingTests](../assets/tests.gif)
 
-Testing happens in a Headless Chrome environment to make sure our tests can run in any servers. Therefore, you cannot visualize it by default,
-however; if you want to take a look at each testing output images, you can edit the `Karma.config.js` and put
-`browsers: ['Chrome']` instead of the default one which is `browsers: ['ChromeHeadlessNoSandbox']`
+### Running Only One Test Locally
+You can use `karma` specifiers such as `fdescribe` instead of (`describe`) and `fit` instead
+of (`it`) to run only one test.

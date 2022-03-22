@@ -1,14 +1,69 @@
 ---
-id: tools-introduction
+id: scope
 ---
 
-# Introduction
+# Scope
 
-`CornerstoneTools3D` is a JavasScript library that works with the `CornerstoneCore3D` library to provide a set of tools for image annotation, segmentation and manipulation. This library also provides a framework for creating new tools, managing all tools in a consistent, cohesive manner, importing/exporting tool annotations along with various Segmentation editing tools.
+This is the scope of the project.
 
-`CornerstoneTools3D` is not stand-alone library; it builds on top of `CornerstoneCore3D`; a standards compliant, fast, and extensible JavaScript library that displays interactive medical images.
 
-## What is new?
+
+This repository contains three projects:
+
+- `/packages/cornerstone-render`: The rendering library equivalent of `cornerstone-core`
+- `/packages/cornerstone-tools`: The tool library equivalent of `cornerstone-tools`
+- `/packages/cornerstone-image-loader-streaming-volume`: For streaming the volumes into the viewport and progressively loading them
+- `/demo`: Consumes all of the above libraries to demonstrate functionality in various `react` demo apps.
+
+In an effort to slowly and intentionally grow the API surface area of these libraries,
+we at times rely on functionality in their predecessors. In that same vein, the `demo`
+project has a `helpers` folder containing functionality that many consumers of
+these libraries would benefit from. These helper functions demonstrate how a consumer can:
+
+- register an external metadata provider
+- register an image and volume loader
+- add metadata to the provider
+- sort the imageIds and lots of other useful utility functions
+
+
+At a later date, those helpers may make their
+way back into the rendering and tool libraries.
+
+
+## Core
+
+- 3D rendering of medical images
+  - *New engine:* We have re-architectured the rendering engine for Cornerstone which implemented a `WebGL` rendering, and have created a wrapper around [vtk.js](https://github.com/kitware/vtk-js)
+  - *Shared Texture:* Our rendering engine can optimally share textures between canvases, so for complex scenarios that may require > 10 viewports, we share the texture between the viewports that _might_ look into the same data from different
+  angles (axial, sagittal, or coronal) or fuse them on top of each other.
+
+- Streaming of Volume data
+  - We have added a new volume loader which implements a progressive loading of volumes
+  to the GPU. You don't need to wait for all of the volume to load to have an initial view. Below, you can see
+  streaming of two volumes that are simultaneously loaded into the scenes for a 3x3 PET/CT fusion layout with a MIP view on the right.
+
+
+## High level design considerations
+
+These libraries expand upon and update the interfaces `cornerstone.js` provided
+to better support volume rendering, 3D aware tools, and PET images support. These
+interfaces and functionality are broadly identified as:
+
+- Rendering / Renderer
+- Image Loading / Image Loader
+- Metadata Provider
+- Tools
+
+`@ohif/cornerstone-render` is a "rendering" library built on top of `vtk.js`.
+which leverages `cornerstone`'s existing plumbing to integrate with image loaders and metadata providers. The `demo` package in this repository contains a simple "metadata provider", named "WADORSHeaderProvider", that allows for querying metadata by instance and
+imageId.
+
+This repository's `@ohif/cornerstone-tools` is a "tools" library that, once initialized, will listen for custom events emitted by `@ohif/cornerstone-render`. Please note, the event naming and handling overlaps the events and event handling in the `cornerstone-tools` library. If you attempt to use `cornerstone-tools` in tandem, you will likely encounter issues. As this is a possible use case, please don't hesitate to report any issues and propose potential solutions.
+
+
+## Tools
+
+
 
 As seen in `CornerstoneCore3D` [documentation](./core-introduction.md), our GPU rendered images use the
 image metadata (such as direction and origin) to place the image at the correct position in the 3D world.

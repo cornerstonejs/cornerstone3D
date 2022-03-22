@@ -17,7 +17,10 @@ import {
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 
-import { setCTWWWC } from './helpers/transferFunctionHelpers'
+import {
+  setCTWWWC,
+  setPetTransferFunction,
+} from './helpers/transferFunctionHelpers'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -25,7 +28,7 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineUID,
-  ctVolumeUID,
+  ptVolumeUID,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -36,7 +39,7 @@ window.cache = cache
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
-let ctSceneToolGroup
+let ptSceneToolGroup
 
 const toolsToUse = [
   WindowLevelTool.toolName,
@@ -73,7 +76,7 @@ class OneVolumeExample extends Component {
 
     this._viewportGridRef = React.createRef()
 
-    this.volumeImageIds = getImageIds('ct1', VOLUME)
+    this.volumeImageIds = getImageIds('pt1', VOLUME)
 
     Promise.all([this.volumeImageIds]).then(() =>
       this.setState({ progressText: 'Loading data...' })
@@ -95,7 +98,7 @@ class OneVolumeExample extends Component {
   async componentDidMount() {
     await csRenderInit()
     csTools3d.init()
-    ;({ ctSceneToolGroup } = initToolGroups())
+    ;({ ptSceneToolGroup } = initToolGroups())
 
     const volumeImageIds = await this.volumeImageIds
 
@@ -107,30 +110,30 @@ class OneVolumeExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportUID: VIEWPORT_IDS.PT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
-          background: [0, 0, 0],
+          background: [1, 1, 1],
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
-          background: [0, 0, 0],
+          background: [1, 1, 1],
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportUID: VIEWPORT_IDS.PT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
-          background: [0, 0, 0],
+          background: [1, 1, 1],
         },
       },
     ]
@@ -138,17 +141,17 @@ class OneVolumeExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.CORONAL, renderingEngineUID)
 
-    addToolsToToolGroups({ ctSceneToolGroup })
+    addToolsToToolGroups({ ptSceneToolGroup })
 
     renderingEngine.render()
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
       imageIds: volumeImageIds,
     })
 
@@ -168,12 +171,12 @@ class OneVolumeExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
-          callback: setCTWWWC,
-          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+          volumeUID: ptVolumeUID,
+          callback: setPetTransferFunction,
+          blendMode: Enums.BlendModes.COMPOSITE,
         },
       ],
-      [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
+      [VIEWPORT_IDS.PT.AXIAL, VIEWPORT_IDS.PT.SAGITTAL, VIEWPORT_IDS.PT.CORONAL]
     )
 
     // Set initial CT levels in UI
@@ -236,9 +239,9 @@ class OneVolumeExample extends Component {
   swapTools = (evt) => {
     const toolName = evt.target.value
 
-    this.resetToolModes(ctSceneToolGroup)
+    this.resetToolModes(ptSceneToolGroup)
 
-    const tools = Object.entries(ctSceneToolGroup.toolOptions)
+    const tools = Object.entries(ptSceneToolGroup.toolOptions)
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -251,13 +254,13 @@ class OneVolumeExample extends Component {
         )
     )
 
-    ctSceneToolGroup.setToolPassive(activeTool)
+    ptSceneToolGroup.setToolPassive(activeTool)
 
     // Using mouse primary for the selected tool
     const currentBindings =
-      ctSceneToolGroup.toolOptions[toolName]?.bindings ?? []
+      ptSceneToolGroup.toolOptions[toolName]?.bindings ?? []
 
-    ctSceneToolGroup.setToolActive(toolName, {
+    ptSceneToolGroup.setToolActive(toolName, {
       bindings: [
         ...currentBindings,
         { mouseButton: csToolsEnums.MouseBindings.Primary },
