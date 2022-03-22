@@ -4,13 +4,13 @@ import {
   RenderingEngine,
   volumeLoader,
   init as csRenderInit,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   SynchronizerManager,
   synchronizers,
   WindowLevelTool,
-} from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'

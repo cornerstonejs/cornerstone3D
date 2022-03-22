@@ -3,10 +3,10 @@ const path = require('path')
 // TODO: If we want to be able to run all examples from within one package,
 // this needs to be configured or part of the function. THese used to be ../cornerstone-render,
 // etc...
-const csRenderBasePath = path.resolve('./packages/cornerstone-render')
-const csToolsBasePath = path.resolve('./packages/cornerstone-tools')
+const csRenderBasePath = path.resolve('./packages/core/src/index')
+const csToolsBasePath = path.resolve('./packages/tools/src/index')
 const csStreamingBasePath = path.resolve(
-  './packages/cornerstone-image-loader-streaming-volume'
+  './packages/streaming-image-volume-loader/src/index'
 )
 
 module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
@@ -67,7 +67,10 @@ module.exports = {
         { from: '${root.replace(
           /\\/g,
           '\\\\'
-        )}/utils/ExampleRunner/serve.json', to: "${destPath.replace(/\\/g, '\\\\')}" },
+        )}/utils/ExampleRunner/serve.json', to: "${destPath.replace(
+    /\\/g,
+    '\\\\'
+  )}" },
       ],
     }),
   ],
@@ -83,15 +86,9 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@precisionmetrics/cornerstone-render': '${csRenderBasePath.replace(
-        /\\/g,
-        '\\\\'
-      )}',
-      '@precisionmetrics/cornerstone-tools': '${csToolsBasePath.replace(
-        /\\/g,
-        '\\\\'
-      )}',
-      '@precisionmetrics/cornerstone-image-loader-streaming-volume': '${csStreamingBasePath.replace(
+      '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '\\\\')}',
+      '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '\\\\')}',
+      '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
         /\\/g,
         '\\\\'
       )}',

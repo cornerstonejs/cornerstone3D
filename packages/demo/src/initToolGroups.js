@@ -1,4 +1,4 @@
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 const { MouseBindings } = csTools3d.Enums
 

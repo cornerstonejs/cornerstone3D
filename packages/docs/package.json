@@ -11,7 +11,7 @@
     "start": "yarn run docs",
     "dev": "yarn run docs",
     "dev:watch": "cross-env NODE_OPTIONS=--max_old_space_size=16384 TYPEDOC_WATCH=true docusaurus start",
-    "build": "cross-env NODE_OPTIONS=--max_old_space_size=16384 docusaurus build",
+    "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",

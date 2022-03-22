@@ -1,5 +1,5 @@
 import dicomParser from 'dicom-parser'
-import * as cornerstone from '@precisionmetrics/cornerstone-render'
+import * as cornerstone from '@cornerstonejs/core'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader'
 
 export default function initProviders() {

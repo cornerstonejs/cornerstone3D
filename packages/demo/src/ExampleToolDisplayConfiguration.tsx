@@ -11,7 +11,7 @@ import {
   CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   Enums as csToolsEnums,
   annotation as csToolsAnnotation,
@@ -21,8 +21,8 @@ import {
   RectangleRoiTool,
   ProbeTool,
   EllipticalRoiTool,
-} from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -35,11 +35,11 @@ import {
   VIEWPORT_IDS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@precisionmetrics/cornerstone-render'
+import * as cs from '@cornerstonejs/core'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 
-import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 

@@ -1,4 +1,4 @@
-import { Enums, WindowLevelTool } from '@precisionmetrics/cornerstone-tools'
+import { Enums, WindowLevelTool } from '@cornerstonejs/tools'
 import { ANNOTATION_TOOLS } from '../constants'
 
 export default function ptCtToggleAnnotationTool(

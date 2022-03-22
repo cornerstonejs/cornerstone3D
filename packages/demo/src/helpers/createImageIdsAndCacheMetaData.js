@@ -2,7 +2,7 @@ import { api } from 'dicomweb-client'
 import dcmjs from 'dcmjs'
 import { calculateSUVScalingFactors } from '@precisionmetrics/calculate-suv'
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata'
-import { utilities } from '@precisionmetrics/cornerstone-render'
+import { utilities } from '@cornerstonejs/core'
 
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'

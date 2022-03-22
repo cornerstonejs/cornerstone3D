@@ -1,9 +1,9 @@
 const path = require('path')
 
-const csRenderBasePath = path.resolve('../cornerstone-render')
-const csToolsBasePath = path.resolve('../cornerstone-tools')
+const csRenderBasePath = path.resolve('../core/src/index')
+const csToolsBasePath = path.resolve('../tools/src/index')
 const csStreamingBasePath = path.resolve(
-  '../cornerstone-image-loader-streaming-volume'
+  '../streaming-image-volume-loader/src/index'
 )
 
 module.exports = function buildConfig(
@@ -55,15 +55,9 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@precisionmetrics/cornerstone-render': '${csRenderBasePath.replace(
-        /\\/g,
-        '\\\\'
-      )}',
-      '@precisionmetrics/cornerstone-tools': '${csToolsBasePath.replace(
-        /\\/g,
-        '\\\\'
-      )}',
-      '@precisionmetrics/cornerstone-image-loader-streaming-volume': '${csStreamingBasePath.replace(
+      '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '\\\\')}',
+      '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '\\\\')}',
+      '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
         /\\/g,
         '\\\\'
       )}',

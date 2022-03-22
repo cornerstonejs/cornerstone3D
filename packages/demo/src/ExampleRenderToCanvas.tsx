@@ -4,9 +4,9 @@ import {
   RenderingEngine,
   renderToCanvas,
   init as cs3dInit,
-} from '@precisionmetrics/cornerstone-render'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
-import { WindowLevelTool } from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/core'
+import * as csTools3d from '@cornerstonejs/tools'
+import { WindowLevelTool } from '@cornerstonejs/tools'
 import getImageIds from './helpers/getImageIds'
 import { renderingEngineUID } from './constants'
 

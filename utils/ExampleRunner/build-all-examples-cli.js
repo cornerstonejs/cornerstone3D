@@ -45,9 +45,9 @@ function validPath(str) {
 if (options.fromRoot === true) {
   configuration = {
     examples: [
-      { path: 'packages/cornerstone-render/examples', regexp: 'index.ts' },
-      { path: 'packages/cornerstone-tools/examples', regexp: 'index.ts' },
-      { path: 'packages/cornerstone-image-loader-streaming-volume/examples', regexp: 'index.ts' },
+      { path: 'packages/core/examples', regexp: 'index.ts' },
+      { path: 'packages/tools/examples', regexp: 'index.ts' },
+      { path: 'packages/streaming-image-volume-loader/examples', regexp: 'index.ts' },
     ],
   }
 } else {

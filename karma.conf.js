@@ -64,16 +64,14 @@ module.exports = function (config) {
       },
     ],
     files: [
-      'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js',
-      'packages/cornerstone-render/test/**/*_test.js',
-      'packages/cornerstone-tools/test/**/*_test.js',
+      'packages/streaming-image-volume-loader/test/**/*_test.js',
+      'packages/core/test/**/*_test.js',
+      'packages/tools/test/**/*_test.js',
     ],
     preprocessors: {
-      'packages/cornerstone-image-loader-streaming-volume/test/**/*_test.js': [
-        'webpack',
-      ],
-      'packages/cornerstone-render/test/**/*_test.js': ['webpack'],
-      'packages/cornerstone-tools/test/**/*_test.js': ['webpack'],
+      'packages/streaming-image-volume-loader/test/**/*_test.js': ['webpack'],
+      'packages/core/test/**/*_test.js': ['webpack'],
+      'packages/tools/test/**/*_test.js': ['webpack'],
     },
     coverageIstanbulReporter: {
       reports: ['html', 'text-summary', 'lcovonly'],
@@ -123,16 +121,11 @@ module.exports = function (config) {
           path: require.resolve('path-browserify'),
         },
         alias: {
-          '@precisionmetrics/cornerstone-render': path.resolve(
-            'packages/cornerstone-render/src/index'
+          '@cornerstonejs/core': path.resolve('packages/core/src/index'),
+          '@cornerstonejs/tools': path.resolve('packages/tools/src/index'),
+          '@cornerstonejs/streaming-image-volume-loader': path.resolve(
+            'packages/streaming-image-volume-loader/src/index'
           ),
-          '@precisionmetrics/cornerstone-tools': path.resolve(
-            'packages/cornerstone-tools/src/index'
-          ),
-          '@precisionmetrics/@precisionmetrics/cornerstone-image-loader-streaming-volume':
-            path.resolve(
-              'packages/@precisionmetrics/cornerstone-image-loader-streaming-volume/src/index'
-            ),
         },
       },
     },

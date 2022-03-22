@@ -1,4 +1,4 @@
-import { cache, utilities } from '@precisionmetrics/cornerstone-render'
+import { cache, utilities } from '@cornerstonejs/core'
 import applyPreset from './applyPreset'
 import colors from './colors'
 import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
