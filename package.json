@@ -81,7 +81,7 @@
     "karma-webpack": "^5.0.0",
     "lerna": "^4.0.0",
     "lint-staged": "^10.5.4",
-    "netlify-cli": "^9.13.2",
+    "netlify-cli": "^9.13.3",
     "path-browserify": "^1.0.1",
     "postcss": "^8.4.5",
     "postcss-import": "^14.0.2",
