@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "0.0.4-rc13",
+  "version": "0.1.0",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -22,12 +22,12 @@
   "peerDependencies": {
     "gl-matrix": "^3.3.0",
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
-    "@cornerstonejs/core": "^0.0.4-rc13"
+    "@cornerstonejs/core": "^0.1.0"
   },
   "devDependencies": {
     "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
-    "@cornerstonejs/streaming-image-volume-loader": "^0.0.4-rc13",
-    "@cornerstonejs/core": "^0.0.4-rc13"
+    "@cornerstonejs/streaming-image-volume-loader": "^0.1.0",
+    "@cornerstonejs/core": "^0.1.0"
   },
   "contributors": [{
     "name": "Cornerstone.js Contributors",
