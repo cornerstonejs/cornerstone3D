@@ -22,6 +22,12 @@ const shaderLoader = {
   loader: 'shader-loader',
 }
 
+const csRenderBasePath = path.resolve('../core/src/index')
+const csToolsBasePath = path.resolve('../tools/src/index')
+const csStreamingBasePath = path.resolve(
+  '../streaming-image-volume-loader/src/index'
+)
+
 const exclude = excludeNodeModulesExcept([])
 
 module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
@@ -100,6 +106,11 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
         fs: false,
         path: require.resolve('path-browserify'),
       },
+      alias: {
+        '@cornerstonejs/core': csRenderBasePath,
+        '@cornerstonejs/tools': csToolsBasePath,
+        '@cornerstonejs/streaming-image-volume-loader': csStreamingBasePath,
+      }
     },
     plugins: [
       // Show build progress
