@@ -7,6 +7,18 @@ id: faq
 <br />
 
 
+## How does Cornerstone-3D relate to cornerstone-core and cornerstone-tools library?
+
+Cornerstone-3D is developed by the same team that developed `cornerstone-core` and `cornerstone-tools`. Cornerstone-3D, and Cornerstone-3D-Tools provide the
+following advantages:
+
+- **Rendering**: new rendering engine for to enable advanced visualizations using [vtk.js](https://github.com/kitware/vtk-js)
+- **Optimal Memory Usage**: enables image rendering with high performance and low memory usage for complex scenarios that may require > 10 viewports using shared textures
+- **Volume Streaming**: streaming of volumes and progressively loading them to the GPU to enable faster initial view and interaction
+- **3D annotation tools**: addition of 3D annotation tools for volumes even for reconstructed views
+- **SVG Annotations**: addition of SVG annotations which significantly guarantees crisp rendering of annotations on high resolution monitors
+
+
 ### What is the difference between Cornerstone (legacy) and Cornerstone 3D (alpha) and react-vtkjs-viewport?
 
 Although Cornerstone (legacy) has gpu-accelerated rendering through webgl, it only handles

@@ -5,7 +5,7 @@ id: core-introduction
 # Introduction
 
 
-`Cornerstone-3D` is a lightweight Javascript library for visualization and manipulation of medical images in modern web browsers that support the HTML5 canvas element.
+`Cornerstone3D` is a lightweight Javascript library for visualization and manipulation of medical images in modern web browsers that support the HTML5 canvas element.
 
 We have revisited the idea of image rendering in browsers, and re-built various
 functionalities to enable fast and performant visualization for most complex imaging use cases.

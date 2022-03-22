@@ -4,23 +4,11 @@ id: overview
 
 # Overview
 
-`Cornerstone-3D` is a lightweight Javascript library for visualization and manipulation of medical images in modern web browsers that support the HTML5 canvas element.
-Using `Cornerstone-3D` and its accompanying libraries (`Cornerstone-WADO-Image-Loader` and `Cornerstone-3D-Tools`), you can render all transfer syntaxes, manipulate and interact with images, annotate with various measurement tools, and render and edit segmentations.
 
+`cornerstone3D` is a lightweight Javascript library for visualization of medical images in modern web browsers that support the HTML5 canvas element.
+Using `cornerstone3D` and its accompanying libraries such as `cornerstone3DTools`, you can render all transfer syntaxes, manipulate and interact with images, annotate with various measurement tools, and render and edit segmentations.
 
-
-
-## How does Cornerstone-3D relate to cornerstone-core and cornerstone-tools library?
-Cornerstone-3D is developed by the same team that developed `cornerstone-core` and `cornerstone-tools`. Cornerstone-3D, and Cornerstone-3D-Tools provide the
-following advantages:
-
-- **Rendering**: new rendering engine for to enable advanced visualizations using [vtk.js](https://github.com/kitware/vtk-js)
-- **Optimal Memory Usage**: enables image rendering with high performance and low memory usage for complex scenarios that may require > 10 viewports using shared textures
-- **Volume Streaming**: streaming of volumes and progressively loading them to the GPU to enable faster initial view and interaction
-- **3D annotation tools**: addition of 3D annotation tools for volumes even for reconstructed views
-- **SVG Annotations**: addition of SVG annotations which significantly guarantees crisp rendering of annotations on high resolution monitors
-
-
+![overView](../assets//../docs/assets/overview.png)
 
 ## About Cornerstone-3D
 

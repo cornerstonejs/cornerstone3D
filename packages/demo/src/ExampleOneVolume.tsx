@@ -112,7 +112,7 @@ class OneVolumeExample extends Component {
         element: this._elementNodes.get(0),
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
-          background: [1, 0, 1],
+          background: [0, 0, 0],
         },
       },
       {
@@ -121,7 +121,7 @@ class OneVolumeExample extends Component {
         element: this._elementNodes.get(1),
         defaultOptions: {
           orientation: ORIENTATION.SAGITTAL,
-          background: [1, 0, 1],
+          background: [0, 0, 0],
         },
       },
       {
@@ -130,7 +130,7 @@ class OneVolumeExample extends Component {
         element: this._elementNodes.get(2),
         defaultOptions: {
           orientation: ORIENTATION.CORONAL,
-          background: [1, 0, 1],
+          background: [0, 0, 0],
         },
       },
     ]
