@@ -37,9 +37,9 @@ module.exports = (env, argv) => {
       {
         '@cornerstonejs/core': {
           root: 'window',
-          commonjs: '@cornerstonejs/core',
-          commonjs2: '@cornerstonejs/core',
-          amd: '@cornerstonejs/core'
+          commonjs: 'cornerstone3D',
+          commonjs2: 'cornerstone3D',
+          amd: 'cornerstone3D'
         },
         '@cornerstonejs/streaming-image-volume-loader': {
           root: 'window',

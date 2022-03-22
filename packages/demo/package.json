@@ -1,13 +1,13 @@
 {
-  "name": "@precisionmetrics/cornerstone-demo",
+  "name": "@cornerstonejs/cornerstone3D-demo",
+  "private": true,
   "version": "1.0.0",
   "description": "",
   "main": "index.tsx",
   "scripts": {
     "preinstall": "node preinstall.js",
     "dev:demo": "webpack serve --config ./.webpack/webpack.dev.js",
-    "build:demo": "yarn run build",
-    "build": "cross-env NODE_ENV=production webpack --progress --config .webpack/webpack.prod.js",
+    "build:demo": "cross-env NODE_ENV=production webpack --progress --config .webpack/webpack.prod.js",
     "prepublishOnly": "yarn run build"
   },
   "author": "",
