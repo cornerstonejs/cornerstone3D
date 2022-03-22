@@ -2,9 +2,6 @@ import { utilities } from '@precisionmetrics/cornerstone-render'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
 import { Color } from '../../types/SegmentationStateTypes'
 import { ColorLUT } from '../../types/SegmentationStateTypes'
-import { checkColorLUTLength, generateNewColorLUT } from './helpers/colorLUT'
-
-const SEGMENTS_PER_SEGMENTATION = 65535 // Todo: max is bigger, but it seems cfun can go upto 255 anyway
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -15,22 +12,15 @@ const SEGMENTS_PER_SEGMENTATION = 65535 // Todo: max is bigger, but it seems cfu
  * @returns
  */
 function addColorLUT(colorLUT: ColorLUT, colorLUTIndex: number): void {
-  if (colorLUT) {
-    checkColorLUTLength(colorLUT, SEGMENTS_PER_SEGMENTATION)
-
-    if (colorLUT.length < SEGMENTS_PER_SEGMENTATION) {
-      colorLUT = [
-        ...colorLUT,
-        ...generateNewColorLUT(SEGMENTS_PER_SEGMENTATION - colorLUT.length),
-      ]
-    }
-  } else {
-    // Auto-generates colorLUT.
-    colorLUT = colorLUT || generateNewColorLUT(SEGMENTS_PER_SEGMENTATION)
+  if (!colorLUT) {
+    throw new Error('addColorLUT: colorLUT is required')
   }
 
   // Append the "zero" (no label) color to the front of the LUT, if necessary.
   if (!utilities.isEqual(colorLUT[0], [0, 0, 0, 0])) {
+    console.warn(
+      'addColorLUT: [0, 0, 0, 0] color is not provided for the background color (segmentIndex =0), automatically adding it'
+    )
     colorLUT.unshift([0, 0, 0, 0])
   }
 

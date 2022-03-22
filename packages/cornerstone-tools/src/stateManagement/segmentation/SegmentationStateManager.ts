@@ -1,8 +1,7 @@
 import cloneDeep from 'lodash.clonedeep'
-
 import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
 
-import { addColorLUT } from './segmentationColor'
+import CORNERSTONE_COLOR_LUT from './helpers/COLOR_LUT'
 
 import {
   SegmentationState,
@@ -464,7 +463,7 @@ export default class SegmentationStateManager {
       this.state.colorLutTables.length === 0 ||
       !this.state.colorLutTables[0]
     ) {
-      addColorLUT(null, 0)
+      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLUT, 0)
     }
   }
 }

@@ -240,11 +240,11 @@ describe('Segmentation Controller --', () => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
 
-        // compareImages(
-        //   image1,
-        //   volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig,
-        //   'volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig'
-        // ).then(done, done.fail)
+        compareImages(
+          image1,
+          volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig,
+          'volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig'
+        ).then(done, done.fail)
       }
 
       eventTarget.addEventListener(
