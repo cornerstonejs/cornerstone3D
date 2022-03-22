@@ -10,7 +10,7 @@ import {
   SphereScissorsTool,
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
-} from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/tools'
 
 const renderingEngineUID = 'PETCTRenderingEngine'
 const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME'

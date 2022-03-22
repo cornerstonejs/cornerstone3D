@@ -7,13 +7,13 @@ import {
   CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   synchronizers,
   Enums as csToolsEnums,
   WindowLevelTool,
-} from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -26,9 +26,9 @@ import {
   ANNOTATION_TOOLS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@precisionmetrics/cornerstone-render'
+import * as cs from '@cornerstonejs/core'
 
-import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
 
 const VOLUME = 'volume'

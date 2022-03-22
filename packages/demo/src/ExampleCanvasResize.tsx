@@ -5,7 +5,7 @@ import {
   Enums,
   CONSTANTS,
   init as csRenderInit,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS

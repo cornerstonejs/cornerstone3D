@@ -155,9 +155,9 @@ module.exports = {
         projectRoot: path.join(__dirname, '../../'),
         packages: [
           ...[
-            'cornerstone-render',
-            'cornerstone-tools',
-            'cornerstone-image-loader-streaming-volume',
+            'core',
+            'tools',
+            'streaming-image-volume-loader',
           ].map((pkg) => `packages/${pkg}`),
         ],
         minimal: false,

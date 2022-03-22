@@ -3,7 +3,7 @@ import {
   cache,
   setVolumesForViewports,
   CONSTANTS,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
 import {
   setCTWWWC,

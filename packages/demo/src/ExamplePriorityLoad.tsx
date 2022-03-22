@@ -5,9 +5,9 @@ import {
   volumeLoader,
   init as csRenderInit,
   imageLoadPoolManager,
-} from '@precisionmetrics/cornerstone-render'
-import { synchronizers } from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/core'
+import { synchronizers } from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 import _ from 'lodash'
 import getInterleavedFrames from './helpers/getInterleavedFrames'

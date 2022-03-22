@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 // ~~
-import * as cs from '@precisionmetrics/cornerstone-render'
+import * as cs from '@cornerstonejs/core'
 import {
   RenderingEngine,
   Enums,
@@ -9,9 +9,9 @@ import {
   init as csRenderInit,
   setVolumesForViewports,
   CONSTANTS,
-} from '@precisionmetrics/cornerstone-render'
-import { Enums as csToolsEnums } from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/core'
+import { Enums as csToolsEnums } from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 import { registerWebImageLoader } from './helpers/registerWebImageLoader'
 import config from './config/default'

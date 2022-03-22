@@ -6,8 +6,8 @@ import {
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
-} from '@precisionmetrics/cornerstone-render'
-import * as cs from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
+import * as cs from '@cornerstonejs/core'
 import {
   Enums as csToolsEnums,
   WindowLevelTool,
@@ -15,10 +15,10 @@ import {
   CrosshairsTool,
   ZoomTool,
   StackScrollTool,
-} from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { registerWebImageLoader } from '@precisionmetrics/cornerstone-image-loader-streaming-volume'
+import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 import config from './config/default'
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'

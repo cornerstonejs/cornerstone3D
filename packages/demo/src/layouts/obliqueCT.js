@@ -1,5 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import { Enums, CONSTANTS } from '@precisionmetrics/cornerstone-render'
+import { Enums, CONSTANTS } from '@cornerstonejs/core'
 import {
   setCTWWWC,
   setCTVRTransferFunction,

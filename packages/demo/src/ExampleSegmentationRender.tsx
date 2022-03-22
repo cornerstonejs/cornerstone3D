@@ -8,7 +8,7 @@ import {
   volumeLoader,
   init as cs3dInit,
   eventTarget,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   // Segmentation
   synchronizers,
@@ -20,8 +20,8 @@ import {
   PanTool,
   ZoomTool,
   RectangleRoiTool,
-} from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'

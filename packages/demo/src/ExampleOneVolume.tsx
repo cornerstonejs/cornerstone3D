@@ -7,15 +7,15 @@ import {
   CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
-} from '@precisionmetrics/cornerstone-render'
+} from '@cornerstonejs/core'
 import {
   Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   ZoomTool,
   StackScrollTool,
-} from '@precisionmetrics/cornerstone-tools'
-import * as csTools3d from '@precisionmetrics/cornerstone-tools'
+} from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools'
 
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
 

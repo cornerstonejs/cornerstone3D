@@ -1,5 +1,5 @@
 import dcmjs from 'dcmjs'
-import { utilities as csUtils } from '@precisionmetrics/cornerstone-render'
+import { utilities as csUtils } from '@cornerstonejs/core'
 const metadataHeadersPerImageId = {}
 const INSTANCE = 'instance'
 

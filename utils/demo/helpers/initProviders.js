@@ -1,4 +1,4 @@
-import * as cornerstone from '@precisionmetrics/cornerstone-render'
+import * as cornerstone from '@cornerstonejs/core'
 import WADORSHeaderProvider from './WADORSHeaderProvider'
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
 

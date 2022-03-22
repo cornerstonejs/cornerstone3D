@@ -1,7 +1,7 @@
 import initProviders from './initProviders'
 import initCornerstoneWADOImageLoader from './initCornerstoneWADOImageLoader'
-import { init as csRenderInit } from '@precisionmetrics/cornerstone-render'
-import { init as csToolsInit } from '@precisionmetrics/cornerstone-tools'
+import { init as csRenderInit } from '@cornerstonejs/core'
+import { init as csToolsInit } from '@cornerstonejs/tools'
 
 export default async function initDemo() {
   initProviders()

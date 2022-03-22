@@ -55,15 +55,15 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@precisionmetrics/cornerstone-render': '${csRenderBasePath.replace(
+      '@cornerstonejs/core': '${csRenderBasePath.replace(
         /\\/g,
         '\\\\'
       )}',
-      '@precisionmetrics/cornerstone-tools': '${csToolsBasePath.replace(
+      '@cornerstonejs/tools': '${csToolsBasePath.replace(
         /\\/g,
         '\\\\'
       )}',
-      '@precisionmetrics/cornerstone-image-loader-streaming-volume': '${csStreamingBasePath.replace(
+      '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
         /\\/g,
         '\\\\'
       )}',
