@@ -11,7 +11,7 @@ import {
 } from '@cornerstonejs/core'
 
 import type { Types } from '@cornerstonejs/core'
-//import { scaleArray } from './helpers'
+import { scaleArray, autoLoad } from './helpers'
 
 const requestType = Enums.RequestType.Prefetch
 const { getMinMax } = cornerstoneUtils
@@ -241,7 +241,7 @@ export default class StreamingImageVolume extends ImageVolume {
         ) {
           reRenderTarget += reRenderFraction
 
-          //autoLoad(volumeUID)
+          autoLoad(volumeUID)
         }
       }
 
@@ -517,8 +517,7 @@ export default class StreamingImageVolume extends ImageVolume {
 
     // copy so that it doesn't get modified
     const pixelDataCopy = image.getPixelData().slice(0)
-    //const scaledArray = scaleArray(pixelDataCopy, scalingParameters)
-    const scaledArray = pixelDataCopy
+    const scaledArray = scaleArray(pixelDataCopy, scalingParameters)
     return scaledArray
   }
 
