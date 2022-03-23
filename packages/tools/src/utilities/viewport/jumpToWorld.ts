@@ -11,7 +11,7 @@ import { vec3 } from 'gl-matrix'
  * @returns True if successful
  */
 export default function jumpToWorld(
-  viewport: VolumeViewport,
+  viewport: Types.IVolumeViewport,
   jumpWorld: Types.Point3
 ): true | undefined {
   // if not instance of volumeViewport, return

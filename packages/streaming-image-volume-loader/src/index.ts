@@ -1,9 +1,9 @@
-import cornerstoneStreamingImageVolumeLoader from './cornerstoneStreamingImageVolumeLoader'
+//import cornerstoneStreamingImageVolumeLoader from './cornerstoneStreamingImageVolumeLoader'
 import sharedArrayBufferImageLoader from './sharedArrayBufferImageLoader'
 import StreamingImageVolume from './StreamingImageVolume'
 
 export {
-  cornerstoneStreamingImageVolumeLoader,
+  //cornerstoneStreamingImageVolumeLoader,
   sharedArrayBufferImageLoader,
   StreamingImageVolume,
 }

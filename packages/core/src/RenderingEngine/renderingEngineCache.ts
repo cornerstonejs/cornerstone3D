@@ -1,4 +1,4 @@
-import RenderingEngine from './RenderingEngine'
+import type { IRenderingEngine } from './RenderingEngine'
 
 const cache = {}
 
@@ -9,7 +9,7 @@ const renderingEngineCache = {
    * @param uid - The `uid` of the `RenderingEngine` instance to fetch.
    * @returns The `RenderingEngine` instance.
    */
-  get: (uid: string): RenderingEngine => {
+  get: (uid: string): IRenderingEngine => {
     return cache[uid]
   },
   /**
@@ -17,7 +17,7 @@ const renderingEngineCache = {
    *
    * @param re - The `RenderingEngine` to add.
    */
-  set: (re: RenderingEngine): void => {
+  set: (re: IRenderingEngine): void => {
     const uid = re.uid
 
     cache[uid] = re
@@ -32,7 +32,7 @@ const renderingEngineCache = {
     return delete cache[uid]
   },
 
-  getAll: (): Array<RenderingEngine> => {
+  getAll: (): Array<IRenderingEngine> => {
     const uids = Object.keys(cache)
     const renderingEngines = uids.map((uid) => cache[uid])
 

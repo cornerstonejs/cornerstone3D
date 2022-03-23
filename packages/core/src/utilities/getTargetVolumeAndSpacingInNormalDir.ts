@@ -1,6 +1,6 @@
 import cache from '../cache/cache'
-import type { VolumeViewport } from '../RenderingEngine'
-import { ICamera, IImageVolume } from '../types'
+// import type { VolumeViewport } from '../RenderingEngine'
+import { ICamera, IImageVolume, IVolumeViewport } from '../types'
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 
 /**
@@ -19,7 +19,7 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection'
  *
  */
 export default function getTargetVolumeAndSpacingInNormalDir(
-  viewport: VolumeViewport,
+  viewport: IVolumeViewport,
   camera: ICamera,
   targetVolumeUID?: string
 ): {

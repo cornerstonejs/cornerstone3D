@@ -4,16 +4,1091 @@
 
 ```ts
 
-import { ImageVolume } from '@cornerstonejs/core';
-import { Types } from '@cornerstonejs/core';
+import type { mat4 } from 'gl-matrix';
+import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData';
+import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
 
-// Warning: (ae-forgotten-export) The symbol "IVolumeLoader" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "cornerstoneStreamingImageVolumeLoader" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+// Warning: (ae-missing-release-tag) "ActorEntry" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ActorEntry = {
+    uid: string
+    volumeActor: VolumeActor
+    slabThickness?: number
+}
+
+// Warning: (ae-missing-release-tag) "CameraModifiedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>
+
+// Warning: (ae-missing-release-tag) "CameraModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type CameraModifiedEventDetail = {
+    previousCamera: ICamera
+    camera: ICamera
+    element: HTMLElement
+    viewportUID: string
+    renderingEngineUID: string
+}
+
+// Warning: (ae-missing-release-tag) "CPUFallbackColormap" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function cornerstoneStreamingImageVolumeLoader(volumeId: string, options: {
-    imageIds: Array<string>;
-}): IVolumeLoader;
+interface CPUFallbackColormap {
+    // (undocumented)
+    addColor: (rgba: Point4) => void
+    // (undocumented)
+    buildLookupTable: (lut: CPUFallbackLookupTable) => void
+    // (undocumented)
+    clearColors: () => void
+    // (undocumented)
+    createLookupTable: () => CPUFallbackLookupTable
+    // (undocumented)
+    getColor: (index: number) => Point4
+    // (undocumented)
+    getColorRepeating: (index: number) => Point4
+    // (undocumented)
+    getColorSchemeName: () => string
+    getId: () => string
+    // (undocumented)
+    getNumberOfColors: () => number
+    // (undocumented)
+    insertColor: (index: number, rgba: Point4) => void
+    // (undocumented)
+    isValidIndex: (index: number) => boolean
+    // (undocumented)
+    removeColor: (index: number) => void
+    // (undocumented)
+    setColor: (index: number, rgba: Point4) => void
+    // (undocumented)
+    setColorSchemeName: (name: string) => void
+    // (undocumented)
+    setNumberOfColors: (numColors: number) => void
+}
+
+// Warning: (ae-missing-release-tag) "CPUFallbackColormapData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUFallbackColormapData = {
+    name: string;
+    numOfColors?: number;
+    colors?: Point4[];
+    segmentedData?: unknown;
+    numColors?: number;
+    gamma?: number;
+};
+
+// Warning: (ae-missing-release-tag) "CPUFallbackColormapsData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUFallbackColormapsData = {
+    [key: string]: CPUFallbackColormapData;
+};
+
+// Warning: (ae-missing-release-tag) "CPUFallbackEnabledElement" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface CPUFallbackEnabledElement {
+    // (undocumented)
+    canvas?: HTMLCanvasElement
+    // (undocumented)
+    colormap?: CPUFallbackColormap
+    // (undocumented)
+    image?: IImage
+    // (undocumented)
+    invalid?: boolean
+    // (undocumented)
+    metadata?: {
+        direction?: Float32Array
+        dimensions?: Point3
+        spacing?: Point3
+        origin?: Point3
+        imagePlaneModule?: {
+            frameOfReferenceUID: string
+            rows: number
+            columns: number
+            imageOrientationPatient: number[]
+            rowCosines: Point3
+            columnCosines: Point3
+            imagePositionPatient: number[]
+            sliceThickness?: number
+            sliceLocation?: number
+            pixelSpacing: Point2
+            rowPixelSpacing: number
+            columnPixelSpacing: number
+        }
+        imagePixelModule?: {
+            samplesPerPixel: number
+            photometricInterpretation: string
+            rows: number
+            columns: number
+            bitsAllocated: number
+            bitsStored: number
+            highBit: number
+            pixelRepresentation: number
+            planarConfiguration?: number
+            pixelAspectRatio?: number
+            smallestPixelValue?: number
+            largestPixelValue?: number
+            redPaletteColorLookupTableDescriptor?: number[]
+            greenPaletteColorLookupTableDescriptor?: number[]
+            bluePaletteColorLookupTableDescriptor?: number[]
+            redPaletteColorLookupTableData: number[]
+            greenPaletteColorLookupTableData: number[]
+            bluePaletteColorLookupTableData: number[]
+        }
+    }
+    // (undocumented)
+    needsRedraw?: boolean
+    // (undocumented)
+    options?: {
+        [key: string]: unknown
+        colormap?: CPUFallbackColormap
+    }
+    // (undocumented)
+    pan?: Point2
+    // (undocumented)
+    renderingTools?: CPUFallbackRenderingTools
+    // (undocumented)
+    rotation?: number
+    // (undocumented)
+    scale?: number
+    // (undocumented)
+    transform?: CPUFallbackTransform
+    // (undocumented)
+    viewport?: CPUFallbackViewport
+    // (undocumented)
+    zoom?: number
+}
+
+// Warning: (ae-missing-release-tag) "CPUFallbackLookupTable" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface CPUFallbackLookupTable {
+    // (undocumented)
+    build: (force: boolean) => void;
+    // (undocumented)
+    getColor: (scalar: number) => Point4;
+    // (undocumented)
+    setAlphaRange: (start: number, end: number) => void;
+    // (undocumented)
+    setHueRange: (start: number, end: number) => void;
+    // (undocumented)
+    setNumberOfTableValues: (number: number) => void;
+    // (undocumented)
+    setRamp: (ramp: string) => void;
+    // (undocumented)
+    setRange: (start: number, end: number) => void;
+    // (undocumented)
+    setSaturationRange: (start: number, end: number) => void;
+    // (undocumented)
+    setTableRange: (start: number, end: number) => void;
+    // (undocumented)
+    setTableValue(index: number, rgba: Point4);
+    // (undocumented)
+    setValueRange: (start: number, end: number) => void;
+}
+
+// Warning: (ae-missing-release-tag) "CPUFallbackLUT" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUFallbackLUT = {
+    lut: number[];
+};
+
+// Warning: (ae-missing-release-tag) "CPUFallbackRenderingTools" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUFallbackRenderingTools = {
+    renderCanvas?: HTMLCanvasElement;
+    lastRenderedIsColor?: boolean;
+    lastRenderedImageId?: string;
+    lastRenderedViewport?: {
+        windowWidth: number | number[];
+        windowCenter: number | number[];
+        invert: boolean;
+        rotation: number;
+        hflip: boolean;
+        vflip: boolean;
+        modalityLUT: CPUFallbackLUT;
+        voiLUT: CPUFallbackLUT;
+        colormap: unknown;
+    };
+    renderCanvasContext?: {
+        putImageData: (
+        renderCanvasData: unknown,
+        dx: number,
+        dy: number
+        ) => unknown;
+    };
+    colormapId?: string;
+    colorLut?: CPUFallbackLookupTable;
+    renderCanvasData?: {
+        data: Uint8ClampedArray;
+    };
+};
+
+// Warning: (ae-missing-release-tag) "CPUFallbackTransform" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface CPUFallbackTransform {
+    // (undocumented)
+    clone: () => CPUFallbackTransform;
+    // (undocumented)
+    getMatrix: () => TransformMatrix2D;
+    // (undocumented)
+    invert: () => void;
+    // (undocumented)
+    multiply: (matrix: TransformMatrix2D) => void;
+    // (undocumented)
+    reset: () => void;
+    // (undocumented)
+    rotate: (rad: number) => void;
+    // (undocumented)
+    scale: (sx: number, sy: number) => void;
+    // (undocumented)
+    transformPoint: (point: Point2) => Point2;
+    // (undocumented)
+    translate: (x: number, y: number) => void;
+}
+
+// Warning: (ae-missing-release-tag) "CPUFallbackViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUFallbackViewport = {
+    scale?: number;
+    translation?: {
+        x: number;
+        y: number;
+    };
+    voi?: {
+        windowWidth: number;
+        windowCenter: number;
+    };
+    invert?: boolean;
+    pixelReplication?: boolean;
+    rotation?: number;
+    hflip?: boolean;
+    vflip?: boolean;
+    modalityLUT?: CPUFallbackLUT;
+    voiLUT?: CPUFallbackLUT;
+    colormap?: CPUFallbackColormap;
+    displayedArea?: CPUFallbackViewportDisplayedArea;
+    modality?: string;
+};
+
+// Warning: (ae-missing-release-tag) "CPUFallbackViewportDisplayedArea" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUFallbackViewportDisplayedArea = {
+    tlhc: {
+        x: number;
+        y: number;
+    };
+    brhc: {
+        x: number;
+        y: number;
+    };
+    rowPixelSpacing: number;
+    columnPixelSpacing: number;
+    presentationSizeMode: string;
+};
+
+// Warning: (ae-missing-release-tag) "CPUIImageData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUIImageData = {
+    dimensions: Point3
+    direction: Float32Array
+    spacing: Point3
+    origin: Point3
+    imageData: CPUImageData
+    metadata: { Modality: string }
+    scalarData: number[]
+    scaling: Scaling
+}
+
+// Warning: (ae-missing-release-tag) "CPUImageData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type CPUImageData = {
+    worldToIndex?: (point: Point3) => Point3
+    indexToWorld?: (point: Point3) => Point3
+    getWorldToIndex?: () => Point3
+    getIndexToWorld?: () => Point3
+    getSpacing?: () => Point3
+    getDirection?: () => Float32Array
+    getScalarData?: () => number[]
+    getDimensions?: () => Point3
+}
+
+// Warning: (ae-missing-release-tag) "CustomEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface CustomEvent_2<T = any> extends Event {
+    readonly detail: T
+    // (undocumented)
+    initCustomEvent(
+    typeArg: string,
+    canBubbleArg: boolean,
+    cancelableArg: boolean,
+    detailArg: T
+    ): void
+}
+
+// Warning: (ae-missing-release-tag) "ElementDisabledEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>
+
+// Warning: (ae-missing-release-tag) "ElementDisabledEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ElementDisabledEventDetail = {
+    element: HTMLElement
+    viewportUID: string
+    renderingEngineUID: string
+}
+
+// Warning: (ae-missing-release-tag) "ElementEnabledEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>
+
+// Warning: (ae-missing-release-tag) "ElementEnabledEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ElementEnabledEventDetail = {
+    element: HTMLElement
+    viewportUID: string
+    renderingEngineUID: string
+}
+
+declare namespace EventTypes {
+    export {
+        CameraModifiedEventDetail,
+        CameraModifiedEvent,
+        VoiModifiedEvent,
+        VoiModifiedEventDetail,
+        ElementDisabledEvent,
+        ElementDisabledEventDetail,
+        ElementEnabledEvent,
+        ElementEnabledEventDetail,
+        ImageRenderedEventDetail,
+        ImageRenderedEvent,
+        ImageVolumeModifiedEvent,
+        ImageVolumeModifiedEventDetail,
+        ImageLoadedEvent,
+        ImageLoadedEventDetail,
+        ImageLoadedFailedEventDetail,
+        ImageLoadedFailedEvent,
+        VolumeLoadedEvent,
+        VolumeLoadedEventDetail,
+        VolumeLoadedFailedEvent,
+        VolumeLoadedFailedEventDetail,
+        ImageCacheImageAddedEvent,
+        ImageCacheImageAddedEventDetail,
+        ImageCacheImageRemovedEvent,
+        ImageCacheImageRemovedEventDetail,
+        VolumeCacheVolumeAddedEvent,
+        VolumeCacheVolumeAddedEventDetail,
+        VolumeCacheVolumeRemovedEvent,
+        VolumeCacheVolumeRemovedEventDetail,
+        StackNewImageEvent,
+        StackNewImageEventDetail,
+        ImageSpacingCalibratedEvent,
+        ImageSpacingCalibratedEventDetail,
+        ImageLoadProgressEvent,
+        ImageLoadProgressEventDetail
+    }
+}
+
+// Warning: (ae-missing-release-tag) "FlipDirection" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type FlipDirection = {
+    flipHorizontal?: boolean
+    flipVertical?: boolean
+}
+
+// Warning: (ae-missing-release-tag) "ICache" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface ICache {
+    getCacheSize: () => number
+    getImageLoadObject: (imageId: string) => IImageLoadObject | void
+    getMaxCacheSize: () => number
+    getVolumeLoadObject: (volumeId: string) => IVolumeLoadObject | void
+    purgeCache: () => void
+    putImageLoadObject: (
+    imageId: string,
+    imageLoadObject: IImageLoadObject
+    ) => Promise<any>
+    putVolumeLoadObject: (
+    volumeId: string,
+    volumeLoadObject: IVolumeLoadObject
+    ) => Promise<any>
+    setMaxCacheSize: (maxCacheSize: number) => void
+}
+
+// Warning: (ae-missing-release-tag) "ICachedImage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface ICachedImage {
+    // (undocumented)
+    image?: IImage
+    // (undocumented)
+    imageId: string
+    // (undocumented)
+    imageLoadObject: IImageLoadObject
+    // (undocumented)
+    loaded: boolean
+    // (undocumented)
+    sharedCacheKey?: string
+    // (undocumented)
+    sizeInBytes: number
+    // (undocumented)
+    timeStamp: number
+}
+
+// Warning: (ae-missing-release-tag) "ICachedVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface ICachedVolume {
+    // (undocumented)
+    loaded: boolean
+    // (undocumented)
+    sizeInBytes: number
+    // (undocumented)
+    timeStamp: number
+    // (undocumented)
+    volume?: IImageVolume
+    // (undocumented)
+    volumeId: string
+    // (undocumented)
+    volumeLoadObject: IVolumeLoadObject
+}
+
+// Warning: (ae-missing-release-tag) "ICamera" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface ICamera {
+    clippingRange?: Point2
+    focalPoint?: Point3
+    parallelProjection?: boolean
+    parallelScale?: number
+    position?: Point3
+    slabThickness?: number
+    viewAngle?: number
+    viewPlaneNormal?: Point3
+    viewUp?: Point3
+}
+
+// Warning: (ae-missing-release-tag) "IEnabledElement" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IEnabledElement {
+    FrameOfReferenceUID: string
+    renderingEngine: IRenderingEngine
+    renderingEngineUID: string
+    viewport: IStackViewport | IVolumeViewport
+    viewportUID: string
+}
+
+// Warning: (ae-missing-release-tag) "IImage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IImage {
+    cachedLut?: {
+        windowWidth?: number | number[]
+        windowCenter?: number | number[]
+        invert?: boolean
+        lutArray?: Uint8ClampedArray
+        modalityLUT?: unknown
+        voiLUT?: CPUFallbackLUT
+    }
+    color: boolean
+    colormap?: CPUFallbackColormap
+    columnPixelSpacing: number
+    columns: number
+    // (undocumented)
+    getCanvas: () => HTMLCanvasElement
+    getPixelData: () => Array<number>
+    height: number
+    imageId: string
+    intercept: number
+    invert: boolean
+    // (undocumented)
+    maxPixelValue: number
+    minPixelValue: number
+    modalityLUT?: CPUFallbackLUT
+    numComps: number
+    render?: (
+    enabledElement: CPUFallbackEnabledElement,
+    invalidated: boolean
+    ) => unknown
+    rgba: boolean
+    rowPixelSpacing: number
+    rows: number
+    scaling?: {
+        PET?: {
+            // @TODO: Do these values exist?
+            SUVlbmFactor?: number
+            SUVbsaFactor?: number
+            // accessed in ProbeTool
+            suvbwToSuvlbm?: number
+            suvbwToSuvbsa?: number
+        }
+    }
+    // (undocumented)
+    sharedCacheKey?: string
+    sizeInBytes: number
+    sliceThickness?: number
+    slope: number
+    stats?: {
+        lastStoredPixelDataToCanvasImageDataTime?: number
+        lastGetPixelDataTime?: number
+        lastPutImageDataTime?: number
+        lastLutGenerateTime?: number
+        lastRenderedViewport?: unknown
+        lastRenderTime?: number
+    }
+    voiLUT?: CPUFallbackLUT
+    width: number
+    windowCenter: number[] | number
+    windowWidth: number[] | number
+}
+
+// Warning: (ae-missing-release-tag) "IImageData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IImageData {
+    dimensions: Point3
+    direction: Float32Array
+    imageData: vtkImageData
+    metadata: { Modality: string }
+    origin: Point3
+    scalarData: Float32Array
+    scaling?: Scaling
+    spacing: Point3
+}
+
+// Warning: (ae-missing-release-tag) "IImageLoadObject" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IImageLoadObject {
+    cancel?: () => void
+    decache?: () => void
+    promise: Promise<IImage>
+}
+
+// Warning: (ae-missing-release-tag) "IImageVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IImageVolume {
+    convertToCornerstoneImage?: (
+    imageId: string,
+    imageIdIndex: number
+    ) => IImageLoadObject
+    dimensions: Point3
+    direction: Float32Array
+    imageData?: vtkImageData
+    imageIds?: Array<string>
+    loadStatus?: Record<string, any>
+    metadata: Metadata
+    numVoxels: number
+    origin: Point3
+    referenceVolumeUID?: string
+    scalarData: any
+    scaling?: {
+        PET?: {
+            SUVlbmFactor?: number
+            SUVbsaFactor?: number
+            suvbwToSuvlbm?: number
+            suvbwToSuvbsa?: number
+        }
+    }
+    sizeInBytes?: number
+    spacing: Point3
+    readonly uid: string
+    vtkOpenGLTexture: any
+}
+
+// Warning: (ae-missing-release-tag) "ImageCacheImageAddedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageCacheImageAddedEvent =
+CustomEvent_2<ImageCacheImageAddedEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageCacheImageAddedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageCacheImageAddedEventDetail = {
+    image: ICachedImage
+}
+
+// Warning: (ae-missing-release-tag) "ImageCacheImageRemovedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageCacheImageRemovedEvent =
+CustomEvent_2<ImageCacheImageRemovedEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageCacheImageRemovedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageCacheImageRemovedEventDetail = {
+    imageId: string
+}
+
+// Warning: (ae-missing-release-tag) "ImageLoadedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageLoadedEvent = CustomEvent_2<ImageLoadedEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageLoadedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageLoadedEventDetail = {
+    image: IImage
+}
+
+// Warning: (ae-missing-release-tag) "ImageLoadedFailedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageLoadedFailedEvent = CustomEvent_2<ImageLoadedFailedEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageLoadedFailedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageLoadedFailedEventDetail = {
+    imageId: string
+    error: unknown
+}
+
+// Warning: (ae-missing-release-tag) "ImageLoaderFn" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageLoaderFn = (
+imageId: string,
+options?: Record<string, any>
+) => {
+    promise: Promise<Record<string, any>>
+    cancelFn?: () => void | undefined
+    decache?: () => void | undefined
+}
+
+// Warning: (ae-missing-release-tag) "ImageLoadProgressEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageLoadProgressEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageLoadProgressEventDetail = {
+    url: string
+    imageId: string
+    loaded: number
+    total: number
+    percent: number
+}
+
+// Warning: (ae-missing-release-tag) "ImageRenderedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageRenderedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageRenderedEventDetail = {
+    element: HTMLElement
+    viewportUID: string
+    renderingEngineUID: string
+    suppressEvents?: boolean
+}
+
+// Warning: (ae-missing-release-tag) "ImageSpacingCalibratedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageSpacingCalibratedEvent =
+CustomEvent_2<ImageSpacingCalibratedEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageSpacingCalibratedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageSpacingCalibratedEventDetail = {
+    element: HTMLElement
+    viewportUID: string
+    renderingEngineUID: string
+    imageId: string
+    rowScale: number
+    columnScale: number
+    imageData: vtkImageData
+    worldToIndex: mat4
+}
+
+// Warning: (ae-missing-release-tag) "ImageVolumeModifiedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageVolumeModifiedEvent = CustomEvent_2<ImageVolumeModifiedEventDetail>
+
+// Warning: (ae-missing-release-tag) "ImageVolumeModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ImageVolumeModifiedEventDetail = {
+    imageVolume: IImageVolume
+    FrameOfReferenceUID: string
+}
+
+// Warning: (ae-missing-release-tag) "IRegisterImageLoader" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IRegisterImageLoader {
+    // (undocumented)
+    registerImageLoader: (scheme: string, imageLoader: ImageLoaderFn) => void
+}
+
+// Warning: (ae-missing-release-tag) "IRenderingEngine" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface IRenderingEngine {
+    // (undocumented)
+    _debugRender(): void
+    // (undocumented)
+    destroy(): void
+    // (undocumented)
+    disableElement(viewportUID: string): void
+    // (undocumented)
+    enableElement(viewportInputEntry: PublicViewportInput): void
+    // (undocumented)
+    fillCanvasWithBackgroundColor(
+    canvas: HTMLCanvasElement,
+    backgroundColor: [number, number, number]
+    ): void
+    // (undocumented)
+    getStackViewports(): Array<IStackViewport>
+    // (undocumented)
+    getViewport(uid: string): IStackViewport | IVolumeViewport
+    // (undocumented)
+    getViewports(): Array<IStackViewport | IVolumeViewport>
+    // (undocumented)
+    getVolumeViewports(): Array<IVolumeViewport>
+    // (undocumented)
+    hasBeenDestroyed: boolean
+    // (undocumented)
+    offScreenCanvasContainer: any
+    // (undocumented)
+    offscreenMultiRenderWindow: any
+    // (undocumented)
+    render(): void
+    // (undocumented)
+    renderFrameOfReference(FrameOfReferenceUID: string): void
+    // (undocumented)
+    renderViewport(viewportUID: string): void
+    // (undocumented)
+    renderViewports(viewportUIDs: Array<string>): void
+    // (undocumented)
+    resize(): void
+    // (undocumented)
+    setViewports(viewports: Array<PublicViewportInput>): void
+    // (undocumented)
+    uid: string
+}
+
+// Warning: (ae-missing-release-tag) "IStackViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IStackViewport extends IViewport {
+    calibrateSpacing(imageId: string): void
+    canvasToWorld: (canvasPos: Point2) => Point3
+    customRenderViewportToCanvas: () => {
+        canvas: HTMLCanvasElement
+        element: HTMLElement
+        viewportUID: string
+        renderingEngineUID: string
+    }
+    getCamera(): ICamera
+    getCurrentImageId: () => string
+    getCurrentImageIdIndex: () => number
+    getFrameOfReferenceUID: () => string
+    getImageData(): IImageData | CPUIImageData
+    getImageIds: () => string[]
+    getProperties: () => StackViewportProperties
+    getRenderer(): any
+    // (undocumented)
+    modality: string
+    resetCamera(resetPanZoomForViewPlane?: boolean): boolean
+    resetProperties(): void
+    resize: () => void
+    scaling: Scaling
+    setCamera(cameraInterface: ICamera): void
+    setColormap(colormap: CPUFallbackColormapData): void
+    setImageIdIndex(imageIdIndex: number): Promise<string>
+    setProperties({
+        voiRange,
+        invert,
+        interpolationType,
+        rotation,
+        flipHorizontal,
+        flipVertical,
+    }: StackViewportProperties): void
+    setStack(
+    imageIds: Array<string>,
+    currentImageIdIndex?: number
+    ): Promise<string>
+    unsetColormap(): void
+    worldToCanvas: (worldPos: Point3) => Point2
+}
+
+// Warning: (ae-forgotten-export) The symbol "ImageVolume" needs to be exported by the entry point index.d.ts
+// Warning: (ae-missing-release-tag) "IStreamingImageVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IStreamingImageVolume extends ImageVolume {
+    clearLoadCallbacks(): void
+    convertToCornerstoneImage(imageId: string, imageIdIndex: number): any
+    decache(completelyRemove: boolean): void
+}
+
+// Warning: (ae-missing-release-tag) "IStreamingVolumeProperties" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface IStreamingVolumeProperties {
+    imageIds: Array<string>
+    loadStatus: {
+        loaded: boolean
+        loading: boolean
+        cachedFrames: Array<boolean>
+        callbacks: Array<() => void>
+    }
+}
+
+// Warning: (ae-missing-release-tag) "IViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IViewport {
+    _actors: Map<string, any>
+    addActor(actorEntry: ActorEntry): void
+    addActors(actors: Array<ActorEntry>): void
+    canvas: HTMLCanvasElement
+    canvasToWorld: (canvasPos: Point2) => Point3
+    customRenderViewportToCanvas: () => unknown
+    defaultOptions: any
+    element: HTMLElement
+    getActor(actorUID: string): ActorEntry
+    getActors(): Array<ActorEntry>
+    getCamera(): ICamera
+    getCanvas(): HTMLCanvasElement
+    // (undocumented)
+    _getCorners(bounds: Array<number>): Array<number>[]
+    getFrameOfReferenceUID: () => string
+    getRenderer(): void
+    getRenderingEngine(): any
+    options: ViewportInputOptions
+    removeAllActors(): void
+    render(): void
+    renderingEngineUID: string
+    reset(immediate: boolean): void
+    setActors(actors: Array<ActorEntry>): void
+    setCamera(cameraInterface: ICamera): void
+    setOptions(options: ViewportInputOptions, immediate: boolean): void
+    sHeight: number
+    suppressEvents: boolean
+    sWidth: number
+    sx: number
+    sy: number
+    // Warning: (ae-forgotten-export) The symbol "ViewportType" needs to be exported by the entry point index.d.ts
+    type: ViewportType
+    uid: string
+    worldToCanvas: (worldPos: Point3) => Point2
+}
+
+// Warning: (ae-missing-release-tag) "IViewportUID" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IViewportUID {
+    // (undocumented)
+    renderingEngineUID: string
+    // (undocumented)
+    viewportUID: string
+}
+
+// Warning: (ae-missing-release-tag) "IVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IVolume {
+    dimensions: Point3
+    direction: Float32Array
+    imageData?: vtkImageData
+    metadata: Metadata
+    origin: Point3
+    referenceVolumeUID?: string
+    scalarData: Float32Array | Uint8Array
+    scaling?: {
+        PET?: {
+            // @TODO: Do these values exist?
+            SUVlbmFactor?: number
+            SUVbsaFactor?: number
+            // accessed in ProbeTool
+            suvbwToSuvlbm?: number
+            suvbwToSuvbsa?: number
+        }
+    }
+    sizeInBytes?: number
+    spacing: Point3
+    uid: string
+}
+
+// Warning: (ae-missing-release-tag) "IVolumeInput" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IVolumeInput {
+    // (undocumented)
+    actorUID?: string
+    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // can have different representations
+    blendMode?: string
+    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // can have different representations
+    callback?: VolumeInputCallback
+    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // can have different representations
+    slabThickness?: number
+    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // can have different representations
+    visibility?: boolean
+    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // can have different representations
+    volumeUID: string
+}
+
+// Warning: (ae-missing-release-tag) "IVolumeLoadObject" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IVolumeLoadObject {
+    cancel?: () => void
+    decache?: () => void
+    promise: Promise<ImageVolume>
+}
+
+// Warning: (ae-missing-release-tag) "IVolumeViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+interface IVolumeViewport extends IViewport {
+    addVolumes(
+    volumeInputArray: Array<IVolumeInput>,
+    immediate?: boolean
+    ): Promise<void>
+    canvasToWorld: (canvasPos: Point2) => Point3
+    flip(flipDirection: FlipDirection): void
+    getBounds(): any
+    getCurrentImageId: () => string
+    getCurrentImageIdIndex: () => number
+    // (undocumented)
+    getFrameOfReferenceUID: () => string
+    getImageData(): IImageData | undefined
+    getIntensityFromWorld(point: Point3): number
+    // (undocumented)
+    getProperties: () => any
+    getSlabThickness(): number
+    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void
+    resetCamera(resetPanZoomForViewPlane?: boolean): boolean
+    setSlabThickness(slabThickness: number): void
+    setVolumes(
+    volumeInputArray: Array<IVolumeInput>,
+    immediate?: boolean
+    ): Promise<void>
+    // (undocumented)
+    useCPURendering: boolean
+    worldToCanvas: (worldPos: Point3) => Point2
+}
+
+// Warning: (ae-missing-release-tag) "Metadata" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type Metadata = {
+    BitsAllocated: number
+    BitsStored: number
+    SamplesPerPixel: number
+    HighBit: number
+    PhotometricInterpretation: string
+    PixelRepresentation: number
+    Modality: string
+    ImageOrientationPatient: Array<number>
+    PixelSpacing: Array<number>
+    FrameOfReferenceUID: string
+    Columns: number
+    Rows: number
+    voiLut: Array<VOI>
+}
+
+// Warning: (ae-missing-release-tag) "Orientation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type Orientation = {
+    sliceNormal: Point3
+    viewUp: Point3
+}
+
+// Warning: (ae-missing-release-tag) "Plane" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type Plane = [number, number, number, number]
+
+// Warning: (ae-missing-release-tag) "Point2" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type Point2 = [number, number]
+
+// Warning: (ae-missing-release-tag) "Point3" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type Point3 = [number, number, number]
+
+// Warning: (ae-missing-release-tag) "Point4" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type Point4 = [number, number, number, number];
+
+// Warning: (ae-missing-release-tag) "PTScaling" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type PTScaling = {
+    suvbwToSuvlbm?: number
+    suvbwToSuvbsa?: number
+}
+
+// Warning: (ae-missing-release-tag) "PublicViewportInput" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type PublicViewportInput = {
+    element: HTMLElement
+    viewportUID: string
+    type: ViewportType
+    defaultOptions: ViewportInputOptions
+}
+
+// Warning: (ae-missing-release-tag) "Scaling" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type Scaling = {
+    PET?: PTScaling
+}
+
+// Warning: (ae-missing-release-tag) "ScalingParameters" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type ScalingParameters = {
+    rescaleSlope: number
+    rescaleIntercept: number
+    modality: string
+    suvbw?: number
+    suvlbm?: number
+    suvbsa?: number
+}
 
 // Warning: (ae-missing-release-tag) "sharedArrayBufferImageLoader" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -23,10 +1098,38 @@ export function sharedArrayBufferImageLoader(imageId: string, options?: Record<s
     cancelFn: () => void;
 };
 
+// Warning: (ae-missing-release-tag) "StackNewImageEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>
+
+// Warning: (ae-missing-release-tag) "StackNewImageEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type StackNewImageEventDetail = {
+    image: IImage
+    imageId: string
+    viewportUID: string
+    renderingEngineUID: string
+}
+
+// Warning: (ae-missing-release-tag) "StackViewportProperties" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type StackViewportProperties = {
+    voiRange?: VOIRange
+    invert?: boolean
+    interpolationType?: InterpolationType
+    rotation?: number
+    flipHorizontal?: boolean
+    flipVertical?: boolean
+}
+
 // Warning: (ae-missing-release-tag) "StreamingImageVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
 export class StreamingImageVolume extends ImageVolume {
+    // Warning: (ae-forgotten-export) The symbol "Types" needs to be exported by the entry point index.d.ts
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     cancelLoading(): void;
@@ -66,6 +1169,130 @@ export class StreamingImageVolume extends ImageVolume {
         callbacks: Array<(...args: unknown[]) => void>;
     };
 }
+
+// Warning: (ae-missing-release-tag) "TransformMatrix2D" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type TransformMatrix2D = [number, number, number, number, number, number]
+
+// Warning: (ae-missing-release-tag) "ViewportInputOptions" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type ViewportInputOptions = {
+    background?: [number, number, number]
+    orientation?: Orientation
+    suppressEvents?: boolean
+}
+
+// Warning: (ae-missing-release-tag) "VOI" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type VOI = {
+    windowWidth: number
+    windowCenter: number
+}
+
+// Warning: (ae-missing-release-tag) "VoiModifiedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>
+
+// Warning: (ae-missing-release-tag) "VoiModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VoiModifiedEventDetail = {
+    viewportUID: string
+    volumeUID: string
+    range: VOIRange
+}
+
+// Warning: (ae-missing-release-tag) "VOIRange" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+type VOIRange = {
+    upper: number
+    lower: number
+}
+
+// Warning: (ae-missing-release-tag) "VolumeActor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeActor = vtkVolume
+
+// Warning: (ae-missing-release-tag) "VolumeCacheVolumeAddedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeCacheVolumeAddedEvent =
+CustomEvent_2<VolumeCacheVolumeAddedEventDetail>
+
+// Warning: (ae-missing-release-tag) "VolumeCacheVolumeAddedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeCacheVolumeAddedEventDetail = {
+    volume: ICachedVolume
+}
+
+// Warning: (ae-missing-release-tag) "VolumeCacheVolumeRemovedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeCacheVolumeRemovedEvent =
+CustomEvent_2<VolumeCacheVolumeRemovedEventDetail>
+
+// Warning: (ae-missing-release-tag) "VolumeCacheVolumeRemovedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeCacheVolumeRemovedEventDetail = {
+    volumeId: string
+}
+
+// Warning: (ae-missing-release-tag) "VolumeInputCallback" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeInputCallback = (params: {
+    volumeActor: VolumeActor
+    volumeUID: string
+}) => unknown
+
+// Warning: (ae-missing-release-tag) "VolumeLoadedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeLoadedEvent = CustomEvent_2<VolumeLoadedEventDetail>
+
+// Warning: (ae-missing-release-tag) "VolumeLoadedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeLoadedEventDetail = {
+    volume: IImageVolume
+}
+
+// Warning: (ae-missing-release-tag) "VolumeLoadedFailedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeLoadedFailedEvent = CustomEvent_2<VolumeLoadedFailedEventDetail>
+
+// Warning: (ae-missing-release-tag) "VolumeLoadedFailedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeLoadedFailedEventDetail = {
+    volumeId: string
+    error: unknown
+}
+
+// Warning: (ae-missing-release-tag) "VolumeLoaderFn" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+type VolumeLoaderFn = (
+volumeId: string,
+options?: Record<string, any>
+) => {
+    promise: Promise<Record<string, any>>
+    cancelFn?: () => void | undefined
+    decache?: () => void | undefined
+}
+
+// Warnings were encountered during analysis:
+//
+// /Users/erikziegler/Projects/MGH/cornerstone3d-FORPUBLIC/packages/core/src/types/StackViewportProperties.ts:13:3 - (ae-forgotten-export) The symbol "InterpolationType" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

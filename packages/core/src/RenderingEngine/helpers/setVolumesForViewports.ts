@@ -1,5 +1,9 @@
-import { RenderingEngine, VolumeViewport } from '../'
-import { IVolumeInput } from '../../types'
+import { VolumeViewport } from '../'
+import type {
+  IVolumeInput,
+  IRenderingEngine,
+  IVolumeViewport,
+} from '../../types'
 
 /**
  * Similar to {@link addVolumesToViewports} it adds volumes to viewports; however,
@@ -14,7 +18,7 @@ import { IVolumeInput } from '../../types'
  * @returns A promise that resolves when all volumes have been added
  */
 async function setVolumesForViewports(
-  renderingEngine: RenderingEngine,
+  renderingEngine: IRenderingEngine,
   volumeInputs: Array<IVolumeInput>,
   viewportUIDs: Array<string>,
   immediateRender = false
@@ -34,7 +38,7 @@ async function setVolumesForViewports(
   })
 
   const setVolumePromises = viewportUIDs.map(async (viewportUID) => {
-    const viewport = renderingEngine.getViewport(viewportUID) as VolumeViewport
+    const viewport = renderingEngine.getViewport(viewportUID) as IVolumeViewport
 
     await viewport.setVolumes(volumeInputs, immediateRender)
   })

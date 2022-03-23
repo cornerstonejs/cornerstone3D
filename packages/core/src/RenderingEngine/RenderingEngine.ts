@@ -4,21 +4,21 @@ import eventTarget from '../eventTarget'
 import { triggerEvent, uuidv4 } from '../utilities'
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses'
 import ViewportType from '../enums/ViewportType'
-import {
-  PublicViewportInput,
-  EventTypes,
-  IStackViewport,
-  IVolumeViewport,
-} from '../types'
-import { ViewportInput } from '../types/IViewport'
-import { InternalViewportInput } from '../types/IViewport'
 import VolumeViewport from './VolumeViewport'
 import StackViewport from './StackViewport'
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline'
 import getOrCreateCanvas from './helpers/getOrCreateCanvas'
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init'
+import type IStackViewport from '../types/IStackViewport'
+import type IVolumeViewport from '../types/IVolumeViewport'
+import type * as EventTypes from '../types/EventTypes'
+import type {
+  ViewportInput,
+  PublicViewportInput,
+  InternalViewportInput,
+} from '../types/IViewport'
 
-interface IRenderingEngine {
+export interface IRenderingEngine {
   uid: string
   hasBeenDestroyed: boolean
   offscreenMultiRenderWindow: any
@@ -31,6 +31,14 @@ interface IRenderingEngine {
   renderViewports(viewportUIDs: Array<string>): void
   renderViewport(viewportUID: string): void
   renderFrameOfReference(FrameOfReferenceUID: string): void
+  fillCanvasWithBackgroundColor(
+    canvas: HTMLCanvasElement,
+    backgroundColor: [number, number, number]
+  ): void
+  enableElement(viewportInputEntry: PublicViewportInput): void
+  disableElement(viewportUID: string): void
+  getStackViewports(): Array<IStackViewport>
+  getVolumeViewports(): Array<IVolumeViewport>
   destroy(): void
   _debugRender(): void
 }
@@ -363,7 +371,7 @@ class RenderingEngine implements IRenderingEngine {
    * Filters all the available viewports and return the stack viewports
    * @returns stack viewports registered on the rendering Engine
    */
-  public getStackViewports(): Array<StackViewport> {
+  public getStackViewports(): Array<IStackViewport> {
     this._throwIfDestroyed()
 
     const viewports = this.getViewports()
@@ -381,7 +389,7 @@ class RenderingEngine implements IRenderingEngine {
    * Return all the viewports that are volume viewports
    * @returns An array of VolumeViewport objects.
    */
-  public getVolumeViewports(): Array<VolumeViewport> {
+  public getVolumeViewports(): Array<IVolumeViewport> {
     this._throwIfDestroyed()
 
     const viewports = this.getViewports()

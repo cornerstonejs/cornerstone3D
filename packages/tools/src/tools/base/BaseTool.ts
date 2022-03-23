@@ -1,10 +1,5 @@
-import {
-  StackViewport,
-  Types,
-  VolumeViewport,
-  cache,
-} from '@cornerstonejs/core'
-import type { RenderingEngine } from '@cornerstonejs/core'
+import { StackViewport, VolumeViewport, cache } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 import deepMerge from '../../utilities/deepMerge'
 import { ToolModes } from '../../enums'
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
@@ -150,7 +145,7 @@ abstract class BaseTool implements IBaseTool {
    */
   protected getTargetUIDViewportAndImage(
     targetUID: string,
-    renderingEngine: RenderingEngine
+    renderingEngine: Types.IRenderingEngine
   ): {
     viewport: Types.IViewport
     image: Types.IImageData

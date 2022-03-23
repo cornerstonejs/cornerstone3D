@@ -23,7 +23,7 @@ type ActorEntry = {
 // Warning: (ae-missing-release-tag) "addVolumesToViewports" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function addVolumesToViewports(renderingEngine: RenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
+export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // Warning: (ae-forgotten-export) The symbol "Cache" needs to be exported by the entry point index.d.ts
 // Warning: (ae-missing-release-tag) "cache" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -671,12 +671,12 @@ export function getOrCreateCanvas(element: HTMLElement): HTMLCanvasElement;
 // Warning: (ae-missing-release-tag) "getRenderingEngine" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function getRenderingEngine(uid: string): RenderingEngine | undefined;
+export function getRenderingEngine(uid: string): IRenderingEngine | undefined;
 
 // Warning: (ae-missing-release-tag) "getRenderingEngines" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function getRenderingEngines(): RenderingEngine[] | undefined;
+export function getRenderingEngines(): IRenderingEngine[] | undefined;
 
 // Warning: (ae-missing-release-tag) "getRuntimeId" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -696,7 +696,7 @@ function getSpacingInNormalDirection(imageVolume: IImageVolume, viewPlaneNormal:
 // Warning: (ae-missing-release-tag) "getTargetVolumeAndSpacingInNormalDir" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-function getTargetVolumeAndSpacingInNormalDir(viewport: VolumeViewport, camera: ICamera, targetVolumeUID?: string): {
+function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeUID?: string): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
 };
@@ -807,7 +807,7 @@ interface IEnabledElement {
     // (undocumented)
     FrameOfReferenceUID: string;
     // (undocumented)
-    renderingEngine: RenderingEngine;
+    renderingEngine: IRenderingEngine;
     // (undocumented)
     renderingEngineUID: string;
     // (undocumented)
@@ -1214,6 +1214,50 @@ function invertRgbTransferFunction(rgbTransferFunction: any): void;
 interface IRegisterImageLoader {
     // (undocumented)
     registerImageLoader: (scheme: string, imageLoader: ImageLoaderFn) => void;
+}
+
+// Warning: (ae-missing-release-tag) "IRenderingEngine" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+interface IRenderingEngine {
+    // (undocumented)
+    _debugRender(): void;
+    // (undocumented)
+    destroy(): void;
+    // (undocumented)
+    disableElement(viewportUID: string): void;
+    // (undocumented)
+    enableElement(viewportInputEntry: PublicViewportInput): void;
+    // (undocumented)
+    fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
+    // (undocumented)
+    getStackViewports(): Array<IStackViewport>;
+    // (undocumented)
+    getViewport(uid: string): IStackViewport | IVolumeViewport;
+    // (undocumented)
+    getViewports(): Array<IStackViewport | IVolumeViewport>;
+    // (undocumented)
+    getVolumeViewports(): Array<IVolumeViewport>;
+    // (undocumented)
+    hasBeenDestroyed: boolean;
+    // (undocumented)
+    offScreenCanvasContainer: any;
+    // (undocumented)
+    offscreenMultiRenderWindow: any;
+    // (undocumented)
+    render(): void;
+    // (undocumented)
+    renderFrameOfReference(FrameOfReferenceUID: string): void;
+    // (undocumented)
+    renderViewport(viewportUID: string): void;
+    // (undocumented)
+    renderViewports(viewportUIDs: Array<string>): void;
+    // (undocumented)
+    resize(): void;
+    // (undocumented)
+    setViewports(viewports: Array<PublicViewportInput>): void;
+    // (undocumented)
+    uid: string;
 }
 
 // Warning: (ae-missing-release-tag) "isCornerstoneInitialized" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -1641,7 +1685,6 @@ function registerUnknownVolumeLoader(volumeLoader: Types.VolumeLoaderFn): Types.
 // @public (undocumented)
 function registerVolumeLoader(scheme: string, volumeLoader: Types.VolumeLoaderFn): void;
 
-// Warning: (ae-forgotten-export) The symbol "IRenderingEngine" needs to be exported by the entry point index.d.ts
 // Warning: (ae-missing-release-tag) "RenderingEngine" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
@@ -1660,13 +1703,13 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
-    getStackViewports(): Array<StackViewport>;
+    getStackViewports(): Array<IStackViewport>;
     // (undocumented)
     getViewport(uid: string): IStackViewport | IVolumeViewport;
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>;
     // (undocumented)
-    getVolumeViewports(): Array<VolumeViewport>;
+    getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
     hasBeenDestroyed: boolean;
     // (undocumented)
@@ -1767,7 +1810,7 @@ export function setUseCPURendering(status: boolean): void;
 // Warning: (ae-missing-release-tag) "setVolumesForViewports" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
-export function setVolumesForViewports(renderingEngine: RenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
+export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // Warning: (ae-missing-release-tag) "StackNewImageEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -1923,6 +1966,7 @@ declare namespace Types {
         IVolume,
         IViewportUID,
         IImageVolume,
+        IRenderingEngine,
         ScalingParameters,
         PTScaling,
         Scaling,
@@ -2061,7 +2105,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
-    getRenderingEngine(): RenderingEngine;
+    getRenderingEngine(): IRenderingEngine;
     // Warning: (ae-forgotten-export) The symbol "vtkSlabCamera" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)

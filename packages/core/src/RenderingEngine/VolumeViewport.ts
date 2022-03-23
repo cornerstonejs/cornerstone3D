@@ -11,7 +11,7 @@ import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera'
 import { ActorEntry, FlipDirection } from '../types'
 import { getShouldUseCPURendering } from '../init'
-import IVolumeViewport from '../types/IVolumeViewport'
+import type IVolumeViewport from '../types/IVolumeViewport'
 
 const EPSILON = 1e-3
 

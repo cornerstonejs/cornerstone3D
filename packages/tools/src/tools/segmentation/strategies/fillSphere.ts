@@ -1,7 +1,4 @@
-import type {
-  Types,
-  VolumeViewport,
-} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
 import { pointInSurroundingSphereCallback } from '../../../utilities'
@@ -43,7 +40,7 @@ function fillSphere(
   }
 
   pointInSurroundingSphereCallback(
-    viewport as VolumeViewport,
+    viewport as Types.IVolumeViewport,
     imageData,
     [points[0], points[1]],
     callback

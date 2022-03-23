@@ -7,8 +7,9 @@ import {
   StackViewport,
   utilities,
   cache,
-  Types,
 } from '@cornerstonejs/core'
+
+import type { Types } from '@cornerstonejs/core'
 
 // Todo: should move to configuration
 const DEFAULT_MULTIPLIER = 4
@@ -54,7 +55,7 @@ export default class WindowLevelTool extends BaseTool {
     let useDynamicRange = false
 
     if (viewport instanceof VolumeViewport) {
-      volumeUID = this.getTargetUID(viewport as VolumeViewport)
+      volumeUID = this.getTargetUID(viewport as Types.IVolumeViewport)
       ;({ volumeActor } = viewport.getActor(volumeUID))
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
       viewportsContainingVolumeUID =
