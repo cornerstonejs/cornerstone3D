@@ -18,8 +18,6 @@ declare namespace activeSegmentation {
     }
 }
 
-// Warning: (ae-missing-release-tag) "ActorEntry" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ActorEntry = {
     uid: string
@@ -27,44 +25,27 @@ type ActorEntry = {
     slabThickness?: number
 }
 
-// Warning: (ae-missing-release-tag) "addAnnotation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function addAnnotation(element: HTMLElement, annotation: Annotation): void;
 
-// Warning: (ae-missing-release-tag) "addColorLUT" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function addColorLUT(colorLut: ColorLUT, index: number): void;
 
-// Warning: (ae-missing-release-tag) "addColorLUT" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function addColorLUT_2(colorLUT: ColorLUT, colorLUTIndex: number): void;
 
-// Warning: (ae-missing-release-tag) "addGlobalSegmentationData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function addGlobalSegmentationData(segmentationData: GlobalSegmentationData, suppressEvents?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "addSegmentationData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function addSegmentationData(toolGroupUID: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
 
-// Warning: (ae-forgotten-export) The symbol "SegmentationDataInput" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "addSegmentationsForToolGroup" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function addSegmentationsForToolGroup(toolGroupUID: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
 
-// Warning: (ae-missing-release-tag) "addTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export function addTool(ToolClass: any): void;
 
-// Warning: (ae-missing-release-tag) "Annotation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type Annotation = {
     annotationUID?: string;
@@ -111,8 +92,6 @@ declare namespace annotation {
 }
 export { annotation }
 
-// Warning: (ae-missing-release-tag) "AnnotationAddedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationAddedEventDetail = {
     viewportUID: string;
@@ -120,18 +99,12 @@ type AnnotationAddedEventDetail = {
     annotation: Annotation;
 };
 
-// Warning: (ae-missing-release-tag) "AnnotationAddedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationAddedEventType = Types_2.CustomEventType<AnnotationAddedEventDetail>;
 
-// Warning: (ae-missing-release-tag) "AnnotationHandle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
 
-// Warning: (ae-missing-release-tag) "AnnotationLockChangeEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationLockChangeEventDetail = {
     added: Array<Annotation>;
@@ -139,13 +112,9 @@ type AnnotationLockChangeEventDetail = {
     locked: Array<Annotation>;
 };
 
-// Warning: (ae-missing-release-tag) "AnnotationLockChangeEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationLockChangeEventType = Types_2.CustomEventType<AnnotationLockChangeEventDetail>;
 
-// Warning: (ae-missing-release-tag) "AnnotationModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationModifiedEventDetail = {
     viewportUID: string;
@@ -153,13 +122,9 @@ type AnnotationModifiedEventDetail = {
     annotation: Annotation;
 };
 
-// Warning: (ae-missing-release-tag) "AnnotationModifiedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEventDetail>;
 
-// Warning: (ae-missing-release-tag) "AnnotationRemovedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
     viewportUID: string;
@@ -167,13 +132,9 @@ type AnnotationRemovedEventDetail = {
     annotation: Annotation;
 };
 
-// Warning: (ae-missing-release-tag) "AnnotationRemovedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationRemovedEventType = Types_2.CustomEventType<AnnotationRemovedEventDetail>;
 
-// Warning: (ae-missing-release-tag) "AnnotationRenderedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationRenderedEventDetail = {
     element: HTMLElement;
@@ -181,18 +142,12 @@ type AnnotationRenderedEventDetail = {
     renderingEngineUID: string;
 };
 
-// Warning: (ae-missing-release-tag) "AnnotationRenderedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationRenderedEventType = Types_2.CustomEventType<AnnotationRenderedEventDetail>;
 
-// Warning: (ae-missing-release-tag) "Annotations" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type Annotations = Array<Annotation>;
 
-// Warning: (ae-missing-release-tag) "AnnotationSelectionChangeEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationSelectionChangeEventDetail = {
     added: Array<Annotation>;
@@ -200,20 +155,14 @@ type AnnotationSelectionChangeEventDetail = {
     selection: Array<Annotation>;
 };
 
-// Warning: (ae-missing-release-tag) "AnnotationSelectionChangeEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationSelectionChangeEventType = Types_2.CustomEventType<AnnotationSelectionChangeEventDetail>;
 
-// Warning: (ae-missing-release-tag) "AnnotationState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type AnnotationState = {
     [key: string]: FrameOfReferenceSpecificAnnotations;
 };
 
-// Warning: (ae-missing-release-tag) "AnnotationTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
@@ -226,8 +175,6 @@ export abstract class AnnotationTool extends BaseTool {
     getHandleNearImagePoint(element: HTMLElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
     getLinkedTextBoxStyle(settings: Settings, annotation?: Annotation): Record<string, unknown>;
-    // Warning: (ae-forgotten-export) The symbol "Settings" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     getStyle(settings: Settings, property: string, annotation?: Annotation): unknown;
     // (undocumented)
@@ -246,9 +193,6 @@ export abstract class AnnotationTool extends BaseTool {
     abstract toolSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes): void;
 }
 
-// Warning: (ae-forgotten-export) The symbol "IBaseTool" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "BaseTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export abstract class BaseTool implements IBaseTool {
     constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
@@ -265,8 +209,6 @@ export abstract class BaseTool implements IBaseTool {
     };
     // (undocumented)
     getToolName(): string;
-    // Warning: (ae-forgotten-export) The symbol "ToolModes" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     mode: ToolModes;
     // (undocumented)
@@ -281,8 +223,6 @@ export abstract class BaseTool implements IBaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "BidirectionalTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class BidirectionalTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -290,8 +230,6 @@ export class BidirectionalTool extends AnnotationTool {
     _activateDraw: (element: any) => void;
     // (undocumented)
     _activateModify: (element: any) => void;
-    // Warning: (ae-forgotten-export) The symbol "BidirectionalAnnotation" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     addNewAnnotation(evt: EventTypes_2.MouseDownActivateEventType): BidirectionalAnnotation;
     // (undocumented)
@@ -351,18 +289,12 @@ export class BidirectionalTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// Warning: (ae-missing-release-tag) "calibrateImageSpacing" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, rowPixelSpacing: number, columnPixelSpacing: number): void;
 
-// Warning: (ae-missing-release-tag) "CameraModifiedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>
 
-// Warning: (ae-missing-release-tag) "CameraModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type CameraModifiedEventDetail = {
     previousCamera: ICamera
@@ -372,18 +304,12 @@ type CameraModifiedEventDetail = {
     renderingEngineUID: string
 }
 
-// Warning: (ae-missing-release-tag) "cancelActiveManipulations" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export function cancelActiveManipulations(element: HTMLElement): string | undefined;
 
-// Warning: (ae-missing-release-tag) "checkAndDefineIsLockedProperty" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
 
-// Warning: (ae-missing-release-tag) "CircleScissorsTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class CircleScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -422,13 +348,9 @@ export class CircleScissorsTool extends BaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "Color" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type Color = [number, number, number, number];
 
-// Warning: (ae-missing-release-tag) "ColorLUT" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ColorLUT = Array<Color>;
 
@@ -443,8 +365,6 @@ declare namespace config {
     }
 }
 
-// Warning: (ae-missing-release-tag) "CPUFallbackColormap" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface CPUFallbackColormap {
     // (undocumented)
@@ -478,8 +398,6 @@ interface CPUFallbackColormap {
     setNumberOfColors: (numColors: number) => void
 }
 
-// Warning: (ae-missing-release-tag) "CPUFallbackColormapData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUFallbackColormapData = {
     name: string;
@@ -490,15 +408,11 @@ type CPUFallbackColormapData = {
     gamma?: number;
 };
 
-// Warning: (ae-missing-release-tag) "CPUFallbackColormapsData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUFallbackColormapsData = {
     [key: string]: CPUFallbackColormapData;
 };
 
-// Warning: (ae-missing-release-tag) "CPUFallbackEnabledElement" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface CPUFallbackEnabledElement {
     // (undocumented)
@@ -573,8 +487,6 @@ interface CPUFallbackEnabledElement {
     zoom?: number
 }
 
-// Warning: (ae-missing-release-tag) "CPUFallbackLookupTable" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface CPUFallbackLookupTable {
     // (undocumented)
@@ -601,15 +513,11 @@ interface CPUFallbackLookupTable {
     setValueRange: (start: number, end: number) => void;
 }
 
-// Warning: (ae-missing-release-tag) "CPUFallbackLUT" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUFallbackLUT = {
     lut: number[];
 };
 
-// Warning: (ae-missing-release-tag) "CPUFallbackRenderingTools" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUFallbackRenderingTools = {
     renderCanvas?: HTMLCanvasElement;
@@ -640,8 +548,6 @@ type CPUFallbackRenderingTools = {
     };
 };
 
-// Warning: (ae-missing-release-tag) "CPUFallbackTransform" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface CPUFallbackTransform {
     // (undocumented)
@@ -664,8 +570,6 @@ interface CPUFallbackTransform {
     translate: (x: number, y: number) => void;
 }
 
-// Warning: (ae-missing-release-tag) "CPUFallbackViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUFallbackViewport = {
     scale?: number;
@@ -689,8 +593,6 @@ type CPUFallbackViewport = {
     modality?: string;
 };
 
-// Warning: (ae-missing-release-tag) "CPUFallbackViewportDisplayedArea" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUFallbackViewportDisplayedArea = {
     tlhc: {
@@ -706,8 +608,6 @@ type CPUFallbackViewportDisplayedArea = {
     presentationSizeMode: string;
 };
 
-// Warning: (ae-missing-release-tag) "CPUIImageData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUIImageData = {
     dimensions: Point3
@@ -720,8 +620,6 @@ type CPUIImageData = {
     scaling: Scaling
 }
 
-// Warning: (ae-missing-release-tag) "CPUImageData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type CPUImageData = {
     worldToIndex?: (point: Point3) => Point3
@@ -734,18 +632,12 @@ type CPUImageData = {
     getDimensions?: () => Point3
 }
 
-// Warning: (ae-missing-release-tag) "createCameraPositionSynchronizer" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
-// Warning: (ae-missing-release-tag) "createMergedLabelmapForIndex" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, uid?: string): Types_2.IImageVolume;
 
-// Warning: (ae-missing-release-tag) "createNewSegmentationForToolGroup" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function createNewSegmentationForToolGroup(toolGroupUID: string, options?: {
     volumeUID?: string;
@@ -760,31 +652,20 @@ function createNewSegmentationForToolGroup(toolGroupUID: string, options?: {
     direction?: Float32Array;
 }): Promise<string>;
 
-// Warning: (ae-forgotten-export) The symbol "ISynchronizerEventHandler" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "createSynchronizer" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
 
-// Warning: (ae-missing-release-tag) "createToolGroup" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function createToolGroup(toolGroupUID: string): IToolGroup | undefined;
 
-// Warning: (ae-missing-release-tag) "createVOISynchronizer" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function createVOISynchronizer(synchronizerName: string): Synchronizer;
 
-// Warning: (ae-missing-release-tag) "CrosshairsTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class CrosshairsTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateModify: (element: any) => void;
-    // Warning: (ae-forgotten-export) The symbol "CrosshairsAnnotation" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType, interactionType: string) => CrosshairsAnnotation;
     // (undocumented)
@@ -829,8 +710,6 @@ export class CrosshairsTool extends AnnotationTool {
     _getSlabThicknessHandleNearImagePoint(viewport: any, annotation: any, canvasCoords: any, proximity: any): any;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType?: string) => void;
-    // Warning: (ae-forgotten-export) The symbol "ViewportInputs" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     init: (viewports: ViewportInputs) => void;
     // (undocumented)
@@ -866,8 +745,6 @@ export class CrosshairsTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes) => void;
 }
 
-// Warning: (ae-missing-release-tag) "CursorNames" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 const CursorNames: string[];
 
@@ -884,8 +761,6 @@ declare namespace cursors {
 }
 export { cursors }
 
-// Warning: (ae-missing-release-tag) "CustomEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface CustomEvent_2<T = any> extends Event {
     readonly detail: T
@@ -898,8 +773,6 @@ interface CustomEvent_2<T = any> extends Event {
     ): void
 }
 
-// Warning: (ae-missing-release-tag) "debounce" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function debounce(func: Function, wait?: number, options?: {
     leading?: boolean;
@@ -907,8 +780,6 @@ function debounce(func: Function, wait?: number, options?: {
     trailing?: boolean;
 }): Function;
 
-// Warning: (ae-missing-release-tag) "deepmerge" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function deepmerge(target?: {}, source?: {}, optionsArgument?: any): any;
 
@@ -1075,48 +946,30 @@ const _default_9: {
     };
 };
 
-// Warning: (ae-missing-release-tag) "destroy" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export function destroy(): void;
 
-// Warning: (ae-missing-release-tag) "destroy" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function destroy_2(): void;
 
-// Warning: (ae-missing-release-tag) "destroy" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function destroy_3(): void;
 
-// Warning: (ae-missing-release-tag) "destroySynchronizerById" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function destroySynchronizerById(synchronizerId: string): void;
 
-// Warning: (ae-missing-release-tag) "destroyToolGroupByToolGroupUID" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function destroyToolGroupByToolGroupUID(toolGroupUID: string): void;
 
-// Warning: (ae-missing-release-tag) "draw" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void;
 
-// Warning: (ae-missing-release-tag) "drawCircle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function drawCircle(svgDrawingHelper: any, toolName: string, annotationUID: string, circleUID: string, center: Types_2.Point2, radius: number, options?: {}): void;
 
-// Warning: (ae-missing-release-tag) "drawEllipse" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function drawEllipse(svgDrawingHelper: any, toolName: string, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}): void;
 
-// Warning: (ae-missing-release-tag) "drawHandles" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function drawHandles(svgDrawingHelper: any, toolName: string, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
 
@@ -1142,23 +995,15 @@ declare namespace drawing_2 {
     }
 }
 
-// Warning: (ae-missing-release-tag) "drawLine" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function drawLine(svgDrawingHelper: any, toolName: string, annotationUID: string, lineUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
 
-// Warning: (ae-missing-release-tag) "drawLinkedTextBox" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function drawLinkedTextBox(svgDrawingHelper: Record<string, unknown>, toolName: string, annotationUID: string, textBoxUID: string, textLines: Array<string>, textBoxPosition: Types_2.Point2, annotationAnchorPoints: Array<Types_2.Point2>, textBox: unknown, options?: {}): SVGRect;
 
-// Warning: (ae-missing-release-tag) "drawRect" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function drawRect(svgDrawingHelper: any, toolName: string, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
 
-// Warning: (ae-missing-release-tag) "drawTextBox" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function drawTextBox(svgDrawingHelper: Record<string, unknown>, toolName: string, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
 
@@ -1171,13 +1016,9 @@ declare namespace elementCursor {
     }
 }
 
-// Warning: (ae-missing-release-tag) "ElementDisabledEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>
 
-// Warning: (ae-missing-release-tag) "ElementDisabledEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ElementDisabledEventDetail = {
     element: HTMLElement
@@ -1185,13 +1026,9 @@ type ElementDisabledEventDetail = {
     renderingEngineUID: string
 }
 
-// Warning: (ae-missing-release-tag) "ElementEnabledEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>
 
-// Warning: (ae-missing-release-tag) "ElementEnabledEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ElementEnabledEventDetail = {
     element: HTMLElement
@@ -1199,8 +1036,6 @@ type ElementEnabledEventDetail = {
     renderingEngineUID: string
 }
 
-// Warning: (ae-missing-release-tag) "EllipticalRoiTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class EllipticalRoiTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -1208,8 +1043,6 @@ export class EllipticalRoiTool extends AnnotationTool {
     _activateDraw: (element: any) => void;
     // (undocumented)
     _activateModify: (element: any) => void;
-    // Warning: (ae-forgotten-export) The symbol "EllipticalRoiAnnotation" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => EllipticalRoiAnnotation;
     // (undocumented)
@@ -1269,8 +1102,6 @@ export class EllipticalRoiTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// Warning: (ae-missing-release-tag) "Enums" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export const Enums: {
     MouseBindings: typeof MouseBindings;
@@ -1366,53 +1197,35 @@ declare namespace EventTypes_2 {
     }
 }
 
-// Warning: (ae-missing-release-tag) "extend2DBoundingBoxInViewAxis" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
-// Warning: (ae-missing-release-tag) "filterAnnotationsForDisplay" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations): Annotations;
 
-// Warning: (ae-missing-release-tag) "filterAnnotationsWithinSlice" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
 
-// Warning: (ae-missing-release-tag) "filterViewportsWithFrameOfReferenceUID" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, FrameOfReferenceUID: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
-// Warning: (ae-missing-release-tag) "filterViewportsWithToolEnabled" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function filterViewportsWithToolEnabled(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
-// Warning: (ae-missing-release-tag) "FlipDirection" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type FlipDirection = {
     flipHorizontal?: boolean
     flipVertical?: boolean
 }
 
-// Warning: (ae-missing-release-tag) "FrameOfReferenceSpecificAnnotations" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type FrameOfReferenceSpecificAnnotations = {
     [key: string]: Annotations;
 };
 
-// Warning: (ae-missing-release-tag) "getActiveSegmentationData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getActiveSegmentationData(toolGroupUID: string): ToolGroupSpecificSegmentationData | undefined;
 
-// Warning: (ae-missing-release-tag) "getActiveSegmentationInfo" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getActiveSegmentationInfo(toolGroupUID: string): {
     volumeUID: string;
@@ -1420,191 +1233,114 @@ function getActiveSegmentationInfo(toolGroupUID: string): {
     activeSegmentIndex: number;
 };
 
-// Warning: (ae-missing-release-tag) "getActiveSegmentIndex" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getActiveSegmentIndex(toolGroupUID: string): number | undefined;
 
-// Warning: (ae-missing-release-tag) "getActiveSegmentIndexForSegmentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getActiveSegmentIndexForSegmentation(segmentationUID: string): number | undefined;
 
-// Warning: (ae-missing-release-tag) "getAllSynchronizers" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
 
-// Warning: (ae-missing-release-tag) "getAllToolGroups" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAllToolGroups(): Array<IToolGroup>;
 
-// Warning: (ae-missing-release-tag) "getAnnotation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotation(annotationUID: string, element?: HTMLElement): Annotation;
 
-// Warning: (ae-missing-release-tag) "getAnnotationNearPoint" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationNearPoint(element: HTMLElement, canvasPoint: Types_2.Point2, proximity?: number): Annotation | null;
 
-// Warning: (ae-missing-release-tag) "getAnnotationNearPointOnEnabledElement" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
 
-// Warning: (ae-missing-release-tag) "getAnnotations" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotations(element: HTMLElement, toolName: string): Annotations;
 
-// Warning: (ae-missing-release-tag) "getAnnotationSelected" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationSelected(annotationUID: string): Annotation;
 
-// Warning: (ae-missing-release-tag) "getAnnotationsLocked" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
 
-// Warning: (ae-missing-release-tag) "getAnnotationsLockedCount" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationsLockedCount(): number;
 
-// Warning: (ae-missing-release-tag) "getAnnotationsSelected" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationsSelected(): Array<Annotation>;
 
-// Warning: (ae-missing-release-tag) "getAnnotationsSelectedByToolName" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationsSelectedByToolName(toolName: string): Array<Annotation>;
 
-// Warning: (ae-missing-release-tag) "getAnnotationsSelectedCount" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
 
-// Warning: (ae-missing-release-tag) "getBoundingBoxAroundShape" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
-// Warning: (ae-missing-release-tag) "getColorForSegmentIndex" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getColorForSegmentIndex(toolGroupUID: string, segmentationDataUID: string, segmentIndex: number): Color;
 
-// Warning: (ae-missing-release-tag) "getColorLut" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getColorLut(index: number): ColorLUT | undefined;
 
-// Warning: (ae-forgotten-export) The symbol "FrameOfReferenceSpecificAnnotationManager" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "getDefaultAnnotationManager" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
 
-// Warning: (ae-forgotten-export) The symbol "LabelmapConfig" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "getDefaultRepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getDefaultRepresentationConfig(representationType: string): LabelmapConfig;
 
-// Warning: (ae-forgotten-export) The symbol "SegmentationStateManager" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "getDefaultSegmentationStateManager" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getDefaultSegmentationStateManager(): SegmentationStateManager;
 
-// Warning: (ae-missing-release-tag) "getFont" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getFont(settings?: Settings, state?: AnnotationStyleStates, mode?: ToolModes): string;
 
-// Warning: (ae-missing-release-tag) "getGlobalRepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig;
 
-// Warning: (ae-missing-release-tag) "getGlobalSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getGlobalSegmentationConfig(): SegmentationConfig;
 
-// Warning: (ae-missing-release-tag) "getGlobalSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getGlobalSegmentationConfig_2(): SegmentationConfig;
 
-// Warning: (ae-missing-release-tag) "getGlobalSegmentationDataByUID" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getGlobalSegmentationDataByUID(segmentationUID: string): GlobalSegmentationData;
 
-// Warning: (ae-missing-release-tag) "getGlobalSegmentationState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getGlobalSegmentationState(): GlobalSegmentationState | [];
 
-// Warning: (ae-missing-release-tag) "getPointInLineOfSightWithCriteria" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeUID: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
 
-// Warning: (ae-missing-release-tag) "getRepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getRepresentationConfig(toolGroupUID: string, representationType: SegmentationRepresentations): RepresentationConfig;
 
-// Warning: (ae-missing-release-tag) "getSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentationConfig(toolGroupUID: string): SegmentationConfig;
 
-// Warning: (ae-missing-release-tag) "getSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentationConfig_2(toolGroupUID: string): SegmentationConfig;
 
-// Warning: (ae-missing-release-tag) "getSegmentationDataByUID" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentationDataByUID(toolGroupUID: string, segmentationDataUID: string): ToolGroupSpecificSegmentationData | undefined;
 
-// Warning: (ae-missing-release-tag) "getSegmentationState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentationState(toolGroupUID: string): ToolGroupSpecificSegmentationState | [];
 
-// Warning: (ae-missing-release-tag) "getSegmentationVisibility" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentationVisibility(toolGroupUID: string, segmentationDataUID: string): boolean | undefined;
 
-// Warning: (ae-missing-release-tag) "getSegmentIndexLocked" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentIndexLocked(toolGroupUID: string, segmentIndex: number): boolean;
 
-// Warning: (ae-missing-release-tag) "getSegmentIndexLockedForSegmentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number): boolean;
 
-// Warning: (ae-missing-release-tag) "getSegmentsLockedForSegmentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSegmentsLockedForSegmentation(segmentationUID: string): number[] | [];
 
-// Warning: (ae-missing-release-tag) "getSliceRange" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
     min: number;
@@ -1612,72 +1348,45 @@ function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_
     current: number;
 };
 
-// Warning: (ae-forgotten-export) The symbol "AnnotationStyleStates" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "getState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
 
-// Warning: (ae-missing-release-tag) "getStyle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getStyle(toolName?: string, annotation?: Record<string, unknown>): Settings;
 
-// Warning: (ae-missing-release-tag) "getSynchronizerById" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSynchronizerById(synchronizerId: string): Synchronizer | void;
 
-// Warning: (ae-missing-release-tag) "getSynchronizers" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getSynchronizers(renderingEngineUID: string, viewportUID: string): Array<Synchronizer>;
 
-// Warning: (ae-missing-release-tag) "getTextBoxCoordsCanvas" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): Types_2.Point2;
 
-// Warning: (ae-missing-release-tag) "getToolGroup" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getToolGroup(viewportUID: string, renderingEngineUID: string): IToolGroup | undefined;
 
-// Warning: (ae-missing-release-tag) "getToolGroupByToolGroupUID" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getToolGroupByToolGroupUID(toolGroupUID: string): IToolGroup | undefined;
 
-// Warning: (ae-missing-release-tag) "getToolGroups" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getToolGroups(): string[];
 
-// Warning: (ae-missing-release-tag) "getToolGroupsWithSegmentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getToolGroupsWithSegmentation(segmentationUID: string): string[];
 
-// Warning: (ae-missing-release-tag) "getViewportSpecificAnnotationManager" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLElement): FrameOfReferenceSpecificAnnotationManager;
 
-// Warning: (ae-missing-release-tag) "getViewportUIDsWithToolToRender" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getViewportUIDsWithToolToRender(element: HTMLElement, toolName: string, requireSameOrientation?: boolean): string[];
 
-// Warning: (ae-missing-release-tag) "getWorldWidthAndHeightFromCorners" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, topLeftWorld: Types_2.Point3, bottomRightWorld: Types_2.Point3): {
     worldWidth: number;
     worldHeight: number;
 };
 
-// Warning: (ae-missing-release-tag) "GlobalSegmentationData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type GlobalSegmentationData = {
     volumeUID: string;
@@ -1691,26 +1400,18 @@ type GlobalSegmentationData = {
     };
 };
 
-// Warning: (ae-missing-release-tag) "GlobalSegmentationState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type GlobalSegmentationState = GlobalSegmentationData[];
 
-// Warning: (ae-missing-release-tag) "GlobalSegmentationStateWithConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type GlobalSegmentationStateWithConfig = {
     segmentations: GlobalSegmentationState;
     config: SegmentationConfig;
 };
 
-// Warning: (ae-missing-release-tag) "hideElementCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function hideElementCursor(element: HTMLElement): void;
 
-// Warning: (ae-missing-release-tag) "ICache" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface ICache {
     getCacheSize: () => number
@@ -1729,8 +1430,6 @@ interface ICache {
     setMaxCacheSize: (maxCacheSize: number) => void
 }
 
-// Warning: (ae-missing-release-tag) "ICachedImage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface ICachedImage {
     // (undocumented)
@@ -1749,8 +1448,6 @@ interface ICachedImage {
     timeStamp: number
 }
 
-// Warning: (ae-missing-release-tag) "ICachedVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface ICachedVolume {
     // (undocumented)
@@ -1767,8 +1464,6 @@ interface ICachedVolume {
     volumeLoadObject: IVolumeLoadObject
 }
 
-// Warning: (ae-missing-release-tag) "ICamera" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface ICamera {
     clippingRange?: Point2
@@ -1782,8 +1477,6 @@ interface ICamera {
     viewUp?: Point3
 }
 
-// Warning: (ae-missing-release-tag) "IEnabledElement" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IEnabledElement {
     FrameOfReferenceUID: string
@@ -1793,8 +1486,6 @@ interface IEnabledElement {
     viewportUID: string
 }
 
-// Warning: (ae-missing-release-tag) "IImage" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IImage {
     cachedLut?: {
@@ -1857,8 +1548,6 @@ interface IImage {
     windowWidth: number[] | number
 }
 
-// Warning: (ae-missing-release-tag) "IImageData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IImageData {
     dimensions: Point3
@@ -1871,8 +1560,6 @@ interface IImageData {
     spacing: Point3
 }
 
-// Warning: (ae-missing-release-tag) "IImageLoadObject" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IImageLoadObject {
     cancel?: () => void
@@ -1880,8 +1567,6 @@ interface IImageLoadObject {
     promise: Promise<IImage>
 }
 
-// Warning: (ae-missing-release-tag) "IImageVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IImageVolume {
     convertToCornerstoneImage?: (
@@ -1912,59 +1597,41 @@ interface IImageVolume {
     vtkOpenGLTexture: any
 }
 
-// Warning: (ae-missing-release-tag) "ImageCacheImageAddedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageCacheImageAddedEvent =
 CustomEvent_2<ImageCacheImageAddedEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageCacheImageAddedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageCacheImageAddedEventDetail = {
     image: ICachedImage
 }
 
-// Warning: (ae-missing-release-tag) "ImageCacheImageRemovedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageCacheImageRemovedEvent =
 CustomEvent_2<ImageCacheImageRemovedEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageCacheImageRemovedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageCacheImageRemovedEventDetail = {
     imageId: string
 }
 
-// Warning: (ae-missing-release-tag) "ImageLoadedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageLoadedEvent = CustomEvent_2<ImageLoadedEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageLoadedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageLoadedEventDetail = {
     image: IImage
 }
 
-// Warning: (ae-missing-release-tag) "ImageLoadedFailedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageLoadedFailedEvent = CustomEvent_2<ImageLoadedFailedEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageLoadedFailedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageLoadedFailedEventDetail = {
     imageId: string
     error: unknown
 }
 
-// Warning: (ae-missing-release-tag) "ImageLoaderFn" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageLoaderFn = (
 imageId: string,
@@ -1975,13 +1642,9 @@ options?: Record<string, any>
     decache?: () => void | undefined
 }
 
-// Warning: (ae-missing-release-tag) "ImageLoadProgressEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageLoadProgressEvent = CustomEvent_2<ImageLoadProgressEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageLoadProgressEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageLoadProgressEventDetail = {
     url: string
@@ -1991,8 +1654,6 @@ type ImageLoadProgressEventDetail = {
     percent: number
 }
 
-// Warning: (ae-missing-release-tag) "ImageMouseCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 class ImageMouseCursor extends MouseCursor {
     constructor(url: string, x?: number, y?: number, name?: string | undefined, fallback?: MouseCursor | undefined);
@@ -2002,13 +1663,9 @@ class ImageMouseCursor extends MouseCursor {
     static getUniqueInstanceName(prefix: string): string;
 }
 
-// Warning: (ae-missing-release-tag) "ImageRenderedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageRenderedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageRenderedEventDetail = {
     element: HTMLElement
@@ -2017,14 +1674,10 @@ type ImageRenderedEventDetail = {
     suppressEvents?: boolean
 }
 
-// Warning: (ae-missing-release-tag) "ImageSpacingCalibratedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageSpacingCalibratedEvent =
 CustomEvent_2<ImageSpacingCalibratedEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageSpacingCalibratedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement
@@ -2037,36 +1690,24 @@ type ImageSpacingCalibratedEventDetail = {
     worldToIndex: mat4
 }
 
-// Warning: (ae-missing-release-tag) "ImageVolumeModifiedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageVolumeModifiedEvent = CustomEvent_2<ImageVolumeModifiedEventDetail>
 
-// Warning: (ae-missing-release-tag) "ImageVolumeModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ImageVolumeModifiedEventDetail = {
     imageVolume: IImageVolume
     FrameOfReferenceUID: string
 }
 
-// Warning: (ae-missing-release-tag) "init" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export function init(defaultConfiguration?: {}): void;
 
-// Warning: (ae-missing-release-tag) "initElementCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function initElementCursor(element: HTMLElement, cursor: MouseCursor | null): void;
 
-// Warning: (ae-missing-release-tag) "InteractionTypes" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type InteractionTypes = 'Mouse';
 
-// Warning: (ae-missing-release-tag) "IPoints" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type IPoints = {
     page: Types_2.Point2;
@@ -2075,16 +1716,12 @@ type IPoints = {
     world: Types_2.Point3;
 };
 
-// Warning: (ae-missing-release-tag) "IRegisterImageLoader" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IRegisterImageLoader {
     // (undocumented)
     registerImageLoader: (scheme: string, imageLoader: ImageLoaderFn) => void
 }
 
-// Warning: (ae-missing-release-tag) "IRenderingEngine" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface IRenderingEngine {
     // (undocumented)
@@ -2130,23 +1767,15 @@ interface IRenderingEngine {
     uid: string
 }
 
-// Warning: (ae-missing-release-tag) "isAnnotationLocked" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function isAnnotationLocked(annotation: Annotation): boolean;
 
-// Warning: (ae-missing-release-tag) "isAnnotationSelected" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function isAnnotationSelected(annotation: Annotation): boolean;
 
-// Warning: (ae-missing-release-tag) "isObject" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function isObject(value: any): boolean;
 
-// Warning: (ae-missing-release-tag) "IStackViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void
@@ -2190,9 +1819,6 @@ interface IStackViewport extends IViewport {
     worldToCanvas: (worldPos: Point3) => Point2
 }
 
-// Warning: (ae-forgotten-export) The symbol "ImageVolume" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "IStreamingImageVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IStreamingImageVolume extends ImageVolume {
     clearLoadCallbacks(): void
@@ -2200,8 +1826,6 @@ interface IStreamingImageVolume extends ImageVolume {
     decache(completelyRemove: boolean): void
 }
 
-// Warning: (ae-missing-release-tag) "IStreamingVolumeProperties" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface IStreamingVolumeProperties {
     imageIds: Array<string>
@@ -2213,21 +1837,15 @@ interface IStreamingVolumeProperties {
     }
 }
 
-// Warning: (ae-missing-release-tag) "isValidRepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function isValidRepresentationConfig(representationType: string, config: RepresentationConfig): boolean;
 
-// Warning: (ae-missing-release-tag) "IToolBinding" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type IToolBinding = {
     mouseButton: ToolBindingMouseType;
     modifierKey?: ToolBindingKeyboardType;
 };
 
-// Warning: (ae-missing-release-tag) "IToolGroup" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 interface IToolGroup {
     // (undocumented)
@@ -2286,8 +1904,6 @@ interface IToolGroup {
     viewportsInfo: Array<Types_2.IViewportUID>;
 }
 
-// Warning: (ae-missing-release-tag) "IViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IViewport {
     _actors: Map<string, any>
@@ -2320,14 +1936,11 @@ interface IViewport {
     sWidth: number
     sx: number
     sy: number
-    // Warning: (ae-forgotten-export) The symbol "ViewportType" needs to be exported by the entry point index.d.ts
     type: ViewportType
     uid: string
     worldToCanvas: (worldPos: Point3) => Point2
 }
 
-// Warning: (ae-missing-release-tag) "IViewportUID" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IViewportUID {
     // (undocumented)
@@ -2336,8 +1949,6 @@ interface IViewportUID {
     viewportUID: string
 }
 
-// Warning: (ae-missing-release-tag) "IVolume" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IVolume {
     dimensions: Point3
@@ -2362,8 +1973,6 @@ interface IVolume {
     uid: string
 }
 
-// Warning: (ae-missing-release-tag) "IVolumeInput" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IVolumeInput {
     // (undocumented)
@@ -2385,8 +1994,6 @@ interface IVolumeInput {
     volumeUID: string
 }
 
-// Warning: (ae-missing-release-tag) "IVolumeLoadObject" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IVolumeLoadObject {
     cancel?: () => void
@@ -2394,8 +2001,6 @@ interface IVolumeLoadObject {
     promise: Promise<ImageVolume>
 }
 
-// Warning: (ae-missing-release-tag) "IVolumeViewport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 interface IVolumeViewport extends IViewport {
     addVolumes(
@@ -2426,8 +2031,6 @@ interface IVolumeViewport extends IViewport {
     worldToCanvas: (worldPos: Point3) => Point2
 }
 
-// Warning: (ae-missing-release-tag) "KeyDownEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type KeyDownEventDetail = {
     element: HTMLElement;
@@ -2437,23 +2040,15 @@ type KeyDownEventDetail = {
     keyCode: number;
 };
 
-// Warning: (ae-missing-release-tag) "KeyDownEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type KeyDownEventType = Types_2.CustomEventType<KeyDownEventDetail>;
 
-// Warning: (ae-missing-release-tag) "KeyUpEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type KeyUpEventDetail = KeyDownEventDetail;
 
-// Warning: (ae-missing-release-tag) "KeyUpEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
 
-// Warning: (ae-missing-release-tag) "LabelmapRepresentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type LabelmapRepresentation = {
     type: typeof SegmentationRepresentations.Labelmap;
@@ -2463,8 +2058,6 @@ type LabelmapRepresentation = {
     };
 };
 
-// Warning: (ae-missing-release-tag) "LengthTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class LengthTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -2472,8 +2065,6 @@ export class LengthTool extends AnnotationTool {
     _activateDraw: (element: HTMLElement) => void;
     // (undocumented)
     _activateModify: (element: HTMLElement) => void;
-    // Warning: (ae-forgotten-export) The symbol "LengthAnnotation" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => LengthAnnotation;
     // (undocumented)
@@ -2525,8 +2116,6 @@ export class LengthTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// Warning: (ae-missing-release-tag) "lineSegment" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 const lineSegment: {
     distanceToPoint: typeof distanceToPoint;
@@ -2555,8 +2144,6 @@ declare namespace math {
     }
 }
 
-// Warning: (ae-missing-release-tag) "Metadata" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type Metadata = {
     BitsAllocated: number
@@ -2574,8 +2161,6 @@ type Metadata = {
     voiLut: Array<VOI>
 }
 
-// Warning: (ae-missing-release-tag) "MIPJumpToClickTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class MIPJumpToClickTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -2587,8 +2172,6 @@ export class MIPJumpToClickTool extends BaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "MouseClickEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseClickEventDetail = NormalizedMouseEventDetail & {
     mouseButton: number;
@@ -2598,13 +2181,9 @@ type MouseClickEventDetail = NormalizedMouseEventDetail & {
     deltaPoints: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseClickEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseClickEventType = Types_2.CustomEventType<MouseClickEventDetail>;
 
-// Warning: (ae-missing-release-tag) "MouseCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 class MouseCursor {
     constructor(name: string, fallback?: MouseCursor | undefined);
@@ -2620,8 +2199,6 @@ class MouseCursor {
     static setDefinedCursor(name: string, cursor: MouseCursor): boolean;
 }
 
-// Warning: (ae-missing-release-tag) "MouseDoubleClickEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDoubleClickEventDetail = NormalizedMouseEventDetail & {
     startPoints: IPoints;
@@ -2630,13 +2207,9 @@ type MouseDoubleClickEventDetail = NormalizedMouseEventDetail & {
     deltaPoints: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseDoubleClickEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDoubleClickEventType = Types_2.CustomEventType<MouseDoubleClickEventDetail>;
 
-// Warning: (ae-missing-release-tag) "MouseDownActivateEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDownActivateEventDetail = NormalizedMouseEventDetail & {
     mouseButton: number;
@@ -2646,13 +2219,9 @@ type MouseDownActivateEventDetail = NormalizedMouseEventDetail & {
     deltaPoints: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseDownActivateEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDownActivateEventType = Types_2.CustomEventType<MouseDownActivateEventDetail>;
 
-// Warning: (ae-missing-release-tag) "MouseDownEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDownEventDetail = NormalizedMouseEventDetail & {
     mouseButton: number;
@@ -2662,13 +2231,9 @@ type MouseDownEventDetail = NormalizedMouseEventDetail & {
     deltaPoints: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseDownEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDownEventType = Types_2.CustomEventType<MouseDownEventDetail>;
 
-// Warning: (ae-missing-release-tag) "MouseDragEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDragEventDetail = NormalizedMouseEventDetail & {
     mouseButton: number;
@@ -2678,25 +2243,17 @@ type MouseDragEventDetail = NormalizedMouseEventDetail & {
     deltaPoints: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseDragEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseDragEventType = Types_2.CustomEventType<MouseDragEventDetail>;
 
-// Warning: (ae-missing-release-tag) "MouseMoveEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseMoveEventDetail = NormalizedMouseEventDetail & {
     currentPoints: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseMoveEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseMoveEventType = Types_2.CustomEventType<MouseMoveEventDetail>;
 
-// Warning: (ae-missing-release-tag) "MouseUpEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseUpEventDetail = NormalizedMouseEventDetail & {
     mouseButton: number;
@@ -2706,13 +2263,9 @@ type MouseUpEventDetail = NormalizedMouseEventDetail & {
     deltaPoints: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseUpEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseUpEventType = Types_2.CustomEventType<MouseUpEventDetail>;
 
-// Warning: (ae-missing-release-tag) "MouseWheelEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseWheelEventDetail = NormalizedMouseEventDetail & {
     detail: Record<string, any>;
@@ -2726,13 +2279,9 @@ type MouseWheelEventDetail = NormalizedMouseEventDetail & {
     points: IPoints;
 };
 
-// Warning: (ae-missing-release-tag) "MouseWheelEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 
-// Warning: (ae-missing-release-tag) "NormalizedMouseEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type NormalizedMouseEventDetail = {
     event: Record<string, unknown> | MouseEvent;
@@ -2743,21 +2292,15 @@ type NormalizedMouseEventDetail = {
     element: HTMLElement;
 };
 
-// Warning: (ae-missing-release-tag) "NormalizedMouseEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type NormalizedMouseEventType = Types_2.CustomEventType<NormalizedMouseEventDetail>;
 
-// Warning: (ae-missing-release-tag) "Orientation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type Orientation = {
     sliceNormal: Point3
     viewUp: Point3
 }
 
-// Warning: (ae-missing-release-tag) "PanTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -2781,8 +2324,6 @@ declare namespace planar {
     }
 }
 
-// Warning: (ae-missing-release-tag) "PlanarBoundingBox" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type PlanarBoundingBox = {
     x: number;
@@ -2791,48 +2332,29 @@ type PlanarBoundingBox = {
     height: number;
 };
 
-// Warning: (ae-missing-release-tag) "Plane" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type Plane = [number, number, number, number]
 
-// Warning: (ae-missing-release-tag) "Point2" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type Point2 = [number, number]
 
-// Warning: (ae-missing-release-tag) "Point3" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type Point3 = [number, number, number]
 
-// Warning: (ae-missing-release-tag) "Point4" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type Point4 = [number, number, number, number];
 
-// Warning: (ae-forgotten-export) The symbol "ShapeFnCriteria" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "PointInShapeCallback" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "BoundsIJK" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "pointInShapeCallback" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK): void;
 
-// Warning: (ae-missing-release-tag) "pointInSurroundingSphereCallback" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
 
-// Warning: (ae-missing-release-tag) "ProbeTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class ProbeTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateModify: (element: any) => void;
-    // Warning: (ae-forgotten-export) The symbol "ProbeAnnotation" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => ProbeAnnotation;
     // (undocumented)
@@ -2881,24 +2403,17 @@ export class ProbeTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// Warning: (ae-missing-release-tag) "PTScaling" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type PTScaling = {
     suvbwToSuvlbm?: number
     suvbwToSuvbsa?: number
 }
 
-// Warning: (ae-forgotten-export) The symbol "SharedToolProp" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "PublicToolProps" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type PublicToolProps = SharedToolProp & {
     name?: string;
 };
 
-// Warning: (ae-missing-release-tag) "PublicViewportInput" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type PublicViewportInput = {
     element: HTMLElement
@@ -2907,15 +2422,11 @@ type PublicViewportInput = {
     defaultOptions: ViewportInputOptions
 }
 
-// Warning: (ae-missing-release-tag) "rectangle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 const rectangle: {
     distanceToPoint: typeof distanceToPoint_2;
 };
 
-// Warning: (ae-missing-release-tag) "RectangleRoiStartEndThresholdTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -2955,8 +2466,6 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
     };
     // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
-    // Warning: (ae-forgotten-export) The symbol "RectangleRoiStartEndThresholdAnnotation" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     _computeProjectionPoints(annotation: RectangleRoiStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
     // (undocumented)
@@ -2981,8 +2490,6 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "RectangleRoiThresholdTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class RectangleRoiThresholdTool extends RectangleRoiTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3033,8 +2540,6 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "RectangleRoiTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class RectangleRoiTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3042,8 +2547,6 @@ export class RectangleRoiTool extends AnnotationTool {
     _activateDraw: (element: any) => void;
     // (undocumented)
     _activateModify: (element: any) => void;
-    // Warning: (ae-forgotten-export) The symbol "RectangleRoiAnnotation" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => RectangleRoiAnnotation;
     // (undocumented)
@@ -3096,8 +2599,6 @@ export class RectangleRoiTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleRoiAnnotation, interactionType: InteractionTypes) => void;
 }
 
-// Warning: (ae-missing-release-tag) "RectangleScissorsTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class RectangleScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3137,53 +2638,35 @@ export class RectangleScissorsTool extends BaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "registerCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function registerCursor(toolName: string, iconContent: string, viewBox: {
     x: number;
     y: number;
 }): void;
 
-// Warning: (ae-missing-release-tag) "removeAnnotation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function removeAnnotation(element: HTMLElement, annotationUID: string): void;
 
-// Warning: (ae-missing-release-tag) "removeSegmentationData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function removeSegmentationData(toolGroupUID: string, segmentationDataUID: string): void;
 
-// Warning: (ae-missing-release-tag) "removeSegmentationsFromToolGroup" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function removeSegmentationsFromToolGroup(toolGroupUID: string, segmentationDataUIDs?: string[] | undefined): void;
 
-// Warning: (ae-missing-release-tag) "removeTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export function removeTool(ToolClass: any): void;
 
-// Warning: (ae-missing-release-tag) "RepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type RepresentationConfig = LabelmapConfig;
 
-// Warning: (ae-missing-release-tag) "resetElementCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function resetElementCursor(element: HTMLElement): void;
 
-// Warning: (ae-missing-release-tag) "Scaling" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type Scaling = {
     PET?: PTScaling
 }
 
-// Warning: (ae-missing-release-tag) "ScalingParameters" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ScalingParameters = {
     rescaleSlope: number
@@ -3194,8 +2677,6 @@ type ScalingParameters = {
     suvbsa?: number
 }
 
-// Warning: (ae-missing-release-tag) "scrollThroughStack" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeUID: string, invert?: boolean): void;
 
@@ -3237,8 +2718,6 @@ declare namespace segmentationColor {
     }
 }
 
-// Warning: (ae-missing-release-tag) "SegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationConfig = {
     renderInactiveSegmentations: boolean;
@@ -3263,21 +2742,15 @@ declare namespace segmentationConfig {
     }
 }
 
-// Warning: (ae-missing-release-tag) "SegmentationDataModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationDataModifiedEventDetail = {
     toolGroupUID: string;
     segmentationDataUID: string;
 };
 
-// Warning: (ae-missing-release-tag) "SegmentationDataModifiedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationDataModifiedEventType = Types_2.CustomEventType<SegmentationDataModifiedEventDetail>;
 
-// Warning: (ae-missing-release-tag) "SegmentationDisplayTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class SegmentationDisplayTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3293,45 +2766,31 @@ export class SegmentationDisplayTool extends BaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "SegmentationGlobalStateModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationGlobalStateModifiedEventDetail = {
     segmentationUID: string;
 };
 
-// Warning: (ae-missing-release-tag) "SegmentationGlobalStateModifiedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationGlobalStateModifiedEventType = Types_2.CustomEventType<SegmentationGlobalStateModifiedEventDetail>;
 
-// Warning: (ae-missing-release-tag) "SegmentationRenderedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationRenderedEventDetail = {
     viewportUID: string;
     toolGroupUID: string;
 };
 
-// Warning: (ae-missing-release-tag) "SegmentationRenderedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationRenderedEventType = Types_2.CustomEventType<SegmentationRenderedEventDetail>;
 
-// Warning: (ae-missing-release-tag) "SegmentationRepresentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationRepresentation = LabelmapRepresentation;
 
-// Warning: (ae-missing-release-tag) "SegmentationStateModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationStateModifiedEventDetail = {
     toolGroupUID: string;
 };
 
-// Warning: (ae-missing-release-tag) "SegmentationStateModifiedEventType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SegmentationStateModifiedEventType = Types_2.CustomEventType<SegmentationStateModifiedEventDetail>;
 
@@ -3375,123 +2834,77 @@ declare namespace selection {
     }
 }
 
-// Warning: (ae-missing-release-tag) "setActiveSegmentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setActiveSegmentation(toolGroupUID: string, segmentationDataUID: string): void;
 
-// Warning: (ae-missing-release-tag) "setActiveSegmentationData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setActiveSegmentationData(toolGroupUID: string, segmentationDataUID: string, suppressEvents?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "setActiveSegmentIndex" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setActiveSegmentIndex(toolGroupUID: string, segmentIndex: number): void;
 
-// Warning: (ae-missing-release-tag) "setActiveSegmentIndexForSegmentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setActiveSegmentIndexForSegmentation(segmentationUID: string, segmentIndex: number): void;
 
-// Warning: (ae-missing-release-tag) "setAnnotationLocked" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "setAnnotationSelected" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setAnnotationSelected(annotation: Annotation, selected?: boolean, preserveSelected?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "setAnnotationStyle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
 
-// Warning: (ae-missing-release-tag) "setCursorForElement" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setCursorForElement(element: HTMLElement, cursorName: string): void;
 
-// Warning: (ae-missing-release-tag) "_setElementCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function _setElementCursor(element: HTMLElement, cursor: MouseCursor | null): void;
 
-// Warning: (ae-missing-release-tag) "setGlobalRepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig): void;
 
-// Warning: (ae-missing-release-tag) "setGlobalSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setGlobalSegmentationConfig(config: SegmentationConfig, suppressEvents?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "setGlobalSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setGlobalSegmentationConfig_2(segmentationConfig: SegmentationConfig): void;
 
-// Warning: (ae-missing-release-tag) "setGlobalStyle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setGlobalStyle(style: Record<string, unknown>): boolean;
 
-// Warning: (ae-missing-release-tag) "setRepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setRepresentationConfig(toolGroupUID: string, representationType: SegmentationRepresentations, representationConfig: RepresentationConfig): void;
 
-// Warning: (ae-missing-release-tag) "setSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setSegmentationConfig(toolGroupUID: string, config: SegmentationConfig, suppressEvents?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "setSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setSegmentationConfig_2(toolGroupUID: string, segmentationConfig: SegmentationConfig): void;
 
-// Warning: (ae-missing-release-tag) "setSegmentationVisibility" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setSegmentationVisibility(toolGroupUID: string, segmentationDataUID: string, visibility: boolean): void;
 
-// Warning: (ae-missing-release-tag) "setSegmentIndexLocked" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setSegmentIndexLocked(toolGroupUID: string, segmentIndex: number, locked?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "setSegmentIndexLockedForSegmentation" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number, locked?: boolean): void;
 
-// Warning: (ae-missing-release-tag) "SetToolBindingsType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SetToolBindingsType = {
     bindings: IToolBinding[];
 };
 
-// Warning: (ae-missing-release-tag) "setToolStyle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function setToolStyle(toolName: string, style: Record<string, unknown>): boolean;
 
-// Warning: (ae-missing-release-tag) "snapFocalPointToSlice" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
     newFocalPoint: Types_2.Point3;
     newPosition: Types_2.Point3;
 };
 
-// Warning: (ae-missing-release-tag) "SphereScissorsTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class SphereScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3531,13 +2944,9 @@ export class SphereScissorsTool extends BaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "StackNewImageEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>
 
-// Warning: (ae-missing-release-tag) "StackNewImageEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type StackNewImageEventDetail = {
     image: IImage
@@ -3546,8 +2955,6 @@ type StackNewImageEventDetail = {
     renderingEngineUID: string
 }
 
-// Warning: (ae-missing-release-tag) "StackScrollMouseWheelTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
     constructor(toolProps?: {}, defaultToolProps?: {
@@ -3562,8 +2969,6 @@ export class StackScrollMouseWheelTool extends BaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "StackScrollTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class StackScrollTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3586,8 +2991,6 @@ declare namespace stackScrollTool {
     }
 }
 
-// Warning: (ae-missing-release-tag) "StackViewportProperties" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type StackViewportProperties = {
     voiRange?: VOIRange
@@ -3632,8 +3035,6 @@ declare namespace state_2 {
     }
 }
 
-// Warning: (ae-missing-release-tag) "SVGCursorDescriptor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SVGCursorDescriptor = {
     iconContent: string;
@@ -3643,8 +3044,6 @@ type SVGCursorDescriptor = {
     mousePointerGroupString: string;
 };
 
-// Warning: (ae-missing-release-tag) "SVGMouseCursor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 class SVGMouseCursor extends ImageMouseCursor {
     constructor(url: string, x?: number, y?: number, name?: string | undefined, fallback?: MouseCursor | undefined);
@@ -3652,16 +3051,12 @@ class SVGMouseCursor extends ImageMouseCursor {
     static getDefinedCursor(name: string, pointer?: boolean, color?: string): MouseCursor;
 }
 
-// Warning: (ae-missing-release-tag) "SVGPoint" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type SVGPoint_2 = {
     x: number;
     y: number;
 };
 
-// Warning: (ae-missing-release-tag) "Synchronizer" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class Synchronizer {
     constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler);
@@ -3711,8 +3106,6 @@ declare namespace synchronizers {
 }
 export { synchronizers }
 
-// Warning: (ae-missing-release-tag) "TextBoxHandle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type TextBoxHandle = {
     hasMoved: boolean;
@@ -3725,21 +3118,12 @@ type TextBoxHandle = {
     worldPosition: Types_2.Point3;
 };
 
-// Warning: (ae-forgotten-export) The symbol "AnnotationForThresholding" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "ThresholdRangeOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "thresholdVolumeByRange" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function thresholdVolumeByRange(toolGroupUID: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRangeOptions): Types_2.IImageVolume;
 
-// Warning: (ae-forgotten-export) The symbol "ThresholdRoiStatsOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "thresholdVolumeByRoiStats" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function thresholdVolumeByRoiStats(toolGroupUID: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRoiStatsOptions): void;
 
-// Warning: (ae-missing-release-tag) "throttle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
     leading?: boolean;
@@ -3759,8 +3143,6 @@ declare namespace ToolGroupManager {
 }
 export { ToolGroupManager }
 
-// Warning: (ae-missing-release-tag) "ToolGroupSpecificSegmentationData" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ToolGroupSpecificSegmentationData = {
     volumeUID: string;
@@ -3772,54 +3154,36 @@ type ToolGroupSpecificSegmentationData = {
     representation: SegmentationRepresentation;
 };
 
-// Warning: (ae-missing-release-tag) "ToolGroupSpecificSegmentationState" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ToolGroupSpecificSegmentationState = ToolGroupSpecificSegmentationData[];
 
-// Warning: (ae-missing-release-tag) "ToolGroupSpecificSegmentationStateWithConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ToolGroupSpecificSegmentationStateWithConfig = {
     segmentations: ToolGroupSpecificSegmentationState;
     config: SegmentationConfig;
 };
 
-// Warning: (ae-missing-release-tag) "ToolHandle" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ToolHandle = AnnotationHandle | TextBoxHandle;
 
-// Warning: (ae-missing-release-tag) "ToolOptionsType" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ToolOptionsType = {
     bindings: IToolBinding[];
     mode: ToolModes;
 };
 
-// Warning: (ae-missing-release-tag) "ToolProps" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type ToolProps = SharedToolProp;
 
-// Warning: (ae-missing-release-tag) "TransformMatrix2D" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number]
 
-// Warning: (ae-missing-release-tag) "transformPhysicalToIndex" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function transformPhysicalToIndex(imageData: any, physicalPoint: any): any;
 
-// Warning: (ae-missing-release-tag) "triggerAnnotationRenderForViewportUIDs" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function triggerAnnotationRenderForViewportUIDs(renderingEngine: Types_2.IRenderingEngine, viewportUIDsToRender: string[]): void;
 
-// Warning: (ae-missing-release-tag) "triggerEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 function triggerEvent(
 el: EventTarget = eventTarget,
@@ -3839,8 +3203,6 @@ detail: unknown = null
     return el.dispatchEvent(event)
 }
 
-// Warning: (ae-missing-release-tag) "triggerSegmentationDataModified" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function triggerSegmentationDataModified(toolGroupUID: string, segmentationDataUID: string): void;
 
@@ -3852,13 +3214,9 @@ declare namespace triggerSegmentationEvents {
     }
 }
 
-// Warning: (ae-missing-release-tag) "triggerSegmentationGlobalStateModified" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function triggerSegmentationGlobalStateModified(segmentationUID?: string): void;
 
-// Warning: (ae-missing-release-tag) "triggerSegmentationStateModified" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function triggerSegmentationStateModified(toolGroupUID: string): void;
 
@@ -3899,18 +3257,12 @@ declare namespace Types {
 }
 export { Types }
 
-// Warning: (ae-missing-release-tag) "unlockAllAnnotations" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function unlockAllAnnotations(): void;
 
-// Warning: (ae-missing-release-tag) "updateGlobalRepresentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function updateGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: Partial<RepresentationConfig>): void;
 
-// Warning: (ae-missing-release-tag) "updateGlobalSegmentationConfig" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 function updateGlobalSegmentationConfig(config: Partial<SegmentationConfig>): void;
 
@@ -3948,8 +3300,6 @@ declare namespace viewportFilters {
     }
 }
 
-// Warning: (ae-missing-release-tag) "ViewportInputOptions" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type ViewportInputOptions = {
     background?: [number, number, number]
@@ -3957,21 +3307,15 @@ type ViewportInputOptions = {
     suppressEvents?: boolean
 }
 
-// Warning: (ae-missing-release-tag) "VOI" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type VOI = {
     windowWidth: number
     windowCenter: number
 }
 
-// Warning: (ae-missing-release-tag) "VoiModifiedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>
 
-// Warning: (ae-missing-release-tag) "VoiModifiedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VoiModifiedEventDetail = {
     viewportUID: string
@@ -3979,80 +3323,56 @@ type VoiModifiedEventDetail = {
     range: VOIRange
 }
 
-// Warning: (ae-missing-release-tag) "VOIRange" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 type VOIRange = {
     upper: number
     lower: number
 }
 
-// Warning: (ae-missing-release-tag) "VolumeActor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeActor = vtkVolume
 
-// Warning: (ae-missing-release-tag) "VolumeCacheVolumeAddedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeCacheVolumeAddedEvent =
 CustomEvent_2<VolumeCacheVolumeAddedEventDetail>
 
-// Warning: (ae-missing-release-tag) "VolumeCacheVolumeAddedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeCacheVolumeAddedEventDetail = {
     volume: ICachedVolume
 }
 
-// Warning: (ae-missing-release-tag) "VolumeCacheVolumeRemovedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeCacheVolumeRemovedEvent =
 CustomEvent_2<VolumeCacheVolumeRemovedEventDetail>
 
-// Warning: (ae-missing-release-tag) "VolumeCacheVolumeRemovedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeCacheVolumeRemovedEventDetail = {
     volumeId: string
 }
 
-// Warning: (ae-missing-release-tag) "VolumeInputCallback" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeInputCallback = (params: {
     volumeActor: VolumeActor
     volumeUID: string
 }) => unknown
 
-// Warning: (ae-missing-release-tag) "VolumeLoadedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeLoadedEvent = CustomEvent_2<VolumeLoadedEventDetail>
 
-// Warning: (ae-missing-release-tag) "VolumeLoadedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeLoadedEventDetail = {
     volume: IImageVolume
 }
 
-// Warning: (ae-missing-release-tag) "VolumeLoadedFailedEvent" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeLoadedFailedEvent = CustomEvent_2<VolumeLoadedFailedEventDetail>
 
-// Warning: (ae-missing-release-tag) "VolumeLoadedFailedEventDetail" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeLoadedFailedEventDetail = {
     volumeId: string
     error: unknown
 }
 
-// Warning: (ae-missing-release-tag) "VolumeLoaderFn" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public
 type VolumeLoaderFn = (
 volumeId: string,
@@ -4063,8 +3383,6 @@ options?: Record<string, any>
     decache?: () => void | undefined
 }
 
-// Warning: (ae-missing-release-tag) "VolumeRotateMouseWheelTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class VolumeRotateMouseWheelTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -4076,8 +3394,6 @@ export class VolumeRotateMouseWheelTool extends BaseTool {
     static toolName: string;
 }
 
-// Warning: (ae-missing-release-tag) "WindowLevelTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class WindowLevelTool extends BaseTool {
     constructor(toolProps?: {}, defaultToolProps?: {
@@ -4118,8 +3434,6 @@ export class WindowLevelTool extends BaseTool {
     touchDragCallback: () => void;
 }
 
-// Warning: (ae-missing-release-tag) "ZoomTool" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
 // @public (undocumented)
 export class ZoomTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -4136,25 +3450,6 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     touchDragCallback: () => void;
 }
-
-// Warnings were encountered during analysis:
-//
-// /Users/erikziegler/Projects/MGH/cornerstone3d-FORPUBLIC/packages/core/src/types/StackViewportProperties.ts:13:3 - (ae-forgotten-export) The symbol "InterpolationType" needs to be exported by the entry point index.d.ts
-// dist/cjs/index.d.ts:13:5 - (ae-forgotten-export) The symbol "MouseBindings" needs to be exported by the entry point index.d.ts
-// dist/cjs/index.d.ts:14:5 - (ae-forgotten-export) The symbol "KeyboardBindings" needs to be exported by the entry point index.d.ts
-// dist/cjs/index.d.ts:16:5 - (ae-forgotten-export) The symbol "Events" needs to be exported by the entry point index.d.ts
-// dist/cjs/index.d.ts:17:5 - (ae-forgotten-export) The symbol "SegmentationRepresentations" needs to be exported by the entry point index.d.ts
-// dist/cjs/types/AnnotationTypes.d.ts:8:9 - (ae-forgotten-export) The symbol "Types" needs to be exported by the entry point index.d.ts
-// dist/cjs/types/ISetToolModeOptions.d.ts:5:5 - (ae-forgotten-export) The symbol "ToolBindingMouseType" needs to be exported by the entry point index.d.ts
-// dist/cjs/types/ISetToolModeOptions.d.ts:6:5 - (ae-forgotten-export) The symbol "ToolBindingKeyboardType" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/ellipse/index.d.ts:5:5 - (ae-forgotten-export) The symbol "pointInEllipse" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/ellipse/index.d.ts:6:5 - (ae-forgotten-export) The symbol "getCanvasEllipseCorners" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/index.d.ts:15:9 - (ae-forgotten-export) The symbol "distanceToPoint" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/index.d.ts:16:9 - (ae-forgotten-export) The symbol "distanceToPointSquared" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/index.d.ts:17:9 - (ae-forgotten-export) The symbol "intersectLine" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/index.d.ts:20:9 - (ae-forgotten-export) The symbol "distanceToPoint" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/vec2/index.d.ts:4:5 - (ae-forgotten-export) The symbol "findClosestPoint" needs to be exported by the entry point index.d.ts
-// dist/cjs/utilities/math/vec2/index.d.ts:5:5 - (ae-forgotten-export) The symbol "clip" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 
