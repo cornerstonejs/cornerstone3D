@@ -75,12 +75,12 @@ are two implemented synchronizers in `cornerstone3D` and we are working on more.
 
 Our documentation can be broken down into the following sections:
 
-- **Introduction**: covers scope of the project, related libraries and other relevant information
+- [**Introduction**](/docs/category/introduction): covers scope of the project, related libraries and other relevant information
 - **Getting Started**: includes installation instructions, basic usage and examples
 - **How-to-Guides**: provides guides for common tasks such as loading images, rendering images, and annotating images
 - **Concepts**: explains an in-depth look at various technical concepts that are used in the library
 - **API Reference**: provides a detailed description of the API and how to use each function
-- [**Contributing**](../contribute/): explains how to contribute to the project and how to report bugs
+- [**Contributing**](/docs/category/contributing/): explains how to contribute to the project and how to report bugs
 - **Migration Guides**: includes instructions for upgrading from legacy `cornerstone-core` and `cornerstone-tools` to `cornerstone3D` and `cornerstone3DTools`
 - **Test Coverage Report**: provides a detailed report of the test coverage of the library
 - **FAQ**: provides answers to frequently asked questions

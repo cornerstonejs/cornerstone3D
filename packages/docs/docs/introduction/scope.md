@@ -4,7 +4,36 @@ id: scope
 
 # Scope of Project
 
-`cornerstone3D` is a javascript library
+## Scope
+
+`cornerstone3D` is a javascript library that enables 3D rendering of medical images
+using purely web standards. The library employs WebGL for GPU accelerated rendering
+whenever possible. `cornerstone3DTools` is a peer library to `cornerstone3D` and
+contains a number manipulation and annotations tools that are used to interact with
+the 3D rendering.
+
+The `cornerstone3D` scope **DOES NOT** encompass dealing with image/volume loading
+and metadata parsing. The `cornerstone3D` scope **DOES** include image rendering.
+Proper image loaders should be registered **TO** the cornerstone3D using `imageLoader.registerImageLoader`
+and `volumeLoader.registerVolumeLoader`. Examples of such image loaders are `wadors` loader
+using `cornerstoneWADOImageLoader` for DICOM P10 instances over `dicomweb` and `wadouri` for
+the DICOM P10 instances over HTTP. With `cornerstone3D` we are releasing our first `volumeLoader`,
+`streaming-image-volume-loader`, that will be able to stream images of a volume one by one.
+
+In addition, `cornerstone3D` has a metadata registration mechanism that allows
+metadata parsers to be registered **TO** the `cornerstone3D` using `metaData.addProvider`.
+Using `cornerstoneWADOImageLoader`, its image loaders and metadata providers self-register
+with the `cornerstone3D`. You can always checkout the example helpers to see how an
+end-to-end example from metadata parsing to image loading and image rendering can be achieved.
+
+## Typescript
+
+Since `cornerstone3D` and `cornerstone3DTools` are written in Typescript, they provide
+a type-safe API. This means that you can use the library in a TypeScript environment
+and using type information, you can be assured that the parameters being passed to any method
+match what is expected.
+
+
 
 
 ## Browser Support
