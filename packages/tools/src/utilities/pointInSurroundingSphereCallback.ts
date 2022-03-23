@@ -1,9 +1,6 @@
-import type {
-  Types,
-  VolumeViewport,
-} from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
+import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
 import { vec3 } from 'gl-matrix'
 import { pointInSphere } from './math/sphere'
 import { getBoundingBoxAroundShape } from './segmentation/getBoundingBoxUtils'
@@ -27,7 +24,7 @@ import transformPhysicalToIndex from './transformPhysicalToIndex'
  * @param callback - A callback function that will be called for each point in the shape.
  */
 export default function pointInSurroundingSphereCallback(
-  viewport: VolumeViewport,
+  viewport: Types.IVolumeViewport,
   imageData: vtkImageData,
   circlePoints: [Types.Point3, Types.Point3],
   callback: PointInShapeCallback

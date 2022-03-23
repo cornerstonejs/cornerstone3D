@@ -1,8 +1,6 @@
 import { BaseTool } from './base'
-import {
-  getEnabledElement,
-  VolumeViewport,
-} from '@cornerstonejs/core'
+import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar'
 import jumpToWorld from '../utilities/viewport/jumpToWorld'
 import { PublicToolProps, ToolProps } from '../types'
@@ -47,7 +45,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     const { viewport, renderingEngine } = enabledElement
 
     // 2. Getting the target volume that is clicked on
-    const targetVolumeUID = this.getTargetUID(viewport as VolumeViewport)
+    const targetVolumeUID = this.getTargetUID(viewport as Types.IVolumeViewport)
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity
@@ -60,7 +58,7 @@ export default class MIPJumpToClickTool extends BaseTool {
 
     // 4. Search for the brightest point location in the line of sight
     const brightestPoint = getPointInLineOfSightWithCriteria(
-      viewport as VolumeViewport,
+      viewport as Types.IVolumeViewport,
       currentPoints.world,
       targetVolumeUID,
       maxFn

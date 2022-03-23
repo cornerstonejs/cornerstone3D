@@ -1,4 +1,5 @@
-import { metaData, Types } from '@cornerstonejs/core'
+import { metaData } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * It creates a metadata object for a volume given the imageIds that compose it.

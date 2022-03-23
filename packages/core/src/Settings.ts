@@ -8,9 +8,8 @@ const OBJECT_SETTINGS_MAP = Symbol('ObjectSettingsMap')
 const DICTIONARY = Symbol('Dictionary')
 
 /**
- * @class Settings
+ * Settings
  */
-
 export default class Settings {
   constructor(base?: Settings) {
     const dictionary = Object.create(

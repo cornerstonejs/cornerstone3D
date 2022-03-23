@@ -1,5 +1,6 @@
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
+import type { vtkImageData as vtkImageDataType } from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper'
 import _cloneDeep from 'lodash.clonedeep'
@@ -92,7 +93,7 @@ class StackViewport extends Viewport implements IStackViewport {
   private rotation = 0
 
   // Helpers
-  private _imageData: vtkImageData
+  private _imageData: vtkImageDataType
   private cameraPosOnRender: Point3
   private stackInvalidated = false // if true -> new actor is forced to be created for the stack
   private panCache: Point3
@@ -1113,7 +1114,7 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   private _checkVTKImageDataMatchesCornerstoneImage(
     image: IImage,
-    imageData: vtkImageData
+    imageData: vtkImageDataType
   ): boolean {
     if (!imageData) {
       return false

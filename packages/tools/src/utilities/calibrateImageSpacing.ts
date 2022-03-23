@@ -1,7 +1,5 @@
-import {
-  RenderingEngine,
-  utilities,
-} from '@cornerstonejs/core'
+import { utilities } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 const { calibratedPixelSpacingMetadataProvider } = utilities
 
@@ -16,7 +14,7 @@ const { calibratedPixelSpacingMetadataProvider } = utilities
  */
 export default function calibrateImageSpacing(
   imageId: string,
-  renderingEngine: RenderingEngine,
+  renderingEngine: Types.IRenderingEngine,
   rowPixelSpacing: number,
   columnPixelSpacing: number
 ): void {

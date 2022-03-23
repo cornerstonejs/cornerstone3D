@@ -1,7 +1,5 @@
-import {
-  getEnabledElement,
-  VolumeViewport,
-} from '@cornerstonejs/core'
+import { getEnabledElement } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 import { ToolGroupSpecificSegmentationData } from '../../../types/SegmentationStateTypes'
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations'
 
@@ -29,7 +27,9 @@ function internalRemoveSegmentationFromElement(
   const { representation, segmentationDataUID } = segmentationData
 
   if (representation.type === SegmentationRepresentations.Labelmap) {
-    ;(viewport as VolumeViewport).removeVolumeActors([segmentationDataUID])
+    ;(viewport as Types.IVolumeViewport).removeVolumeActors([
+      segmentationDataUID,
+    ])
   } else {
     throw new Error('Only labelmap representation is supported for now')
   }

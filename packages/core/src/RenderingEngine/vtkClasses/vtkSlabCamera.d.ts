@@ -1,5 +1,5 @@
-import { mat4 } from 'gl-matrix'
-import { VtkObject } from 'vtk.js/Sources/macros'
+import type { mat4 } from 'gl-matrix'
+import type { VtkObject } from 'vtk.js/Sources/interfaces'
 
 // Copied from VTKCamera
 
@@ -34,19 +34,19 @@ export interface vtkSlabCamera extends VtkObject {
    * Apply a transform to the camera.
    * The camera position, focal-point, and view-up are re-calculated
    * using the transform's matrix to multiply the old points by the new transform.
-   * @param transformMat4
+   * @param transformMat4 -
    */
   applyTransform(transformMat4: mat4): void
 
   /**
    * Rotate the camera about the view up vector centered at the focal point.
-   * @param {Number} angle
+   * @param angle -
    */
   azimuth(angle: number): void
 
   /**
    *
-   * @param {Number} bounds
+   * @param bounds -
    */
   computeClippingRange(bounds: number[]): number[]
 
@@ -59,33 +59,33 @@ export interface vtkSlabCamera extends VtkObject {
    * the provided matrix should include
    * translation and orientation only
    * mat is physical to view
-   * @param {mat4} mat
+   * @param mat -
    */
   computeViewParametersFromPhysicalMatrix(mat: mat4): void
 
   /**
    *
-   * @param {mat4} vmat
+   * @param vmat -
    */
   computeViewParametersFromViewMatrix(vmat: mat4): void
 
   /**
    * Not implemented yet
-   * @param {vtkCamera} sourceCamera
+   * @param sourceCamera -
    */
-  deepCopy(sourceCamera: vtkCamera): void
+  deepCopy(sourceCamera: vtkSlabCamera): void
 
   /**
    * Move the position of the camera along the view plane normal. Moving
-   * towards the focal point (e.g., > 1) is a dolly-in, moving away
-   * from the focal point (e.g., < 1) is a dolly-out.
-   * @param {Number} amount
+   * towards the focal point (e.g., greater than 1) is a dolly-in, moving away
+   * from the focal point (e.g., less than 1) is a dolly-out.
+   * @param amount -
    */
   dolly(amount: number): void
 
   /**
    * Rotate the camera about the cross product of the negative of the direction of projection and the view up vector, using the focal point as the center of rotation.
-   * @param {Number} angle
+   * @param angle  -
    */
   elevation(angle: number): void
 
@@ -96,33 +96,33 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @default [0.01, 1000.01],
+   * @defaultValue [0.01, 1000.01],
    */
   getClippingRange(): number[]
 
   /**
    *
-   * @default [0.01],
+   * @defaultValue [0.01],
    */
   getSlabThickness(): number
 
   /**
    *
-   * @default
+   * @defaultValue
    */
   getSlabThicknessActive(): boolean
 
   /**
    *
-   * @default [0.01, 1000.01],
+   * @defaultValue [0.01, 1000.01],
    */
   getClippingRangeByReference(): number[]
 
   /**
    *
-   * @param {Number} aspect Camera frustum aspect ratio.
-   * @param {Number} nearz Camera frustum near plane.
-   * @param {Number} farz Camera frustum far plane.
+   * @param aspect - Camera frustum aspect ratio.
+   * @param nearz - Camera frustum near plane.
+   * @param farz - Camera frustum far plane.
    */
   getCompositeProjectionMatrix(
     aspect: number,
@@ -132,13 +132,13 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    * Get the vector in the direction from the camera position to the focal point.
-   * @default [0, 0, -1],
+   * @defaultValue [0, 0, -1],
    */
   getDirectionOfProjection(): number[]
 
   /**
    *
-   * @default [0, 0, -1],
+   * @defaultValue [0, 0, -1],
    */
   getDirectionOfProjectionByReference(): number[]
 
@@ -149,7 +149,7 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @default [0, 0, 0]
+   * @defaultValue [0, 0, 0]
    */
   getFocalPoint(): number[]
 
@@ -160,13 +160,15 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @default false
+   * @defaultValue false
    */
   getFreezeFocalPoint(): boolean
 
+  setFreezeFocalPoint(freeze: boolean): void
+
   /**
    * Not implemented yet
-   * @param {Number} aspect Camera frustum aspect ratio.
+   * @param aspect - Camera frustum aspect ratio.
    */
   getFrustumPlanes(aspect: number): void
 
@@ -182,25 +184,25 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @default false
+   * @defaultValue false
    */
   getParallelProjection(): boolean
 
   /**
    *
-   * @default 1
+   * @defaultValue 1
    */
   getParallelScale(): number
 
   /**
    *
-   * @default 1.0
+   * @defaultValue 1.0
    */
   getPhysicalScale(): number
 
   /**
    *
-   * @param {mat4} result
+   * @param result -
    */
   getPhysicalToWorldMatrix(result: mat4): void
 
@@ -216,7 +218,7 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @default [0, 0, -1],
+   * @defaultValue [0, 0, -1],
    */
   getPhysicalViewNorth(): number[]
 
@@ -227,7 +229,7 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @default [0, 1, 0]
+   * @defaultValue [0, 1, 0]
    */
   getPhysicalViewUp(): number[]
 
@@ -238,7 +240,7 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    * Get the position of the camera in world coordinates.
-   * @default [0, 0, 1]
+   * @defaultValue [0, 0, 1]
    */
   getPosition(): number[]
 
@@ -249,10 +251,10 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @param {Number} aspect Camera frustum aspect ratio.
-   * @param {Number} nearz Camera frustum near plane.
-   * @param {Number} farz Camera frustum far plane.
-   * @default null
+   * @param aspect - Camera frustum aspect ratio.
+   * @param nearz - Camera frustum near plane.
+   * @param farz - Camera frustum far plane.
+   * @defaultValue null
    */
   getProjectionMatrix(aspect: number, nearz: number, farz: number): null | mat4
 
@@ -264,67 +266,66 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    * Get top left corner point of the screen.
-   * @default [-0.5, -0.5, -0.5]
+   * @defaultValue [-0.5, -0.5, -0.5]
    */
   getScreenBottomLeft(): number[]
 
   /**
    *
-   * @default [-0.5, -0.5, -0.5]
+   * @defaultValue [-0.5, -0.5, -0.5]
    */
   getScreenBottomLeftByReference(): number[]
 
   /**
    * Get bottom left corner point of the screen
-   * @default [0.5, -0.5, -0.5]
+   * @defaultValue [0.5, -0.5, -0.5]
    */
   getScreenBottomRight(): number[]
 
   /**
    *
-   * @default [0.5, -0.5, -0.5]
+   * @defaultValue [0.5, -0.5, -0.5]
    */
   getScreenBottomRightByReference(): number[]
 
   /**
    *
-   * @default [0.5, 0.5, -0.5]
+   * @defaultValue [0.5, 0.5, -0.5]
    */
   getScreenTopRight(): number[]
 
   /**
    *
-   * @default [0.5, 0.5, -0.5]
+   * @defaultValue [0.5, 0.5, -0.5]
    */
   getScreenTopRightByReference(): number[]
 
   /**
    * Get the center of the window in viewport coordinates.
-   * @return
    */
   getThickness(): number
 
   /**
    * Get the value of the UseHorizontalViewAngle instance variable.
-   * @default false
+   * @defaultValue false
    */
   getUseHorizontalViewAngle(): boolean
 
   /**
    * Get use offaxis frustum.
-   * @default false
+   * @defaultValue false
    */
   getUseOffAxisProjection(): boolean
 
   /**
    * Get the camera view angle.
-   * @default 30
+   * @defaultValue 30
    */
   getViewAngle(): number
 
   /**
    *
-   * @default null
+   * @defaultValue null
    */
   getViewMatrix(): null | mat4
 
@@ -332,7 +333,7 @@ export interface vtkSlabCamera extends VtkObject {
    * Get the ViewPlaneNormal.
    * This vector will point opposite to the direction of projection,
    * unless you have created a sheared output view using SetViewShear/SetObliqueAngles.
-   * @default [0, 0, 1]
+   * @defaultValue [0, 0, 1]
    */
   getViewPlaneNormal(): number[]
 
@@ -343,88 +344,88 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    * Get ViewUp vector.
-   * @default [0, 1, 0]
+   * @defaultValue [0, 1, 0]
    */
   getViewUp(): number[]
 
   /**
    * Get ViewUp vector by reference.
-   * @default [0, 1, 0]
+   * @defaultValue [0, 1, 0]
    */
   getViewUpByReference(): number[]
 
   /**
    * Get the center of the window in viewport coordinates.
    * The viewport coordinate range is ([-1,+1],[-1,+1]).
-   * @default [0, 0]
+   * @defaultValue [0, 0]
    */
   getWindowCenter(): number[]
 
   /**
    *
-   * @default [0, 0]
+   * @defaultValue [0, 0]
    */
   getWindowCenterByReference(): number[]
 
   /**
    *
-   * @param {mat4} result
+   * @param result -
    */
   getWorldToPhysicalMatrix(result: mat4): void
 
   /**
-   * Recompute the ViewUp vector to force it to be perpendicular to camera->focalpoint vector.
+   * Recompute the ViewUp vector to force it to be perpendicular to the camera's focalpoint vector.
    */
   orthogonalizeViewUp(): void
 
   /**
    *
-   * @param {Number[]} ori
+   * @param ori -
    */
   physicalOrientationToWorldDirection(ori: number[]): any
 
   /**
    * Rotate the focal point about the cross product of the view up vector and the direction of projection, using the camera's position as the center of rotation.
-   * @param {Number} angle
+   * @param angle -
    */
   pitch(angle: number): void
 
   /**
    * Rotate the camera about the direction of projection.
-   * @param {Number} angle
+   * @param angle -
    */
   roll(angle: number): void
 
   /**
    * Set the location of the near and far clipping planes along the direction
    * of projection.
-   * @param {Number} near
-   * @param {Number} far
+   * @param near -
+   * @param far -
    */
   setClippingRange(near: number, far: number): boolean
 
   /**
    * Set the location of the near and far clipping planes along the direction
    * of projection.
-   * @param {Number[]} clippingRange
+   * @param clippingRange -
    */
   setClippingRange(clippingRange: number[]): boolean
 
   /**
    * Activate slab thickness for the camera
-   * @param {boolean} status
+   * @param status -
    */
   setSlabThicknessActive(status: boolean): void
 
   /**
    * Set the slab thickness
-   * @param {boolean} status
+   * @param status -
    */
   setSlabThickness(slabThickness: number): void
 
   /**
    *
-   * @param {Number[]} clippingRange
+   * @param clippingRange -
    */
   setClippingRangeFrom(clippingRange: number[]): boolean
 
@@ -445,10 +446,10 @@ export interface vtkSlabCamera extends VtkObject {
    * convention with axes of Z, X, Y (the code below substitutes
    * the physical coordinate system for these axes to get the right
    * modified coordinate system.
-   * @param {Number} alpha
-   * @param {Number} beta
-   * @param {Number} gamma
-   * @param {Number} screen
+   * @param alpha -
+   * @param beta -
+   * @param gamma -
+   * @param screen -
    */
   setDeviceAngles(
     alpha: number,
@@ -459,29 +460,29 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setDirectionOfProjection(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Number} distance
+   * @param distance -
    */
   setDistance(distance: number): boolean
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setFocalPoint(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Number[]} focalPoint
+   * @param focalPoint -
    */
   setFocalPointFrom(focalPoint: number[]): boolean
 
@@ -494,98 +495,98 @@ export interface vtkSlabCamera extends VtkObject {
    * This creates a shear transform x' = x + dz*cos(alpha)/tan(beta), y' = dz*sin(alpha)/tan(beta) where dz is the distance of the point from the focal plane.
    * The angles are (45,90) by default. Oblique projections commonly use (30,63.435).
    *
-   * @param {Number} alpha
-   * @param {Number} beta
+   * @param alpha -
+   * @param beta -
    */
   setObliqueAngles(alpha: number, beta: number): boolean
 
   /**
    *
-   * @param {Number} degrees
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param degrees -
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setOrientationWXYZ(degrees: number, x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Boolean} parallelProjection
+   * @param parallelProjection -
    */
   setParallelProjection(parallelProjection: boolean): boolean
 
   /**
    *
-   * @param {Number} parallelScale
+   * @param parallelScale -
    */
   setParallelScale(parallelScale: number): boolean
 
   /**
    *
-   * @param {Number} physicalScale
+   * @param physicalScale -
    */
   setPhysicalScale(physicalScale: number): boolean
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setPhysicalTranslation(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Number[]} physicalTranslation
+   * @param physicalTranslation -
    */
   setPhysicalTranslationFrom(physicalTranslation: number[]): boolean
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setPhysicalViewNorth(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Number[]} physicalViewNorth
+   * @param physicalViewNorth -
    */
   setPhysicalViewNorthFrom(physicalViewNorth: number[]): boolean
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setPhysicalViewUp(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Number[]} physicalViewUp
+   * @param physicalViewUp -
    */
   setPhysicalViewUpFrom(physicalViewUp: number[]): boolean
 
   /**
    * Set the position of the camera in world coordinates.
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setPosition(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {mat4} mat
+   * @param mat -
    */
   setProjectionMatrix(mat: mat4): boolean
 
   /**
    * Set the roll angle of the camera about the direction of projection.
-   * @todo Not implemented yet
-   * @param {Number} angle
+   * todo Not implemented yet
+   * @param angle -
    */
   setRoll(angle: number): boolean
 
@@ -593,9 +594,9 @@ export interface vtkSlabCamera extends VtkObject {
    * Set top left corner point of the screen.
    *
    * This will be used only for offaxis frustum calculation.
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setScreenBottomLeft(x: number, y: number, z: number): boolean
 
@@ -603,33 +604,33 @@ export interface vtkSlabCamera extends VtkObject {
    * Set top left corner point of the screen.
    *
    * This will be used only for offaxis frustum calculation.
-   * @param {Number[]} screenBottomLeft
+   * @param screenBottomLeft -
    */
   setScreenBottomLeft(screenBottomLeft: number[]): boolean
 
   /**
    *
-   * @param {Number[]} screenBottomLeft
+   * @param screenBottomLeft -
    */
   setScreenBottomLeftFrom(screenBottomLeft: number[]): boolean
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setScreenBottomRight(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Number[]} screenBottomRight
+   * @param screenBottomRight -
    */
   setScreenBottomRight(screenBottomRight: number[]): boolean
 
   /**
    *
-   * @param {Number[]} screenBottomRight
+   * @param screenBottomRight -
    */
   setScreenBottomRightFrom(screenBottomRight: number[]): boolean
 
@@ -637,9 +638,9 @@ export interface vtkSlabCamera extends VtkObject {
    * Set top right corner point of the screen.
    *
    * This will be used only for offaxis frustum calculation.
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setScreenTopRight(x: number, y: number, z: number): boolean
 
@@ -647,13 +648,13 @@ export interface vtkSlabCamera extends VtkObject {
    * Set top right corner point of the screen.
    *
    * This will be used only for offaxis frustum calculation.
-   * @param {Number[]} screenTopRight
+   * @param screenTopRight -
    */
   setScreenTopRight(screenTopRight: number[]): boolean
 
   /**
    *
-   * @param {Number[]} screenTopRight
+   * @param screenTopRight -
    */
   setScreenTopRightFrom(screenTopRight: number[]): boolean
 
@@ -661,19 +662,19 @@ export interface vtkSlabCamera extends VtkObject {
    * Set the distance between clipping planes.
    *
    * This method adjusts the far clipping plane to be set a distance 'thickness' beyond the near clipping plane.
-   * @param {Number} thickness
+   * @param thickness -
    */
   setThickness(thickness: number): boolean
 
   /**
    *
-   * @param {Number} thickness
+   * @param thickness -
    */
   setThicknessFromFocalPoint(thickness: number): boolean
 
   /**
    *
-   * @param {Boolean} useHorizontalViewAngle
+   * @param useHorizontalViewAngle -
    */
   setUseHorizontalViewAngle(useHorizontalViewAngle: boolean): boolean
 
@@ -683,39 +684,39 @@ export interface vtkSlabCamera extends VtkObject {
    * OffAxis frustum is used for off-axis frustum calculations specifically for
    * stereo rendering. For reference see "High Resolution Virtual Reality", in
    * Proc. SIGGRAPH '92, Computer Graphics, pages 195-202, 1992.
-   * @param {Boolean} useOffAxisProjection
+   * @param useOffAxisProjection -
    */
   setUseOffAxisProjection(useOffAxisProjection: boolean): boolean
 
   /**
    * Set the camera view angle, which is the angular height of the camera view measured in degrees.
-   * @param {Number} viewAngle
+   * @param viewAngle -
    */
   setViewAngle(viewAngle: number): boolean
 
   /**
    *
-   * @param {mat4} mat
+   * @param mat -
    */
   setViewMatrix(mat: mat4): boolean
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   setViewUp(x: number, y: number, z: number): boolean
 
   /**
    *
-   * @param {Number[]} viewUp
+   * @param viewUp -
    */
   setViewUp(viewUp: number[]): boolean
 
   /**
    *
-   * @param {Number[]} viewUp
+   * @param viewUp -
    */
   setViewUpFrom(viewUp: number[]): boolean
 
@@ -723,34 +724,34 @@ export interface vtkSlabCamera extends VtkObject {
    * Set the center of the window in viewport coordinates.
    * The viewport coordinate range is ([-1,+1],[-1,+1]).
    * This method is for if you have one window which consists of several viewports, or if you have several screens which you want to act together as one large screen
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
    */
   setWindowCenter(x: number, y: number): boolean
 
   /**
    * Set the center of the window in viewport coordinates from an array.
-   * @param {Number[]} windowCenter
+   * @param windowCenter -
    */
   setWindowCenterFrom(windowCenter: number[]): boolean
 
   /**
    *
-   * @param {Number} x The x coordinate.
-   * @param {Number} y The y coordinate.
-   * @param {Number} z The z coordinate.
+   * @param x - The x coordinate.
+   * @param y - The y coordinate.
+   * @param z - The z coordinate.
    */
   translate(x: number, y: number, z: number): void
 
   /**
    * Rotate the focal point about the view up vector, using the camera's position as the center of rotation.
-   * @param {Number} angle
+   * @param angle -
    */
   yaw(angle: number): void
 
   /**
    * In perspective mode, decrease the view angle by the specified factor.
-   * @param {Number} factor
+   * @param factor -
    */
   zoom(factor: number): void
 }
@@ -758,9 +759,9 @@ export interface vtkSlabCamera extends VtkObject {
 /**
  * Method use to decorate a given object (publicAPI+model) with vtkRenderer characteristics.
  *
- * @param publicAPI object on which methods will be bounds (public)
- * @param model object on which data structure will be bounds (protected)
- * @param {ICameraInitialValues} [initialValues] (default: {})
+ * @param publicAPI - object on which methods will be bounds (public)
+ * @param model - object on which data structure will be bounds (protected)
+ * @param initialValues -
  */
 export function extend(
   publicAPI: any,
@@ -772,9 +773,9 @@ export function extend(
  * Method use to create a new instance of vtkCamera with its focal point at the origin,
  * and position=(0,0,1). The view up is along the y-axis, view angle is 30 degrees,
  * and the clipping range is (.1,1000).
- * @param {ICameraInitialValues} [initialValues] for pre-setting some of its content
+ * @param initialValues - for pre-setting some of its content
  */
-export function newInstance(initialValues?: ICameraInitialValues): vtkCamera
+export function newInstance(initialValues?: ICameraInitialValues): vtkSlabCamera
 
 /**
  * vtkCamera is a virtual camera for 3D rendering. It provides methods

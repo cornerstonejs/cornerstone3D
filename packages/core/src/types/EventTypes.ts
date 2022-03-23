@@ -1,12 +1,12 @@
-import { CustomEventType } from '../types'
-import ICachedImage from './ICachedImage'
-import ICachedVolume from './ICachedVolume'
-import ICamera from './ICamera'
-import IImage from './IImage'
-import IImageVolume from './IImageVolume'
-import { VOIRange } from './voi'
+import type CustomEventType from '../types/CustomEventType'
+import type ICachedImage from './ICachedImage'
+import type ICachedVolume from './ICachedVolume'
+import type ICamera from './ICamera'
+import type IImage from './IImage'
+import type IImageVolume from './IImageVolume'
+import type { VOIRange } from './voi'
 import type { mat4 } from 'gl-matrix'
-import type vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
+import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
 
 /**
  * CAMERA_MODIFIED Event's data

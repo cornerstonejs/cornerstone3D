@@ -7,13 +7,12 @@ import _cloneDeep from 'lodash.clonedeep'
 
 import Events from '../enums/Events'
 import ViewportType from '../enums/ViewportType'
-import { ICamera, ActorEntry } from '../types'
+import { ICamera, ActorEntry, IRenderingEngine } from '../types'
 import { ViewportInput, IViewport } from '../types/IViewport'
 import renderingEngineCache from './renderingEngineCache'
-import RenderingEngine from './RenderingEngine'
 import { triggerEvent, planar } from '../utilities'
 import { ViewportInputOptions, Point2, Point3, FlipDirection } from '../types'
-import type { vtkSlabCamera } from './vtkClasses'
+import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera'
 
 /**
  * An object representing a single viewport, which is a camera
@@ -97,7 +96,7 @@ class Viewport implements IViewport {
    *
    * @returns The RenderingEngine instance.
    */
-  public getRenderingEngine(): RenderingEngine {
+  public getRenderingEngine(): IRenderingEngine {
     return renderingEngineCache.get(this.renderingEngineUID)
   }
 

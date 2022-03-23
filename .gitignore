@@ -36,6 +36,7 @@ dist/
 tsDist/
 lib/
 lib-esm/
+temp/
 
 
 # Report Output

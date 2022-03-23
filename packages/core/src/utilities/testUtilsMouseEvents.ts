@@ -1,4 +1,6 @@
+import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
 import { getOrCreateCanvas } from '../RenderingEngine'
+import type { IVolumeViewport, IStackViewport } from '../types'
 
 function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
   const rect = DomCanvasElement.getBoundingClientRect()
@@ -18,10 +20,15 @@ function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
  * @param {vtkImageData} imageData
  * @param {[number, number,number]} index - IJK index of the point to click
  * @param {HTMLElement} element - the canvas to be clicked on
- * @param {StackViewport|VolumeViewport} viewport
+ * @param {IStackViewport|IVolumeViewport} viewport
  * @returns pageX, pageY, clientX, clientY, worldCoordinate
  */
-function createNormalizedMouseEvent(imageData, index, element, viewport) {
+function createNormalizedMouseEvent(
+  imageData: vtkImageData,
+  index,
+  element,
+  viewport
+) {
   const canvas = getOrCreateCanvas(element)
   const tempWorld1 = imageData.indexToWorld(index)
   const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1)

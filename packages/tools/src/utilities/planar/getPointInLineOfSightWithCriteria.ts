@@ -1,10 +1,7 @@
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
-import {
-  VolumeViewport,
-  utilities as csUtils,
-} from '@cornerstonejs/core'
+import { utilities as csUtils } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
-
+import { VolumeViewport } from '@cornerstonejs/core'
 /**
  * Returns a point based on some criteria (e.g., minimum or maximum intensity) in
  * the line of sight (on the line between the passed worldPosition and camera position).
@@ -22,7 +19,7 @@ import type { Types } from '@cornerstonejs/core'
  * @returns the World pos of the point that passes the criteriaFunction
  */
 export default function getPointInLineOfSightWithCriteria(
-  viewport: VolumeViewport,
+  viewport: Types.IVolumeViewport,
   worldPos: Types.Point3,
   targetVolumeUID: string,
   criteriaFunction: (intensity: number, point: Types.Point3) => Types.Point3,

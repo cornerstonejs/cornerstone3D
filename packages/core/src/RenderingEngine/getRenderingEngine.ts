@@ -1,6 +1,5 @@
 import renderingEngineCache from './renderingEngineCache'
-import RenderingEngine from './RenderingEngine'
-import { IViewport } from '../types'
+import type { IRenderingEngine } from './RenderingEngine'
 
 /**
  * Method to retrieve a RenderingEngine by its unique identifier.
@@ -20,7 +19,7 @@ import { IViewport } from '../types'
  * @returns the matching RenderingEngine, or `undefined` if there is no match
  * @public
  */
-export function getRenderingEngine(uid: string): RenderingEngine | undefined {
+export function getRenderingEngine(uid: string): IRenderingEngine | undefined {
   return renderingEngineCache.get(uid)
 }
 
@@ -28,7 +27,7 @@ export function getRenderingEngine(uid: string): RenderingEngine | undefined {
  * Get all the rendering engines that are currently registered
  * @returns An array of rendering engines.
  */
-export function getRenderingEngines(): RenderingEngine[] | undefined {
+export function getRenderingEngines(): IRenderingEngine[] | undefined {
   return renderingEngineCache.getAll()
 }
 

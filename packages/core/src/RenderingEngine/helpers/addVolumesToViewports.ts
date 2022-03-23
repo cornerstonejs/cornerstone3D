@@ -1,5 +1,5 @@
-import { RenderingEngine, VolumeViewport } from '../'
-import { IVolumeInput } from '../../types'
+import { VolumeViewport } from '../'
+import type { IVolumeInput, IRenderingEngine } from '../../types'
 
 /**
  * For each provided viewport it adds a volume to the viewport using the
@@ -14,7 +14,7 @@ import { IVolumeInput } from '../../types'
  * @returns A promise that resolves when all volumes have been added
  */
 async function addVolumesToViewports(
-  renderingEngine: RenderingEngine,
+  renderingEngine: IRenderingEngine,
   volumeInputs: Array<IVolumeInput>,
   viewportUIDs: Array<string>,
   immediateRender = false

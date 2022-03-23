@@ -1,4 +1,5 @@
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
+import type { vtkImageData as vtkImageDataType } from 'vtk.js/Sources/Common/DataModel/ImageData'
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import cloneDeep from 'lodash.clonedeep'
 
@@ -37,7 +38,7 @@ function createInternalVTKRepresentation({
   direction,
   origin,
   scalarData,
-}): vtkImageData {
+}): vtkImageDataType {
   const { PhotometricInterpretation } = metadata
 
   let numComponents = 1

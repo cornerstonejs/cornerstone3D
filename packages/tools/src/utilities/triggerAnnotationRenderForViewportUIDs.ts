@@ -1,8 +1,8 @@
-import { RenderingEngine } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 import triggerAnnotationRender from './triggerAnnotationRender'
 
 export function triggerAnnotationRenderForViewportUIDs(
-  renderingEngine: RenderingEngine,
+  renderingEngine: Types.IRenderingEngine,
   viewportUIDsToRender: string[]
 ): void {
   if (!viewportUIDsToRender.length) {

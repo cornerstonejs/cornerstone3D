@@ -3,9 +3,7 @@ import { AnnotationTool } from './base'
 import {
   getEnabledElementByUIDs,
   getEnabledElement,
-  RenderingEngine,
   utilities as csUtils,
-  VolumeViewport,
 } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
@@ -450,7 +448,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const { element } = eventDetail
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
-    const viewport = enabledElement.viewport as VolumeViewport
+    const viewport = enabledElement.viewport as Types.IVolumeViewport
 
     const requireSameOrientation = false
     const viewportUIDsToRender = getViewportUIDsWithToolToRender(
@@ -719,7 +717,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
       const otherViewport = renderingEngine.getViewport(
         data.viewportUID
-      ) as VolumeViewport
+      ) as Types.IVolumeViewport
 
       const otherCamera = otherViewport.getCamera()
 
@@ -1324,7 +1322,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
   _autoPanViewportIfNecessary(
     viewportUID: string,
-    renderingEngine: RenderingEngine
+    renderingEngine: Types.IRenderingEngine
   ): void {
     // 1. Compute the current world bounding box of the viewport from corner to corner
     // 2. Check if the toolCenter is outside of the world bounding box
@@ -2038,7 +2036,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
           const otherViewport = renderingEngine.getViewport(
             data.viewportUID
-          ) as VolumeViewport
+          ) as Types.IVolumeViewport
           const camera = otherViewport.getCamera()
           const normal = camera.viewPlaneNormal
 
@@ -2159,7 +2157,7 @@ export default class CrosshairsTool extends AnnotationTool {
     })
   }
   _applyDeltaShiftToViewportCamera(
-    renderingEngine: RenderingEngine,
+    renderingEngine: Types.IRenderingEngine,
     annotation,
     delta
   ) {

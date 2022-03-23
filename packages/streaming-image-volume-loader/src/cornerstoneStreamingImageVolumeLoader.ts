@@ -1,10 +1,5 @@
-import {
-  volumeLoader,
-  cache,
-  utilities,
-  Enums,
-  Types,
-} from '@cornerstonejs/core'
+import { volumeLoader, cache, utilities, Enums } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
 import StreamingImageVolume from './StreamingImageVolume'
@@ -31,7 +26,7 @@ interface IVolumeLoader {
 function cornerstoneStreamingImageVolumeLoader(
   volumeId: string,
   options: {
-    imageIds: Array<string>
+    imageIds: string[]
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
