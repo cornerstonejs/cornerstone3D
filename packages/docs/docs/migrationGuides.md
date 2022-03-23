@@ -352,3 +352,39 @@ const loaded = volume.loadStatus.loaded;
 // cachedFrames is the same length as imageIds.
 const cachedFrames = volume.loadStatus.cachedFrames
 ```
+
+
+## Migration plans
+
+The following will not be migrated at the current time, as we do not need these for our immediate goals of planar annotation tools. They could be added in future work:
+
+<table>
+<thead>
+  <tr>
+    <th>Feature</th>
+    <th>Reason</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>Cornerstone Modules</td>
+    <td>In CornerstoneTools these are namespaced plugins used to store tool-wide metadata in a custom manner, whilst also having initialization hooks for enabled/disabled events. They are not necessary for simple planar tools and as such will not be available in the first version.</td>
+  </tr>
+  <tr>
+    <td>Cursor State/Module</td>
+    <td>Cursors are polish that are not a priority for this first leg of work.</td>
+  </tr>
+  <tr>
+    <td>Styling configuration (i.e. textStyle/annotationStyle/toolColors)</td>
+    <td>In the first pass we shall focus on the functionality, and there is no plan to migrate these customization options yet.</td>
+  </tr>
+  <tr>
+    <td>Mixins</td>
+    <td>Mixins are self registering addons for tools introduced in CornerstoneTools 3.0+. We found there are more useful design patterns for making tools by composition, such as wrapping common utility functions. We intend to deprecate this feature.</td>
+  </tr>
+  <tr>
+    <td>Registered third party content other than tools (custom manipulators, utils, etc).</td>
+    <td>We feel utils should just be wrapped up in NPM libraries and imported, and the old framework was probably too heavy for its use cases.</td>
+  </tr>
+</tbody>
+</table>

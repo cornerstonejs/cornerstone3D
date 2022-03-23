@@ -20,21 +20,35 @@ module.exports = {
       type: 'category',
       label: 'Getting Started',
       collapsed: true,
-      items: [
-        'getting-started/core-installation',
-        'getting-started/tools-installation',
-      ],
+      link: {
+        type: 'generated-index',
+        title: 'Getting Started',
+        description:
+          'In this section you will find the basics of using cornerstone3D',
+      },
+      items: ['getting-started/installation', 'getting-started/live-examples'],
     },
     {
       type: 'category',
       label: 'Tutorials',
       collapsed: true,
+      link: {
+        type: 'generated-index',
+        title: 'Tutorials',
+        description: 'In this section you will find a collection of tutorials',
+      },
       items: ['tutorials/core-usage', 'tutorials/tools-usage'],
     },
     {
       type: 'category',
       label: 'How-to Guides',
       collapsed: true,
+      link: {
+        type: 'generated-index',
+        title: 'How-to Guides',
+        description:
+          'In this section you will find how-to guides for cornerstone3D',
+      },
       items: [
         'how-to-guides/core-configuration',
         'how-to-guides/tools-configuration',
@@ -45,10 +59,17 @@ module.exports = {
       type: 'category',
       label: 'Concepts',
       collapsed: true,
+      link: {
+        type: 'generated-index',
+        title: 'Concepts',
+        description:
+          'In this section we explain technical concepts that are used in cornerstone3D',
+      },
       items: [
         {
           type: 'category',
           label: 'Core',
+          link: { type: 'doc', id: 'concepts/cornerstone-core/index' },
           collapsed: true,
           items: [
             'concepts/cornerstone-core/imageId',
@@ -68,6 +89,7 @@ module.exports = {
           type: 'category',
           label: 'Tools',
           collapsed: true,
+          link: { type: 'doc', id: 'concepts/cornerstone-tools/index' },
           items: [
             'concepts/cornerstone-tools/tools',
             'concepts/cornerstone-tools/synchronizers',
