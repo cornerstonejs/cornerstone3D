@@ -2,7 +2,7 @@
 id: pull-request
 ---
 
-# Contributing
+# How to Contribute
 
 
 

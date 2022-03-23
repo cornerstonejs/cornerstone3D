@@ -103,6 +103,11 @@ module.exports = {
     {
       type: 'category',
       label: 'Contributing',
+      link: {
+        type: 'generated-index',
+        title: 'Contributing',
+        description: 'How to contribute to cornerstone3D',
+      },
       collapsed: true,
       items: ['contribute/pull-request', 'contribute/tests'],
     },
