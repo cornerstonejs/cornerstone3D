@@ -114,7 +114,7 @@ class CrosshairsExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -123,7 +123,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -132,7 +132,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -141,7 +141,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PROSTATE.AXIAL,
+        viewportId: VIEWPORT_IDS.PROSTATE.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -150,7 +150,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PROSTATE.SAGITTAL,
+        viewportId: VIEWPORT_IDS.PROSTATE.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {

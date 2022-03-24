@@ -24,11 +24,11 @@ async function setVolumesForViewports(
   immediateRender = false
 ): Promise<void> {
   // Check if all viewports are volumeViewports
-  viewportUIDs.forEach((viewportUID) => {
-    const viewport = renderingEngine.getViewport(viewportUID)
+  viewportUIDs.forEach((viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId)
 
     if (!viewport) {
-      throw new Error(`Viewport with UID ${viewportUID} does not exist`)
+      throw new Error(`Viewport with UID ${viewportId} does not exist`)
     }
 
     // if not instance of VolumeViewport, throw
@@ -37,8 +37,8 @@ async function setVolumesForViewports(
     }
   })
 
-  const setVolumePromises = viewportUIDs.map(async (viewportUID) => {
-    const viewport = renderingEngine.getViewport(viewportUID) as IVolumeViewport
+  const setVolumePromises = viewportUIDs.map(async (viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId) as IVolumeViewport
 
     await viewport.setVolumes(volumeInputs, immediateRender)
   })

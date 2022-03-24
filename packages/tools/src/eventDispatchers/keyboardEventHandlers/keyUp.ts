@@ -16,10 +16,10 @@ export default function keyUp(evt: KeyDownEventType): void {
     return
   }
 
-  const { renderingEngineUID, viewportUID } = evt.detail
+  const { renderingEngineUID, viewportId } = evt.detail
 
   const toolGroup = ToolGroupManager.getToolGroup(
-    viewportUID,
+    viewportId,
     renderingEngineUID
   )
 

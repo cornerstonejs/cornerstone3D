@@ -36,7 +36,7 @@ const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
 const renderingEngineUID = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -51,7 +51,7 @@ function createViewport(renderingEngine, orientation) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
@@ -110,7 +110,7 @@ describe('Segmentation State -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
@@ -175,7 +175,7 @@ describe('Segmentation State -- ', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
-            [viewportUID]
+            [viewportId]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
@@ -196,7 +196,7 @@ describe('Segmentation State -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
@@ -234,7 +234,7 @@ describe('Segmentation State -- ', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeUID: volumeId, callback }],
-            [viewportUID]
+            [viewportId]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {

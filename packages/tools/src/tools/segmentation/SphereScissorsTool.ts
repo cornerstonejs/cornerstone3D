@@ -1,8 +1,4 @@
-import {
-  cache,
-  getEnabledElement,
-  StackViewport,
-} from '@cornerstonejs/core'
+import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
 import { BaseTool } from '../base'
@@ -16,7 +12,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 import {
   segmentationColor,
   segmentLocking,
@@ -158,10 +154,7 @@ export default class SphereScissorsTool extends BaseTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
@@ -204,10 +197,7 @@ export default class SphereScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseUpCallback = (

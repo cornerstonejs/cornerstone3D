@@ -139,7 +139,7 @@ class EnableDisableViewportExample extends Component {
       viewportInputEntries: [
         {
           // CT volume axial
-          viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+          viewportId: VIEWPORT_IDS.CT.SAGITTAL,
           type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(0),
           toolGroup: ctSceneToolGroup,
@@ -149,7 +149,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // stack CT
-          viewportUID: VIEWPORT_IDS.STACK.CT,
+          viewportId: VIEWPORT_IDS.STACK.CT,
           type: ViewportType.STACK,
           element: this._elementNodes.get(1),
           toolGroup: stackCTViewportToolGroup,
@@ -159,7 +159,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // dx
-          viewportUID: VIEWPORT_IDS.STACK.DX,
+          viewportId: VIEWPORT_IDS.STACK.DX,
           type: ViewportType.STACK,
           element: this._elementNodes.get(2),
           toolGroup: stackDXViewportToolGroup,
@@ -169,7 +169,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // CT volume Coronal
-          viewportUID: VIEWPORT_IDS.CT.CORONAL,
+          viewportId: VIEWPORT_IDS.CT.CORONAL,
           type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(3),
           toolGroup: ctSceneToolGroup,
@@ -178,7 +178,7 @@ class EnableDisableViewportExample extends Component {
           },
         },
         {
-          viewportUID: VIEWPORT_IDS.CT.AXIAL,
+          viewportId: VIEWPORT_IDS.CT.AXIAL,
           type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(4),
           toolGroup: ctSceneToolGroup,
@@ -355,7 +355,7 @@ class EnableDisableViewportExample extends Component {
 
     const viewportInput = this.state.viewportInputEntries[viewportIndex]
 
-    this.renderingEngine.disableElement(viewportInput.viewportUID)
+    this.renderingEngine.disableElement(viewportInput.viewportId)
 
     this.setState((state) => ({
       ...state,
@@ -372,14 +372,14 @@ class EnableDisableViewportExample extends Component {
 
     this.renderingEngine.enableElement(viewportInput)
 
-    const { toolGroup, viewportUID, type, canvas } = viewportInput
+    const { toolGroup, viewportId, type, canvas } = viewportInput
 
-    toolGroup.addViewport(viewportUID, renderingEngineUID)
+    toolGroup.addViewport(viewportId, renderingEngineUID)
 
     // load
-    if (viewportUID === VIEWPORT_IDS.STACK.CT) {
+    if (viewportId === VIEWPORT_IDS.STACK.CT) {
       this.ctStackLoad()
-    } else if (viewportUID === VIEWPORT_IDS.STACK.DX) {
+    } else if (viewportId === VIEWPORT_IDS.STACK.DX) {
       this.dxColorLoad()
     } else {
       // if we have removed the scene when disabling all the related viewports
@@ -478,12 +478,12 @@ class EnableDisableViewportExample extends Component {
           </p>
           <p>
             By default, two viewports renders to the screen, the user can add
-            more viewports to the screen by selecting the viewportUID in the
-            list of available viewports.
+            more viewports to the screen by selecting the viewportId in the list
+            of available viewports.
           </p>
           <p>
             Viewports can also be removed from the screen by selecting the
-            viewportUID in the dropdown and disabling it.
+            viewportId in the dropdown and disabling it.
           </p>
           <p>
             A render of offscreen canvas is shown below, to demonstrate correct
@@ -522,8 +522,8 @@ class EnableDisableViewportExample extends Component {
               this.state.viewportInputEntries.map((vpEntry, index) => (
                 <option key={index} value={index}>
                   {this.state.enabledViewports.includes(index)
-                    ? vpEntry.viewportUID + ' --- enabled'
-                    : vpEntry.viewportUID + ' --- disabled'}
+                    ? vpEntry.viewportId + ' --- enabled'
+                    : vpEntry.viewportId + ' --- disabled'}
                 </option>
               ))}
           </select>

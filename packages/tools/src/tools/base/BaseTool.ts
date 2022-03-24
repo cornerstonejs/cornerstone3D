@@ -135,7 +135,7 @@ abstract class BaseTool implements IBaseTool {
 
   /**
    * Get the viewport and image for the targetUID. Since we are using the
-   * schema of stackTarget:<viewportUID>, we can get the viewport and image
+   * schema of stackTarget:<viewportId>, we can get the viewport and image
    * from the stack. For the volumeViewports, the targetUID is the actual
    * volumeUID, so we can get the viewport and image.
    *
@@ -153,8 +153,8 @@ abstract class BaseTool implements IBaseTool {
     let image, viewport
     if (targetUID.startsWith('stackTarget')) {
       const coloneIndex = targetUID.indexOf(':')
-      const viewportUID = targetUID.substring(coloneIndex + 1)
-      viewport = renderingEngine.getViewport(viewportUID)
+      const viewportId = targetUID.substring(coloneIndex + 1)
+      viewport = renderingEngine.getViewport(viewportId)
       image = viewport.getImageData()
     } else {
       image = cache.getVolume(targetUID)
@@ -166,7 +166,7 @@ abstract class BaseTool implements IBaseTool {
   /**
    * Get the target UID for the viewport which will be used to store the cached
    * statistics scoped to that target in the annotations.
-   * For StackViewport, targetUID is the viewportUID, but for the volume viewport,
+   * For StackViewport, targetUID is the viewportId, but for the volume viewport,
    * the targetUID will be grabbed from the volumeUID if particularly specified
    * in the tool configuration, or if not, the first actorUID in the viewport.
    *

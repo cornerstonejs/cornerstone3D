@@ -63,7 +63,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID1,
+      viewportId: viewportUID1,
       type: viewportType,
       element: element1,
       defaultOptions: {
@@ -72,7 +72,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
       },
     },
     {
-      viewportUID: viewportUID2,
+      viewportId: viewportUID2,
       type: viewportType,
       element: element2,
       defaultOptions: {
@@ -81,7 +81,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
       },
     },
     {
-      viewportUID: viewportUID3,
+      viewportId: viewportUID3,
       type: viewportType,
       element: element3,
       defaultOptions: {

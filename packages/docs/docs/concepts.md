@@ -23,7 +23,7 @@ const sceneUID = 'SCENE_UID'
 const viewports = []
 const viewport = {
   sceneUID,
-  viewportUID: 'viewportUID_0',
+  viewportId: 'viewportUID_0',
   type: ViewportType.ORTHOGRAPHIC,
   canvas: document.querySelector('.target-canvas'),
   defaultOptions: {
@@ -67,7 +67,7 @@ scene.setVolumes([
   },
 ])
 
-const viewport = scene.getViewport(viewports[0].viewportUID)
+const viewport = scene.getViewport(viewports[0].viewportId)
 
 // This will initialise volumes in GPU memory
 renderingEngine.render()
@@ -244,7 +244,7 @@ const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
 )
 
 // Add viewports to synchronize
-const firstViewport = { renderingEngineUID, sceneUID, viewportUID }
+const firstViewport = { renderingEngineUID, sceneUID, viewportId }
 const secondViewport = {
   /* */
 }

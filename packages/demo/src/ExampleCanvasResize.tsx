@@ -74,7 +74,7 @@ class CanvasResizeExample extends Component {
 
     renderingEngine.setViewports([
       {
-        viewportUID: axialCTViewportID,
+        viewportId: axialCTViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.axialCTContainer.current,
         defaultOptions: {
@@ -83,7 +83,7 @@ class CanvasResizeExample extends Component {
         },
       },
       {
-        viewportUID: sagittalCTViewportID,
+        viewportId: sagittalCTViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.sagittalCTContainer.current,
         defaultOptions: {
@@ -92,7 +92,7 @@ class CanvasResizeExample extends Component {
         },
       },
       {
-        viewportUID: coronalCTViewportID,
+        viewportId: coronalCTViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.coronalCTContainer.current,
         defaultOptions: {

@@ -19,7 +19,7 @@ type CameraModifiedEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
   renderingEngineUID: string
 }
@@ -29,7 +29,7 @@ type CameraModifiedEventDetail = {
  */
 type VoiModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the volume in the cache */
   volumeUID: string
   /** new VOI range */
@@ -43,7 +43,7 @@ type ElementDisabledEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
   renderingEngineUID: string
 }
@@ -55,7 +55,7 @@ type ElementEnabledEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
   renderingEngineUID: string
 }
@@ -67,7 +67,7 @@ type ImageRenderedEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
   renderingEngineUID: string
   /** Whether to suppress the event */
@@ -158,7 +158,7 @@ type StackNewImageEventDetail = {
   /** the image imageId */
   imageId: string
   /** unique id for the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id for the renderingEngine */
   renderingEngineUID: string
 }
@@ -168,7 +168,7 @@ type StackNewImageEventDetail = {
  */
 type ImageSpacingCalibratedEventDetail = {
   element: HTMLElement
-  viewportUID: string
+  viewportId: string
   renderingEngineUID: string
   imageId: string
   rowScale: number

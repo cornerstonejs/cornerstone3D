@@ -36,7 +36,7 @@ const {
 
 const renderingEngineUID = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -49,7 +49,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: viewportType,
       element,
       defaultOptions: {
@@ -90,7 +90,7 @@ describe('Ellipse Tool: ', () => {
     })
 
     afterEach(function () {
-      this.renderingEngine.disableElement(viewportUID)
+      this.renderingEngine.disableElement(viewportId)
       csTools3d.destroy()
       eventTarget.reset()
       cache.purgeCache()
@@ -115,7 +115,7 @@ describe('Ellipse Tool: ', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
@@ -224,7 +224,7 @@ describe('Ellipse Tool: ', () => {
       )
       this.DOMElements.push(element)
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
@@ -316,7 +316,7 @@ describe('Ellipse Tool: ', () => {
             setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
-              [viewportUID]
+              [viewportId]
             )
             vp.render()
           })
@@ -373,7 +373,7 @@ describe('Ellipse Tool: ', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         // Since ellipse draws from center to out, we are picking a very center

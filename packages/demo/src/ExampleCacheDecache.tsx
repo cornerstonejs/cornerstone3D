@@ -103,7 +103,7 @@ class CacheDecacheExample extends Component {
     this.viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -111,7 +111,7 @@ class CacheDecacheExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -119,7 +119,7 @@ class CacheDecacheExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -128,7 +128,7 @@ class CacheDecacheExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {

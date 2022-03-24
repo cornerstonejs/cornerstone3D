@@ -108,7 +108,7 @@ describe('Synchronizer Manager: ', () => {
 
     this.renderingEngine.setViewports([
       {
-        viewportUID: viewportUID1,
+        viewportId: viewportUID1,
         type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
@@ -117,7 +117,7 @@ describe('Synchronizer Manager: ', () => {
         },
       },
       {
-        viewportUID: viewportUID2,
+        viewportId: viewportUID2,
         type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
@@ -173,11 +173,11 @@ describe('Synchronizer Manager: ', () => {
 
       axialSync.add({
         renderingEngineUID: this.renderingEngine.uid,
-        viewportUID: this.renderingEngine.getViewport(viewportUID1).uid,
+        viewportId: this.renderingEngine.getViewport(viewportUID1).uid,
       })
       axialSync.add({
         renderingEngineUID: this.renderingEngine.uid,
-        viewportUID: this.renderingEngine.getViewport(viewportUID2).uid,
+        viewportId: this.renderingEngine.getViewport(viewportUID2).uid,
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
@@ -252,7 +252,7 @@ describe('Synchronizer Manager: ', () => {
 
     this.renderingEngine.setViewports([
       {
-        viewportUID: viewportUID1,
+        viewportId: viewportUID1,
         type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
@@ -261,7 +261,7 @@ describe('Synchronizer Manager: ', () => {
         },
       },
       {
-        viewportUID: viewportUID2,
+        viewportId: viewportUID2,
         type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
@@ -339,11 +339,11 @@ describe('Synchronizer Manager: ', () => {
 
       voiSync.addSource({
         renderingEngineUID: this.renderingEngine.uid,
-        viewportUID: this.renderingEngine.getViewport(viewportUID1).uid,
+        viewportId: this.renderingEngine.getViewport(viewportUID1).uid,
       })
       voiSync.addTarget({
         renderingEngineUID: this.renderingEngine.uid,
-        viewportUID: this.renderingEngine.getViewport(viewportUID2).uid,
+        viewportId: this.renderingEngine.getViewport(viewportUID2).uid,
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {

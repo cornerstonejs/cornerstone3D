@@ -20,7 +20,7 @@ import {
 import { vec2, vec3 } from 'gl-matrix'
 import { state } from '../store'
 import { Events } from '../enums'
-import { getViewportUIDsWithToolToRender } from '../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters'
 import { resetElementCursor, hideElementCursor } from '../cursors/elementCursor'
 import { math } from '../utilities'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
@@ -36,7 +36,7 @@ import {
   InteractionTypes,
 } from '../types'
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking'
-import triggerAnnotationRenderForViewportUIDs from '../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds'
 import { MouseDragEventType } from '../types/EventTypes'
 
 const { liangBarksyClip } = math.vec2
@@ -44,15 +44,15 @@ const { liangBarksyClip } = math.vec2
 // TODO: nested config is weird
 interface ToolConfiguration {
   configuration?: {
-    getReferenceLineColor?: (viewportUID: string) => string
-    getReferenceLineControllable?: (viewportUID: string) => boolean
-    getReferenceLineDraggableRotatable?: (viewportUID: string) => boolean
-    getReferenceLineSlabThicknessControlsOn?: (viewportUID: string) => boolean
+    getReferenceLineColor?: (viewportId: string) => string
+    getReferenceLineControllable?: (viewportId: string) => boolean
+    getReferenceLineDraggableRotatable?: (viewportId: string) => boolean
+    getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean
     shadow?: boolean
   }
 }
 
-type ViewportInputs = Array<Types.IViewportUID>
+type ViewportInputs = Array<Types.IViewportId>
 
 interface CrosshairsAnnotation extends Annotation {
   data: {
@@ -62,8 +62,8 @@ interface CrosshairsAnnotation extends Annotation {
       activeOperation: number | null // 0 translation, 1 rotation handles, 2 slab thickness handles
       toolCenter: Types.Point3
     }
-    activeViewportUIDs: string[] // a list of the viewport uids connected to the reference lines being translated
-    viewportUID: string
+    activeViewportIds: string[] // a list of the viewport uids connected to the reference lines being translated
+    viewportId: string
   }
 }
 
@@ -105,10 +105,10 @@ export default class CrosshairsTool extends AnnotationTool {
 
   toolCenter: Types.Point3 = [0, 0, 0] // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
-  _getReferenceLineColor?: (viewportUID: string) => string
-  _getReferenceLineControllable?: (viewportUID: string) => boolean
-  _getReferenceLineDraggableRotatable?: (viewportUID: string) => boolean
-  _getReferenceLineSlabThicknessControlsOn?: (viewportUID: string) => boolean
+  _getReferenceLineColor?: (viewportId: string) => string
+  _getReferenceLineControllable?: (viewportId: string) => boolean
+  _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean
+  _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean
   editData: {
     annotation: any
   } | null
@@ -157,13 +157,13 @@ export default class CrosshairsTool extends AnnotationTool {
    */
   initializeViewport = ({
     renderingEngineUID,
-    viewportUID,
-  }: Types.IViewportUID): {
+    viewportId,
+  }: Types.IViewportId): {
     normal: Types.Point3
     point: Types.Point3
   } => {
     const enabledElement = getEnabledElementByUIDs(
-      viewportUID,
+      viewportId,
       renderingEngineUID
     )
     const { FrameOfReferenceUID, viewport } = enabledElement
@@ -198,8 +198,8 @@ export default class CrosshairsTool extends AnnotationTool {
         },
         // Todo: add enum for active Operations
         activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
-        activeViewportUIDs: [], // a list of the viewport uids connected to the reference lines being translated
-        viewportUID,
+        activeViewportIds: [], // a list of the viewport uids connected to the reference lines being translated
+        viewportId,
       },
     }
 
@@ -223,7 +223,7 @@ export default class CrosshairsTool extends AnnotationTool {
    * will be an exact point in space; however, with two viewports, because the
    * intersection of two planes is a line, it assumes the last view is between the centre
    * of the two rendering viewports.
-   * @param viewports Array of viewportInputs which each item containing {viewportUID, renderingEngineUID}
+   * @param viewports Array of viewportInputs which each item containing {viewportId, renderingEngineUID}
    */
   init = (viewports: ViewportInputs): void => {
     if (!viewports.length || viewports.length === 1) {
@@ -319,7 +319,7 @@ export default class CrosshairsTool extends AnnotationTool {
       i++
     }
 
-    data.activeViewportUIDs = [...viewportUIDArray]
+    data.activeViewportIds = [...viewportUIDArray]
     // set translation operation
     data.handles.activeOperation = OPERATION.DRAG
 
@@ -451,7 +451,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const viewport = enabledElement.viewport as Types.IVolumeViewport
 
     const requireSameOrientation = false
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       CrosshairsTool.toolName,
       requireSameOrientation
@@ -543,7 +543,7 @@ export default class CrosshairsTool extends AnnotationTool {
         //     otherLinkedViewportsAnnotationsWithSameCameraDirection[i]
         //   const { data } = annotation
         //   const scene = renderingEngine.getScene(data.sceneUID)
-        //   const otherViewport = scene.getViewport(data.viewportUID)
+        //   const otherViewport = scene.getViewport(data.viewportId)
         //   const camera = otherViewport.getCamera()
 
         //   const newFocalPoint = [0, 0, 0]
@@ -571,18 +571,15 @@ export default class CrosshairsTool extends AnnotationTool {
         renderingEngine.uid
       )
 
-      viewports.forEach(({ uid: viewportUID }) => {
+      viewports.forEach(({ uid: viewportId }) => {
         // other viewports in the scene
-        if (viewportUID !== viewport.uid) {
-          this._autoPanViewportIfNecessary(viewportUID, renderingEngine)
+        if (viewportId !== viewport.uid) {
+          this._autoPanViewportIfNecessary(viewportId, renderingEngine)
         }
       })
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   mouseMoveCallback = (
@@ -606,13 +603,13 @@ export default class CrosshairsTool extends AnnotationTool {
       }
 
       const previousActiveOperation = data.handles.activeOperation
-      const previousActiveViewportUIDs =
-        data.activeViewportUIDs && data.activeViewportUIDs.length > 0
-          ? [...data.activeViewportUIDs]
+      const previousActiveViewportIds =
+        data.activeViewportIds && data.activeViewportIds.length > 0
+          ? [...data.activeViewportIds]
           : []
 
       // This init are necessary, because when we move the mouse they are not cleaned by _mouseUpCallback
-      data.activeViewportUIDs = []
+      data.activeViewportIds = []
       data.handles.activeOperation = null
 
       const handleNearImagePoint = this.getHandleNearImagePoint(
@@ -636,9 +633,9 @@ export default class CrosshairsTool extends AnnotationTool {
         imageNeedsUpdate = true
       } else if (
         data.handles.activeOperation !== previousActiveOperation ||
-        !this._areViewportUIDArraysEqual(
-          data.activeViewportUIDs,
-          previousActiveViewportUIDs
+        !this._areViewportIdArraysEqual(
+          data.activeViewportIds,
+          previousActiveViewportIds
         )
       ) {
         imageNeedsUpdate = true
@@ -654,10 +651,10 @@ export default class CrosshairsTool extends AnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element)
-    const { viewportUID } = enabledElement
+    const { viewportId } = enabledElement
 
     const viewportUIDSpecificCrosshairs = annotations.filter(
-      (annotation) => annotation.data.viewportUID === viewportUID
+      (annotation) => annotation.data.viewportId === viewportId
     )
 
     return viewportUIDSpecificCrosshairs
@@ -716,7 +713,7 @@ export default class CrosshairsTool extends AnnotationTool {
       data.handles.toolCenter = this.toolCenter
 
       const otherViewport = renderingEngine.getViewport(
-        data.viewportUID
+        data.viewportId
       ) as Types.IVolumeViewport
 
       const otherCamera = otherViewport.getCamera()
@@ -1033,7 +1030,7 @@ export default class CrosshairsTool extends AnnotationTool {
         this._getReferenceLineDraggableRotatable(otherViewport.uid)
       const viewportSlabThicknessControlsOn =
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
-      const selectedViewportUID = data.activeViewportUIDs.find(
+      const selectedViewportId = data.activeViewportIds.find(
         (uid) => uid === otherViewport.uid
       )
 
@@ -1043,7 +1040,7 @@ export default class CrosshairsTool extends AnnotationTool {
       const lineActive =
         data.handles.activeOperation !== null &&
         data.handles.activeOperation === OPERATION.DRAG &&
-        selectedViewportUID
+        selectedViewportId
 
       if (lineActive) {
         lineWidth = 2.5
@@ -1205,7 +1202,7 @@ export default class CrosshairsTool extends AnnotationTool {
             }
           )
         } else if (
-          selectedViewportUID &&
+          selectedViewportId &&
           !rotHandlesActive &&
           !slabThicknessHandlesActive &&
           viewportSlabThicknessControlsOn
@@ -1242,7 +1239,7 @@ export default class CrosshairsTool extends AnnotationTool {
           )
         } else if (
           slabThicknessHandlesActive &&
-          selectedViewportUID &&
+          selectedViewportId &&
           viewportSlabThicknessControlsOn
         ) {
           // draw only the slab thickness handles for the active viewport as active
@@ -1321,14 +1318,14 @@ export default class CrosshairsTool extends AnnotationTool {
   }
 
   _autoPanViewportIfNecessary(
-    viewportUID: string,
+    viewportId: string,
     renderingEngine: Types.IRenderingEngine
   ): void {
     // 1. Compute the current world bounding box of the viewport from corner to corner
     // 2. Check if the toolCenter is outside of the world bounding box
     // 3. If it is outside, pan the viewport to fit in the toolCenter
 
-    const viewport = renderingEngine.getViewport(viewportUID)
+    const viewport = renderingEngine.getViewport(viewportId)
     const { sWidth, sHeight } = viewport
 
     const topLefWorld = viewport.canvasToWorld([0, 0])
@@ -1418,7 +1415,7 @@ export default class CrosshairsTool extends AnnotationTool {
     viewport.render()
   }
 
-  _areViewportUIDArraysEqual = (viewportUIDArrayOne, viewportUIDArrayTwo) => {
+  _areViewportIdArraysEqual = (viewportUIDArrayOne, viewportUIDArrayTwo) => {
     if (viewportUIDArrayOne.length !== viewportUIDArrayTwo.length) {
       return false
     }
@@ -1445,10 +1442,10 @@ export default class CrosshairsTool extends AnnotationTool {
     enabledElement,
     annotations
   ) => {
-    const { viewportUID, renderingEngine, viewport } = enabledElement
+    const { viewportId, renderingEngine, viewport } = enabledElement
 
     const otherViewportAnnotations = annotations.filter(
-      (annotation) => annotation.data.viewportUID !== viewportUID
+      (annotation) => annotation.data.viewportId !== viewportId
     )
 
     if (!otherViewportAnnotations || !otherViewportAnnotations.length) {
@@ -1460,8 +1457,8 @@ export default class CrosshairsTool extends AnnotationTool {
 
     const viewportsWithDifferentCameras = otherViewportAnnotations.filter(
       (annotation) => {
-        const { viewportUID } = annotation.data
-        const targetViewport = renderingEngine.getViewport(viewportUID)
+        const { viewportId } = annotation.data
+        const targetViewport = renderingEngine.getViewport(viewportId)
         const cameraOfTarget = targetViewport.getCamera()
 
         return !(
@@ -1489,7 +1486,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const otherLinkedViewportAnnotationsFromSameScene = annotations.filter(
       (annotation) => {
         const { data } = annotation
-        const otherViewport = renderingEngine.getViewport(data.viewportUID)
+        const otherViewport = renderingEngine.getViewport(data.viewportId)
         const otherViewportControllable = this._getReferenceLineControllable(
           otherViewport.uid
         )
@@ -1516,8 +1513,8 @@ export default class CrosshairsTool extends AnnotationTool {
 
     const otherLinkedViewportsAnnotationsWithSameCameraDirection =
       otherLinkedViewportAnnotationsFromSameScene.filter((annotation) => {
-        const { viewportUID } = annotation.data
-        const otherViewport = renderingEngine.getViewport(viewportUID)
+        const { viewportId } = annotation.data
+        const otherViewport = renderingEngine.getViewport(viewportId)
         const otherCamera = otherViewport.getCamera()
         const otherViewPlaneNormal = otherCamera.viewPlaneNormal
         vtkMath.normalize(otherViewPlaneNormal)
@@ -1543,7 +1540,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const otherLinkedViewportAnnotationsFromSameScene = annotations.filter(
       (annotation) => {
         const { data } = annotation
-        const otherViewport = renderingEngine.getViewport(data.viewportUID)
+        const otherViewport = renderingEngine.getViewport(data.viewportId)
         const otherViewportControllable = this._getReferenceLineControllable(
           otherViewport.uid
         )
@@ -1564,8 +1561,8 @@ export default class CrosshairsTool extends AnnotationTool {
       ++i
     ) {
       const annotation = otherLinkedViewportAnnotationsFromSameScene[i]
-      const { viewportUID } = annotation.data
-      const otherViewport = renderingEngine.getViewport(viewportUID)
+      const { viewportId } = annotation.data
+      const otherViewport = renderingEngine.getViewport(viewportId)
       const otherCamera = otherViewport.getCamera()
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal
       vtkMath.normalize(otherViewPlaneNormal)
@@ -1584,8 +1581,8 @@ export default class CrosshairsTool extends AnnotationTool {
         ++jj
       ) {
         const annotation = otherViewportsAnnotationsWithUniqueCameras[jj]
-        const { viewportUID } = annotation.data
-        const stockedViewport = renderingEngine.getViewport(viewportUID)
+        const { viewportId } = annotation.data
+        const stockedViewport = renderingEngine.getViewport(viewportId)
         const cameraOfStocked = stockedViewport.getCamera()
 
         if (
@@ -1608,7 +1605,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const otherNonLinkedViewportAnnotationsFromSameScene = annotations.filter(
       (annotation) => {
         const { data } = annotation
-        const otherViewport = renderingEngine.getViewport(data.viewportUID)
+        const otherViewport = renderingEngine.getViewport(data.viewportId)
         const otherViewportControllable = this._getReferenceLineControllable(
           otherViewport.uid
         )
@@ -1628,8 +1625,8 @@ export default class CrosshairsTool extends AnnotationTool {
       ++i
     ) {
       const annotation = otherNonLinkedViewportAnnotationsFromSameScene[i]
-      const { viewportUID } = annotation.data
-      const otherViewport = renderingEngine.getViewport(viewportUID)
+      const { viewportId } = annotation.data
+      const otherViewport = renderingEngine.getViewport(viewportId)
 
       const otherCamera = otherViewport.getCamera()
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal
@@ -1649,8 +1646,8 @@ export default class CrosshairsTool extends AnnotationTool {
         ++jj
       ) {
         const annotation = otherViewportsAnnotationsWithUniqueCameras[jj]
-        const { viewportUID } = annotation.data
-        const stockedViewport = renderingEngine.getViewport(viewportUID)
+        const { viewportId } = annotation.data
+        const stockedViewport = renderingEngine.getViewport(viewportId)
         const cameraOfStocked = stockedViewport.getCamera()
 
         if (
@@ -1687,8 +1684,8 @@ export default class CrosshairsTool extends AnnotationTool {
         continue
       }
 
-      const { viewportUID } = annotation.data
-      const otherViewport = renderingEngine.getViewport(viewportUID)
+      const { viewportId } = annotation.data
+      const otherViewport = renderingEngine.getViewport(viewportId)
       const otherCamera = otherViewport.getCamera()
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal
       vtkMath.normalize(otherViewPlaneNormal)
@@ -1707,8 +1704,8 @@ export default class CrosshairsTool extends AnnotationTool {
         ++jj
       ) {
         const annotation = otherViewportsAnnotationsWithUniqueCameras[jj]
-        const { viewportUID } = annotation.data
-        const stockedViewport = renderingEngine.getViewport(viewportUID)
+        const { viewportId } = annotation.data
+        const stockedViewport = renderingEngine.getViewport(viewportId)
         const cameraOfStocked = stockedViewport.getCamera()
 
         if (
@@ -1772,7 +1769,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
       (annotation) => {
         const { data } = annotation
-        const otherViewport = renderingEngine.getViewport(data.viewportUID)
+        const otherViewport = renderingEngine.getViewport(data.viewportId)
 
         const sameScene = this._checkIfViewportsRenderingSameScene(
           viewport,
@@ -1833,7 +1830,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
     this.editData.annotation.highlighted = false
     this.editData.annotation.data.handles.activeOperation = null
-    this.editData.annotation.data.activeViewportUIDs = []
+    this.editData.annotation.data.activeViewportIds = []
 
     this._deactivateModify(element)
 
@@ -1845,16 +1842,13 @@ export default class CrosshairsTool extends AnnotationTool {
     const { renderingEngine } = enabledElement
 
     const requireSameOrientation = false
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       CrosshairsTool.toolName,
       requireSameOrientation
     )
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseDragCallback = (evt: MouseDragEventType) => {
@@ -1901,9 +1895,9 @@ export default class CrosshairsTool extends AnnotationTool {
       const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
         (annotation) => {
           const { data } = annotation
-          const otherViewport = renderingEngine.getViewport(data.viewportUID)
+          const otherViewport = renderingEngine.getViewport(data.viewportId)
 
-          return viewportAnnotation.data.activeViewportUIDs.find(
+          return viewportAnnotation.data.activeViewportIds.find(
             (uid) => uid === otherViewport.uid
           )
         }
@@ -1926,7 +1920,7 @@ export default class CrosshairsTool extends AnnotationTool {
         (annotation) => {
           const { data } = annotation
           data.handles.toolCenter = center
-          const otherViewport = renderingEngine.getViewport(data.viewportUID)
+          const otherViewport = renderingEngine.getViewport(data.viewportId)
           const otherViewportControllable = this._getReferenceLineControllable(
             otherViewport.uid
           )
@@ -1992,7 +1986,7 @@ export default class CrosshairsTool extends AnnotationTool {
         const { data } = annotation
         data.handles.toolCenter = center
 
-        const otherViewport = renderingEngine.getViewport(data.viewportUID)
+        const otherViewport = renderingEngine.getViewport(data.viewportId)
         const camera = otherViewport.getCamera()
         const { viewUp, position, focalPoint } = camera
 
@@ -2022,9 +2016,9 @@ export default class CrosshairsTool extends AnnotationTool {
       const viewportsAnnotationsToUpdate = annotations.filter(
         (annotation: CrosshairsAnnotation) => {
           const { data } = annotation
-          const otherViewport = renderingEngine.getViewport(data.viewportUID)
+          const otherViewport = renderingEngine.getViewport(data.viewportId)
 
-          return viewportAnnotation.data.activeViewportUIDs.find(
+          return viewportAnnotation.data.activeViewportIds.find(
             (uid) => uid === otherViewport.uid
           )
         }
@@ -2035,7 +2029,7 @@ export default class CrosshairsTool extends AnnotationTool {
           const { data } = annotation
 
           const otherViewport = renderingEngine.getViewport(
-            data.viewportUID
+            data.viewportId
           ) as Types.IVolumeViewport
           const camera = otherViewport.getCamera()
           const normal = camera.viewPlaneNormal
@@ -2166,7 +2160,7 @@ export default class CrosshairsTool extends AnnotationTool {
     // NOTE2: crosshair center are automatically updated in the onCameraModified event
     const { data } = annotation
 
-    const viewport = renderingEngine.getViewport(data.viewportUID)
+    const viewport = renderingEngine.getViewport(data.viewportId)
     const camera = viewport.getCamera()
     const normal = camera.viewPlaneNormal
 
@@ -2331,7 +2325,7 @@ export default class CrosshairsTool extends AnnotationTool {
       if (vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity) {
         data.handles.activeOperation = OPERATION.SLAB
 
-        data.activeViewportUIDs = [otherViewport.uid]
+        data.activeViewportIds = [otherViewport.uid]
 
         this.editData = {
           annotation,
@@ -2504,7 +2498,7 @@ export default class CrosshairsTool extends AnnotationTool {
       i++
     }
 
-    data.activeViewportUIDs = [...viewportUIDArray]
+    data.activeViewportIds = [...viewportUIDArray]
 
     this.editData = {
       annotation,

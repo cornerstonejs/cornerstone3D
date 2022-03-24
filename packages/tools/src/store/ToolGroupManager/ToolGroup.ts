@@ -1,8 +1,5 @@
 import { MouseBindings, ToolModes } from '../../enums'
-import {
-  getRenderingEngine,
-  getRenderingEngines,
-} from '@cornerstonejs/core'
+import { getRenderingEngine, getRenderingEngines } from '@cornerstonejs/core'
 import { state } from '../index'
 import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types'
 
@@ -37,8 +34,8 @@ export default class ToolGroup implements IToolGroup {
    * Get the viewport UIDs of all the viewports in the current viewport
    * @returns An array of viewport UIDs.
    */
-  getViewportUIDs(): string[] {
-    return this.viewportsInfo.map(({ viewportUID }) => viewportUID)
+  getViewportIds(): string[] {
+    return this.viewportsInfo.map(({ viewportId }) => viewportId)
   }
 
   /**
@@ -107,16 +104,16 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
-   * Add a viewport to the ToolGroup. It accepts viewportUID and optional
+   * Add a viewport to the ToolGroup. It accepts viewportId and optional
    * renderingEngineUID parameter. If renderingEngineUID is not provided,
    * it checks if cornerstone-core has more than one renderingEngine; If so,
    * it will throw an error. If cornerstone-core has only one renderingEngine,
    * it will use that renderingEngine.
    *
-   * @param viewportUID - The unique identifier for the viewport.
+   * @param viewportId - The unique identifier for the viewport.
    * @param renderingEngineUID - The rendering engine to use.
    */
-  addViewport(viewportUID: string, renderingEngineUID?: string): void {
+  addViewport(viewportId: string, renderingEngineUID?: string): void {
     const renderingEngines = getRenderingEngines()
 
     if (!renderingEngineUID && renderingEngines.length > 1) {
@@ -129,20 +126,20 @@ export default class ToolGroup implements IToolGroup {
       renderingEngineUID || renderingEngines[0].uid
 
     this.viewportsInfo.push({
-      viewportUID,
+      viewportId,
       renderingEngineUID: renderingEngineUIDToUse,
     })
   }
 
   /**
    * Removes viewport from the toolGroup. If only renderingEngineUID is defined
-   * it removes all the viewports with the same renderingEngineUID, if viewportUID
+   * it removes all the viewports with the same renderingEngineUID, if viewportId
    * is also provided, it will remove that specific viewport from the ToolGroup.
    *
    * @param renderingEngineUID - renderingEngine uid
-   * @param viewportUID - viewport uid
+   * @param viewportId - viewport uid
    */
-  removeViewports(renderingEngineUID: string, viewportUID?: string): void {
+  removeViewports(renderingEngineUID: string, viewportId?: string): void {
     const indices = []
 
     this.viewportsInfo.forEach((vpInfo, index) => {
@@ -150,7 +147,7 @@ export default class ToolGroup implements IToolGroup {
       if (vpInfo.renderingEngineUID === renderingEngineUID) {
         match = true
 
-        if (viewportUID && vpInfo.viewportUID !== viewportUID) {
+        if (viewportId && vpInfo.viewportId !== viewportId) {
           match = false
         }
       }
@@ -366,9 +363,9 @@ export default class ToolGroup implements IToolGroup {
     if (!cursor) {
       cursor = MouseCursor.getDefinedCursor('default')
     }
-    this.viewportsInfo.forEach(({ renderingEngineUID, viewportUID }) => {
+    this.viewportsInfo.forEach(({ renderingEngineUID, viewportId }) => {
       const viewport =
-        getRenderingEngine(renderingEngineUID).getViewport(viewportUID)
+        getRenderingEngine(renderingEngineUID).getViewport(viewportId)
       if (viewport && viewport.element) {
         initElementCursor(viewport.element, cursor)
       }
@@ -392,8 +389,8 @@ export default class ToolGroup implements IToolGroup {
    * It re-renders the viewports in the toolGroup
    */
   private _renderViewports(): void {
-    this.viewportsInfo.forEach(({ renderingEngineUID, viewportUID }) => {
-      getRenderingEngine(renderingEngineUID).renderViewport(viewportUID)
+    this.viewportsInfo.forEach(({ renderingEngineUID, viewportId }) => {
+      getRenderingEngine(renderingEngineUID).renderViewport(viewportId)
     })
   }
 }

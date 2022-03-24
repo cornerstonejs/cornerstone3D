@@ -36,7 +36,7 @@ const {
 
 const renderingEngineUID = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -57,7 +57,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: viewportType,
       element,
       defaultOptions: {
@@ -126,7 +126,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 
@@ -235,7 +235,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p2, p3
 
@@ -378,7 +378,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 
@@ -513,7 +513,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2, p3, p4
 

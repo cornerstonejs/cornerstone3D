@@ -23,7 +23,7 @@ type CameraModifiedEventDetail = {
     previousCamera: ICamera
     camera: ICamera
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     renderingEngineUID: string
 }
 
@@ -317,7 +317,7 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>
 // @public
 type ElementDisabledEventDetail = {
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     renderingEngineUID: string
 }
 
@@ -327,7 +327,7 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>
 // @public
 type ElementEnabledEventDetail = {
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     renderingEngineUID: string
 }
 
@@ -447,7 +447,7 @@ interface IEnabledElement {
     renderingEngine: IRenderingEngine
     renderingEngineUID: string
     viewport: IStackViewport | IVolumeViewport
-    viewportUID: string
+    viewportId: string
 }
 
 // @public
@@ -624,7 +624,7 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>
 // @public
 type ImageRenderedEventDetail = {
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     renderingEngineUID: string
     suppressEvents?: boolean
 }
@@ -636,7 +636,7 @@ CustomEvent_2<ImageSpacingCalibratedEventDetail>
 // @public
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     renderingEngineUID: string
     imageId: string
     rowScale: number
@@ -667,7 +667,7 @@ interface IRenderingEngine {
     // (undocumented)
     destroy(): void
     // (undocumented)
-    disableElement(viewportUID: string): void
+    disableElement(viewportId: string): void
     // (undocumented)
     enableElement(viewportInputEntry: PublicViewportInput): void
     // (undocumented)
@@ -694,7 +694,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderFrameOfReference(FrameOfReferenceUID: string): void
     // (undocumented)
-    renderViewport(viewportUID: string): void
+    renderViewport(viewportId: string): void
     // (undocumented)
     renderViewports(viewportUIDs: Array<string>): void
     // (undocumented)
@@ -712,7 +712,7 @@ interface IStackViewport extends IViewport {
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement
         element: HTMLElement
-        viewportUID: string
+        viewportId: string
         renderingEngineUID: string
     }
     getCamera(): ICamera
@@ -804,11 +804,11 @@ interface IViewport {
 }
 
 // @public
-interface IViewportUID {
+interface IViewportId {
     // (undocumented)
     renderingEngineUID: string
     // (undocumented)
-    viewportUID: string
+    viewportId: string
 }
 
 // @public
@@ -937,7 +937,7 @@ type PTScaling = {
 // @public
 type PublicViewportInput = {
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     type: ViewportType
     defaultOptions: ViewportInputOptions
 }
@@ -970,7 +970,7 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>
 type StackNewImageEventDetail = {
     image: IImage
     imageId: string
-    viewportUID: string
+    viewportId: string
     renderingEngineUID: string
 }
 
@@ -1047,7 +1047,7 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>
 
 // @public
 type VoiModifiedEventDetail = {
-    viewportUID: string
+    viewportId: string
     volumeUID: string
     range: VOIRange
 }

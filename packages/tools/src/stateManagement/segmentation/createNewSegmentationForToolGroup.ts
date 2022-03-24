@@ -39,12 +39,9 @@ async function createNewSegmentationForToolGroup(
     throw new Error(`ToolGroup with UID ${toolGroupUID} not found`)
   }
 
-  const { viewportUID, renderingEngineUID } = toolGroup.viewportsInfo[0]
+  const { viewportId, renderingEngineUID } = toolGroup.viewportsInfo[0]
 
-  const enabledElement = getEnabledElementByUIDs(
-    viewportUID,
-    renderingEngineUID
-  )
+  const enabledElement = getEnabledElementByUIDs(viewportId, renderingEngineUID)
 
   if (!enabledElement) {
     throw new Error('element disabled')

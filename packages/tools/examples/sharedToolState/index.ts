@@ -128,7 +128,7 @@ async function run() {
 
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportUIDs[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -137,7 +137,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportUIDs[1],
       type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
@@ -149,8 +149,8 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  viewportUIDs.forEach((viewportUID) =>
-    toolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportUIDs.forEach((viewportId) =>
+    toolGroup.addViewport(viewportId, renderingEngineUID)
   )
 
   // Define a volume in memory

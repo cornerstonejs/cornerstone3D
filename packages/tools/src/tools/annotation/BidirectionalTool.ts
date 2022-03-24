@@ -25,7 +25,7 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { Events } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import lineSegment from '../../utilities/math/line'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
@@ -47,7 +47,7 @@ import {
   MouseDragEventType,
   MouseMoveEventType,
 } from '../../types/EventTypes'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 interface BidirectionalAnnotation extends Annotation {
   data: {
@@ -96,7 +96,7 @@ interface BidirectionalAnnotation extends Annotation {
  *
  * toolGroup.addTool(BidirectionalTool.toolName)
  *
- * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(BidirectionalTool.toolName, {
  *   bindings: [
@@ -230,7 +230,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       BidirectionalTool.toolName
     )
@@ -249,10 +249,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     return annotation
   }
@@ -348,7 +345,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       BidirectionalTool.toolName
     )
@@ -364,10 +361,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     hideElementCursor(element)
 
@@ -405,7 +399,7 @@ export default class BidirectionalTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       BidirectionalTool.toolName
     )
@@ -423,10 +417,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     evt.preventDefault()
   }
@@ -531,10 +522,7 @@ export default class BidirectionalTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     this.editData = null
     this.isDrawing = false
@@ -617,10 +605,7 @@ export default class BidirectionalTool extends AnnotationTool {
     data.handles.points[3] = viewport.canvasToWorld([endX, endY])
 
     annotation.invalidated = true
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     this.editData.hasMoved = true
   }
@@ -668,10 +653,7 @@ export default class BidirectionalTool extends AnnotationTool {
       annotation.invalidated = true
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   /**
@@ -917,7 +899,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const enabledElement = getEnabledElement(element)
       const { renderingEngine } = enabledElement
 
-      triggerAnnotationRenderForViewportUIDs(
+      triggerAnnotationRenderForViewportIds(
         renderingEngine,
         viewportUIDsToRender
       )
@@ -1216,7 +1198,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
   _calculateCachedStats = (annotation, renderingEngine, enabledElement) => {
     const { data } = annotation
-    const { viewportUID, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
@@ -1263,7 +1245,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
-      viewportUID,
+      viewportId,
       renderingEngineUID,
     }
     triggerEvent(eventTarget, eventType, eventDetail)

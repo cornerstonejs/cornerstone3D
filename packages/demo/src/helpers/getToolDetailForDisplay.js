@@ -1,8 +1,4 @@
-import {
-  LengthTool,
-  BidirectionalTool,
-  ProbeTool,
-} from '@cornerstonejs/tools'
+import { LengthTool, BidirectionalTool, ProbeTool } from '@cornerstonejs/tools'
 
 // Given an annotation event, returns the correct info for displaying
 export default function getToolDetailForDisplay(eventDetail) {
@@ -11,7 +7,7 @@ export default function getToolDetailForDisplay(eventDetail) {
   const { data, metadata } = annotation
   const { cachedStats } = data
   const detail = {
-    viewportUID: eventDetail.viewportUID,
+    viewportId: eventDetail.viewportId,
     stats: {},
     toolName: metadata.toolName,
     toolId: annotation.annotationUID,

@@ -49,7 +49,7 @@ const TOOL_GROUP_UID = 'segToolGroup'
 function createViewport(
   renderingEngine,
   orientation,
-  viewportUID = viewportUID1
+  viewportId = viewportUID1
 ) {
   const element = document.createElement('div')
 
@@ -58,7 +58,7 @@ function createViewport(
   document.body.appendChild(element)
 
   renderingEngine.enableElement({
-    viewportUID: viewportUID,
+    viewportId: viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {

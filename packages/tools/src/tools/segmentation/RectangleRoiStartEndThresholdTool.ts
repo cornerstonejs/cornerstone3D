@@ -18,11 +18,11 @@ import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import throttle from '../../utilities/throttle'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 import { hideElementCursor } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -207,7 +207,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiStartEndThresholdTool.toolName
     )
@@ -225,10 +225,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     return annotation
   }
@@ -296,7 +293,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data
-    const { viewportUID, renderingEngineUID, viewport } = enabledElement
+    const { viewportId, renderingEngineUID, viewport } = enabledElement
 
     const { cachedStats } = data
     const volumeUID = this.getTargetUID(viewport)
@@ -314,7 +311,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
-      viewportUID,
+      viewportId,
       renderingEngineUID,
     }
     triggerEvent(eventTarget, eventType, eventDetail)

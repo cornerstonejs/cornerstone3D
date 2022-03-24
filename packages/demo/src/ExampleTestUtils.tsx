@@ -101,7 +101,7 @@ class testUtil extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {

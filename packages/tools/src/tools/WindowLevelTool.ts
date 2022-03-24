@@ -42,7 +42,7 @@ export default class WindowLevelTool extends BaseTool {
   _dragCallback(evt) {
     const { element, deltaPoints } = evt.detail
     const enabledElement = getEnabledElement(element)
-    const { renderingEngine, viewportUID, viewport } = enabledElement
+    const { renderingEngine, viewportId, viewport } = enabledElement
 
     let volumeUID,
       volumeActor,
@@ -95,7 +95,7 @@ export default class WindowLevelTool extends BaseTool {
 
     const eventDetail: Types.EventTypes.VoiModifiedEventDetail = {
       volumeUID,
-      viewportUID,
+      viewportId,
       range: newRange,
     }
 

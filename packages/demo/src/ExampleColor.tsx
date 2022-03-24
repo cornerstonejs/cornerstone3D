@@ -80,7 +80,7 @@ class ColorExample extends Component {
 
     renderingEngine.setViewports([
       {
-        viewportUID: axialViewportID,
+        viewportId: axialViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.axialContainer.current,
         defaultOptions: {
@@ -88,7 +88,7 @@ class ColorExample extends Component {
         },
       },
       {
-        viewportUID: sagittalViewportID,
+        viewportId: sagittalViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.sagittalContainer.current,
         defaultOptions: {
@@ -96,7 +96,7 @@ class ColorExample extends Component {
         },
       },
       {
-        viewportUID: coronalViewportID,
+        viewportId: coronalViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.coronalContainer.current,
         defaultOptions: {

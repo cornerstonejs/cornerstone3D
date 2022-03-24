@@ -27,7 +27,7 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { Events } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints'
 import {
@@ -52,7 +52,7 @@ import {
   MouseDragEventType,
   MouseMoveEventType,
 } from '../../types/EventTypes'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 import { pointInShapeCallback } from '../../utilities/'
 
 export interface EllipticalRoiAnnotation extends Annotation {
@@ -109,7 +109,7 @@ export interface EllipticalRoiAnnotation extends Annotation {
  *
  * toolGroup.addTool(EllipticalRoiTool.toolName)
  *
- * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(EllipticalRoiTool.toolName, {
  *   bindings: [
@@ -247,7 +247,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
@@ -265,10 +265,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     return annotation
   }
@@ -348,7 +345,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
@@ -366,10 +363,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     evt.preventDefault()
   }
@@ -417,7 +411,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
@@ -439,10 +433,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     evt.preventDefault()
   }
@@ -482,10 +473,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
@@ -522,10 +510,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     this.editData.hasMoved = true
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseDragModifyCallback = (evt: MouseDragEventType) => {
@@ -570,10 +555,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _dragHandle = (evt) => {
@@ -675,7 +657,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       const enabledElement = getEnabledElement(element)
       const { renderingEngine } = enabledElement
 
-      triggerAnnotationRenderForViewportUIDs(
+      triggerAnnotationRenderForViewportIds(
         renderingEngine,
         viewportUIDsToRender
       )
@@ -977,7 +959,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     enabledElement
   ) => {
     const data = annotation.data
-    const { viewportUID, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineUID } = enabledElement
 
     const { points } = data.handles
 
@@ -1122,7 +1104,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
-      viewportUID,
+      viewportId,
       renderingEngineUID,
     }
 

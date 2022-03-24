@@ -48,7 +48,7 @@ Viewports (both stack and volume) are defined using their properties.  Viewport'
 type PublicViewportInput = {
   element: HTMLElement // Div element to render
   sceneUID?: string // Unique scene UID (optional for stackViewports)
-  viewportUID: string // Unique viewport UID
+  viewportId: string // Unique viewport UID
   type: string // Stack or Volume
   defaultOptions: ViewportInputOptions // Viewport options
 }
@@ -84,7 +84,7 @@ const viewportInput = [
   // CT Volume Viewport - Axial
   {
     sceneUID: 'ctScene',
-    viewportUID: 'ctAxial',
+    viewportId: 'ctAxial',
     type: ViewportType.ORTHOGRAPHIC,
     canvas: canvas1,
     defaultOptions: {
@@ -94,7 +94,7 @@ const viewportInput = [
   // CT Volume Viewport - Sagittal
   {
     sceneUID: 'ctScene',
-    viewportUID: 'ctSagittal',
+    viewportId: 'ctSagittal',
     type: ViewportType.ORTHOGRAPHIC,
     canvas: canvas2,
     defaultOptions: {
@@ -103,7 +103,7 @@ const viewportInput = [
   },
   // CT Axial Stack Viewport
   {
-    viewportUID: 'ctStack',
+    viewportId: 'ctStack',
     type: ViewportType.STACK,
     canvas: canvas3,
     defaultOptions: {
@@ -138,7 +138,7 @@ const renderingEngine = new RenderingEngine(renderingEngineUID)
 
 const viewport = {
   sceneUID: 'ctScene',
-  viewportUID: 'ctAxial',
+  viewportId: 'ctAxial',
   type: ViewportType.ORTHOGRAPHIC,
   canvas: canvas1,
   defaultOptions: {
@@ -152,11 +152,11 @@ renderingEngine.enableElement(viewport)
 
 
 #### DisableElement
-You can disable any viewport by using its `viewportUID`, after disabling,
+You can disable any viewport by using its `viewportId`, after disabling,
 renderingEngine will resize its offScreen canvas.
 
 ```js
-disableElement(viewportUID: string)
+disableElement(viewportId: string)
 ```
 
 
@@ -168,7 +168,7 @@ with below event detail.
 ```js
 const eventDetail = {
   canvas,
-  viewportUID,
+  viewportId,
   renderingEngineUID,
 }
 ```

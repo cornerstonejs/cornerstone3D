@@ -27,7 +27,7 @@ The library will otherwise emit the same events as the existing Cornerstone Tool
 
 The following table demonstrates some expected schema changes for events. The key differences are that:
 
-- Several UIDs will function as lookup keys for core API methods (renderingEngineUID, sceneUID, viewportUID, volumeUID). This is similar to the “enabledElement” property currently provided in custom events, and can be used to obtain all of the imaging data that is being visualized.
+- Several UIDs will function as lookup keys for core API methods (renderingEngineUID, sceneUID, viewportId, volumeUID). This is similar to the “enabledElement” property currently provided in custom events, and can be used to obtain all of the imaging data that is being visualized.
 
 - Snapshots of state at time of interaction return camera properties and coordinates in world space within the Scene's frame of reference.
 
@@ -53,7 +53,7 @@ The following table demonstrates some expected schema changes for events. The ke
   </tr>
   <tr>
     <td>N/A</td>
-    <td>viewportUID</td>
+    <td>viewportId</td>
     <td>The UID of the viewport itself.</td>
   </tr>
   <tr>

@@ -18,7 +18,7 @@ const { Active } = ToolModes
 export default function getActiveToolForKeyboardEvent(
   evt: EventTypes.KeyDownEventType
 ) {
-  const { renderingEngineUID, viewportUID } = evt.detail
+  const { renderingEngineUID, viewportId } = evt.detail
 
   // Get the current mouse button clicked
   const mouseButton = getMouseButton()
@@ -27,7 +27,7 @@ export default function getActiveToolForKeyboardEvent(
   const modifierKey = keyEventListener.getModifierKey()
 
   const toolGroup = ToolGroupManager.getToolGroup(
-    viewportUID,
+    viewportId,
     renderingEngineUID
   )
 

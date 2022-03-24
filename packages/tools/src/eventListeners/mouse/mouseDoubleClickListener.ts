@@ -1,7 +1,4 @@
-import {
-  getEnabledElement,
-  triggerEvent,
-} from '@cornerstonejs/core'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
 import Events from '../../enums/Events'
 import getMouseEventPoints from './getMouseEventPoints'
 import { EventTypes, IPoints } from '../../types'
@@ -15,7 +12,7 @@ import { EventTypes, IPoints } from '../../types'
 function mouseDoubleClickListener(evt: MouseEvent): void {
   const element = <HTMLElement>evt.currentTarget
 
-  const { viewportUID, renderingEngineUID } = getEnabledElement(element)
+  const { viewportId, renderingEngineUID } = getEnabledElement(element)
 
   const startPoints = getMouseEventPoints(evt, element)
   const deltaPoints: IPoints = {
@@ -28,7 +25,7 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
   const eventDetail: EventTypes.MouseDoubleClickEventDetail = {
     event: evt,
     eventName: Events.MOUSE_DOUBLE_CLICK,
-    viewportUID,
+    viewportId,
     renderingEngineUID,
     camera: {},
     element,

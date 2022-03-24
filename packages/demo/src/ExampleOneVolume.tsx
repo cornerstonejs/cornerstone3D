@@ -110,7 +110,7 @@ class OneVolumeExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.PT.AXIAL,
+        viewportId: VIEWPORT_IDS.PT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -119,7 +119,7 @@ class OneVolumeExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.PT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -128,7 +128,7 @@ class OneVolumeExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.CORONAL,
+        viewportId: VIEWPORT_IDS.PT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {

@@ -53,7 +53,7 @@ const xrayImageIds = [
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
 
 // 2. Defining the 3 viewports
-// - sceneUID and viewportUID are specified
+// - sceneUID and viewportId are specified
 // - type of viewport (orthographic -> volume)
 // - which HTML canvas element to use for this viewport
 // - defaultOptions: what is the orientation and background of this viewport
@@ -61,7 +61,7 @@ const viewportInput = [
   // Volume viewport (axial)
   {
     sceneUID,
-    viewportUID: viewportUID1,
+    viewportId: viewportUID1,
     type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {
@@ -72,7 +72,7 @@ const viewportInput = [
   // Volume viewport (sagittal)
   {
     sceneUID,
-    viewportUID: viewportUID2,
+    viewportId: viewportUID2,
     type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {
@@ -83,7 +83,7 @@ const viewportInput = [
   // stack viewport
   {
     sceneUID,
-    viewportUID: viewportUID3,
+    viewportId: viewportUID3,
     type: ViewportType.STACK,
     canvas: document.querySelector('.target-canvas-3'),
     defaultOptions: {

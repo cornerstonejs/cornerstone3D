@@ -25,7 +25,7 @@ const { ORIENTATION } = CONSTANTS
 const { BlendMode } = vtkConstants
 
 const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_SAGITTAL_STACK'
+const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -56,7 +56,7 @@ addButtonToToolbar('Set VOI Range', () => {
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Get the volume actor from the viewport
@@ -76,7 +76,7 @@ addButtonToToolbar('Flip H', () => {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Flip the viewport horizontally
@@ -93,7 +93,7 @@ addButtonToToolbar('Flip V', () => {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Flip the viewport vertically
@@ -110,7 +110,7 @@ addButtonToToolbar('Invert', () => {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Get the volume actor from the viewport
@@ -131,7 +131,7 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Reset the camera so that we can set some pan and zoom relative to the
@@ -158,7 +158,7 @@ addButtonToToolbar('Reset Viewport', () => {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Resets the viewport's camera
@@ -187,7 +187,7 @@ addDropdownToToolbar(
 
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportUID)
+      renderingEngine.getViewport(viewportId)
     )
 
     // TODO -> Maybe we should rename sliceNormal to viewPlaneNormal everywhere?
@@ -240,7 +240,7 @@ addSliderToToolbar(
 
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportUID)
+      renderingEngine.getViewport(viewportId)
     )
 
     let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND
@@ -287,7 +287,7 @@ async function run() {
 
   // Create a stack viewport
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -300,7 +300,7 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a volume in memory

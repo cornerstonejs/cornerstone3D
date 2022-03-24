@@ -675,7 +675,7 @@ class StackViewport extends Viewport implements IStackViewport {
       previousCamera,
       camera: updatedCamera,
       element: this.element,
-      viewportUID: this.uid,
+      viewportId: this.uid,
       renderingEngineUID: this.renderingEngineUID,
     }
 
@@ -1225,7 +1225,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
-          viewportUID: this.uid,
+          viewportId: this.uid,
           renderingEngineUID: this.renderingEngineUID,
         }
 
@@ -1364,7 +1364,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
-          viewportUID: this.uid,
+          viewportId: this.uid,
           renderingEngineUID: this.renderingEngineUID,
         }
 
@@ -1709,7 +1709,7 @@ class StackViewport extends Viewport implements IStackViewport {
       previousCamera,
       camera,
       element: this.element,
-      viewportUID: this.uid,
+      viewportId: this.uid,
       renderingEngineUID: this.renderingEngineUID,
     }
 
@@ -1725,7 +1725,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Finally emit event for the full camera change cause during load image.
     const eventDetail: EventTypes.ImageSpacingCalibratedEventDetail = {
       element: this.element,
-      viewportUID: this.uid,
+      viewportId: this.uid,
       renderingEngineUID: this.renderingEngineUID,
       imageId: this.getCurrentImageId(),
       // Todo: why do we need to pass imageData? isn't' indexToWorld and worldToIndex enough?
@@ -2028,7 +2028,7 @@ class StackViewport extends Viewport implements IStackViewport {
     return {
       canvas: this.canvas,
       element: this.element,
-      viewportUID: this.uid,
+      viewportId: this.uid,
       renderingEngineUID: this.renderingEngineUID,
     }
   }

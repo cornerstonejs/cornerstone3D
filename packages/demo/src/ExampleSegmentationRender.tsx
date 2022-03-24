@@ -420,8 +420,8 @@ class SegmentationExample extends Component {
     const toolGroup = this.state.toolGroups[this.state.selectedToolGroupName]
 
     const { viewportsInfo } = toolGroup
-    const { viewportUID, renderingEngineUID } = viewportsInfo[0]
-    const viewport = this.renderingEngine.getViewport(viewportUID)
+    const { viewportId, renderingEngineUID } = viewportsInfo[0]
+    const viewport = this.renderingEngine.getViewport(viewportId)
 
     segmentation
       .createNewSegmentationForToolGroup(this.state.selectedToolGroupName)
@@ -636,8 +636,8 @@ class SegmentationExample extends Component {
   }
 
   calculateTMTV = () => {
-    const viewportUID = this.state.selectedToolGroupName
-    const { element } = this.renderingEngine.getViewport(viewportUID)
+    const viewportId = this.state.selectedToolGroupName
+    const { element } = this.renderingEngine.getViewport(viewportId)
     const segmentationUIDs = segmentation.getsegmentationUIDsForElement(element)
 
     const labelmaps = segmentationUIDs.map((uid) => cache.getVolume(uid))
@@ -653,8 +653,8 @@ class SegmentationExample extends Component {
   }
 
   calculateSuvPeak = () => {
-    const viewportUID = this.state.selectedToolGroupName
-    const viewport = this.renderingEngine.getViewport(viewportUID)
+    const viewportId = this.state.selectedToolGroupName
+    const viewport = this.renderingEngine.getViewport(viewportId)
 
     const { uid } = viewport.getDefaultActor()
     const referenceVolume = cache.getVolume(uid)

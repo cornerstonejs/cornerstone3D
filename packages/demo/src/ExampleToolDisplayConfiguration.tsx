@@ -144,7 +144,7 @@ class ToolDisplayConfigurationExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -152,7 +152,7 @@ class ToolDisplayConfigurationExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -161,7 +161,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -170,7 +170,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       // dx
       {
-        viewportUID: VIEWPORT_IDS.STACK.DX,
+        viewportId: VIEWPORT_IDS.STACK.DX,
         type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {

@@ -16,8 +16,8 @@ import {
  */
 export default function voiSyncCallback(
   synchronizerInstance,
-  sourceViewport: Types.IViewportUID,
-  targetViewport: Types.IViewportUID,
+  sourceViewport: Types.IViewportId,
+  targetViewport: Types.IViewportId,
   voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
 ): void {
   const eventDetail = voiModifiedEvent.detail
@@ -30,7 +30,7 @@ export default function voiSyncCallback(
     )
   }
 
-  const tViewport = renderingEngine.getViewport(targetViewport.viewportUID)
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportId)
 
   if (tViewport instanceof VolumeViewport) {
     const actor = tViewport.getActor(volumeUID)

@@ -99,7 +99,7 @@ class CalibrationExample extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK.DX,
+        viewportId: VIEWPORT_IDS.STACK.DX,
         type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {

@@ -1,15 +1,15 @@
 import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID'
 import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled'
-import getViewportUIDsWithToolToRender from './getViewportUIDsWithToolToRender'
+import getViewportIdsWithToolToRender from './getViewportIdsWithToolToRender'
 
 export default {
   filterViewportsWithToolEnabled,
   filterViewportsWithFrameOfReferenceUID,
-  getViewportUIDsWithToolToRender,
+  getViewportIdsWithToolToRender,
 }
 
 export {
   filterViewportsWithToolEnabled,
   filterViewportsWithFrameOfReferenceUID,
-  getViewportUIDsWithToolToRender,
+  getViewportIdsWithToolToRender,
 }

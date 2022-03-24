@@ -180,7 +180,7 @@ function render(
 }
 
 function _setLabelmapColorAndOpacity(
-  viewportUID: string,
+  viewportId: string,
   actor: Types.ActorEntry,
   cfun: vtkColorTransferFunction,
   ofun: vtkPiecewiseFunction,
@@ -207,7 +207,7 @@ function _setLabelmapColorAndOpacity(
   const { volumeActor, uid } = actor
 
   const needUpdate = _needsTransferFunctionUpdateUpdate(
-    viewportUID,
+    viewportId,
     actor.uid,
     fillAlpha,
     colorLUTIndex
@@ -248,12 +248,12 @@ function _setLabelmapColorAndOpacity(
 }
 
 function _needsTransferFunctionUpdateUpdate(
-  viewportUID: string,
+  viewportId: string,
   actorUID: string,
   fillAlpha: number,
   colorLUTIndex: number
 ): boolean {
-  const cacheUID = `${viewportUID}-${actorUID}`
+  const cacheUID = `${viewportId}-${actorUID}`
   const config = labelMapConfigCache.get(cacheUID)
 
   if (
@@ -292,9 +292,9 @@ function _removeLabelmapFromToolGroupViewports(
   )
 
   for (const viewportInfo of viewportsInfo) {
-    const { viewportUID, renderingEngineUID } = viewportInfo
+    const { viewportId, renderingEngineUID } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
-      viewportUID,
+      viewportId,
       renderingEngineUID
     )
     internalRemoveSegmentationFromElement(
@@ -312,15 +312,15 @@ async function _addLabelmapToToolGroupViewports(
   const { viewportsInfo } = toolGroup
 
   for (const viewportInfo of viewportsInfo) {
-    const { viewportUID, renderingEngineUID } = viewportInfo
+    const { viewportId, renderingEngineUID } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
-      viewportUID,
+      viewportId,
       renderingEngineUID
     )
 
     if (!enabledElement) {
       throw new Error(
-        `No enabled element found for rendering engine: ${renderingEngineUID} and viewport: ${viewportUID}`
+        `No enabled element found for rendering engine: ${renderingEngineUID} and viewport: ${viewportId}`
       )
     }
 

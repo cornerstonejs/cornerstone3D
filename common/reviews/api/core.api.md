@@ -32,7 +32,7 @@ type CameraModifiedEventDetail = {
     previousCamera: ICamera;
     camera: ICamera;
     element: HTMLElement;
-    viewportUID: string;
+    viewportId: string;
     renderingEngineUID: string;
 };
 
@@ -367,7 +367,7 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 // @public (undocumented)
 type ElementDisabledEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
+    viewportId: string;
     renderingEngineUID: string;
 };
 
@@ -377,7 +377,7 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>;
 // @public (undocumented)
 type ElementEnabledEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
+    viewportId: string;
     renderingEngineUID: string;
 };
 
@@ -555,7 +555,7 @@ function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlan
 export function getEnabledElement(element: HTMLElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
-export function getEnabledElementByUIDs(viewportUID: string, renderingEngineUID: string): IEnabledElement;
+export function getEnabledElementByUIDs(viewportId: string, renderingEngineUID: string): IEnabledElement;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -683,7 +683,7 @@ interface IEnabledElement {
     // (undocumented)
     viewport: IStackViewport | IVolumeViewport;
     // (undocumented)
-    viewportUID: string;
+    viewportId: string;
 }
 
 // @public (undocumented)
@@ -936,7 +936,7 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 // @public (undocumented)
 type ImageRenderedEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
+    viewportId: string;
     renderingEngineUID: string;
     suppressEvents?: boolean;
 };
@@ -950,7 +950,7 @@ type ImageSpacingCalibratedEvent = CustomEvent_2<ImageSpacingCalibratedEventDeta
 // @public (undocumented)
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
+    viewportId: string;
     renderingEngineUID: string;
     imageId: string;
     rowScale: number;
@@ -1032,7 +1032,7 @@ interface IRenderingEngine {
     // (undocumented)
     destroy(): void;
     // (undocumented)
-    disableElement(viewportUID: string): void;
+    disableElement(viewportId: string): void;
     // (undocumented)
     enableElement(viewportInputEntry: PublicViewportInput): void;
     // (undocumented)
@@ -1056,7 +1056,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderFrameOfReference(FrameOfReferenceUID: string): void;
     // (undocumented)
-    renderViewport(viewportUID: string): void;
+    renderViewport(viewportId: string): void;
     // (undocumented)
     renderViewports(viewportUIDs: Array<string>): void;
     // (undocumented)
@@ -1086,7 +1086,7 @@ interface IStackViewport extends IViewport {
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLElement;
-        viewportUID: string;
+        viewportId: string;
         renderingEngineUID: string;
     };
     // (undocumented)
@@ -1223,11 +1223,11 @@ interface IViewport {
 }
 
 // @public (undocumented)
-interface IViewportUID {
+interface IViewportId {
     // (undocumented)
     renderingEngineUID: string;
     // (undocumented)
-    viewportUID: string;
+    viewportId: string;
 }
 
 // @public (undocumented)
@@ -1411,7 +1411,7 @@ type PTScaling = {
 // @public (undocumented)
 type PublicViewportInput = {
     element: HTMLElement;
-    viewportUID: string;
+    viewportId: string;
     type: ViewportType;
     defaultOptions: ViewportInputOptions;
 };
@@ -1436,7 +1436,7 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     destroy(): void;
     // (undocumented)
-    disableElement(viewportUID: string): void;
+    disableElement(viewportId: string): void;
     // (undocumented)
     _downloadOffScreenCanvas(): void;
     // (undocumented)
@@ -1462,7 +1462,7 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     renderFrameOfReference: (FrameOfReferenceUID: string) => void;
     // (undocumented)
-    renderViewport(viewportUID: string): void;
+    renderViewport(viewportId: string): void;
     // (undocumented)
     renderViewports(viewportUIDs: Array<string>): void;
     // (undocumented)
@@ -1542,7 +1542,7 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 type StackNewImageEventDetail = {
     image: IImage;
     imageId: string;
-    viewportUID: string;
+    viewportId: string;
     renderingEngineUID: string;
 };
 
@@ -1561,7 +1561,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLElement;
-        viewportUID: string;
+        viewportId: string;
         renderingEngineUID: string;
     };
     // (undocumented)
@@ -1668,7 +1668,7 @@ declare namespace Types {
         IEnabledElement,
         ICache,
         IVolume,
-        IViewportUID,
+        IViewportId,
         IImageVolume,
         IRenderingEngine,
         ScalingParameters,
@@ -1874,7 +1874,7 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;
 
 // @public (undocumented)
 type VoiModifiedEventDetail = {
-    viewportUID: string;
+    viewportId: string;
     volumeUID: string;
     range: VOIRange;
 };

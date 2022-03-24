@@ -18,10 +18,10 @@ export default function getToolsWithModesForElement(
   modesFilter: ModesFilter
 ) {
   const enabledElement = getEnabledElement(element)
-  const { renderingEngineUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportId } = enabledElement
 
   const toolGroup = ToolGroupManager.getToolGroup(
-    viewportUID,
+    viewportId,
     renderingEngineUID
   )
 

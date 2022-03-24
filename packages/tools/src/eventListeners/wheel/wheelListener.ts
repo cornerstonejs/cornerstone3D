@@ -1,7 +1,4 @@
-import {
-  getEnabledElement,
-  triggerEvent,
-} from '@cornerstonejs/core'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
 import normalizeWheel from './normalizeWheel'
 import Events from '../../enums/Events'
 // ~~ VIEWPORT LIBRARY
@@ -16,7 +13,7 @@ import { MouseWheelEventDetail } from '../../types/EventTypes'
 function wheelListener(evt: WheelEvent) {
   const element = <HTMLElement>evt.currentTarget
   const enabledElement = getEnabledElement(element)
-  const { renderingEngineUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportId } = enabledElement
 
   // Prevent triggering MouseWheel events that are not real scroll events:
   // E.g. when clicking the MiddleMouseWheelButton, a deltaY of 0 is emitted.
@@ -34,7 +31,7 @@ function wheelListener(evt: WheelEvent) {
     event: evt,
     eventName: Events.MOUSE_WHEEL,
     renderingEngineUID,
-    viewportUID,
+    viewportId,
     element,
     camera: {},
     detail: evt,

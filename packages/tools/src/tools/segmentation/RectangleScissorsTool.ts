@@ -10,7 +10,7 @@ import { BaseTool } from '../base'
 import { PublicToolProps, ToolProps, EventTypes } from '../../types'
 import { fillInsideRectangle } from './strategies/fillRectangle'
 import { eraseInsideRectangle } from './strategies/eraseRectangle'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 
 import { Events } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -20,7 +20,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 import {
   segmentationColor,
   segmentLocking,
@@ -144,7 +144,7 @@ export default class RectangleScissorsTool extends BaseTool {
     // Ensure settings are initialized after annotation instantiation
     Settings.getObjectSettings(annotation, RectangleRoiTool)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleScissorsTool.toolName
     )
@@ -169,10 +169,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
@@ -249,10 +246,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseUpCallback = (

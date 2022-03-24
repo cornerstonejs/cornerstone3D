@@ -98,12 +98,12 @@ content.append(instructions)
 // ============================= //
 
 const SynchronizerButtonInfo = [
-  { viewportLabel: 'A', viewportUID: viewportUIDs[0] },
-  { viewportLabel: 'B', viewportUID: viewportUIDs[1] },
-  { viewportLabel: 'C', viewportUID: viewportUIDs[2] },
+  { viewportLabel: 'A', viewportId: viewportUIDs[0] },
+  { viewportLabel: 'B', viewportId: viewportUIDs[1] },
+  { viewportLabel: 'C', viewportId: viewportUIDs[2] },
 ]
 
-SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
+SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
   addToggleButtonToToolbar(`Camera ${viewportLabel}`, (evt, toggle) => {
     const synchronizer =
       SynchronizerManager.getSynchronizerById(cameraSynchronizerId)
@@ -113,14 +113,14 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
     }
 
     if (toggle) {
-      synchronizer.add({ renderingEngineUID, viewportUID })
+      synchronizer.add({ renderingEngineUID, viewportId })
     } else {
-      synchronizer.remove({ renderingEngineUID, viewportUID })
+      synchronizer.remove({ renderingEngineUID, viewportId })
     }
   })
 })
 
-SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
+SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
   addToggleButtonToToolbar(`VOI ${viewportLabel}`, (evt, toggle) => {
     const synchronizer =
       SynchronizerManager.getSynchronizerById(voiSynchronizerId)
@@ -130,9 +130,9 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
     }
 
     if (toggle) {
-      synchronizer.add({ renderingEngineUID, viewportUID })
+      synchronizer.add({ renderingEngineUID, viewportId })
     } else {
-      synchronizer.remove({ renderingEngineUID, viewportUID })
+      synchronizer.remove({ renderingEngineUID, viewportId })
     }
   })
 })
@@ -210,7 +210,7 @@ async function run() {
   // Create the viewports
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportUIDs[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -219,7 +219,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportUIDs[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -228,7 +228,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[2],
+      viewportId: viewportUIDs[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
@@ -241,8 +241,8 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  viewportUIDs.forEach((viewportUID) =>
-    toolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportUIDs.forEach((viewportId) =>
+    toolGroup.addViewport(viewportId, renderingEngineUID)
   )
 
   // Define a volume in memory

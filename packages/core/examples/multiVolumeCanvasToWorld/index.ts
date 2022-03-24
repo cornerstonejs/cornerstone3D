@@ -95,9 +95,9 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineUID)
 
   // Create a stack viewport
-  const viewportUID = 'CT_SAGITTAL_STACK'
+  const viewportId = 'CT_SAGITTAL_STACK'
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -110,7 +110,7 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a volume in memory

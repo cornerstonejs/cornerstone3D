@@ -620,7 +620,7 @@ class Viewport implements IViewport {
         camera: this.getCamera(),
         canvas: this.canvas,
         element: this.element,
-        viewportUID: this.uid,
+        viewportId: this.uid,
         renderingEngineUID: this.renderingEngineUID,
       }
 
@@ -787,7 +787,7 @@ class Viewport implements IViewport {
         camera: updatedCamera,
         canvas: this.canvas,
         element: this.element,
-        viewportUID: this.uid,
+        viewportId: this.uid,
         renderingEngineUID: this.renderingEngineUID,
       }
 

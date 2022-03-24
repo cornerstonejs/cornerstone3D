@@ -36,7 +36,7 @@ const {
 
 const renderingEngineUID = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -57,7 +57,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: viewportType,
       element,
       defaultOptions: {
@@ -125,7 +125,7 @@ describe('LengthTool:', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       let p1, p2
 
@@ -233,7 +233,7 @@ describe('LengthTool:', () => {
       )
       this.DOMElements.push(element)
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       let p1, p2
 
@@ -327,7 +327,7 @@ describe('LengthTool:', () => {
             setVolumesForViewports(
               this.renderingEngine,
               [{ volumeUID: volumeId }],
-              [viewportUID]
+              [viewportId]
             )
             vp.render()
           })
@@ -346,7 +346,7 @@ describe('LengthTool:', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       let p2, p3
 
@@ -489,7 +489,7 @@ describe('LengthTool:', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       let p1, p2
 
@@ -624,7 +624,7 @@ describe('LengthTool:', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       let p1, p2, p3, p4
 
@@ -822,7 +822,7 @@ describe('LengthTool:', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       let p1, p2
 
@@ -977,7 +977,7 @@ describe('LengthTool:', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       let p1, p2
 
@@ -1143,7 +1143,7 @@ describe('LengthTool:', () => {
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_4_40_1_1_0_1'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const secondCallback = () => {
         const lengthAnnotations = annotation.state.getAnnotations(element, LengthTool.toolName)
@@ -1216,7 +1216,7 @@ describe('LengthTool:', () => {
         document.dispatchEvent(evt)
 
         const imageId = this.renderingEngine
-          .getViewport(viewportUID)
+          .getViewport(viewportId)
           .getCurrentImageId()
 
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)

@@ -161,7 +161,7 @@ class StackViewportExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -169,7 +169,7 @@ class StackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -178,7 +178,7 @@ class StackViewportExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -187,7 +187,7 @@ class StackViewportExample extends Component {
       },
       // pt volume
       {
-        viewportUID: VIEWPORT_IDS.PT.AXIAL,
+        viewportId: VIEWPORT_IDS.PT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -196,7 +196,7 @@ class StackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.PT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {
@@ -206,7 +206,7 @@ class StackViewportExample extends Component {
       },
       // dx
       // {
-      //   viewportUID: VIEWPORT_IDS.STACK.DX,
+      //   viewportId: VIEWPORT_IDS.STACK.DX,
       //   type: ViewportType.STACK,
       //   element: this._elementNodes.get(4),
       //   defaultOptions: {
@@ -215,7 +215,7 @@ class StackViewportExample extends Component {
       // },
       // PT stack
       {
-        viewportUID: VIEWPORT_IDS.STACK.PT,
+        viewportId: VIEWPORT_IDS.STACK.PT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(5),
         defaultOptions: {
@@ -406,11 +406,11 @@ class StackViewportExample extends Component {
   }
 
   updateAnnotationAdded = (evt) => {
-    const { annotation, viewportUID } = evt.detail
+    const { annotation, viewportId } = evt.detail
 
     const { metadata, annotationUID } = annotation
     const detail = {
-      viewportUID,
+      viewportId,
       toolName: metadata.toolName,
       toolId: annotationUID,
     }
@@ -420,11 +420,11 @@ class StackViewportExample extends Component {
   }
 
   updateAnnotationRemoved = (evt) => {
-    const { annotation, viewportUID } = evt.detail
+    const { annotation, viewportId } = evt.detail
 
     const { metadata, annotationUID } = annotation
     const detail = {
-      viewportUID,
+      viewportId,
       toolName: metadata.toolName,
       toolId: annotationUID,
     }
@@ -676,7 +676,7 @@ class StackViewportExample extends Component {
                             0,
                             5
                           )}`}</h4>
-                          <p>{`viewportUID: ${m.viewportUID}`}</p>
+                          <p>{`viewportId: ${m.viewportId}`}</p>
                           <hr></hr>
                           <hr></hr>
                         </div>
@@ -701,7 +701,7 @@ class StackViewportExample extends Component {
                                 0,
                                 5
                               )}`}</h4>
-                              <p>{`viewportUID: ${value.viewportUID}`}</p>
+                              <p>{`viewportId: ${value.viewportId}`}</p>
                               <div>
                                 {Object.keys(value.stats).map((statName) => {
                                   return (
@@ -732,7 +732,7 @@ class StackViewportExample extends Component {
                             0,
                             5
                           )}`}</h4>
-                          <p>{`viewportUID: ${m.viewportUID}`}</p>
+                          <p>{`viewportId: ${m.viewportId}`}</p>
                           <hr></hr>
                           <hr></hr>
                         </div>

@@ -20,7 +20,7 @@ import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_SAGITTAL_STACK'
+const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
@@ -55,7 +55,7 @@ addButtonToToolbar('Set CT VOI Range', () => {
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Get the volume actor from the viewport
@@ -76,7 +76,7 @@ addButtonToToolbar('Reset Viewport', () => {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Resets the viewport's camera
@@ -94,7 +94,7 @@ addButtonToToolbar('toggle PET', () => {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
   if (fused) {
     // Removes the PT actor from the scene
@@ -131,7 +131,7 @@ addDropdownToToolbar(
 
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportUID)
+      renderingEngine.getViewport(viewportId)
     )
 
     // TODO -> Maybe we should rename sliceNormal to viewPlaneNormal everywhere?
@@ -208,7 +208,7 @@ async function run() {
 
   // Create a stack viewport
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -221,7 +221,7 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a volume in memory

@@ -14,7 +14,7 @@ import filterViewportsWithSameOrientation from './filterViewportsWithSameOrienta
  *
  * @returns An array of viewportUIDs.
  */
-export default function getViewportUIDsWithToolToRender(
+export default function getViewportIdsWithToolToRender(
   element: HTMLElement,
   toolName: string,
   requireSameOrientation = true
@@ -30,7 +30,7 @@ export default function getViewportUIDsWithToolToRender(
   )
   viewports = filterViewportsWithToolEnabled(viewports, toolName)
 
-  const viewport = renderingEngine.getViewport(enabledElement.viewportUID)
+  const viewport = renderingEngine.getViewport(enabledElement.viewportId)
 
   if (requireSameOrientation) {
     viewports = filterViewportsWithSameOrientation(

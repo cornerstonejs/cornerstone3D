@@ -37,7 +37,7 @@ const {
 
 const renderingEngineUID = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -52,7 +52,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: viewportType,
       element,
       defaultOptions: {
@@ -120,7 +120,7 @@ describe('ProbeTool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
@@ -207,7 +207,7 @@ describe('ProbeTool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
@@ -334,7 +334,7 @@ describe('ProbeTool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
@@ -419,7 +419,7 @@ describe('ProbeTool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
@@ -504,7 +504,7 @@ describe('ProbeTool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p2
 
@@ -632,7 +632,7 @@ describe('ProbeTool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p2
 

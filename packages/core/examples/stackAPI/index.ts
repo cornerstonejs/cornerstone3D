@@ -16,7 +16,7 @@ const { ViewportType } = Enums
 
 // ======== Constants ======= //
 const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_STACK'
+const viewportId = 'CT_STACK'
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -37,9 +37,7 @@ addButtonToToolbar('Set VOI Range', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Set a range to highlight bones
   viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } })
@@ -52,9 +50,7 @@ addButtonToToolbar('Next Image', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Get the current index of the image displayed
   const currentImageIdIndex = viewport.getCurrentImageIdIndex()
@@ -74,9 +70,7 @@ addButtonToToolbar('Previous Image', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Get the current index of the image displayed
   const currentImageIdIndex = viewport.getCurrentImageIdIndex()
@@ -95,9 +89,7 @@ addButtonToToolbar('Flip H', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   const { flipHorizontal } = viewport.getProperties()
 
@@ -111,9 +103,7 @@ addButtonToToolbar('Flip V', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   const { flipVertical } = viewport.getProperties()
 
@@ -127,9 +117,7 @@ addButtonToToolbar('Rotate', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   const rotation = Math.random() * 360
 
@@ -143,9 +131,7 @@ addButtonToToolbar('Invert', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   const { invert } = viewport.getProperties()
 
@@ -159,9 +145,7 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Reset the camera so that we can set some pan and zoom relative to the
   // defaults for this demo. Note that changes could be relative instead.
@@ -188,9 +172,7 @@ addButtonToToolbar('Reset Viewport', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Resets the viewport's camera
   viewport.resetCamera()
@@ -222,7 +204,7 @@ async function run() {
   // Create a stack viewport
 
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.STACK,
     element,
     defaultOptions: {
@@ -233,9 +215,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Define a stack containing a few images
   const stack = [imageIds[0], imageIds[1], imageIds[2]]

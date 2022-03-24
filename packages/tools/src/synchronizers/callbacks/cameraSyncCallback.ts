@@ -10,14 +10,14 @@ import { getRenderingEngine, Types } from '@cornerstonejs/core'
  */
 export default function cameraSyncCallback(
   synchronizerInstance,
-  sourceViewport: Types.IViewportUID,
-  targetViewport: Types.IViewportUID,
+  sourceViewport: Types.IViewportId,
+  targetViewport: Types.IViewportId,
   cameraModifiedEvent: CustomEvent
 ): void {
   // We need a helper for this
   if (
     sourceViewport.renderingEngineUID === targetViewport.renderingEngineUID &&
-    sourceViewport.viewportUID === targetViewport.viewportUID
+    sourceViewport.viewportId === targetViewport.viewportId
   ) {
     return
   }
@@ -31,7 +31,7 @@ export default function cameraSyncCallback(
     )
   }
 
-  const tViewport = renderingEngine.getViewport(targetViewport.viewportUID)
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportId)
 
   // TODO: only sync in-plane movements if one viewport is a stack viewport
 

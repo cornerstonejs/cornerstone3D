@@ -20,7 +20,7 @@ const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
 const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_SAGITTAL_STACK'
+const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
@@ -90,11 +90,11 @@ element.addEventListener(
   STACK_NEW_IMAGE,
   (evt: Types.EventTypes.StackNewImageEvent) => {
     // Remove the image since then we serialise a bunch of pixeldata to the screen.
-    const { imageId, renderingEngineUID, viewportUID } = evt.detail
+    const { imageId, renderingEngineUID, viewportId } = evt.detail
     const detail = {
       imageId,
       renderingEngineUID,
-      viewportUID,
+      viewportId,
       image: 'cornerstoneImageObject',
     }
 
@@ -113,7 +113,7 @@ addButtonToToolbar('Set VOI Range', () => {
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Get the volume actor from the viewport
@@ -134,7 +134,7 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Reset the camera so that we can set some pan and zoom relative to the
@@ -161,7 +161,7 @@ addButtonToToolbar('Reset Viewport', () => {
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Resets the viewport's camera
@@ -193,7 +193,7 @@ async function run() {
 
   // Create a stack viewport
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -206,7 +206,7 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a volume in memory

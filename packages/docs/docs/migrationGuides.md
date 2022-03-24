@@ -33,7 +33,7 @@ const renderingEngine = new RenderingEngine();
 renderingEngine.setViewports([
  {
     sceneUID: "CT",
-    viewportUID: "CTAxial",
+    viewportId: "CTAxial",
     type: ViewportType.ORTHOGRAPHIC,
     canvas,
     defaultOptions: {
@@ -45,7 +45,7 @@ renderingEngine.setViewports([
 renderingEngine.enableElement(
  {
     sceneUID: "CT",
-    viewportUID: "CTAxial",
+    viewportId: "CTAxial",
     type: ViewportType.ORTHOGRAPHIC,
     canvas,
     defaultOptions: {
@@ -58,7 +58,7 @@ renderingEngine.enableElement(
 {
   canvas,
   sceneUID,
-  viewportUID,
+  viewportId,
   renderingEngineUID,
 }
 ```
@@ -212,7 +212,7 @@ const myScene = renderingEngine.getScene('mySceneUID');
 myScene.render();
 
 // Update a single viewport
-const myViewport = myScene.getViewport('myViewportUID');
+const myViewport = myScene.getViewport('myViewportId');
 myViewport.render();
 ```
 
@@ -256,7 +256,7 @@ The ELEMENT_DISABLED event contains just a reference to the canvas element which
 
 ```js
 eventDetail: {
-  viewportUID,
+  viewportId,
   sceneUID,
   renderingEngineUID,
   canvas

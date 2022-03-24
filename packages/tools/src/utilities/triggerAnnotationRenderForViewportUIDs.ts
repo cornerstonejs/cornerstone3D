@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core'
 import triggerAnnotationRender from './triggerAnnotationRender'
 
-export function triggerAnnotationRenderForViewportUIDs(
+export function triggerAnnotationRenderForViewportIds(
   renderingEngine: Types.IRenderingEngine,
   viewportUIDsToRender: string[]
 ): void {
@@ -9,10 +9,10 @@ export function triggerAnnotationRenderForViewportUIDs(
     return
   }
 
-  viewportUIDsToRender.forEach((viewportUID) => {
-    const { element } = renderingEngine.getViewport(viewportUID)
+  viewportUIDsToRender.forEach((viewportId) => {
+    const { element } = renderingEngine.getViewport(viewportId)
     triggerAnnotationRender(element)
   })
 }
 
-export default triggerAnnotationRenderForViewportUIDs
+export default triggerAnnotationRenderForViewportIds

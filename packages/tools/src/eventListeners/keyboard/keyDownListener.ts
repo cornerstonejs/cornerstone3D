@@ -1,14 +1,11 @@
 import _cloneDeep from 'lodash.clonedeep'
-import {
-  getEnabledElement,
-  triggerEvent,
-} from '@cornerstonejs/core'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
 import Events from '../../enums/Events'
 import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes'
 
 interface IKeyDownListenerState {
   renderingEngineUID: string
-  viewportUID: string
+  viewportId: string
   key: string | null
   keyCode: number | null
   element: HTMLElement
@@ -17,7 +14,7 @@ interface IKeyDownListenerState {
 const defaultState: IKeyDownListenerState = {
   //
   renderingEngineUID: undefined,
-  viewportUID: undefined,
+  viewportId: undefined,
   //
   key: undefined,
   keyCode: undefined,
@@ -27,7 +24,7 @@ const defaultState: IKeyDownListenerState = {
 let state: IKeyDownListenerState = {
   //
   renderingEngineUID: undefined,
-  viewportUID: undefined,
+  viewportId: undefined,
   //
   key: undefined,
   keyCode: undefined,
@@ -42,17 +39,17 @@ function keyListener(evt: KeyboardEvent): void {
   state.element = <HTMLElement>evt.currentTarget
 
   const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportId } = enabledElement
 
   state.renderingEngineUID = renderingEngineUID
-  state.viewportUID = viewportUID
+  state.viewportId = viewportId
   state.key = evt.key
   state.keyCode = evt.keyCode
 
   evt.preventDefault()
   const eventDetail: KeyDownEventDetail = {
     renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    viewportId: state.viewportId,
     element: state.element,
     key: state.key,
     keyCode: state.keyCode,
@@ -75,7 +72,7 @@ function keyListener(evt: KeyboardEvent): void {
 function _onKeyUp(evt: KeyboardEvent): void {
   const eventDetail: KeyUpEventDetail = {
     renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    viewportId: state.viewportId,
     element: state.element,
     key: state.key,
     keyCode: state.keyCode,

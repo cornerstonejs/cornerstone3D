@@ -36,7 +36,7 @@ const {
 
 const renderingEngineUID = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -57,7 +57,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: viewportType,
       element,
       defaultOptions: {
@@ -123,7 +123,7 @@ describe('Cornerstone Tools: ', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 
@@ -229,7 +229,7 @@ describe('Cornerstone Tools: ', () => {
     )
     this.DOMElements.push(element)
 
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 
@@ -323,7 +323,7 @@ describe('Cornerstone Tools: ', () => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
-          [viewportUID]
+          [viewportId]
         )
         vp.render()
       })
@@ -342,7 +342,7 @@ describe('Cornerstone Tools: ', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p2, p3
 
@@ -487,7 +487,7 @@ describe('Cornerstone Tools: ', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 
@@ -622,7 +622,7 @@ describe('Cornerstone Tools: ', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2, p3, p4
 
@@ -817,7 +817,7 @@ describe('Cornerstone Tools: ', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 

@@ -1,7 +1,4 @@
-import {
-  getEnabledElement,
-  addVolumesToViewports,
-} from '@cornerstonejs/core'
+import { getEnabledElement, addVolumesToViewports } from '@cornerstonejs/core'
 
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations'
 import { ToolGroupSpecificSegmentationData } from '../../../types/SegmentationStateTypes'
@@ -28,7 +25,7 @@ async function internalAddSegmentationToElement(
 
   const enabledElement = getEnabledElement(element)
   const { renderingEngine, viewport } = enabledElement
-  const { uid: viewportUID } = viewport
+  const { uid: viewportId } = viewport
 
   // Default to true since we are setting a new segmentation, however,
   // in the event listener, we will make other segmentations visible/invisible
@@ -49,7 +46,7 @@ async function internalAddSegmentationToElement(
           visibility,
         },
       ],
-      [viewportUID]
+      [viewportId]
     )
   } else {
     throw new Error('Only labelmap representation is supported for now')

@@ -13,7 +13,7 @@ type NormalizedMouseEventDetail = {
   /** The unique identifier of the rendering engine. */
   renderingEngineUID: string
   /** The unique identifier of the viewport that the event was fired in. */
-  viewportUID: string
+  viewportId: string
   /** The camera at the time of the event. */
   camera: Record<string, unknown>
   /** The element that the event was fired on. */
@@ -26,7 +26,7 @@ type NormalizedMouseEventDetail = {
  */
 type AnnotationAddedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
   renderingEngineUID: string
   /** The annotation that is being added to the annotations manager. */
@@ -38,7 +38,7 @@ type AnnotationAddedEventDetail = {
  */
 type AnnotationModifiedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
   renderingEngineUID: string
   /** The annotation that is being added to the annotations manager. */
@@ -50,7 +50,7 @@ type AnnotationModifiedEventDetail = {
  */
 type AnnotationRemovedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
   renderingEngineUID: string
   /** The annotation that is being added to the annotations manager. */
@@ -88,7 +88,7 @@ type AnnotationRenderedEventDetail = {
   /** The HTML element that the annotation was rendered on. */
   element: HTMLElement
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
   renderingEngineUID: string
 }
@@ -108,7 +108,7 @@ type SegmentationDataModifiedEventDetail = {
  */
 type SegmentationRenderedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the toolGroup segmentation belongs to */
   toolGroupUID: string
 }
@@ -136,7 +136,7 @@ type KeyDownEventDetail = {
   /** html element */
   element: HTMLElement
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
   renderingEngineUID: string
   /** The key that was pressed */

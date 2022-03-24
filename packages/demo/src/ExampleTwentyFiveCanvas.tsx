@@ -42,13 +42,13 @@ class TwentyFiveCanvasExample extends Component {
     const viewports = []
 
     for (let i = 0; i < NUM_VIEWPORTS; i++) {
-      const viewportUID = `viewportUID_${0}`
+      const viewportId = `viewportUID_${0}`
 
-      viewportUIDS.push(viewportUID)
+      viewportUIDS.push(viewportId)
 
       viewports.push({
         sceneUID,
-        viewportUID,
+        viewportId,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.containers[i].current,
         defaultOptions: {

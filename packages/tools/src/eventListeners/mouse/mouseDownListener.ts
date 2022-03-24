@@ -1,7 +1,4 @@
-import {
-  getEnabledElement,
-  triggerEvent,
-} from '@cornerstonejs/core'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
 import Events from '../../enums/Events'
@@ -16,7 +13,7 @@ interface IMouseDownListenerState {
   mouseButton: number
   element: HTMLElement
   renderingEngineUID: string
-  viewportUID: string
+  viewportId: string
   isClickEvent: boolean
   clickDelay: number
   preventClickTimeout: ReturnType<typeof setTimeout>
@@ -30,7 +27,7 @@ const defaultState: IMouseDownListenerState = {
   //
   element: null,
   renderingEngineUID: undefined,
-  viewportUID: undefined,
+  viewportId: undefined,
   //
   isClickEvent: true,
   clickDelay: 200,
@@ -53,7 +50,7 @@ let state: IMouseDownListenerState = {
   mouseButton: undefined,
   //
   renderingEngineUID: undefined,
-  viewportUID: undefined,
+  viewportId: undefined,
   //
   isClickEvent: true,
   clickDelay: 200,
@@ -92,10 +89,10 @@ function mouseDownListener(evt: MouseEvent) {
   state.mouseButton = evt.button
 
   const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportId } = enabledElement
 
   state.renderingEngineUID = renderingEngineUID
-  state.viewportUID = viewportUID
+  state.viewportId = viewportId
 
   state.preventClickTimeout = setTimeout(_preventClickHandler, state.clickDelay)
 
@@ -111,7 +108,7 @@ function mouseDownListener(evt: MouseEvent) {
     element: state.element,
     mouseButton: state.mouseButton,
     renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    viewportId: state.viewportId,
     camera: {},
     startPoints,
     lastPoints: startPoints,
@@ -160,7 +157,7 @@ function _onMouseDrag(evt: MouseEvent) {
     eventName: MOUSE_DRAG,
     mouseButton: state.mouseButton,
     renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    viewportId: state.viewportId,
     camera: {},
     element: state.element,
     startPoints: _copyPoints(state.startPoints),
@@ -197,7 +194,7 @@ function _onMouseUp(evt: MouseEvent): void {
     mouseButton: state.mouseButton,
     element: state.element,
     renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    viewportId: state.viewportId,
     camera: {},
     startPoints: _copyPoints(state.startPoints),
     lastPoints: _copyPoints(state.lastPoints),

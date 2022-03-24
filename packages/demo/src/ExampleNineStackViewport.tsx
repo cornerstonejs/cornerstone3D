@@ -94,7 +94,7 @@ class NineStackViewportExample extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--0',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--0',
         type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -102,7 +102,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--1',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--1',
         type: ViewportType.STACK,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -110,7 +110,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--2',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--2',
         type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -118,7 +118,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--3',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--3',
         type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -126,7 +126,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--4',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--4',
         type: ViewportType.STACK,
         element: this._elementNodes.get(4),
         defaultOptions: {
@@ -134,7 +134,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--5',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--5',
         type: ViewportType.STACK,
         element: this._elementNodes.get(5),
         defaultOptions: {
@@ -142,7 +142,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--6',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--6',
         type: ViewportType.STACK,
         element: this._elementNodes.get(6),
         defaultOptions: {
@@ -150,7 +150,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--7',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--7',
         type: ViewportType.STACK,
         element: this._elementNodes.get(7),
         defaultOptions: {
@@ -158,7 +158,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--8',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--8',
         type: ViewportType.STACK,
         element: this._elementNodes.get(8),
         defaultOptions: {
@@ -175,7 +175,7 @@ class NineStackViewportExample extends Component {
     // stack ct
     viewportInput.forEach((vpEntry) => {
       stackCTViewportToolGroup.addViewport(
-        vpEntry.viewportUID,
+        vpEntry.viewportId,
         renderingEngineUID
       )
     })
@@ -183,7 +183,7 @@ class NineStackViewportExample extends Component {
     renderingEngine.render()
 
     const promises = viewportInput.map((vpEntry) => {
-      const stackViewport = renderingEngine.getViewport(vpEntry.viewportUID)
+      const stackViewport = renderingEngine.getViewport(vpEntry.viewportId)
       return stackViewport.setStack(sortImageIdsByIPP(imageIds))
     })
 

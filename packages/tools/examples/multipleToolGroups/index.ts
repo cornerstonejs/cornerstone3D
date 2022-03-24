@@ -1,8 +1,4 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-} from '@cornerstonejs/core'
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -141,7 +137,7 @@ async function run() {
   // Create a stack viewport
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportUIDs[0],
       type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
@@ -149,7 +145,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportUIDs[1],
       type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
@@ -157,7 +153,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[2],
+      viewportId: viewportUIDs[2],
       type: ViewportType.STACK,
       element: element3,
       defaultOptions: {

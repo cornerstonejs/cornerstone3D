@@ -81,7 +81,7 @@ type PublicViewportInput = {
   /** HTML element in the DOM */
   element: HTMLElement
   /** unique id for the viewport in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** type of the viewport */
   type: ViewportType
   /** options for the viewport */
@@ -91,7 +91,7 @@ type PublicViewportInput = {
 type InternalViewportInput = {
   element: HTMLElement
   canvas: HTMLCanvasElement
-  viewportUID: string
+  viewportId: string
   type: ViewportType
   defaultOptions: ViewportInputOptions
 }

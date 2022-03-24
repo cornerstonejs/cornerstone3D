@@ -107,7 +107,7 @@ class SegmentationRenderingEngine {
     const { viewportsInfo } = toolGroup
     const viewports = []
 
-    viewportsInfo.forEach(({ viewportUID, renderingEngineUID }) => {
+    viewportsInfo.forEach(({ viewportId, renderingEngineUID }) => {
       const renderingEngine = getRenderingEngine(renderingEngineUID)
 
       if (!renderingEngine) {
@@ -115,7 +115,7 @@ class SegmentationRenderingEngine {
         return
       }
 
-      viewports.push(renderingEngine.getViewport(viewportUID))
+      viewports.push(renderingEngine.getViewport(viewportId))
     })
 
     const segmentationDisplayToolInstance = toolGroup.getToolInstance(
@@ -123,18 +123,18 @@ class SegmentationRenderingEngine {
     ) as SegmentationDisplayTool
 
     function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
-      const { element, viewportUID, renderingEngineUID } = evt.detail
+      const { element, viewportId, renderingEngineUID } = evt.detail
 
       element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         onSegmentationRender
       )
 
-      const toolGroup = getToolGroup(viewportUID, renderingEngineUID)
+      const toolGroup = getToolGroup(viewportId, renderingEngineUID)
 
       const eventDetail: SegmentationRenderedEventDetail = {
         toolGroupUID: toolGroup.uid,
-        viewportUID,
+        viewportId,
       }
 
       triggerEvent(eventTarget, csToolsEvents.SEGMENTATION_RENDERED, {

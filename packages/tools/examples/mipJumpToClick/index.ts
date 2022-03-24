@@ -148,7 +148,7 @@ async function run() {
 
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportUIDs[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -157,7 +157,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportUIDs[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -166,7 +166,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[2],
+      viewportId: viewportUIDs[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {

@@ -8,9 +8,9 @@ const { ORIENTATION } = CONSTANTS
 
 const renderingEngineUID = utilities.uuidv4()
 
-const axialViewportUID = 'AXIAL_VIEWPORT'
-const sagittalViewportUID = 'SAGITTAL_VIEWPORT'
-const customOrientationViewportUID = 'OFF_AXIS_VIEWPORT'
+const axialViewportId = 'AXIAL_VIEWPORT'
+const sagittalViewportId = 'SAGITTAL_VIEWPORT'
+const customOrientationViewportId = 'OFF_AXIS_VIEWPORT'
 
 describe('RenderingEngineAPI -- ', () => {
   beforeAll(() => {
@@ -38,7 +38,7 @@ describe('RenderingEngineAPI -- ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: axialViewportUID,
+          viewportId: axialViewportId,
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementAxial,
           defaultOptions: {
@@ -46,7 +46,7 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          viewportUID: sagittalViewportUID,
+          viewportId: sagittalViewportId,
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementSagittal,
           defaultOptions: {
@@ -54,7 +54,7 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          viewportUID: customOrientationViewportUID,
+          viewportId: customOrientationViewportId,
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustom,
           defaultOptions: {
@@ -77,7 +77,7 @@ describe('RenderingEngineAPI -- ', () => {
     })
 
     it('should be able to access the viewports from renderingEngine', function () {
-      const AxialViewport = this.renderingEngine.getViewport(axialViewportUID)
+      const AxialViewport = this.renderingEngine.getViewport(axialViewportId)
       const Viewports = this.renderingEngine.getViewports()
 
       expect(AxialViewport).toBeTruthy()
@@ -100,9 +100,9 @@ describe('RenderingEngineAPI -- ', () => {
     })
 
     it('Take an orientation given by AXIAL as well as set manually by sliceNormal and viewUp', function () {
-      const AxialViewport = this.renderingEngine.getViewport(axialViewportUID)
+      const AxialViewport = this.renderingEngine.getViewport(axialViewportId)
       const CustomOrientationViewport = this.renderingEngine.getViewport(
-        customOrientationViewportUID
+        customOrientationViewportId
       )
 
       const DefaultOptions1 = AxialViewport.defaultOptions
@@ -153,7 +153,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to successfully use enable api', function () {
       const viewportInputEntries = [
         {
-          viewportUID: axialViewportUID,
+          viewportId: axialViewportId,
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementAxial,
           defaultOptions: {
@@ -161,7 +161,7 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          viewportUID: sagittalViewportUID,
+          viewportId: sagittalViewportId,
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementSagittal,
           defaultOptions: {
@@ -169,7 +169,7 @@ describe('RenderingEngineAPI -- ', () => {
           },
         },
         {
-          viewportUID: customOrientationViewportUID,
+          viewportId: customOrientationViewportId,
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustomOrientation,
           defaultOptions: {
@@ -180,17 +180,17 @@ describe('RenderingEngineAPI -- ', () => {
 
       this.renderingEngine.enableElement(viewportInputEntries[0])
 
-      let viewport1 = this.renderingEngine.getViewport(axialViewportUID)
-      let viewport2 = this.renderingEngine.getViewport(sagittalViewportUID)
+      let viewport1 = this.renderingEngine.getViewport(axialViewportId)
+      let viewport2 = this.renderingEngine.getViewport(sagittalViewportId)
 
       expect(viewport1).toBeTruthy()
-      expect(viewport1.uid).toBe(axialViewportUID)
+      expect(viewport1.uid).toBe(axialViewportId)
       expect(viewport2).toBeUndefined()
     })
 
     it('should not enable element without an element', function () {
       const entry = {
-        viewportUID: axialViewportUID,
+        viewportId: axialViewportId,
         type: ViewportType.ORTHOGRAPHIC,
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
@@ -205,7 +205,7 @@ describe('RenderingEngineAPI -- ', () => {
 
     it('should successfully use disable element API', function () {
       const entry = {
-        viewportUID: axialViewportUID,
+        viewportId: axialViewportId,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.elementAxial,
         defaultOptions: {
@@ -214,17 +214,17 @@ describe('RenderingEngineAPI -- ', () => {
       }
 
       this.renderingEngine.enableElement(entry)
-      let viewport1 = this.renderingEngine.getViewport(axialViewportUID)
+      let viewport1 = this.renderingEngine.getViewport(axialViewportId)
       expect(viewport1).toBeTruthy()
 
-      this.renderingEngine.disableElement(axialViewportUID)
-      viewport1 = this.renderingEngine.getViewport(axialViewportUID)
+      this.renderingEngine.disableElement(axialViewportId)
+      viewport1 = this.renderingEngine.getViewport(axialViewportId)
       expect(viewport1).toBeUndefined()
     })
 
     it('should successfully get StackViewports', function () {
       const entry = {
-        viewportUID: axialViewportUID,
+        viewportId: axialViewportId,
         type: ViewportType.STACK,
         element: this.elementAxial,
         defaultOptions: {

@@ -97,7 +97,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportUID1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -106,7 +106,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportUID2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -167,7 +167,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportUID1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -176,7 +176,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportUID2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -212,7 +212,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportUID1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -221,7 +221,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportUID2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -258,7 +258,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportUID1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -267,7 +267,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportUID2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -295,7 +295,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportUID1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -304,7 +304,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportUID2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {

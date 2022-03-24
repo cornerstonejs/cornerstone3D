@@ -51,9 +51,9 @@ function getAnnotationNearPointOnEnabledElement(
 ): Annotation | null {
   // Todo: this function should return closest annotation, BUT, we are not using
   // the function anywhere.
-  const { renderingEngineUID, viewportUID } = enabledElement
+  const { renderingEngineUID, viewportId } = enabledElement
   const toolGroup = ToolGroupManager.getToolGroup(
-    viewportUID,
+    viewportId,
     renderingEngineUID
   )
 

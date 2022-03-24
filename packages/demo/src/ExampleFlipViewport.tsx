@@ -65,7 +65,7 @@ class FlipViewportExample extends Component {
     },
     ptCtLeftClickTool: 'Levels',
     viewportUIDs: ['ctAxial', 'ctSagittal', 'ctCoronal', 'ctStack'],
-    selectedViewportUID: 'ctAxial',
+    selectedViewportId: 'ctAxial',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
   }
 
@@ -120,7 +120,7 @@ class FlipViewportExample extends Component {
     viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -128,7 +128,7 @@ class FlipViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -136,7 +136,7 @@ class FlipViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -145,7 +145,7 @@ class FlipViewportExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -174,28 +174,28 @@ class FlipViewportExample extends Component {
 
     this.axialSync.add({
       renderingEngineUID,
-      viewportUID: VIEWPORT_IDS.CT.AXIAL,
+      viewportId: VIEWPORT_IDS.CT.AXIAL,
     })
     this.axialSync.add({
       renderingEngineUID,
-      viewportUID: VIEWPORT_IDS.STACK.CT,
+      viewportId: VIEWPORT_IDS.STACK.CT,
     })
 
     this.ctWLSync.add({
       renderingEngineUID,
-      viewportUID: VIEWPORT_IDS.CT.AXIAL,
+      viewportId: VIEWPORT_IDS.CT.AXIAL,
     })
     this.ctWLSync.add({
       renderingEngineUID,
-      viewportUID: VIEWPORT_IDS.CT.CORONAL,
+      viewportId: VIEWPORT_IDS.CT.CORONAL,
     })
     this.ctWLSync.add({
       renderingEngineUID,
-      viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+      viewportId: VIEWPORT_IDS.CT.SAGITTAL,
     })
     this.ctWLSync.add({
       renderingEngineUID,
-      viewportUID: VIEWPORT_IDS.STACK.CT,
+      viewportId: VIEWPORT_IDS.STACK.CT,
     })
 
     renderingEngine.render()
@@ -321,15 +321,15 @@ class FlipViewportExample extends Component {
   }
 
   flipHorizontal = () => {
-    const viewportUID = this.state.selectedViewportUID
-    const viewport = this.renderingEngine.getViewport(viewportUID)
+    const viewportId = this.state.selectedViewportId
+    const viewport = this.renderingEngine.getViewport(viewportId)
     const { flipHorizontal } = viewport.getProperties()
     viewport.flip({ flipHorizontal: !flipHorizontal })
   }
 
   flipVertical = () => {
-    const viewportUID = this.state.selectedViewportUID
-    const viewport = this.renderingEngine.getViewport(viewportUID)
+    const viewportId = this.state.selectedViewportId
+    const viewport = this.renderingEngine.getViewport(viewportId)
     const { flipVertical } = viewport.getProperties()
     viewport.flip({ flipVertical: !flipVertical })
   }
@@ -379,14 +379,14 @@ class FlipViewportExample extends Component {
           </button>
           <select
             style={{ margin: '2px 4px', float: 'right' }}
-            value={this.state.selectedViewportUID}
+            value={this.state.selectedViewportId}
             onChange={(ev) =>
-              this.setState({ selectedViewportUID: ev.target.value })
+              this.setState({ selectedViewportId: ev.target.value })
             }
           >
-            {this.state.viewportUIDs.map((viewportUID) => (
-              <option key={viewportUID} value={viewportUID}>
-                {viewportUID}
+            {this.state.viewportUIDs.map((viewportId) => (
+              <option key={viewportId} value={viewportId}>
+                {viewportId}
               </option>
             ))}
           </select>

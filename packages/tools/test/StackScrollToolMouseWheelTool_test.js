@@ -33,7 +33,7 @@ const {
 
 const renderingEngineUID = 'RENDERING_ENGINE_UID22'
 
-const viewportUID = 'VIEWPORT22'
+const viewportId = 'VIEWPORT22'
 
 const AXIAL = 'AXIAL'
 
@@ -48,7 +48,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: viewportType,
       element,
       defaultOptions: {
@@ -107,7 +107,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     )
     this.DOMElements.push(element)
 
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     const renderEventHandler = () => {
       const index1 = [50, 50, 4]
@@ -161,7 +161,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeUID: volumeId }],
-          [viewportUID]
+          [viewportId]
         )
         vp.render()
       })
@@ -181,7 +181,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
     const imageId2 = 'fakeImageLoader:imageURI_64_64_0_20_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     const renderEventHandler = () => {
       // First render is the actual image render

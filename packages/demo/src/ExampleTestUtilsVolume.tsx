@@ -10,10 +10,7 @@ import {
   init as csRenderInit,
   setVolumesForViewports,
 } from '@cornerstonejs/core'
-import {
-  Enums as csToolsEnums,
-  synchronizers,
-} from '@cornerstonejs/tools'
+import { Enums as csToolsEnums, synchronizers } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 
 import {
@@ -106,7 +103,7 @@ class testUtilVolume extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -115,7 +112,7 @@ class testUtilVolume extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.AXIAL,
+        viewportId: VIEWPORT_IDS.PT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -124,7 +121,7 @@ class testUtilVolume extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -160,11 +157,11 @@ class testUtilVolume extends Component {
 
     axialSync.addSource({
       renderingEngineUID: renderingEngineUID,
-      viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
+      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
     })
     axialSync.addTarget({
       renderingEngineUID: renderingEngineUID,
-      viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
+      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
     })
 
     await setVolumesForViewports(

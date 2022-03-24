@@ -1,10 +1,5 @@
 import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import {
-  Enums,
-  CONSTANTS,
-  utilities,
-  cache,
-} from '@cornerstonejs/core'
+import { Enums, CONSTANTS, utilities, cache } from '@cornerstonejs/core'
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
@@ -18,7 +13,7 @@ function setLayout(
     // PT Coronal SUV BW
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BW,
-      viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
+      viewportId: VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(0),
       defaultOptions: {
@@ -29,7 +24,7 @@ function setLayout(
     // PT Coronal SUV LBM
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_LBM,
-      viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
+      viewportId: VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(1),
       defaultOptions: {
@@ -40,7 +35,7 @@ function setLayout(
     // PT Coronal SUV BSA
     {
       sceneUID: SCENE_IDS.PT_TYPES_SUV_BSA,
-      viewportUID: VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
+      viewportId: VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(2),
       defaultOptions: {
@@ -55,9 +50,9 @@ function setLayout(
   const renderingEngineUID = renderingEngine.uid
 
   viewportInput.forEach((viewportInputEntry) => {
-    const { sceneUID, viewportUID } = viewportInputEntry
+    const { sceneUID, viewportId } = viewportInputEntry
 
-    ptTypesSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
+    ptTypesSceneToolGroup.addViewport(viewportId, renderingEngineUID)
   })
 }
 

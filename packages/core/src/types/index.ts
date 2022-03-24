@@ -28,7 +28,7 @@ import type { CPUImageData } from './CPUIImageData'
 import type IImage from './IImage'
 import type { PTScaling, Scaling, ScalingParameters } from './ScalingParameters'
 import type StackViewportProperties from './StackViewportProperties'
-import type IViewportUID from './IViewportUID'
+import type IViewportId from './IViewportId'
 import type FlipDirection from './FlipDirection'
 import type ICachedImage from './ICachedImage'
 import type ICachedVolume from './ICachedVolume'
@@ -58,7 +58,7 @@ export type {
   IEnabledElement,
   ICache,
   IVolume,
-  IViewportUID,
+  IViewportId,
   IImageVolume,
   IRenderingEngine,
   ScalingParameters,

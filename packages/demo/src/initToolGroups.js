@@ -72,11 +72,11 @@ let viewportReferenceLineControllable = [
   VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
 ]
 
-function setReferenceLineControllable(viewportUID, controllable) {
-  const index = viewportReferenceLineControllable.indexOf(viewportUID)
+function setReferenceLineControllable(viewportId, controllable) {
+  const index = viewportReferenceLineControllable.indexOf(viewportId)
   if (controllable) {
     index === -1
-      ? array.push(viewportUID)
+      ? array.push(viewportId)
       : console.log('viewport is already controllable')
   } else {
     index > -1
@@ -87,8 +87,8 @@ function setReferenceLineControllable(viewportUID, controllable) {
 
 window.settReferenceLineControllable = setReferenceLineControllable
 
-function getReferenceLineControllable(viewportUID) {
-  const index = viewportReferenceLineControllable.indexOf(viewportUID)
+function getReferenceLineControllable(viewportId) {
+  const index = viewportReferenceLineControllable.indexOf(viewportId)
   return index !== -1 ? true : false
 }
 
@@ -115,11 +115,11 @@ let viewportReferenceLineDraggableRotatable = [
   VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
 ]
 
-function setReferenceLineDraggableRotatable(viewportUID, controllable) {
-  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportUID)
+function setReferenceLineDraggableRotatable(viewportId, controllable) {
+  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportId)
   if (controllable) {
     index === -1
-      ? array.push(viewportUID)
+      ? array.push(viewportId)
       : console.log('viewport is already draggable')
   } else {
     index > -1
@@ -130,8 +130,8 @@ function setReferenceLineDraggableRotatable(viewportUID, controllable) {
 
 window.setReferenceLineDraggableRotatable = setReferenceLineDraggableRotatable
 
-function getReferenceLineDraggableRotatable(viewportUID) {
-  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportUID)
+function getReferenceLineDraggableRotatable(viewportId) {
+  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportId)
   return index !== -1 ? true : false
 }
 
@@ -158,12 +158,11 @@ let viewportReferenceLineSlabThicknessControlsOn = [
   VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
 ]
 
-function setReferenceLineSlabThicknessControlsOn(viewportUID, controllable) {
-  const index =
-    viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportUID)
+function setReferenceLineSlabThicknessControlsOn(viewportId, controllable) {
+  const index = viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportId)
   if (controllable) {
     index === -1
-      ? array.push(viewportUID)
+      ? array.push(viewportId)
       : console.log('viewport has already the slabThickness controls on')
   } else {
     index > -1
@@ -175,9 +174,8 @@ function setReferenceLineSlabThicknessControlsOn(viewportUID, controllable) {
 window.setReferenceLineSlabThicknessControlsOn =
   setReferenceLineSlabThicknessControlsOn
 
-function getReferenceLineSlabThicknessControlsOn(viewportUID) {
-  const index =
-    viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportUID)
+function getReferenceLineSlabThicknessControlsOn(viewportId) {
+  const index = viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportId)
   return index !== -1 ? true : false
 }
 
@@ -211,14 +209,14 @@ viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL] = 'rgb(0, 200, 0)'
 viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL] = 'rgb(0, 200, 0)'
 viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL] = 'rgb(0, 200, 0)'
 
-function setReferenceLineColor(viewportUID, color) {
-  viewportColors[viewportUID] = color
+function setReferenceLineColor(viewportId, color) {
+  viewportColors[viewportId] = color
 }
 
 window.setReferenceLineColor = setReferenceLineColor
 
-function getReferenceLineColor(viewportUID) {
-  return viewportColors[viewportUID]
+function getReferenceLineColor(viewportId) {
+  return viewportColors[viewportId]
 }
 
 window.getReferenceLineColor = getReferenceLineColor
@@ -706,7 +704,7 @@ function addToolsToToolGroups({
     ptMipSceneToolGroup.addTool(VolumeRotateMouseWheelTool.toolName)
     ptMipSceneToolGroup.addTool(MIPJumpToClickTool.toolName, {
       // Just as an example to see it is capable of jumping in different viewports
-      targetViewportUIDs: [
+      targetViewportIds: [
         VIEWPORT_IDS.CT.AXIAL,
         VIEWPORT_IDS.PT.SAGITTAL,
         VIEWPORT_IDS.FUSION.CORONAL,

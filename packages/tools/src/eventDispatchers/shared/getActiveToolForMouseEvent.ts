@@ -18,14 +18,14 @@ export default function getActiveToolForMouseEvent(
   evt: EventTypes.NormalizedMouseEventType
 ) {
   // Todo: we should refactor this to use getToolsWithModesForMouseEvent instead
-  const { renderingEngineUID, viewportUID } = evt.detail
+  const { renderingEngineUID, viewportId } = evt.detail
   const mouseEvent = evt.detail.event
 
   // If any keyboard modifier key is also pressed
   const modifierKey = keyEventListener.getModifierKey()
 
   const toolGroup = ToolGroupManager.getToolGroup(
-    viewportUID,
+    viewportId,
     renderingEngineUID
   )
 

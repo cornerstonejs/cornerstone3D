@@ -111,7 +111,7 @@ class ApplyPresetExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -120,7 +120,7 @@ class ApplyPresetExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -129,7 +129,7 @@ class ApplyPresetExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -177,7 +177,7 @@ class ApplyPresetExample extends Component {
           blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],
-      viewportInput.map(({ viewportUID }) => viewportUID)
+      viewportInput.map(({ viewportId }) => viewportId)
     )
 
     // Set initial CT levels in UI

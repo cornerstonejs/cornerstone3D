@@ -2,7 +2,7 @@ import { getRenderingEngines, utilities } from '@cornerstonejs/core'
 
 //import type { Types } from '@cornerstonejs/core'
 
-type RenderingEngineAndViewportUIDs = {
+type RenderingEngineAndViewportIds = {
   renderingEngine: any | undefined //Types.IRenderingEngine | undefined
   viewportUIDs: Array<string>
 }
@@ -14,31 +14,26 @@ type RenderingEngineAndViewportUIDs = {
  * @param volumeUID - The UID of the volume
  */
 const autoLoad = (volumeUID: string): void => {
-  const renderingEngineAndViewportUIDs =
+  const renderingEngineAndViewportIds =
     getRenderingEngineAndViewportsContainingVolume(volumeUID)
 
-  if (
-    !renderingEngineAndViewportUIDs ||
-    !renderingEngineAndViewportUIDs.length
-  ) {
+  if (!renderingEngineAndViewportIds || !renderingEngineAndViewportIds.length) {
     return
   }
 
-  renderingEngineAndViewportUIDs.forEach(
-    ({ renderingEngine, viewportUIDs }) => {
-      if (!renderingEngine.hasBeenDestroyed) {
-        renderingEngine.renderViewports(viewportUIDs)
-      }
+  renderingEngineAndViewportIds.forEach(({ renderingEngine, viewportUIDs }) => {
+    if (!renderingEngine.hasBeenDestroyed) {
+      renderingEngine.renderViewports(viewportUIDs)
     }
-  )
+  })
 }
 
 function getRenderingEngineAndViewportsContainingVolume(
   volumeUID: string
-): Array<RenderingEngineAndViewportUIDs> {
+): Array<RenderingEngineAndViewportIds> {
   const renderingEnginesArray = getRenderingEngines()
 
-  const renderingEngineAndViewportUIDs = []
+  const renderingEngineAndViewportIds = []
 
   for (let i = 0; i < renderingEnginesArray.length; i++) {
     const renderingEngine = renderingEnginesArray[i]
@@ -48,14 +43,14 @@ function getRenderingEngineAndViewportsContainingVolume(
     )
 
     if (viewports.length) {
-      renderingEngineAndViewportUIDs.push({
+      renderingEngineAndViewportIds.push({
         renderingEngine,
         viewportUIDs: viewports.map((viewport) => viewport.uid),
       })
     }
   }
 
-  return renderingEngineAndViewportUIDs
+  return renderingEngineAndViewportIds
 }
 
 export default autoLoad

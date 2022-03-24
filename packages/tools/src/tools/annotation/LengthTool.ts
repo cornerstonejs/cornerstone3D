@@ -27,9 +27,9 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
 import {
@@ -92,7 +92,7 @@ interface LengthAnnotation extends Annotation {
  *
  * toolGroup.addTool(LengthTool.toolName)
  *
- * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(LengthTool.toolName, {
  *   bindings: [
@@ -222,7 +222,7 @@ class LengthTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       LengthTool.toolName
     )
@@ -239,10 +239,7 @@ class LengthTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     return annotation
   }
@@ -305,7 +302,7 @@ class LengthTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       LengthTool.toolName
     )
@@ -323,10 +320,7 @@ class LengthTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     evt.preventDefault()
   }
@@ -353,7 +347,7 @@ class LengthTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       LengthTool.toolName
     )
@@ -371,10 +365,7 @@ class LengthTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     evt.preventDefault()
   }
@@ -412,10 +403,7 @@ class LengthTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     this.editData = null
     this.isDrawing = false
@@ -472,10 +460,7 @@ class LengthTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   cancel = (element: HTMLElement) => {
@@ -495,7 +480,7 @@ class LengthTool extends AnnotationTool {
       const enabledElement = getEnabledElement(element)
       const { renderingEngine } = enabledElement
 
-      triggerAnnotationRenderForViewportUIDs(
+      triggerAnnotationRenderForViewportIds(
         renderingEngine,
         viewportUIDsToRender
       )
@@ -725,7 +710,7 @@ class LengthTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data
-    const { viewportUID, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
@@ -770,7 +755,7 @@ class LengthTool extends AnnotationTool {
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
-      viewportUID,
+      viewportId,
       renderingEngineUID,
     }
     triggerEvent(eventTarget, eventType, eventDetail)

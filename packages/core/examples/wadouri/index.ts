@@ -38,7 +38,7 @@ const ptObjectUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125112959.5'
 
 // Instantiate a rendering engine
 const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_STACK'
+const viewportId = 'CT_STACK'
 
 const createWADOURIImageId = (params) => {
   return `wadouri:${params.wadoURIRoot}?requestType=WADO&studyUID=${params.studyUID}&seriesUID=${params.seriesUID}&objectUID=${params.objectUID}&contentType=${params.contentType}`
@@ -65,9 +65,7 @@ addButtonToToolbar('Load CT Image', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   viewport.setStack([ctImageId])
 })
@@ -77,9 +75,7 @@ addButtonToToolbar('Load PT Image', () => {
   const renderingEngine = getRenderingEngine(renderingEngineUID)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   viewport.setStack([ptImageId])
 })
@@ -96,7 +92,7 @@ async function run() {
 
   // Create a stack viewport
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.STACK,
     element,
     defaultOptions: {
@@ -107,9 +103,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Define a stack containing a single image
   const stack = [ctImageId]

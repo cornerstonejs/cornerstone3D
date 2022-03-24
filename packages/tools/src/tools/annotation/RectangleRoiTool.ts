@@ -28,7 +28,7 @@ import {
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { Events } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import rectangle from '../../utilities/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners'
@@ -36,7 +36,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import {
   Annotation,
@@ -84,7 +84,7 @@ interface RectangleRoiCachedStats {
  *
  * toolGroup.addTool(RectangleRoiAnnotation.toolName)
  *
- * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineUID')
  *
  * toolGroup.setToolActive(RectangleRoiAnnotation.toolName, {
  *   bindings: [
@@ -240,7 +240,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiTool.toolName
     )
@@ -259,10 +259,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     return annotation
   }
@@ -323,7 +320,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiTool.toolName
     )
@@ -341,10 +338,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     evt.preventDefault()
   }
@@ -371,7 +365,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiTool.toolName
     )
@@ -389,10 +383,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     evt.preventDefault()
   }
@@ -432,10 +423,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   _mouseDragCallback = (
@@ -547,10 +535,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
   }
 
   cancel = (element: HTMLElement) => {
@@ -571,7 +556,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       const enabledElement = getEnabledElement(element)
       const { renderingEngine } = enabledElement
 
-      triggerAnnotationRenderForViewportUIDs(
+      triggerAnnotationRenderForViewportIds(
         renderingEngine,
         viewportUIDsToRender
       )
@@ -909,7 +894,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     enabledElement
   ) => {
     const { data } = annotation
-    const { viewportUID, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineUID } = enabledElement
 
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[3]
@@ -1030,7 +1015,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
-      viewportUID,
+      viewportId,
       renderingEngineUID,
     }
     triggerEvent(eventTarget, eventType, eventDetail)

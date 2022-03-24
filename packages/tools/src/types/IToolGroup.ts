@@ -9,23 +9,23 @@ export default interface IToolGroup {
   _toolInstances: Record<string, any>
   /** ToolGroup UID */
   uid: string
-  /** Viewports Info inside the ToolGroup - including viewportUID and renderingEngineUID */
-  viewportsInfo: Array<Types.IViewportUID>
+  /** Viewports Info inside the ToolGroup - including viewportId and renderingEngineUID */
+  viewportsInfo: Array<Types.IViewportId>
   /** Options for each tool including bindings and mode */
   toolOptions: Record<string, any>
   /** Get viewportUIDs in the toolGroup*/
-  getViewportUIDs: () => string[]
+  getViewportIds: () => string[]
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any }
   /** Add a tool to toolGroup with its configuration */
   addTool: { (toolName: string, toolConfiguration?: any): void }
   /** Add viewports to share the tools for the ToolGroup */
   addViewport: {
-    (viewportUID: string, renderingEngineUID?: string): void
+    (viewportId: string, renderingEngineUID?: string): void
   }
   /** Remove viewports from the ToolGroup */
   removeViewports: {
-    (renderingEngineUID: string, viewportUID?: string): void
+    (renderingEngineUID: string, viewportId?: string): void
   }
   /** Setting the tool to be Active by its name*/
   setToolActive: {

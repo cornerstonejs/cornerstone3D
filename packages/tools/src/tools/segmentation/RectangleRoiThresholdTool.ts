@@ -17,9 +17,9 @@ import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
@@ -161,7 +161,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportUIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiThresholdTool.toolName
     )
@@ -179,10 +179,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
 
     return annotation
   }
@@ -246,7 +243,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,
-        viewportUID: viewport.uid,
+        viewportId: viewport.uid,
         renderingEngineUID,
       }
 

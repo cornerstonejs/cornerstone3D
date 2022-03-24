@@ -29,14 +29,14 @@ export interface IRenderingEngine {
   getViewports(): Array<IStackViewport | IVolumeViewport>
   render(): void
   renderViewports(viewportUIDs: Array<string>): void
-  renderViewport(viewportUID: string): void
+  renderViewport(viewportId: string): void
   renderFrameOfReference(FrameOfReferenceUID: string): void
   fillCanvasWithBackgroundColor(
     canvas: HTMLCanvasElement,
     backgroundColor: [number, number, number]
   ): void
   enableElement(viewportInputEntry: PublicViewportInput): void
-  disableElement(viewportUID: string): void
+  disableElement(viewportId: string): void
   getStackViewports(): Array<IStackViewport>
   getVolumeViewports(): Array<IVolumeViewport>
   destroy(): void
@@ -67,7 +67,7 @@ type ViewportDisplayCoords = {
  *
  * There are various ways you can trigger a render on viewports. The simplest is to call `render()`
  * on the rendering engine; however, it will trigger a render on all viewports. A more efficient
- * way to do this is to call `renderViewports([viewportUID])` on the rendering engine to
+ * way to do this is to call `renderViewports([viewportId])` on the rendering engine to
  * trigger a render on a specific viewport(s). Each viewport also has a `.render` method which can be used to trigger a render on that
  * viewport.
  *
@@ -135,7 +135,7 @@ class RenderingEngine implements IRenderingEngine {
    *
    * ```typescript
    * renderingEngine.enableElement({
-   *  viewportUID: viewportUID,
+   *  viewportId: viewportId,
    *  type: ViewportType.ORTHOGRAPHIC,
    *  element,
    *  defaultOptions: {
@@ -152,7 +152,7 @@ class RenderingEngine implements IRenderingEngine {
 
   public enableElement(viewportInputEntry: PublicViewportInput): void {
     this._throwIfDestroyed()
-    const { element, viewportUID } = viewportInputEntry
+    const { element, viewportId } = viewportInputEntry
 
     // Throw error if no canvas
     if (!element) {
@@ -160,13 +160,13 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     // 1. Get the viewport from the list of available viewports.
-    const viewport = this.getViewport(viewportUID)
+    const viewport = this.getViewport(viewportId)
 
     // 1.a) If there is a found viewport, we remove the viewport and create a new viewport
     if (viewport) {
-      this.disableElement(viewportUID)
+      this.disableElement(viewportId)
       // todo: if only removing the viewport, make sure resize also happens
-      // this._removeViewport(viewportUID)
+      // this._removeViewport(viewportId)
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
@@ -194,7 +194,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Disables the requested viewportUID from the rendering engine:
+   * Disables the requested viewportId from the rendering engine:
    *
    * 1) It removes the viewport from the the list of viewports
    * 2) remove the renderer from the offScreen render window if using vtk.js driven
@@ -204,17 +204,17 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @fires Events.ELEMENT_ENABLED
    *
-   * @param viewportUID - viewport UID
+   * @param viewportId - viewport UID
    *
    */
-  public disableElement(viewportUID: string): void {
+  public disableElement(viewportId: string): void {
     this._throwIfDestroyed()
     // 1. Getting the viewport to remove it
-    const viewport = this.getViewport(viewportUID)
+    const viewport = this.getViewport(viewportId)
 
     // 2 To throw if there is no viewport stored in rendering engine
     if (!viewport) {
-      console.warn(`viewport ${viewportUID} does not exist`)
+      console.warn(`viewport ${viewportId} does not exist`)
       return
     }
 
@@ -226,14 +226,14 @@ class RenderingEngine implements IRenderingEngine {
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
       !this.useCPURendering
     ) {
-      this.offscreenMultiRenderWindow.removeRenderer(viewportUID)
+      this.offscreenMultiRenderWindow.removeRenderer(viewportId)
     }
 
     // 5. Remove the requested viewport from the rendering engine
-    this._removeViewport(viewportUID)
+    this._removeViewport(viewportId)
 
     // 6. Avoid rendering for the disabled viewport
-    this._needsRender.delete(viewportUID)
+    this._needsRender.delete(viewportId)
 
     // 7. Clear RAF if no viewport is left
     const viewports = this.getViewports()
@@ -246,14 +246,14 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * It takes an array of viewport input objects including element, viewportUID, type
+   * It takes an array of viewport input objects including element, viewportId, type
    * and defaultOptions. It will add the viewport to the rendering engine and enables them.
    *
    *
    * ```typescript
    *renderingEngine.setViewports([
    *   {
-   *     viewportUID: axialViewportUID,
+   *     viewportId: axialViewportId,
    *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('axialDiv'),
    *     defaultOptions: {
@@ -261,7 +261,7 @@ class RenderingEngine implements IRenderingEngine {
    *     },
    *   },
    *   {
-   *     viewportUID: sagittalViewportUID,
+   *     viewportId: sagittalViewportId,
    *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('sagittalDiv'),
    *     defaultOptions: {
@@ -269,7 +269,7 @@ class RenderingEngine implements IRenderingEngine {
    *     },
    *   },
    *   {
-   *     viewportUID: customOrientationViewportUID,
+   *     viewportId: customOrientationViewportId,
    *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('customOrientationDiv'),
    *     defaultOptions: {
@@ -443,10 +443,10 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * Renders only a specific `Viewport` on the next animation frame.
    *
-   * @param viewportUID - The UID of the viewport.
+   * @param viewportId - The UID of the viewport.
    */
-  public renderViewport(viewportUID: string): void {
-    this._setViewportsToBeRenderedNextFrame([viewportUID])
+  public renderViewport(viewportId: string): void {
+    this._setViewportsToBeRenderedNextFrame([viewportId])
   }
 
   /**
@@ -592,25 +592,25 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Disables the requested viewportUID from the rendering engine:
+   * Disables the requested viewportId from the rendering engine:
    * 1) It removes the viewport from the the list of viewports
    * 2) remove the renderer from the offScreen render window
    * 3) resetting the viewport to remove the canvas attributes and canvas data
    * 4) resize the offScreen appropriately
    *
-   * @param viewportUID - viewport UID
+   * @param viewportId - viewport UID
    *
    */
-  private _removeViewport(viewportUID: string): void {
+  private _removeViewport(viewportId: string): void {
     // 1. Get the viewport
-    const viewport = this.getViewport(viewportUID)
+    const viewport = this.getViewport(viewportId)
     if (!viewport) {
-      console.warn(`viewport ${viewportUID} does not exist`)
+      console.warn(`viewport ${viewportId} does not exist`)
       return
     }
 
     // 2. Delete the viewports from the the viewports
-    this._viewports.delete(viewportUID)
+    this._viewports.delete(viewportId)
   }
 
   /**
@@ -630,7 +630,7 @@ class RenderingEngine implements IRenderingEngine {
       xOffset: number
     }
   ): void {
-    const { element, canvas, viewportUID, type, defaultOptions } =
+    const { element, canvas, viewportId, type, defaultOptions } =
       viewportInputEntry
 
     // Make the element not focusable, we use this for modifier keys to work
@@ -664,7 +664,7 @@ class RenderingEngine implements IRenderingEngine {
         sxEndDisplayCoords,
         syEndDisplayCoords,
       ],
-      uid: viewportUID,
+      uid: viewportId,
       background: defaultOptions.background
         ? defaultOptions.background
         : [0, 0, 0],
@@ -672,7 +672,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. ViewportInput to be passed to a stack/volume viewport
     const viewportInput = <ViewportInput>{
-      uid: viewportUID,
+      uid: viewportId,
       element, // div
       renderingEngineUID: this.uid,
       type,
@@ -697,11 +697,11 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     // 5. Storing the viewports
-    this._viewports.set(viewportUID, viewport)
+    this._viewports.set(viewportId, viewport)
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
-      viewportUID,
+      viewportId,
       renderingEngineUID: this.uid,
     }
 
@@ -717,7 +717,7 @@ class RenderingEngine implements IRenderingEngine {
    * construct and enable the viewport.
    */
   private addCustomViewport(viewportInputEntry: PublicViewportInput): void {
-    const { element, viewportUID, type, defaultOptions } = viewportInputEntry
+    const { element, viewportId, type, defaultOptions } = viewportInputEntry
 
     // Make the element not focusable, we use this for modifier keys to work
     element.tabIndex = -1
@@ -734,7 +734,7 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     const viewportInput = <ViewportInput>{
-      uid: viewportUID,
+      uid: viewportId,
       renderingEngineUID: this.uid,
       element, // div
       type,
@@ -758,11 +758,11 @@ class RenderingEngine implements IRenderingEngine {
     const viewport = new StackViewport(viewportInput)
 
     // 5. Storing the viewports
-    this._viewports.set(viewportUID, viewport)
+    this._viewports.set(viewportId, viewport)
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
-      viewportUID,
+      viewportId,
       renderingEngineUID: this.uid,
     }
 
@@ -979,8 +979,8 @@ class RenderingEngine implements IRenderingEngine {
 
   private _setViewportsToBeRenderedNextFrame(viewportUIDs: string[]) {
     // Add the viewports to the set of flagged viewports
-    viewportUIDs.forEach((viewportUID) => {
-      this._needsRender.add(viewportUID)
+    viewportUIDs.forEach((viewportId) => {
+      this._needsRender.add(viewportId)
     })
 
     // Render any flagged viewports
@@ -1153,7 +1153,7 @@ class RenderingEngine implements IRenderingEngine {
     return {
       element,
       suppressEvents,
-      viewportUID: uid,
+      viewportId: uid,
       renderingEngineUID,
     }
   }
@@ -1167,11 +1167,11 @@ class RenderingEngine implements IRenderingEngine {
   private _resetViewport(viewport) {
     const renderingEngineUID = this.uid
 
-    const { element, canvas, uid: viewportUID } = viewport
+    const { element, canvas, uid: viewportId } = viewport
 
     const eventDetail: EventTypes.ElementDisabledEventDetail = {
       element,
-      viewportUID,
+      viewportId,
       renderingEngineUID,
     }
 
