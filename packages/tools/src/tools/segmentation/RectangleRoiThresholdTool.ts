@@ -195,7 +195,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
-    const { viewport, renderingEngineUID } = enabledElement
+    const { viewport, renderingEngineId } = enabledElement
     const { element } = viewport
     let annotations = getAnnotations(
       element,
@@ -244,7 +244,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,
         viewportId: viewport.uid,
-        renderingEngineUID,
+        renderingEngineId,
       }
 
       triggerEvent(eventTarget, eventType, eventDetail)

@@ -5,10 +5,7 @@ import {
   volumeLoader,
   init as cs3dInit,
 } from '@cornerstonejs/core'
-import {
-  SynchronizerManager,
-  synchronizers,
-} from '@cornerstonejs/tools'
+import { SynchronizerManager, synchronizers } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
@@ -21,7 +18,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
@@ -108,7 +105,7 @@ class MPRExample extends Component {
   async componentDidMount() {
     await cs3dInit()
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
   }
@@ -155,7 +152,7 @@ class MPRExample extends Component {
     this.ctVolumeUID = ctVolumeUID
     this.ptVolumeUID = ptVolumeUID
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 

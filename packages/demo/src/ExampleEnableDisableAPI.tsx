@@ -23,7 +23,7 @@ import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-lo
 
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ctVolumeUID,
   ptVolumeUID,
   VIEWPORT_IDS,
@@ -189,7 +189,7 @@ class EnableDisableViewportExample extends Component {
       ],
     })
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
 
@@ -207,14 +207,14 @@ class EnableDisableViewportExample extends Component {
     // Tools added for the first two viewports
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({
@@ -249,7 +249,7 @@ class EnableDisableViewportExample extends Component {
 
       stackDXViewportToolGroup.addViewport(
         VIEWPORT_IDS.STACK.DX,
-        renderingEngineUID
+        renderingEngineId
       )
     }
 
@@ -374,7 +374,7 @@ class EnableDisableViewportExample extends Component {
 
     const { toolGroup, viewportId, type, canvas } = viewportInput
 
-    toolGroup.addViewport(viewportId, renderingEngineUID)
+    toolGroup.addViewport(viewportId, renderingEngineId)
 
     // load
     if (viewportId === VIEWPORT_IDS.STACK.CT) {

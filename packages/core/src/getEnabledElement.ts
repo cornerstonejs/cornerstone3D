@@ -9,7 +9,7 @@ import { IEnabledElement } from './types'
  * @example
  * Using the renderingEngine to find the enabled element:
  * ```javascript
- * const element = getRenderingEngine(renderingEngineUID)
+ * const element = getRenderingEngine(renderingEngineId)
  *    .getViewport(viewportId)
  *    .element
  *
@@ -47,19 +47,19 @@ export default function getEnabledElement(
  * EnabledElement.
  *
  * @param viewportId - The UID of the viewport
- * @param renderingEngineUID - The UID of the rendering engine.
+ * @param renderingEngineId - The UID of the rendering engine.
  * @returns The enabled element which is an object that contains the viewport, rendering
  * engine, viewport UID, rendering engine UID, and the Frame of Reference UID.
  */
 export function getEnabledElementByUIDs(
   viewportId: string,
-  renderingEngineUID: string
+  renderingEngineId: string
 ): IEnabledElement {
-  if (!renderingEngineUID || !viewportId) {
+  if (!renderingEngineId || !viewportId) {
     return
   }
 
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
     return
@@ -77,7 +77,7 @@ export function getEnabledElementByUIDs(
     viewport,
     renderingEngine,
     viewportId,
-    renderingEngineUID,
+    renderingEngineId,
     FrameOfReferenceUID,
   }
 }

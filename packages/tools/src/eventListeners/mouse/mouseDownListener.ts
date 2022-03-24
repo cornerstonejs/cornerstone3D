@@ -12,7 +12,7 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
 interface IMouseDownListenerState {
   mouseButton: number
   element: HTMLElement
-  renderingEngineUID: string
+  renderingEngineId: string
   viewportId: string
   isClickEvent: boolean
   clickDelay: number
@@ -26,7 +26,7 @@ const defaultState: IMouseDownListenerState = {
   mouseButton: undefined,
   //
   element: null,
-  renderingEngineUID: undefined,
+  renderingEngineId: undefined,
   viewportId: undefined,
   //
   isClickEvent: true,
@@ -49,7 +49,7 @@ const defaultState: IMouseDownListenerState = {
 let state: IMouseDownListenerState = {
   mouseButton: undefined,
   //
-  renderingEngineUID: undefined,
+  renderingEngineId: undefined,
   viewportId: undefined,
   //
   isClickEvent: true,
@@ -89,9 +89,9 @@ function mouseDownListener(evt: MouseEvent) {
   state.mouseButton = evt.button
 
   const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineUID, viewportId } = enabledElement
+  const { renderingEngineId, viewportId } = enabledElement
 
-  state.renderingEngineUID = renderingEngineUID
+  state.renderingEngineId = renderingEngineId
   state.viewportId = viewportId
 
   state.preventClickTimeout = setTimeout(_preventClickHandler, state.clickDelay)
@@ -107,7 +107,7 @@ function mouseDownListener(evt: MouseEvent) {
     eventName: MOUSE_DOWN,
     element: state.element,
     mouseButton: state.mouseButton,
-    renderingEngineUID: state.renderingEngineUID,
+    renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
     camera: {},
     startPoints,
@@ -156,7 +156,7 @@ function _onMouseDrag(evt: MouseEvent) {
     event: evt,
     eventName: MOUSE_DRAG,
     mouseButton: state.mouseButton,
-    renderingEngineUID: state.renderingEngineUID,
+    renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
     camera: {},
     element: state.element,
@@ -193,7 +193,7 @@ function _onMouseUp(evt: MouseEvent): void {
     eventName,
     mouseButton: state.mouseButton,
     element: state.element,
-    renderingEngineUID: state.renderingEngineUID,
+    renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
     camera: {},
     startPoints: _copyPoints(state.startPoints),

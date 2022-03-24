@@ -96,7 +96,7 @@ interface BidirectionalAnnotation extends Annotation {
  *
  * toolGroup.addTool(BidirectionalTool.toolName)
  *
- * toolGroup.addViewport('viewportId', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
  * toolGroup.setToolActive(BidirectionalTool.toolName, {
  *   bindings: [
@@ -1198,7 +1198,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
   _calculateCachedStats = (annotation, renderingEngine, enabledElement) => {
     const { data } = annotation
-    const { viewportId, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineId } = enabledElement
 
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
@@ -1246,7 +1246,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
-      renderingEngineUID,
+      renderingEngineId,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
 

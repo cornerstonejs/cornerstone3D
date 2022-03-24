@@ -19,7 +19,7 @@ import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define a unique id for the volume
@@ -90,10 +90,10 @@ element.addEventListener(
   STACK_NEW_IMAGE,
   (evt: Types.EventTypes.StackNewImageEvent) => {
     // Remove the image since then we serialise a bunch of pixeldata to the screen.
-    const { imageId, renderingEngineUID, viewportId } = evt.detail
+    const { imageId, renderingEngineId, viewportId } = evt.detail
     const detail = {
       imageId,
-      renderingEngineUID,
+      renderingEngineId,
       viewportId,
       image: 'cornerstoneImageObject',
     }
@@ -109,7 +109,7 @@ element.addEventListener(
 // Buttons
 addButtonToToolbar('Set VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
@@ -130,7 +130,7 @@ addButtonToToolbar('Set VOI Range', () => {
 
 addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
@@ -157,7 +157,7 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
@@ -189,7 +189,7 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportInput = {

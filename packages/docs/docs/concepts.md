@@ -244,7 +244,7 @@ const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
 )
 
 // Add viewports to synchronize
-const firstViewport = { renderingEngineUID, sceneUID, viewportId }
+const firstViewport = { renderingEngineId, sceneUID, viewportId }
 const secondViewport = {
   /* */
 }

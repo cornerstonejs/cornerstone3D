@@ -14,7 +14,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
@@ -141,7 +141,7 @@ class VTKSetVolumesExample extends Component {
     this.ctVolumeUID = ctVolumeUID
     this.ptVolumeUID = ptVolumeUID
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 

@@ -41,7 +41,7 @@ const {
   compareImages,
 } = utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'
@@ -92,7 +92,7 @@ describe('Segmentation Tools --', () => {
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })

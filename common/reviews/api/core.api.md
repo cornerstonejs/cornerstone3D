@@ -33,7 +33,7 @@ type CameraModifiedEventDetail = {
     camera: ICamera;
     element: HTMLElement;
     viewportId: string;
-    renderingEngineUID: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -368,7 +368,7 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 type ElementDisabledEventDetail = {
     element: HTMLElement;
     viewportId: string;
-    renderingEngineUID: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -378,7 +378,7 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>;
 type ElementEnabledEventDetail = {
     element: HTMLElement;
     viewportId: string;
-    renderingEngineUID: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -555,7 +555,7 @@ function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlan
 export function getEnabledElement(element: HTMLElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
-export function getEnabledElementByUIDs(viewportId: string, renderingEngineUID: string): IEnabledElement;
+export function getEnabledElementByUIDs(viewportId: string, renderingEngineId: string): IEnabledElement;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -591,10 +591,10 @@ function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera:
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 
 // @public (undocumented)
-function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineUID?: string): Array<IVolumeViewport>;
+function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
-function getVolumeViewportsContainingVolumeUID(uid: string, renderingEngineUID?: string): Array<IVolumeViewport>;
+function getVolumeViewportsContainingVolumeUID(uid: string, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
 interface ICache {
@@ -679,7 +679,7 @@ interface IEnabledElement {
     // (undocumented)
     renderingEngine: IRenderingEngine;
     // (undocumented)
-    renderingEngineUID: string;
+    renderingEngineId: string;
     // (undocumented)
     viewport: IStackViewport | IVolumeViewport;
     // (undocumented)
@@ -937,7 +937,7 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 type ImageRenderedEventDetail = {
     element: HTMLElement;
     viewportId: string;
-    renderingEngineUID: string;
+    renderingEngineId: string;
     suppressEvents?: boolean;
 };
 
@@ -951,7 +951,7 @@ type ImageSpacingCalibratedEvent = CustomEvent_2<ImageSpacingCalibratedEventDeta
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement;
     viewportId: string;
-    renderingEngineUID: string;
+    renderingEngineId: string;
     imageId: string;
     rowScale: number;
     columnScale: number;
@@ -1087,7 +1087,7 @@ interface IStackViewport extends IViewport {
         canvas: HTMLCanvasElement;
         element: HTMLElement;
         viewportId: string;
-        renderingEngineUID: string;
+        renderingEngineId: string;
     };
     // (undocumented)
     getCamera(): ICamera;
@@ -1195,7 +1195,7 @@ interface IViewport {
     // (undocumented)
     render(): void;
     // (undocumented)
-    renderingEngineUID: string;
+    renderingEngineId: string;
     // (undocumented)
     reset(immediate: boolean): void;
     // (undocumented)
@@ -1225,7 +1225,7 @@ interface IViewport {
 // @public (undocumented)
 interface IViewportId {
     // (undocumented)
-    renderingEngineUID: string;
+    renderingEngineId: string;
     // (undocumented)
     viewportId: string;
 }
@@ -1474,7 +1474,7 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-export function renderToCanvas(imageId: string, canvas: HTMLCanvasElement, renderingEngineUID?: any, suppressEvents?: boolean): Promise<string>;
+export function renderToCanvas(imageId: string, canvas: HTMLCanvasElement, renderingEngineId?: any, suppressEvents?: boolean): Promise<string>;
 
 // @public (undocumented)
 export function resetUseCPURendering(): void;
@@ -1543,7 +1543,7 @@ type StackNewImageEventDetail = {
     image: IImage;
     imageId: string;
     viewportId: string;
-    renderingEngineUID: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -1562,7 +1562,7 @@ export class StackViewport extends Viewport implements IStackViewport {
         canvas: HTMLCanvasElement;
         element: HTMLElement;
         viewportId: string;
-        renderingEngineUID: string;
+        renderingEngineId: string;
     };
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
@@ -1819,7 +1819,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     render(): void;
     // (undocumented)
-    readonly renderingEngineUID: string;
+    readonly renderingEngineId: string;
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)

@@ -12,7 +12,7 @@ import { EventTypes, IPoints } from '../../types'
 function mouseDoubleClickListener(evt: MouseEvent): void {
   const element = <HTMLElement>evt.currentTarget
 
-  const { viewportId, renderingEngineUID } = getEnabledElement(element)
+  const { viewportId, renderingEngineId } = getEnabledElement(element)
 
   const startPoints = getMouseEventPoints(evt, element)
   const deltaPoints: IPoints = {
@@ -26,7 +26,7 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
     event: evt,
     eventName: Events.MOUSE_DOUBLE_CLICK,
     viewportId,
-    renderingEngineUID,
+    renderingEngineId,
     camera: {},
     element,
     startPoints,

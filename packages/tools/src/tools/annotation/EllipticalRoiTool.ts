@@ -109,7 +109,7 @@ export interface EllipticalRoiAnnotation extends Annotation {
  *
  * toolGroup.addTool(EllipticalRoiTool.toolName)
  *
- * toolGroup.addViewport('viewportId', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
  * toolGroup.setToolActive(EllipticalRoiTool.toolName, {
  *   bindings: [
@@ -959,7 +959,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     enabledElement
   ) => {
     const data = annotation.data
-    const { viewportId, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineId } = enabledElement
 
     const { points } = data.handles
 
@@ -1105,7 +1105,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
-      renderingEngineUID,
+      renderingEngineId,
     }
 
     triggerEvent(eventTarget, eventType, eventDetail)

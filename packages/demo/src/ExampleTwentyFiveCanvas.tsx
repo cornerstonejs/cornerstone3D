@@ -32,8 +32,8 @@ class TwentyFiveCanvasExample extends Component {
 
   async componentDidMount() {
     await csRenderInit()
-    const renderingEngineUID = 'ExampleRenderingEngineID'
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngineId = 'ExampleRenderingEngineID'
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 

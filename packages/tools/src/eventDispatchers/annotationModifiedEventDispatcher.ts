@@ -16,8 +16,8 @@ import { AnnotationModifiedEventType } from '../types/EventTypes'
  * no svg update happens since the attributes for handles are the same)
  */
 const onAnnotationModified = function (evt: AnnotationModifiedEventType) {
-  const { viewportId, renderingEngineUID } = evt.detail
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const { viewportId, renderingEngineId } = evt.detail
+  const renderingEngine = getRenderingEngine(renderingEngineId)
   triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId])
 }
 

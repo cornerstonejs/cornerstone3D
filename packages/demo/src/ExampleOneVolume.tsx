@@ -27,7 +27,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ptVolumeUID,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
@@ -102,7 +102,7 @@ class OneVolumeExample extends Component {
 
     const volumeImageIds = await this.volumeImageIds
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -141,9 +141,9 @@ class OneVolumeExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineUID)
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.CORONAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineId)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.CORONAL, renderingEngineId)
 
     addToolsToToolGroups({ ptSceneToolGroup })
 

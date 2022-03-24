@@ -24,7 +24,7 @@ const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 const { BlendMode } = vtkConstants
 
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define a unique id for the volume
@@ -52,7 +52,7 @@ content.appendChild(element)
 // Buttons
 addButtonToToolbar('Set VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
@@ -72,7 +72,7 @@ addButtonToToolbar('Set VOI Range', () => {
 })
 addButtonToToolbar('Flip H', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
@@ -89,7 +89,7 @@ addButtonToToolbar('Flip H', () => {
 
 addButtonToToolbar('Flip V', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
@@ -106,7 +106,7 @@ addButtonToToolbar('Flip V', () => {
 
 addButtonToToolbar('Invert', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
@@ -127,7 +127,7 @@ addButtonToToolbar('Invert', () => {
 
 addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
@@ -154,7 +154,7 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
@@ -183,7 +183,7 @@ addDropdownToToolbar(
   },
   (selectedValue) => {
     // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineUID)
+    const renderingEngine = getRenderingEngine(renderingEngineId)
 
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
@@ -236,7 +236,7 @@ addSliderToToolbar(
   { range: [0, 50], defaultValue: 0 },
   (value) => {
     // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineUID)
+    const renderingEngine = getRenderingEngine(renderingEngineId)
 
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
@@ -283,7 +283,7 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportInput = {

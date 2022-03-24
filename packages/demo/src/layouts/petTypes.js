@@ -47,12 +47,12 @@ function setLayout(
 
   renderingEngine.setViewports(viewportInput)
 
-  const renderingEngineUID = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid
 
   viewportInput.forEach((viewportInputEntry) => {
     const { sceneUID, viewportId } = viewportInputEntry
 
-    ptTypesSceneToolGroup.addViewport(viewportId, renderingEngineUID)
+    ptTypesSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 }
 

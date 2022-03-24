@@ -54,7 +54,7 @@ Use the buttons to lock/select the annotations.
 content.append(instructions)
 // ============================= //
 
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const toolGroupUID = 'STACK_TOOL_GROUP_UID'
 
 // Some annotations to demonstrate the demo
@@ -84,7 +84,7 @@ addButtonToToolbar('Select Length Annotation', () => {
   selection.setAnnotationSelected(annotation, true)
 
   // Render the image to see it was selected
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   renderingEngine.render()
 })
@@ -129,7 +129,7 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportId = 'CT_STACK'
@@ -145,7 +145,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput)
 
   // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineUID)
+  toolGroup.addViewport(viewportId, renderingEngineId)
 
   // Get the stack viewport that was created
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)

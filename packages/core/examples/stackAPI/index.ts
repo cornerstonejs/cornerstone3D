@@ -15,7 +15,7 @@ import {
 const { ViewportType } = Enums
 
 // ======== Constants ======= //
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_STACK'
 
 // ======== Set up page ======== //
@@ -34,7 +34,7 @@ content.appendChild(element)
 
 addButtonToToolbar('Set VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -47,7 +47,7 @@ addButtonToToolbar('Set VOI Range', () => {
 
 addButtonToToolbar('Next Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -67,7 +67,7 @@ addButtonToToolbar('Next Image', () => {
 
 addButtonToToolbar('Previous Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -86,7 +86,7 @@ addButtonToToolbar('Previous Image', () => {
 
 addButtonToToolbar('Flip H', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -100,7 +100,7 @@ addButtonToToolbar('Flip H', () => {
 
 addButtonToToolbar('Flip V', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -114,7 +114,7 @@ addButtonToToolbar('Flip V', () => {
 
 addButtonToToolbar('Rotate', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -128,7 +128,7 @@ addButtonToToolbar('Rotate', () => {
 
 addButtonToToolbar('Invert', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -142,7 +142,7 @@ addButtonToToolbar('Invert', () => {
 
 addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -169,7 +169,7 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -199,7 +199,7 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
 

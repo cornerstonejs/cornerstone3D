@@ -40,7 +40,7 @@ const { SegmentationRepresentations } = csToolsEnums
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 const viewportUID2 = 'SAGITTAL'
@@ -90,7 +90,7 @@ describe('Segmentation Render -- ', () => {
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })

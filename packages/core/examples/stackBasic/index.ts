@@ -40,8 +40,8 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportId = 'CT_STACK'

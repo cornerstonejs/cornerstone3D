@@ -674,7 +674,7 @@ class RenderingEngine implements IRenderingEngine {
     const viewportInput = <ViewportInput>{
       uid: viewportId,
       element, // div
-      renderingEngineUID: this.uid,
+      renderingEngineId: this.uid,
       type,
       canvas,
       sx,
@@ -702,7 +702,7 @@ class RenderingEngine implements IRenderingEngine {
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
       viewportId,
-      renderingEngineUID: this.uid,
+      renderingEngineId: this.uid,
     }
 
     if (!viewport.suppressEvents) {
@@ -735,7 +735,7 @@ class RenderingEngine implements IRenderingEngine {
 
     const viewportInput = <ViewportInput>{
       uid: viewportId,
-      renderingEngineUID: this.uid,
+      renderingEngineId: this.uid,
       element, // div
       type,
       canvas,
@@ -763,7 +763,7 @@ class RenderingEngine implements IRenderingEngine {
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
       viewportId,
-      renderingEngineUID: this.uid,
+      renderingEngineId: this.uid,
     }
 
     triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail)
@@ -1130,7 +1130,7 @@ class RenderingEngine implements IRenderingEngine {
       sWidth,
       sHeight,
       uid,
-      renderingEngineUID,
+      renderingEngineId,
       suppressEvents,
     } = viewport
 
@@ -1154,7 +1154,7 @@ class RenderingEngine implements IRenderingEngine {
       element,
       suppressEvents,
       viewportId: uid,
-      renderingEngineUID,
+      renderingEngineId,
     }
   }
 
@@ -1165,14 +1165,14 @@ class RenderingEngine implements IRenderingEngine {
    * @param viewport - The `Viewport` to render.
    */
   private _resetViewport(viewport) {
-    const renderingEngineUID = this.uid
+    const renderingEngineId = this.uid
 
     const { element, canvas, uid: viewportId } = viewport
 
     const eventDetail: EventTypes.ElementDisabledEventDetail = {
       element,
       viewportId,
-      renderingEngineUID,
+      renderingEngineId,
     }
 
     // Trigger first before removing the data attributes, as we need the enabled

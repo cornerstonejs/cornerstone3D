@@ -59,7 +59,7 @@ renderingEngine.enableElement(
   canvas,
   sceneUID,
   viewportId,
-  renderingEngineUID,
+  renderingEngineId,
 }
 ```
 
@@ -258,7 +258,7 @@ The ELEMENT_DISABLED event contains just a reference to the canvas element which
 eventDetail: {
   viewportId,
   sceneUID,
-  renderingEngineUID,
+  renderingEngineId,
   canvas
 }
 ```

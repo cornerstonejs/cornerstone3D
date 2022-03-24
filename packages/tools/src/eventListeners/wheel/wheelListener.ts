@@ -13,7 +13,7 @@ import { MouseWheelEventDetail } from '../../types/EventTypes'
 function wheelListener(evt: WheelEvent) {
   const element = <HTMLElement>evt.currentTarget
   const enabledElement = getEnabledElement(element)
-  const { renderingEngineUID, viewportId } = enabledElement
+  const { renderingEngineId, viewportId } = enabledElement
 
   // Prevent triggering MouseWheel events that are not real scroll events:
   // E.g. when clicking the MiddleMouseWheelButton, a deltaY of 0 is emitted.
@@ -30,7 +30,7 @@ function wheelListener(evt: WheelEvent) {
   const eventDetail: MouseWheelEventDetail = {
     event: evt,
     eventName: Events.MOUSE_WHEEL,
-    renderingEngineUID,
+    renderingEngineId,
     viewportId,
     element,
     camera: {},

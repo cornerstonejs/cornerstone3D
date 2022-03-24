@@ -34,7 +34,7 @@ const { Events: csToolsEvents } = csToolsEnums
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
@@ -110,7 +110,7 @@ describe('Cornerstone Tools: ', () => {
       configuration: {},
     })
 
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    this.renderingEngine = new RenderingEngine(renderingEngineId)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })

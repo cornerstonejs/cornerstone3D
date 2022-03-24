@@ -113,8 +113,8 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
   const viewportUIDs = [
@@ -165,7 +165,7 @@ async function run() {
 
   // Set the tool group on the viewports
   viewportUIDs.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineUID)
+    toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
   // Define a volume in memory

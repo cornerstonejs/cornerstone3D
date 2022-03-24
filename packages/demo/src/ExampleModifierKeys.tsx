@@ -27,7 +27,7 @@ import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -100,7 +100,7 @@ class ModifierKeysExample extends Component {
     const ctStackImageIds = await this.ctStackImageIdsPromise
     const dxStackImageIds = await this.dxStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -120,7 +120,7 @@ class ModifierKeysExample extends Component {
 
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({ stackCTViewportToolGroup })

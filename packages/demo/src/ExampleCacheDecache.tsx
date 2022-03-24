@@ -16,7 +16,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ctVolumeUID,
   ctStackUID,
   VIEWPORT_IDS,
@@ -93,7 +93,7 @@ class CacheDecacheExample extends Component {
     // Create volumes
     const ctStackImageIds = await this.ctStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -140,14 +140,14 @@ class CacheDecacheExample extends Component {
     renderingEngine.setViewports(this.viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({ ctSceneToolGroup, stackCTViewportToolGroup })

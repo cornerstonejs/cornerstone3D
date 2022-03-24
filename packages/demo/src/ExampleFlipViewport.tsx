@@ -20,7 +20,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ctVolumeUID,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
@@ -112,7 +112,7 @@ class FlipViewportExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     const ctStackImageIds = await this.ctStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -157,14 +157,14 @@ class FlipViewportExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({
@@ -173,28 +173,28 @@ class FlipViewportExample extends Component {
     })
 
     this.axialSync.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.AXIAL,
     })
     this.axialSync.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId: VIEWPORT_IDS.STACK.CT,
     })
 
     this.ctWLSync.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.AXIAL,
     })
     this.ctWLSync.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.CORONAL,
     })
     this.ctWLSync.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.SAGITTAL,
     })
     this.ctWLSync.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId: VIEWPORT_IDS.STACK.CT,
     })
 

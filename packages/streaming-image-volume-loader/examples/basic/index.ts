@@ -25,8 +25,8 @@ async function setup() {
 
   // registerWebImageLoader(cs)
 
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   const viewportInput = [
     {

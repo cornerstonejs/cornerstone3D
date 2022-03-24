@@ -13,7 +13,7 @@ interface IEnabledElement {
   /** Unique ID of the viewport in the renderingEngine */
   viewportId: string
   /** Unique ID of the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** FrameOfReference the enabledElement is rendering inside */
   FrameOfReferenceUID: string
 }

@@ -29,7 +29,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleToolDisplayConfiguration.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ctVolumeUID,
   ctStackUID,
   VIEWPORT_IDS,
@@ -137,7 +137,7 @@ class ToolDisplayConfigurationExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     const colorImageIds = this.colorImageIds
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
@@ -182,19 +182,19 @@ class ToolDisplayConfigurationExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     // dx and color
     stackDXViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.DX,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({

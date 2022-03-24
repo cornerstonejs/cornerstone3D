@@ -28,9 +28,9 @@ export default class StackScrollTool extends BaseTool {
   }
 
   _dragCallback(evt: EventTypes.MouseDragEventType) {
-    const { deltaPoints, viewportId, renderingEngineUID } = evt.detail
+    const { deltaPoints, viewportId, renderingEngineId } = evt.detail
     const deltaFrames = deltaPoints.canvas[1]
-    const { viewport } = getEnabledElementByUIDs(viewportId, renderingEngineUID)
+    const { viewport } = getEnabledElementByUIDs(viewportId, renderingEngineId)
     const volumeUID = this.getTargetUID(viewport)
     const { invert } = this.configuration
 

@@ -11,18 +11,18 @@ import { IToolGroup } from '../../types'
  *
  * @param viewportId - The UID of the viewport that the tool is being
  * added to.
- * @param renderingEngineUID - The UID of the rendering engine that the
+ * @param renderingEngineId - The UID of the rendering engine that the
  * tool group is associated with.
  * @returns A tool group.
  */
 function getToolGroup(
   viewportId: string,
-  renderingEngineUID: string
+  renderingEngineId: string
 ): IToolGroup | undefined {
   const toolGroupFilteredByUIDs = state.toolGroups.filter((tg) =>
     tg.viewportsInfo.some(
       (vp) =>
-        vp.renderingEngineUID === renderingEngineUID &&
+        vp.renderingEngineId === renderingEngineId &&
         (!vp.viewportId || vp.viewportId === viewportId)
     )
   )
@@ -33,7 +33,7 @@ function getToolGroup(
 
   if (toolGroupFilteredByUIDs.length > 1) {
     throw new Error(
-      `Multiple tool groups found for renderingEngineUID: ${renderingEngineUID} and viewportId: ${viewportId}. You should only
+      `Multiple tool groups found for renderingEngineId: ${renderingEngineId} and viewportId: ${viewportId}. You should only
       have one tool group per viewport in a renderingEngine.`
     )
   }

@@ -37,7 +37,7 @@ const ptSeriesUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125112950.1'
 const ptObjectUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125112959.5'
 
 // Instantiate a rendering engine
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_STACK'
 
 const createWADOURIImageId = (params) => {
@@ -62,7 +62,7 @@ const ptImageId = createWADOURIImageId({
 
 addButtonToToolbar('Load CT Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -72,7 +72,7 @@ addButtonToToolbar('Load CT Image', () => {
 
 addButtonToToolbar('Load PT Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -88,7 +88,7 @@ async function run() {
   await csRenderInit()
   await csToolsInit()
 
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportInput = {

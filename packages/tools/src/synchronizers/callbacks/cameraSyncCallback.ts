@@ -16,7 +16,7 @@ export default function cameraSyncCallback(
 ): void {
   // We need a helper for this
   if (
-    sourceViewport.renderingEngineUID === targetViewport.renderingEngineUID &&
+    sourceViewport.renderingEngineId === targetViewport.renderingEngineId &&
     sourceViewport.viewportId === targetViewport.viewportId
   ) {
     return
@@ -24,10 +24,10 @@ export default function cameraSyncCallback(
 
   const { camera } = cameraModifiedEvent.detail
 
-  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineUID)
+  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId)
   if (!renderingEngine) {
     throw new Error(
-      `No RenderingEngine for UID: ${targetViewport.renderingEngineUID}`
+      `No RenderingEngine for UID: ${targetViewport.renderingEngineId}`
     )
   }
 

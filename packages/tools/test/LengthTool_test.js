@@ -34,7 +34,7 @@ const {
   createNormalizedMouseEvent,
 } = utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportId = 'VIEWPORT'
 
@@ -91,7 +91,7 @@ describe('LengthTool:', () => {
         bindings: [{ mouseButton: 1 }],
       })
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -945,7 +945,7 @@ describe('LengthTool:', () => {
         bindings: [{ mouseButton: 1 }],
       })
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -1105,7 +1105,7 @@ describe('LengthTool:', () => {
         bindings: [{ mouseButton: 1 }],
       })
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)

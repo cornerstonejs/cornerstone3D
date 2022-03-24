@@ -203,6 +203,6 @@ Finally, the toolGroup needs to get viewports that it should act on. You can use
 // Apply tool group to viewport or all viewports rendering a scene
 ctSceneToolGroup.addViewport(
   viewportId,
-  renderingEngineUID,
+  renderingEngineId,
 )
 ```

@@ -24,7 +24,7 @@ type CameraModifiedEventDetail = {
     camera: ICamera
     element: HTMLElement
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
 }
 
 // @public (undocumented)
@@ -318,7 +318,7 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>
 type ElementDisabledEventDetail = {
     element: HTMLElement
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
 }
 
 // @public
@@ -328,7 +328,7 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>
 type ElementEnabledEventDetail = {
     element: HTMLElement
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
 }
 
 declare namespace EventTypes {
@@ -445,7 +445,7 @@ interface ICamera {
 interface IEnabledElement {
     FrameOfReferenceUID: string
     renderingEngine: IRenderingEngine
-    renderingEngineUID: string
+    renderingEngineId: string
     viewport: IStackViewport | IVolumeViewport
     viewportId: string
 }
@@ -625,7 +625,7 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>
 type ImageRenderedEventDetail = {
     element: HTMLElement
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
     suppressEvents?: boolean
 }
 
@@ -637,7 +637,7 @@ CustomEvent_2<ImageSpacingCalibratedEventDetail>
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
     imageId: string
     rowScale: number
     columnScale: number
@@ -713,7 +713,7 @@ interface IStackViewport extends IViewport {
         canvas: HTMLCanvasElement
         element: HTMLElement
         viewportId: string
-        renderingEngineUID: string
+        renderingEngineId: string
     }
     getCamera(): ICamera
     getCurrentImageId: () => string
@@ -788,7 +788,7 @@ interface IViewport {
     options: ViewportInputOptions
     removeAllActors(): void
     render(): void
-    renderingEngineUID: string
+    renderingEngineId: string
     reset(immediate: boolean): void
     setActors(actors: Array<ActorEntry>): void
     setCamera(cameraInterface: ICamera): void
@@ -806,7 +806,7 @@ interface IViewport {
 // @public
 interface IViewportId {
     // (undocumented)
-    renderingEngineUID: string
+    renderingEngineId: string
     // (undocumented)
     viewportId: string
 }
@@ -971,7 +971,7 @@ type StackNewImageEventDetail = {
     image: IImage
     imageId: string
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
 }
 
 // @public

@@ -58,9 +58,9 @@ class CanvasResizeExample extends Component {
 
   async componentDidMount() {
     await csRenderInit()
-    const renderingEngineUID = 'ExampleRenderingEngineID'
+    const renderingEngineId = 'ExampleRenderingEngineID'
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 

@@ -120,8 +120,8 @@ async function run() {
   const smallStackImageIds = [stackImageIds[42], stackImageIds[43]] // Small bit of the body
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
   const viewportUIDs = ['CT_AXIAL_VOLUME', 'CT_AXIAL_STACK']
@@ -150,7 +150,7 @@ async function run() {
 
   // Set the tool group on the viewports
   viewportUIDs.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineUID)
+    toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
   // Define a volume in memory

@@ -19,7 +19,7 @@ import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define unique ids for the volumes
@@ -51,7 +51,7 @@ content.appendChild(element)
 // Buttons
 addButtonToToolbar('Set CT VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
@@ -72,7 +72,7 @@ addButtonToToolbar('Set CT VOI Range', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
@@ -90,7 +90,7 @@ let fused = false
 
 addButtonToToolbar('toggle PET', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
@@ -127,7 +127,7 @@ addDropdownToToolbar(
   },
   (selectedValue) => {
     // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineUID)
+    const renderingEngine = getRenderingEngine(renderingEngineId)
 
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
@@ -204,7 +204,7 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportInput = {

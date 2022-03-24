@@ -55,17 +55,17 @@ function setLayout(
 
   renderingEngine.setViewports(viewportInput)
 
-  const renderingEngineUID = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid
 
   viewportInput.forEach((viewportInputEntry) => {
     const { sceneUID, viewportId } = viewportInputEntry
 
     if (sceneUID === SCENE_IDS.CT) {
       console.log(`adding ${viewportId} to CT toolgroup`)
-      ctSceneToolGroup.addViewport(viewportId, renderingEngineUID)
+      ctSceneToolGroup.addViewport(viewportId, renderingEngineId)
     } else if (sceneUID === SCENE_IDS.CTVR) {
       console.log(`adding ${viewportId} to CTVR toolgroup`)
-      ctVRSceneToolGroup.addViewport(viewportId, renderingEngineUID)
+      ctVRSceneToolGroup.addViewport(viewportId, renderingEngineId)
     }
   })
 }

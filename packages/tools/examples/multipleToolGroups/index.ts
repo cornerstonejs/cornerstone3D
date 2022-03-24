@@ -125,8 +125,8 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   const viewportUIDs = [
     'CT_AXIAL_STACK_1',
@@ -185,10 +185,10 @@ async function run() {
   viewport3.setStack(ptStack)
 
   // Set viewport 1 to toolgroup 1
-  toolGroup1.addViewport(viewportUIDs[0], renderingEngineUID)
+  toolGroup1.addViewport(viewportUIDs[0], renderingEngineId)
   // Set viewport 2 and 3 to toolgroup 2
-  toolGroup2.addViewport(viewportUIDs[1], renderingEngineUID)
-  toolGroup2.addViewport(viewportUIDs[2], renderingEngineUID)
+  toolGroup2.addViewport(viewportUIDs[1], renderingEngineId)
+  toolGroup2.addViewport(viewportUIDs[2], renderingEngineId)
 
   // Render the image
   renderingEngine.render()

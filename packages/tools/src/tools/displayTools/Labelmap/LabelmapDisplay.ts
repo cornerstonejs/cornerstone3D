@@ -292,10 +292,10 @@ function _removeLabelmapFromToolGroupViewports(
   )
 
   for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineUID } = viewportInfo
+    const { viewportId, renderingEngineId } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
       viewportId,
-      renderingEngineUID
+      renderingEngineId
     )
     internalRemoveSegmentationFromElement(
       enabledElement.viewport.element,
@@ -312,15 +312,15 @@ async function _addLabelmapToToolGroupViewports(
   const { viewportsInfo } = toolGroup
 
   for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineUID } = viewportInfo
+    const { viewportId, renderingEngineId } = viewportInfo
     const enabledElement = getEnabledElementByUIDs(
       viewportId,
-      renderingEngineUID
+      renderingEngineId
     )
 
     if (!enabledElement) {
       throw new Error(
-        `No enabled element found for rendering engine: ${renderingEngineUID} and viewport: ${viewportId}`
+        `No enabled element found for rendering engine: ${renderingEngineId} and viewport: ${viewportId}`
       )
     }
 

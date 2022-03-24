@@ -24,12 +24,12 @@ function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
 
   renderingEngine.setViewports(viewportInput)
 
-  const renderingEngineUID = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid
   const viewportInputEntry = viewportInput[0]
 
   const { sceneUID, viewportId } = viewportInputEntry
 
-  ctObliqueToolGroup.addViewport(viewportId, renderingEngineUID)
+  ctObliqueToolGroup.addViewport(viewportId, renderingEngineId)
 }
 
 function setVolumes(renderingEngine, ctVolumeUID) {

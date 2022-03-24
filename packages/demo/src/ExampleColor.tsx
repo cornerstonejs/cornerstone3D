@@ -52,7 +52,7 @@ class ColorExample extends Component {
     await csRenderInit()
     csTools3d.init()
     registerWebImageLoader(cs)
-    const renderingEngineUID = 'ExampleRenderingEngineID'
+    const renderingEngineId = 'ExampleRenderingEngineID'
     const { imageIds } = config.colorImages
 
     ;({ colorSceneToolGroup } = initToolGroups())
@@ -70,7 +70,7 @@ class ColorExample extends Component {
 
     volume.load()
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
@@ -143,9 +143,9 @@ class ColorExample extends Component {
       [axialViewportID, sagittalViewportID, coronalViewportID]
     )
 
-    colorSceneToolGroup.addViewport(axialViewportID, renderingEngineUID)
-    colorSceneToolGroup.addViewport(sagittalViewportID, renderingEngineUID)
-    colorSceneToolGroup.addViewport(coronalViewportID, renderingEngineUID)
+    colorSceneToolGroup.addViewport(axialViewportID, renderingEngineId)
+    colorSceneToolGroup.addViewport(sagittalViewportID, renderingEngineId)
+    colorSceneToolGroup.addViewport(coronalViewportID, renderingEngineId)
 
     renderingEngine.render()
   }

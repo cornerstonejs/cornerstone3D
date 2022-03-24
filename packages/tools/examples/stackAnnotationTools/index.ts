@@ -128,8 +128,8 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportId = 'CT_STACK'
@@ -145,7 +145,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput)
 
   // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineUID)
+  toolGroup.addViewport(viewportId, renderingEngineId)
 
   // Get the stack viewport that was created
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)

@@ -34,7 +34,7 @@ const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportId = 'VIEWPORT'
 
@@ -78,7 +78,7 @@ describe('Segmentation State -- ', () => {
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })

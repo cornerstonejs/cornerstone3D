@@ -29,7 +29,7 @@ const { CPU_COLORMAPS } = CONSTANTS
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportId = 'VIEWPORT'
 const AXIAL = 'AXIAL'
@@ -68,7 +68,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -269,7 +269,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -428,7 +428,7 @@ describe('StackViewport CPU -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })

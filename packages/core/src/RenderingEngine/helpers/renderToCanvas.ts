@@ -23,7 +23,7 @@ import Events from '../../enums/Events'
  * ```
  * @param imageId - The imageId to render
  * @param canvas - Canvas element to render to
- * @param renderingEngineUID - [Default=null] The rendering engine UID
+ * @param renderingEngineId - [Default=null] The rendering engine UID
  * to use, if not provided, will create a new rendering engine with a random UID (this is preferred)
  * @param suppressEvents - [Default = true] boolean to suppress events during render,
  * if undefined, events will be suppressed
@@ -32,7 +32,7 @@ import Events from '../../enums/Events'
 export default function renderToCanvas(
   imageId: string,
   canvas: HTMLCanvasElement,
-  renderingEngineUID = null,
+  renderingEngineId = null,
   suppressEvents = true
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,7 +46,7 @@ export default function renderToCanvas(
     // many things can trigger IMAGE_RENDERED including: disabling of another
     // element (which would cause a resize event and consequently a render), or
     // a resize event by itself (which would cause a render).
-    let renderingEngine = getRenderingEngine(renderingEngineUID)
+    let renderingEngine = getRenderingEngine(renderingEngineId)
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       // Use a new renderingEngine with random uid
@@ -59,7 +59,7 @@ export default function renderToCanvas(
 
     if (!renderingEngine) {
       throw new Error(
-        `No rendering engine with UID of ${renderingEngineUID} found`
+        `No rendering engine with UID of ${renderingEngineId} found`
       )
     }
 

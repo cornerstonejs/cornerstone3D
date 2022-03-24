@@ -136,8 +136,8 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
   const viewportUIDs = [
@@ -179,7 +179,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  mipToolGroup.addViewport(viewportUIDs[2], renderingEngineUID)
+  mipToolGroup.addViewport(viewportUIDs[2], renderingEngineId)
 
   // Define volumes in memory
   const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {

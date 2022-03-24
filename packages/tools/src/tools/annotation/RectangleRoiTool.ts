@@ -84,7 +84,7 @@ interface RectangleRoiCachedStats {
  *
  * toolGroup.addTool(RectangleRoiAnnotation.toolName)
  *
- * toolGroup.addViewport('viewportId', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
  * toolGroup.setToolActive(RectangleRoiAnnotation.toolName, {
  *   bindings: [
@@ -894,7 +894,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     enabledElement
   ) => {
     const { data } = annotation
-    const { viewportId, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineId } = enabledElement
 
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[3]
@@ -1016,7 +1016,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
-      renderingEngineUID,
+      renderingEngineId,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
 

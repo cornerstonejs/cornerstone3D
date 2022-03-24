@@ -46,7 +46,7 @@ const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
 )
 
 // Add viewports to synchronize
-const firstViewport = { renderingEngineUID, sceneUID, viewportId }
+const firstViewport = { renderingEngineId, sceneUID, viewportId }
 const secondViewport = {
   /* */
 }
@@ -85,8 +85,8 @@ const ptAxial = {
 const axialSync = createCameraPositionSynchronizer('axialSync')
 
 [ctAxial, ptAxial].forEach(vp => {
-  const { renderingEngineUID, sceneUID, viewportId } = vp;
-  axialSync.add({ renderingEngineUID, sceneUID, viewportId });
+  const { renderingEngineId, sceneUID, viewportId } = vp;
+  axialSync.add({ renderingEngineId, sceneUID, viewportId });
 });
 
 ```
@@ -101,13 +101,13 @@ It synchronizes the VOI between the viewports. For instance, if in the 3x3 layou
 const ctWLSync = createVOISynchronizer('ctWLSync')
 
 ctViewports.forEach(viewport => {
-  const { renderingEngineUID, sceneUID, viewportId } = viewport;
-  ctWLSync.addSource({ renderingEngineUID, sceneUID, viewportId });
+  const { renderingEngineId, sceneUID, viewportId } = viewport;
+  ctWLSync.addSource({ renderingEngineId, sceneUID, viewportId });
 });
 
 fusionViewports.forEach(viewport => {
-  const { renderingEngineUID, sceneUID, viewportId } = viewport;
-  ctWLSync.addTarget({ renderingEngineUID, sceneUID, viewportId });
+  const { renderingEngineId, sceneUID, viewportId } = viewport;
+  ctWLSync.addTarget({ renderingEngineId, sceneUID, viewportId });
 });
 ```
 

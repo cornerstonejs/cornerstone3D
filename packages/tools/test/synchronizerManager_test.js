@@ -38,7 +38,7 @@ const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } =
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
@@ -78,7 +78,7 @@ describe('Synchronizer Manager: ', () => {
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
     this.firstToolGroup.addTool(StackScrollMouseWheelTool.toolName)
     this.firstToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    this.renderingEngine = new RenderingEngine(renderingEngineId)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
@@ -137,7 +137,7 @@ describe('Synchronizer Manager: ', () => {
       }
 
       const synchronizers = SynchronizerManager.getSynchronizers(
-        renderingEngineUID,
+        renderingEngineId,
         viewportUID1
       )
 
@@ -172,11 +172,11 @@ describe('Synchronizer Manager: ', () => {
       synchronizerId = axialSync.id
 
       axialSync.add({
-        renderingEngineUID: this.renderingEngine.uid,
+        renderingEngineId: this.renderingEngine.uid,
         viewportId: this.renderingEngine.getViewport(viewportUID1).uid,
       })
       axialSync.add({
-        renderingEngineUID: this.renderingEngine.uid,
+        renderingEngineId: this.renderingEngine.uid,
         viewportId: this.renderingEngine.getViewport(viewportUID2).uid,
       })
 
@@ -222,7 +222,7 @@ describe('Synchronizer Manager: ', () => {
         },
       ],
     })
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    this.renderingEngine = new RenderingEngine(renderingEngineId)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
@@ -338,11 +338,11 @@ describe('Synchronizer Manager: ', () => {
       const voiSync = createVOISynchronizer('ctWLSync')
 
       voiSync.addSource({
-        renderingEngineUID: this.renderingEngine.uid,
+        renderingEngineId: this.renderingEngine.uid,
         viewportId: this.renderingEngine.getViewport(viewportUID1).uid,
       })
       voiSync.addTarget({
-        renderingEngineUID: this.renderingEngine.uid,
+        renderingEngineId: this.renderingEngine.uid,
         viewportId: this.renderingEngine.getViewport(viewportUID2).uid,
       })
 

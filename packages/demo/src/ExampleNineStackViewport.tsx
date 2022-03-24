@@ -15,7 +15,7 @@ import './ExampleVTKMPR.css'
 import { ctStackUID, VIEWPORT_IDS } from './constants'
 import * as csTools3d from '@cornerstonejs/tools'
 
-const renderingEngineUID = 'renderingEngineUID'
+const renderingEngineId = 'renderingEngineId'
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
@@ -86,8 +86,8 @@ class NineStackViewportExample extends Component {
     const imageIds = await this.ctImageIdsPromise
     // const dxImageIds = await this.dxImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
-    // const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
+    // const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -176,7 +176,7 @@ class NineStackViewportExample extends Component {
     viewportInput.forEach((vpEntry) => {
       stackCTViewportToolGroup.addViewport(
         vpEntry.viewportId,
-        renderingEngineUID
+        renderingEngineId
       )
     })
 

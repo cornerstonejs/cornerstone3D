@@ -27,7 +27,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ctVolumeUID,
   ptVolumeUID,
   VIEWPORT_IDS,
@@ -106,7 +106,7 @@ class CrosshairsExample extends Component {
     const ctImageIds = await this.ctImageIds
     const prostateImageIds = await this.prostateImageIds
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -163,15 +163,15 @@ class CrosshairsExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
     prostateSceneToolGroup.addViewport(
-      renderingEngineUID,
+      renderingEngineId,
       VIEWPORT_IDS.PROSTATE.AXIAL
     )
     prostateSceneToolGroup.addViewport(
-      renderingEngineUID,
+      renderingEngineId,
       VIEWPORT_IDS.PROSTATE.SAGITTAL
     )
 

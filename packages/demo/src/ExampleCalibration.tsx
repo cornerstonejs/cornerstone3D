@@ -21,7 +21,7 @@ import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
 const STACK = 'stack'
 
@@ -92,7 +92,7 @@ class CalibrationExample extends Component {
 
     const DXStackImageIds = await this.DXStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -112,7 +112,7 @@ class CalibrationExample extends Component {
 
     stackDXViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.DX,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({ stackDXViewportToolGroup })

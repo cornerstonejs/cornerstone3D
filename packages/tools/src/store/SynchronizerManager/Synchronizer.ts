@@ -57,7 +57,7 @@ class Synchronizer {
 
   /**
    * Add a viewport to the list of targets and sources both.
-   * @param viewportInfo - The viewportId and its renderingEngineUID to add to the list of targets and sources.
+   * @param viewportInfo - The viewportId and its renderingEngineId to add to the list of targets and sources.
    */
   public add(viewportInfo: Types.IViewportId): void {
     this.addTarget(viewportInfo)
@@ -66,17 +66,17 @@ class Synchronizer {
 
   /**
    * Add a viewport to the list of sources (source ONLY)
-   * @param viewportInfo - The viewportId and its renderingEngineUID to add to the list of targets and sources.
+   * @param viewportInfo - The viewportId and its renderingEngineId to add to the list of targets and sources.
    */
   public addSource(viewportInfo: Types.IViewportId): void {
     if (_containsViewport(this._sourceViewports, viewportInfo)) {
       return
     }
 
-    const { renderingEngineUID, viewportId } = viewportInfo
+    const { renderingEngineId, viewportId } = viewportInfo
 
     const { element } =
-      getRenderingEngine(renderingEngineUID).getViewport(viewportId)
+      getRenderingEngine(renderingEngineId).getViewport(viewportId)
 
     // @ts-ignore
     element.addEventListener(this._eventName, this._onEvent.bind(this))
@@ -88,7 +88,7 @@ class Synchronizer {
   /**
    * Add a viewport to the list of viewports that will get the eventHandler
    * executed when the event is fired on the source viewport.
-   * @param viewportInfo - The viewportId and its renderingEngineUID to add to the list of targets and sources.
+   * @param viewportInfo - The viewportId and its renderingEngineId to add to the list of targets and sources.
    */
   public addTarget(viewportInfo: Types.IViewportId): void {
     if (_containsViewport(this._targetViewports, viewportInfo)) {
@@ -100,16 +100,16 @@ class Synchronizer {
   }
 
   /**
-   * Get the list of source viewports (as {viewportId, renderingEngineUID} objects)
-   * @returns An array of {viewportId, renderingEngineUID} objects.
+   * Get the list of source viewports (as {viewportId, renderingEngineId} objects)
+   * @returns An array of {viewportId, renderingEngineId} objects.
    */
   public getSourceViewports(): Array<Types.IViewportId> {
     return this._sourceViewports
   }
 
   /**
-   * Get the list of target viewports (as {viewportId, renderingEngineUID} objects)
-   * @returns An array of {viewportId, renderingEngineUID} objects.
+   * Get the list of target viewports (as {viewportId, renderingEngineId} objects)
+   * @returns An array of {viewportId, renderingEngineId} objects.
    */
   public getTargetViewports(): Array<Types.IViewportId> {
     return this._targetViewports
@@ -122,7 +122,7 @@ class Synchronizer {
 
   /**
    * Remove the viewport from the list of targets and sources
-   * @param viewportInfo - The viewport info including viewportId and renderingEngineUID.
+   * @param viewportInfo - The viewport info including viewportId and renderingEngineId.
    */
   public remove(viewportInfo: Types.IViewportId): void {
     this.removeTarget(viewportInfo)
@@ -131,7 +131,7 @@ class Synchronizer {
 
   /**
    * Remove the viewport from the list of source viewports
-   * @param viewportInfo - The viewport info including viewportId and renderingEngineUID.
+   * @param viewportInfo - The viewport info including viewportId and renderingEngineId.
    */
   public removeSource(viewportInfo: Types.IViewportId): void {
     const index = _getViewportIndex(this._sourceViewports, viewportInfo)
@@ -151,7 +151,7 @@ class Synchronizer {
   /**
    * Remove the viewport from the list of viewports that are currently targeted by
    * this handler
-   * @param viewportInfo - The viewport info including viewportId and renderingEngineUID.
+   * @param viewportInfo - The viewport info including viewportId and renderingEngineId.
    *
    */
   public removeTarget(viewportInfo: Types.IViewportId): void {
@@ -166,11 +166,11 @@ class Synchronizer {
   }
 
   public hasSourceViewport(
-    renderingEngineUID: string,
+    renderingEngineId: string,
     viewportId: string
   ): boolean {
     return _containsViewport(this._sourceViewports, {
-      renderingEngineUID,
+      renderingEngineId,
       viewportId,
     })
   }
@@ -220,11 +220,11 @@ class Synchronizer {
       return
     }
 
-    const { renderingEngineUID, viewportId } = enabledElement
+    const { renderingEngineId, viewportId } = enabledElement
 
     this.fireEvent(
       {
-        renderingEngineUID,
+        renderingEngineId,
         viewportId,
       },
       evt
@@ -247,7 +247,7 @@ class Synchronizer {
 
     viewports.forEach(function (vUid) {
       const { element } = getRenderingEngine(
-        vUid.renderingEngineUID
+        vUid.renderingEngineId
       ).getViewport(vUid.viewportId)
 
       element.removeEventListener(Enums.Events.ELEMENT_DISABLED, disableHandler)
@@ -269,7 +269,7 @@ function _getUniqueViewports(
     if (
       !unique.some(
         (u) =>
-          vp.renderingEngineUID === u.renderingEngineUID &&
+          vp.renderingEngineId === u.renderingEngineId &&
           vp.viewportId === u.viewportId
       )
     ) {
@@ -286,7 +286,7 @@ function _getViewportIndex(
 ): number {
   return arr.findIndex(
     (ar) =>
-      vp.renderingEngineUID === ar.renderingEngineUID &&
+      vp.renderingEngineId === ar.renderingEngineId &&
       vp.viewportId === ar.viewportId
   )
 }
@@ -297,15 +297,15 @@ function _containsViewport(
 ) {
   return arr.some(
     (ar) =>
-      ar.renderingEngineUID === vp.renderingEngineUID &&
+      ar.renderingEngineId === vp.renderingEngineId &&
       ar.viewportId === vp.viewportId
   )
 }
 
 function _getViewportElement(vp: Types.IViewportId): HTMLElement {
-  const renderingEngine = getRenderingEngine(vp.renderingEngineUID)
+  const renderingEngine = getRenderingEngine(vp.renderingEngineId)
   if (!renderingEngine) {
-    throw new Error(`No RenderingEngine for UID: ${vp.renderingEngineUID}`)
+    throw new Error(`No RenderingEngine for UID: ${vp.renderingEngineId}`)
   }
 
   return renderingEngine.getViewport(vp.viewportId).element

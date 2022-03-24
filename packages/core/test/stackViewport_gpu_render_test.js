@@ -34,7 +34,7 @@ const { calibratedPixelSpacingMetadataProvider } = utilities
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportId = 'VIEWPORT'
 
@@ -70,7 +70,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -373,7 +373,7 @@ describe('renderingCore -- Stack', () => {
     beforeEach(function () {
       cache.purgeCache()
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -447,7 +447,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -523,7 +523,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -616,7 +616,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -750,7 +750,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -816,7 +816,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -894,7 +894,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })

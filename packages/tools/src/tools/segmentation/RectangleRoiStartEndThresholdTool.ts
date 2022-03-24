@@ -293,7 +293,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data
-    const { viewportId, renderingEngineUID, viewport } = enabledElement
+    const { viewportId, renderingEngineId, viewport } = enabledElement
 
     const { cachedStats } = data
     const volumeUID = this.getTargetUID(viewport)
@@ -312,7 +312,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
-      renderingEngineUID,
+      renderingEngineId,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
 

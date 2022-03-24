@@ -31,7 +31,7 @@ class Viewport implements IViewport {
   /** an internal canvas that is created on the provided HTML element */
   readonly canvas: HTMLCanvasElement
   /** RenderingEngine uid that the viewport belongs to */
-  readonly renderingEngineUID: string
+  readonly renderingEngineId: string
   /** Type of viewport */
   readonly type: ViewportType
   protected flipHorizontal = false
@@ -57,7 +57,7 @@ class Viewport implements IViewport {
 
   constructor(props: ViewportInput) {
     this.uid = props.uid
-    this.renderingEngineUID = props.renderingEngineUID
+    this.renderingEngineId = props.renderingEngineId
     this.type = props.type
     this.element = props.element
     this.canvas = props.canvas
@@ -70,7 +70,7 @@ class Viewport implements IViewport {
     this.element.setAttribute('data-viewport-uid', this.uid)
     this.element.setAttribute(
       'data-rendering-engine-uid',
-      this.renderingEngineUID
+      this.renderingEngineId
     )
 
     this.defaultOptions = _cloneDeep(props.defaultOptions)
@@ -97,7 +97,7 @@ class Viewport implements IViewport {
    * @returns The RenderingEngine instance.
    */
   public getRenderingEngine(): IRenderingEngine {
-    return renderingEngineCache.get(this.renderingEngineUID)
+    return renderingEngineCache.get(this.renderingEngineId)
   }
 
   /**
@@ -621,7 +621,7 @@ class Viewport implements IViewport {
         canvas: this.canvas,
         element: this.element,
         viewportId: this.uid,
-        renderingEngineUID: this.renderingEngineUID,
+        renderingEngineId: this.renderingEngineId,
       }
 
       // For crosshairs to adapt to new viewport size
@@ -788,7 +788,7 @@ class Viewport implements IViewport {
         canvas: this.canvas,
         element: this.element,
         viewportId: this.uid,
-        renderingEngineUID: this.renderingEngineUID,
+        renderingEngineId: this.renderingEngineId,
       }
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)

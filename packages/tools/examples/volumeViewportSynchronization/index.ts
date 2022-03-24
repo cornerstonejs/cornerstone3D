@@ -42,7 +42,7 @@ const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with 
 const cameraSynchronizerId = 'CAMERA_SYNCHRONIZER_ID'
 const voiSynchronizerId = 'VOI_SYNCHRONIZER_ID'
 
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const viewportUIDs = [
   'CT_SAGITTAL_STACK_1',
   'CT_SAGITTAL_STACK_2',
@@ -113,9 +113,9 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
     }
 
     if (toggle) {
-      synchronizer.add({ renderingEngineUID, viewportId })
+      synchronizer.add({ renderingEngineId, viewportId })
     } else {
-      synchronizer.remove({ renderingEngineUID, viewportId })
+      synchronizer.remove({ renderingEngineId, viewportId })
     }
   })
 })
@@ -130,9 +130,9 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
     }
 
     if (toggle) {
-      synchronizer.add({ renderingEngineUID, viewportId })
+      synchronizer.add({ renderingEngineId, viewportId })
     } else {
-      synchronizer.remove({ renderingEngineUID, viewportId })
+      synchronizer.remove({ renderingEngineId, viewportId })
     }
   })
 })
@@ -205,7 +205,7 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
   const viewportInputArray = [
@@ -242,7 +242,7 @@ async function run() {
 
   // Set the tool group on the viewports
   viewportUIDs.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineUID)
+    toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
   // Define a volume in memory

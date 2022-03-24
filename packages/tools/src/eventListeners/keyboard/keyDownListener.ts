@@ -4,7 +4,7 @@ import Events from '../../enums/Events'
 import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes'
 
 interface IKeyDownListenerState {
-  renderingEngineUID: string
+  renderingEngineId: string
   viewportId: string
   key: string | null
   keyCode: number | null
@@ -13,7 +13,7 @@ interface IKeyDownListenerState {
 
 const defaultState: IKeyDownListenerState = {
   //
-  renderingEngineUID: undefined,
+  renderingEngineId: undefined,
   viewportId: undefined,
   //
   key: undefined,
@@ -23,7 +23,7 @@ const defaultState: IKeyDownListenerState = {
 
 let state: IKeyDownListenerState = {
   //
-  renderingEngineUID: undefined,
+  renderingEngineId: undefined,
   viewportId: undefined,
   //
   key: undefined,
@@ -39,16 +39,16 @@ function keyListener(evt: KeyboardEvent): void {
   state.element = <HTMLElement>evt.currentTarget
 
   const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineUID, viewportId } = enabledElement
+  const { renderingEngineId, viewportId } = enabledElement
 
-  state.renderingEngineUID = renderingEngineUID
+  state.renderingEngineId = renderingEngineId
   state.viewportId = viewportId
   state.key = evt.key
   state.keyCode = evt.keyCode
 
   evt.preventDefault()
   const eventDetail: KeyDownEventDetail = {
-    renderingEngineUID: state.renderingEngineUID,
+    renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
     element: state.element,
     key: state.key,
@@ -71,7 +71,7 @@ function keyListener(evt: KeyboardEvent): void {
 
 function _onKeyUp(evt: KeyboardEvent): void {
   const eventDetail: KeyUpEventDetail = {
-    renderingEngineUID: state.renderingEngineUID,
+    renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
     element: state.element,
     key: state.key,

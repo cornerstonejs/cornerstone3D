@@ -85,7 +85,7 @@ interface ProbeAnnotation extends Annotation {
  *
  * toolGroup.addTool(ProbeTool.toolName)
  *
- * toolGroup.addViewport('viewportId', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
  * toolGroup.setToolActive(ProbeTool.toolName, {
  *   bindings: [
@@ -107,7 +107,7 @@ export default class ProbeTool extends AnnotationTool {
   editData: { annotation: any; viewportUIDsToRender: string[] } | null
   eventDispatchDetail: {
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
   }
   isDrawing: boolean
   isHandleOutsideImage: boolean
@@ -301,7 +301,7 @@ export default class ProbeTool extends AnnotationTool {
     const { viewportId } = enabledElement
     this.eventDispatchDetail = {
       viewportId,
-      renderingEngineUID: renderingEngine.uid,
+      renderingEngineId: renderingEngine.uid,
     }
 
     this._deactivateModify(element)
@@ -581,7 +581,7 @@ export default class ProbeTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data
-    const { viewportId, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineId } = enabledElement
 
     const worldPos = data.handles.points[0]
     const { cachedStats } = data
@@ -642,7 +642,7 @@ export default class ProbeTool extends AnnotationTool {
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,
         viewportId,
-        renderingEngineUID,
+        renderingEngineId,
       }
 
       triggerEvent(eventTarget, eventType, eventDetail)

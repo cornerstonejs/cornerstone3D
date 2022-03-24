@@ -38,7 +38,7 @@ const { addSegmentationsForToolGroup } = segmentation
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportUID1 = 'AXIAL'
 
@@ -89,7 +89,7 @@ describe('Segmentation Controller --', () => {
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })

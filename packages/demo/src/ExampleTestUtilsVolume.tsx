@@ -23,7 +23,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ctVolumeUID,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
@@ -96,7 +96,7 @@ class testUtilVolume extends Component {
     csTools3d.init()
     ;({ ctTestSceneToolGroup, ptTestSceneToolGroup } = initToolGroups())
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -133,17 +133,14 @@ class testUtilVolume extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
     // ctTestSceneToolGroup.addViewport(
     //   VIEWPORT_IDS.CT.AXIAL,
-    //   renderingEngineUID,
+    //   renderingEngineId,
     // )
-    ctTestSceneToolGroup.addViewport(
-      VIEWPORT_IDS.CT.CORONAL,
-      renderingEngineUID
-    )
+    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
 
-    ptTestSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
+    ptTestSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId)
 
     addToolsToToolGroups({ ctTestSceneToolGroup })
     addToolsToToolGroups({ ptTestSceneToolGroup })
@@ -156,11 +153,11 @@ class testUtilVolume extends Component {
     await volumeLoader.createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
 
     axialSync.addSource({
-      renderingEngineUID: renderingEngineUID,
+      renderingEngineId: renderingEngineId,
       viewportId: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
     })
     axialSync.addTarget({
-      renderingEngineUID: renderingEngineUID,
+      renderingEngineId: renderingEngineId,
       viewportId: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
     })
 

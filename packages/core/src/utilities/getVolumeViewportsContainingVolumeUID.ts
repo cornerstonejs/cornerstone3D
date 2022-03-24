@@ -12,12 +12,12 @@ import {
  */
 function getVolumeViewportsContainingVolumeUID(
   uid: string,
-  renderingEngineUID?: string
+  renderingEngineId?: string
 ): Array<IVolumeViewport> {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines
-  if (renderingEngineUID) {
-    renderingEngines = [getRenderingEngine(renderingEngineUID)]
+  if (renderingEngineId) {
+    renderingEngines = [getRenderingEngine(renderingEngineId)]
   } else {
     renderingEngines = getRenderingEngines()
   }

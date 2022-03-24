@@ -107,8 +107,8 @@ class SegmentationRenderingEngine {
     const { viewportsInfo } = toolGroup
     const viewports = []
 
-    viewportsInfo.forEach(({ viewportId, renderingEngineUID }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineUID)
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const renderingEngine = getRenderingEngine(renderingEngineId)
 
       if (!renderingEngine) {
         console.warn('rendering Engine has been destroyed')
@@ -123,14 +123,14 @@ class SegmentationRenderingEngine {
     ) as SegmentationDisplayTool
 
     function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
-      const { element, viewportId, renderingEngineUID } = evt.detail
+      const { element, viewportId, renderingEngineId } = evt.detail
 
       element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         onSegmentationRender
       )
 
-      const toolGroup = getToolGroup(viewportId, renderingEngineUID)
+      const toolGroup = getToolGroup(viewportId, renderingEngineId)
 
       const eventDetail: SegmentationRenderedEventDetail = {
         toolGroupUID: toolGroup.uid,

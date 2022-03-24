@@ -130,33 +130,33 @@ function setLayout(
   renderingEngine.setViewports(viewportInput)
 
   // Add tools
-  const renderingEngineUID = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid
 
   // CT tool groups
   viewportInput.slice(0, 3).forEach(({ viewportId }, index) => {
-    ctSceneToolGroup.addViewport(viewportId, renderingEngineUID)
+    ctSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   // PT tool groups
   viewportInput.slice(3, 6).forEach(({ viewportId }, index) => {
-    ptSceneToolGroup.addViewport(viewportId, renderingEngineUID)
+    ptSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   // Fusion tool groups
   viewportInput.slice(6, 9).forEach(({ viewportId }, index) => {
-    fusionSceneToolGroup.addViewport(viewportId, renderingEngineUID)
+    fusionSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   // PET MIP tool groups
   viewportInput.slice(9, 10).forEach(({ viewportId }, index) => {
-    ptMipSceneToolGroup.addViewport(viewportId, renderingEngineUID)
+    ptMipSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   const axialViewports = [0, 3, 6]
   axialSynchronizers.forEach((sync) => {
     axialViewports.forEach((axialIndex) => {
       const { viewportId } = viewportInput[axialIndex]
-      sync.add({ renderingEngineUID, viewportId })
+      sync.add({ renderingEngineId, viewportId })
     })
   })
 
@@ -164,7 +164,7 @@ function setLayout(
   sagittalSynchronizers.forEach((sync) => {
     sagittalViewports.forEach((sagittalIndex) => {
       const { viewportId } = viewportInput[sagittalIndex]
-      sync.add({ renderingEngineUID, viewportId })
+      sync.add({ renderingEngineId, viewportId })
     })
   })
 
@@ -172,7 +172,7 @@ function setLayout(
   coronalSynchronizers.forEach((sync) => {
     coronalViewports.forEach((coronalIndex) => {
       const { viewportId } = viewportInput[coronalIndex]
-      sync.add({ renderingEngineUID, viewportId })
+      sync.add({ renderingEngineId, viewportId })
     })
   })
 
@@ -184,12 +184,12 @@ function setLayout(
   // CT WL Synchronization
   ctViewports.forEach((ctIndex) => {
     const { viewportId } = viewportInput[ctIndex]
-    ctWLSynchronizer.add({ renderingEngineUID, viewportId })
+    ctWLSynchronizer.add({ renderingEngineId, viewportId })
   })
 
   fusionViewports.forEach((fusionIndex) => {
     const { viewportId } = viewportInput[fusionIndex]
-    ctWLSynchronizer.addTarget({ renderingEngineUID, viewportId })
+    ctWLSynchronizer.addTarget({ renderingEngineId, viewportId })
   })
 
   // PT Threshold Synchronization
@@ -197,7 +197,7 @@ function setLayout(
     const { viewportId } = viewportInput[ptIndex]
     // add as both source and target
     ptThresholdSynchronizer.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId,
     })
   })
@@ -206,7 +206,7 @@ function setLayout(
     const { viewportId } = viewportInput[fusionIndex]
     // add as both source and target
     ptThresholdSynchronizer.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId,
     })
   })
@@ -214,7 +214,7 @@ function setLayout(
   petMipViewports.forEach((ptMipIndex) => {
     const { viewportId } = viewportInput[ptMipIndex]
     ptThresholdSynchronizer.add({
-      renderingEngineUID,
+      renderingEngineId,
       viewportId,
     })
   })

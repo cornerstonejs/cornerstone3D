@@ -156,7 +156,7 @@ export default class CrosshairsTool extends AnnotationTool {
    * @returns viewPlaneNormal and center of viewport canvas in world space
    */
   initializeViewport = ({
-    renderingEngineUID,
+    renderingEngineId,
     viewportId,
   }: Types.IViewportId): {
     normal: Types.Point3
@@ -164,7 +164,7 @@ export default class CrosshairsTool extends AnnotationTool {
   } => {
     const enabledElement = getEnabledElementByUIDs(
       viewportId,
-      renderingEngineUID
+      renderingEngineId
     )
     const { FrameOfReferenceUID, viewport } = enabledElement
     const { element } = viewport
@@ -223,7 +223,7 @@ export default class CrosshairsTool extends AnnotationTool {
    * will be an exact point in space; however, with two viewports, because the
    * intersection of two planes is a line, it assumes the last view is between the centre
    * of the two rendering viewports.
-   * @param viewports Array of viewportInputs which each item containing {viewportId, renderingEngineUID}
+   * @param viewports Array of viewportInputs which each item containing {viewportId, renderingEngineId}
    */
   init = (viewports: ViewportInputs): void => {
     if (!viewports.length || viewports.length === 1) {

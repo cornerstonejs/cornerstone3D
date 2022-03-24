@@ -28,7 +28,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
@@ -206,7 +206,7 @@ class SegmentationExample extends Component {
     this.ctVolumeUID = ctVolumeUID
     this.ptVolumeUID = ptVolumeUID
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
@@ -420,7 +420,7 @@ class SegmentationExample extends Component {
     const toolGroup = this.state.toolGroups[this.state.selectedToolGroupName]
 
     const { viewportsInfo } = toolGroup
-    const { viewportId, renderingEngineUID } = viewportsInfo[0]
+    const { viewportId, renderingEngineId } = viewportsInfo[0]
     const viewport = this.renderingEngine.getViewport(viewportId)
 
     segmentation

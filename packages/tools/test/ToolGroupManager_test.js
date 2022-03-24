@@ -27,7 +27,7 @@ const {
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 const { MouseBindings } = csToolsEnums
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportUID1 = 'VIEWPORT1'
 const viewportUID2 = 'VIEWPORT2'
@@ -69,7 +69,7 @@ describe('ToolGroup Manager: ', () => {
           },
         ],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -139,7 +139,7 @@ describe('ToolGroup Manager: ', () => {
           },
         ],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -191,10 +191,7 @@ describe('ToolGroup Manager: ', () => {
       const tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg).toBeDefined()
 
-      const tg2 = ToolGroupManager.getToolGroup(
-        viewportUID1,
-        renderingEngineUID
-      )
+      const tg2 = ToolGroupManager.getToolGroup(viewportUID1, renderingEngineId)
       expect(tg2).toBeDefined()
       expect(tg).toBe(tg2)
 
@@ -237,7 +234,7 @@ describe('ToolGroup Manager: ', () => {
       tg.addViewport(viewportUID1, this.renderingEngine.uid)
       expect(tg.viewportsInfo.length).toBe(1)
 
-      tg.removeViewports(renderingEngineUID)
+      tg.removeViewports(renderingEngineId)
 
       tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg.viewportsInfo.length).toBe(0)
@@ -247,7 +244,7 @@ describe('ToolGroup Manager: ', () => {
       tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
       expect(tg.viewportsInfo.length).toBe(1)
 
-      tg.removeViewports(renderingEngineUID, viewportUID2)
+      tg.removeViewports(renderingEngineId, viewportUID2)
       expect(tg.viewportsInfo.length).toBe(1)
     })
 

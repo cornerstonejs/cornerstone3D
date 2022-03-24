@@ -71,7 +71,7 @@ export default interface IStackViewport extends IViewport {
     canvas: HTMLCanvasElement
     element: HTMLElement
     viewportId: string
-    renderingEngineUID: string
+    renderingEngineId: string
   }
   /**
    * Returns the image and its properties that is being shown inside the

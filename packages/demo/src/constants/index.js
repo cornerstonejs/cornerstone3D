@@ -12,7 +12,7 @@ import {
   RectangleRoiStartEndThresholdTool,
 } from '@cornerstonejs/tools'
 
-const renderingEngineUID = 'PETCTRenderingEngine'
+const renderingEngineId = 'PETCTRenderingEngine'
 const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME'
 const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME'
 const prostateVolumeUID = 'cornerstoneStreamingImageVolume:PROSTATE_VOLUME'
@@ -110,7 +110,7 @@ const SEGMENTATION_TOOLS = [
 const colormaps = ['hsv', 'Inferno (matplotlib)']
 
 export {
-  renderingEngineUID,
+  renderingEngineId,
   ptVolumeUID,
   ctVolumeUID,
   prostateVolumeUID,

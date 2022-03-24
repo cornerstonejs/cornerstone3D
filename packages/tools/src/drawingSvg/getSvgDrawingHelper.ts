@@ -8,8 +8,8 @@ import { getEnabledElement } from '@cornerstonejs/core'
  */
 function getSvgDrawingHelper(element: HTMLElement) {
   const enabledElement = getEnabledElement(element)
-  const { viewportId, renderingEngineUID } = enabledElement
-  const canvasHash = `${viewportId}:${renderingEngineUID}`
+  const { viewportId, renderingEngineId } = enabledElement
+  const canvasHash = `${viewportId}:${renderingEngineId}`
   const svgLayerElement = _getSvgLayer(element)
 
   // Reset touched

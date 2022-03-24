@@ -676,7 +676,7 @@ class StackViewport extends Viewport implements IStackViewport {
       camera: updatedCamera,
       element: this.element,
       viewportId: this.uid,
-      renderingEngineUID: this.renderingEngineUID,
+      renderingEngineId: this.renderingEngineId,
     }
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
@@ -1226,7 +1226,7 @@ class StackViewport extends Viewport implements IStackViewport {
           image,
           imageId,
           viewportId: this.uid,
-          renderingEngineUID: this.renderingEngineUID,
+          renderingEngineId: this.renderingEngineId,
         }
 
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail)
@@ -1365,7 +1365,7 @@ class StackViewport extends Viewport implements IStackViewport {
           image,
           imageId,
           viewportId: this.uid,
-          renderingEngineUID: this.renderingEngineUID,
+          renderingEngineId: this.renderingEngineId,
         }
 
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail)
@@ -1710,7 +1710,7 @@ class StackViewport extends Viewport implements IStackViewport {
       camera,
       element: this.element,
       viewportId: this.uid,
-      renderingEngineUID: this.renderingEngineUID,
+      renderingEngineId: this.renderingEngineId,
     }
 
     if (!this.suppressEvents) {
@@ -1726,7 +1726,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const eventDetail: EventTypes.ImageSpacingCalibratedEventDetail = {
       element: this.element,
       viewportId: this.uid,
-      renderingEngineUID: this.renderingEngineUID,
+      renderingEngineId: this.renderingEngineId,
       imageId: this.getCurrentImageId(),
       // Todo: why do we need to pass imageData? isn't' indexToWorld and worldToIndex enough?
       imageData: imageData as vtkImageData,
@@ -2029,7 +2029,7 @@ class StackViewport extends Viewport implements IStackViewport {
       canvas: this.canvas,
       element: this.element,
       viewportId: this.uid,
-      renderingEngineUID: this.renderingEngineUID,
+      renderingEngineId: this.renderingEngineId,
     }
   }
 

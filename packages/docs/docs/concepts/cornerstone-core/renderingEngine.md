@@ -76,8 +76,8 @@ import {
 } from '@ohif/cornerstone-render'
 
 
-const renderingEngineUID = 'myEngine'
-const renderingEngine = new RenderingEngine(renderingEngineUID)
+const renderingEngineId = 'myEngine'
+const renderingEngine = new RenderingEngine(renderingEngineId)
 
 
 const viewportInput = [
@@ -133,8 +133,8 @@ import {
 } from '@ohif/cornerstone-render'
 
 
-const renderingEngineUID = 'myEngine'
-const renderingEngine = new RenderingEngine(renderingEngineUID)
+const renderingEngineId = 'myEngine'
+const renderingEngine = new RenderingEngine(renderingEngineId)
 
 const viewport = {
   sceneUID: 'ctScene',
@@ -169,6 +169,6 @@ with below event detail.
 const eventDetail = {
   canvas,
   viewportId,
-  renderingEngineUID,
+  renderingEngineId,
 }
 ```

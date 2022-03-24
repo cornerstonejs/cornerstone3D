@@ -26,7 +26,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ctVolumeUID,
   ptVolumeUID,
   VIEWPORT_IDS,
@@ -153,7 +153,7 @@ class StackViewportExample extends Component {
     const ctStackImageIds = await this.ctStackImageIdsPromise
     const ptStackImageIds = await this.ptStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -227,27 +227,27 @@ class StackViewportExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
 
     // pt volume axial
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineId)
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     // stackDXViewportToolGroup.addViewport(
     //   VIEWPORT_IDS.STACK.DX,
-    //   renderingEngineUID,
+    //   renderingEngineId,
     // )
 
     stackPTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.PT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({

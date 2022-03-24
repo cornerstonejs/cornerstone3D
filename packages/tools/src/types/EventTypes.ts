@@ -11,7 +11,7 @@ type NormalizedMouseEventDetail = {
   /** The normalized event name. */
   eventName: string
   /** The unique identifier of the rendering engine. */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The unique identifier of the viewport that the event was fired in. */
   viewportId: string
   /** The camera at the time of the event. */
@@ -28,7 +28,7 @@ type AnnotationAddedEventDetail = {
   /** unique id of the viewport */
   viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation
 }
@@ -40,7 +40,7 @@ type AnnotationModifiedEventDetail = {
   /** unique id of the viewport */
   viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation
 }
@@ -52,7 +52,7 @@ type AnnotationRemovedEventDetail = {
   /** unique id of the viewport */
   viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation
 }
@@ -90,7 +90,7 @@ type AnnotationRenderedEventDetail = {
   /** unique id of the viewport */
   viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -138,7 +138,7 @@ type KeyDownEventDetail = {
   /** unique id of the viewport */
   viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The key that was pressed */
   key: string
   /** key code */

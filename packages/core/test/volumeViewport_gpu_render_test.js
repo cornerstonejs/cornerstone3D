@@ -34,7 +34,7 @@ const { unregisterAllImageLoaders } = imageLoader
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const viewportId = 'VIEWPORT'
 
@@ -73,7 +73,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -169,7 +169,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
 
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -268,7 +268,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -369,7 +369,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
 
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -643,7 +643,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
 
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)

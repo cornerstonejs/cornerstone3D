@@ -92,7 +92,7 @@ interface LengthAnnotation extends Annotation {
  *
  * toolGroup.addTool(LengthTool.toolName)
  *
- * toolGroup.addViewport('viewportId', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
  * toolGroup.setToolActive(LengthTool.toolName, {
  *   bindings: [
@@ -710,7 +710,7 @@ class LengthTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data
-    const { viewportId, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineId } = enabledElement
 
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
@@ -756,7 +756,7 @@ class LengthTool extends AnnotationTool {
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
-      renderingEngineUID,
+      renderingEngineId,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
 

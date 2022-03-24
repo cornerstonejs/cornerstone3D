@@ -27,11 +27,8 @@ export default function customCallbackHandler(
     return false
   }
 
-  const { renderingEngineUID, viewportId } = evt.detail
-  const toolGroup = ToolGroupManager.getToolGroup(
-    viewportId,
-    renderingEngineUID
-  )
+  const { renderingEngineId, viewportId } = evt.detail
+  const toolGroup = ToolGroupManager.getToolGroup(viewportId, renderingEngineId)
 
   if (!toolGroup) {
     return false

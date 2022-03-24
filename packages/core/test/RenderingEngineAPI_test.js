@@ -6,7 +6,7 @@ const { RenderingEngine, cache, utilities, Enums, CONSTANTS } = cornerstone3D
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
 const axialViewportId = 'AXIAL_VIEWPORT'
 const sagittalViewportId = 'SAGITTAL_VIEWPORT'
@@ -19,7 +19,7 @@ describe('RenderingEngineAPI -- ', () => {
 
   describe('RenderingEngine API:', function () {
     beforeEach(function () {
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       this.elementAxial = document.createElement('div')
 
@@ -119,7 +119,7 @@ describe('RenderingEngineAPI -- ', () => {
 
   describe('RenderingEngine Enable/Disable API:', function () {
     beforeEach(function () {
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       this.elementAxial = document.createElement('div')
 

@@ -21,7 +21,7 @@ type CameraModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -45,7 +45,7 @@ type ElementDisabledEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -57,7 +57,7 @@ type ElementEnabledEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -69,7 +69,7 @@ type ImageRenderedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** Whether to suppress the event */
   suppressEvents?: boolean
 }
@@ -160,7 +160,7 @@ type StackNewImageEventDetail = {
   /** unique id for the viewport */
   viewportId: string
   /** unique id for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -169,7 +169,7 @@ type StackNewImageEventDetail = {
 type ImageSpacingCalibratedEventDetail = {
   element: HTMLElement
   viewportId: string
-  renderingEngineUID: string
+  renderingEngineId: string
   imageId: string
   rowScale: number
   columnScale: number

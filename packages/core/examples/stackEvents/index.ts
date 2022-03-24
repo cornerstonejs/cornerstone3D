@@ -15,7 +15,7 @@ import { vec3 } from 'gl-matrix'
 const { ViewportType } = Enums
 
 // ======== Constants ======= //
-const renderingEngineUID = 'myRenderingEngine'
+const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_STACK'
 
 // ======== Set up page ======== //
@@ -81,10 +81,10 @@ element.addEventListener(
   STACK_NEW_IMAGE,
   (evt: Types.EventTypes.StackNewImageEvent) => {
     // Remove the image since then we serialize a bunch of pixelData to the screen.
-    const { imageId, renderingEngineUID, viewportId } = evt.detail
+    const { imageId, renderingEngineId, viewportId } = evt.detail
     const detail = {
       imageId,
-      renderingEngineUID,
+      renderingEngineId,
       viewportId,
       image: 'cornerstoneImageObject',
     }
@@ -96,7 +96,7 @@ element.addEventListener(
 
 addButtonToToolbar('Set VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -109,7 +109,7 @@ addButtonToToolbar('Set VOI Range', () => {
 
 addButtonToToolbar('Next Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -129,7 +129,7 @@ addButtonToToolbar('Next Image', () => {
 
 addButtonToToolbar('Previous Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -148,7 +148,7 @@ addButtonToToolbar('Previous Image', () => {
 
 addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -206,7 +206,7 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
@@ -236,7 +236,7 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
 

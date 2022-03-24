@@ -138,9 +138,7 @@ class AnnotationRenderingEngine {
       return
     }
 
-    const renderingEngine = getRenderingEngine(
-      enabledElement.renderingEngineUID
-    )
+    const renderingEngine = getRenderingEngine(enabledElement.renderingEngineId)
     if (!renderingEngine) {
       console.warn('rendering Engine has been destroyed')
       return
@@ -152,10 +150,10 @@ class AnnotationRenderingEngine {
       Enabled,
     ])
 
-    const { renderingEngineUID, viewportId } = enabledElement
+    const { renderingEngineId, viewportId } = enabledElement
     const eventDetail: AnnotationRenderedEventDetail = {
       element,
-      renderingEngineUID,
+      renderingEngineId,
       viewportId,
     }
 

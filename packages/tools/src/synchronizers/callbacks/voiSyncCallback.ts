@@ -23,10 +23,10 @@ export default function voiSyncCallback(
   const eventDetail = voiModifiedEvent.detail
   const { volumeUID, range } = eventDetail
 
-  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineUID)
+  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId)
   if (!renderingEngine) {
     throw new Error(
-      `Rendering Engine does not exist: ${targetViewport.renderingEngineUID}`
+      `Rendering Engine does not exist: ${targetViewport.renderingEngineId}`
     )
   }
 

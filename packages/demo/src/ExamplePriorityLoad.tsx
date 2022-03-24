@@ -21,7 +21,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
+  renderingEngineId,
   ptVolumeUID,
   ctVolumeUID,
   colormaps,
@@ -142,7 +142,7 @@ class PriorityLoadExample extends Component {
     this.ctVolumeUID = ctVolumeUID
     this.ptVolumeUID = ptVolumeUID
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 

@@ -31,7 +31,7 @@ const {
   compareImages,
 } = utilities.testUtils
 
-const renderingEngineUID = 'RENDERING_ENGINE_UID22'
+const renderingEngineId = 'RENDERING_ENGINE_UID22'
 
 const viewportId = 'VIEWPORT22'
 
@@ -77,7 +77,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName)
     this.stackToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
 
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    this.renderingEngine = new RenderingEngine(renderingEngineId)
     imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
