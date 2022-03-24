@@ -123,6 +123,8 @@ jobs:
           command:
             mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
             no\n" > ~/.ssh/config
+      - run: git config --global user.email "contact@ohif.org"
+      - run: git config --global user.name "ohif-bot"
       - run: npx lerna version
       - run: npx lerna publish from-package
 
