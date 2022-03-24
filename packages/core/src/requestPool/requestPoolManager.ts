@@ -2,7 +2,7 @@ import RequestType from '../enums/RequestType'
 
 type AdditionalDetails = {
   imageId?: string
-  volumeUID?: string
+  volumeId?: string
 }
 
 type RequestDetailsInterface = {
@@ -134,7 +134,7 @@ class RequestPoolManager {
    * @param type - Priority category, it can be either of interaction, prefetch,
    * or thumbnail.
    * @param additionalDetails - Additional details that requests can contain.
-   * For instance the volumeUID for the volume requests
+   * For instance the volumeId for the volume requests
    * @param priority - Priority number for each category of requests. Its default
    * value is priority 0. The lower the priority number, the higher the priority number
    *

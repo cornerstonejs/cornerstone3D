@@ -25,11 +25,11 @@ const viewportId = 'CT_SAGITTAL_STACK'
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
-const ctVolumeUID = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeUID with loader id + volume id
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
 
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_UID'
-const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -59,7 +59,7 @@ addButtonToToolbar('Set CT VOI Range', () => {
   )
 
   // Get the volume actor from the viewport
-  const actor = viewport.getActor(ctVolumeUID)
+  const actor = viewport.getActor(ctVolumeId)
 
   // Set the mapping range of the actor to a range to highlight bones
   actor.volumeActor
@@ -98,14 +98,14 @@ addButtonToToolbar('toggle PET', () => {
   )
   if (fused) {
     // Removes the PT actor from the scene
-    viewport.removeVolumeActors([ptVolumeUID], true)
+    viewport.removeVolumeActors([ptVolumeId], true)
 
     fused = false
   } else {
     // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
     // If it was in a different frame of reference, you would need to register it first.
     viewport.addVolumes(
-      [{ volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction }],
+      [{ volumeId: ptVolumeId, callback: setPetColorMapTransferFunction }],
       true
     )
 
@@ -225,7 +225,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   })
 
@@ -233,7 +233,7 @@ async function run() {
   ctVolume.load()
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeUID: ctVolumeUID }])
+  viewport.setVolumes([{ volumeId: ctVolumeId }])
 
   // Render the image
   renderingEngine.render()
@@ -241,7 +241,7 @@ async function run() {
   // Load the PT in the background as we know we'll need it
 
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   })
 

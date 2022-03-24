@@ -81,7 +81,7 @@ describe('RectangleRoiTool (CPU):', () => {
 
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool(RectangleRoiTool.toolName, {
-      configuration: { volumeUID: volumeId },
+      configuration: { volumeId: volumeId },
     })
     this.stackToolGroup.setToolActive(RectangleRoiTool.toolName, {
       bindings: [{ mouseButton: 1 }],

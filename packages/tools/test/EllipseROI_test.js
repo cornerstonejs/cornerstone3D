@@ -77,7 +77,7 @@ describe('Ellipse Tool: ', () => {
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool(EllipticalRoiTool.toolName, {
-        configuration: { volumeUID: volumeId },
+        configuration: { volumeId: volumeId },
       })
       this.stackToolGroup.setToolActive(EllipticalRoiTool.toolName, {
         bindings: [{ mouseButton: 1 }],
@@ -315,7 +315,7 @@ describe('Ellipse Tool: ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportId]
             )
             vp.render()
@@ -335,7 +335,7 @@ describe('Ellipse Tool: ', () => {
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool(EllipticalRoiTool.toolName, {
-        configuration: { volumeUID: volumeId },
+        configuration: { volumeId: volumeId },
       })
       this.stackToolGroup.setToolActive(EllipticalRoiTool.toolName, {
         bindings: [{ mouseButton: 1 }],

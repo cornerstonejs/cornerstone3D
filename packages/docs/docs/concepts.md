@@ -18,7 +18,7 @@ import {
 
 // RENDER
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
-const volumeUID = 'VOLUME_UID '
+const volumeId = 'VOLUME_UID '
 const sceneUID = 'SCENE_UID'
 const viewports = []
 const viewport = {
@@ -47,8 +47,8 @@ const imageIds = [
   'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
 ]
 
-imageCache.makeAndCacheImageVolume(imageIds, volumeUID)
-imageCache.loadVolume(volumeUID, (event) => {
+imageCache.makeAndCacheImageVolume(imageIds, volumeId)
+imageCache.loadVolume(volumeId, (event) => {
   if (event.framesProcessed === event.numFrames) {
     console.log('done loading!')
   }
@@ -59,8 +59,8 @@ const scene = renderingEngine.getScene(sceneUID)
 
 scene.setVolumes([
   {
-    volumeUID,
-    callback: ({ volumeActor, volumeUID }) => {
+    volumeId,
+    callback: ({ volumeActor, volumeId }) => {
       // Where you might setup a transfer function or PET colormap
       console.log('volume loaded!')
     },
@@ -132,7 +132,7 @@ destroy Tool Groups.
 
 ```js
 import { ToolGroupManager } from 'vtkjs-viewport-tools'
-import { ctVolumeUID } from './constants'
+import { ctVolumeId } from './constants'
 
 const toolGroupId = 'TOOL_GROUP_UID'
 const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
@@ -142,7 +142,7 @@ sceneToolGroup.addTool(PanTool.toolName)
 sceneToolGroup.addTool(ZoomTool.toolName)
 sceneToolGroup.addTool(StackScrollMouseWheelTool.toolName)
 sceneToolGroup.addTool(LengthTool.toolName, {
-  configuration: { volumeUID: ctVolumeUID },
+  configuration: { volumeId: ctVolumeId },
 })
 ```
 

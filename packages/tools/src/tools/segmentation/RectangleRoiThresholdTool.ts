@@ -36,7 +36,7 @@ export interface RectangleRoiThresholdAnnotation extends Annotation {
     referencedImageId?: string
     toolName: string
     enabledElement: any // Todo: how to remove this from the annotation??
-    volumeUID: string
+    volumeId: string
   }
   data: {
     label: string
@@ -101,13 +101,13 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    let referencedImageId, volumeUID
+    let referencedImageId, volumeId
     if (viewport instanceof StackViewport) {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      volumeUID = this.getTargetUID(viewport)
-      const imageVolume = cache.getVolume(volumeUID)
+      volumeId = this.getTargetUID(viewport)
+      const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -133,7 +133,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: RectangleRoiThresholdTool.toolName,
-        volumeUID,
+        volumeId,
       },
       data: {
         label: '',

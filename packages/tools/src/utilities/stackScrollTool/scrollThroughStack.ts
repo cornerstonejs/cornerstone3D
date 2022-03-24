@@ -11,20 +11,20 @@ import { MouseDragEventType, MouseWheelEventType } from '../../types/EventTypes'
 
 /**
  * Scroll the stack defined by the event (`evt`)
- * and volume with `volumeUID` `deltaFrames number of frames`.
+ * and volume with `volumeId` `deltaFrames number of frames`.
  * Frames are defined as increasing in the view direction.
  *
  * @param evt - The event corresponding to an interaction with a
  * specific viewport.
  * @param deltaFrames - The number of frames to jump through.
- * @param volumeUID - The `volumeUID` of the volume to scroll through
+ * @param volumeId - The `volumeId` of the volume to scroll through
  * @param invert - inversion of the scrolling
  * on the viewport.
  */
 export default function scrollThroughStack(
   evt: MouseWheelEventType | MouseDragEventType,
   deltaFrames: number,
-  volumeUID: string,
+  volumeId: string,
   invert = false
 ): void {
   const { element } = evt.detail
@@ -43,9 +43,9 @@ export default function scrollThroughStack(
 
     viewport.setImageIdIndex(newImageIdIndex)
   } else if (viewport instanceof VolumeViewport) {
-    // If volumeUID is specified, scroll through that specific volume
+    // If volumeId is specified, scroll through that specific volume
     const { spacingInNormalDirection, imageVolume } =
-      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeUID)
+      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId)
 
     if (!imageVolume) {
       return

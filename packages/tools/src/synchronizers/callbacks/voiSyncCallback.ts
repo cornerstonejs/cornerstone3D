@@ -21,7 +21,7 @@ export default function voiSyncCallback(
   voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
 ): void {
   const eventDetail = voiModifiedEvent.detail
-  const { volumeUID, range } = eventDetail
+  const { volumeId, range } = eventDetail
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId)
   if (!renderingEngine) {
@@ -33,7 +33,7 @@ export default function voiSyncCallback(
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId)
 
   if (tViewport instanceof VolumeViewport) {
-    const actor = tViewport.getActor(volumeUID)
+    const actor = tViewport.getActor(volumeId)
 
     if (actor) {
       actor.volumeActor

@@ -6,7 +6,7 @@ title: Volume Loaders
 
 # Volume Loaders
 
-Similar to the [`Image Loaders`](./imageLoader.md), a volume loader takes a `volumeUID`.
+Similar to the [`Image Loaders`](./imageLoader.md), a volume loader takes a `volumeId`.
 
 
 

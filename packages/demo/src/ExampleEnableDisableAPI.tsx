@@ -24,8 +24,8 @@ import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-lo
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ctVolumeUID,
-  ptVolumeUID,
+  ctVolumeId,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -258,7 +258,7 @@ class EnableDisableViewportExample extends Component {
     const CTVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+      const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
         imageIds: ctVolumeImageIds,
       })
 
@@ -279,7 +279,7 @@ class EnableDisableViewportExample extends Component {
 
       await setVolumesForViewports(
         renderingEngine,
-        [{ volumeUID: ctVolumeUID }],
+        [{ volumeId: ctVolumeId }],
         [
           VIEWPORT_IDS.CT.AXIAL,
           VIEWPORT_IDS.CT.CORONAL,
@@ -298,7 +298,7 @@ class EnableDisableViewportExample extends Component {
     const PETVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+      const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
         imageIds: ctVolumeImageIds2,
       })
 
@@ -306,7 +306,7 @@ class EnableDisableViewportExample extends Component {
 
       await setVolumesForViewports(
         renderingEngine,
-        [{ volumeUID: ptVolumeUID }],
+        [{ volumeId: ptVolumeId }],
         [
           VIEWPORT_IDS.CT.AXIAL,
           VIEWPORT_IDS.CT.CORONAL,

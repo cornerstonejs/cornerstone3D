@@ -1276,7 +1276,7 @@ interface IVolumeInput {
     // (undocumented)
     visibility?: boolean;
     // (undocumented)
-    volumeUID: string;
+    volumeId: string;
 }
 
 // @public (undocumented)
@@ -1875,7 +1875,7 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;
 // @public (undocumented)
 type VoiModifiedEventDetail = {
     viewportId: string;
-    volumeUID: string;
+    volumeId: string;
     range: VOIRange;
 };
 
@@ -1907,7 +1907,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 // @public (undocumented)
 type VolumeInputCallback = (params: {
     volumeActor: VolumeActor;
-    volumeUID: string;
+    volumeId: string;
 }) => unknown;
 
 // @public (undocumented)

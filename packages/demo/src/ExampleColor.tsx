@@ -62,9 +62,9 @@ class ColorExample extends Component {
       10000
     )
 
-    const volumeUID = 'VOLUME'
+    const volumeId = 'VOLUME'
 
-    const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
     })
 
@@ -106,16 +106,16 @@ class ColorExample extends Component {
     ])
 
     colorSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
     colorSceneToolGroup.addTool(PanTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
     colorSceneToolGroup.addTool(ZoomTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
     colorSceneToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
 
     colorSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
@@ -133,8 +133,8 @@ class ColorExample extends Component {
       this.renderingEngine,
       [
         {
-          volumeUID: volumeUID,
-          callback: ({ volumeActor, volumeUID }) => {
+          volumeId: volumeId,
+          callback: ({ volumeActor, volumeId }) => {
             volumeActor.getProperty().setIndependentComponents(false)
             volumeActor.getProperty().setInterpolationTypeToNearest()
           },

@@ -85,7 +85,7 @@ describe('LengthTool:', () => {
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool(LengthTool.toolName, {
-        configuration: { volumeUID: volumeId },
+        configuration: { volumeId: volumeId },
       })
       this.stackToolGroup.setToolActive(LengthTool.toolName, {
         bindings: [{ mouseButton: 1 }],
@@ -326,7 +326,7 @@ describe('LengthTool:', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportId]
             )
             vp.render()
@@ -939,7 +939,7 @@ describe('LengthTool:', () => {
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool(LengthTool.toolName, {
-        configuration: { volumeUID: volumeId },
+        configuration: { volumeId: volumeId },
       })
       this.stackToolGroup.setToolActive(LengthTool.toolName, {
         bindings: [{ mouseButton: 1 }],

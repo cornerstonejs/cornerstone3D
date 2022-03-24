@@ -145,13 +145,13 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
+            [{ volumeId: volumeId, callback }],
             [viewportUID1]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+              { volumeId: segVolumeId },
             ])
           })
         })
@@ -222,13 +222,13 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
+            [{ volumeId: volumeId, callback }],
             [viewportUID1, viewportUID2, viewportUID3]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+              { volumeId: segVolumeId },
             ])
           })
         })
@@ -270,15 +270,15 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
+            [{ volumeId: volumeId, callback }],
             [viewportUID1]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             createAndCacheVolume(segVolumeId2, { imageIds: [] }).then(() => {
               addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                { volumeUID: segVolumeId },
-                { volumeUID: segVolumeId2 },
+                { volumeId: segVolumeId },
+                { volumeId: segVolumeId2 },
               ])
             })
           })
@@ -349,14 +349,14 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
+            [{ volumeId: volumeId, callback }],
             [viewportUID1]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentationsForToolGroup(
               this.segToolGroup.uid,
-              [{ volumeUID: segVolumeId }],
+              [{ volumeId: segVolumeId }],
               {
                 ...customToolGroupSeConfig,
               }

@@ -21,7 +21,7 @@ import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
 async function createNewSegmentationForToolGroup(
   toolGroupId: string,
   options?: {
-    volumeUID?: string
+    volumeId?: string
     scalarData?: Float32Array | Uint8Array
     targetBuffer?: {
       type: 'Float32Array' | 'Uint8Array'
@@ -55,7 +55,7 @@ async function createNewSegmentationForToolGroup(
   const { uid } = viewport.getDefaultActor()
   // Name the segmentation volume with the viewport UID
   const segmentationUID = `${uid}-based-segmentation-${
-    options?.volumeUID ?? csUtils.uuidv4().slice(0, 8)
+    options?.volumeId ?? csUtils.uuidv4().slice(0, 8)
   }`
 
   if (options) {
@@ -65,8 +65,8 @@ async function createNewSegmentationForToolGroup(
     await volumeLoader.createLocalVolume(properties, segmentationUID)
   } else {
     // create a labelmap from a reference volume
-    const { uid: volumeUID } = viewport.getDefaultActor()
-    await volumeLoader.createAndCacheDerivedVolume(volumeUID, {
+    const { uid: volumeId } = viewport.getDefaultActor()
+    await volumeLoader.createAndCacheDerivedVolume(volumeId, {
       uid: segmentationUID,
     })
   }

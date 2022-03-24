@@ -133,16 +133,16 @@ ctSceneToolGroup.addTool(ProbeTool.toolName)
 The annotations in StackViewport and VolumeViewport are immediately shared.
 You can activate both a Stack and a Volume viewport and draw annotations on
 one while editing (modifying or moving) the other. This is accomplished by
-providing the toolGroup of the VolumeViewports with the `VolumeUID`.
+providing the toolGroup of the VolumeViewports with the `VolumeId`.
 
 When drawing an annotation:
--The tool gets the volume using volumeUID
+-The tool gets the volume using volumeId
 - It checks which imageId of the volume the tool has been drawn on
 - If in a stack viewport, we are at the same imageId, we render the tool
 
 ```js
 ctSceneToolGroup.addTool(LengthTool.toolName, {
-  configuration: { volumeUID: ctVolumeUID },
+  configuration: { volumeId: ctVolumeId },
 })
 ctStackToolGroup.addTool(LengthTool.toolName)
 ```
@@ -155,11 +155,11 @@ ctStackToolGroup.addTool(LengthTool.toolName)
 #### Dynamic tool statistics
 Cornerstone3D-Tools is capable of calculating dynamic statistics based on the modality of the volume being rendered. For instance, for CT volumes a `ProbeTool` will give Hounsfield Units and for PET it will calculate SUV stats.
 
-In order to enable such dynamic tool statistics, you are required to provide the `volumeUID` when you are adding the tool.
+In order to enable such dynamic tool statistics, you are required to provide the `volumeId` when you are adding the tool.
 
 ```js
 ctSceneToolGroup.addTool(ProbeTool.toolName, {
-  configuration: { volumeUID: ctVolumeUID },
+  configuration: { volumeId: ctVolumeId },
 })
 ```
 

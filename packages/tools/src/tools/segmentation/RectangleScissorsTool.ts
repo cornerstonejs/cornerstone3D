@@ -91,10 +91,10 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
-    const toolGroupUID = this.toolGroupUID
+    const toolGroupId = this.toolGroupId
 
     const activeSegmentationInfo =
-      activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
+      activeSegmentation.getActiveSegmentationInfo(toolGroupId)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
@@ -103,18 +103,18 @@ export default class RectangleScissorsTool extends BaseTool {
 
     // Todo: we should have representation type check if we are going to use this
     // tool in other representations other than labelmap
-    const { segmentationDataUID, volumeUID } = activeSegmentationInfo
+    const { segmentationDataUID, volumeId } = activeSegmentationInfo
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupUID)
+      segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
+      segmentLocking.getSegmentsLockedForSegmentation(volumeId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
-      toolGroupUID,
+      toolGroupId,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex
     )
 
-    const segmentation = cache.getVolume(volumeUID)
+    const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const annotation = {
@@ -293,7 +293,7 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentationDataUID,
       segmentIndex,
       segmentsLocked,
-      toolGroupUID: this.toolGroupUID,
+      toolGroupId: this.toolGroupId,
     }
 
     this.applyActiveStrategy(enabledElement, operationData)

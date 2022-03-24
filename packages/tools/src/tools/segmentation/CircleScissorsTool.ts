@@ -84,28 +84,28 @@ export default class CircleScissorsTool extends BaseTool {
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
-    const toolGroupUID = this.toolGroupUID
+    const toolGroupId = this.toolGroupId
 
     const activeSegmentationInfo =
-      activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
+      activeSegmentation.getActiveSegmentationInfo(toolGroupId)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       )
     }
 
-    const { volumeUID, segmentationDataUID } = activeSegmentationInfo
+    const { volumeId, segmentationDataUID } = activeSegmentationInfo
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupUID)
+      segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
+      segmentLocking.getSegmentsLockedForSegmentation(volumeId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
-      toolGroupUID,
+      toolGroupId,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex
     )
 
-    const segmentation = cache.getVolume(volumeUID)
+    const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const annotation = {
@@ -245,7 +245,7 @@ export default class CircleScissorsTool extends BaseTool {
       segmentIndex,
       segmentsLocked,
       viewPlaneNormal,
-      toolGroupUID: this.toolGroupUID,
+      toolGroupId: this.toolGroupId,
       segmentationDataUID,
       viewUp,
     }

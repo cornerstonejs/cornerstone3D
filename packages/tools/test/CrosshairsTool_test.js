@@ -229,7 +229,7 @@ describe('Cornerstone Tools: ', () => {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
+          [{ volumeId: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]
         )
         this.renderingEngine.render()
@@ -376,7 +376,7 @@ describe('Cornerstone Tools: ', () => {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
+          [{ volumeId: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]
         )
         this.renderingEngine.render()
@@ -520,7 +520,7 @@ describe('Cornerstone Tools: ', () => {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
+          [{ volumeId: volumeId }],
           [viewportUID1, viewportUID2, viewportUID3]
         )
         this.renderingEngine.render()

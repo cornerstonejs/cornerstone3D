@@ -60,7 +60,7 @@ type Annotation = {
         FrameOfReferenceUID: string;
         toolName: string;
         referencedImageId?: string;
-        volumeUID?: string;
+        volumeId?: string;
     };
     data: {
         handles?: {
@@ -640,7 +640,7 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 
 // @public (undocumented)
 function createNewSegmentationForToolGroup(toolGroupId: string, options?: {
-    volumeUID?: string;
+    volumeId?: string;
     scalarData?: Float32Array | Uint8Array;
     targetBuffer?: {
         type: 'Float32Array' | 'Uint8Array';
@@ -1228,7 +1228,7 @@ function getActiveSegmentationData(toolGroupId: string): ToolGroupSpecificSegmen
 
 // @public (undocumented)
 function getActiveSegmentationInfo(toolGroupId: string): {
-    volumeUID: string;
+    volumeId: string;
     segmentationDataUID: string;
     activeSegmentIndex: number;
 };
@@ -1389,7 +1389,7 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 
 // @public (undocumented)
 type GlobalSegmentationData = {
-    volumeUID: string;
+    volumeId: string;
     label: string;
     referenceVolumeUID?: string;
     referenceImageId?: string;
@@ -1977,21 +1977,21 @@ interface IVolume {
 interface IVolumeInput {
     // (undocumented)
     actorUID?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     blendMode?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     callback?: VolumeInputCallback
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     slabThickness?: number
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     visibility?: boolean
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    volumeUID: string
+    volumeId: string
 }
 
 // @public
@@ -2441,7 +2441,7 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
             FrameOfReferenceUID: string;
             referencedImageId: any;
             toolName: string;
-            volumeUID: any;
+            volumeId: any;
             spacingInNormal: number;
         };
         data: {
@@ -2504,7 +2504,7 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
             FrameOfReferenceUID: string;
             referencedImageId: any;
             toolName: string;
-            volumeUID: any;
+            volumeId: any;
         };
         data: {
             label: string;
@@ -2678,7 +2678,7 @@ type ScalingParameters = {
 }
 
 // @public (undocumented)
-function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeUID: string, invert?: boolean): void;
+function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeId: string, invert?: boolean): void;
 
 declare namespace segmentation {
     export {
@@ -3145,7 +3145,7 @@ export { ToolGroupManager }
 
 // @public (undocumented)
 type ToolGroupSpecificSegmentationData = {
-    volumeUID: string;
+    volumeId: string;
     segmentationDataUID: string;
     active: boolean;
     segmentsHidden: Set<number>;
@@ -3319,7 +3319,7 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>
 // @public
 type VoiModifiedEventDetail = {
     viewportId: string
-    volumeUID: string
+    volumeId: string
     range: VOIRange
 }
 
@@ -3353,7 +3353,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 // @public
 type VolumeInputCallback = (params: {
     volumeActor: VolumeActor
-    volumeUID: string
+    volumeId: string
 }) => unknown
 
 // @public
@@ -3402,14 +3402,14 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     _dragCallback(evt: any): void;
     // (undocumented)
-    _getImageDynamicRange: (volumeUID: string) => number;
+    _getImageDynamicRange: (volumeId: string) => number;
     // (undocumented)
-    _getMultiplyerFromDynamicRange(volumeUID: any): number;
+    _getMultiplyerFromDynamicRange(volumeId: any): number;
     // (undocumented)
-    getNewRange({ deltaPointsCanvas, useDynamicRange, volumeUID, lower, upper }: {
+    getNewRange({ deltaPointsCanvas, useDynamicRange, volumeId, lower, upper }: {
         deltaPointsCanvas: any;
         useDynamicRange: any;
-        volumeUID: any;
+        volumeId: any;
         lower: any;
         upper: any;
     }): {

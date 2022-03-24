@@ -61,8 +61,8 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupUID1 = 'STACK_TOOL_GROUP_UID_1'
-  const toolGroupUID2 = 'STACK_TOOL_GROUP_UID_2'
+  const toolGroupId1 = 'STACK_TOOL_GROUP_UID_1'
+  const toolGroupId2 = 'STACK_TOOL_GROUP_UID_2'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool)
@@ -70,7 +70,7 @@ async function run() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool)
 
   // Define tool group 1, used by viewport 1
-  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupUID1)
+  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1)
 
   // Add tools to the tool group
   toolGroup1.addTool(WindowLevelTool.toolName)
@@ -87,7 +87,7 @@ async function run() {
   toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName)
 
   // Define tool group 2, used by viewport 2
-  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupUID2)
+  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2)
 
   // Add tools to the tool group
   toolGroup2.addTool(LengthTool.toolName)

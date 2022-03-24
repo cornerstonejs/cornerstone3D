@@ -150,7 +150,7 @@ describe('Segmentation Controller --', () => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
               setVolumesForViewports(
                 this.renderingEngine,
-                [{ volumeUID: volumeId }],
+                [{ volumeId: volumeId }],
                 [viewportUID1]
               ).then(() => {
                 vp1.render()
@@ -158,10 +158,10 @@ describe('Segmentation Controller --', () => {
                 // add two volumes on the segmentation
                 addSegmentationsForToolGroup(TOOL_GROUP_UID, [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                   },
                   {
-                    volumeUID: seg2VolumeID,
+                    volumeId: seg2VolumeID,
                   },
                 ])
               })
@@ -209,7 +209,7 @@ describe('Segmentation Controller --', () => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
               setVolumesForViewports(
                 this.renderingEngine,
-                [{ volumeUID: volumeId }],
+                [{ volumeId: volumeId }],
                 [viewportUID1]
               ).then(() => {
                 vp1.render()
@@ -223,11 +223,11 @@ describe('Segmentation Controller --', () => {
                 // add two volumes on the segmentation
                 addSegmentationsForToolGroup(TOOL_GROUP_UID, [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                     colorLUTIndex: 1,
                   },
                   {
-                    volumeUID: seg2VolumeID,
+                    volumeId: seg2VolumeID,
                   },
                 ])
               })
@@ -286,7 +286,7 @@ describe('Segmentation Controller --', () => {
     //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
     //           setVolumesForViewports(
     //             this.renderingEngine,
-    //             [{ volumeUID: volumeId }],
+    //             [{ volumeId: volumeId }],
     //             [viewportUID1]
     //           ).then(() => {
     //             vp1.render()
@@ -294,10 +294,10 @@ describe('Segmentation Controller --', () => {
     //             // add two volumes on the segmentation
     //             addSegmentationsForToolGroup(TOOL_GROUP_UID, [
     //               {
-    //                 volumeUID: seg1VolumeID,
+    //                 volumeId: seg1VolumeID,
     //               },
     //               {
-    //                 volumeUID: seg2VolumeID,
+    //                 volumeId: seg2VolumeID,
     //               },
     //             ]).then(() => {
     //               const segmentationData =

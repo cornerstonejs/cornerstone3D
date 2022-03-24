@@ -24,7 +24,7 @@ export default class StackScrollMouseWheelTool extends BaseTool {
   mouseWheelCallback(evt: MouseWheelEventType): void {
     const { wheel } = evt.detail
     const { direction: deltaFrames } = wheel
-    const { invert, volumeUID } = this.configuration
-    scrollThroughStack(evt, deltaFrames, volumeUID, invert)
+    const { invert, volumeId } = this.configuration
+    scrollThroughStack(evt, deltaFrames, volumeId, invert)
   }
 }

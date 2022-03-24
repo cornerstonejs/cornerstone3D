@@ -28,8 +28,8 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ctVolumeUID,
-  ptVolumeUID,
+  ctVolumeId,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
   prostateVolumeUID,
@@ -192,7 +192,7 @@ class CrosshairsExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctImageIds,
     })
     const prostateVolume = await volumeLoader.createAndCacheVolume(
@@ -209,7 +209,7 @@ class CrosshairsExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
+          volumeId: ctVolumeId,
           callback: setCTWWWC,
           blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
@@ -220,7 +220,7 @@ class CrosshairsExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: prostateVolumeUID,
+          volumeId: prostateVolumeUID,
           blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],

@@ -38,7 +38,7 @@ export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
     referencedImageId?: string
     toolName: string
     enabledElement: any // Todo: how to remove this from the annotation??
-    volumeUID: string
+    volumeId: string
     spacingInNormal: number
   }
   data: {
@@ -119,12 +119,12 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    let referencedImageId, imageVolume, volumeUID
+    let referencedImageId, imageVolume, volumeId
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented')
     } else {
-      volumeUID = this.getTargetUID(viewport)
-      imageVolume = cache.getVolume(volumeUID)
+      volumeId = this.getTargetUID(viewport)
+      imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -167,7 +167,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: RectangleRoiStartEndThresholdTool.toolName,
-        volumeUID,
+        volumeId,
         spacingInNormal,
       },
       data: {
@@ -296,8 +296,8 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     const { viewportId, renderingEngineId, viewport } = enabledElement
 
     const { cachedStats } = data
-    const volumeUID = this.getTargetUID(viewport)
-    const imageVolume = cache.getVolume(volumeUID)
+    const volumeId = this.getTargetUID(viewport)
+    const imageVolume = cache.getVolume(volumeId)
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleRoi class, we need to

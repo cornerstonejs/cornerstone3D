@@ -4,8 +4,8 @@ const { MouseBindings } = csTools3d.Enums
 
 import {
   TOOL_GROUP_UIDS,
-  ptVolumeUID,
-  ctVolumeUID,
+  ptVolumeId,
+  ctVolumeId,
   ctStackUID,
   ctVolumeTestUID,
   ptVolumeTestUID,
@@ -225,7 +225,7 @@ function initToolGroups() {
   // TODO: Can we delete tool groups?
   // These need to be in lifecycle so we can undo on page death
   csTools3d.addTool(PanTool)
-  // @TODO: This kills the volumeUID and tool configuration
+  // @TODO: This kills the volumeId and tool configuration
   csTools3d.addTool(WindowLevelTool)
   csTools3d.addTool(StackScrollMouseWheelTool)
   csTools3d.addTool(StackScrollTool)
@@ -473,7 +473,7 @@ function addToolsToToolGroups({
   if (ctSceneToolGroup) {
     // Set up CT Scene tools
 
-    // @TODO: This kills the volumeUID and tool configuration
+    // @TODO: This kills the volumeId and tool configuration
     ctSceneToolGroup.addTool(StackScrollTool.toolName)
     ctSceneToolGroup.addTool(RectangleScissorsTool.toolName)
     ctSceneToolGroup.addTool(RectangleRoiThresholdTool.toolName)
@@ -534,7 +534,7 @@ function addToolsToToolGroups({
   if (prostateSceneToolGroup) {
     // Set up CT Scene tools
 
-    // @TODO: This kills the volumeUID and tool configuration
+    // @TODO: This kills the volumeId and tool configuration
     prostateSceneToolGroup.addTool(WindowLevelTool.toolName)
     prostateSceneToolGroup.addTool(LengthTool.toolName)
     prostateSceneToolGroup.addTool(PanTool.toolName)
@@ -645,22 +645,22 @@ function addToolsToToolGroups({
     fusionSceneToolGroup.addTool(PanTool.toolName)
     fusionSceneToolGroup.addTool(StackScrollMouseWheelTool.toolName)
     fusionSceneToolGroup.addTool(BidirectionalTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(LengthTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
-    fusionSceneToolGroup.addTool(ProbeTool.toolName, { volumeUID: ptVolumeUID })
+    fusionSceneToolGroup.addTool(ProbeTool.toolName, { volumeId: ptVolumeId })
     fusionSceneToolGroup.addTool(RectangleRoiTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(EllipticalRoiTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(ZoomTool.toolName)
 
     fusionSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(CrosshairsTool.toolName, {
       getReferenceLineColor,
@@ -711,7 +711,7 @@ function addToolsToToolGroups({
       ],
     })
     ptMipSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     ptMipSceneToolGroup.setToolActive(VolumeRotateMouseWheelTool.toolName)
     ptMipSceneToolGroup.setToolActive(MIPJumpToClickTool.toolName)
@@ -805,7 +805,7 @@ function addToolsToToolGroups({
 
   if (ptTypesSceneToolGroup) {
     ptTypesSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     ptTypesSceneToolGroup.addTool(PanTool.toolName)
     ptTypesSceneToolGroup.addTool(ZoomTool.toolName)

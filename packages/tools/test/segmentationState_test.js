@@ -122,7 +122,7 @@ describe('Segmentation State -- ', () => {
 
           expect(globalState).toBeDefined()
 
-          expect(globalState.volumeUID).toBe(segVolumeId)
+          expect(globalState.volumeId).toBe(segVolumeId)
           expect(globalState.label).toBe(segVolumeId)
           expect(globalState.activeSegmentIndex).toBe(1)
         }
@@ -156,7 +156,7 @@ describe('Segmentation State -- ', () => {
           expect(segData.active).toBe(true)
           expect(segData.visibility).toBe(true)
           expect(segData.segmentationDataUID).toBeDefined()
-          expect(segData.volumeUID).toBe(segVolumeId)
+          expect(segData.volumeId).toBe(segVolumeId)
           expect(segData.representation).toBeDefined()
           expect(segData.representation.type).toBe(LABELMAP)
           expect(segData.representation.config).toBeDefined()
@@ -174,13 +174,13 @@ describe('Segmentation State -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
+            [{ volumeId: volumeId, callback }],
             [viewportId]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+              { volumeId: segVolumeId },
             ])
           })
         })
@@ -233,13 +233,13 @@ describe('Segmentation State -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
+            [{ volumeId: volumeId, callback }],
             [viewportId]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+              { volumeId: segVolumeId },
             ])
           })
         })

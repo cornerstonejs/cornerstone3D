@@ -6,13 +6,13 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 /**
  * Given a volume viewport and camera, find the target volume.
  * The imageVolume is retrieved from cache for the specified targetVolumeUID or
- * in case it is not provided, it chooses the volumeUID on the viewport (there
+ * in case it is not provided, it chooses the volumeId on the viewport (there
  * might be more than one in case of fusion) that has the finest resolution in the
  * direction of view (normal).
  *
  * @param viewport - volume viewport
  * @param camera - current camera
- * @param targetVolumeUID - If a target volumeUID is given that volume
+ * @param targetVolumeUID - If a target volumeId is given that volume
  * is forced to be used.
  *
  * @returns An object containing the imageVolume and spacingInNormalDirection.
@@ -35,7 +35,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   const numVolumeActors = volumeActors.length
   const imageVolumes = volumeActors.map((va) => cache.getVolume(va.uid))
 
-  // If a volumeUID is defined, set that volume as the target
+  // If a volumeId is defined, set that volume as the target
   if (targetVolumeUID) {
     const imageVolume = imageVolumes.find((iv) => iv.uid === targetVolumeUID)
 

@@ -15,8 +15,8 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ptVolumeUID,
-  ctVolumeUID,
+  ptVolumeId,
+  ctVolumeId,
   colormaps,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -138,8 +138,8 @@ class VTKSetVolumesExample extends Component {
       ptTypesSceneToolGroup,
     } = initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
-    this.ptVolumeUID = ptVolumeUID
+    this.ctVolumeId = ctVolumeId
+    this.ptVolumeId = ptVolumeId
 
     const renderingEngine = new RenderingEngine(renderingEngineId)
 
@@ -181,10 +181,10 @@ class VTKSetVolumesExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptVolumeImageIds1,
     })
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds1,
     })
 
@@ -203,8 +203,8 @@ class VTKSetVolumesExample extends Component {
 
     ptCtFusion.setVolumes(
       renderingEngine,
-      ctVolumeUID,
-      ptVolumeUID,
+      ctVolumeId,
+      ptVolumeId,
       colormaps[this.state.petColorMapIndex]
     )
 

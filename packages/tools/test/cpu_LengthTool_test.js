@@ -88,7 +88,7 @@ describe('Length Tool (CPU):', () => {
 
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool(LengthTool.toolName, {
-      configuration: { volumeUID: volumeId },
+      configuration: { volumeId: volumeId },
     })
     this.stackToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [{ mouseButton: 1 }],

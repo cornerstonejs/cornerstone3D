@@ -81,7 +81,7 @@ describe('ProbeTool (CPU):', () => {
 
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool(ProbeTool.toolName, {
-      configuration: { volumeUID: volumeId }, // Only for volume viewport
+      configuration: { volumeId: volumeId }, // Only for volume viewport
     })
     this.stackToolGroup.setToolActive(ProbeTool.toolName, {
       bindings: [{ mouseButton: 1 }],

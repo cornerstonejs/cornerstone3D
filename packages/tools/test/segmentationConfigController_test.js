@@ -201,7 +201,7 @@ describe('Segmentation Controller --', () => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportUID1]
             ).then(() => {
               vp1.render()
@@ -211,7 +211,7 @@ describe('Segmentation Controller --', () => {
                 TOOL_GROUP_UID,
                 [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                   },
                 ],
                 toolGroupSpecificConfig
@@ -262,7 +262,7 @@ describe('Segmentation Controller --', () => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportUID1]
             ).then(() => {
               vp1.render()
@@ -283,7 +283,7 @@ describe('Segmentation Controller --', () => {
               // add two volumes on the segmentation
               addSegmentationsForToolGroup(TOOL_GROUP_UID, [
                 {
-                  volumeUID: seg1VolumeID,
+                  volumeId: seg1VolumeID,
                   colorLUTIndex: 1,
                 },
               ])
@@ -342,7 +342,7 @@ describe('Segmentation Controller --', () => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportUID1]
             ).then(() => {
               vp1.render()
@@ -365,7 +365,7 @@ describe('Segmentation Controller --', () => {
                 TOOL_GROUP_UID,
                 [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                     colorLUTIndex: 1,
                   },
                 ],

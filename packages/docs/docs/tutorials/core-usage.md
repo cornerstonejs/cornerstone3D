@@ -32,7 +32,7 @@ import {
 } from '@ohif/cornerstone-render'
 
 const sceneUID = 'SCENE_UID'
-const volumeUID = 'VOLUME_UID'
+const volumeId = 'VOLUME_UID'
 const viewportUID1 = 'viewport_UID_1'
 const viewportUID2 = 'viewport_UID_2'
 const viewportUID3 = 'viewport_UID_3'
@@ -100,7 +100,7 @@ renderingEngine.render()
 
 // 5. This only creates the volumes, it does not actually load all
 // of the pixel data (yet)
-const ctVolume = await createAndCacheVolume(volumeUID, { imageIds })
+const ctVolume = await createAndCacheVolume(volumeId, { imageIds })
 
 // 6. Actual load of the volume. Look into StreamingImageVolume to
 // get insight on what happens in a load: Spoiler Alert: each 2D image is requested and its pixel data is put at the correct position in the volume
@@ -112,8 +112,8 @@ const ctScene = renderingEngine.getScene(sceneUID)
 // 8. Setting the volumes for the scene => creating actor and mappers
 ctScene.setVolumes([
   {
-    volumeUID,
-    callback: ({ volumeActor, volumeUID }) => {
+    volumeId,
+    callback: ({ volumeActor, volumeId }) => {
       // Where you might setup a transfer function or PET colormap
       console.log('volume loaded!')
     },

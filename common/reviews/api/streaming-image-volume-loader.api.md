@@ -839,21 +839,21 @@ interface IVolume {
 interface IVolumeInput {
     // (undocumented)
     actorUID?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     blendMode?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     callback?: VolumeInputCallback
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     slabThickness?: number
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     visibility?: boolean
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    volumeUID: string
+    volumeId: string
 }
 
 // @public
@@ -1012,7 +1012,7 @@ export class StreamingImageVolume extends ImageVolume {
             };
         };
         additionalDetails: {
-            volumeUID: string;
+            volumeId: string;
         };
     }[];
     // (undocumented)
@@ -1048,7 +1048,7 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>
 // @public
 type VoiModifiedEventDetail = {
     viewportId: string
-    volumeUID: string
+    volumeId: string
     range: VOIRange
 }
 
@@ -1082,7 +1082,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 // @public
 type VolumeInputCallback = (params: {
     volumeActor: VolumeActor
-    volumeUID: string
+    volumeId: string
 }) => unknown
 
 // @public

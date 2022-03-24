@@ -8,14 +8,14 @@ type RenderingEngineAndViewportIds = {
 }
 
 /**
- * Given a volumeUID, it finds the viewports and renderingEngines that
+ * Given a volumeId, it finds the viewports and renderingEngines that
  * include that volume, and triggers a render if renderingEngine is available.
  *
- * @param volumeUID - The UID of the volume
+ * @param volumeId - The UID of the volume
  */
-const autoLoad = (volumeUID: string): void => {
+const autoLoad = (volumeId: string): void => {
   const renderingEngineAndViewportIds =
-    getRenderingEngineAndViewportsContainingVolume(volumeUID)
+    getRenderingEngineAndViewportsContainingVolume(volumeId)
 
   if (!renderingEngineAndViewportIds || !renderingEngineAndViewportIds.length) {
     return
@@ -29,7 +29,7 @@ const autoLoad = (volumeUID: string): void => {
 }
 
 function getRenderingEngineAndViewportsContainingVolume(
-  volumeUID: string
+  volumeId: string
 ): Array<RenderingEngineAndViewportIds> {
   const renderingEnginesArray = getRenderingEngines()
 
@@ -38,7 +38,7 @@ function getRenderingEngineAndViewportsContainingVolume(
   for (let i = 0; i < renderingEnginesArray.length; i++) {
     const renderingEngine = renderingEnginesArray[i]
     const viewports = utilities.getVolumeViewportsContainingVolumeUID(
-      volumeUID,
+      volumeId,
       renderingEngine.uid
     )
 

@@ -36,16 +36,16 @@ function triggerSegmentationStateModified(toolGroupId: string): void {
 function triggerSegmentationGlobalStateModified(
   segmentationUID?: string
 ): void {
-  let toolGroupUIDs, segmentationUIDs
+  let toolGroupIds, segmentationUIDs
 
   if (segmentationUID) {
-    toolGroupUIDs = getToolGroupsWithSegmentation(segmentationUID)
+    toolGroupIds = getToolGroupsWithSegmentation(segmentationUID)
     segmentationUIDs = [segmentationUID]
   } else {
     // get all toolGroups
-    toolGroupUIDs = getToolGroups()
+    toolGroupIds = getToolGroups()
     segmentationUIDs = getGlobalSegmentationState().map(
-      ({ volumeUID }) => volumeUID
+      ({ volumeId }) => volumeId
     )
   }
 
@@ -64,7 +64,7 @@ function triggerSegmentationGlobalStateModified(
 
   // 2. Notify all viewports that render the segmentationUID in order to update the
   // rendering based on the new global state.
-  toolGroupUIDs.forEach((toolGroupId) => {
+  toolGroupIds.forEach((toolGroupId) => {
     triggerSegmentationStateModified(toolGroupId)
   })
 }

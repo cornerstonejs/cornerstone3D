@@ -8,18 +8,18 @@ type VolumeInputCallback = (params: {
   /** vtk volume actor */
   volumeActor: VolumeActor
   /** unique volume UID in the cache */
-  volumeUID: string
+  volumeId: string
 }) => unknown
 
 /**
  * VolumeInput that can be used to add a volume to a viewport. It includes
- * mandatory `volumeUID` but other options such as `visibility`, `blendMode`,
+ * mandatory `volumeId` but other options such as `visibility`, `blendMode`,
  * `slabThickness` and `callback` can also be provided
  */
 interface IVolumeInput {
   /** Volume UID of the volume in the cache */
-  volumeUID: string
-  // actorUID for segmentations, since two segmentations with the same volumeUID
+  volumeId: string
+  // actorUID for segmentations, since two segmentations with the same volumeId
   // can have different representations
   actorUID?: string
   /** Visibility of the volume - by default it is true */

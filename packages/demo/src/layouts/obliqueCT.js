@@ -32,10 +32,10 @@ function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
   ctObliqueToolGroup.addViewport(viewportId, renderingEngineId)
 }
 
-function setVolumes(renderingEngine, ctVolumeUID) {
+function setVolumes(renderingEngine, ctVolumeId) {
   const ctObliqueScene = renderingEngine.getScene(SCENE_IDS.CTOBLIQUE)
 
-  ctObliqueScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }])
+  ctObliqueScene.setVolumes([{ volumeId: ctVolumeId, callback: setCTWWWC }])
 }
 
 export default { setLayout, setVolumes }

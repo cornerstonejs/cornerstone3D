@@ -99,7 +99,7 @@ export default class StreamingImageVolume extends ImageVolume {
   /**
    * It cancels loading the images of the volume. It sets the loading status to false
    * and filters any imageLoad request in the requestPoolManager that has the same
-   * volumeUID
+   * volumeId
    */
   public cancelLoading(): void {
     const { loadStatus } = this
@@ -117,7 +117,7 @@ export default class StreamingImageVolume extends ImageVolume {
     // Create a filter function which only keeps requests
     // which do not match this volume's UID
     const filterFunction = ({ additionalDetails }) => {
-      return additionalDetails.volumeUID !== this.uid
+      return additionalDetails.volumeId !== this.uid
     }
 
     // Instruct the request pool manager to filter queued
@@ -182,7 +182,7 @@ export default class StreamingImageVolume extends ImageVolume {
    * moving to the next slice.
    *
    * @returns Array of requests including imageId of the request, its imageIdIndex,
-   * options (targetBuffer and scaling parameters), and additionalDetails (volumeUID)
+   * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
   public getImageLoadRequests = () => {
     const { scalarData, loadStatus } = this
@@ -193,7 +193,7 @@ export default class StreamingImageVolume extends ImageVolume {
       vtkOpenGLTexture,
       imageData,
       metadata,
-      uid: volumeUID,
+      uid: volumeId,
     } = this
 
     const { FrameOfReferenceUID } = metadata
@@ -241,7 +241,7 @@ export default class StreamingImageVolume extends ImageVolume {
         ) {
           reRenderTarget += reRenderFraction
 
-          autoLoad(volumeUID)
+          autoLoad(volumeId)
         }
       }
 
@@ -438,7 +438,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageIdIndex,
         options,
         additionalDetails: {
-          volumeUID: this.uid,
+          volumeId: this.uid,
         },
       }
     })

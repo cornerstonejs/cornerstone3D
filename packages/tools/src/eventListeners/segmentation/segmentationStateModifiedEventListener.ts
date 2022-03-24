@@ -9,8 +9,8 @@ import { SegmentationStateModifiedEventType } from '../../types/EventTypes'
 const segmentationStateModifiedEventListener = function (
   evt: SegmentationStateModifiedEventType
 ): void {
-  const { toolGroupUID } = evt.detail
-  triggerSegmentationRender(toolGroupUID)
+  const { toolGroupId } = evt.detail
+  triggerSegmentationRender(toolGroupId)
 }
 
 export default segmentationStateModifiedEventListener

@@ -59,7 +59,7 @@ function addGlobalSegmentationData(
   segmentationStateManager.addGlobalSegmentationData(segmentationData)
 
   if (!suppressEvents) {
-    triggerSegmentationGlobalStateModified(segmentationData.volumeUID)
+    triggerSegmentationGlobalStateModified(segmentationData.volumeId)
   }
 }
 
@@ -83,33 +83,33 @@ function getGlobalSegmentationState(): GlobalSegmentationState | [] {
 /**
  * Get the segmentation state for a tool group. It will return an array of
  * segmentation data objects.
- * @param toolGroupUID - The unique identifier of the tool group.
+ * @param toolGroupId - The unique identifier of the tool group.
  * @returns An array of segmentation data objects.
  */
 function getSegmentationState(
-  toolGroupUID: string
+  toolGroupId: string
 ): ToolGroupSpecificSegmentationState | [] {
   const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getSegmentationState(toolGroupUID)
+  return segmentationStateManager.getSegmentationState(toolGroupId)
 }
 
 /**
  * Get the segmentation data object for a given tool group and
  * segmentation data UID. It searches all the toolGroup specific segmentation
  * data objects and returns the first one that matches the UID.
- * @param toolGroupUID - The UID of the tool group that the segmentation
+ * @param toolGroupId - The UID of the tool group that the segmentation
  * data belongs to.
  * @param segmentationDataUID - The UID of the segmentation data to
  * retrieve.
  * @returns Segmentation Data object.
  */
 function getSegmentationDataByUID(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string
 ): ToolGroupSpecificSegmentationData | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   return segmentationStateManager.getSegmentationDataByUID(
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID
   )
 }
@@ -120,22 +120,22 @@ function getSegmentationDataByUID(
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
  *
- * @param toolGroupUID - The UID of the tool group that the segmentation
+ * @param toolGroupId - The UID of the tool group that the segmentation
  * data belongs to.
  * @param segmentationDataUID - The UID of the segmentation data to
  * remove.
  */
 function removeSegmentationData(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   segmentationStateManager.removeSegmentationData(
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID
   )
 
-  triggerSegmentationStateModified(toolGroupUID)
+  triggerSegmentationStateModified(toolGroupId)
 }
 
 /**
@@ -144,22 +144,22 @@ function removeSegmentationData(
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
  *
- * @param toolGroupUID - The UID of the tool group that the segmentation data is for.
+ * @param toolGroupId - The UID of the tool group that the segmentation data is for.
  * @param segmentationData - The data to add to the segmentation state.
  * @param suppressEvents - boolean
  */
 function addSegmentationData(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationData: ToolGroupSpecificSegmentationData,
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   _initGlobalStateIfNecessary(segmentationStateManager, segmentationData)
 
-  segmentationStateManager.addSegmentationData(toolGroupUID, segmentationData)
+  segmentationStateManager.addSegmentationData(toolGroupId, segmentationData)
 
   if (!suppressEvents) {
-    triggerSegmentationStateModified(toolGroupUID)
+    triggerSegmentationStateModified(toolGroupId)
   }
 }
 
@@ -212,34 +212,34 @@ function setGlobalSegmentationConfig(
  * It fires SEGMENTATION_STATE_MODIFIED event if not suppressed.
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
- * @param toolGroupUID - The UID of the tool group that the segmentation
+ * @param toolGroupId - The UID of the tool group that the segmentation
  * config is being set for.
  * @param config - The new configuration for the tool group.
  * @param suppressEvents - If true, the event will not be triggered.
  */
 function setSegmentationConfig(
-  toolGroupUID: string,
+  toolGroupId: string,
   config: SegmentationConfig,
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager()
-  segmentationStateManager.setSegmentationConfig(toolGroupUID, config)
+  segmentationStateManager.setSegmentationConfig(toolGroupId, config)
 
   if (!suppressEvents) {
-    triggerSegmentationStateModified(toolGroupUID)
+    triggerSegmentationStateModified(toolGroupId)
   }
 }
 
 /**
  * Get the segmentation config for a given tool group which contains each
  * segmentation representation configuration.
- * @param toolGroupUID - The UID of the tool group that the segmentation
+ * @param toolGroupId - The UID of the tool group that the segmentation
  * config belongs to.
  * @returns A SegmentationConfig object.
  */
-function getSegmentationConfig(toolGroupUID: string): SegmentationConfig {
+function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
   const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getSegmentationConfig(toolGroupUID)
+  return segmentationStateManager.getSegmentationConfig(toolGroupId)
 }
 
 /***************************
@@ -296,23 +296,23 @@ function addColorLUT(colorLut: ColorLUT, index: number): void {
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
  *
- * @param toolGroupUID - The UID of the tool group that owns the segmentation data.
+ * @param toolGroupId - The UID of the tool group that owns the segmentation data.
  * @param segmentationDataUID - The UID of the segmentation data to set as active.
  * @param suppressEvents - If true, the segmentation state will be updated, but no events will be triggered.
  */
 function setActiveSegmentationData(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string,
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   segmentationStateManager.setActiveSegmentationData(
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID
   )
 
   if (!suppressEvents) {
-    triggerSegmentationStateModified(toolGroupUID)
+    triggerSegmentationStateModified(toolGroupId)
   }
 }
 
@@ -321,17 +321,17 @@ function setActiveSegmentationData(
  * segmentation state of the tool group and returning the segmentation data with
  * the given UID.
  *
- * @param toolGroupUID - The UID of the tool group that the segmentation
+ * @param toolGroupId - The UID of the tool group that the segmentation
  * data belongs to.
  * @returns The active segmentation data for the tool group.
  */
 function getActiveSegmentationData(
-  toolGroupUID: string
+  toolGroupId: string
 ): ToolGroupSpecificSegmentationData | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager()
 
   const toolGroupSegmentations =
-    segmentationStateManager.getSegmentationState(toolGroupUID)
+    segmentationStateManager.getSegmentationState(toolGroupId)
 
   if (toolGroupSegmentations.length === 0) {
     return
@@ -358,7 +358,7 @@ function _initGlobalStateIfNecessary(
   segmentationData
 ) {
   const globalSegmentationData = getGlobalSegmentationDataByUID(
-    segmentationData.volumeUID
+    segmentationData.volumeId
   )
   // for the representation, if no global config exists, create default one
   const {
@@ -380,11 +380,11 @@ function _initGlobalStateIfNecessary(
 
   // if no global state exists, create a default one
   if (!globalSegmentationData) {
-    const { volumeUID } = segmentationData
+    const { volumeId } = segmentationData
 
     const defaultGlobalData: GlobalSegmentationData = {
-      volumeUID: volumeUID,
-      label: volumeUID,
+      volumeId: volumeId,
+      label: volumeId,
       referenceVolumeUID: null,
       cachedStats: {},
       referenceImageId: null,
@@ -422,7 +422,7 @@ function _initGlobalStateIfNecessary(
   // and/or a new default config for the representation, so we need to trigger
   // the event to notify the listeners.
   if (suppressEvents) {
-    triggerSegmentationGlobalStateModified(segmentationData.volumeUID)
+    triggerSegmentationGlobalStateModified(segmentationData.volumeId)
   }
 }
 

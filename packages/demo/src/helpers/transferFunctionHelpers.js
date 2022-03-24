@@ -5,11 +5,11 @@ import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/Co
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 
-function setCTWWWC({ volumeActor, volumeUID }) {
+function setCTWWWC({ volumeActor, volumeId }) {
   let lower, upper, windowWidth, windowCenter
 
-  if (volumeUID) {
-    const volume = cache.getVolume(volumeUID)
+  if (volumeId) {
+    const volume = cache.getVolume(volumeId)
     ;({ windowWidth, windowCenter } = volume.metadata.voiLut[0])
   } else {
     windowWidth = 400
@@ -57,7 +57,7 @@ function setSegmentationTransferFunction({ volumeActor, Settings }) {
   volumeActor.getProperty().setLabelOutlineThickness(outlineThickness)
 }
 
-function setPetTransferFunction({ volumeActor, volumeUID }) {
+function setPetTransferFunction({ volumeActor, volumeId }) {
   const rgbTransferFunction = volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
@@ -67,8 +67,8 @@ function setPetTransferFunction({ volumeActor, volumeUID }) {
   utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
-function setCTVRTransferFunction({ volumeActor, volumeUID }) {
-  const volume = cache.getVolume(volumeUID)
+function setCTVRTransferFunction({ volumeActor, volumeId }) {
+  const volume = cache.getVolume(volumeId)
 
   const { windowWidth, windowCenter } = volume.metadata.voiLut[0]
 

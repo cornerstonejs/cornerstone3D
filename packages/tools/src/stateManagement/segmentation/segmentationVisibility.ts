@@ -7,16 +7,16 @@ import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationState
  * a SEGMENTATION_STATE_MODIFIED event.
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
- * @param toolGroupUID - The UID of the tool group that contains the segmentation.
+ * @param toolGroupId - The UID of the tool group that contains the segmentation.
  * @param segmentationDataUID - The UID of the segmentation data to modify its visibility.
  * @param visibility - boolean
  */
 function setSegmentationVisibility(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string,
   visibility: boolean
 ): void {
-  const toolGroupSegmentations = getSegmentationState(toolGroupUID)
+  const toolGroupSegmentations = getSegmentationState(toolGroupId)
 
   if (!toolGroupSegmentations) {
     return
@@ -26,7 +26,7 @@ function setSegmentationVisibility(
     (segmentationData: ToolGroupSpecificSegmentationData) => {
       if (segmentationData.segmentationDataUID === segmentationDataUID) {
         segmentationData.visibility = visibility
-        triggerSegmentationStateModified(toolGroupUID)
+        triggerSegmentationStateModified(toolGroupId)
       }
     }
   )
@@ -35,17 +35,17 @@ function setSegmentationVisibility(
 /**
  * Get the visibility of a segmentation data for a given tool group.
  *
- * @param toolGroupUID - The UID of the tool group that the segmentation
+ * @param toolGroupId - The UID of the tool group that the segmentation
  * data belongs to.
  * @param segmentationDataUID - The UID of the segmentation data to get
  * @returns A boolean value that indicates whether the segmentation data is visible or
  * not on the toolGroup
  */
 function getSegmentationVisibility(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string
 ): boolean | undefined {
-  const toolGroupSegmentations = getSegmentationState(toolGroupUID)
+  const toolGroupSegmentations = getSegmentationState(toolGroupId)
 
   const segmentationData = toolGroupSegmentations.find(
     (segmentationData: ToolGroupSpecificSegmentationData) =>

@@ -25,7 +25,7 @@ const viewportId = 'CT_SAGITTAL_STACK'
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -117,7 +117,7 @@ addButtonToToolbar('Set VOI Range', () => {
   )
 
   // Get the volume actor from the viewport
-  const actor = viewport.getActor(volumeUID)
+  const actor = viewport.getActor(volumeId)
 
   // Set the mapping range of the actor to a range to highlight bones
   actor.volumeActor
@@ -210,7 +210,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   })
 
@@ -218,7 +218,7 @@ async function run() {
   volume.load()
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeUID }])
+  viewport.setVolumes([{ volumeId }])
 
   // Render the image
   renderingEngine.render()

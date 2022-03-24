@@ -42,9 +42,9 @@ type Annotation = {
      */
     referencedImageId?: string
     /**
-     * VolumeUID of the volume that the tool was configured to work on.
+     * VolumeId of the volume that the tool was configured to work on.
      */
-    volumeUID?: string
+    volumeId?: string
   }
   /**
    * Data for annotation, Derivatives need to define their own data types.

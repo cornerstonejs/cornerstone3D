@@ -35,13 +35,13 @@ async function internalAddSegmentationToElement(
   const { representation, segmentationDataUID } = segmentationData
 
   if (representation.type === SegmentationRepresentations.Labelmap) {
-    const { volumeUID } = segmentationData
+    const { volumeId } = segmentationData
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
     await addVolumesToViewports(
       renderingEngine,
       [
         {
-          volumeUID,
+          volumeId,
           actorUID: segmentationDataUID,
           visibility,
         },

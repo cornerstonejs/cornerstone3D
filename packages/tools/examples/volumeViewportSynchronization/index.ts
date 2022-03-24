@@ -37,7 +37,7 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
 const cameraSynchronizerId = 'CAMERA_SYNCHRONIZER_ID'
 const voiSynchronizerId = 'VOI_SYNCHRONIZER_ID'
@@ -157,7 +157,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName, { configuration: { volumeUID } })
+  toolGroup.addTool(WindowLevelTool.toolName, { configuration: { volumeId } })
   toolGroup.addTool(PanTool.toolName)
   toolGroup.addTool(ZoomTool.toolName)
   toolGroup.addTool(StackScrollMouseWheelTool.toolName)
@@ -246,14 +246,14 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   })
 
   // Set the volume to load
   volume.load()
 
-  setVolumesForViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportUIDs)
 
   // Render the image
   renderingEngine.render()

@@ -119,7 +119,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -153,7 +153,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportId]
             )
             vp.render()
@@ -216,7 +216,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -250,7 +250,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportId]
             )
             vp.render()
@@ -318,7 +318,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -352,7 +352,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportId]
             )
             vp.render()
@@ -417,7 +417,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -428,7 +428,7 @@ describe('Volume Viewport GPU -- ', () => {
       }
     })
 
-    it('Should be able to filter viewports based on volumeUID', function (done) {
+    it('Should be able to filter viewports based on volumeId', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
       this.DOMElements.push(element)
 
@@ -460,7 +460,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             this.renderingEngine.render()
@@ -502,7 +502,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -543,7 +543,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -582,7 +582,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -623,7 +623,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             ).then(() => {
               this.renderingEngine.renderFrameOfReference(
@@ -694,7 +694,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()
@@ -733,7 +733,7 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
+              [{ volumeId: volumeId, callback }],
               [viewportId]
             )
             vp.render()

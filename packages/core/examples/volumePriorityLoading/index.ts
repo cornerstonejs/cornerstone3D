@@ -21,11 +21,11 @@ const { ORIENTATION } = CONSTANTS
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
-const ctVolumeUID = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeUID with loader id + volume id
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
 
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_UID'
-const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -49,13 +49,13 @@ function generateRequests(customOrderedRequests, ctRequests, ptRequests) {
 
   for (let i = 0; i < customOrderedRequests.length; i++) {
     const { imageId } = customOrderedRequests[i]
-    const additionalDetails = { volumeUID: '' }
+    const additionalDetails = { volumeId: '' }
 
     const ctRequest = ctRequests.filter((req) => req.imageId === imageId)
 
     // if ct request
     if (ctRequest.length) {
-      additionalDetails.volumeUID = ctVolumeUID
+      additionalDetails.volumeId = ctVolumeId
       const { callLoadImage, imageId, imageIdIndex, options } = ctRequest[0]
       requests.push({
         callLoadImage: callLoadImage.bind(this, imageId, imageIdIndex, options),
@@ -69,7 +69,7 @@ function generateRequests(customOrderedRequests, ctRequests, ptRequests) {
 
     // if pet request
     if (ptRequest.length) {
-      additionalDetails.volumeUID = ptVolumeUID
+      additionalDetails.volumeId = ptVolumeId
       const { callLoadImage, imageId, imageIdIndex, options } = ptRequest[0]
       requests.push({
         callLoadImage: callLoadImage.bind(this, imageId, imageIdIndex, options),
@@ -135,19 +135,19 @@ async function run() {
   )
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   })
 
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   })
 
   // Set the volume on the viewport
   viewport.setVolumes([
-    { volumeUID: ctVolumeUID },
-    { volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction },
+    { volumeId: ctVolumeId },
+    { volumeId: ptVolumeId, callback: setPetColorMapTransferFunction },
   ])
 
   const ctRequests = ctVolume.getImageLoadRequests()

@@ -88,7 +88,7 @@ describe('Bidirectional Tool (CPU): ', () => {
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool(BidirectionalTool.toolName, {
-      configuration: { volumeUID: volumeId },
+      configuration: { volumeId: volumeId },
     })
     this.stackToolGroup.setToolActive(BidirectionalTool.toolName, {
       bindings: [{ mouseButton: 1 }],

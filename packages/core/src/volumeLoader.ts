@@ -195,7 +195,7 @@ export async function createAndCacheVolume(
  * created that matches the image metadata of the referenceVolume. If scalarData
  * is given, it will be used to generate the intensity values for the derivedVolume.
  * Finally, it will save the volume in the cache.
- * @param referencedVolumeUID - the volumeUID from which the new volume will get its metadata
+ * @param referencedVolumeUID - the volumeId from which the new volume will get its metadata
  * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
  *
  * @returns ImageVolume

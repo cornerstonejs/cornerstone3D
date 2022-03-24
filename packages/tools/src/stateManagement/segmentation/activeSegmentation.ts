@@ -11,7 +11,7 @@ import {
  * currently interacting with.
  */
 function getActiveSegmentationInfo(toolGroupId: string): {
-  volumeUID: string
+  volumeId: string
   segmentationDataUID: string
   activeSegmentIndex: number
 } {
@@ -22,11 +22,11 @@ function getActiveSegmentationInfo(toolGroupId: string): {
   }
 
   const globalState = getGlobalSegmentationDataByUID(
-    activeSegmentationData.volumeUID
+    activeSegmentationData.volumeId
   )
 
   return {
-    volumeUID: activeSegmentationData.volumeUID,
+    volumeId: activeSegmentationData.volumeId,
     segmentationDataUID: activeSegmentationData.segmentationDataUID,
     activeSegmentIndex: globalState.activeSegmentIndex,
   }

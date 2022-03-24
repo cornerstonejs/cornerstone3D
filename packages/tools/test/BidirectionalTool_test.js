@@ -84,7 +84,7 @@ describe('Cornerstone Tools: ', () => {
     this.DOMElements = []
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool(BidirectionalTool.toolName, {
-      configuration: { volumeUID: volumeId },
+      configuration: { volumeId: volumeId },
     })
     this.stackToolGroup.setToolActive(BidirectionalTool.toolName, {
       bindings: [{ mouseButton: 1 }],
@@ -322,7 +322,7 @@ describe('Cornerstone Tools: ', () => {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
+          [{ volumeId: volumeId }],
           [viewportId]
         )
         vp.render()

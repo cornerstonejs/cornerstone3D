@@ -29,11 +29,11 @@ const onSegmentationDataModified = function (
     representation: { type },
   } = segmentationData
 
-  let toolGroupUIDs
+  let toolGroupIds
   if (type === SegmentationRepresentations.Labelmap) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
-    const { volumeUID } = segmentationData
-    const segmentation = cache.getVolume(volumeUID)
+    const { volumeId } = segmentationData
+    const segmentation = cache.getVolume(volumeId)
 
     if (!segmentation) {
       console.warn('segmentation not found in cache')
@@ -52,14 +52,14 @@ const onSegmentationDataModified = function (
 
     // Trigger modified on the imageData to update the image
     imageData.modified()
-    toolGroupUIDs = SegmentationState.getToolGroupsWithSegmentation(uid)
+    toolGroupIds = SegmentationState.getToolGroupsWithSegmentation(uid)
   } else {
     throw new Error(
       `onSegmentationDataModified: representationType ${type} not supported yet`
     )
   }
 
-  toolGroupUIDs.forEach((toolGroupId) => {
+  toolGroupIds.forEach((toolGroupId) => {
     triggerSegmentationRender(toolGroupId)
   })
 }

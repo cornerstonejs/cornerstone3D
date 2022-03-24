@@ -76,7 +76,7 @@ describe('Rectangle Roi Tool: ', () => {
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool(RectangleRoiTool.toolName, {
-        configuration: { volumeUID: volumeId },
+        configuration: { volumeId: volumeId },
       })
       this.stackToolGroup.setToolActive(RectangleRoiTool.toolName, {
         bindings: [{ mouseButton: 1 }],
@@ -316,7 +316,7 @@ describe('Rectangle Roi Tool: ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
+              [{ volumeId: volumeId }],
               [viewportId]
             )
             vp.render()
@@ -809,7 +809,7 @@ describe('Rectangle Roi Tool: ', () => {
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
       this.stackToolGroup.addTool(RectangleRoiTool.toolName, {
-        configuration: { volumeUID: volumeId },
+        configuration: { volumeId: volumeId },
       })
       this.stackToolGroup.setToolActive(RectangleRoiTool.toolName, {
         bindings: [{ mouseButton: 1 }],

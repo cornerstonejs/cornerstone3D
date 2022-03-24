@@ -81,7 +81,7 @@ describe('EllipticalRoiTool (CPU):', () => {
     cache.purgeCache()
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool(EllipticalRoiTool.toolName, {
-      configuration: { volumeUID: volumeId },
+      configuration: { volumeId: volumeId },
     })
     this.stackToolGroup.setToolActive(EllipticalRoiTool.toolName, {
       bindings: [{ mouseButton: 1 }],

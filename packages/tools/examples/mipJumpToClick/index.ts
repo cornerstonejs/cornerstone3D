@@ -32,9 +32,9 @@ const { MouseBindings } = csToolsEnums
 // Define a unique id for each volume
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
-const ctVolumeUID = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeUID with loader id + volume id
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_UID'
-const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 function setPetTransferFunction({ volumeActor }) {
   const rgbTransferFunction = volumeActor
@@ -182,10 +182,10 @@ async function run() {
   mipToolGroup.addViewport(viewportUIDs[2], renderingEngineId)
 
   // Define volumes in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   })
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   })
 
@@ -205,12 +205,12 @@ async function run() {
 
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeUID: ctVolumeUID }],
+    [{ volumeId: ctVolumeId }],
     [viewportUIDs[0]]
   )
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeUID: ptVolumeUID, callback: setPetTransferFunction }],
+    [{ volumeId: ptVolumeId, callback: setPetTransferFunction }],
     [viewportUIDs[1]]
   )
 
@@ -218,7 +218,7 @@ async function run() {
     renderingEngine,
     [
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: setPetTransferFunction,
         blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
         slabThickness,

@@ -32,13 +32,13 @@ const labelMapConfigCache = new Map()
  * @param segmentationDataArray - the array of segmentation data
  */
 async function addSegmentationData(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationData: Partial<ToolGroupSpecificSegmentationData>,
   toolGroupSpecificConfig?: SegmentationConfig
 ): Promise<void> {
-  const { volumeUID, segmentationDataUID, representation } = segmentationData
+  const { volumeId, segmentationDataUID, representation } = segmentationData
 
-  await _addLabelmapToToolGroupViewports(toolGroupUID, segmentationData)
+  await _addLabelmapToToolGroupViewports(toolGroupId, segmentationData)
 
   // Viewport Specific Rendering State for the segmentation
   // Merging the default configuration with the configuration passed in the arguments
@@ -65,7 +65,7 @@ async function addSegmentationData(
   const ofun = representation.config.ofun || vtkPiecewiseFunction.newInstance()
 
   const mergedSegmentationData = {
-    volumeUID,
+    volumeId,
     segmentationDataUID,
     segmentsHidden,
     visibility,
@@ -87,7 +87,7 @@ async function addSegmentationData(
     // the first one
     const suppressEvents = true
     const currentToolGroupConfig =
-      SegmentationState.getSegmentationConfig(toolGroupUID)
+      SegmentationState.getSegmentationConfig(toolGroupId)
 
     const mergedConfig = deepMerge(
       currentToolGroupConfig,
@@ -95,7 +95,7 @@ async function addSegmentationData(
     )
 
     SegmentationState.setSegmentationConfig(
-      toolGroupUID,
+      toolGroupId,
       {
         renderInactiveSegmentations:
           mergedConfig.renderInactiveSegmentations || true,
@@ -108,7 +108,7 @@ async function addSegmentationData(
   }
 
   // Add data first
-  SegmentationState.addSegmentationData(toolGroupUID, mergedSegmentationData)
+  SegmentationState.addSegmentationData(toolGroupId, mergedSegmentationData)
 }
 
 /**
@@ -119,11 +119,11 @@ async function addSegmentationData(
  * @param segmentationDataArray - the array of segmentation data
  */
 function removeSegmentationData(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string
 ): void {
-  _removeLabelmapFromToolGroupViewports(toolGroupUID, segmentationDataUID)
-  SegmentationState.removeSegmentationData(toolGroupUID, segmentationDataUID)
+  _removeLabelmapFromToolGroupViewports(toolGroupId, segmentationDataUID)
+  SegmentationState.removeSegmentationData(toolGroupId, segmentationDataUID)
 }
 
 /**
@@ -139,7 +139,7 @@ function render(
   config: SegmentationConfig
 ): void {
   const {
-    volumeUID: labelmapUID,
+    volumeId: labelmapUID,
     colorLUTIndex,
     active,
     representation,
@@ -273,19 +273,19 @@ function _needsTransferFunctionUpdateUpdate(
 }
 
 function _removeLabelmapFromToolGroupViewports(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string
 ): void {
-  const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
+  const toolGroup = getToolGroupByToolGroupUID(toolGroupId)
 
   if (toolGroup === undefined) {
-    throw new Error(`ToolGroup with ToolGroupId ${toolGroupUID} does not exist`)
+    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`)
   }
 
   const { viewportsInfo } = toolGroup
 
   const segmentationData = SegmentationState.getSegmentationDataByUID(
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID
   )
 
@@ -303,10 +303,10 @@ function _removeLabelmapFromToolGroupViewports(
 }
 
 async function _addLabelmapToToolGroupViewports(
-  toolGroupUID,
+  toolGroupId,
   segmentationData
 ): Promise<void> {
-  const toolGroup = getToolGroupByToolGroupUID(toolGroupUID) as IToolGroup
+  const toolGroup = getToolGroupByToolGroupUID(toolGroupId) as IToolGroup
   const { viewportsInfo } = toolGroup
 
   for (const viewportInfo of viewportsInfo) {

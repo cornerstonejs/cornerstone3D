@@ -42,15 +42,15 @@ function thresholdVolumeByRoiStats(
   }
 
   const globalState = SegmentationState.getGlobalSegmentationDataByUID(
-    segmentationData.volumeUID
+    segmentationData.volumeId
   )
 
   if (!globalState) {
     throw new Error('No Segmentation Found')
   }
 
-  const { volumeUID } = globalState
-  const segmentation = cache.getVolume(volumeUID)
+  const { volumeId } = globalState
+  const segmentation = cache.getVolume(volumeId)
 
   const { numSlicesToProject, overwrite } = options
 

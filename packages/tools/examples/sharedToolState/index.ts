@@ -28,7 +28,7 @@ const { MouseBindings } = csToolsEnums
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -81,7 +81,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeUID } })
+  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeId } })
   toolGroup.addTool(StackScrollMouseWheelTool.toolName)
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -154,7 +154,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds: smallVolumeImageIds,
   })
 
@@ -172,7 +172,7 @@ async function run() {
   volume.load()
 
   // Set the volume on the viewport
-  volumeViewport.setVolumes([{ volumeUID }])
+  volumeViewport.setVolumes([{ volumeId }])
 
   // Render the image
   renderingEngine.render()

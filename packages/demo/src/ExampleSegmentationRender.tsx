@@ -29,8 +29,8 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ptVolumeUID,
-  ctVolumeUID,
+  ptVolumeId,
+  ctVolumeId,
   colormaps,
   ANNOTATION_TOOLS,
   SEGMENTATION_TOOLS,
@@ -86,8 +86,8 @@ class SegmentationExample extends Component {
   ctWLSync = null
   renderingEngine = null
   viewportGridResizeObserver = null
-  ctVolumeUID = null
-  ptVolumeUID = null
+  ctVolumeId = null
+  ptVolumeId = null
 
   state = {
     progressText: 'fetching metadata...',
@@ -203,8 +203,8 @@ class SegmentationExample extends Component {
       ptMipSceneToolGroup,
     } = initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
-    this.ptVolumeUID = ptVolumeUID
+    this.ctVolumeId = ctVolumeId
+    this.ptVolumeId = ptVolumeId
 
     const renderingEngine = new RenderingEngine(renderingEngineId)
 
@@ -243,10 +243,10 @@ class SegmentationExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -269,8 +269,8 @@ class SegmentationExample extends Component {
 
     ptCtFusion.setVolumes(
       renderingEngine,
-      ctVolumeUID,
-      ptVolumeUID,
+      ctVolumeId,
+      ptVolumeId,
       colormaps[this.state.petColorMapIndex]
     )
 
@@ -348,7 +348,7 @@ class SegmentationExample extends Component {
     const { segmentationUID } = evt.detail
     const allSegmentationUIDs = segmentation.state
       .getGlobalSegmentationState()
-      .map(({ volumeUID }) => volumeUID)
+      .map(({ volumeId }) => volumeId)
 
     let newSelectedSegmentationUID = this.state.selectedSegmentationUIDFromAll
     if (newSelectedSegmentationUID === '') {
@@ -379,7 +379,7 @@ class SegmentationExample extends Component {
 
       segmentLocked =
         segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
-          activeSegmentationInfo.volumeUID,
+          activeSegmentationInfo.volumeId,
           activeSegmentIndex
         )
     }
@@ -430,7 +430,7 @@ class SegmentationExample extends Component {
           this.state.selectedToolGroupName,
           [
             {
-              volumeUID: segmentationUID,
+              volumeId: segmentationUID,
               // default representation which is labelmap
             },
           ]
@@ -521,10 +521,10 @@ class SegmentationExample extends Component {
     const ctViewport = this.renderingEngine.getViewport('ctAxial')
     const { imageData: backgroundImageData } = ctViewport.getImageData()
 
-    await volumeLoader.createAndCacheDerivedVolume(ctVolumeUID, {
+    await volumeLoader.createAndCacheDerivedVolume(ctVolumeId, {
       uid: labelmap1UID,
     })
-    await volumeLoader.createAndCacheDerivedVolume(ctVolumeUID, {
+    await volumeLoader.createAndCacheDerivedVolume(ctVolumeId, {
       uid: labelmap2UID,
     })
 
@@ -551,7 +551,7 @@ class SegmentationExample extends Component {
     if (!initialConfig) {
       await segmentation.addSegmentationsForToolGroup(toolGroupId, [
         {
-          volumeUID: segmentationUID,
+          volumeId: segmentationUID,
           active: true,
           representation: {
             type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -563,7 +563,7 @@ class SegmentationExample extends Component {
         toolGroupId,
         [
           {
-            volumeUID: segmentationUID,
+            volumeId: segmentationUID,
             active: true,
             representation: {
               type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -593,16 +593,16 @@ class SegmentationExample extends Component {
         this.state.selectedToolGroupName
       )
 
-    const { volumeUID, activeSegmentIndex } = activesegmentationInfo
+    const { volumeId, activeSegmentIndex } = activesegmentationInfo
 
     const activeSegmentLockedStatus =
       segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
-        volumeUID,
+        volumeId,
         activeSegmentIndex
       )
 
     segmentation.segmentLocking.setSegmentIndexLockedForSegmentation(
-      volumeUID,
+      volumeId,
       activeSegmentIndex,
       !activeSegmentLockedStatus
     )
@@ -704,7 +704,7 @@ class SegmentationExample extends Component {
       this.state.selectedsegmentationUID
     )
     const globalState = segmentation.state.getGlobalSegmentationDataByUID(
-      segmentationData.volumeUID
+      segmentationData.volumeId
     )
 
     if (!globalState) {
@@ -1168,19 +1168,19 @@ class SegmentationExample extends Component {
                 segmentation
                   .addSegmentationsForToolGroup(toolGroupId, [
                     {
-                      volumeUID: this.state.selectedSegmentationUIDFromAll,
+                      volumeId: this.state.selectedSegmentationUIDFromAll,
                       // no representation -> labelmap
                     },
                   ])
                   .then(() => {
-                    const { volumeUID, activeSegmentIndex } =
+                    const { volumeId, activeSegmentIndex } =
                       segmentation.activeSegmentation.getActiveSegmentationInfo(
                         toolGroupId
                       )
 
                     const activeSegmentIndexLocked =
                       segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
-                        volumeUID,
+                        volumeId,
                         activeSegmentIndex
                       )
 

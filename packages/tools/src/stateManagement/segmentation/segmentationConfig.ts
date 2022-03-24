@@ -99,42 +99,42 @@ function updateGlobalSegmentationConfig(
 
 /**
  * Get the toolGroup specific segmentation config
- * @param toolGroupUID - The UID of the tool group
+ * @param toolGroupId - The UID of the tool group
  * @returns A SegmentationConfig object.
  */
-function getSegmentationConfig(toolGroupUID: string): SegmentationConfig {
-  return SegmentationState.getSegmentationConfig(toolGroupUID)
+function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
+  return SegmentationState.getSegmentationConfig(toolGroupId)
 }
 
 /**
  * Set the toolGroup specific segmentation config.
  * It fires a SEGMENTATION_STATE_MODIFIED event.
  *
- * @param toolGroupUID - The UID of the tool group that the segmentation config is for.
+ * @param toolGroupId - The UID of the tool group that the segmentation config is for.
  * @param segmentationConfig - The segmentation config to set.
  */
 function setSegmentationConfig(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationConfig: SegmentationConfig
 ): void {
-  SegmentationState.setSegmentationConfig(toolGroupUID, segmentationConfig)
+  SegmentationState.setSegmentationConfig(toolGroupId, segmentationConfig)
 }
 
 /**
  * Set the representation config for a given tool group for the given representation type.
  * It fires a SEGMENTATION_STATE_MODIFIED event.
  *
- * @param toolGroupUID - The unique identifier of the tool group.
+ * @param toolGroupId - The unique identifier of the tool group.
  * @param representationType - The type of representation to set config for.
  * @param representationConfig - The configuration for the representation.
  */
 function setRepresentationConfig(
-  toolGroupUID: string,
+  toolGroupId: string,
   representationType: SegmentationRepresentations,
   representationConfig: RepresentationConfig
 ): void {
   const segmentationConfig =
-    SegmentationState.getSegmentationConfig(toolGroupUID)
+    SegmentationState.getSegmentationConfig(toolGroupId)
 
   if (segmentationConfig) {
     const config = {
@@ -145,22 +145,22 @@ function setRepresentationConfig(
       },
     }
 
-    setSegmentationConfig(toolGroupUID, config)
+    setSegmentationConfig(toolGroupId, config)
   }
 }
 
 /**
  * Get the representation config for a given tool group and representation type
- * @param toolGroupUID - The UID of the tool group that contains the tool that you
+ * @param toolGroupId - The UID of the tool group that contains the tool that you
  * want to get the representation config for.
  * @param representationType - The type of representation to get.
  * @returns A RepresentationConfig object.
  */
 function getRepresentationConfig(
-  toolGroupUID: string,
+  toolGroupId: string,
   representationType: SegmentationRepresentations
 ): RepresentationConfig {
-  const segmentationConfig = getSegmentationConfig(toolGroupUID)
+  const segmentationConfig = getSegmentationConfig(toolGroupId)
 
   if (segmentationConfig) {
     return segmentationConfig.representations[representationType]

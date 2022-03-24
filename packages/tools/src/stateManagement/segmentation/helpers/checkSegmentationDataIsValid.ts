@@ -2,7 +2,7 @@ import { SegmentationDataInput } from '../../../types/SegmentationStateTypes'
 
 /**
  * Checks if the segmentationDataArray is valid meaning it contains
- * volumeUID of the segmentation.
+ * volumeId of the segmentation.
  *
  * @param segmentationDataArray - Array of segmentationData
  * @internal
@@ -14,10 +14,10 @@ function checkSegmentationDataIsValid(
     throw new Error('The segmentationDataArray undefined or empty array')
   }
 
-  // check if volumeUID is present in all the segmentationDataArray
+  // check if volumeId is present in all the segmentationDataArray
   segmentationDataArray.forEach((segmentationData) => {
-    if (!segmentationData.volumeUID) {
-      throw new Error('volumeUID is missing in the segmentationData')
+    if (!segmentationData.volumeId) {
+      throw new Error('volumeId is missing in the segmentationData')
     }
   })
 }

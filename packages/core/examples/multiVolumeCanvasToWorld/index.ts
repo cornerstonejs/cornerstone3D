@@ -22,11 +22,11 @@ const { ORIENTATION } = CONSTANTS
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
-const ctVolumeUID = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeUID with loader id + volume id
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
 
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_UID'
-const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -114,7 +114,7 @@ async function run() {
   )
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   })
 
@@ -122,7 +122,7 @@ async function run() {
   ctVolume.load()
 
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   })
 
@@ -131,8 +131,8 @@ async function run() {
 
   // Set the volume on the viewport
   viewport.setVolumes([
-    { volumeUID: ctVolumeUID },
-    { volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction },
+    { volumeId: ctVolumeId },
+    { volumeId: ptVolumeId, callback: setPetColorMapTransferFunction },
   ])
 
   // Render the image

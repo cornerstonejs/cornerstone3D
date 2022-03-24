@@ -30,7 +30,7 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleToolDisplayConfiguration.css'
 import {
   renderingEngineId,
-  ctVolumeUID,
+  ctVolumeId,
   ctStackUID,
   VIEWPORT_IDS,
 } from './constants'
@@ -69,7 +69,7 @@ class ToolDisplayConfigurationExample extends Component {
   colorImageIds = null
   renderingEngine = null
   viewportGridResizeObserver = null
-  ctVolumeUID = null
+  ctVolumeId = null
   ctStackUID = null
 
   activeToolByGroup = new WeakMap()
@@ -128,7 +128,7 @@ class ToolDisplayConfigurationExample extends Component {
     ;({ ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup } =
       initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
+    this.ctVolumeId = ctVolumeId
     this.ctStackUID = ctStackUID
 
     // Create volumes
@@ -225,7 +225,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -245,7 +245,7 @@ class ToolDisplayConfigurationExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
+          volumeId: ctVolumeId,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL]

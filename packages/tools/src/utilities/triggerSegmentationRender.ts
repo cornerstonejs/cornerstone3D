@@ -48,10 +48,10 @@ class SegmentationRenderingEngine {
   }
 
   private _setToolGroupSegmentationToBeRenderedNextFrame(
-    toolGroupUIDs: string[]
+    toolGroupIds: string[]
   ) {
     // Add the viewports to the set of flagged viewports
-    toolGroupUIDs.forEach((toolGroupId) => {
+    toolGroupIds.forEach((toolGroupId) => {
       this._needsRender.add(toolGroupId)
     })
 
@@ -79,9 +79,9 @@ class SegmentationRenderingEngine {
     this._throwIfDestroyed()
 
     // for each toolGroupId insides the _needsRender set, render the segmentation
-    const toolGroupUIDs = Array.from(this._needsRender.values())
+    const toolGroupIds = Array.from(this._needsRender.values())
 
-    for (const toolGroupId of toolGroupUIDs) {
+    for (const toolGroupId of toolGroupIds) {
       this._triggerRender(toolGroupId)
 
       // This viewport has been rendered, we can remove it from the set

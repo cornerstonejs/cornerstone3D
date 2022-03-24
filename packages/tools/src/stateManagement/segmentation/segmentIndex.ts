@@ -15,9 +15,8 @@ function getActiveSegmentIndex(toolGroupId: string): number | undefined {
     throw new Error('toolGroup does not contain an active segmentation')
   }
 
-  const { volumeUID } = segmentationInfo
-  const activeSegmentationGlobalState =
-    getGlobalSegmentationDataByUID(volumeUID)
+  const { volumeId } = segmentationInfo
+  const activeSegmentationGlobalState = getGlobalSegmentationDataByUID(volumeId)
 
   if (activeSegmentationGlobalState) {
     return activeSegmentationGlobalState.activeSegmentIndex
@@ -42,7 +41,7 @@ function setActiveSegmentIndex(
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeUID: segmentationUID } = segmentationInfo
+  const { volumeId: segmentationUID } = segmentationInfo
   const activeSegmentationGlobalState =
     getGlobalSegmentationDataByUID(segmentationUID)
 

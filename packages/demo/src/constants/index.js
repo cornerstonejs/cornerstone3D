@@ -13,8 +13,8 @@ import {
 } from '@cornerstonejs/tools'
 
 const renderingEngineId = 'PETCTRenderingEngine'
-const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME'
-const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME'
+const ptVolumeId = 'cornerstoneStreamingImageVolume:PET_VOLUME'
+const ctVolumeId = 'cornerstoneStreamingImageVolume:CT_VOLUME'
 const prostateVolumeUID = 'cornerstoneStreamingImageVolume:PROSTATE_VOLUME'
 const ctVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 const ptVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0'
@@ -111,8 +111,8 @@ const colormaps = ['hsv', 'Inferno (matplotlib)']
 
 export {
   renderingEngineId,
-  ptVolumeUID,
-  ctVolumeUID,
+  ptVolumeId,
+  ctVolumeId,
   prostateVolumeUID,
   ctStackUID,
   ctVolumeTestUID,

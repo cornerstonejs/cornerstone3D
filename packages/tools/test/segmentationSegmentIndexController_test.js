@@ -222,7 +222,7 @@ describe('Segmentation Index Controller --', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
+            [{ volumeId: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp1.render()
@@ -231,7 +231,7 @@ describe('Segmentation Index Controller --', () => {
               .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                  { volumeId: segmentationUID },
                 ])
               })
           })
@@ -333,11 +333,11 @@ describe('Segmentation Index Controller --', () => {
           )
 
         expect(segmentationInfo.segmentationDataUID).toBeDefined()
-        expect(segmentationInfo.volumeUID).toBeDefined()
+        expect(segmentationInfo.volumeId).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
           segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
-            segmentationInfo.volumeUID
+            segmentationInfo.volumeId
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)
@@ -368,7 +368,7 @@ describe('Segmentation Index Controller --', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
+            [{ volumeId: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp1.render()
@@ -377,7 +377,7 @@ describe('Segmentation Index Controller --', () => {
               .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                  { volumeId: segmentationUID },
                 ])
               })
           })
@@ -485,18 +485,18 @@ describe('Segmentation Index Controller --', () => {
           )
 
         expect(segmentationInfo.segmentationDataUID).toBeDefined()
-        expect(segmentationInfo.volumeUID).toBeDefined()
+        expect(segmentationInfo.volumeId).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
           segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
-            segmentationInfo.volumeUID
+            segmentationInfo.volumeId
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)
 
         const locked1 =
           segmentation.segmentLocking.getSegmentsLockedForSegmentation(
-            segmentationInfo.volumeUID
+            segmentationInfo.volumeId
           )
 
         expect(locked1.length).toBe(1)
@@ -511,7 +511,7 @@ describe('Segmentation Index Controller --', () => {
 
         const lockedStatus2 =
           segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
-            segmentationInfo.volumeUID,
+            segmentationInfo.volumeId,
             2
           )
         expect(lockedStatus2).toBe(false)
@@ -542,7 +542,7 @@ describe('Segmentation Index Controller --', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
+            [{ volumeId: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp1.render()
@@ -551,7 +551,7 @@ describe('Segmentation Index Controller --', () => {
               .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                  { volumeId: segmentationUID },
                 ])
               })
           })

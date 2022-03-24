@@ -239,14 +239,14 @@ export function cancelLoadAll(): void {
 
     Object.keys(requests).forEach((priority) => {
       const requestDetails = requests[priority].pop()
-      const { imageId, volumeUID } = requestDetails.additionalDetails
+      const { imageId, volumeId } = requestDetails.additionalDetails
 
       let loadObject
 
       if (imageId) {
         loadObject = cache.getImageLoadObject(imageId)
-      } else if (volumeUID) {
-        loadObject = cache.getVolumeLoadObject(volumeUID)
+      } else if (volumeId) {
+        loadObject = cache.getVolumeLoadObject(volumeId)
       }
       if (loadObject) {
         loadObject.cancel()

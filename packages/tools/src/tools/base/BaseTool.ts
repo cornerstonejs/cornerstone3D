@@ -6,7 +6,7 @@ import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
 
 interface IBaseTool {
   /** ToolGroup UID the tool instance belongs to */
-  toolGroupUID: string
+  toolGroupId: string
   /** Tool supported interaction types */
   supportedInteractionTypes: InteractionTypes[]
   /** Tool Mode : Active, Passive, Enabled, Disabled */
@@ -32,7 +32,7 @@ abstract class BaseTool implements IBaseTool {
   public supportedInteractionTypes: InteractionTypes[]
   public configuration: Record<string, any>
   /** ToolGroup UID the tool instance belongs to */
-  public toolGroupUID: string
+  public toolGroupId: string
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes
 
@@ -42,7 +42,7 @@ abstract class BaseTool implements IBaseTool {
     const {
       configuration = {},
       supportedInteractionTypes,
-      toolGroupUID,
+      toolGroupId,
     } = initialProps
 
     // If strategies are not initialized in the tool config
@@ -53,7 +53,7 @@ abstract class BaseTool implements IBaseTool {
       configuration.strategyOptions = {}
     }
 
-    this.toolGroupUID = toolGroupUID
+    this.toolGroupId = toolGroupId
     this.supportedInteractionTypes = supportedInteractionTypes || []
     this.configuration = Object.assign({}, configuration)
     this.mode = ToolModes.Disabled
@@ -102,15 +102,15 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * Returns the volumeUID for the volume viewport. It will grabbed the volumeUID
-   * from the volumeUID if particularly specified in the tool configuration, or if
-   * not, the first actorUID in the viewport is returned as the volumeUID. NOTE: for
-   * segmentations, actorUID is not necessarily the volumeUID since the segmentation
-   * can have multiple representations, use segmentation helpers to get the volumeUID
+   * Returns the volumeId for the volume viewport. It will grabbed the volumeId
+   * from the volumeId if particularly specified in the tool configuration, or if
+   * not, the first actorUID in the viewport is returned as the volumeId. NOTE: for
+   * segmentations, actorUID is not necessarily the volumeId since the segmentation
+   * can have multiple representations, use segmentation helpers to get the volumeId
    * based on the actorUID.
    *
    * @param viewport - Volume viewport
-   * @returns the volumeUID for the viewport if specified in the tool configuration,
+   * @returns the volumeId for the viewport if specified in the tool configuration,
    * or the first actorUID in the viewport if not.
    */
   private getTargetVolumeUID(viewport: Types.IViewport): string | undefined {
@@ -118,8 +118,8 @@ abstract class BaseTool implements IBaseTool {
       throw new Error('getTargetVolumeUID: viewport must be a VolumeViewport')
     }
 
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
+    if (this.configuration.volumeId) {
+      return this.configuration.volumeId
     }
 
     // If volume not specified, then return the actorUID for the
@@ -137,7 +137,7 @@ abstract class BaseTool implements IBaseTool {
    * Get the viewport and image for the targetUID. Since we are using the
    * schema of stackTarget:<viewportId>, we can get the viewport and image
    * from the stack. For the volumeViewports, the targetUID is the actual
-   * volumeUID, so we can get the viewport and image.
+   * volumeId, so we can get the viewport and image.
    *
    * @param targetUID - annotation targetUID
    * @param renderingEngine - The rendering engine
@@ -167,7 +167,7 @@ abstract class BaseTool implements IBaseTool {
    * Get the target UID for the viewport which will be used to store the cached
    * statistics scoped to that target in the annotations.
    * For StackViewport, targetUID is the viewportId, but for the volume viewport,
-   * the targetUID will be grabbed from the volumeUID if particularly specified
+   * the targetUID will be grabbed from the volumeId if particularly specified
    * in the tool configuration, or if not, the first actorUID in the viewport.
    *
    * @param viewport - viewport to get the targetUID for

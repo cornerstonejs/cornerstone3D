@@ -29,7 +29,7 @@ const { MouseBindings } = csToolsEnums
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -75,7 +75,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupUID = 'STACK_TOOL_GROUP_UID'
+  const toolGroupId = 'STACK_TOOL_GROUP_UID'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool)
@@ -83,10 +83,10 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeUID } })
+  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeId } })
   toolGroup.addTool(StackScrollMouseWheelTool.toolName)
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -169,17 +169,17 @@ async function run() {
   )
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   })
 
   // Set the volume to load
   volume.load()
 
-  setVolumesForViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportUIDs)
 
   // // Set the volume on the viewport
-  // viewport.setVolumes([{ volumeUID }])
+  // viewport.setVolumes([{ volumeId }])
 
   // Render the image
   renderingEngine.render()

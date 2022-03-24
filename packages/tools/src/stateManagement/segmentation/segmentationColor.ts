@@ -32,24 +32,24 @@ function addColorLUT(colorLUT: ColorLUT, colorLUTIndex: number): void {
  * color for that segment. It can be used for segmentation tools that need to
  * display the color of their annotation.
  *
- * @param toolGroupUID - The UID of the tool group that owns the segmentation data.
+ * @param toolGroupId - The UID of the tool group that owns the segmentation data.
  * @param segmentationDataUID - The UID of the segmentation data
  * @param segmentIndex - The index of the segment in the segmentation
  * @returns A color.
  */
 function getColorForSegmentIndex(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string,
   segmentIndex: number
 ): Color {
   const segmentationData = SegmentationState.getSegmentationDataByUID(
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID
   )
 
   if (!segmentationData) {
     throw new Error(
-      `Segmentation data with UID ${segmentationDataUID} does not exist for tool group ${toolGroupUID}`
+      `Segmentation data with UID ${segmentationDataUID} does not exist for tool group ${toolGroupId}`
     )
   }
 

@@ -225,15 +225,15 @@ function setLayout(
 
 async function setVolumes(
   renderingEngine,
-  ctVolumeUID,
-  ptVolumeUID,
+  ctVolumeId,
+  ptVolumeId,
   petColorMap
 ) {
   await setVolumesForViewports(
     renderingEngine,
     [
       {
-        volumeUID: ctVolumeUID,
+        volumeId: ctVolumeId,
         callback: setCTWWWC,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
@@ -245,7 +245,7 @@ async function setVolumes(
     renderingEngine,
     [
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: setPetTransferFunction,
         blendMode: Enums.BlendModes.COMPOSITE,
       },
@@ -257,12 +257,12 @@ async function setVolumes(
     renderingEngine,
     [
       {
-        volumeUID: ctVolumeUID,
+        volumeId: ctVolumeId,
         callback: setCTWWWC,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: getSetPetColorMapTransferFunction(petColorMap),
         blendMode: Enums.BlendModes.COMPOSITE,
       },
@@ -288,7 +288,7 @@ async function setVolumes(
    *        ignore the slab thickness. Check the vtkSlabCamera for more info.
    */
 
-  const ptVolume = cache.getVolume(ptVolumeUID)
+  const ptVolume = cache.getVolume(ptVolumeId)
   const ptVolumeDimensions = ptVolume.dimensions
 
   // Only make the MIP as large as it needs to be.
@@ -302,7 +302,7 @@ async function setVolumes(
     renderingEngine,
     [
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: setPetTransferFunction,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,

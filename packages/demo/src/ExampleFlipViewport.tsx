@@ -21,7 +21,7 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ctVolumeUID,
+  ctVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -211,7 +211,7 @@ class FlipViewportExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -231,7 +231,7 @@ class FlipViewportExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
+          volumeId: ctVolumeId,
           callback: setCTWWWC,
           blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },

@@ -5,7 +5,7 @@ import {
 } from '../RenderingEngine/getRenderingEngine'
 
 /**
- * Similar to {@link getVolumeViewportsContainingSameVolumes}, but uses the volumeUID
+ * Similar to {@link getVolumeViewportsContainingSameVolumes}, but uses the volumeId
  * to filter viewports that contain the same volume.
  *
  * @returns VolumeViewport viewports array

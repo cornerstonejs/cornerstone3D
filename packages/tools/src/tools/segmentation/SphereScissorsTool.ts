@@ -95,18 +95,18 @@ export default class SphereScissorsTool extends BaseTool {
       )
     }
 
-    const { volumeUID, segmentationDataUID } = activeSegmentationInfo
+    const { volumeId, segmentationDataUID } = activeSegmentationInfo
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
+      segmentLocking.getSegmentsLockedForSegmentation(volumeId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex
     )
 
-    const segmentation = cache.getVolume(volumeUID)
+    const segmentation = cache.getVolume(volumeId)
     this.isDrawing = true
 
     // Used for drawing the svg only, we might not need it at all

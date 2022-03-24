@@ -31,7 +31,7 @@ type VoiModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string
   /** Unique ID for the volume in the cache */
-  volumeUID: string
+  volumeId: string
   /** new VOI range */
   range: VOIRange
 }

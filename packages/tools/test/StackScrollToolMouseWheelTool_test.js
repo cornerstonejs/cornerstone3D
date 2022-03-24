@@ -160,7 +160,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
+          [{ volumeId: volumeId }],
           [viewportId]
         )
         vp.render()

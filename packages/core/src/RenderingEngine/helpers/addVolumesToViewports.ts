@@ -7,7 +7,7 @@ import type { IVolumeInput, IRenderingEngine } from '../../types'
  *
  *
  * @param renderingEngine - The rendering engine to use to get viewports from
- * @param volumeInputs - Array of volume inputs including volumeUID. Other properties
+ * @param volumeInputs - Array of volume inputs including volumeId. Other properties
  * such as visibility, callback, blendMode, slabThickness are optional
  * @param viewportUIDs - Array of viewport UIDs to add the volume to
  * @param immediateRender - If true, the volumes will be rendered immediately

@@ -160,8 +160,8 @@ export default class ProbeTool extends AnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = cache.getVolume(volumeUID)
+      const volumeId = this.getTargetUID(viewport)
+      const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,

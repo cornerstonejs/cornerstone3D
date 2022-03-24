@@ -104,7 +104,7 @@ For loading volumes we have
 ```js
 // Define a set of imageIds as a volume.
 const ctVolume = await createAndCacheVolume(
-  volumeUID,
+  volumeId,
   { imageIds: volumeImageIds}
 )
 
@@ -165,8 +165,8 @@ In Cornerstone-3D we have:
 
 ```js
 fusionScene.setVolumes([
-  { volumeUID: ctVolumeUID, callback: setCTWWWC },
-  { volumeUID: ptVolumeUID, callback: setPetFusionColorMapTransferFunction },
+  { volumeId: ctVolumeId, callback: setCTWWWC },
+  { volumeId: ptVolumeId, callback: setPetFusionColorMapTransferFunction },
 ]);
 ```
 
@@ -342,7 +342,7 @@ cornerstone.cache.getImageLoadObject(imageId);
 In Cornerstone-3D we have:
 
 ```js
-const volume = cache.getVolume(volumeUID)
+const volume = cache.getVolume(volumeId)
 
 // Check which frames have already been loaded:
 // - true if all frames have loaded.

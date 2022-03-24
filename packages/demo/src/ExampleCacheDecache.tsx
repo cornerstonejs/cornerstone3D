@@ -17,7 +17,7 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ctVolumeUID,
+  ctVolumeId,
   ctStackUID,
   VIEWPORT_IDS,
 } from './constants'
@@ -87,7 +87,7 @@ class CacheDecacheExample extends Component {
     csTools3d.init()
     ;({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
+    this.ctVolumeId = ctVolumeId
     this.ctStackUID = ctStackUID
 
     // Create volumes
@@ -184,7 +184,7 @@ class CacheDecacheExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -200,7 +200,7 @@ class CacheDecacheExample extends Component {
 
     setVolumesForViewports(
       this.renderingEngine,
-      [{ volumeUID: ctVolumeUID }],
+      [{ volumeId: ctVolumeId }],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
     )
 
@@ -216,7 +216,7 @@ class CacheDecacheExample extends Component {
   }
 
   decacheVolume = () => {
-    const volume = cache.getVolume(ctVolumeUID)
+    const volume = cache.getVolume(ctVolumeId)
 
     if (!volume) {
       throw new Error('Volume is not loaded')
@@ -227,7 +227,7 @@ class CacheDecacheExample extends Component {
   }
 
   convertVolumeToImage = () => {
-    const volume = cache.getVolume(ctVolumeUID)
+    const volume = cache.getVolume(ctVolumeId)
 
     if (!volume) {
       throw new Error('Volume is not loaded')

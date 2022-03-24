@@ -24,7 +24,7 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ctVolumeUID,
+  ctVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -165,7 +165,7 @@ class testUtilVolume extends Component {
       renderingEngine,
       [
         {
-          volumeUID: this.ctVolumeId,
+          volumeId: this.ctVolumeId,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.CORONAL]
@@ -175,7 +175,7 @@ class testUtilVolume extends Component {
       renderingEngine,
       [
         {
-          volumeUID: this.ptVolumeId,
+          volumeId: this.ptVolumeId,
         },
       ],
       [VIEWPORT_IDS.PT.AXIAL]

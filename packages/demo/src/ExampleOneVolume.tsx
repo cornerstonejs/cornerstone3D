@@ -28,7 +28,7 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ptVolumeUID,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -151,7 +151,7 @@ class OneVolumeExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: volumeImageIds,
     })
 
@@ -171,7 +171,7 @@ class OneVolumeExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ptVolumeUID,
+          volumeId: ptVolumeId,
           callback: setPetTransferFunction,
           blendMode: Enums.BlendModes.COMPOSITE,
         },

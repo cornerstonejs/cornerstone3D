@@ -144,7 +144,7 @@ describe('Segmentation Tools --', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
+            [{ volumeId: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp.render()
@@ -153,7 +153,7 @@ describe('Segmentation Tools --', () => {
               .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                  { volumeId: segmentationUID },
                 ])
               })
           })
@@ -269,7 +269,7 @@ describe('Segmentation Tools --', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
+            [{ volumeId: volumeId }],
             [viewportUID1]
           ).then(() => {
             vp.render()
@@ -278,7 +278,7 @@ describe('Segmentation Tools --', () => {
               .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                  { volumeId: segmentationUID },
                 ])
               })
           })
@@ -437,7 +437,7 @@ describe('Segmentation Tools --', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
+            [{ volumeId: volumeId }],
             [viewportUID1, viewportUID2]
           ).then(() => {
             vp1.render()
@@ -447,7 +447,7 @@ describe('Segmentation Tools --', () => {
               .createNewSegmentationForToolGroup(this.segToolGroup.uid)
               .then((segmentationUID) => {
                 addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                  { volumeId: segmentationUID },
                 ])
               })
           })

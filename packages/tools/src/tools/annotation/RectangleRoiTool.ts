@@ -185,8 +185,8 @@ export default class RectangleRoiTool extends AnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = cache.getVolume(volumeUID)
+      const volumeId = this.getTargetUID(viewport)
+      const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -835,7 +835,7 @@ export default class RectangleRoiTool extends AnnotationTool {
    * target volume enclosed by the rectangle.
    *
    * @param data - The annotation tool-specific data.
-   * @param targetUID - The volumeUID of the volume to display the stats for.
+   * @param targetUID - The volumeId of the volume to display the stats for.
    */
   _getTextLines = (data, targetUID: string) => {
     const cachedVolumeStats = data.cachedStats[targetUID]

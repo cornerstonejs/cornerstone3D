@@ -6,23 +6,23 @@ import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEve
 /**
  * Get the locked status of a segment index in a segmentation
  *
- * @param toolGroupUID - The UID of the tool group that contains the
+ * @param toolGroupId - The UID of the tool group that contains the
  * segmentation.
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not for modification
  */
-// Todo: should this be based on a segmentationUID instead of a toolGroupUID?
+// Todo: should this be based on a segmentationUID instead of a toolGroupId?
 function getSegmentIndexLocked(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentIndex: number
 ): boolean {
-  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupUID)
+  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupId)
 
   if (!activeSegmentationInfo) {
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeUID: segmentationUID } = activeSegmentationInfo
+  const { volumeId: segmentationUID } = activeSegmentationInfo
   const segmentationGlobalState =
     getGlobalSegmentationDataByUID(segmentationUID)
 
@@ -37,24 +37,24 @@ function getSegmentIndexLocked(
  *
  * @triggers {SegmentationGlobalStateModifiedEvent}
  *
- * @param toolGroupUID - the UID of the tool group that contains the
+ * @param toolGroupId - the UID of the tool group that contains the
  * segmentation
  * @param segmentIndex - the index of the segment to lock/unlock
  * @param locked - boolean
  */
-// Todo: shouldn't this be a based on a segmentationUID instead of a toolGroupUID?
+// Todo: shouldn't this be a based on a segmentationUID instead of a toolGroupId?
 function setSegmentIndexLocked(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentIndex: number,
   locked = true
 ): void {
-  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupUID)
+  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupId)
 
   if (!activeSegmentationInfo) {
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeUID: segmentationUID } = activeSegmentationInfo
+  const { volumeId: segmentationUID } = activeSegmentationInfo
 
   const segmentationGlobalState =
     getGlobalSegmentationDataByUID(segmentationUID)

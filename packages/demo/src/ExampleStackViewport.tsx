@@ -27,8 +27,8 @@ import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
   renderingEngineId,
-  ctVolumeUID,
-  ptVolumeUID,
+  ctVolumeId,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -302,11 +302,11 @@ class StackViewportExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
-    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptVolumeImageIds,
     })
 
@@ -327,7 +327,7 @@ class StackViewportExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
+          volumeId: ctVolumeId,
           callback: setCTWWWC,
         },
       ],
@@ -338,7 +338,7 @@ class StackViewportExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ptVolumeUID,
+          volumeId: ptVolumeId,
           callback: setPetTransferFunction,
         },
       ],

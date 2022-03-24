@@ -469,7 +469,7 @@ export default class CrosshairsTool extends AnnotationTool {
       return
     }
 
-    // -- Update the camera of other linked viewports containing the same volumeUID that
+    // -- Update the camera of other linked viewports containing the same volumeId that
     //    have the same camera in case of translation
     // -- Update the crosshair center in world coordinates in annotation.
     // This is necessary because other tools can modify the position of the slices,

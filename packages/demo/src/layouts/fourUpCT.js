@@ -70,13 +70,13 @@ function setLayout(
   })
 }
 
-function setVolumes(renderingEngine, ctVolumeUID) {
+function setVolumes(renderingEngine, ctVolumeId) {
   const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
   const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR)
 
-  ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }])
+  ctScene.setVolumes([{ volumeId: ctVolumeId, callback: setCTWWWC }])
   ctVRScene.setVolumes([
-    { volumeUID: ctVolumeUID, callback: setCTVRTransferFunction },
+    { volumeId: ctVolumeId, callback: setCTVRTransferFunction },
   ])
 }
 

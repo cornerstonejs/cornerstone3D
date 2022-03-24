@@ -56,7 +56,7 @@ function setLayout(
   })
 }
 
-function setPetBWTransferFunction({ volumeActor, volumeUID }) {
+function setPetBWTransferFunction({ volumeActor, volumeId }) {
   const rgbTransferFunction = volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
@@ -66,8 +66,8 @@ function setPetBWTransferFunction({ volumeActor, volumeUID }) {
   utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
-function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = cache.getVolume(volumeUID)
+function setPetLBMTransferFunction({ volumeActor, volumeId }) {
+  const imageVolume = cache.getVolume(volumeId)
 
   let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET
 
@@ -91,8 +91,8 @@ function setPetLBMTransferFunction({ volumeActor, volumeUID }) {
   utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
-function setPetBSATransferFunction({ volumeActor, volumeUID }) {
-  const imageVolume = cache.getVolume(volumeUID)
+function setPetBSATransferFunction({ volumeActor, volumeId }) {
+  const imageVolume = cache.getVolume(volumeId)
 
   let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET
 
@@ -116,19 +116,19 @@ function setPetBSATransferFunction({ volumeActor, volumeUID }) {
   utilities.invertRgbTransferFunction(rgbTransferFunction)
 }
 
-function setVolumes(renderingEngine, ptVolumeUID) {
+function setVolumes(renderingEngine, ptVolumeId) {
   const ptBWScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BW)
   const ptLBMScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_LBM)
   const ptBSAScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BSA)
 
   ptBWScene.setVolumes([
-    { volumeUID: ptVolumeUID, callback: setPetBWTransferFunction },
+    { volumeId: ptVolumeId, callback: setPetBWTransferFunction },
   ])
   ptLBMScene.setVolumes([
-    { volumeUID: ptVolumeUID, callback: setPetLBMTransferFunction },
+    { volumeId: ptVolumeId, callback: setPetLBMTransferFunction },
   ])
   ptBSAScene.setVolumes([
-    { volumeUID: ptVolumeUID, callback: setPetBSATransferFunction },
+    { volumeId: ptVolumeId, callback: setPetBSATransferFunction },
   ])
 }
 

@@ -183,14 +183,14 @@ describe('Synchronizer Manager: ', () => {
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: ctVolumeId }],
+          [{ volumeId: ctVolumeId }],
           [viewportUID1]
         )
       })
       createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: ptVolumeId }],
+          [{ volumeId: ptVolumeId }],
           [viewportUID2]
         )
       })
@@ -213,7 +213,7 @@ describe('Synchronizer Manager: ', () => {
 
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1')
     this.firstToolGroup.addTool(WindowLevelTool.toolName, {
-      configuration: { volumeUID: ctVolumeId },
+      configuration: { volumeId: ctVolumeId },
     })
     this.firstToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
@@ -349,7 +349,7 @@ describe('Synchronizer Manager: ', () => {
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: ctVolumeId }],
+          [{ volumeId: ctVolumeId }],
           [viewportUID1, viewportUID2]
         )
         this.renderingEngine.render()

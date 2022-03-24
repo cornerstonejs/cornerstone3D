@@ -44,7 +44,7 @@ export default class WindowLevelTool extends BaseTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewportId, viewport } = enabledElement
 
-    let volumeUID,
+    let volumeId,
       volumeActor,
       lower,
       upper,
@@ -55,16 +55,16 @@ export default class WindowLevelTool extends BaseTool {
     let useDynamicRange = false
 
     if (viewport instanceof VolumeViewport) {
-      volumeUID = this.getTargetUID(viewport as Types.IVolumeViewport)
-      ;({ volumeActor } = viewport.getActor(volumeUID))
+      volumeId = this.getTargetUID(viewport as Types.IVolumeViewport)
+      ;({ volumeActor } = viewport.getActor(volumeId))
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
       viewportsContainingVolumeUID =
         utilities.getVolumeViewportsContainingVolumeUID(
-          volumeUID,
+          volumeId,
           renderingEngine.uid
         )
       ;[lower, upper] = rgbTransferFunction.getRange()
-      modality = cache.getVolume(volumeUID).metadata.Modality
+      modality = cache.getVolume(volumeId).metadata.Modality
       useDynamicRange = true
     } else {
       const properties = viewport.getProperties()
@@ -87,14 +87,14 @@ export default class WindowLevelTool extends BaseTool {
       newRange = this.getNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         useDynamicRange,
-        volumeUID,
+        volumeId,
         lower,
         upper,
       })
     }
 
     const eventDetail: Types.EventTypes.VoiModifiedEventDetail = {
-      volumeUID,
+      volumeId,
       viewportId,
       range: newRange,
     }
@@ -127,11 +127,11 @@ export default class WindowLevelTool extends BaseTool {
     return { lower, upper }
   }
 
-  getNewRange({ deltaPointsCanvas, useDynamicRange, volumeUID, lower, upper }) {
+  getNewRange({ deltaPointsCanvas, useDynamicRange, volumeId, lower, upper }) {
     // Todo: enabling a viewport twice in a row sets the imageDynamicRange to be zero for some reason
     // 1 was too little
     const multiplier = useDynamicRange
-      ? this._getMultiplyerFromDynamicRange(volumeUID)
+      ? this._getMultiplyerFromDynamicRange(volumeId)
       : DEFAULT_MULTIPLIER
 
     const wwDelta = deltaPointsCanvas[0] * multiplier
@@ -151,13 +151,13 @@ export default class WindowLevelTool extends BaseTool {
     return utilities.windowLevel.toLowHighRange(windowWidth, windowCenter)
   }
 
-  _getMultiplyerFromDynamicRange(volumeUID) {
-    if (!volumeUID) {
-      throw new Error('No volumeUID provided for the volume Viewport')
+  _getMultiplyerFromDynamicRange(volumeId) {
+    if (!volumeId) {
+      throw new Error('No volumeId provided for the volume Viewport')
     }
 
     let multiplier = DEFAULT_MULTIPLIER
-    const imageDynamicRange = this._getImageDynamicRange(volumeUID)
+    const imageDynamicRange = this._getImageDynamicRange(volumeId)
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE
 
@@ -168,8 +168,8 @@ export default class WindowLevelTool extends BaseTool {
     return multiplier
   }
 
-  _getImageDynamicRange = (volumeUID: string) => {
-    const imageVolume = cache.getVolume(volumeUID)
+  _getImageDynamicRange = (volumeId: string) => {
+    const imageVolume = cache.getVolume(volumeId)
     const { dimensions, scalarData } = imageVolume
     const middleSliceIndex = Math.floor(dimensions[2] / 2)
 

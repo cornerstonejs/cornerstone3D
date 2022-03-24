@@ -125,7 +125,7 @@ type SegmentationStateModifiedEventDetail = {
  * EventDetail for when a Segmentation Global State is modified
  */
 type SegmentationGlobalStateModifiedEventDetail = {
-  /** unique id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeUID */
+  /** unique id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeId */
   segmentationUID: string
 }
 
