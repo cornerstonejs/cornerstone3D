@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -22,22 +22,24 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "peerDependencies": {
+    "@cornerstonejs/core": "^0.1.0",
     "gl-matrix": "^3.3.0",
-    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
-    "@cornerstonejs/core": "^0.1.0"
+    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "devDependencies": {
-    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
-    "@cornerstonejs/streaming-image-volume-loader": "^0.1.0",
-    "@cornerstonejs/core": "^0.1.0"
+    "@cornerstonejs/core": "^0.1.1",
+    "@cornerstonejs/streaming-image-volume-loader": "^0.1.1",
+    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
-  "contributors": [{
-    "name": "Cornerstone.js Contributors",
-    "url": "https://github.com/orgs/cornerstonejs/people"
-  }],
+  "contributors": [
+    {
+      "name": "Cornerstone.js Contributors",
+      "url": "https://github.com/orgs/cornerstonejs/people"
+    }
+  ],
   "license": "MIT",
   "funding": {
-    "type" : "individual",
-    "url" : "https://ohif.org/donate"
+    "type": "individual",
+    "url": "https://ohif.org/donate"
   }
 }

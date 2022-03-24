@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/streaming-image-volume-loader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -22,22 +22,24 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "peerDependencies": {
+    "@cornerstonejs/calculate-suv": "1.0.1",
     "@cornerstonejs/core": "^0.1.0",
-    "cornerstone-wado-image-loader": "^4.1.2",
-    "@cornerstonejs/calculate-suv": "1.0.1"
+    "cornerstone-wado-image-loader": "^4.1.2"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "^0.1.0",
-    "cornerstone-wado-image-loader": "^4.1.2",
-    "@cornerstonejs/calculate-suv": "1.0.1"
+    "@cornerstonejs/calculate-suv": "1.0.1",
+    "@cornerstonejs/core": "^0.1.1",
+    "cornerstone-wado-image-loader": "^4.1.2"
   },
-  "contributors": [{
-    "name": "Cornerstone.js Contributors",
-    "url": "https://github.com/orgs/cornerstonejs/people"
-  }],
+  "contributors": [
+    {
+      "name": "Cornerstone.js Contributors",
+      "url": "https://github.com/orgs/cornerstonejs/people"
+    }
+  ],
   "license": "MIT",
   "funding": {
-    "type" : "individual",
-    "url" : "https://ohif.org/donate"
+    "type": "individual",
+    "url": "https://ohif.org/donate"
   }
 }

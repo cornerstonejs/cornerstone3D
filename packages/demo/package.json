@@ -1,7 +1,7 @@
 {
   "name": "@cornerstonejs/cornerstone3D-demo",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "index.tsx",
   "scripts": {
@@ -13,21 +13,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@cornerstonejs/core": "^0.1.1",
+    "@cornerstonejs/streaming-image-volume-loader": "^0.1.1",
+    "@cornerstonejs/tools": "^0.1.1",
+    "cornerstone-wado-image-loader": "^4.1.2",
     "dcmjs": "0.19.2",
+    "detect-gpu": "^4.0.7",
     "dicom-parser": "^1.8.11",
     "dicomweb-client": "^0.8.4",
     "gl-matrix": "^3.4.3",
-    "@cornerstonejs/streaming-image-volume-loader": "^0.1.0",
-    "@cornerstonejs/core": "^0.1.0",
-    "@cornerstonejs/tools": "^0.1.0",
-    "cornerstone-wado-image-loader": "^4.1.2",
     "hammerjs": "^2.0.8",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-resize-detector": "6.7.8",
     "react-router-dom": "5.3.0",
-    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel",
-    "detect-gpu": "^4.0.7"
+    "vtk.js": "git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel"
   },
   "devDependencies": {
     "eslint-config-react-app": "^6.0.0",

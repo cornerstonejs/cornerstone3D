@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "preinstall": "node preinstall.js",
@@ -27,11 +27,11 @@
     "@docusaurus/core": "2.0.0-beta.17",
     "@docusaurus/module-type-aliases": "2.0.0-beta.17",
     "@docusaurus/preset-classic": "2.0.0-beta.17",
-    "docusaurus-plugin-typedoc-api": "^1.9.0",
-    "docusaurus-plugin-copy": "^0.1.1",
     "@mdx-js/react": "^1.6.21",
     "@svgr/webpack": "^6.2.1",
     "clsx": "^1.1.1",
+    "docusaurus-plugin-copy": "^0.1.1",
+    "docusaurus-plugin-typedoc-api": "^1.9.0",
     "file-loader": "^6.2.0",
     "plugin-image-zoom": "github:ataft/plugin-image-zoom",
     "prism-react-renderer": "^1.2.1",
