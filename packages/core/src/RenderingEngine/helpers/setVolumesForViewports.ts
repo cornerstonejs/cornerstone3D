@@ -28,7 +28,7 @@ async function setVolumesForViewports(
     const viewport = renderingEngine.getViewport(viewportId)
 
     if (!viewport) {
-      throw new Error(`Viewport with UID ${viewportId} does not exist`)
+      throw new Error(`Viewport with Id ${viewportId} does not exist`)
     }
 
     // if not instance of VolumeViewport, throw

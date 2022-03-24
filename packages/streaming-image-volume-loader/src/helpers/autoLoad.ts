@@ -11,7 +11,7 @@ type RenderingEngineAndViewportIds = {
  * Given a volumeId, it finds the viewports and renderingEngines that
  * include that volume, and triggers a render if renderingEngine is available.
  *
- * @param volumeId - The UID of the volume
+ * @param volumeId - The Id of the volume
  */
 const autoLoad = (volumeId: string): void => {
   const renderingEngineAndViewportIds =

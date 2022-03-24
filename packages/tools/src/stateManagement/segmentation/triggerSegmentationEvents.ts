@@ -15,7 +15,7 @@ import {
 /**
  * Trigger an event on the eventTarget that the segmentation state for
  * toolGroupId has been updated
- * @param toolGroupId - The UID of the toolGroup
+ * @param toolGroupId - The Id of the toolGroup
  */
 function triggerSegmentationStateModified(toolGroupId: string): void {
   const eventDetail: SegmentationStateModifiedEventDetail = {

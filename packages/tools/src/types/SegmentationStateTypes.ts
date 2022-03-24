@@ -35,7 +35,7 @@ export type SegmentationConfig = {
  * Global Segmentation Data which is used for the segmentation
  */
 export type GlobalSegmentationData = {
-  /** volume UID of the segmentation in the cache */
+  /** volume Id of the segmentation in the cache */
   volumeId: string
   /** segmentation label */
   label: string

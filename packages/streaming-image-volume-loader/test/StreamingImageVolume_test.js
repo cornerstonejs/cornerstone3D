@@ -91,7 +91,7 @@ function setupLoaders() {
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
       {
-        uid: volumeId, // TODO: should we differentiate between volumeId and a volume's UID?
+        volumeId,
         metadata: volumeMetadata,
         dimensions: dimensions,
         spacing: [1, 1, 1],

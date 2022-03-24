@@ -115,9 +115,9 @@ export default class StreamingImageVolume extends ImageVolume {
     this.clearLoadCallbacks()
 
     // Create a filter function which only keeps requests
-    // which do not match this volume's UID
+    // which do not match this volume's Id
     const filterFunction = ({ additionalDetails }) => {
-      return additionalDetails.volumeId !== this.uid
+      return additionalDetails.volumeId !== this.volumeId
     }
 
     // Instruct the request pool manager to filter queued
@@ -543,9 +543,9 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   private _removeFromCache() {
-    // TODO: not 100% sure this is the same UID as the volume loader's volumeId?
+    // TODO: not 100% sure this is the same Id as the volume loader's volumeId?
     // so I have no idea if this will work
-    cache.removeVolumeLoadObject(this.uid)
+    cache.removeVolumeLoadObject(this.volumeId)
   }
 
   /**

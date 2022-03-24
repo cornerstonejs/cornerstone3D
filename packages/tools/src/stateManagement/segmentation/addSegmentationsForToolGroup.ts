@@ -15,7 +15,7 @@ import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
  * Add a segmentation to the viewports of the toolGroup. It will use the
  * provided segmentationDataArray to create and configure the segmentation based
  * on the representation type and representation specific configuration.
- * @param toolGroupId - The UID of the toolGroup to add the segmentation to.
+ * @param toolGroupId - The Id of the toolGroup to add the segmentation to.
  * @param segmentationDataArray - minimum of volumeId should be provided, it will
  * throw an error if not. If no representation type is provided, it will use
  * the default labelmap representation.

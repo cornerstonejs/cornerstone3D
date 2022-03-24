@@ -348,7 +348,7 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Returns the viewport by UID
+   * Returns the viewport by Id
    *
    * @returns viewport
    */

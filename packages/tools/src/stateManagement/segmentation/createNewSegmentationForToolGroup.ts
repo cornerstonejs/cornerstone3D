@@ -14,7 +14,7 @@ import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
  * the first viewport of the toolGroup. It looks at the metadata of the imageData
  * to determine the volume dimensions and spacing if particular options are not provided.
  *
- * @param toolGroupId - The UID of the toolGroup
+ * @param toolGroupId - The Id of the toolGroup
  * @param options - LabelmapOptions
  * @returns A promise that resolves to the UID of the new labelmap.
  */

@@ -7,7 +7,7 @@ import { VolumeActor } from './IActor'
 type VolumeInputCallback = (params: {
   /** vtk volume actor */
   volumeActor: VolumeActor
-  /** unique volume UID in the cache */
+  /** unique volume Id in the cache */
   volumeId: string
 }) => unknown
 
@@ -17,7 +17,7 @@ type VolumeInputCallback = (params: {
  * `slabThickness` and `callback` can also be provided
  */
 interface IVolumeInput {
-  /** Volume UID of the volume in the cache */
+  /** Volume ID of the volume in the cache */
   volumeId: string
   // actorUID for segmentations, since two segmentations with the same volumeId
   // can have different representations

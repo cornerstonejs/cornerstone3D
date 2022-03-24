@@ -183,7 +183,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * It removes the volume actor from the Viewport. If the volume actor is not in
    * the viewport, it does nothing.
    * @param actorUIDs - Array of actor UIDs to remove. In case of simple volume it will
-   * be the volume UID, but in case of Segmentation it will be `{volumeId}-{representationType}`
+   * be the volume Id, but in case of Segmentation it will be `{volumeId}-{representationType}`
    * since the same volume can be rendered in multiple representations.
    * @param immediate - If true, the Viewport will be rendered immediately
    */

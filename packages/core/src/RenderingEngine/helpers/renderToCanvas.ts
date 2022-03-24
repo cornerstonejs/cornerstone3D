@@ -24,7 +24,7 @@ import Events from '../../enums/Events'
  * @param imageId - The imageId to render
  * @param canvas - Canvas element to render to
  * @param renderingEngineId - [Default=null] The rendering engine Id
- * to use, if not provided, will create a new rendering engine with a random UID (this is preferred)
+ * to use, if not provided, will create a new rendering engine with a random Id (this is preferred)
  * @param suppressEvents - [Default = true] boolean to suppress events during render,
  * if undefined, events will be suppressed
  * @returns - A promise that resolves when the image has been rendered with the imageId
@@ -59,7 +59,7 @@ export default function renderToCanvas(
 
     if (!renderingEngine) {
       throw new Error(
-        `No rendering engine with UID of ${renderingEngineId} found`
+        `No rendering engine with Id of ${renderingEngineId} found`
       )
     }
 

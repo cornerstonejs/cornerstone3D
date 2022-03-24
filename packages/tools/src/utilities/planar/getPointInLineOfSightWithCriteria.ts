@@ -9,7 +9,7 @@ import { VolumeViewport } from '@cornerstonejs/core'
  *
  * @param viewport - Volume viewport
  * @param worldPos - World coordinates of the clicked location
- * @param targetVolumeUID - target Volume UID in the viewport
+ * @param targetVolumeUID - target Volume ID in the viewport
  * @param criteriaFunction - A function that returns the point if it passes a certain
  * written logic, for instance, it can be a maxValue function that keeps the
  * records of all intensity values, and only return the point if its intensity

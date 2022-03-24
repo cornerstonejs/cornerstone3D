@@ -8,7 +8,7 @@ import {
 
 /**
  * Remove the segmentation data (representation) from the viewports of the toolGroup.
- * @param toolGroupId - The UID of the toolGroup to remove the segmentation from.
+ * @param toolGroupId - The Id of the toolGroup to remove the segmentation from.
  * @param segmentationDataArray - Array of segmentationData
  * containing at least volumeId. If no representation type is provided, it will
  * assume the default labelmap representation should be removed from the viewports.
