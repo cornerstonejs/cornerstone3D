@@ -128,16 +128,12 @@ async function run() {
   const renderingEngineId = 'myRenderingEngine'
   const renderingEngine = new RenderingEngine(renderingEngineId)
 
-  const viewportUIDs = [
-    'CT_AXIAL_STACK_1',
-    'CT_AXIAL_STACK_2',
-    'PT_AXIAL_STACK',
-  ]
+  const viewportIds = ['CT_AXIAL_STACK_1', 'CT_AXIAL_STACK_2', 'PT_AXIAL_STACK']
 
   // Create a stack viewport
   const viewportInputArray = [
     {
-      viewportId: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
@@ -145,7 +141,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
@@ -153,7 +149,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.STACK,
       element: element3,
       defaultOptions: {
@@ -166,13 +162,13 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport1 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUIDs[0])
+    renderingEngine.getViewport(viewportIds[0])
   )
   const viewport2 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUIDs[1])
+    renderingEngine.getViewport(viewportIds[1])
   )
   const viewport3 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUIDs[2])
+    renderingEngine.getViewport(viewportIds[2])
   )
 
   // Define a stack containing a single image
@@ -185,10 +181,10 @@ async function run() {
   viewport3.setStack(ptStack)
 
   // Set viewport 1 to toolgroup 1
-  toolGroup1.addViewport(viewportUIDs[0], renderingEngineId)
+  toolGroup1.addViewport(viewportIds[0], renderingEngineId)
   // Set viewport 2 and 3 to toolgroup 2
-  toolGroup2.addViewport(viewportUIDs[1], renderingEngineId)
-  toolGroup2.addViewport(viewportUIDs[2], renderingEngineId)
+  toolGroup2.addViewport(viewportIds[1], renderingEngineId)
+  toolGroup2.addViewport(viewportIds[2], renderingEngineId)
 
   // Render the image
   renderingEngine.render()

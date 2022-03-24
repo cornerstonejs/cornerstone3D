@@ -115,7 +115,7 @@ class LengthTool extends AnnotationTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     movingTextBox?: boolean
     newAnnotation?: boolean
@@ -222,14 +222,14 @@ class LengthTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       LengthTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex: 1,
       movingTextBox: false,
       newAnnotation: true,
@@ -239,7 +239,7 @@ class LengthTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }
@@ -302,14 +302,14 @@ class LengthTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       LengthTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       movingTextBox: false,
     }
 
@@ -320,7 +320,7 @@ class LengthTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     evt.preventDefault()
   }
@@ -347,14 +347,14 @@ class LengthTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       LengthTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex,
       movingTextBox,
     }
@@ -365,7 +365,7 @@ class LengthTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     evt.preventDefault()
   }
@@ -376,7 +376,7 @@ class LengthTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportIDsToRender, newAnnotation, hasMoved } =
+    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
       this.editData
     const { data } = annotation
 
@@ -403,7 +403,7 @@ class LengthTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     this.editData = null
     this.isDrawing = false
@@ -416,7 +416,7 @@ class LengthTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportIDsToRender, handleIndex, movingTextBox } =
+    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
       this.editData
     const { data } = annotation
 
@@ -460,7 +460,7 @@ class LengthTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   cancel = (element: HTMLElement) => {
@@ -471,7 +471,7 @@ class LengthTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportIDsToRender } = this.editData
+      const { annotation, viewportIdsToRender } = this.editData
       const { data } = annotation
 
       annotation.highlighted = false
@@ -482,7 +482,7 @@ class LengthTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportIDsToRender
+        viewportIdsToRender
       )
 
       this.editData = null
@@ -715,12 +715,12 @@ class LengthTool extends AnnotationTool {
     const worldPos1 = data.handles.points[0]
     const worldPos2 = data.handles.points[1]
     const { cachedStats } = data
-    const targetUIDs = Object.keys(cachedStats)
+    const targetIds = Object.keys(cachedStats)
 
     // TODO clean up, this doesn't need a length per volume, it has no stats derived from volumes.
 
-    for (let i = 0; i < targetUIDs.length; i++) {
-      const targetId = targetUIDs[i]
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i]
 
       const { image } = this.getTargetIdViewportAndImage(
         targetId,

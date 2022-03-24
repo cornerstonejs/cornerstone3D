@@ -249,10 +249,10 @@ function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
  ***************************/
 
 /**
- * Get the tool group UIDs that have a segmentation with the given UID
+ * Get the tool group IDs that have a segmentation with the given UID
  * @param segmentationUID - The UID of the segmentation to get the tool
  * groups for.
- * @returns An array of tool group UIDs.
+ * @returns An array of tool group IDs.
  */
 function getToolGroupsWithSegmentation(segmentationUID: string): string[] {
   const segmentationStateManager = getDefaultSegmentationStateManager()
@@ -261,7 +261,7 @@ function getToolGroupsWithSegmentation(segmentationUID: string): string[] {
 
 /**
  * Get the list of all tool groups currently in the segmentation state manager.
- * @returns An array of tool group UIDs.
+ * @returns An array of tool group IDs.
  */
 function getToolGroups(): string[] {
   const segmentationStateManager = getDefaultSegmentationStateManager()

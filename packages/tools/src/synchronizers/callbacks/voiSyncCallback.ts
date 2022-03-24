@@ -10,8 +10,8 @@ import {
  * in different viewports.
  *
  * @param synchronizerInstance - The Instance of the Synchronizer
- * @param sourceViewport - The list of UIDs defining the source viewport.
- * @param targetViewport - The list of UIDs defining the target viewport.
+ * @param sourceViewport - The list of IDs defining the source viewport.
+ * @param targetViewport - The list of IDs defining the target viewport.
  * @param voiModifiedEvent - The VOI_MODIFIED event.
  */
 export default function voiSyncCallback(

@@ -129,7 +129,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportIDsToRender: Array<string>
+    viewportIdsToRender: Array<string>
     handleIndex?: number
     movingTextBox?: boolean
     centerCanvas?: Array<number>
@@ -247,14 +247,14 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       centerCanvas: canvasPos,
       newAnnotation: true,
       hasMoved: false,
@@ -265,7 +265,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }
@@ -345,14 +345,14 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       movingTextBox: false,
     }
 
@@ -363,7 +363,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     evt.preventDefault()
   }
@@ -411,14 +411,14 @@ export default class EllipticalRoiTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex,
       canvasWidth,
       canvasHeight,
@@ -433,7 +433,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     evt.preventDefault()
   }
@@ -444,7 +444,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportIDsToRender, newAnnotation, hasMoved } =
+    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
       this.editData
     const { data } = annotation
 
@@ -473,7 +473,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
@@ -487,7 +487,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const { canvasToWorld } = viewport
 
     //////
-    const { annotation, viewportIDsToRender, centerCanvas } = this.editData
+    const { annotation, viewportIdsToRender, centerCanvas } = this.editData
     const { data } = annotation
 
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
@@ -510,7 +510,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     this.editData.hasMoved = true
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragModifyCallback = (evt: MouseDragEventType) => {
@@ -518,7 +518,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportIDsToRender, handleIndex, movingTextBox } =
+    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
       this.editData
     const { data } = annotation
 
@@ -555,7 +555,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _dragHandle = (evt) => {
@@ -648,7 +648,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportIDsToRender } = this.editData
+      const { annotation, viewportIdsToRender } = this.editData
       const { data } = annotation
 
       annotation.highlighted = false
@@ -659,7 +659,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportIDsToRender
+        viewportIdsToRender
       )
 
       this.editData = null
@@ -974,12 +974,12 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
     const { cachedStats } = data
 
-    const targetUIDs = Object.keys(cachedStats)
+    const targetIds = Object.keys(cachedStats)
     const worldPos1 = topLeftWorld
     const worldPos2 = bottomRightWorld
 
-    for (let i = 0; i < targetUIDs.length; i++) {
-      const targetId = targetUIDs[i]
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i]
 
       const { image } = this.getTargetIdViewportAndImage(
         targetId,

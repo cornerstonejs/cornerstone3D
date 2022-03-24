@@ -43,7 +43,7 @@ const cameraSynchronizerId = 'CAMERA_SYNCHRONIZER_ID'
 const voiSynchronizerId = 'VOI_SYNCHRONIZER_ID'
 
 const renderingEngineId = 'myRenderingEngine'
-const viewportUIDs = [
+const viewportIds = [
   'CT_SAGITTAL_STACK_1',
   'CT_SAGITTAL_STACK_2',
   'CT_SAGITTAL_STACK_3',
@@ -98,9 +98,9 @@ content.append(instructions)
 // ============================= //
 
 const SynchronizerButtonInfo = [
-  { viewportLabel: 'A', viewportId: viewportUIDs[0] },
-  { viewportLabel: 'B', viewportId: viewportUIDs[1] },
-  { viewportLabel: 'C', viewportId: viewportUIDs[2] },
+  { viewportLabel: 'A', viewportId: viewportIds[0] },
+  { viewportLabel: 'B', viewportId: viewportIds[1] },
+  { viewportLabel: 'C', viewportId: viewportIds[2] },
 ]
 
 SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
@@ -210,7 +210,7 @@ async function run() {
   // Create the viewports
   const viewportInputArray = [
     {
-      viewportId: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -219,7 +219,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -228,7 +228,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
@@ -241,7 +241,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  viewportUIDs.forEach((viewportId) =>
+  viewportIds.forEach((viewportId) =>
     toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
@@ -253,7 +253,7 @@ async function run() {
   // Set the volume to load
   volume.load()
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)
 
   // Render the image
   renderingEngine.render()

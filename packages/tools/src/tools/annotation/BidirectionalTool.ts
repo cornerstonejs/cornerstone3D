@@ -117,7 +117,7 @@ export default class BidirectionalTool extends AnnotationTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
     newAnnotation?: boolean
@@ -230,14 +230,14 @@ export default class BidirectionalTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       BidirectionalTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex: 1,
       movingTextBox: false,
       newAnnotation: true,
@@ -249,7 +249,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }
@@ -345,14 +345,14 @@ export default class BidirectionalTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       BidirectionalTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       movingTextBox: false,
     }
 
@@ -361,7 +361,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     hideElementCursor(element)
 
@@ -399,7 +399,7 @@ export default class BidirectionalTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       BidirectionalTool.toolName
     )
@@ -408,7 +408,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex,
       movingTextBox,
     }
@@ -417,7 +417,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     evt.preventDefault()
   }
@@ -436,7 +436,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportIDsToRender, newAnnotation, hasMoved } =
+    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
       this.editData
     const { data } = annotation
 
@@ -522,7 +522,7 @@ export default class BidirectionalTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     this.editData = null
     this.isDrawing = false
@@ -539,7 +539,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewport } = enabledElement
     const { worldToCanvas } = viewport
-    const { annotation, viewportIDsToRender, handleIndex } = this.editData
+    const { annotation, viewportIdsToRender, handleIndex } = this.editData
     const { data } = annotation
 
     const worldPos = currentPoints.world
@@ -605,7 +605,7 @@ export default class BidirectionalTool extends AnnotationTool {
     data.handles.points[3] = viewport.canvasToWorld([endX, endY])
 
     annotation.invalidated = true
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     this.editData.hasMoved = true
   }
@@ -621,7 +621,7 @@ export default class BidirectionalTool extends AnnotationTool {
     const { element } = eventDetail
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
-    const { annotation, viewportIDsToRender, handleIndex, movingTextBox } =
+    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
       this.editData
     const { data } = annotation
     if (movingTextBox) {
@@ -653,7 +653,7 @@ export default class BidirectionalTool extends AnnotationTool {
       annotation.invalidated = true
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   /**
@@ -890,7 +890,7 @@ export default class BidirectionalTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportIDsToRender } = this.editData
+      const { annotation, viewportIdsToRender } = this.editData
       const { data } = annotation
 
       annotation.highlighted = false
@@ -901,7 +901,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportIDsToRender
+        viewportIdsToRender
       )
 
       this.editData = null
@@ -1206,10 +1206,10 @@ export default class BidirectionalTool extends AnnotationTool {
     const worldPos4 = data.handles.points[3]
 
     const { cachedStats } = data
-    const targetUIDs = Object.keys(cachedStats)
+    const targetIds = Object.keys(cachedStats)
 
-    for (let i = 0; i < targetUIDs.length; i++) {
-      const targetId = targetUIDs[i]
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i]
 
       const { image } = this.getTargetIdViewportAndImage(
         targetId,

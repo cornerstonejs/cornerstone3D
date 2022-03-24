@@ -140,7 +140,7 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
-  const viewportUIDs = [
+  const viewportIds = [
     'CT_AXIAL_STACK',
     'CT_SAGITTAL_STACK',
     'CT_OBLIQUE_STACK',
@@ -148,7 +148,7 @@ async function run() {
 
   const viewportInputArray = [
     {
-      viewportId: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -157,7 +157,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -166,7 +166,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
@@ -179,7 +179,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  mipToolGroup.addViewport(viewportUIDs[2], renderingEngineId)
+  mipToolGroup.addViewport(viewportIds[2], renderingEngineId)
 
   // Define volumes in memory
   const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
@@ -206,12 +206,12 @@ async function run() {
   setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ctVolumeId }],
-    [viewportUIDs[0]]
+    [viewportIds[0]]
   )
   setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ptVolumeId, callback: setPetTransferFunction }],
-    [viewportUIDs[1]]
+    [viewportIds[1]]
   )
 
   setVolumesForViewports(
@@ -224,7 +224,7 @@ async function run() {
         slabThickness,
       },
     ],
-    [viewportUIDs[2]]
+    [viewportIds[2]]
   )
 
   // Render the image

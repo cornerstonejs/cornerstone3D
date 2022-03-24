@@ -123,7 +123,7 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Given a segmentation UID, return a list of tool group UIDs that have that
+   * Given a segmentation UID, return a list of tool group IDs that have that
    * segmentation in their segmentation state (segmentation has been added
    * to the tool group).
    * @param segmentationUID - The UID of the segmentation volume.
@@ -132,7 +132,7 @@ export default class SegmentationStateManager {
   getToolGroupsWithSegmentation(segmentationUID: string): string[] {
     const toolGroupIds = Object.keys(this.state.toolGroups)
 
-    const foundToolGroupUIDs = []
+    const foundToolGroupIds = []
     toolGroupIds.forEach((toolGroupId) => {
       const toolGroupSegmentationState = this.getSegmentationState(
         toolGroupId
@@ -143,11 +143,11 @@ export default class SegmentationStateManager {
       )
 
       if (segmentationData) {
-        foundToolGroupUIDs.push(toolGroupId)
+        foundToolGroupIds.push(toolGroupId)
       }
     })
 
-    return foundToolGroupUIDs
+    return foundToolGroupIds
   }
 
   /**

@@ -13,7 +13,7 @@ export default interface IToolGroup {
   viewportsInfo: Array<Types.IViewportId>
   /** Options for each tool including bindings and mode */
   toolOptions: Record<string, any>
-  /** Get viewportUIDs in the toolGroup*/
+  /** Get viewportIds in the toolGroup*/
   getViewportIds: () => string[]
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any }

@@ -117,7 +117,7 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
-  const viewportUIDs = [
+  const viewportIds = [
     'CT_AXIAL_STACK',
     'CT_SAGITTAL_STACK',
     'CT_OBLIQUE_STACK',
@@ -125,7 +125,7 @@ async function run() {
 
   const viewportInputArray = [
     {
-      viewportId: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -134,7 +134,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -143,7 +143,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
@@ -164,7 +164,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  viewportUIDs.forEach((viewportId) =>
+  viewportIds.forEach((viewportId) =>
     toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
@@ -176,7 +176,7 @@ async function run() {
   // Set the volume to load
   volume.load()
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)
 
   // // Set the volume on the viewport
   // viewport.setVolumes([{ volumeId }])

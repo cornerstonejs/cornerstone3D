@@ -1,5 +1,5 @@
 import { BaseTool } from '../base'
-import { getEnabledElementByUIDs } from '@cornerstonejs/core'
+import { getEnabledElementByIds } from '@cornerstonejs/core'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
 import { LabelmapDisplay } from './Labelmap'
@@ -110,7 +110,7 @@ export default class SegmentationDisplayTool extends BaseTool {
     // toolGroup Viewports
     const toolGroupViewports = toolGroup.viewportsInfo.map(
       ({ renderingEngineId, viewportId }) => {
-        const enabledElement = getEnabledElementByUIDs(
+        const enabledElement = getEnabledElementByIds(
           viewportId,
           renderingEngineId
         )

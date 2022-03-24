@@ -31,8 +31,8 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
-   * Get the viewport UIDs of all the viewports in the current viewport
-   * @returns An array of viewport UIDs.
+   * Get the viewport IDs of all the viewports in the current viewport
+   * @returns An array of viewport IDs.
    */
   getViewportIds(): string[] {
     return this.viewportsInfo.map(({ viewportId }) => viewportId)

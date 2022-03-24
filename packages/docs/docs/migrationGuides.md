@@ -252,7 +252,7 @@ renderingEngine.destroy()
 
 if you plan to leave the page, this will destroy all elements.
 
-The ELEMENT_DISABLED event contains just a reference to the canvas element which is now disabled, and related UIDs.
+The ELEMENT_DISABLED event contains just a reference to the canvas element which is now disabled, and related IDs.
 
 ```js
 eventDetail: {

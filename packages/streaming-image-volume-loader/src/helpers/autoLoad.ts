@@ -4,7 +4,7 @@ import { getRenderingEngines, utilities } from '@cornerstonejs/core'
 
 type RenderingEngineAndViewportIds = {
   renderingEngine: any | undefined //Types.IRenderingEngine | undefined
-  viewportUIDs: Array<string>
+  viewportIds: Array<string>
 }
 
 /**
@@ -21,9 +21,9 @@ const autoLoad = (volumeId: string): void => {
     return
   }
 
-  renderingEngineAndViewportIds.forEach(({ renderingEngine, viewportUIDs }) => {
+  renderingEngineAndViewportIds.forEach(({ renderingEngine, viewportIds }) => {
     if (!renderingEngine.hasBeenDestroyed) {
-      renderingEngine.renderViewports(viewportUIDs)
+      renderingEngine.renderViewports(viewportIds)
     }
   })
 }
@@ -45,7 +45,7 @@ function getRenderingEngineAndViewportsContainingVolume(
     if (viewports.length) {
       renderingEngineAndViewportIds.push({
         renderingEngine,
-        viewportUIDs: viewports.map((viewport) => viewport.id),
+        viewportIds: viewports.map((viewport) => viewport.id),
       })
     }
   }

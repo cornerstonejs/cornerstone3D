@@ -20,7 +20,7 @@ import 'vtk.js/Sources/Rendering/Core/Mapper'
  * - When checking the size of the container element we no longer check the client size, as the canvas is offscreen.
  * - We aren't using interactor styles, so don't set one up.
  *
- * Additionally this class has some new helpers to easily add/associate renderers to different viewportUIDs.
+ * Additionally this class has some new helpers to easily add/associate renderers to different viewportIds.
  *
  *
  * @param {*} publicAPI The public API to extend

@@ -59,7 +59,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     newAnnotation?: boolean
     hasMoved?: boolean
@@ -161,14 +161,14 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     addAnnotation(element, annotation)
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiThresholdTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex: 3,
       newAnnotation: true,
       hasMoved: false,
@@ -179,7 +179,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }

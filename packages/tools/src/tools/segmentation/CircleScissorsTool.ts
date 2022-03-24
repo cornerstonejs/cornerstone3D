@@ -36,7 +36,7 @@ export default class CircleScissorsTool extends BaseTool {
     segmentationDataUID: string
     segmentsLocked: number[]
     segmentColor: [number, number, number, number]
-    viewportIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
     newAnnotation?: boolean
@@ -129,7 +129,7 @@ export default class CircleScissorsTool extends BaseTool {
       },
     }
 
-    const viewportIDsToRender = [viewport.id]
+    const viewportIdsToRender = [viewport.id]
 
     this.editData = {
       annotation,
@@ -139,7 +139,7 @@ export default class CircleScissorsTool extends BaseTool {
       segmentationDataUID,
       segmentsLocked,
       segmentColor,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
@@ -152,7 +152,7 @@ export default class CircleScissorsTool extends BaseTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
@@ -166,7 +166,7 @@ export default class CircleScissorsTool extends BaseTool {
     const { canvasToWorld } = viewport
 
     //////
-    const { annotation, viewportIDsToRender, centerCanvas } = this.editData
+    const { annotation, viewportIdsToRender, centerCanvas } = this.editData
     const { data } = annotation
 
     // Center of circle in canvas Coordinates
@@ -197,7 +197,7 @@ export default class CircleScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseUpCallback = (
@@ -294,9 +294,9 @@ export default class CircleScissorsTool extends BaseTool {
     }
 
     const { viewport } = enabledElement
-    const { viewportIDsToRender } = this.editData
+    const { viewportIdsToRender } = this.editData
 
-    if (!viewportIDsToRender.includes(viewport.id)) {
+    if (!viewportIdsToRender.includes(viewport.id)) {
       return
     }
 

@@ -104,7 +104,7 @@ export default class ProbeTool extends AnnotationTool {
 
   touchDragCallback: any
   mouseDragCallback: any
-  editData: { annotation: any; viewportIDsToRender: string[] } | null
+  editData: { annotation: any; viewportIdsToRender: string[] } | null
   eventDispatchDetail: {
     viewportId: string
     renderingEngineId: string
@@ -197,14 +197,14 @@ export default class ProbeTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       ProbeTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
     }
     this._activateModify(element)
 
@@ -212,7 +212,7 @@ export default class ProbeTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }
@@ -261,7 +261,7 @@ export default class ProbeTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       ProbeTool.toolName
     )
@@ -271,7 +271,7 @@ export default class ProbeTool extends AnnotationTool {
     this.editData = {
       //handle, // This would be useful for other tools with more than one handle
       annotation,
-      viewportIDsToRender,
+      viewportIdsToRender,
     }
     this._activateModify(element)
 
@@ -280,7 +280,7 @@ export default class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     evt.preventDefault()
   }
@@ -291,7 +291,7 @@ export default class ProbeTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportIDsToRender } = this.editData
+    const { annotation, viewportIdsToRender } = this.editData
 
     annotation.highlighted = false
 
@@ -318,7 +318,7 @@ export default class ProbeTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragCallback = (evt) => {
@@ -327,7 +327,7 @@ export default class ProbeTool extends AnnotationTool {
     const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
-    const { annotation, viewportIDsToRender } = this.editData
+    const { annotation, viewportIdsToRender } = this.editData
     const { data } = annotation
 
     data.handles.points[0] = [...worldPos]
@@ -336,7 +336,7 @@ export default class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   cancel = (element: HTMLElement) => {
@@ -346,7 +346,7 @@ export default class ProbeTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportIDsToRender } = this.editData
+      const { annotation, viewportIdsToRender } = this.editData
       const { data } = annotation
 
       annotation.highlighted = false
@@ -357,7 +357,7 @@ export default class ProbeTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportIDsToRender
+        viewportIdsToRender
       )
 
       this.editData = null
@@ -586,10 +586,10 @@ export default class ProbeTool extends AnnotationTool {
     const worldPos = data.handles.points[0]
     const { cachedStats } = data
 
-    const targetUIDs = Object.keys(cachedStats)
+    const targetIds = Object.keys(cachedStats)
 
-    for (let i = 0; i < targetUIDs.length; i++) {
-      const targetId = targetUIDs[i]
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i]
 
       const { image, viewport } = this.getTargetIdViewportAndImage(
         targetId,

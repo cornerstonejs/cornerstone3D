@@ -28,7 +28,7 @@ import imageLoadPoolManager from './requestPool/imageLoadPoolManager'
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests'
 import CPU_COLORMAPS from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 
-import getEnabledElement, { getEnabledElementByUIDs } from './getEnabledElement'
+import getEnabledElement, { getEnabledElementByIds } from './getEnabledElement'
 import metaData from './metaData'
 import {
   init,
@@ -89,7 +89,7 @@ export {
   getRenderingEngine,
   getRenderingEngines,
   getEnabledElement,
-  getEnabledElementByUIDs,
+  getEnabledElementByIds,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,

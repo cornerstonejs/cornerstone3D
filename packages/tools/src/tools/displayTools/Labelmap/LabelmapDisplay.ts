@@ -1,7 +1,7 @@
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
 
-import { cache, getEnabledElementByUIDs, Types } from '@cornerstonejs/core'
+import { cache, getEnabledElementByIds, Types } from '@cornerstonejs/core'
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import { LabelmapRepresentation } from '../../../types/SegmentationRepresentationTypes'
@@ -291,10 +291,7 @@ function _removeLabelmapFromToolGroupViewports(
 
   for (const viewportInfo of viewportsInfo) {
     const { viewportId, renderingEngineId } = viewportInfo
-    const enabledElement = getEnabledElementByUIDs(
-      viewportId,
-      renderingEngineId
-    )
+    const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
     internalRemoveSegmentationFromElement(
       enabledElement.viewport.element,
       segmentationData
@@ -311,10 +308,7 @@ async function _addLabelmapToToolGroupViewports(
 
   for (const viewportInfo of viewportsInfo) {
     const { viewportId, renderingEngineId } = viewportInfo
-    const enabledElement = getEnabledElementByUIDs(
-      viewportId,
-      renderingEngineId
-    )
+    const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
 
     if (!enabledElement) {
       throw new Error(

@@ -19,7 +19,7 @@ function getToolGroup(
   viewportId: string,
   renderingEngineId: string
 ): IToolGroup | undefined {
-  const toolGroupFilteredByUIDs = state.toolGroups.filter((tg) =>
+  const toolGroupFilteredByIds = state.toolGroups.filter((tg) =>
     tg.viewportsInfo.some(
       (vp) =>
         vp.renderingEngineId === renderingEngineId &&
@@ -27,18 +27,18 @@ function getToolGroup(
     )
   )
 
-  if (!toolGroupFilteredByUIDs.length) {
+  if (!toolGroupFilteredByIds.length) {
     return
   }
 
-  if (toolGroupFilteredByUIDs.length > 1) {
+  if (toolGroupFilteredByIds.length > 1) {
     throw new Error(
       `Multiple tool groups found for renderingEngineId: ${renderingEngineId} and viewportId: ${viewportId}. You should only
       have one tool group per viewport in a renderingEngine.`
     )
   }
 
-  return toolGroupFilteredByUIDs[0]
+  return toolGroupFilteredByIds[0]
 }
 
 export default getToolGroup

@@ -21,8 +21,8 @@ function annotationSelectionListener(evt): void {
 
   renderingEngines.forEach((renderingEngine) => {
     const viewports = renderingEngine.getViewports()
-    const viewportUIDs = viewports.map((vp) => vp.id)
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDs)
+    const viewportIds = viewports.map((vp) => vp.id)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds)
   })
 }
 

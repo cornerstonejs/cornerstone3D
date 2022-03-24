@@ -698,7 +698,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewport(viewportId: string): void
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void
+    renderViewports(viewportIds: Array<string>): void
     // (undocumented)
     resize(): void
     // (undocumented)

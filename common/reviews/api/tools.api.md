@@ -245,7 +245,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -327,7 +327,7 @@ export class CircleScissorsTool extends BaseTool {
         segmentationDataUID: string;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -1058,7 +1058,7 @@ export class EllipticalRoiTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportIDsToRender: Array<string>;
+        viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
         centerCanvas?: Array<number>;
@@ -1760,7 +1760,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewport(viewportId: string): void
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void
+    renderViewports(viewportIds: Array<string>): void
     // (undocumented)
     resize(): void
     // (undocumented)
@@ -2080,7 +2080,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
         newAnnotation?: boolean;
@@ -2366,7 +2366,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
     } | null;
     // (undocumented)
     eventDispatchDetail: {
@@ -2471,7 +2471,7 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
         hasMoved?: boolean;
@@ -2523,7 +2523,7 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
         hasMoved?: boolean;
@@ -2560,7 +2560,7 @@ export class RectangleRoiTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
         newAnnotation?: boolean;
@@ -2616,7 +2616,7 @@ export class RectangleScissorsTool extends BaseTool {
         segmentIndex: number;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -2923,7 +2923,7 @@ export class SphereScissorsTool extends BaseTool {
         segmentationDataUID: string;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
-        viewportIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -3182,7 +3182,7 @@ type TransformMatrix2D = [number, number, number, number, number, number]
 function transformPhysicalToIndex(imageData: any, physicalPoint: any): any;
 
 // @public (undocumented)
-function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIDsToRender: string[]): void;
+function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
 
 // @public
 function triggerEvent(

@@ -45,7 +45,7 @@ export default class RectangleScissorsTool extends BaseTool {
     segmentIndex: number
     segmentsLocked: number[]
     segmentColor: [number, number, number, number]
-    viewportIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
     newAnnotation?: boolean
@@ -144,7 +144,7 @@ export default class RectangleScissorsTool extends BaseTool {
     // Ensure settings are initialized after annotation instantiation
     Settings.getObjectSettings(annotation, RectangleRoiTool)
 
-    const viewportIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleScissorsTool.toolName
     )
@@ -156,7 +156,7 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentsLocked,
       segmentColor,
       segmentationDataUID,
-      viewportIDsToRender,
+      viewportIdsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
@@ -169,7 +169,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
@@ -178,7 +178,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportIDsToRender, handleIndex } = this.editData
+    const { annotation, viewportIdsToRender, handleIndex } = this.editData
     const { data } = annotation
 
     // Moving handle.
@@ -246,7 +246,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseUpCallback = (

@@ -124,11 +124,11 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
-  const viewportUIDs = ['CT_AXIAL_VOLUME', 'CT_AXIAL_STACK']
+  const viewportIds = ['CT_AXIAL_VOLUME', 'CT_AXIAL_STACK']
 
   const viewportInputArray = [
     {
-      viewportId: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -137,7 +137,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
@@ -149,7 +149,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  viewportUIDs.forEach((viewportId) =>
+  viewportIds.forEach((viewportId) =>
     toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
@@ -159,10 +159,10 @@ async function run() {
   })
 
   const volumeViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUIDs[0])
+    renderingEngine.getViewport(viewportIds[0])
   )
   const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUIDs[1])
+    renderingEngine.getViewport(viewportIds[1])
   )
 
   // Set the stack on the stackViewport

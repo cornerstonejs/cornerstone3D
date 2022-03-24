@@ -19,7 +19,7 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
-export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
+export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // @public (undocumented)
 export const cache: Cache_2;
@@ -555,7 +555,7 @@ function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlan
 export function getEnabledElement(element: HTMLElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
-export function getEnabledElementByUIDs(viewportId: string, renderingEngineId: string): IEnabledElement;
+export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -1060,7 +1060,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewport(viewportId: string): void;
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void;
+    renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
     resize(): void;
     // (undocumented)
@@ -1466,7 +1466,7 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     renderViewport(viewportId: string): void;
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void;
+    renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
     resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
     // (undocumented)
@@ -1533,7 +1533,7 @@ export class Settings {
 export function setUseCPURendering(status: boolean): void;
 
 // @public (undocumented)
-export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
+export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // @public (undocumented)
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;

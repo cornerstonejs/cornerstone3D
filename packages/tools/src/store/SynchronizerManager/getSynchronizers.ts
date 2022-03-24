@@ -12,7 +12,7 @@ function getSynchronizers(
   renderingEngineId: string,
   viewportId: string
 ): Array<Synchronizer> {
-  const synchronizersFilteredByUIDs = []
+  const synchronizersFilteredByIds = []
 
   if (!renderingEngineId && !viewportId) {
     throw new Error(
@@ -29,11 +29,11 @@ function getSynchronizers(
     )
 
     if (notDisabled && hasSourceViewport) {
-      synchronizersFilteredByUIDs.push(synchronizer)
+      synchronizersFilteredByIds.push(synchronizer)
     }
   }
 
-  return synchronizersFilteredByUIDs
+  return synchronizersFilteredByIds
 }
 
 export default getSynchronizers

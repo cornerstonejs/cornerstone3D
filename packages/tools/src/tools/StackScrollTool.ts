@@ -1,4 +1,4 @@
-import { getEnabledElementByUIDs } from '@cornerstonejs/core'
+import { getEnabledElementByIds } from '@cornerstonejs/core'
 import { BaseTool } from './base'
 import { scrollThroughStack } from '../utilities/stackScrollTool'
 import { PublicToolProps, ToolProps, EventTypes } from '../types'
@@ -30,7 +30,7 @@ export default class StackScrollTool extends BaseTool {
   _dragCallback(evt: EventTypes.MouseDragEventType) {
     const { deltaPoints, viewportId, renderingEngineId } = evt.detail
     const deltaFrames = deltaPoints.canvas[1]
-    const { viewport } = getEnabledElementByUIDs(viewportId, renderingEngineId)
+    const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId)
     const volumeId = this.getTargetId(viewport)
     const { invert } = this.configuration
 

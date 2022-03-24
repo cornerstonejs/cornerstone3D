@@ -4,8 +4,8 @@ import { getRenderingEngine, Types } from '@cornerstonejs/core'
  * Synchronizer callback to synchronize the camera. Synchronization
  *
  * @param synchronizerInstance - The Instance of the Synchronizer
- * @param sourceViewport - The list of UIDs defining the source viewport.
- * @param targetViewport - The list of UIDs defining the target viewport.
+ * @param sourceViewport - The list of IDs defining the source viewport.
+ * @param targetViewport - The list of IDs defining the target viewport.
  * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
 export default function cameraSyncCallback(

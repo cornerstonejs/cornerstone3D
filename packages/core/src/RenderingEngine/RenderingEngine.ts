@@ -28,7 +28,7 @@ export interface IRenderingEngine {
   getViewport(id: string): IStackViewport | IVolumeViewport
   getViewports(): Array<IStackViewport | IVolumeViewport>
   render(): void
-  renderViewports(viewportUIDs: Array<string>): void
+  renderViewports(viewportIds: Array<string>): void
   renderViewport(viewportId: string): void
   renderFrameOfReference(FrameOfReferenceUID: string): void
   fillCanvasWithBackgroundColor(
@@ -410,9 +410,9 @@ class RenderingEngine implements IRenderingEngine {
    */
   public render(): void {
     const viewports = this.getViewports()
-    const viewportUIDs = viewports.map((vp) => vp.id)
+    const viewportIds = viewports.map((vp) => vp.id)
 
-    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
+    this._setViewportsToBeRenderedNextFrame(viewportIds)
   }
 
   /**
@@ -433,11 +433,11 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Renders the provided Viewport UIDs.
+   * Renders the provided Viewport IDs.
    *
    */
-  public renderViewports(viewportUIDs: Array<string>): void {
-    this._setViewportsToBeRenderedNextFrame(viewportUIDs)
+  public renderViewports(viewportIds: Array<string>): void {
+    this._setViewportsToBeRenderedNextFrame(viewportIds)
   }
 
   /**
@@ -977,9 +977,9 @@ class RenderingEngine implements IRenderingEngine {
     return Array.from(this._viewports.values())
   }
 
-  private _setViewportsToBeRenderedNextFrame(viewportUIDs: string[]) {
+  private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
     // Add the viewports to the set of flagged viewports
-    viewportUIDs.forEach((viewportId) => {
+    viewportIds.forEach((viewportId) => {
       this._needsRender.add(viewportId)
     })
 

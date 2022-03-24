@@ -1,6 +1,6 @@
 import { _cloneDeep } from 'lodash.clonedeep'
 import {
-  getEnabledElementByUIDs,
+  getEnabledElementByIds,
   volumeLoader,
   VolumeViewport,
   utilities as csUtils,
@@ -41,7 +41,7 @@ async function createNewSegmentationForToolGroup(
 
   const { viewportId, renderingEngineId } = toolGroup.viewportsInfo[0]
 
-  const enabledElement = getEnabledElementByUIDs(viewportId, renderingEngineId)
+  const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
 
   if (!enabledElement) {
     throw new Error('element disabled')
