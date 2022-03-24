@@ -438,7 +438,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const viewport = this.renderingEngine.getViewport(viewportId)
-        const viewports = utilities.getVolumeViewportsContainingVolumeUID(
+        const viewports = utilities.getVolumeViewportsContainingVolumeId(
           volumeId,
           this.renderingEngine.uid
         )

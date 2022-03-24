@@ -44,7 +44,7 @@ instructions.innerText = 'Left Click to use selected tool TODO'
 content.append(instructions)
 // ============================= //
 
-const toolGroupId = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_ID'
 
 /**
  * Runs the demo

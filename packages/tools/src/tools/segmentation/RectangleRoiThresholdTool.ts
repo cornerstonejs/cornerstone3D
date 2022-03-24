@@ -59,7 +59,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportUIDsToRender: string[]
+    viewportIDsToRender: string[]
     handleIndex?: number
     newAnnotation?: boolean
     hasMoved?: boolean
@@ -106,7 +106,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      volumeId = this.getTargetUID(viewport)
+      volumeId = this.getTargetId(viewport)
       const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -161,14 +161,14 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiThresholdTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       handleIndex: 3,
       newAnnotation: true,
       hasMoved: false,
@@ -179,7 +179,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     return annotation
   }

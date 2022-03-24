@@ -73,7 +73,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportUIDsToRender: string[]
+    viewportIDsToRender: string[]
     handleIndex?: number
     newAnnotation?: boolean
     hasMoved?: boolean
@@ -123,7 +123,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented')
     } else {
-      volumeId = this.getTargetUID(viewport)
+      volumeId = this.getTargetId(viewport)
       imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -207,14 +207,14 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiStartEndThresholdTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       handleIndex: 3,
       newAnnotation: true,
       hasMoved: false,
@@ -225,7 +225,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     return annotation
   }
@@ -296,7 +296,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     const { viewportId, renderingEngineId, viewport } = enabledElement
 
     const { cachedStats } = data
-    const volumeId = this.getTargetUID(viewport)
+    const volumeId = this.getTargetId(viewport)
     const imageVolume = cache.getVolume(volumeId)
 
     // Todo: this shouldn't be here, this is a performance issue

@@ -45,7 +45,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     const { viewport, renderingEngine } = enabledElement
 
     // 2. Getting the target volume that is clicked on
-    const targetVolumeUID = this.getTargetUID(viewport as Types.IVolumeViewport)
+    const targetVolumeId = this.getTargetId(viewport as Types.IVolumeViewport)
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity
@@ -60,7 +60,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     const brightestPoint = getPointInLineOfSightWithCriteria(
       viewport as Types.IVolumeViewport,
       currentPoints.world,
-      targetVolumeUID,
+      targetVolumeId,
       maxFn
     )
 

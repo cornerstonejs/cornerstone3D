@@ -55,7 +55,7 @@ content.append(instructions)
 // ============================= //
 
 const renderingEngineId = 'myRenderingEngine'
-const toolGroupId = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_ID'
 
 // Some annotations to demonstrate the demo
 const annotationsJSON =

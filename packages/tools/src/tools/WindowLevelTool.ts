@@ -55,11 +55,11 @@ export default class WindowLevelTool extends BaseTool {
     let useDynamicRange = false
 
     if (viewport instanceof VolumeViewport) {
-      volumeId = this.getTargetUID(viewport as Types.IVolumeViewport)
+      volumeId = this.getTargetId(viewport as Types.IVolumeViewport)
       ;({ volumeActor } = viewport.getActor(volumeId))
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
       viewportsContainingVolumeUID =
-        utilities.getVolumeViewportsContainingVolumeUID(
+        utilities.getVolumeViewportsContainingVolumeId(
           volumeId,
           renderingEngine.uid
         )

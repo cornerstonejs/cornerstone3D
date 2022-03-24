@@ -73,7 +73,7 @@ export interface EllipticalRoiAnnotation extends Annotation {
     }
     label: string
     cachedStats?: {
-      [targetUID: string]: {
+      [targetId: string]: {
         Modality: string
         area: number
         max: number
@@ -129,7 +129,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportUIDsToRender: Array<string>
+    viewportIDsToRender: Array<string>
     handleIndex?: number
     movingTextBox?: boolean
     centerCanvas?: Array<number>
@@ -190,7 +190,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const volumeId = this.getTargetUID(viewport)
+      const volumeId = this.getTargetId(viewport)
       const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -247,14 +247,14 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       centerCanvas: canvasPos,
       newAnnotation: true,
       hasMoved: false,
@@ -265,7 +265,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     return annotation
   }
@@ -345,14 +345,14 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       movingTextBox: false,
     }
 
@@ -363,7 +363,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     evt.preventDefault()
   }
@@ -411,14 +411,14 @@ export default class EllipticalRoiTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       handleIndex,
       canvasWidth,
       canvasHeight,
@@ -433,7 +433,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     evt.preventDefault()
   }
@@ -444,7 +444,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportUIDsToRender, newAnnotation, hasMoved } =
+    const { annotation, viewportIDsToRender, newAnnotation, hasMoved } =
       this.editData
     const { data } = annotation
 
@@ -473,7 +473,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
@@ -487,7 +487,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const { canvasToWorld } = viewport
 
     //////
-    const { annotation, viewportUIDsToRender, centerCanvas } = this.editData
+    const { annotation, viewportIDsToRender, centerCanvas } = this.editData
     const { data } = annotation
 
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
@@ -510,7 +510,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
     this.editData.hasMoved = true
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _mouseDragModifyCallback = (evt: MouseDragEventType) => {
@@ -518,7 +518,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportUIDsToRender, handleIndex, movingTextBox } =
+    const { annotation, viewportIDsToRender, handleIndex, movingTextBox } =
       this.editData
     const { data } = annotation
 
@@ -555,7 +555,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _dragHandle = (evt) => {
@@ -648,7 +648,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportUIDsToRender } = this.editData
+      const { annotation, viewportIDsToRender } = this.editData
       const { data } = annotation
 
       annotation.highlighted = false
@@ -659,7 +659,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportUIDsToRender
+        viewportIDsToRender
       )
 
       this.editData = null
@@ -749,7 +749,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       return
     }
 
-    const targetUID = this.getTargetUID(viewport)
+    const targetId = this.getTargetId(viewport)
 
     const renderingEngine = viewport.getRenderingEngine()
 
@@ -772,8 +772,8 @@ export default class EllipticalRoiTool extends AnnotationTool {
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates)
       )
-      if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {
+      if (!data.cachedStats[targetId]) {
+        data.cachedStats[targetId] = {
           Modality: null,
           area: null,
           max: null,
@@ -809,16 +809,16 @@ export default class EllipticalRoiTool extends AnnotationTool {
           // at the referencedImageId
           const viewports = renderingEngine.getViewports()
           viewports.forEach((vp) => {
-            const stackTargetUID = this.getTargetUID(vp)
+            const stackTargetId = this.getTargetId(vp)
             // only delete the cachedStats for the stackedViewports if the tool
             // is dragged inside the volume and the stackViewports are not at the
             // referencedImageId for the tool
             if (
               vp instanceof StackViewport &&
               !vp.getCurrentImageId().includes(referencedImageId) &&
-              data.cachedStats[stackTargetUID]
+              data.cachedStats[stackTargetId]
             ) {
-              delete data.cachedStats[stackTargetUID]
+              delete data.cachedStats[stackTargetId]
             }
           })
         }
@@ -870,7 +870,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
         }
       )
 
-      const textLines = this._getTextLines(data, targetUID)
+      const textLines = this._getTextLines(data, targetId)
       if (!textLines || textLines.length === 0) {
         continue
       }
@@ -913,8 +913,8 @@ export default class EllipticalRoiTool extends AnnotationTool {
     }
   }
 
-  _getTextLines = (data, targetUID) => {
-    const cachedVolumeStats = data.cachedStats[targetUID]
+  _getTextLines = (data, targetId) => {
+    const cachedVolumeStats = data.cachedStats[targetId]
     const { area, mean, stdDev, max, isEmptyArea, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
@@ -979,10 +979,10 @@ export default class EllipticalRoiTool extends AnnotationTool {
     const worldPos2 = bottomRightWorld
 
     for (let i = 0; i < targetUIDs.length; i++) {
-      const targetUID = targetUIDs[i]
+      const targetId = targetUIDs[i]
 
-      const { image } = this.getTargetUIDViewportAndImage(
-        targetUID,
+      const { image } = this.getTargetIdViewportAndImage(
+        targetId,
         renderingEngine
       )
 
@@ -1080,7 +1080,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
         stdDev /= count
         stdDev = Math.sqrt(stdDev)
 
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
           mean,
@@ -1091,7 +1091,7 @@ export default class EllipticalRoiTool extends AnnotationTool {
       } else {
         this.isHandleOutsideImage = true
 
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           Modality: metadata.Modality,
         }
       }

@@ -47,7 +47,7 @@ interface ProbeAnnotation extends Annotation {
   data: {
     handles: { points: Types.Point3[] }
     cachedStats: {
-      [targetUID: string]: {
+      [targetId: string]: {
         Modality: string
         index: Types.Point3
         value: number
@@ -104,7 +104,7 @@ export default class ProbeTool extends AnnotationTool {
 
   touchDragCallback: any
   mouseDragCallback: any
-  editData: { annotation: any; viewportUIDsToRender: string[] } | null
+  editData: { annotation: any; viewportIDsToRender: string[] } | null
   eventDispatchDetail: {
     viewportId: string
     renderingEngineId: string
@@ -160,7 +160,7 @@ export default class ProbeTool extends AnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const volumeId = this.getTargetUID(viewport)
+      const volumeId = this.getTargetId(viewport)
       const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -197,14 +197,14 @@ export default class ProbeTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       ProbeTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
     }
     this._activateModify(element)
 
@@ -212,7 +212,7 @@ export default class ProbeTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     return annotation
   }
@@ -261,7 +261,7 @@ export default class ProbeTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       ProbeTool.toolName
     )
@@ -271,7 +271,7 @@ export default class ProbeTool extends AnnotationTool {
     this.editData = {
       //handle, // This would be useful for other tools with more than one handle
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
     }
     this._activateModify(element)
 
@@ -280,7 +280,7 @@ export default class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     evt.preventDefault()
   }
@@ -291,7 +291,7 @@ export default class ProbeTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportUIDsToRender } = this.editData
+    const { annotation, viewportIDsToRender } = this.editData
 
     annotation.highlighted = false
 
@@ -318,7 +318,7 @@ export default class ProbeTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _mouseDragCallback = (evt) => {
@@ -327,7 +327,7 @@ export default class ProbeTool extends AnnotationTool {
     const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
-    const { annotation, viewportUIDsToRender } = this.editData
+    const { annotation, viewportIDsToRender } = this.editData
     const { data } = annotation
 
     data.handles.points[0] = [...worldPos]
@@ -336,7 +336,7 @@ export default class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   cancel = (element: HTMLElement) => {
@@ -346,7 +346,7 @@ export default class ProbeTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportUIDsToRender } = this.editData
+      const { annotation, viewportIDsToRender } = this.editData
       const { data } = annotation
 
       annotation.highlighted = false
@@ -357,7 +357,7 @@ export default class ProbeTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportUIDsToRender
+        viewportIDsToRender
       )
 
       this.editData = null
@@ -417,7 +417,7 @@ export default class ProbeTool extends AnnotationTool {
       return
     }
 
-    const targetUID = this.getTargetUID(viewport)
+    const targetId = this.getTargetId(viewport)
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < annotations.length; i++) {
@@ -429,8 +429,8 @@ export default class ProbeTool extends AnnotationTool {
       const canvasCoordinates = viewport.worldToCanvas(point)
       const color = this.getStyle(settings, 'color', annotation)
 
-      if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {
+      if (!data.cachedStats[targetId]) {
+        data.cachedStats[targetId] = {
           Modality: null,
           index: null,
           value: null,
@@ -455,16 +455,16 @@ export default class ProbeTool extends AnnotationTool {
           // at the referencedImageId
           const viewports = renderingEngine.getViewports()
           viewports.forEach((vp) => {
-            const stackTargetUID = this.getTargetUID(vp)
+            const stackTargetId = this.getTargetId(vp)
             // only delete the cachedStats for the stackedViewports if the tool
             // is dragged inside the volume and the stackViewports are not at the
             // referencedImageId for the tool
             if (
               vp instanceof StackViewport &&
               !vp.getCurrentImageId().includes(referencedImageId) &&
-              data.cachedStats[stackTargetUID]
+              data.cachedStats[stackTargetId]
             ) {
-              delete data.cachedStats[stackTargetUID]
+              delete data.cachedStats[stackTargetId]
             }
           })
         }
@@ -487,7 +487,7 @@ export default class ProbeTool extends AnnotationTool {
         { color }
       )
 
-      const textLines = this._getTextLines(data, targetUID)
+      const textLines = this._getTextLines(data, targetId)
       if (textLines) {
         const textCanvasCoorinates = [
           canvasCoordinates[0] + 6,
@@ -508,8 +508,8 @@ export default class ProbeTool extends AnnotationTool {
     }
   }
 
-  _getTextLines(data, targetUID) {
-    const cachedVolumeStats = data.cachedStats[targetUID]
+  _getTextLines(data, targetId) {
+    const cachedVolumeStats = data.cachedStats[targetId]
     const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats
 
     if (value === undefined && SUVBw === undefined) {
@@ -589,10 +589,10 @@ export default class ProbeTool extends AnnotationTool {
     const targetUIDs = Object.keys(cachedStats)
 
     for (let i = 0; i < targetUIDs.length; i++) {
-      const targetUID = targetUIDs[i]
+      const targetId = targetUIDs[i]
 
-      const { image, viewport } = this.getTargetUIDViewportAndImage(
-        targetUID,
+      const { image, viewport } = this.getTargetIdViewportAndImage(
+        targetId,
         renderingEngine
       )
 
@@ -621,14 +621,14 @@ export default class ProbeTool extends AnnotationTool {
 
         const values = this._getValueForModality(value, image, modality)
 
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           index,
           ...values,
           Modality: modality,
         }
       } else {
         this.isHandleOutsideImage = true
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           index,
           Modality: modality,
         }

@@ -324,7 +324,7 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
-function createAndCacheDerivedVolume(referencedVolumeUID: string, options: DerivedVolumeOptions): ImageVolume;
+function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): ImageVolume;
 
 // @public (undocumented)
 function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
@@ -582,7 +582,7 @@ export function getShouldUseCPURendering(): boolean;
 function getSpacingInNormalDirection(imageVolume: IImageVolume, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
-function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeUID?: string): {
+function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
 };
@@ -594,7 +594,7 @@ function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
-function getVolumeViewportsContainingVolumeUID(uid: string, renderingEngineId?: string): Array<IVolumeViewport>;
+function getVolumeViewportsContainingVolumeId(uid: string, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
 interface ICache {
@@ -1747,7 +1747,7 @@ declare namespace utilities {
         getVolumeActorCorners,
         indexWithinDimensions,
         getVolumeViewportsContainingSameVolumes,
-        getVolumeViewportsContainingVolumeUID
+        getVolumeViewportsContainingVolumeId
     }
 }
 export { utilities }

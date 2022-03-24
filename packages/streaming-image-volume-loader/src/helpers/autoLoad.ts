@@ -37,7 +37,7 @@ function getRenderingEngineAndViewportsContainingVolume(
 
   for (let i = 0; i < renderingEnginesArray.length; i++) {
     const renderingEngine = renderingEnginesArray[i]
-    const viewports = utilities.getVolumeViewportsContainingVolumeUID(
+    const viewports = utilities.getVolumeViewportsContainingVolumeId(
       volumeId,
       renderingEngine.uid
     )

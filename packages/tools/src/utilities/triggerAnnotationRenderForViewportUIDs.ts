@@ -3,13 +3,13 @@ import triggerAnnotationRender from './triggerAnnotationRender'
 
 export function triggerAnnotationRenderForViewportIds(
   renderingEngine: Types.IRenderingEngine,
-  viewportUIDsToRender: string[]
+  viewportIDsToRender: string[]
 ): void {
-  if (!viewportUIDsToRender.length) {
+  if (!viewportIDsToRender.length) {
     return
   }
 
-  viewportUIDsToRender.forEach((viewportId) => {
+  viewportIDsToRender.forEach((viewportId) => {
     const { element } = renderingEngine.getViewport(viewportId)
     triggerAnnotationRender(element)
   })

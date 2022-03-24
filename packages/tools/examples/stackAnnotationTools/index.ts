@@ -44,7 +44,7 @@ instructions.innerText = 'Left Click to use selected tool'
 content.append(instructions)
 // ============================= //
 
-const toolGroupId = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_ID'
 
 const toolsNames = [
   LengthTool.toolName,

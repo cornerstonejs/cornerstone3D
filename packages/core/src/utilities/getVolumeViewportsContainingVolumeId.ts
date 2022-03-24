@@ -10,7 +10,7 @@ import {
  *
  * @returns VolumeViewport viewports array
  */
-function getVolumeViewportsContainingVolumeUID(
+function getVolumeViewportsContainingVolumeId(
   uid: string,
   renderingEngineId?: string
 ): Array<IVolumeViewport> {
@@ -36,4 +36,4 @@ function getVolumeViewportsContainingVolumeUID(
   return sameVolumeViewports
 }
 
-export default getVolumeViewportsContainingVolumeUID
+export default getVolumeViewportsContainingVolumeId

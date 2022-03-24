@@ -451,7 +451,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const viewport = enabledElement.viewport as Types.IVolumeViewport
 
     const requireSameOrientation = false
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       CrosshairsTool.toolName,
       requireSameOrientation
@@ -579,7 +579,7 @@ export default class CrosshairsTool extends AnnotationTool {
       })
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   mouseMoveCallback = (
@@ -1842,13 +1842,13 @@ export default class CrosshairsTool extends AnnotationTool {
     const { renderingEngine } = enabledElement
 
     const requireSameOrientation = false
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       CrosshairsTool.toolName,
       requireSameOrientation
     )
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _mouseDragCallback = (evt: MouseDragEventType) => {

@@ -41,7 +41,7 @@ instructions.innerText = instructionText[ToolModes.Active]
 content.append(instructions)
 // ============================= //
 
-const toolGroupId = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_ID'
 
 const toolModes = [
   ToolModes.Active,

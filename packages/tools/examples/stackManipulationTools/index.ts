@@ -50,7 +50,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupId = 'STACK_TOOL_GROUP_UID'
+  const toolGroupId = 'STACK_TOOL_GROUP_ID'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool)

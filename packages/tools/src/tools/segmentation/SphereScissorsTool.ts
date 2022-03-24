@@ -38,7 +38,7 @@ export default class SphereScissorsTool extends BaseTool {
     segmentationDataUID: string
     toolGroupId: string
     segmentColor: [number, number, number, number]
-    viewportUIDsToRender: string[]
+    viewportIDsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
     newAnnotation?: boolean
@@ -130,7 +130,7 @@ export default class SphereScissorsTool extends BaseTool {
       },
     }
 
-    const viewportUIDsToRender = [viewport.uid]
+    const viewportIDsToRender = [viewport.uid]
 
     this.editData = {
       annotation,
@@ -141,7 +141,7 @@ export default class SphereScissorsTool extends BaseTool {
       segmentColor,
       segmentationDataUID,
       toolGroupId,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
@@ -154,7 +154,7 @@ export default class SphereScissorsTool extends BaseTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
@@ -168,7 +168,7 @@ export default class SphereScissorsTool extends BaseTool {
     const { canvasToWorld } = viewport
 
     //////
-    const { annotation, viewportUIDsToRender, centerCanvas } = this.editData
+    const { annotation, viewportIDsToRender, centerCanvas } = this.editData
     const { data } = annotation
 
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
@@ -197,7 +197,7 @@ export default class SphereScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _mouseUpCallback = (
@@ -294,9 +294,9 @@ export default class SphereScissorsTool extends BaseTool {
     }
 
     const { viewport } = enabledElement
-    const { viewportUIDsToRender } = this.editData
+    const { viewportIDsToRender } = this.editData
 
-    if (!viewportUIDsToRender.includes(viewport.uid)) {
+    if (!viewportIDsToRender.includes(viewport.uid)) {
       return
     }
 

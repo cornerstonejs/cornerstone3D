@@ -201,9 +201,9 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
-    protected getTargetUID(viewport: Types_2.IViewport): string | undefined;
+    protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
-    protected getTargetUIDViewportAndImage(targetUID: string, renderingEngine: Types_2.IRenderingEngine): {
+    protected getTargetIdViewportAndImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): {
         viewport: Types_2.IViewport;
         image: Types_2.IImageData;
     };
@@ -245,14 +245,14 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines: (data: any, targetUID: any) => string[];
+    _getTextLines: (data: any, targetId: any) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: BidirectionalAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -327,7 +327,7 @@ export class CircleScissorsTool extends BaseTool {
         segmentationDataUID: string;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -1058,7 +1058,7 @@ export class EllipticalRoiTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: Array<string>;
+        viewportIDsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
         centerCanvas?: Array<number>;
@@ -1069,7 +1069,7 @@ export class EllipticalRoiTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines: (data: any, targetUID: any) => any[];
+    _getTextLines: (data: any, targetId: any) => any[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalRoiAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -1312,7 +1312,7 @@ function getGlobalSegmentationDataByUID(segmentationUID: string): GlobalSegmenta
 function getGlobalSegmentationState(): GlobalSegmentationState | [];
 
 // @public (undocumented)
-function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeUID: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
+function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
 
 // @public (undocumented)
 function getRepresentationConfig(toolGroupId: string, representationType: SegmentationRepresentations): RepresentationConfig;
@@ -2080,14 +2080,14 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines(data: any, targetUID: any): string[];
+    _getTextLines(data: any, targetId: any): string[];
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: LengthAnnotation, handle: ToolHandle, interactionType?: string): void;
     // (undocumented)
@@ -2366,7 +2366,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
     } | null;
     // (undocumented)
     eventDispatchDetail: {
@@ -2376,7 +2376,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    _getTextLines(data: any, targetUID: any): any[];
+    _getTextLines(data: any, targetId: any): any[];
     // (undocumented)
     _getValueForModality(value: any, imageVolume: any, modality: any): {};
     // (undocumented)
@@ -2471,7 +2471,7 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
         hasMoved?: boolean;
@@ -2523,7 +2523,7 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
         hasMoved?: boolean;
@@ -2560,7 +2560,7 @@ export class RectangleRoiTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
         newAnnotation?: boolean;
@@ -2574,7 +2574,7 @@ export class RectangleRoiTool extends AnnotationTool {
         height: number;
     };
     // (undocumented)
-    _getTextLines: (data: any, targetUID: string) => any[];
+    _getTextLines: (data: any, targetId: string) => any[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleRoiAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -2616,7 +2616,7 @@ export class RectangleScissorsTool extends BaseTool {
         segmentIndex: number;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -2923,7 +2923,7 @@ export class SphereScissorsTool extends BaseTool {
         segmentationDataUID: string;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
-        viewportUIDsToRender: string[];
+        viewportIDsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -3182,7 +3182,7 @@ type TransformMatrix2D = [number, number, number, number, number, number]
 function transformPhysicalToIndex(imageData: any, physicalPoint: any): any;
 
 // @public (undocumented)
-function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportUIDsToRender: string[]): void;
+function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIDsToRender: string[]): void;
 
 // @public
 function triggerEvent(

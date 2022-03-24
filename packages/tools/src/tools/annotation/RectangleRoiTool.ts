@@ -50,7 +50,7 @@ import {
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
 interface RectangleRoiCachedStats {
-  [targetUID: string]: {
+  [targetId: string]: {
     Modality: string
     area: number
     max: number
@@ -129,7 +129,7 @@ export default class RectangleRoiTool extends AnnotationTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportUIDsToRender: string[]
+    viewportIDsToRender: string[]
     handleIndex?: number
     movingTextBox?: boolean
     newAnnotation?: boolean
@@ -185,7 +185,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const volumeId = this.getTargetUID(viewport)
+      const volumeId = this.getTargetId(viewport)
       const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -240,14 +240,14 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
@@ -259,7 +259,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     return annotation
   }
@@ -320,14 +320,14 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       movingTextBox: false,
     }
 
@@ -338,7 +338,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     evt.preventDefault()
   }
@@ -365,14 +365,14 @@ export default class RectangleRoiTool extends AnnotationTool {
     }
 
     // Find viewports to render on drag.
-    const viewportUIDsToRender = getViewportIdsWithToolToRender(
+    const viewportIDsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIDsToRender,
       handleIndex,
       movingTextBox,
     }
@@ -383,7 +383,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
 
     evt.preventDefault()
   }
@@ -394,7 +394,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportUIDsToRender, newAnnotation, hasMoved } =
+    const { annotation, viewportIDsToRender, newAnnotation, hasMoved } =
       this.editData
     const { data } = annotation
 
@@ -423,7 +423,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   _mouseDragCallback = (
@@ -434,7 +434,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportUIDsToRender, handleIndex, movingTextBox } =
+    const { annotation, viewportIDsToRender, handleIndex, movingTextBox } =
       this.editData
     const { data } = annotation
 
@@ -535,7 +535,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportUIDsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIDsToRender)
   }
 
   cancel = (element: HTMLElement) => {
@@ -546,7 +546,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportUIDsToRender } = this.editData
+      const { annotation, viewportIDsToRender } = this.editData
 
       const { data } = annotation
 
@@ -558,7 +558,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportUIDsToRender
+        viewportIDsToRender
       )
 
       this.editData = null
@@ -653,7 +653,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       return
     }
 
-    const targetUID = this.getTargetUID(viewport)
+    const targetId = this.getTargetId(viewport)
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < annotations.length; i++) {
@@ -670,8 +670,8 @@ export default class RectangleRoiTool extends AnnotationTool {
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera()
 
-      if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {
+      if (!data.cachedStats[targetId]) {
+        data.cachedStats[targetId] = {
           Modality: null,
           area: null,
           max: null,
@@ -710,16 +710,16 @@ export default class RectangleRoiTool extends AnnotationTool {
           // at the referencedImageId
           const viewports = renderingEngine.getViewports()
           viewports.forEach((vp) => {
-            const stackTargetUID = this.getTargetUID(vp)
+            const stackTargetId = this.getTargetId(vp)
             // only delete the cachedStats for the stackedViewports if the tool
             // is dragged inside the volume and the stackViewports are not at the
             // referencedImageId for the tool
             if (
               vp instanceof StackViewport &&
               !vp.getCurrentImageId().includes(referencedImageId) &&
-              data.cachedStats[stackTargetUID]
+              data.cachedStats[stackTargetId]
             ) {
-              delete data.cachedStats[stackTargetUID]
+              delete data.cachedStats[stackTargetId]
             }
           })
         }
@@ -772,7 +772,7 @@ export default class RectangleRoiTool extends AnnotationTool {
         }
       )
 
-      const textLines = this._getTextLines(data, targetUID)
+      const textLines = this._getTextLines(data, targetId)
       if (!textLines || textLines.length === 0) {
         continue
       }
@@ -835,10 +835,10 @@ export default class RectangleRoiTool extends AnnotationTool {
    * target volume enclosed by the rectangle.
    *
    * @param data - The annotation tool-specific data.
-   * @param targetUID - The volumeId of the volume to display the stats for.
+   * @param targetId - The volumeId of the volume to display the stats for.
    */
-  _getTextLines = (data, targetUID: string) => {
-    const cachedVolumeStats = data.cachedStats[targetUID]
+  _getTextLines = (data, targetId: string) => {
+    const cachedVolumeStats = data.cachedStats[targetId]
     const { area, mean, max, stdDev, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
@@ -903,10 +903,10 @@ export default class RectangleRoiTool extends AnnotationTool {
     const targetUIDs = Object.keys(cachedStats)
 
     for (let i = 0; i < targetUIDs.length; i++) {
-      const targetUID = targetUIDs[i]
+      const targetId = targetUIDs[i]
 
-      const { image } = this.getTargetUIDViewportAndImage(
-        targetUID,
+      const { image } = this.getTargetIdViewportAndImage(
+        targetId,
         renderingEngine
       )
 
@@ -993,7 +993,7 @@ export default class RectangleRoiTool extends AnnotationTool {
         stdDev /= count
         stdDev = Math.sqrt(stdDev)
 
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
           mean,
@@ -1002,7 +1002,7 @@ export default class RectangleRoiTool extends AnnotationTool {
         }
       } else {
         this.isHandleOutsideImage = true
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           Modality: metadata.Modality,
         }
       }
