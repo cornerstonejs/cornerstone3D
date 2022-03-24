@@ -22,9 +22,9 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ptVolumeUID,
-  ctVolumeUID,
+  renderingEngineId,
+  ptVolumeId,
+  ctVolumeId,
   colormaps,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -138,10 +138,10 @@ class MPRExample extends Component {
       ptTypesSceneToolGroup,
     } = initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
-    this.ptVolumeUID = ptVolumeUID
+    this.ctVolumeId = ctVolumeId
+    this.ptVolumeId = ptVolumeId
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
@@ -179,10 +179,10 @@ class MPRExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -201,8 +201,8 @@ class MPRExample extends Component {
 
     ptCtFusion.setVolumes(
       renderingEngine,
-      ctVolumeUID,
-      ptVolumeUID,
+      ctVolumeId,
+      ptVolumeId,
       colormaps[this.state.petColorMapIndex]
     )
 
@@ -251,28 +251,28 @@ class MPRExample extends Component {
 
         ptCtFusion.setVolumes(
           renderingEngine,
-          ctVolumeUID,
-          ptVolumeUID,
+          ctVolumeId,
+          ptVolumeId,
           colormaps[this.state.petColorMapIndex]
         )
       } else if (layout === 'ObliqueCT') {
         obliqueCT.setLayout(renderingEngine, this._elementNodes, {
           ctObliqueToolGroup,
         })
-        obliqueCT.setVolumes(renderingEngine, ctVolumeUID)
+        obliqueCT.setVolumes(renderingEngine, ctVolumeId)
       } else if (layout === 'CTVR') {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._elementNodes, {
           ctSceneToolGroup,
           ctVRSceneToolGroup,
         })
-        fourUpCT.setVolumes(renderingEngine, ctVolumeUID)
+        fourUpCT.setVolumes(renderingEngine, ctVolumeId)
       } else if (layout === 'PetTypes') {
         // petTypes
         petTypes.setLayout(renderingEngine, this._elementNodes, {
           ptTypesSceneToolGroup,
         })
-        petTypes.setVolumes(renderingEngine, ptVolumeUID)
+        petTypes.setVolumes(renderingEngine, ptVolumeId)
       } else {
         throw new Error('Unrecognised layout index')
       }
@@ -337,7 +337,7 @@ class MPRExample extends Component {
   swapPetTransferFunction() {
     const renderingEngine = this.renderingEngine
 
-    const volumeActor = petCTScene.getVolumeActor(ptVolumeUID)
+    const volumeActor = petCTScene.getVolumeActor(ptVolumeId)
 
     let petColorMapIndex = this.state.petColorMapIndex
 

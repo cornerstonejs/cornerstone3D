@@ -52,7 +52,7 @@ class ColorExample extends Component {
     await csRenderInit()
     csTools3d.init()
     registerWebImageLoader(cs)
-    const renderingEngineUID = 'ExampleRenderingEngineID'
+    const renderingEngineId = 'ExampleRenderingEngineID'
     const { imageIds } = config.colorImages
 
     ;({ colorSceneToolGroup } = initToolGroups())
@@ -62,15 +62,15 @@ class ColorExample extends Component {
       10000
     )
 
-    const volumeUID = 'VOLUME'
+    const volumeId = 'VOLUME'
 
-    const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
     })
 
     volume.load()
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
@@ -80,7 +80,7 @@ class ColorExample extends Component {
 
     renderingEngine.setViewports([
       {
-        viewportUID: axialViewportID,
+        viewportId: axialViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.axialContainer.current,
         defaultOptions: {
@@ -88,7 +88,7 @@ class ColorExample extends Component {
         },
       },
       {
-        viewportUID: sagittalViewportID,
+        viewportId: sagittalViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.sagittalContainer.current,
         defaultOptions: {
@@ -96,7 +96,7 @@ class ColorExample extends Component {
         },
       },
       {
-        viewportUID: coronalViewportID,
+        viewportId: coronalViewportID,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.coronalContainer.current,
         defaultOptions: {
@@ -106,16 +106,16 @@ class ColorExample extends Component {
     ])
 
     colorSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
     colorSceneToolGroup.addTool(PanTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
     colorSceneToolGroup.addTool(ZoomTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
     colorSceneToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
-      configuration: { volumeUID },
+      configuration: { volumeId },
     })
 
     colorSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
@@ -133,8 +133,8 @@ class ColorExample extends Component {
       this.renderingEngine,
       [
         {
-          volumeUID: volumeUID,
-          callback: ({ volumeActor, volumeUID }) => {
+          volumeId: volumeId,
+          callback: ({ volumeActor, volumeId }) => {
             volumeActor.getProperty().setIndependentComponents(false)
             volumeActor.getProperty().setInterpolationTypeToNearest()
           },
@@ -143,9 +143,9 @@ class ColorExample extends Component {
       [axialViewportID, sagittalViewportID, coronalViewportID]
     )
 
-    colorSceneToolGroup.addViewport(axialViewportID, renderingEngineUID)
-    colorSceneToolGroup.addViewport(sagittalViewportID, renderingEngineUID)
-    colorSceneToolGroup.addViewport(coronalViewportID, renderingEngineUID)
+    colorSceneToolGroup.addViewport(axialViewportID, renderingEngineId)
+    colorSceneToolGroup.addViewport(sagittalViewportID, renderingEngineId)
+    colorSceneToolGroup.addViewport(coronalViewportID, renderingEngineId)
 
     renderingEngine.render()
   }

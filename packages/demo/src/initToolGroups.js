@@ -3,9 +3,9 @@ import * as csTools3d from '@cornerstonejs/tools'
 const { MouseBindings } = csTools3d.Enums
 
 import {
-  TOOL_GROUP_UIDS,
-  ptVolumeUID,
-  ctVolumeUID,
+  TOOL_GROUP_IDS,
+  ptVolumeId,
+  ctVolumeId,
   ctStackUID,
   ctVolumeTestUID,
   ptVolumeTestUID,
@@ -72,11 +72,11 @@ let viewportReferenceLineControllable = [
   VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
 ]
 
-function setReferenceLineControllable(viewportUID, controllable) {
-  const index = viewportReferenceLineControllable.indexOf(viewportUID)
+function setReferenceLineControllable(viewportId, controllable) {
+  const index = viewportReferenceLineControllable.indexOf(viewportId)
   if (controllable) {
     index === -1
-      ? array.push(viewportUID)
+      ? array.push(viewportId)
       : console.log('viewport is already controllable')
   } else {
     index > -1
@@ -87,8 +87,8 @@ function setReferenceLineControllable(viewportUID, controllable) {
 
 window.settReferenceLineControllable = setReferenceLineControllable
 
-function getReferenceLineControllable(viewportUID) {
-  const index = viewportReferenceLineControllable.indexOf(viewportUID)
+function getReferenceLineControllable(viewportId) {
+  const index = viewportReferenceLineControllable.indexOf(viewportId)
   return index !== -1 ? true : false
 }
 
@@ -115,11 +115,11 @@ let viewportReferenceLineDraggableRotatable = [
   VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
 ]
 
-function setReferenceLineDraggableRotatable(viewportUID, controllable) {
-  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportUID)
+function setReferenceLineDraggableRotatable(viewportId, controllable) {
+  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportId)
   if (controllable) {
     index === -1
-      ? array.push(viewportUID)
+      ? array.push(viewportId)
       : console.log('viewport is already draggable')
   } else {
     index > -1
@@ -130,8 +130,8 @@ function setReferenceLineDraggableRotatable(viewportUID, controllable) {
 
 window.setReferenceLineDraggableRotatable = setReferenceLineDraggableRotatable
 
-function getReferenceLineDraggableRotatable(viewportUID) {
-  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportUID)
+function getReferenceLineDraggableRotatable(viewportId) {
+  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportId)
   return index !== -1 ? true : false
 }
 
@@ -158,12 +158,11 @@ let viewportReferenceLineSlabThicknessControlsOn = [
   VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL,
 ]
 
-function setReferenceLineSlabThicknessControlsOn(viewportUID, controllable) {
-  const index =
-    viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportUID)
+function setReferenceLineSlabThicknessControlsOn(viewportId, controllable) {
+  const index = viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportId)
   if (controllable) {
     index === -1
-      ? array.push(viewportUID)
+      ? array.push(viewportId)
       : console.log('viewport has already the slabThickness controls on')
   } else {
     index > -1
@@ -175,9 +174,8 @@ function setReferenceLineSlabThicknessControlsOn(viewportUID, controllable) {
 window.setReferenceLineSlabThicknessControlsOn =
   setReferenceLineSlabThicknessControlsOn
 
-function getReferenceLineSlabThicknessControlsOn(viewportUID) {
-  const index =
-    viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportUID)
+function getReferenceLineSlabThicknessControlsOn(viewportId) {
+  const index = viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportId)
   return index !== -1 ? true : false
 }
 
@@ -211,14 +209,14 @@ viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_BW.CORONAL] = 'rgb(0, 200, 0)'
 viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_LBM.CORONAL] = 'rgb(0, 200, 0)'
 viewportColors[VIEWPORT_IDS.PT_TYPES_SUV_BSA.CORONAL] = 'rgb(0, 200, 0)'
 
-function setReferenceLineColor(viewportUID, color) {
-  viewportColors[viewportUID] = color
+function setReferenceLineColor(viewportId, color) {
+  viewportColors[viewportId] = color
 }
 
 window.setReferenceLineColor = setReferenceLineColor
 
-function getReferenceLineColor(viewportUID) {
-  return viewportColors[viewportUID]
+function getReferenceLineColor(viewportId) {
+  return viewportColors[viewportId]
 }
 
 window.getReferenceLineColor = getReferenceLineColor
@@ -227,7 +225,7 @@ function initToolGroups() {
   // TODO: Can we delete tool groups?
   // These need to be in lifecycle so we can undo on page death
   csTools3d.addTool(PanTool)
-  // @TODO: This kills the volumeUID and tool configuration
+  // @TODO: This kills the volumeId and tool configuration
   csTools3d.addTool(WindowLevelTool)
   csTools3d.addTool(StackScrollMouseWheelTool)
   csTools3d.addTool(StackScrollTool)
@@ -249,37 +247,37 @@ function initToolGroups() {
   csTools3d.addTool(SegmentationDisplayTool)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.STACK_CT
+    TOOL_GROUP_IDS.STACK_CT
   )
   const stackPTViewportToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.STACK_PT
+    TOOL_GROUP_IDS.STACK_PT
   )
   const stackDXViewportToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.STACK_DX
+    TOOL_GROUP_IDS.STACK_DX
   )
-  const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT)
-  const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT)
+  const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_IDS.CT)
+  const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_IDS.PT)
   const colorSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.COLOR
+    TOOL_GROUP_IDS.COLOR
   )
   const prostateSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.PROSTATE
+    TOOL_GROUP_IDS.PROSTATE
   )
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.FUSION
+    TOOL_GROUP_IDS.FUSION
   )
   const ptMipSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.PTMIP
+    TOOL_GROUP_IDS.PTMIP
   )
   const ctVRSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.CTVR
+    TOOL_GROUP_IDS.CTVR
   )
   const ctObliqueToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.CTOBLIQUE
+    TOOL_GROUP_IDS.CTOBLIQUE
   )
 
   const ptTypesSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.PT_TYPES
+    TOOL_GROUP_IDS.PT_TYPES
   )
 
   const ctTestSceneToolGroup = ToolGroupManager.createToolGroup('ctTestVolume')
@@ -475,7 +473,7 @@ function addToolsToToolGroups({
   if (ctSceneToolGroup) {
     // Set up CT Scene tools
 
-    // @TODO: This kills the volumeUID and tool configuration
+    // @TODO: This kills the volumeId and tool configuration
     ctSceneToolGroup.addTool(StackScrollTool.toolName)
     ctSceneToolGroup.addTool(RectangleScissorsTool.toolName)
     ctSceneToolGroup.addTool(RectangleRoiThresholdTool.toolName)
@@ -536,7 +534,7 @@ function addToolsToToolGroups({
   if (prostateSceneToolGroup) {
     // Set up CT Scene tools
 
-    // @TODO: This kills the volumeUID and tool configuration
+    // @TODO: This kills the volumeId and tool configuration
     prostateSceneToolGroup.addTool(WindowLevelTool.toolName)
     prostateSceneToolGroup.addTool(LengthTool.toolName)
     prostateSceneToolGroup.addTool(PanTool.toolName)
@@ -647,22 +645,22 @@ function addToolsToToolGroups({
     fusionSceneToolGroup.addTool(PanTool.toolName)
     fusionSceneToolGroup.addTool(StackScrollMouseWheelTool.toolName)
     fusionSceneToolGroup.addTool(BidirectionalTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(LengthTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
-    fusionSceneToolGroup.addTool(ProbeTool.toolName, { volumeUID: ptVolumeUID })
+    fusionSceneToolGroup.addTool(ProbeTool.toolName, { volumeId: ptVolumeId })
     fusionSceneToolGroup.addTool(RectangleRoiTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(EllipticalRoiTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(ZoomTool.toolName)
 
     fusionSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(CrosshairsTool.toolName, {
       getReferenceLineColor,
@@ -706,14 +704,14 @@ function addToolsToToolGroups({
     ptMipSceneToolGroup.addTool(VolumeRotateMouseWheelTool.toolName)
     ptMipSceneToolGroup.addTool(MIPJumpToClickTool.toolName, {
       // Just as an example to see it is capable of jumping in different viewports
-      targetViewportUIDs: [
+      targetViewportIds: [
         VIEWPORT_IDS.CT.AXIAL,
         VIEWPORT_IDS.PT.SAGITTAL,
         VIEWPORT_IDS.FUSION.CORONAL,
       ],
     })
     ptMipSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     ptMipSceneToolGroup.setToolActive(VolumeRotateMouseWheelTool.toolName)
     ptMipSceneToolGroup.setToolActive(MIPJumpToClickTool.toolName)
@@ -807,7 +805,7 @@ function addToolsToToolGroups({
 
   if (ptTypesSceneToolGroup) {
     ptTypesSceneToolGroup.addTool(WindowLevelTool.toolName, {
-      volumeUID: ptVolumeUID,
+      volumeId: ptVolumeId,
     })
     ptTypesSceneToolGroup.addTool(PanTool.toolName)
     ptTypesSceneToolGroup.addTool(ZoomTool.toolName)

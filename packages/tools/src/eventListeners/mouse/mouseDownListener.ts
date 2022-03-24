@@ -1,7 +1,4 @@
-import {
-  getEnabledElement,
-  triggerEvent,
-} from '@cornerstonejs/core'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
 import Events from '../../enums/Events'
@@ -15,8 +12,8 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
 interface IMouseDownListenerState {
   mouseButton: number
   element: HTMLElement
-  renderingEngineUID: string
-  viewportUID: string
+  renderingEngineId: string
+  viewportId: string
   isClickEvent: boolean
   clickDelay: number
   preventClickTimeout: ReturnType<typeof setTimeout>
@@ -29,8 +26,8 @@ const defaultState: IMouseDownListenerState = {
   mouseButton: undefined,
   //
   element: null,
-  renderingEngineUID: undefined,
-  viewportUID: undefined,
+  renderingEngineId: undefined,
+  viewportId: undefined,
   //
   isClickEvent: true,
   clickDelay: 200,
@@ -52,8 +49,8 @@ const defaultState: IMouseDownListenerState = {
 let state: IMouseDownListenerState = {
   mouseButton: undefined,
   //
-  renderingEngineUID: undefined,
-  viewportUID: undefined,
+  renderingEngineId: undefined,
+  viewportId: undefined,
   //
   isClickEvent: true,
   clickDelay: 200,
@@ -92,10 +89,10 @@ function mouseDownListener(evt: MouseEvent) {
   state.mouseButton = evt.button
 
   const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineUID, viewportUID } = enabledElement
+  const { renderingEngineId, viewportId } = enabledElement
 
-  state.renderingEngineUID = renderingEngineUID
-  state.viewportUID = viewportUID
+  state.renderingEngineId = renderingEngineId
+  state.viewportId = viewportId
 
   state.preventClickTimeout = setTimeout(_preventClickHandler, state.clickDelay)
 
@@ -110,8 +107,8 @@ function mouseDownListener(evt: MouseEvent) {
     eventName: MOUSE_DOWN,
     element: state.element,
     mouseButton: state.mouseButton,
-    renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    renderingEngineId: state.renderingEngineId,
+    viewportId: state.viewportId,
     camera: {},
     startPoints,
     lastPoints: startPoints,
@@ -159,8 +156,8 @@ function _onMouseDrag(evt: MouseEvent) {
     event: evt,
     eventName: MOUSE_DRAG,
     mouseButton: state.mouseButton,
-    renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    renderingEngineId: state.renderingEngineId,
+    viewportId: state.viewportId,
     camera: {},
     element: state.element,
     startPoints: _copyPoints(state.startPoints),
@@ -196,8 +193,8 @@ function _onMouseUp(evt: MouseEvent): void {
     eventName,
     mouseButton: state.mouseButton,
     element: state.element,
-    renderingEngineUID: state.renderingEngineUID,
-    viewportUID: state.viewportUID,
+    renderingEngineId: state.renderingEngineId,
+    viewportId: state.viewportId,
     camera: {},
     startPoints: _copyPoints(state.startPoints),
     lastPoints: _copyPoints(state.lastPoints),

@@ -34,7 +34,7 @@ function setLayout(
   const viewportInput = [
     // CT
     {
-      viewportUID: VIEWPORT_IDS.CT.AXIAL,
+      viewportId: VIEWPORT_IDS.CT.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(0),
       defaultOptions: {
@@ -42,7 +42,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+      viewportId: VIEWPORT_IDS.CT.SAGITTAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(1),
       defaultOptions: {
@@ -50,7 +50,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.CT.CORONAL,
+      viewportId: VIEWPORT_IDS.CT.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(2),
       defaultOptions: {
@@ -61,7 +61,7 @@ function setLayout(
     // PT
 
     {
-      viewportUID: VIEWPORT_IDS.PT.AXIAL,
+      viewportId: VIEWPORT_IDS.PT.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(3),
       defaultOptions: {
@@ -70,7 +70,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+      viewportId: VIEWPORT_IDS.PT.SAGITTAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(4),
       defaultOptions: {
@@ -79,7 +79,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.PT.CORONAL,
+      viewportId: VIEWPORT_IDS.PT.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(5),
       defaultOptions: {
@@ -91,7 +91,7 @@ function setLayout(
     // Fusion
 
     {
-      viewportUID: VIEWPORT_IDS.FUSION.AXIAL,
+      viewportId: VIEWPORT_IDS.FUSION.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(6),
       defaultOptions: {
@@ -99,7 +99,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.FUSION.SAGITTAL,
+      viewportId: VIEWPORT_IDS.FUSION.SAGITTAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(7),
       defaultOptions: {
@@ -107,7 +107,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.FUSION.CORONAL,
+      viewportId: VIEWPORT_IDS.FUSION.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(8),
       defaultOptions: {
@@ -117,7 +117,7 @@ function setLayout(
 
     // PET MIP
     {
-      viewportUID: VIEWPORT_IDS.PTMIP.CORONAL,
+      viewportId: VIEWPORT_IDS.PTMIP.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: elementContainers.get(9),
       defaultOptions: {
@@ -130,49 +130,49 @@ function setLayout(
   renderingEngine.setViewports(viewportInput)
 
   // Add tools
-  const renderingEngineUID = renderingEngine.uid
+  const renderingEngineId = renderingEngine.id
 
   // CT tool groups
-  viewportInput.slice(0, 3).forEach(({ viewportUID }, index) => {
-    ctSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportInput.slice(0, 3).forEach(({ viewportId }, index) => {
+    ctSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   // PT tool groups
-  viewportInput.slice(3, 6).forEach(({ viewportUID }, index) => {
-    ptSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportInput.slice(3, 6).forEach(({ viewportId }, index) => {
+    ptSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   // Fusion tool groups
-  viewportInput.slice(6, 9).forEach(({ viewportUID }, index) => {
-    fusionSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportInput.slice(6, 9).forEach(({ viewportId }, index) => {
+    fusionSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   // PET MIP tool groups
-  viewportInput.slice(9, 10).forEach(({ viewportUID }, index) => {
-    ptMipSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportInput.slice(9, 10).forEach(({ viewportId }, index) => {
+    ptMipSceneToolGroup.addViewport(viewportId, renderingEngineId)
   })
 
   const axialViewports = [0, 3, 6]
   axialSynchronizers.forEach((sync) => {
     axialViewports.forEach((axialIndex) => {
-      const { viewportUID } = viewportInput[axialIndex]
-      sync.add({ renderingEngineUID, viewportUID })
+      const { viewportId } = viewportInput[axialIndex]
+      sync.add({ renderingEngineId, viewportId })
     })
   })
 
   const sagittalViewports = [1, 4, 7]
   sagittalSynchronizers.forEach((sync) => {
     sagittalViewports.forEach((sagittalIndex) => {
-      const { viewportUID } = viewportInput[sagittalIndex]
-      sync.add({ renderingEngineUID, viewportUID })
+      const { viewportId } = viewportInput[sagittalIndex]
+      sync.add({ renderingEngineId, viewportId })
     })
   })
 
   const coronalViewports = [2, 5, 8]
   coronalSynchronizers.forEach((sync) => {
     coronalViewports.forEach((coronalIndex) => {
-      const { viewportUID } = viewportInput[coronalIndex]
-      sync.add({ renderingEngineUID, viewportUID })
+      const { viewportId } = viewportInput[coronalIndex]
+      sync.add({ renderingEngineId, viewportId })
     })
   })
 
@@ -183,39 +183,39 @@ function setLayout(
 
   // CT WL Synchronization
   ctViewports.forEach((ctIndex) => {
-    const { viewportUID } = viewportInput[ctIndex]
-    ctWLSynchronizer.add({ renderingEngineUID, viewportUID })
+    const { viewportId } = viewportInput[ctIndex]
+    ctWLSynchronizer.add({ renderingEngineId, viewportId })
   })
 
   fusionViewports.forEach((fusionIndex) => {
-    const { viewportUID } = viewportInput[fusionIndex]
-    ctWLSynchronizer.addTarget({ renderingEngineUID, viewportUID })
+    const { viewportId } = viewportInput[fusionIndex]
+    ctWLSynchronizer.addTarget({ renderingEngineId, viewportId })
   })
 
   // PT Threshold Synchronization
   petViewports.forEach((ptIndex) => {
-    const { viewportUID } = viewportInput[ptIndex]
+    const { viewportId } = viewportInput[ptIndex]
     // add as both source and target
     ptThresholdSynchronizer.add({
-      renderingEngineUID,
-      viewportUID,
+      renderingEngineId,
+      viewportId,
     })
   })
 
   fusionViewports.forEach((fusionIndex) => {
-    const { viewportUID } = viewportInput[fusionIndex]
+    const { viewportId } = viewportInput[fusionIndex]
     // add as both source and target
     ptThresholdSynchronizer.add({
-      renderingEngineUID,
-      viewportUID,
+      renderingEngineId,
+      viewportId,
     })
   })
 
   petMipViewports.forEach((ptMipIndex) => {
-    const { viewportUID } = viewportInput[ptMipIndex]
+    const { viewportId } = viewportInput[ptMipIndex]
     ptThresholdSynchronizer.add({
-      renderingEngineUID,
-      viewportUID,
+      renderingEngineId,
+      viewportId,
     })
   })
 
@@ -225,15 +225,15 @@ function setLayout(
 
 async function setVolumes(
   renderingEngine,
-  ctVolumeUID,
-  ptVolumeUID,
+  ctVolumeId,
+  ptVolumeId,
   petColorMap
 ) {
   await setVolumesForViewports(
     renderingEngine,
     [
       {
-        volumeUID: ctVolumeUID,
+        volumeId: ctVolumeId,
         callback: setCTWWWC,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
@@ -245,7 +245,7 @@ async function setVolumes(
     renderingEngine,
     [
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: setPetTransferFunction,
         blendMode: Enums.BlendModes.COMPOSITE,
       },
@@ -257,12 +257,12 @@ async function setVolumes(
     renderingEngine,
     [
       {
-        volumeUID: ctVolumeUID,
+        volumeId: ctVolumeId,
         callback: setCTWWWC,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: getSetPetColorMapTransferFunction(petColorMap),
         blendMode: Enums.BlendModes.COMPOSITE,
       },
@@ -288,7 +288,7 @@ async function setVolumes(
    *        ignore the slab thickness. Check the vtkSlabCamera for more info.
    */
 
-  const ptVolume = cache.getVolume(ptVolumeUID)
+  const ptVolume = cache.getVolume(ptVolumeId)
   const ptVolumeDimensions = ptVolume.dimensions
 
   // Only make the MIP as large as it needs to be.
@@ -302,7 +302,7 @@ async function setVolumes(
     renderingEngine,
     [
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: setPetTransferFunction,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,

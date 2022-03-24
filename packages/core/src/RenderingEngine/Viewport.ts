@@ -25,13 +25,13 @@ import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera'
  */
 class Viewport implements IViewport {
   /** unique identifier for the viewport */
-  readonly uid: string
+  readonly id: string
   /** HTML element in DOM that is used for rendering the viewport */
   readonly element: HTMLElement
   /** an internal canvas that is created on the provided HTML element */
   readonly canvas: HTMLCanvasElement
-  /** RenderingEngine uid that the viewport belongs to */
-  readonly renderingEngineUID: string
+  /** RenderingEngine id that the viewport belongs to */
+  readonly renderingEngineId: string
   /** Type of viewport */
   readonly type: ViewportType
   protected flipHorizontal = false
@@ -56,8 +56,8 @@ class Viewport implements IViewport {
   readonly suppressEvents: boolean
 
   constructor(props: ViewportInput) {
-    this.uid = props.uid
-    this.renderingEngineUID = props.renderingEngineUID
+    this.id = props.id
+    this.renderingEngineId = props.renderingEngineId
     this.type = props.type
     this.element = props.element
     this.canvas = props.canvas
@@ -67,10 +67,10 @@ class Viewport implements IViewport {
     this.sHeight = props.sHeight
     this._actors = new Map()
     // Set data attributes for render events
-    this.element.setAttribute('data-viewport-uid', this.uid)
+    this.element.setAttribute('data-viewport-uid', this.id)
     this.element.setAttribute(
       'data-rendering-engine-uid',
-      this.renderingEngineUID
+      this.renderingEngineId
     )
 
     this.defaultOptions = _cloneDeep(props.defaultOptions)
@@ -97,7 +97,7 @@ class Viewport implements IViewport {
    * @returns The RenderingEngine instance.
    */
   public getRenderingEngine(): IRenderingEngine {
-    return renderingEngineCache.get(this.renderingEngineUID)
+    return renderingEngineCache.get(this.renderingEngineId)
   }
 
   /**
@@ -112,7 +112,7 @@ class Viewport implements IViewport {
       throw new Error('Rendering engine has been destroyed')
     }
 
-    return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.uid)
+    return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.id)
   }
 
   /**
@@ -121,7 +121,7 @@ class Viewport implements IViewport {
   public render() {
     const renderingEngine = this.getRenderingEngine()
 
-    renderingEngine.renderViewport(this.uid)
+    renderingEngine.renderViewport(this.id)
   }
 
   /**
@@ -369,7 +369,7 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Add an actor to the viewport including its uid, its volumeActor and slabThickness
+   * Add an actor to the viewport including its id, its volumeActor and slabThickness
    * if defined
    * @param actorEntry - ActorEntry
    * @param actorEntry.uid - The unique identifier for the actor.
@@ -620,8 +620,8 @@ class Viewport implements IViewport {
         camera: this.getCamera(),
         canvas: this.canvas,
         element: this.element,
-        viewportUID: this.uid,
-        renderingEngineUID: this.renderingEngineUID,
+        viewportId: this.id,
+        renderingEngineId: this.renderingEngineId,
       }
 
       // For crosshairs to adapt to new viewport size
@@ -787,8 +787,8 @@ class Viewport implements IViewport {
         camera: updatedCamera,
         canvas: this.canvas,
         element: this.element,
-        viewportUID: this.uid,
-        renderingEngineUID: this.renderingEngineUID,
+        viewportId: this.id,
+        renderingEngineId: this.renderingEngineId,
       }
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)

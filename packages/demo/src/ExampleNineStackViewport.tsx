@@ -15,7 +15,7 @@ import './ExampleVTKMPR.css'
 import { ctStackUID, VIEWPORT_IDS } from './constants'
 import * as csTools3d from '@cornerstonejs/tools'
 
-const renderingEngineUID = 'renderingEngineUID'
+const renderingEngineId = 'renderingEngineId'
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
@@ -86,15 +86,15 @@ class NineStackViewportExample extends Component {
     const imageIds = await this.ctImageIdsPromise
     // const dxImageIds = await this.dxImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
-    // const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
+    // const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--0',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--0',
         type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -102,7 +102,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--1',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--1',
         type: ViewportType.STACK,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -110,7 +110,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--2',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--2',
         type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -118,7 +118,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--3',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--3',
         type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -126,7 +126,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--4',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--4',
         type: ViewportType.STACK,
         element: this._elementNodes.get(4),
         defaultOptions: {
@@ -134,7 +134,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--5',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--5',
         type: ViewportType.STACK,
         element: this._elementNodes.get(5),
         defaultOptions: {
@@ -142,7 +142,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--6',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--6',
         type: ViewportType.STACK,
         element: this._elementNodes.get(6),
         defaultOptions: {
@@ -150,7 +150,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--7',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--7',
         type: ViewportType.STACK,
         element: this._elementNodes.get(7),
         defaultOptions: {
@@ -158,7 +158,7 @@ class NineStackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT + '--8',
+        viewportId: VIEWPORT_IDS.STACK.CT + '--8',
         type: ViewportType.STACK,
         element: this._elementNodes.get(8),
         defaultOptions: {
@@ -175,15 +175,15 @@ class NineStackViewportExample extends Component {
     // stack ct
     viewportInput.forEach((vpEntry) => {
       stackCTViewportToolGroup.addViewport(
-        vpEntry.viewportUID,
-        renderingEngineUID
+        vpEntry.viewportId,
+        renderingEngineId
       )
     })
 
     renderingEngine.render()
 
     const promises = viewportInput.map((vpEntry) => {
-      const stackViewport = renderingEngine.getViewport(vpEntry.viewportUID)
+      const stackViewport = renderingEngine.getViewport(vpEntry.viewportId)
       return stackViewport.setStack(sortImageIdsByIPP(imageIds))
     })
 

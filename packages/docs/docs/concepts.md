@@ -18,12 +18,11 @@ import {
 
 // RENDER
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
-const volumeUID = 'VOLUME_UID '
-const sceneUID = 'SCENE_UID'
+const volumeId = 'VOLUME_ID '
 const viewports = []
 const viewport = {
   sceneUID,
-  viewportUID: 'viewportUID_0',
+  viewportId: 'viewportUID_0',
   type: ViewportType.ORTHOGRAPHIC,
   canvas: document.querySelector('.target-canvas'),
   defaultOptions: {
@@ -47,8 +46,8 @@ const imageIds = [
   'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
 ]
 
-imageCache.makeAndCacheImageVolume(imageIds, volumeUID)
-imageCache.loadVolume(volumeUID, (event) => {
+imageCache.makeAndCacheImageVolume(imageIds, volumeId)
+imageCache.loadVolume(volumeId, (event) => {
   if (event.framesProcessed === event.numFrames) {
     console.log('done loading!')
   }
@@ -59,15 +58,15 @@ const scene = renderingEngine.getScene(sceneUID)
 
 scene.setVolumes([
   {
-    volumeUID,
-    callback: ({ volumeActor, volumeUID }) => {
+    volumeId,
+    callback: ({ volumeActor, volumeId }) => {
       // Where you might setup a transfer function or PET colormap
       console.log('volume loaded!')
     },
   },
 ])
 
-const viewport = scene.getViewport(viewports[0].viewportUID)
+const viewport = scene.getViewport(viewports[0].viewportId)
 
 // This will initialise volumes in GPU memory
 renderingEngine.render()
@@ -132,17 +131,17 @@ destroy Tool Groups.
 
 ```js
 import { ToolGroupManager } from 'vtkjs-viewport-tools'
-import { ctVolumeUID } from './constants'
+import { ctVolumeId } from './constants'
 
-const toolGroupUID = 'TOOL_GROUP_UID'
-const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
+const toolGroupId = 'TOOL_GROUP_ID'
+const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
 
 // Add tools to ToolGroup
 sceneToolGroup.addTool(PanTool.toolName)
 sceneToolGroup.addTool(ZoomTool.toolName)
 sceneToolGroup.addTool(StackScrollMouseWheelTool.toolName)
 sceneToolGroup.addTool(LengthTool.toolName, {
-  configuration: { volumeUID: ctVolumeUID },
+  configuration: { volumeId: ctVolumeId },
 })
 ```
 
@@ -244,7 +243,7 @@ const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
 )
 
 // Add viewports to synchronize
-const firstViewport = { renderingEngineUID, sceneUID, viewportUID }
+const firstViewport = { renderingEngineId, sceneUID, viewportId }
 const secondViewport = {
   /* */
 }

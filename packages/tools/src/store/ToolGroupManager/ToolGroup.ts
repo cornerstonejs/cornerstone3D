@@ -1,8 +1,5 @@
 import { MouseBindings, ToolModes } from '../../enums'
-import {
-  getRenderingEngine,
-  getRenderingEngines,
-} from '@cornerstonejs/core'
+import { getRenderingEngine, getRenderingEngines } from '@cornerstonejs/core'
 import { state } from '../index'
 import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types'
 
@@ -20,25 +17,25 @@ const { Active, Passive, Enabled, Disabled } = ToolModes
  * ToolGroupManager helpers to create a new toolGroup or get a reference to an existing toolGroup.
  *
  * ```js
- * const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupUID')
+ * const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupId')
  * ```
  */
 export default class ToolGroup implements IToolGroup {
-  uid: string
+  id: string
   viewportsInfo = []
   toolOptions = {}
   _toolInstances = {}
 
-  constructor(uid: string) {
-    this.uid = uid
+  constructor(id: string) {
+    this.id = id
   }
 
   /**
-   * Get the viewport UIDs of all the viewports in the current viewport
-   * @returns An array of viewport UIDs.
+   * Get the viewport IDs of all the viewports in the current viewport
+   * @returns An array of viewport IDs.
    */
-  getViewportUIDs(): string[] {
-    return this.viewportsInfo.map(({ viewportUID }) => viewportUID)
+  getViewportIds(): string[] {
+    return this.viewportsInfo.map(({ viewportId }) => viewportId)
   }
 
   /**
@@ -84,7 +81,7 @@ export default class ToolGroup implements IToolGroup {
 
     if (localToolInstance) {
       console.warn(
-        `'${toolName}' is already registered for ToolGroup ${this.uid}.`
+        `'${toolName}' is already registered for ToolGroup ${this.id}.`
       )
       return
     }
@@ -95,7 +92,7 @@ export default class ToolGroup implements IToolGroup {
 
     const toolProps = {
       name: toolName,
-      toolGroupUID: this.uid,
+      toolGroupId: this.id,
       configuration,
     }
 
@@ -107,50 +104,49 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
-   * Add a viewport to the ToolGroup. It accepts viewportUID and optional
-   * renderingEngineUID parameter. If renderingEngineUID is not provided,
+   * Add a viewport to the ToolGroup. It accepts viewportId and optional
+   * renderingEngineId parameter. If renderingEngineId is not provided,
    * it checks if cornerstone-core has more than one renderingEngine; If so,
    * it will throw an error. If cornerstone-core has only one renderingEngine,
    * it will use that renderingEngine.
    *
-   * @param viewportUID - The unique identifier for the viewport.
-   * @param renderingEngineUID - The rendering engine to use.
+   * @param viewportId - The unique identifier for the viewport.
+   * @param renderingEngineId - The rendering engine to use.
    */
-  addViewport(viewportUID: string, renderingEngineUID?: string): void {
+  addViewport(viewportId: string, renderingEngineId?: string): void {
     const renderingEngines = getRenderingEngines()
 
-    if (!renderingEngineUID && renderingEngines.length > 1) {
+    if (!renderingEngineId && renderingEngines.length > 1) {
       throw new Error(
-        'You must specify a renderingEngineUID when there are multiple rendering engines.'
+        'You must specify a renderingEngineId when there are multiple rendering engines.'
       )
     }
 
-    const renderingEngineUIDToUse =
-      renderingEngineUID || renderingEngines[0].uid
+    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id
 
     this.viewportsInfo.push({
-      viewportUID,
-      renderingEngineUID: renderingEngineUIDToUse,
+      viewportId,
+      renderingEngineId: renderingEngineUIDToUse,
     })
   }
 
   /**
-   * Removes viewport from the toolGroup. If only renderingEngineUID is defined
-   * it removes all the viewports with the same renderingEngineUID, if viewportUID
+   * Removes viewport from the toolGroup. If only renderingEngineId is defined
+   * it removes all the viewports with the same renderingEngineId, if viewportId
    * is also provided, it will remove that specific viewport from the ToolGroup.
    *
-   * @param renderingEngineUID - renderingEngine uid
-   * @param viewportUID - viewport uid
+   * @param renderingEngineId - renderingEngine id
+   * @param viewportId - viewport id
    */
-  removeViewports(renderingEngineUID: string, viewportUID?: string): void {
+  removeViewports(renderingEngineId: string, viewportId?: string): void {
     const indices = []
 
     this.viewportsInfo.forEach((vpInfo, index) => {
       let match = false
-      if (vpInfo.renderingEngineUID === renderingEngineUID) {
+      if (vpInfo.renderingEngineId === renderingEngineId) {
         match = true
 
-        if (viewportUID && vpInfo.viewportUID !== viewportUID) {
+        if (viewportId && vpInfo.viewportId !== viewportId) {
           match = false
         }
       }
@@ -291,7 +287,7 @@ export default class ToolGroup implements IToolGroup {
     this._toolInstances[toolName].mode = Enabled
 
     if (this._toolInstances[toolName].enableCallback) {
-      this._toolInstances[toolName].enableCallback(this.uid)
+      this._toolInstances[toolName].enableCallback(this.id)
     }
 
     this._renderViewports()
@@ -323,7 +319,7 @@ export default class ToolGroup implements IToolGroup {
     this._toolInstances[toolName].mode = Disabled
 
     if (this._toolInstances[toolName].disableCallback) {
-      this._toolInstances[toolName].disableCallback(this.uid)
+      this._toolInstances[toolName].disableCallback(this.id)
     }
     this._renderViewports()
   }
@@ -366,9 +362,9 @@ export default class ToolGroup implements IToolGroup {
     if (!cursor) {
       cursor = MouseCursor.getDefinedCursor('default')
     }
-    this.viewportsInfo.forEach(({ renderingEngineUID, viewportUID }) => {
+    this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
       const viewport =
-        getRenderingEngine(renderingEngineUID).getViewport(viewportUID)
+        getRenderingEngine(renderingEngineId).getViewport(viewportId)
       if (viewport && viewport.element) {
         initElementCursor(viewport.element, cursor)
       }
@@ -392,8 +388,8 @@ export default class ToolGroup implements IToolGroup {
    * It re-renders the viewports in the toolGroup
    */
   private _renderViewports(): void {
-    this.viewportsInfo.forEach(({ renderingEngineUID, viewportUID }) => {
-      getRenderingEngine(renderingEngineUID).renderViewport(viewportUID)
+    this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
+      getRenderingEngine(renderingEngineId).renderViewport(viewportId)
     })
   }
 }

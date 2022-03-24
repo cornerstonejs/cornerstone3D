@@ -32,9 +32,9 @@ import {
 } from '@ohif/cornerstone-render'
 
 const sceneUID = 'SCENE_UID'
-const volumeUID = 'VOLUME_UID'
-const viewportUID1 = 'viewport_UID_1'
-const viewportUID2 = 'viewport_UID_2'
+const volumeId = 'VOLUME_ID'
+const viewportId1 = 'viewport_UID_1'
+const viewportId2 = 'viewport_UID_2'
 const viewportUID3 = 'viewport_UID_3'
 
 // 0. ImageIds to use for this volume, see: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration how to add metadata
@@ -53,7 +53,7 @@ const xrayImageIds = [
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
 
 // 2. Defining the 3 viewports
-// - sceneUID and viewportUID are specified
+// - sceneUID and viewportId are specified
 // - type of viewport (orthographic -> volume)
 // - which HTML canvas element to use for this viewport
 // - defaultOptions: what is the orientation and background of this viewport
@@ -61,7 +61,7 @@ const viewportInput = [
   // Volume viewport (axial)
   {
     sceneUID,
-    viewportUID: viewportUID1,
+    viewportId: viewportId1,
     type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {
@@ -72,7 +72,7 @@ const viewportInput = [
   // Volume viewport (sagittal)
   {
     sceneUID,
-    viewportUID: viewportUID2,
+    viewportId: viewportId2,
     type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {
@@ -83,7 +83,7 @@ const viewportInput = [
   // stack viewport
   {
     sceneUID,
-    viewportUID: viewportUID3,
+    viewportId: viewportUID3,
     type: ViewportType.STACK,
     canvas: document.querySelector('.target-canvas-3'),
     defaultOptions: {
@@ -100,7 +100,7 @@ renderingEngine.render()
 
 // 5. This only creates the volumes, it does not actually load all
 // of the pixel data (yet)
-const ctVolume = await createAndCacheVolume(volumeUID, { imageIds })
+const ctVolume = await createAndCacheVolume(volumeId, { imageIds })
 
 // 6. Actual load of the volume. Look into StreamingImageVolume to
 // get insight on what happens in a load: Spoiler Alert: each 2D image is requested and its pixel data is put at the correct position in the volume
@@ -112,8 +112,8 @@ const ctScene = renderingEngine.getScene(sceneUID)
 // 8. Setting the volumes for the scene => creating actor and mappers
 ctScene.setVolumes([
   {
-    volumeUID,
-    callback: ({ volumeActor, volumeUID }) => {
+    volumeId,
+    callback: ({ volumeActor, volumeId }) => {
       // Where you might setup a transfer function or PET colormap
       console.log('volume loaded!')
     },

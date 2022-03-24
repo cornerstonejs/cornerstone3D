@@ -41,10 +41,10 @@ const {
   compareImages,
 } = utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
-const viewportUID2 = 'SAGITTAL'
+const viewportId1 = 'AXIAL'
+const viewportId2 = 'SAGITTAL'
 
 const AXIAL = 'AXIAL'
 const SAGITTAL = 'SAGITTAL'
@@ -52,7 +52,7 @@ const SAGITTAL = 'SAGITTAL'
 function createViewport(
   renderingEngine,
   orientation,
-  viewportUID = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -61,7 +61,7 @@ function createViewport(
   document.body.appendChild(element)
 
   renderingEngine.enableElement({
-    viewportUID: viewportUID,
+    viewportId: viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -92,7 +92,7 @@ describe('Segmentation Tools --', () => {
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -108,7 +108,7 @@ describe('Segmentation Tools --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
+      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -123,7 +123,7 @@ describe('Segmentation Tools --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID1)
+      const vp = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
@@ -138,22 +138,22 @@ describe('Segmentation Tools --', () => {
         done()
       })
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID1]
+            [{ volumeId: volumeId }],
+            [viewportId1]
           ).then(() => {
             vp.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
+                  { volumeId: segmentationUID },
                 ])
               })
           })
@@ -169,7 +169,7 @@ describe('Segmentation Tools --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID1)
+      const vp = this.renderingEngine.getViewport(viewportId1)
 
       const drawRectangle = () => {
         eventTarget.addEventListener(
@@ -263,22 +263,22 @@ describe('Segmentation Tools --', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID1]
+            [{ volumeId: volumeId }],
+            [viewportId1]
           ).then(() => {
             vp.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
+                  { volumeId: segmentationUID },
                 ])
               })
           })
@@ -293,15 +293,15 @@ describe('Segmentation Tools --', () => {
       const element2 = createViewport(
         this.renderingEngine,
         SAGITTAL,
-        viewportUID2
+        viewportId2
       )
       this.DOMElements.push(element1)
       this.DOMElements.push(element2)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
-      const vp2 = this.renderingEngine.getViewport(viewportUID2)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
+      const vp2 = this.renderingEngine.getViewport(viewportId2)
 
       const drawRectangle = () => {
         eventTarget.removeEventListener(
@@ -430,24 +430,24 @@ describe('Segmentation Tools --', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
-      this.segToolGroup.addViewport(vp2.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+      this.segToolGroup.addViewport(vp2.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId }],
-            [viewportUID1, viewportUID2]
+            [{ volumeId: volumeId }],
+            [viewportId1, viewportId2]
           ).then(() => {
             vp1.render()
             vp2.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                  { volumeUID: segmentationUID },
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
+                  { volumeId: segmentationUID },
                 ])
               })
           })

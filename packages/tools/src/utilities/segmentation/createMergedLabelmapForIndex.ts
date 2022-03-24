@@ -1,8 +1,5 @@
 import { Types } from '@cornerstonejs/core'
-import {
-  volumeLoader,
-  utilities as csUtils,
-} from '@cornerstonejs/core'
+import { volumeLoader, utilities as csUtils } from '@cornerstonejs/core'
 
 /**
  * Given a list of labelmaps (with the possibility of overlapping regions), and
@@ -18,7 +15,7 @@ import {
 function createMergedLabelmapForIndex(
   labelmaps: Array<Types.IImageVolume>,
   segmentIndex = 1,
-  uid = 'mergedLabelmap'
+  volumeId = 'mergedLabelmap'
 ): Types.IImageVolume {
   labelmaps.forEach(({ direction, dimensions, origin, spacing }) => {
     if (
@@ -58,7 +55,7 @@ function createMergedLabelmapForIndex(
   // Todo: following should be async
   const mergedVolume = volumeLoader.createLocalVolume(
     options,
-    uid,
+    volumeId,
     preventCache
   )
 

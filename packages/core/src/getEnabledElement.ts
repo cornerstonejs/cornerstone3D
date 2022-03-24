@@ -9,8 +9,8 @@ import { IEnabledElement } from './types'
  * @example
  * Using the renderingEngine to find the enabled element:
  * ```javascript
- * const element = getRenderingEngine(renderingEngineUID)
- *    .getViewport(viewportUID)
+ * const element = getRenderingEngine(renderingEngineId)
+ *    .getViewport(viewportId)
  *    .element
  *
  * const enabledElement = getEnabledElement(element)
@@ -38,34 +38,34 @@ export default function getEnabledElement(
 
   const { viewportUid, renderingEngineUid } = element.dataset
 
-  return getEnabledElementByUIDs(viewportUid, renderingEngineUid)
+  return getEnabledElementByIds(viewportUid, renderingEngineUid)
 }
 
 /**
- * Similar to {@link getEnabledElement}, but takes the UIDs of the
+ * Similar to {@link getEnabledElement}, but takes the IDs of the
  * renderingEngine and viewport as parameters to return the associated
  * EnabledElement.
  *
- * @param viewportUID - The UID of the viewport
- * @param renderingEngineUID - The UID of the rendering engine.
+ * @param viewportId - The Id of the viewport
+ * @param renderingEngineId - The Id of the rendering engine.
  * @returns The enabled element which is an object that contains the viewport, rendering
- * engine, viewport UID, rendering engine UID, and the Frame of Reference UID.
+ * engine, viewport Id, rendering engine Id, and the Frame of Reference UID.
  */
-export function getEnabledElementByUIDs(
-  viewportUID: string,
-  renderingEngineUID: string
+export function getEnabledElementByIds(
+  viewportId: string,
+  renderingEngineId: string
 ): IEnabledElement {
-  if (!renderingEngineUID || !viewportUID) {
+  if (!renderingEngineId || !viewportId) {
     return
   }
 
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
     return
   }
 
-  const viewport = renderingEngine.getViewport(viewportUID)
+  const viewport = renderingEngine.getViewport(viewportId)
 
   if (!viewport) {
     return
@@ -76,8 +76,8 @@ export function getEnabledElementByUIDs(
   return {
     viewport,
     renderingEngine,
-    viewportUID,
-    renderingEngineUID,
+    viewportId,
+    renderingEngineId,
     FrameOfReferenceUID,
   }
 }

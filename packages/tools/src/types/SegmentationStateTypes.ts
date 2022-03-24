@@ -35,12 +35,12 @@ export type SegmentationConfig = {
  * Global Segmentation Data which is used for the segmentation
  */
 export type GlobalSegmentationData = {
-  /** volume UID of the segmentation in the cache */
-  volumeUID: string
+  /** volume Id of the segmentation in the cache */
+  volumeId: string
   /** segmentation label */
   label: string
-  /** volumeUID of the data that the segmentation was derived from - if any */
-  referenceVolumeUID?: string
+  /** volumeId of the data that the segmentation was derived from - if any */
+  referenceVolumeId?: string
   /** imageId of the image that the segmentation was derived from - if any */
   referenceImageId?: string
   /**
@@ -81,11 +81,11 @@ export type GlobalSegmentationStateWithConfig = {
  */
 export type ToolGroupSpecificSegmentationData = {
   /**
-   * VolumeUID for the segmentation
+   * VolumeId for the segmentation
    */
-  volumeUID: string
+  volumeId: string
   /**
-   * unique id for this segmentationData in this viewport which will be `{volumeUID}-{representationType}`
+   * unique id for this segmentationData in this viewport which will be `{volumeId}-{representationType}`
    */
   segmentationDataUID: string
   /**
@@ -140,18 +140,18 @@ export type ToolGroupSpecificSegmentationStateWithConfig = {
  *   global: {
  *     segmentations: [
  *       {
- *         volumeUID: 'labelmapUID2',
+ *         volumeId: 'labelmapUID2',
  *         label: 'label1',
- *         referenceVolumeUID: 'referenceVolumeName',
+ *         referenceVolumeId: 'referenceVolumeName',
  *         referenceImageId: 'referenceImageId',
  *         activeSegmentIndex: 1,
  *         segmentsLocked: Set(),
  *         cacheStats: {},
  *       },
  *       {
- *         volumeUID: 'labelmapUID2',
+ *         volumeId: 'labelmapUID2',
  *         label: 'label1',
- *         referenceVolumeUID: 'referenceVolumeName',
+ *         referenceVolumeId: 'referenceVolumeName',
  *         referenceImageId: 'referenceImageId',
  *         activeSegmentIndex: 1,
  *         segmentsLocked: Set(),
@@ -175,10 +175,10 @@ export type ToolGroupSpecificSegmentationStateWithConfig = {
  *     }
  *   },
  *   toolGroups: {
- *     toolGroupUID1: {
+ *     toolGroupId1: {
  *       segmentations: [
  *         {
- *           volumeUID: 'labelmapUID1',
+ *           volumeId: 'labelmapUID1',
  *           segmentationDataUID: "123123"
  *           active: true,
  *           colorLUTIndex: 0,
@@ -193,7 +193,7 @@ export type ToolGroupSpecificSegmentationStateWithConfig = {
  *           }
  *         },
  *         {
- *           volumeUID: 'labelmapUID1',
+ *           volumeId: 'labelmapUID1',
  *           segmentationDataUID: "5987123"
  *           colorLUTIndex: 1,
  *           visibility: true,
@@ -233,16 +233,16 @@ export interface SegmentationState {
    * ToolGroup specific segmentation state with config
    */
   toolGroups: {
-    /** toolGroupUID and their toolGroup specific segmentation state with config */
+    /** toolGroupId and their toolGroup specific segmentation state with config */
     [key: string]: ToolGroupSpecificSegmentationStateWithConfig
   }
 }
 
 /**
  * SegmentationDataInput that is used to add a segmentation to
- * a tooLGroup. It is partial of ToolGroupSpecificSegmentationData BUT REQUIRES volumeUID
+ * a tooLGroup. It is partial of ToolGroupSpecificSegmentationData BUT REQUIRES volumeId
  */
 export type SegmentationDataInput =
   Partial<ToolGroupSpecificSegmentationData> & {
-    toolGroupUID: string
+    toolGroupId: string
   }

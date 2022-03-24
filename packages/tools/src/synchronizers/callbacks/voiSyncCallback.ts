@@ -10,30 +10,30 @@ import {
  * in different viewports.
  *
  * @param synchronizerInstance - The Instance of the Synchronizer
- * @param sourceViewport - The list of UIDs defining the source viewport.
- * @param targetViewport - The list of UIDs defining the target viewport.
+ * @param sourceViewport - The list of IDs defining the source viewport.
+ * @param targetViewport - The list of IDs defining the target viewport.
  * @param voiModifiedEvent - The VOI_MODIFIED event.
  */
 export default function voiSyncCallback(
   synchronizerInstance,
-  sourceViewport: Types.IViewportUID,
-  targetViewport: Types.IViewportUID,
+  sourceViewport: Types.IViewportId,
+  targetViewport: Types.IViewportId,
   voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
 ): void {
   const eventDetail = voiModifiedEvent.detail
-  const { volumeUID, range } = eventDetail
+  const { volumeId, range } = eventDetail
 
-  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineUID)
+  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId)
   if (!renderingEngine) {
     throw new Error(
-      `Rendering Engine does not exist: ${targetViewport.renderingEngineUID}`
+      `Rendering Engine does not exist: ${targetViewport.renderingEngineId}`
     )
   }
 
-  const tViewport = renderingEngine.getViewport(targetViewport.viewportUID)
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportId)
 
   if (tViewport instanceof VolumeViewport) {
-    const actor = tViewport.getActor(volumeUID)
+    const actor = tViewport.getActor(volumeId)
 
     if (actor) {
       actor.volumeActor

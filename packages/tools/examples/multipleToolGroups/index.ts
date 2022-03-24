@@ -1,8 +1,4 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-} from '@cornerstonejs/core'
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -65,8 +61,8 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupUID1 = 'STACK_TOOL_GROUP_UID_1'
-  const toolGroupUID2 = 'STACK_TOOL_GROUP_UID_2'
+  const toolGroupId1 = 'STACK_TOOL_GROUP_ID_1'
+  const toolGroupId2 = 'STACK_TOOL_GROUP_ID_2'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool)
@@ -74,7 +70,7 @@ async function run() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool)
 
   // Define tool group 1, used by viewport 1
-  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupUID1)
+  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1)
 
   // Add tools to the tool group
   toolGroup1.addTool(WindowLevelTool.toolName)
@@ -91,7 +87,7 @@ async function run() {
   toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName)
 
   // Define tool group 2, used by viewport 2
-  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupUID2)
+  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2)
 
   // Add tools to the tool group
   toolGroup2.addTool(LengthTool.toolName)
@@ -129,19 +125,15 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
-  const viewportUIDs = [
-    'CT_AXIAL_STACK_1',
-    'CT_AXIAL_STACK_2',
-    'PT_AXIAL_STACK',
-  ]
+  const viewportIds = ['CT_AXIAL_STACK_1', 'CT_AXIAL_STACK_2', 'PT_AXIAL_STACK']
 
   // Create a stack viewport
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
@@ -149,7 +141,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
@@ -157,7 +149,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.STACK,
       element: element3,
       defaultOptions: {
@@ -170,13 +162,13 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport1 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUIDs[0])
+    renderingEngine.getViewport(viewportIds[0])
   )
   const viewport2 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUIDs[1])
+    renderingEngine.getViewport(viewportIds[1])
   )
   const viewport3 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUIDs[2])
+    renderingEngine.getViewport(viewportIds[2])
   )
 
   // Define a stack containing a single image
@@ -189,10 +181,10 @@ async function run() {
   viewport3.setStack(ptStack)
 
   // Set viewport 1 to toolgroup 1
-  toolGroup1.addViewport(viewportUIDs[0], renderingEngineUID)
+  toolGroup1.addViewport(viewportIds[0], renderingEngineId)
   // Set viewport 2 and 3 to toolgroup 2
-  toolGroup2.addViewport(viewportUIDs[1], renderingEngineUID)
-  toolGroup2.addViewport(viewportUIDs[2], renderingEngineUID)
+  toolGroup2.addViewport(viewportIds[1], renderingEngineId)
+  toolGroup2.addViewport(viewportIds[2], renderingEngineId)
 
   // Render the image
   renderingEngine.render()

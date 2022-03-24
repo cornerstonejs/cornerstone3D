@@ -19,13 +19,13 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ctVolumeUID,
-  ptVolumeUID,
+  renderingEngineId,
+  ctVolumeId,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -90,8 +90,6 @@ class EnableDisableViewportExample extends Component {
       10000
     )
 
-    registerWebImageLoader(cs)
-
     this.numberOfViewports =
       this.state.viewportGrid.numCols * this.state.viewportGrid.numRows
 
@@ -139,7 +137,7 @@ class EnableDisableViewportExample extends Component {
       viewportInputEntries: [
         {
           // CT volume axial
-          viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+          viewportId: VIEWPORT_IDS.CT.SAGITTAL,
           type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(0),
           toolGroup: ctSceneToolGroup,
@@ -149,7 +147,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // stack CT
-          viewportUID: VIEWPORT_IDS.STACK.CT,
+          viewportId: VIEWPORT_IDS.STACK.CT,
           type: ViewportType.STACK,
           element: this._elementNodes.get(1),
           toolGroup: stackCTViewportToolGroup,
@@ -159,7 +157,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // dx
-          viewportUID: VIEWPORT_IDS.STACK.DX,
+          viewportId: VIEWPORT_IDS.STACK.DX,
           type: ViewportType.STACK,
           element: this._elementNodes.get(2),
           toolGroup: stackDXViewportToolGroup,
@@ -169,7 +167,7 @@ class EnableDisableViewportExample extends Component {
         },
         {
           // CT volume Coronal
-          viewportUID: VIEWPORT_IDS.CT.CORONAL,
+          viewportId: VIEWPORT_IDS.CT.CORONAL,
           type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(3),
           toolGroup: ctSceneToolGroup,
@@ -178,7 +176,7 @@ class EnableDisableViewportExample extends Component {
           },
         },
         {
-          viewportUID: VIEWPORT_IDS.CT.AXIAL,
+          viewportId: VIEWPORT_IDS.CT.AXIAL,
           type: ViewportType.ORTHOGRAPHIC,
           element: this._elementNodes.get(4),
           toolGroup: ctSceneToolGroup,
@@ -189,7 +187,7 @@ class EnableDisableViewportExample extends Component {
       ],
     })
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
 
@@ -207,14 +205,14 @@ class EnableDisableViewportExample extends Component {
     // Tools added for the first two viewports
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({
@@ -249,7 +247,7 @@ class EnableDisableViewportExample extends Component {
 
       stackDXViewportToolGroup.addViewport(
         VIEWPORT_IDS.STACK.DX,
-        renderingEngineUID
+        renderingEngineId
       )
     }
 
@@ -258,7 +256,7 @@ class EnableDisableViewportExample extends Component {
     const CTVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+      const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
         imageIds: ctVolumeImageIds,
       })
 
@@ -279,7 +277,7 @@ class EnableDisableViewportExample extends Component {
 
       await setVolumesForViewports(
         renderingEngine,
-        [{ volumeUID: ctVolumeUID }],
+        [{ volumeId: ctVolumeId }],
         [
           VIEWPORT_IDS.CT.AXIAL,
           VIEWPORT_IDS.CT.CORONAL,
@@ -298,7 +296,7 @@ class EnableDisableViewportExample extends Component {
     const PETVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
-      const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+      const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
         imageIds: ctVolumeImageIds2,
       })
 
@@ -306,7 +304,7 @@ class EnableDisableViewportExample extends Component {
 
       await setVolumesForViewports(
         renderingEngine,
-        [{ volumeUID: ptVolumeUID }],
+        [{ volumeId: ptVolumeId }],
         [
           VIEWPORT_IDS.CT.AXIAL,
           VIEWPORT_IDS.CT.CORONAL,
@@ -355,7 +353,7 @@ class EnableDisableViewportExample extends Component {
 
     const viewportInput = this.state.viewportInputEntries[viewportIndex]
 
-    this.renderingEngine.disableElement(viewportInput.viewportUID)
+    this.renderingEngine.disableElement(viewportInput.viewportId)
 
     this.setState((state) => ({
       ...state,
@@ -372,14 +370,14 @@ class EnableDisableViewportExample extends Component {
 
     this.renderingEngine.enableElement(viewportInput)
 
-    const { toolGroup, viewportUID, type, canvas } = viewportInput
+    const { toolGroup, viewportId, type, canvas } = viewportInput
 
-    toolGroup.addViewport(viewportUID, renderingEngineUID)
+    toolGroup.addViewport(viewportId, renderingEngineId)
 
     // load
-    if (viewportUID === VIEWPORT_IDS.STACK.CT) {
+    if (viewportId === VIEWPORT_IDS.STACK.CT) {
       this.ctStackLoad()
-    } else if (viewportUID === VIEWPORT_IDS.STACK.DX) {
+    } else if (viewportId === VIEWPORT_IDS.STACK.DX) {
       this.dxColorLoad()
     } else {
       // if we have removed the scene when disabling all the related viewports
@@ -478,12 +476,12 @@ class EnableDisableViewportExample extends Component {
           </p>
           <p>
             By default, two viewports renders to the screen, the user can add
-            more viewports to the screen by selecting the viewportUID in the
-            list of available viewports.
+            more viewports to the screen by selecting the viewportId in the list
+            of available viewports.
           </p>
           <p>
             Viewports can also be removed from the screen by selecting the
-            viewportUID in the dropdown and disabling it.
+            viewportId in the dropdown and disabling it.
           </p>
           <p>
             A render of offscreen canvas is shown below, to demonstrate correct
@@ -522,8 +520,8 @@ class EnableDisableViewportExample extends Component {
               this.state.viewportInputEntries.map((vpEntry, index) => (
                 <option key={index} value={index}>
                   {this.state.enabledViewports.includes(index)
-                    ? vpEntry.viewportUID + ' --- enabled'
-                    : vpEntry.viewportUID + ' --- disabled'}
+                    ? vpEntry.viewportId + ' --- enabled'
+                    : vpEntry.viewportId + ' --- disabled'}
                 </option>
               ))}
           </select>

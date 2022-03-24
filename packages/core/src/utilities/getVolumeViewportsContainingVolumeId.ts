@@ -5,19 +5,19 @@ import {
 } from '../RenderingEngine/getRenderingEngine'
 
 /**
- * Similar to {@link getVolumeViewportsContainingSameVolumes}, but uses the volumeUID
+ * Similar to {@link getVolumeViewportsContainingSameVolumes}, but uses the volumeId
  * to filter viewports that contain the same volume.
  *
  * @returns VolumeViewport viewports array
  */
-function getVolumeViewportsContainingVolumeUID(
-  uid: string,
-  renderingEngineUID?: string
+function getVolumeViewportsContainingVolumeId(
+  volumeId: string,
+  renderingEngineId?: string
 ): Array<IVolumeViewport> {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines
-  if (renderingEngineUID) {
-    renderingEngines = [getRenderingEngine(renderingEngineUID)]
+  if (renderingEngineId) {
+    renderingEngines = [getRenderingEngine(renderingEngineId)]
   } else {
     renderingEngines = getRenderingEngines()
   }
@@ -27,8 +27,8 @@ function getVolumeViewportsContainingVolumeUID(
   renderingEngines.forEach((renderingEngine) => {
     const viewports = renderingEngine.getVolumeViewports()
     const filteredViewports = viewports.filter((vp) => {
-      const volActors = vp.getDefaultActor()
-      return volActors.volumeActor && volActors.uid === uid
+      const actor = vp.getDefaultActor()
+      return actor.volumeActor && actor.uid === volumeId
     })
     sameVolumeViewports.push(...filteredViewports)
   })
@@ -36,4 +36,4 @@ function getVolumeViewportsContainingVolumeUID(
   return sameVolumeViewports
 }
 
-export default getVolumeViewportsContainingVolumeUID
+export default getVolumeViewportsContainingVolumeId

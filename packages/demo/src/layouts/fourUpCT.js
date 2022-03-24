@@ -16,7 +16,7 @@ function setLayout(
   const viewportInput = [
     // CT
     {
-      viewportUID: VIEWPORT_IDS.CT.AXIAL,
+      viewportId: VIEWPORT_IDS.CT.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(0),
       defaultOptions: {
@@ -24,7 +24,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+      viewportId: VIEWPORT_IDS.CT.SAGITTAL,
       type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(1),
       defaultOptions: {
@@ -32,7 +32,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.CT.CORONAL,
+      viewportId: VIEWPORT_IDS.CT.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(2),
       defaultOptions: {
@@ -40,7 +40,7 @@ function setLayout(
       },
     },
     {
-      viewportUID: VIEWPORT_IDS.CTVR.VR,
+      viewportId: VIEWPORT_IDS.CTVR.VR,
       type: ViewportType.PERSPECTIVE,
       canvas: canvasContainers.get(3),
       defaultOptions: {
@@ -55,28 +55,28 @@ function setLayout(
 
   renderingEngine.setViewports(viewportInput)
 
-  const renderingEngineUID = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid
 
   viewportInput.forEach((viewportInputEntry) => {
-    const { sceneUID, viewportUID } = viewportInputEntry
+    const { sceneUID, viewportId } = viewportInputEntry
 
     if (sceneUID === SCENE_IDS.CT) {
-      console.log(`adding ${viewportUID} to CT toolgroup`)
-      ctSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
+      console.log(`adding ${viewportId} to CT toolgroup`)
+      ctSceneToolGroup.addViewport(viewportId, renderingEngineId)
     } else if (sceneUID === SCENE_IDS.CTVR) {
-      console.log(`adding ${viewportUID} to CTVR toolgroup`)
-      ctVRSceneToolGroup.addViewport(viewportUID, renderingEngineUID)
+      console.log(`adding ${viewportId} to CTVR toolgroup`)
+      ctVRSceneToolGroup.addViewport(viewportId, renderingEngineId)
     }
   })
 }
 
-function setVolumes(renderingEngine, ctVolumeUID) {
+function setVolumes(renderingEngine, ctVolumeId) {
   const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
   const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR)
 
-  ctScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }])
+  ctScene.setVolumes([{ volumeId: ctVolumeId, callback: setCTWWWC }])
   ctVRScene.setVolumes([
-    { volumeUID: ctVolumeUID, callback: setCTVRTransferFunction },
+    { volumeId: ctVolumeId, callback: setCTVRTransferFunction },
   ])
 }
 

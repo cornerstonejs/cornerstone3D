@@ -1,11 +1,11 @@
 import { BaseTool } from '../base'
-import { getEnabledElementByUIDs } from '@cornerstonejs/core'
+import { getEnabledElementByIds } from '@cornerstonejs/core'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
 import { LabelmapDisplay } from './Labelmap'
 import { segmentationConfig } from '../../stateManagement/segmentation'
 import { triggerSegmentationStateModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
-import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
+import { getToolGroupByToolGroupId } from '../../store/ToolGroupManager'
 import {
   ToolGroupSpecificSegmentationData,
   SegmentationConfig,
@@ -32,15 +32,15 @@ import { deepMerge } from '../../utilities'
  * Similar to other tools in Cornerstone3DTools, the SegmentationDisplayTool should
  * be added to the CornerstoneTools by calling cornerstoneTools.addTool(SegmentationDisplayTool)
  * and a toolGroup should be created for it using the ToolGroupManager API, finally
- * viewports information such as viewportUID and renderingEngineUID should be provided
+ * viewports information such as viewportId and renderingEngineId should be provided
  * to the toolGroup and the SegmentationDisplayTool should be set to be activated.
  * For adding segmentations to be displayed you can addSegmentationsForToolGroup helper.
  *
  * ```js
  *
- *  addSegmentationsForToolGroup('toolGroupUID', [
+ *  addSegmentationsForToolGroup('toolGroupId', [
  *     {
- *       volumeUID: segmentationUID,
+ *       volumeId: segmentationUID,
  *     },
  *  ])
  *
@@ -58,8 +58,8 @@ export default class SegmentationDisplayTool extends BaseTool {
   }
 
   enableCallback(): void {
-    const toolGroupUID = this.toolGroupUID
-    const toolGroupSegmentationState = getSegmentationState(toolGroupUID)
+    const toolGroupId = this.toolGroupId
+    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
 
     if (toolGroupSegmentationState.length === 0) {
       return
@@ -71,12 +71,12 @@ export default class SegmentationDisplayTool extends BaseTool {
     }
 
     // trigger the update
-    triggerSegmentationStateModified(toolGroupUID)
+    triggerSegmentationStateModified(toolGroupId)
   }
 
   disableCallback(): void {
-    const toolGroupUID = this.toolGroupUID
-    const toolGroupSegmentationState = getSegmentationState(toolGroupUID)
+    const toolGroupId = this.toolGroupId
+    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
 
     if (toolGroupSegmentationState.length === 0) {
       return
@@ -88,7 +88,7 @@ export default class SegmentationDisplayTool extends BaseTool {
     }
 
     // trigger the update
-    triggerSegmentationStateModified(toolGroupUID)
+    triggerSegmentationStateModified(toolGroupId)
   }
 
   /**
@@ -96,23 +96,23 @@ export default class SegmentationDisplayTool extends BaseTool {
    * Based on the segmentation representation type, it will call the corresponding
    * render function.
    *
-   * @param toolGroupUID - the toolGroupUID
+   * @param toolGroupId - the toolGroupId
    */
-  renderSegmentation = (toolGroupUID: string): void => {
-    const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
+  renderSegmentation = (toolGroupId: string): void => {
+    const toolGroup = getToolGroupByToolGroupId(toolGroupId)
 
     if (!toolGroup) {
       return
     }
 
-    const toolGroupSegmentationState = getSegmentationState(toolGroupUID)
+    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
 
     // toolGroup Viewports
     const toolGroupViewports = toolGroup.viewportsInfo.map(
-      ({ renderingEngineUID, viewportUID }) => {
-        const enabledElement = getEnabledElementByUIDs(
-          viewportUID,
-          renderingEngineUID
+      ({ renderingEngineId, viewportId }) => {
+        const enabledElement = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
         )
 
         if (enabledElement) {
@@ -124,7 +124,7 @@ export default class SegmentationDisplayTool extends BaseTool {
     // Render each segmentationData, in each viewport in the toolGroup
     toolGroupSegmentationState.forEach(
       (segmentationData: ToolGroupSpecificSegmentationData) => {
-        const config = this._getSegmentationConfig(toolGroupUID)
+        const config = this._getSegmentationConfig(toolGroupId)
         const { representation } = segmentationData
 
         toolGroupViewports.forEach((viewport) => {
@@ -145,9 +145,9 @@ export default class SegmentationDisplayTool extends BaseTool {
     })
   }
 
-  _getSegmentationConfig(toolGroupUID: string): SegmentationConfig {
+  _getSegmentationConfig(toolGroupId: string): SegmentationConfig {
     const toolGroupConfig =
-      segmentationConfig.getSegmentationConfig(toolGroupUID)
+      segmentationConfig.getSegmentationConfig(toolGroupId)
 
     const globalConfig = segmentationConfig.getGlobalSegmentationConfig()
 

@@ -25,12 +25,12 @@ async function setup() {
 
   // registerWebImageLoader(cs)
 
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   const viewportInput = [
     {
-      viewportUID: 'CT_STACK',
+      viewportId: 'CT_STACK',
       type: Enums.ViewportType.STACK,
       element,
       defaultOptions: {

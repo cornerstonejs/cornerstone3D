@@ -19,7 +19,7 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
-export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
+export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // @public (undocumented)
 export const cache: Cache_2;
@@ -32,8 +32,8 @@ type CameraModifiedEventDetail = {
     previousCamera: ICamera;
     camera: ICamera;
     element: HTMLElement;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -324,7 +324,7 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
-function createAndCacheDerivedVolume(referencedVolumeUID: string, options: DerivedVolumeOptions): ImageVolume;
+function createAndCacheDerivedVolume(referenceVolumeId: string, options: DerivedVolumeOptions): ImageVolume;
 
 // @public (undocumented)
 function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
@@ -333,7 +333,7 @@ function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): P
 function createFloat32SharedArray(length: number): Float32Array;
 
 // @public (undocumented)
-function createLocalVolume(options: LocalVolumeOptions, uid: string, preventCache?: boolean): ImageVolume;
+function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): ImageVolume;
 
 // @public (undocumented)
 function createNormalizedMouseEvent(imageData: vtkImageData, index: any, element: any, viewport: any): {
@@ -367,8 +367,8 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 // @public (undocumented)
 type ElementDisabledEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -377,8 +377,8 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>;
 // @public (undocumented)
 type ElementEnabledEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -555,7 +555,7 @@ function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlan
 export function getEnabledElement(element: HTMLElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
-export function getEnabledElementByUIDs(viewportUID: string, renderingEngineUID: string): IEnabledElement;
+export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -567,7 +567,7 @@ function getMinMax(storedPixelData: number[]): {
 export function getOrCreateCanvas(element: HTMLElement): HTMLCanvasElement;
 
 // @public (undocumented)
-export function getRenderingEngine(uid: string): IRenderingEngine | undefined;
+export function getRenderingEngine(id: string): IRenderingEngine | undefined;
 
 // @public (undocumented)
 export function getRenderingEngines(): IRenderingEngine[] | undefined;
@@ -582,7 +582,7 @@ export function getShouldUseCPURendering(): boolean;
 function getSpacingInNormalDirection(imageVolume: IImageVolume, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
-function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeUID?: string): {
+function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
 };
@@ -591,10 +591,10 @@ function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera:
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 
 // @public (undocumented)
-function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineUID?: string): Array<IVolumeViewport>;
+function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
-function getVolumeViewportsContainingVolumeUID(uid: string, renderingEngineUID?: string): Array<IVolumeViewport>;
+function getVolumeViewportsContainingVolumeId(volumeId: string, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
 interface ICache {
@@ -679,11 +679,11 @@ interface IEnabledElement {
     // (undocumented)
     renderingEngine: IRenderingEngine;
     // (undocumented)
-    renderingEngineUID: string;
+    renderingEngineId: string;
     // (undocumented)
     viewport: IStackViewport | IVolumeViewport;
     // (undocumented)
-    viewportUID: string;
+    viewportId: string;
 }
 
 // @public (undocumented)
@@ -822,7 +822,7 @@ interface IImageVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     // (undocumented)
     scalarData: any;
     // (undocumented)
@@ -839,7 +839,7 @@ interface IImageVolume {
     // (undocumented)
     spacing: Point3;
     // (undocumented)
-    readonly uid: string;
+    readonly volumeId: string;
     // (undocumented)
     vtkOpenGLTexture: any;
 }
@@ -936,8 +936,8 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 // @public (undocumented)
 type ImageRenderedEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
     suppressEvents?: boolean;
 };
 
@@ -950,8 +950,8 @@ type ImageSpacingCalibratedEvent = CustomEvent_2<ImageSpacingCalibratedEventDeta
 // @public (undocumented)
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
     imageId: string;
     rowScale: number;
     columnScale: number;
@@ -979,7 +979,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     // (undocumented)
     scalarData: Float32Array | Uint8Array;
     // (undocumented)
@@ -996,7 +996,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     spacing: Point3;
     // (undocumented)
-    readonly uid: string;
+    readonly volumeId: string;
     // (undocumented)
     vtkOpenGLTexture: any;
 }
@@ -1032,7 +1032,7 @@ interface IRenderingEngine {
     // (undocumented)
     destroy(): void;
     // (undocumented)
-    disableElement(viewportUID: string): void;
+    disableElement(viewportId: string): void;
     // (undocumented)
     enableElement(viewportInputEntry: PublicViewportInput): void;
     // (undocumented)
@@ -1040,13 +1040,15 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport;
+    getViewport(id: string): IStackViewport | IVolumeViewport;
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
     hasBeenDestroyed: boolean;
+    // (undocumented)
+    id: string;
     // (undocumented)
     offScreenCanvasContainer: any;
     // (undocumented)
@@ -1056,15 +1058,13 @@ interface IRenderingEngine {
     // (undocumented)
     renderFrameOfReference(FrameOfReferenceUID: string): void;
     // (undocumented)
-    renderViewport(viewportUID: string): void;
+    renderViewport(viewportId: string): void;
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void;
+    renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
     resize(): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
-    // (undocumented)
-    uid: string;
 }
 
 // @public (undocumented)
@@ -1086,8 +1086,8 @@ interface IStackViewport extends IViewport {
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLElement;
-        viewportUID: string;
-        renderingEngineUID: string;
+        viewportId: string;
+        renderingEngineId: string;
     };
     // (undocumented)
     getCamera(): ICamera;
@@ -1189,13 +1189,15 @@ interface IViewport {
     // (undocumented)
     getRenderingEngine(): any;
     // (undocumented)
+    id: string;
+    // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
     removeAllActors(): void;
     // (undocumented)
     render(): void;
     // (undocumented)
-    renderingEngineUID: string;
+    renderingEngineId: string;
     // (undocumented)
     reset(immediate: boolean): void;
     // (undocumented)
@@ -1217,17 +1219,15 @@ interface IViewport {
     // (undocumented)
     type: ViewportType;
     // (undocumented)
-    uid: string;
-    // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
 // @public (undocumented)
-interface IViewportUID {
+interface IViewportId {
     // (undocumented)
-    renderingEngineUID: string;
+    renderingEngineId: string;
     // (undocumented)
-    viewportUID: string;
+    viewportId: string;
 }
 
 // @public (undocumented)
@@ -1243,7 +1243,7 @@ interface IVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     // (undocumented)
     scalarData: Float32Array | Uint8Array;
     // (undocumented)
@@ -1260,7 +1260,7 @@ interface IVolume {
     // (undocumented)
     spacing: Point3;
     // (undocumented)
-    uid: string;
+    volumeId: string;
 }
 
 // @public (undocumented)
@@ -1276,7 +1276,7 @@ interface IVolumeInput {
     // (undocumented)
     visibility?: boolean;
     // (undocumented)
-    volumeUID: string;
+    volumeId: string;
 }
 
 // @public (undocumented)
@@ -1411,7 +1411,7 @@ type PTScaling = {
 // @public (undocumented)
 type PublicViewportInput = {
     element: HTMLElement;
-    viewportUID: string;
+    viewportId: string;
     type: ViewportType;
     defaultOptions: ViewportInputOptions;
 };
@@ -1430,13 +1430,13 @@ function registerVolumeLoader(scheme: string, volumeLoader: Types.VolumeLoaderFn
 
 // @public (undocumented)
 export class RenderingEngine implements IRenderingEngine {
-    constructor(uid?: string);
+    constructor(id?: string);
     // (undocumented)
     _debugRender(): void;
     // (undocumented)
     destroy(): void;
     // (undocumented)
-    disableElement(viewportUID: string): void;
+    disableElement(viewportId: string): void;
     // (undocumented)
     _downloadOffScreenCanvas(): void;
     // (undocumented)
@@ -1446,13 +1446,15 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport;
+    getViewport(viewportId: string): IStackViewport | IVolumeViewport;
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
     hasBeenDestroyed: boolean;
+    // (undocumented)
+    readonly id: string;
     // (undocumented)
     readonly offScreenCanvasContainer: any;
     // (undocumented)
@@ -1462,19 +1464,17 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     renderFrameOfReference: (FrameOfReferenceUID: string) => void;
     // (undocumented)
-    renderViewport(viewportUID: string): void;
+    renderViewport(viewportId: string): void;
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void;
+    renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
     resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
     // (undocumented)
     setViewports(viewportInputEntries: Array<PublicViewportInput>): void;
-    // (undocumented)
-    readonly uid: string;
 }
 
 // @public (undocumented)
-export function renderToCanvas(imageId: string, canvas: HTMLCanvasElement, renderingEngineUID?: any, suppressEvents?: boolean): Promise<string>;
+export function renderToCanvas(imageId: string, canvas: HTMLCanvasElement, renderingEngineId?: any, suppressEvents?: boolean): Promise<string>;
 
 // @public (undocumented)
 export function resetUseCPURendering(): void;
@@ -1533,7 +1533,7 @@ export class Settings {
 export function setUseCPURendering(status: boolean): void;
 
 // @public (undocumented)
-export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportUIDs: Array<string>, immediateRender?: boolean): Promise<void>;
+export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // @public (undocumented)
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
@@ -1542,8 +1542,8 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 type StackNewImageEventDetail = {
     image: IImage;
     imageId: string;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -1561,8 +1561,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
         element: HTMLElement;
-        viewportUID: string;
-        renderingEngineUID: string;
+        viewportId: string;
+        renderingEngineId: string;
     };
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
@@ -1668,7 +1668,7 @@ declare namespace Types {
         IEnabledElement,
         ICache,
         IVolume,
-        IViewportUID,
+        IViewportId,
         IImageVolume,
         IRenderingEngine,
         ScalingParameters,
@@ -1747,7 +1747,7 @@ declare namespace utilities {
         getVolumeActorCorners,
         indexWithinDimensions,
         getVolumeViewportsContainingSameVolumes,
-        getVolumeViewportsContainingVolumeUID
+        getVolumeViewportsContainingVolumeId
     }
 }
 export { utilities }
@@ -1807,6 +1807,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
+    readonly id: string;
+    // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
     options: ViewportInputOptions;
@@ -1819,7 +1821,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     render(): void;
     // (undocumented)
-    readonly renderingEngineUID: string;
+    readonly renderingEngineId: string;
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
@@ -1849,8 +1851,6 @@ export class Viewport implements IViewport {
     // (undocumented)
     readonly type: ViewportType;
     // (undocumented)
-    readonly uid: string;
-    // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
@@ -1874,8 +1874,8 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;
 
 // @public (undocumented)
 type VoiModifiedEventDetail = {
-    viewportUID: string;
-    volumeUID: string;
+    viewportId: string;
+    volumeId: string;
     range: VOIRange;
 };
 
@@ -1907,7 +1907,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 // @public (undocumented)
 type VolumeInputCallback = (params: {
     volumeActor: VolumeActor;
-    volumeUID: string;
+    volumeId: string;
 }) => unknown;
 
 // @public (undocumented)

@@ -14,12 +14,12 @@ import {
 
 /**
  * Trigger an event on the eventTarget that the segmentation state for
- * toolGroupUID has been updated
- * @param toolGroupUID - The UID of the toolGroup
+ * toolGroupId has been updated
+ * @param toolGroupId - The Id of the toolGroup
  */
-function triggerSegmentationStateModified(toolGroupUID: string): void {
+function triggerSegmentationStateModified(toolGroupId: string): void {
   const eventDetail: SegmentationStateModifiedEventDetail = {
-    toolGroupUID,
+    toolGroupId,
   }
 
   triggerEvent(eventTarget, Events.SEGMENTATION_STATE_MODIFIED, eventDetail)
@@ -36,16 +36,16 @@ function triggerSegmentationStateModified(toolGroupUID: string): void {
 function triggerSegmentationGlobalStateModified(
   segmentationUID?: string
 ): void {
-  let toolGroupUIDs, segmentationUIDs
+  let toolGroupIds, segmentationUIDs
 
   if (segmentationUID) {
-    toolGroupUIDs = getToolGroupsWithSegmentation(segmentationUID)
+    toolGroupIds = getToolGroupsWithSegmentation(segmentationUID)
     segmentationUIDs = [segmentationUID]
   } else {
     // get all toolGroups
-    toolGroupUIDs = getToolGroups()
+    toolGroupIds = getToolGroups()
     segmentationUIDs = getGlobalSegmentationState().map(
-      ({ volumeUID }) => volumeUID
+      ({ volumeId }) => volumeId
     )
   }
 
@@ -64,22 +64,22 @@ function triggerSegmentationGlobalStateModified(
 
   // 2. Notify all viewports that render the segmentationUID in order to update the
   // rendering based on the new global state.
-  toolGroupUIDs.forEach((toolGroupUID) => {
-    triggerSegmentationStateModified(toolGroupUID)
+  toolGroupIds.forEach((toolGroupId) => {
+    triggerSegmentationStateModified(toolGroupId)
   })
 }
 
 /**
  * Trigger an event that a segmentation data has been modified
- * @param toolGroupUID - The UID of the tool group that triggered the event.
+ * @param toolGroupId - The Id of the tool group that triggered the event.
  * @param segmentationDataUID - The UID of the segmentation data that was modified.
  */
 function triggerSegmentationDataModified(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string
 ): void {
   const eventDetail: SegmentationDataModifiedEventDetail = {
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID,
   }
 

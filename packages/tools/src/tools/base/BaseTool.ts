@@ -5,8 +5,8 @@ import { ToolModes } from '../../enums'
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
 
 interface IBaseTool {
-  /** ToolGroup UID the tool instance belongs to */
-  toolGroupUID: string
+  /** ToolGroup ID the tool instance belongs to */
+  toolGroupId: string
   /** Tool supported interaction types */
   supportedInteractionTypes: InteractionTypes[]
   /** Tool Mode : Active, Passive, Enabled, Disabled */
@@ -31,8 +31,8 @@ abstract class BaseTool implements IBaseTool {
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[]
   public configuration: Record<string, any>
-  /** ToolGroup UID the tool instance belongs to */
-  public toolGroupUID: string
+  /** ToolGroup ID the tool instance belongs to */
+  public toolGroupId: string
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes
 
@@ -42,7 +42,7 @@ abstract class BaseTool implements IBaseTool {
     const {
       configuration = {},
       supportedInteractionTypes,
-      toolGroupUID,
+      toolGroupId,
     } = initialProps
 
     // If strategies are not initialized in the tool config
@@ -53,7 +53,7 @@ abstract class BaseTool implements IBaseTool {
       configuration.strategyOptions = {}
     }
 
-    this.toolGroupUID = toolGroupUID
+    this.toolGroupId = toolGroupId
     this.supportedInteractionTypes = supportedInteractionTypes || []
     this.configuration = Object.assign({}, configuration)
     this.mode = ToolModes.Disabled
@@ -102,24 +102,24 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * Returns the volumeUID for the volume viewport. It will grabbed the volumeUID
-   * from the volumeUID if particularly specified in the tool configuration, or if
-   * not, the first actorUID in the viewport is returned as the volumeUID. NOTE: for
-   * segmentations, actorUID is not necessarily the volumeUID since the segmentation
-   * can have multiple representations, use segmentation helpers to get the volumeUID
+   * Returns the volumeId for the volume viewport. It will grabbed the volumeId
+   * from the volumeId if particularly specified in the tool configuration, or if
+   * not, the first actorUID in the viewport is returned as the volumeId. NOTE: for
+   * segmentations, actorUID is not necessarily the volumeId since the segmentation
+   * can have multiple representations, use segmentation helpers to get the volumeId
    * based on the actorUID.
    *
    * @param viewport - Volume viewport
-   * @returns the volumeUID for the viewport if specified in the tool configuration,
+   * @returns the volumeId for the viewport if specified in the tool configuration,
    * or the first actorUID in the viewport if not.
    */
-  private getTargetVolumeUID(viewport: Types.IViewport): string | undefined {
+  private getTargetVolumeId(viewport: Types.IViewport): string | undefined {
     if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('getTargetVolumeUID: viewport must be a VolumeViewport')
+      throw new Error('getTargetVolumeId: viewport must be a VolumeViewport')
     }
 
-    if (this.configuration.volumeUID) {
-      return this.configuration.volumeUID
+    if (this.configuration.volumeId) {
+      return this.configuration.volumeId
     }
 
     // If volume not specified, then return the actorUID for the
@@ -134,53 +134,53 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * Get the viewport and image for the targetUID. Since we are using the
-   * schema of stackTarget:<viewportUID>, we can get the viewport and image
-   * from the stack. For the volumeViewports, the targetUID is the actual
-   * volumeUID, so we can get the viewport and image.
+   * Get the viewport and image for the targetId. Since we are using the
+   * schema of stackTarget:<viewportId>, we can get the viewport and image
+   * from the stack. For the volumeViewports, the targetId is the actual
+   * volumeId, so we can get the viewport and image.
    *
-   * @param targetUID - annotation targetUID
+   * @param targetId - annotation targetId
    * @param renderingEngine - The rendering engine
    * @returns The viewport and image data for the target.
    */
-  protected getTargetUIDViewportAndImage(
-    targetUID: string,
+  protected getTargetIdViewportAndImage(
+    targetId: string,
     renderingEngine: Types.IRenderingEngine
   ): {
     viewport: Types.IViewport
     image: Types.IImageData
   } {
     let image, viewport
-    if (targetUID.startsWith('stackTarget')) {
-      const coloneIndex = targetUID.indexOf(':')
-      const viewportUID = targetUID.substring(coloneIndex + 1)
-      viewport = renderingEngine.getViewport(viewportUID)
+    if (targetId.startsWith('stackTarget')) {
+      const coloneIndex = targetId.indexOf(':')
+      const viewportId = targetId.substring(coloneIndex + 1)
+      viewport = renderingEngine.getViewport(viewportId)
       image = viewport.getImageData()
     } else {
-      image = cache.getVolume(targetUID)
+      image = cache.getVolume(targetId)
     }
 
     return { image, viewport }
   }
 
   /**
-   * Get the target UID for the viewport which will be used to store the cached
+   * Get the target Id for the viewport which will be used to store the cached
    * statistics scoped to that target in the annotations.
-   * For StackViewport, targetUID is the viewportUID, but for the volume viewport,
-   * the targetUID will be grabbed from the volumeUID if particularly specified
+   * For StackViewport, targetId is the viewportId, but for the volume viewport,
+   * the targetId will be grabbed from the volumeId if particularly specified
    * in the tool configuration, or if not, the first actorUID in the viewport.
    *
-   * @param viewport - viewport to get the targetUID for
-   * @returns targetUID
+   * @param viewport - viewport to get the targetId for
+   * @returns targetId
    */
-  protected getTargetUID(viewport: Types.IViewport): string | undefined {
+  protected getTargetId(viewport: Types.IViewport): string | undefined {
     if (viewport instanceof StackViewport) {
-      return `stackTarget:${viewport.uid}`
+      return `stackTarget:${viewport.id}`
     } else if (viewport instanceof VolumeViewport) {
-      return this.getTargetVolumeUID(viewport)
+      return this.getTargetVolumeId(viewport)
     } else {
       throw new Error(
-        'getTargetUID: viewport must be a StackViewport or VolumeViewport'
+        'getTargetId: viewport must be a StackViewport or VolumeViewport'
       )
     }
   }

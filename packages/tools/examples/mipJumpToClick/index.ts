@@ -31,10 +31,10 @@ const {
 const { MouseBindings } = csToolsEnums
 // Define a unique id for each volume
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
-const ctVolumeUID = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeUID with loader id + volume id
-const ptVolumeName = 'PT_VOLUME_UID'
-const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const ctVolumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
+const ptVolumeName = 'PT_VOLUME_ID'
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 function setPetTransferFunction({ volumeActor }) {
   const rgbTransferFunction = volumeActor
@@ -136,11 +136,11 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
-  const viewportUIDs = [
+  const viewportIds = [
     'CT_AXIAL_STACK',
     'CT_SAGITTAL_STACK',
     'CT_OBLIQUE_STACK',
@@ -148,7 +148,7 @@ async function run() {
 
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -157,7 +157,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -166,7 +166,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
@@ -179,13 +179,13 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  mipToolGroup.addViewport(viewportUIDs[2], renderingEngineUID)
+  mipToolGroup.addViewport(viewportIds[2], renderingEngineId)
 
   // Define volumes in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   })
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   })
 
@@ -205,26 +205,26 @@ async function run() {
 
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeUID: ctVolumeUID }],
-    [viewportUIDs[0]]
+    [{ volumeId: ctVolumeId }],
+    [viewportIds[0]]
   )
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeUID: ptVolumeUID, callback: setPetTransferFunction }],
-    [viewportUIDs[1]]
+    [{ volumeId: ptVolumeId, callback: setPetTransferFunction }],
+    [viewportIds[1]]
   )
 
   setVolumesForViewports(
     renderingEngine,
     [
       {
-        volumeUID: ptVolumeUID,
+        volumeId: ptVolumeId,
         callback: setPetTransferFunction,
         blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },
     ],
-    [viewportUIDs[2]]
+    [viewportIds[2]]
   )
 
   // Render the image

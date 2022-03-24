@@ -85,11 +85,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     volumeInputArray: Array<IVolumeInput>,
     immediate = false
   ): Promise<void> {
-    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeUID)
+    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId)
 
     if (!firstImageVolume) {
       throw new Error(
-        `imageVolume with uid: ${firstImageVolume.uid} does not exist`
+        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
       )
     }
 
@@ -104,15 +104,15 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeUID, slabThickness, actorUID } = volumeInputArray[i]
+      const { volumeId, slabThickness, actorUID } = volumeInputArray[i]
       const volumeActor = await createVolumeActor(volumeInputArray[i])
 
-      // We cannot use only volumeUID since then we cannot have for instance more
+      // We cannot use only volumeId since then we cannot have for instance more
       // than one representation of the same volume (since actors would have the
       // same name, and we don't allow that) AND We cannot use only any uid, since
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
-      // it is defined, otherwise we use volumeUID for the actor name.
-      const uid = actorUID || volumeUID
+      // it is defined, otherwise we use volumeId for the actor name.
+      const uid = actorUID || volumeId
       volumeActors.push({ uid, volumeActor, slabThickness })
 
       if (
@@ -156,19 +156,19 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeUID, visibility, actorUID } = volumeInputArray[i]
+      const { volumeId, visibility, actorUID } = volumeInputArray[i]
       const volumeActor = await createVolumeActor(volumeInputArray[i])
 
       if (visibility === false) {
         volumeActor.setVisibility(false)
       }
 
-      // We cannot use only volumeUID since then we cannot have for instance more
+      // We cannot use only volumeId since then we cannot have for instance more
       // than one representation of the same volume (since actors would have the
       // same name, and we don't allow that) AND We cannot use only any uid, since
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
-      // it is defined, otherwise we use volumeUID for the actor name.
-      const uid = actorUID || volumeUID
+      // it is defined, otherwise we use volumeId for the actor name.
+      const uid = actorUID || volumeId
       volumeActors.push({ uid, volumeActor })
     }
 
@@ -183,7 +183,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * It removes the volume actor from the Viewport. If the volume actor is not in
    * the viewport, it does nothing.
    * @param actorUIDs - Array of actor UIDs to remove. In case of simple volume it will
-   * be the volume UID, but in case of Segmentation it will be `{volumeUID}-{representationType}`
+   * be the volume Id, but in case of Segmentation it will be `{volumeId}-{representationType}`
    * since the same volume can be rendered in multiple representations.
    * @param immediate - If true, the Viewport will be rendered immediately
    */
@@ -205,17 +205,17 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     for (let i = 1; i < numVolumes; i++) {
       const volumeInput = volumeInputArray[i]
 
-      const imageVolume = await loadVolume(volumeInput.volumeUID)
+      const imageVolume = await loadVolume(volumeInput.volumeId)
 
       if (!imageVolume) {
         throw new Error(
-          `imageVolume with uid: ${imageVolume.uid} does not exist`
+          `imageVolume with id: ${imageVolume.volumeId} does not exist`
         )
       }
 
       if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
         throw new Error(
-          `Volumes being added to viewport ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
+          `Volumes being added to viewport ${this.id} do not share the same FrameOfReferenceUID. This is not yet supported`
         )
       }
     }

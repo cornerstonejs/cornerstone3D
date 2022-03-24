@@ -33,7 +33,7 @@ const renderingEngine = new RenderingEngine();
 renderingEngine.setViewports([
  {
     sceneUID: "CT",
-    viewportUID: "CTAxial",
+    viewportId: "CTAxial",
     type: ViewportType.ORTHOGRAPHIC,
     canvas,
     defaultOptions: {
@@ -45,7 +45,7 @@ renderingEngine.setViewports([
 renderingEngine.enableElement(
  {
     sceneUID: "CT",
-    viewportUID: "CTAxial",
+    viewportId: "CTAxial",
     type: ViewportType.ORTHOGRAPHIC,
     canvas,
     defaultOptions: {
@@ -58,8 +58,8 @@ renderingEngine.enableElement(
 {
   canvas,
   sceneUID,
-  viewportUID,
-  renderingEngineUID,
+  viewportId,
+  renderingEngineId,
 }
 ```
 
@@ -104,7 +104,7 @@ For loading volumes we have
 ```js
 // Define a set of imageIds as a volume.
 const ctVolume = await createAndCacheVolume(
-  volumeUID,
+  volumeId,
   { imageIds: volumeImageIds}
 )
 
@@ -165,8 +165,8 @@ In Cornerstone-3D we have:
 
 ```js
 fusionScene.setVolumes([
-  { volumeUID: ctVolumeUID, callback: setCTWWWC },
-  { volumeUID: ptVolumeUID, callback: setPetFusionColorMapTransferFunction },
+  { volumeId: ctVolumeId, callback: setCTWWWC },
+  { volumeId: ptVolumeId, callback: setPetFusionColorMapTransferFunction },
 ]);
 ```
 
@@ -212,7 +212,7 @@ const myScene = renderingEngine.getScene('mySceneUID');
 myScene.render();
 
 // Update a single viewport
-const myViewport = myScene.getViewport('myViewportUID');
+const myViewport = myScene.getViewport('myViewportId');
 myViewport.render();
 ```
 
@@ -252,13 +252,13 @@ renderingEngine.destroy()
 
 if you plan to leave the page, this will destroy all elements.
 
-The ELEMENT_DISABLED event contains just a reference to the canvas element which is now disabled, and related UIDs.
+The ELEMENT_DISABLED event contains just a reference to the canvas element which is now disabled, and related IDs.
 
 ```js
 eventDetail: {
-  viewportUID,
+  viewportId,
   sceneUID,
-  renderingEngineUID,
+  renderingEngineId,
   canvas
 }
 ```
@@ -342,7 +342,7 @@ cornerstone.cache.getImageLoadObject(imageId);
 In Cornerstone-3D we have:
 
 ```js
-const volume = cache.getVolume(volumeUID)
+const volume = cache.getVolume(volumeId)
 
 // Check which frames have already been loaded:
 // - true if all frames have loaded.

@@ -11,9 +11,9 @@ interface IEnabledElement {
   /** Cornerstone Rendering Engine instance */
   renderingEngine: IRenderingEngine
   /** Unique ID of the viewport in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID of the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** FrameOfReference the enabledElement is rendering inside */
   FrameOfReferenceUID: string
 }

@@ -34,9 +34,9 @@ const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -51,7 +51,7 @@ function createViewport(renderingEngine, orientation) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
@@ -78,7 +78,7 @@ describe('Segmentation State -- ', () => {
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -94,7 +94,7 @@ describe('Segmentation State -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
+      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -110,7 +110,7 @@ describe('Segmentation State -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
@@ -122,7 +122,7 @@ describe('Segmentation State -- ', () => {
 
           expect(globalState).toBeDefined()
 
-          expect(globalState.volumeUID).toBe(segVolumeId)
+          expect(globalState.volumeId).toBe(segVolumeId)
           expect(globalState.label).toBe(segVolumeId)
           expect(globalState.activeSegmentIndex).toBe(1)
         }
@@ -135,18 +135,18 @@ describe('Segmentation State -- ', () => {
 
           const state = stateManager.getState()
 
-          expect(evt.detail.toolGroupUID).toBe('segToolGroup')
+          expect(evt.detail.toolGroupId).toBe('segToolGroup')
           expect(state).toBeDefined()
           expect(state.toolGroups).toBeDefined()
 
           const toolGroupSegmentationState =
-            state.toolGroups[this.segToolGroup.uid]
+            state.toolGroups[this.segToolGroup.id]
 
           expect(toolGroupSegmentationState).toBeDefined()
           expect(toolGroupSegmentationState.segmentations.length).toBe(1)
 
           const segState = segmentation.state.getSegmentationState(
-            this.segToolGroup.uid
+            this.segToolGroup.id
           )
 
           expect(toolGroupSegmentationState.segmentations).toEqual(segState)
@@ -156,7 +156,7 @@ describe('Segmentation State -- ', () => {
           expect(segData.active).toBe(true)
           expect(segData.visibility).toBe(true)
           expect(segData.segmentationDataUID).toBeDefined()
-          expect(segData.volumeUID).toBe(segVolumeId)
+          expect(segData.volumeId).toBe(segVolumeId)
           expect(segData.representation).toBeDefined()
           expect(segData.representation.type).toBe(LABELMAP)
           expect(segData.representation.config).toBeDefined()
@@ -165,7 +165,7 @@ describe('Segmentation State -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -174,13 +174,13 @@ describe('Segmentation State -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
-            [viewportUID]
+            [{ volumeId: volumeId, callback }],
+            [viewportId]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
+              { volumeId: segVolumeId },
             ])
           })
         })
@@ -196,7 +196,7 @@ describe('Segmentation State -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
@@ -224,7 +224,7 @@ describe('Segmentation State -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -233,13 +233,13 @@ describe('Segmentation State -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
-            [viewportUID]
+            [{ volumeId: volumeId, callback }],
+            [viewportId]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
+              { volumeId: segVolumeId },
             ])
           })
         })

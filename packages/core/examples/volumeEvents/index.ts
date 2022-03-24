@@ -19,13 +19,13 @@ import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
-const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_SAGITTAL_STACK'
+const renderingEngineId = 'myRenderingEngine'
+const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
+const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -90,11 +90,11 @@ element.addEventListener(
   STACK_NEW_IMAGE,
   (evt: Types.EventTypes.StackNewImageEvent) => {
     // Remove the image since then we serialise a bunch of pixeldata to the screen.
-    const { imageId, renderingEngineUID, viewportUID } = evt.detail
+    const { imageId, renderingEngineId, viewportId } = evt.detail
     const detail = {
       imageId,
-      renderingEngineUID,
-      viewportUID,
+      renderingEngineId,
+      viewportId,
       image: 'cornerstoneImageObject',
     }
 
@@ -109,15 +109,15 @@ element.addEventListener(
 // Buttons
 addButtonToToolbar('Set VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Get the volume actor from the viewport
-  const actor = viewport.getActor(volumeUID)
+  const actor = viewport.getActor(volumeId)
 
   // Set the mapping range of the actor to a range to highlight bones
   actor.volumeActor
@@ -130,11 +130,11 @@ addButtonToToolbar('Set VOI Range', () => {
 
 addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Reset the camera so that we can set some pan and zoom relative to the
@@ -157,11 +157,11 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Resets the viewport's camera
@@ -189,11 +189,11 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -206,11 +206,11 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   })
 
@@ -218,7 +218,7 @@ async function run() {
   volume.load()
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeUID }])
+  viewport.setVolumes([{ volumeId }])
 
   // Render the image
   renderingEngine.render()

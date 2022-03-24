@@ -27,7 +27,6 @@ CS3D includes two types of viewports currently:
 
 - Suitable for rendering a stack of images, that might or might not belong to the same image.
 - Stack can include 2D images of various shapes, size and direction
-- For StackViewport, as you don’t need volume rendering functionalities, you don't need to provide a SceneUID. However, we create an *internal* scene by generating a random UID to manage the relationship between viewports and scenes.
 
 
 Both `StackViewport` and `VolumeViewport` are created via the `RenderingEngine` API.

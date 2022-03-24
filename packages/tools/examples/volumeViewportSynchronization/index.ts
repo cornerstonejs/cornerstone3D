@@ -35,15 +35,15 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
+const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
 const cameraSynchronizerId = 'CAMERA_SYNCHRONIZER_ID'
 const voiSynchronizerId = 'VOI_SYNCHRONIZER_ID'
 
-const renderingEngineUID = 'myRenderingEngine'
-const viewportUIDs = [
+const renderingEngineId = 'myRenderingEngine'
+const viewportIds = [
   'CT_SAGITTAL_STACK_1',
   'CT_SAGITTAL_STACK_2',
   'CT_SAGITTAL_STACK_3',
@@ -98,12 +98,12 @@ content.append(instructions)
 // ============================= //
 
 const SynchronizerButtonInfo = [
-  { viewportLabel: 'A', viewportUID: viewportUIDs[0] },
-  { viewportLabel: 'B', viewportUID: viewportUIDs[1] },
-  { viewportLabel: 'C', viewportUID: viewportUIDs[2] },
+  { viewportLabel: 'A', viewportId: viewportIds[0] },
+  { viewportLabel: 'B', viewportId: viewportIds[1] },
+  { viewportLabel: 'C', viewportId: viewportIds[2] },
 ]
 
-SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
+SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
   addToggleButtonToToolbar(`Camera ${viewportLabel}`, (evt, toggle) => {
     const synchronizer =
       SynchronizerManager.getSynchronizerById(cameraSynchronizerId)
@@ -113,14 +113,14 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
     }
 
     if (toggle) {
-      synchronizer.add({ renderingEngineUID, viewportUID })
+      synchronizer.add({ renderingEngineId, viewportId })
     } else {
-      synchronizer.remove({ renderingEngineUID, viewportUID })
+      synchronizer.remove({ renderingEngineId, viewportId })
     }
   })
 })
 
-SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
+SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
   addToggleButtonToToolbar(`VOI ${viewportLabel}`, (evt, toggle) => {
     const synchronizer =
       SynchronizerManager.getSynchronizerById(voiSynchronizerId)
@@ -130,9 +130,9 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportUID }) => {
     }
 
     if (toggle) {
-      synchronizer.add({ renderingEngineUID, viewportUID })
+      synchronizer.add({ renderingEngineId, viewportId })
     } else {
-      synchronizer.remove({ renderingEngineUID, viewportUID })
+      synchronizer.remove({ renderingEngineId, viewportId })
     }
   })
 })
@@ -144,7 +144,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupUID = 'TOOL_GROUP_UID'
+  const toolGroupId = 'TOOL_GROUP_ID'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool)
@@ -154,10 +154,10 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName, { configuration: { volumeUID } })
+  toolGroup.addTool(WindowLevelTool.toolName, { configuration: { volumeId } })
   toolGroup.addTool(PanTool.toolName)
   toolGroup.addTool(ZoomTool.toolName)
   toolGroup.addTool(StackScrollMouseWheelTool.toolName)
@@ -205,12 +205,12 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -219,7 +219,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -228,7 +228,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
@@ -241,19 +241,19 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  viewportUIDs.forEach((viewportUID) =>
-    toolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportIds.forEach((viewportId) =>
+    toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   })
 
   // Set the volume to load
   volume.load()
 
-  setVolumesForViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)
 
   // Render the image
   renderingEngine.render()

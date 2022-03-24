@@ -18,11 +18,11 @@ import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import throttle from '../../utilities/throttle'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 import { hideElementCursor } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -38,7 +38,7 @@ export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
     referencedImageId?: string
     toolName: string
     enabledElement: any // Todo: how to remove this from the annotation??
-    volumeUID: string
+    volumeId: string
     spacingInNormal: number
   }
   data: {
@@ -73,7 +73,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportUIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     newAnnotation?: boolean
     hasMoved?: boolean
@@ -119,12 +119,12 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    let referencedImageId, imageVolume, volumeUID
+    let referencedImageId, imageVolume, volumeId
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented')
     } else {
-      volumeUID = this.getTargetUID(viewport)
-      imageVolume = cache.getVolume(volumeUID)
+      volumeId = this.getTargetId(viewport)
+      imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -167,7 +167,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: RectangleRoiStartEndThresholdTool.toolName,
-        volumeUID,
+        volumeId,
         spacingInNormal,
       },
       data: {
@@ -207,14 +207,14 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiStartEndThresholdTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIdsToRender,
       handleIndex: 3,
       newAnnotation: true,
       hasMoved: false,
@@ -225,10 +225,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }
@@ -296,11 +293,11 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data
-    const { viewportUID, renderingEngineUID, viewport } = enabledElement
+    const { viewportId, renderingEngineId, viewport } = enabledElement
 
     const { cachedStats } = data
-    const volumeUID = this.getTargetUID(viewport)
-    const imageVolume = cache.getVolume(volumeUID)
+    const volumeId = this.getTargetId(viewport)
+    const imageVolume = cache.getVolume(volumeId)
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleRoi class, we need to
@@ -314,8 +311,8 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
-      viewportUID,
-      renderingEngineUID,
+      viewportId,
+      renderingEngineId,
     }
     triggerEvent(eventTarget, eventType, eventDetail)
 

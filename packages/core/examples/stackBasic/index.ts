@@ -40,13 +40,13 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
-  const viewportUID = 'CT_STACK'
+  const viewportId = 'CT_STACK'
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.STACK,
     element,
     defaultOptions: {
@@ -57,9 +57,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Define a stack containing a single image
   const stack = [imageIds[0]]

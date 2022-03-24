@@ -27,10 +27,10 @@ const {
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 const { MouseBindings } = csToolsEnums
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'VIEWPORT1'
-const viewportUID2 = 'VIEWPORT2'
+const viewportId1 = 'VIEWPORT1'
+const viewportId2 = 'VIEWPORT2'
 
 function createViewports(width, height) {
   const element1 = document.createElement('div')
@@ -69,7 +69,7 @@ describe('ToolGroup Manager: ', () => {
           },
         ],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -97,7 +97,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportId1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -106,7 +106,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportId2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -116,9 +116,9 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
-      const tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      const tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg).toBeDefined()
     })
   })
@@ -139,7 +139,7 @@ describe('ToolGroup Manager: ', () => {
           },
         ],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -147,7 +147,7 @@ describe('ToolGroup Manager: ', () => {
     afterEach(function () {
       // Destroy synchronizer manager to test it first since csTools3D also destroy
       // synchronizers
-      ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
+      ToolGroupManager.destroyToolGroupByToolGroupId('volume1')
       csTools3d.destroy()
       cache.purgeCache()
       this.renderingEngine.destroy()
@@ -167,7 +167,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportId1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -176,7 +176,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportId2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -186,15 +186,12 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
-      const tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      const tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg).toBeDefined()
 
-      const tg2 = ToolGroupManager.getToolGroup(
-        viewportUID1,
-        renderingEngineUID
-      )
+      const tg2 = ToolGroupManager.getToolGroup(viewportId1, renderingEngineId)
       expect(tg2).toBeDefined()
       expect(tg).toBe(tg2)
 
@@ -212,7 +209,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportId1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -221,7 +218,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportId2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -232,22 +229,22 @@ describe('ToolGroup Manager: ', () => {
       ])
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      let tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
 
-      tg.addViewport(viewportUID1, this.renderingEngine.uid)
+      tg.addViewport(viewportId1, this.renderingEngine.id)
       expect(tg.viewportsInfo.length).toBe(1)
 
-      tg.removeViewports(renderingEngineUID)
+      tg.removeViewports(renderingEngineId)
 
-      tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg.viewportsInfo.length).toBe(0)
 
       //
-      tg.addViewport(viewportUID1, this.renderingEngine.uid)
-      tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      tg.addViewport(viewportId1, this.renderingEngine.id)
+      tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg.viewportsInfo.length).toBe(1)
 
-      tg.removeViewports(renderingEngineUID, viewportUID2)
+      tg.removeViewports(renderingEngineId, viewportId2)
       expect(tg.viewportsInfo.length).toBe(1)
     })
 
@@ -258,7 +255,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportId1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -267,7 +264,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportId2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -277,10 +274,10 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      let tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg.getToolInstance(ProbeTool.toolName).mode).toBe('Active')
       expect(tg.getToolInstance(LengthTool.toolName)).toBeUndefined()
 
@@ -295,7 +292,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.renderingEngine.setViewports([
         {
-          viewportUID: viewportUID1,
+          viewportId: viewportId1,
           type: ViewportType.ORTHOGRAPHIC,
           element: element1,
           defaultOptions: {
@@ -304,7 +301,7 @@ describe('ToolGroup Manager: ', () => {
           },
         },
         {
-          viewportUID: viewportUID2,
+          viewportId: viewportId2,
           type: ViewportType.ORTHOGRAPHIC,
           element: element2,
           defaultOptions: {
@@ -314,10 +311,10 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupByToolGroupUID('volume1')
+      let tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       tg.setToolActive()
       tg.setToolPassive()
       tg.setToolEnabled()

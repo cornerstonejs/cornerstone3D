@@ -18,13 +18,14 @@ import {
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
+
 import config from './config/default'
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
 const STACK = 'stack'
 
@@ -88,7 +89,6 @@ class CursorExample extends Component {
   async componentDidMount() {
     await csRenderInit()
     csTools3d.init()
-    registerWebImageLoader(cs)
 
     this.setState({ cursorNames: cursors.CursorNames })
     ;({ stackCTViewportToolGroup } = initToolGroups())
@@ -96,7 +96,7 @@ class CursorExample extends Component {
     const ctStackImageIds = await this.ctStackImageIdsPromise
     const dxStackImageIds = await this.dxStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     const colorImageIds = config.colorImages.imageIds
 
@@ -111,7 +111,7 @@ class CursorExample extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -124,7 +124,7 @@ class CursorExample extends Component {
 
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({ stackCTViewportToolGroup })

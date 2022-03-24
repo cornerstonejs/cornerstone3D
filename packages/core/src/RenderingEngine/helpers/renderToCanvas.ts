@@ -23,8 +23,8 @@ import Events from '../../enums/Events'
  * ```
  * @param imageId - The imageId to render
  * @param canvas - Canvas element to render to
- * @param renderingEngineUID - [Default=null] The rendering engine UID
- * to use, if not provided, will create a new rendering engine with a random UID (this is preferred)
+ * @param renderingEngineId - [Default=null] The rendering engine Id
+ * to use, if not provided, will create a new rendering engine with a random Id (this is preferred)
  * @param suppressEvents - [Default = true] boolean to suppress events during render,
  * if undefined, events will be suppressed
  * @returns - A promise that resolves when the image has been rendered with the imageId
@@ -32,7 +32,7 @@ import Events from '../../enums/Events'
 export default function renderToCanvas(
   imageId: string,
   canvas: HTMLCanvasElement,
-  renderingEngineUID = null,
+  renderingEngineId = null,
   suppressEvents = true
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,7 +46,7 @@ export default function renderToCanvas(
     // many things can trigger IMAGE_RENDERED including: disabling of another
     // element (which would cause a resize event and consequently a render), or
     // a resize event by itself (which would cause a render).
-    let renderingEngine = getRenderingEngine(renderingEngineUID)
+    let renderingEngine = getRenderingEngine(renderingEngineId)
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       // Use a new renderingEngine with random uid
@@ -59,7 +59,7 @@ export default function renderToCanvas(
 
     if (!renderingEngine) {
       throw new Error(
-        `No rendering engine with UID of ${renderingEngineUID} found`
+        `No rendering engine with Id of ${renderingEngineId} found`
       )
     }
 
@@ -74,11 +74,11 @@ export default function renderToCanvas(
     element.style.visibility = 'hidden'
     document.body.appendChild(element)
 
-    // Setting the viewportUID to imageId
-    const viewportUID = imageId
+    // Setting the viewportId to imageId
+    const viewportId = imageId
 
     const stackViewportInput = {
-      viewportUID,
+      viewportId,
       type: ViewportType.STACK,
       element,
       defaultOptions: {
@@ -88,7 +88,7 @@ export default function renderToCanvas(
     }
 
     renderingEngine.enableElement(stackViewportInput)
-    const viewport = renderingEngine.getViewport(viewportUID) as StackViewport
+    const viewport = renderingEngine.getViewport(viewportId) as StackViewport
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
       // get the canvas element that is the child of the div
@@ -98,7 +98,7 @@ export default function renderToCanvas(
       const context = canvas.getContext('2d')
 
       context.drawImage(temporaryCanvas, 0, 0)
-      renderingEngine.disableElement(viewportUID)
+      renderingEngine.disableElement(viewportId)
       document.body.removeChild(element)
       renderingEngine.destroy()
       resolve(imageId)

@@ -26,14 +26,14 @@ import {
 import { state } from '../../store'
 import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import { Events } from '../../enums'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import {
   Annotation,
@@ -47,7 +47,7 @@ interface ProbeAnnotation extends Annotation {
   data: {
     handles: { points: Types.Point3[] }
     cachedStats: {
-      [targetUID: string]: {
+      [targetId: string]: {
         Modality: string
         index: Types.Point3
         value: number
@@ -81,11 +81,11 @@ interface ProbeAnnotation extends Annotation {
  * ```js
  * cornerstoneTools.addTool(ProbeTool)
  *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
  * toolGroup.addTool(ProbeTool.toolName)
  *
- * toolGroup.addViewport('viewportUID', 'renderingEngineUID')
+ * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
  * toolGroup.setToolActive(ProbeTool.toolName, {
  *   bindings: [
@@ -104,10 +104,10 @@ export default class ProbeTool extends AnnotationTool {
 
   touchDragCallback: any
   mouseDragCallback: any
-  editData: { annotation: any; viewportUIDsToRender: string[] } | null
+  editData: { annotation: any; viewportIdsToRender: string[] } | null
   eventDispatchDetail: {
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
   }
   isDrawing: boolean
   isHandleOutsideImage: boolean
@@ -160,8 +160,8 @@ export default class ProbeTool extends AnnotationTool {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      const volumeUID = this.getTargetUID(viewport)
-      const imageVolume = cache.getVolume(volumeUID)
+      const volumeId = this.getTargetId(viewport)
+      const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -197,14 +197,14 @@ export default class ProbeTool extends AnnotationTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       ProbeTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIdsToRender,
     }
     this._activateModify(element)
 
@@ -212,10 +212,7 @@ export default class ProbeTool extends AnnotationTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }
@@ -264,7 +261,7 @@ export default class ProbeTool extends AnnotationTool {
 
     annotation.highlighted = true
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       ProbeTool.toolName
     )
@@ -274,7 +271,7 @@ export default class ProbeTool extends AnnotationTool {
     this.editData = {
       //handle, // This would be useful for other tools with more than one handle
       annotation,
-      viewportUIDsToRender,
+      viewportIdsToRender,
     }
     this._activateModify(element)
 
@@ -283,10 +280,7 @@ export default class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     evt.preventDefault()
   }
@@ -297,17 +291,17 @@ export default class ProbeTool extends AnnotationTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportUIDsToRender } = this.editData
+    const { annotation, viewportIdsToRender } = this.editData
 
     annotation.highlighted = false
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    const { viewportUID } = enabledElement
+    const { viewportId } = enabledElement
     this.eventDispatchDetail = {
-      viewportUID,
-      renderingEngineUID: renderingEngine.uid,
+      viewportId,
+      renderingEngineId: renderingEngine.id,
     }
 
     this._deactivateModify(element)
@@ -324,10 +318,7 @@ export default class ProbeTool extends AnnotationTool {
       removeAnnotation(element, annotation.annotationUID)
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragCallback = (evt) => {
@@ -336,7 +327,7 @@ export default class ProbeTool extends AnnotationTool {
     const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
 
-    const { annotation, viewportUIDsToRender } = this.editData
+    const { annotation, viewportIdsToRender } = this.editData
     const { data } = annotation
 
     data.handles.points[0] = [...worldPos]
@@ -345,10 +336,7 @@ export default class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   cancel = (element: HTMLElement) => {
@@ -358,7 +346,7 @@ export default class ProbeTool extends AnnotationTool {
       this._deactivateModify(element)
       resetElementCursor(element)
 
-      const { annotation, viewportUIDsToRender } = this.editData
+      const { annotation, viewportIdsToRender } = this.editData
       const { data } = annotation
 
       annotation.highlighted = false
@@ -367,9 +355,9 @@ export default class ProbeTool extends AnnotationTool {
       const enabledElement = getEnabledElement(element)
       const { renderingEngine } = enabledElement
 
-      triggerAnnotationRenderForViewportUIDs(
+      triggerAnnotationRenderForViewportIds(
         renderingEngine,
-        viewportUIDsToRender
+        viewportIdsToRender
       )
 
       this.editData = null
@@ -429,7 +417,7 @@ export default class ProbeTool extends AnnotationTool {
       return
     }
 
-    const targetUID = this.getTargetUID(viewport)
+    const targetId = this.getTargetId(viewport)
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < annotations.length; i++) {
@@ -441,8 +429,8 @@ export default class ProbeTool extends AnnotationTool {
       const canvasCoordinates = viewport.worldToCanvas(point)
       const color = this.getStyle(settings, 'color', annotation)
 
-      if (!data.cachedStats[targetUID]) {
-        data.cachedStats[targetUID] = {
+      if (!data.cachedStats[targetId]) {
+        data.cachedStats[targetId] = {
           Modality: null,
           index: null,
           value: null,
@@ -467,16 +455,16 @@ export default class ProbeTool extends AnnotationTool {
           // at the referencedImageId
           const viewports = renderingEngine.getViewports()
           viewports.forEach((vp) => {
-            const stackTargetUID = this.getTargetUID(vp)
+            const stackTargetId = this.getTargetId(vp)
             // only delete the cachedStats for the stackedViewports if the tool
             // is dragged inside the volume and the stackViewports are not at the
             // referencedImageId for the tool
             if (
               vp instanceof StackViewport &&
               !vp.getCurrentImageId().includes(referencedImageId) &&
-              data.cachedStats[stackTargetUID]
+              data.cachedStats[stackTargetId]
             ) {
-              delete data.cachedStats[stackTargetUID]
+              delete data.cachedStats[stackTargetId]
             }
           })
         }
@@ -499,7 +487,7 @@ export default class ProbeTool extends AnnotationTool {
         { color }
       )
 
-      const textLines = this._getTextLines(data, targetUID)
+      const textLines = this._getTextLines(data, targetId)
       if (textLines) {
         const textCanvasCoorinates = [
           canvasCoordinates[0] + 6,
@@ -520,8 +508,8 @@ export default class ProbeTool extends AnnotationTool {
     }
   }
 
-  _getTextLines(data, targetUID) {
-    const cachedVolumeStats = data.cachedStats[targetUID]
+  _getTextLines(data, targetId) {
+    const cachedVolumeStats = data.cachedStats[targetId]
     const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats
 
     if (value === undefined && SUVBw === undefined) {
@@ -593,18 +581,18 @@ export default class ProbeTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data
-    const { viewportUID, renderingEngineUID } = enabledElement
+    const { viewportId, renderingEngineId } = enabledElement
 
     const worldPos = data.handles.points[0]
     const { cachedStats } = data
 
-    const targetUIDs = Object.keys(cachedStats)
+    const targetIds = Object.keys(cachedStats)
 
-    for (let i = 0; i < targetUIDs.length; i++) {
-      const targetUID = targetUIDs[i]
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i]
 
-      const { image, viewport } = this.getTargetUIDViewportAndImage(
-        targetUID,
+      const { image, viewport } = this.getTargetIdViewportAndImage(
+        targetId,
         renderingEngine
       )
 
@@ -633,14 +621,14 @@ export default class ProbeTool extends AnnotationTool {
 
         const values = this._getValueForModality(value, image, modality)
 
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           index,
           ...values,
           Modality: modality,
         }
       } else {
         this.isHandleOutsideImage = true
-        cachedStats[targetUID] = {
+        cachedStats[targetId] = {
           index,
           Modality: modality,
         }
@@ -653,8 +641,8 @@ export default class ProbeTool extends AnnotationTool {
 
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,
-        viewportUID,
-        renderingEngineUID,
+        viewportId,
+        renderingEngineId,
       }
 
       triggerEvent(eventTarget, eventType, eventDetail)

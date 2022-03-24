@@ -23,8 +23,8 @@ type CameraModifiedEventDetail = {
     previousCamera: ICamera
     camera: ICamera
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 // @public (undocumented)
@@ -317,8 +317,8 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>
 // @public
 type ElementDisabledEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 // @public
@@ -327,8 +327,8 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>
 // @public
 type ElementEnabledEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 declare namespace EventTypes {
@@ -445,9 +445,9 @@ interface ICamera {
 interface IEnabledElement {
     FrameOfReferenceUID: string
     renderingEngine: IRenderingEngine
-    renderingEngineUID: string
+    renderingEngineId: string
     viewport: IStackViewport | IVolumeViewport
-    viewportUID: string
+    viewportId: string
 }
 
 // @public
@@ -545,7 +545,7 @@ interface IImageVolume {
     metadata: Metadata
     numVoxels: number
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: any
     scaling?: {
         PET?: {
@@ -557,7 +557,7 @@ interface IImageVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    readonly uid: string
+    readonly volumeId: string
     vtkOpenGLTexture: any
 }
 
@@ -624,8 +624,8 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>
 // @public
 type ImageRenderedEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
     suppressEvents?: boolean
 }
 
@@ -636,8 +636,8 @@ CustomEvent_2<ImageSpacingCalibratedEventDetail>
 // @public
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
     imageId: string
     rowScale: number
     columnScale: number
@@ -667,7 +667,7 @@ interface IRenderingEngine {
     // (undocumented)
     destroy(): void
     // (undocumented)
-    disableElement(viewportUID: string): void
+    disableElement(viewportId: string): void
     // (undocumented)
     enableElement(viewportInputEntry: PublicViewportInput): void
     // (undocumented)
@@ -678,13 +678,15 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport
+    getViewport(id: string): IStackViewport | IVolumeViewport
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>
     // (undocumented)
     hasBeenDestroyed: boolean
+    // (undocumented)
+    id: string
     // (undocumented)
     offScreenCanvasContainer: any
     // (undocumented)
@@ -694,15 +696,13 @@ interface IRenderingEngine {
     // (undocumented)
     renderFrameOfReference(FrameOfReferenceUID: string): void
     // (undocumented)
-    renderViewport(viewportUID: string): void
+    renderViewport(viewportId: string): void
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void
+    renderViewports(viewportIds: Array<string>): void
     // (undocumented)
     resize(): void
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void
-    // (undocumented)
-    uid: string
 }
 
 // @public
@@ -712,8 +712,8 @@ interface IStackViewport extends IViewport {
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement
         element: HTMLElement
-        viewportUID: string
-        renderingEngineUID: string
+        viewportId: string
+        renderingEngineId: string
     }
     getCamera(): ICamera
     getCurrentImageId: () => string
@@ -785,10 +785,11 @@ interface IViewport {
     getFrameOfReferenceUID: () => string
     getRenderer(): void
     getRenderingEngine(): any
+    id: string
     options: ViewportInputOptions
     removeAllActors(): void
     render(): void
-    renderingEngineUID: string
+    renderingEngineId: string
     reset(immediate: boolean): void
     setActors(actors: Array<ActorEntry>): void
     setCamera(cameraInterface: ICamera): void
@@ -799,16 +800,15 @@ interface IViewport {
     sx: number
     sy: number
     type: ViewportType
-    uid: string
     worldToCanvas: (worldPos: Point3) => Point2
 }
 
 // @public
-interface IViewportUID {
+interface IViewportId {
     // (undocumented)
-    renderingEngineUID: string
+    renderingEngineId: string
     // (undocumented)
-    viewportUID: string
+    viewportId: string
 }
 
 // @public
@@ -818,7 +818,7 @@ interface IVolume {
     imageData?: vtkImageData
     metadata: Metadata
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: Float32Array | Uint8Array
     scaling?: {
         PET?: {
@@ -832,28 +832,28 @@ interface IVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    uid: string
+    volumeId: string
 }
 
 // @public
 interface IVolumeInput {
     // (undocumented)
     actorUID?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     blendMode?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     callback?: VolumeInputCallback
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     slabThickness?: number
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     visibility?: boolean
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    volumeUID: string
+    volumeId: string
 }
 
 // @public
@@ -937,7 +937,7 @@ type PTScaling = {
 // @public
 type PublicViewportInput = {
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     type: ViewportType
     defaultOptions: ViewportInputOptions
 }
@@ -970,8 +970,8 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>
 type StackNewImageEventDetail = {
     image: IImage
     imageId: string
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 // @public
@@ -1012,7 +1012,7 @@ export class StreamingImageVolume extends ImageVolume {
             };
         };
         additionalDetails: {
-            volumeUID: string;
+            volumeId: string;
         };
     }[];
     // (undocumented)
@@ -1047,8 +1047,8 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>
 
 // @public
 type VoiModifiedEventDetail = {
-    viewportUID: string
-    volumeUID: string
+    viewportId: string
+    volumeId: string
     range: VOIRange
 }
 
@@ -1082,7 +1082,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 // @public
 type VolumeInputCallback = (params: {
     volumeActor: VolumeActor
-    volumeUID: string
+    volumeId: string
 }) => unknown
 
 // @public

@@ -49,13 +49,13 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
-  const viewportUID = 'CT_SAGITTAL_STACK'
+  const viewportId = 'CT_SAGITTAL_STACK'
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -68,16 +68,16 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a unique id for the volume
-  const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
+  const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
   const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-  const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+  const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   })
 
@@ -85,7 +85,7 @@ async function run() {
   volume.load()
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeUID }])
+  viewport.setVolumes([{ volumeId }])
 
   // Render the image
   renderingEngine.render()

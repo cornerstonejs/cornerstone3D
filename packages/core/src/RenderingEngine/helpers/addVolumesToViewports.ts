@@ -7,24 +7,24 @@ import type { IVolumeInput, IRenderingEngine } from '../../types'
  *
  *
  * @param renderingEngine - The rendering engine to use to get viewports from
- * @param volumeInputs - Array of volume inputs including volumeUID. Other properties
+ * @param volumeInputs - Array of volume inputs including volumeId. Other properties
  * such as visibility, callback, blendMode, slabThickness are optional
- * @param viewportUIDs - Array of viewport UIDs to add the volume to
+ * @param viewportIds - Array of viewport IDs to add the volume to
  * @param immediateRender - If true, the volumes will be rendered immediately
  * @returns A promise that resolves when all volumes have been added
  */
 async function addVolumesToViewports(
   renderingEngine: IRenderingEngine,
   volumeInputs: Array<IVolumeInput>,
-  viewportUIDs: Array<string>,
+  viewportIds: Array<string>,
   immediateRender = false
 ): Promise<void> {
   // Check if all viewports are volumeViewports
-  viewportUIDs.forEach((viewportUID) => {
-    const viewport = renderingEngine.getViewport(viewportUID)
+  viewportIds.forEach((viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId)
 
     if (!viewport) {
-      throw new Error(`Viewport with UID ${viewportUID} does not exist`)
+      throw new Error(`Viewport with Id ${viewportId} does not exist`)
     }
 
     // if not instance of VolumeViewport, throw
@@ -33,8 +33,8 @@ async function addVolumesToViewports(
     }
   })
 
-  const addVolumePromises = viewportUIDs.map(async (viewportUID) => {
-    const viewport = renderingEngine.getViewport(viewportUID) as VolumeViewport
+  const addVolumePromises = viewportIds.map(async (viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId) as VolumeViewport
 
     await viewport.addVolumes(volumeInputs, immediateRender)
   })

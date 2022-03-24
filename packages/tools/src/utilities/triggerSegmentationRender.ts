@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core'
 import { Events as csToolsEvents } from '../enums'
 import {
-  getToolGroupByToolGroupUID,
+  getToolGroupByToolGroupId,
   getToolGroup,
 } from '../store/ToolGroupManager'
 
@@ -22,7 +22,7 @@ import { SegmentationRenderedEventDetail } from '../types/EventTypes'
  * segmentations of a tool group you can use.
  *
  * ```
- * triggerSegmentationRender(toolGroupUID)
+ * triggerSegmentationRender(toolGroupId)
  * ```
  */
 class SegmentationRenderingEngine {
@@ -31,8 +31,8 @@ class SegmentationRenderingEngine {
   private _animationFrameHandle: number | null = null
   public hasBeenDestroyed: boolean
 
-  public renderToolGroupSegmentations(toolGroupUID): void {
-    this._setToolGroupSegmentationToBeRenderedNextFrame([toolGroupUID])
+  public renderToolGroupSegmentations(toolGroupId): void {
+    this._setToolGroupSegmentationToBeRenderedNextFrame([toolGroupId])
   }
 
   /**
@@ -48,11 +48,11 @@ class SegmentationRenderingEngine {
   }
 
   private _setToolGroupSegmentationToBeRenderedNextFrame(
-    toolGroupUIDs: string[]
+    toolGroupIds: string[]
   ) {
     // Add the viewports to the set of flagged viewports
-    toolGroupUIDs.forEach((toolGroupUID) => {
-      this._needsRender.add(toolGroupUID)
+    toolGroupIds.forEach((toolGroupId) => {
+      this._needsRender.add(toolGroupId)
     })
 
     // Render any flagged viewports
@@ -78,14 +78,14 @@ class SegmentationRenderingEngine {
   private _renderFlaggedToolGroups = () => {
     this._throwIfDestroyed()
 
-    // for each toolGroupUID insides the _needsRender set, render the segmentation
-    const toolGroupUIDs = Array.from(this._needsRender.values())
+    // for each toolGroupId insides the _needsRender set, render the segmentation
+    const toolGroupIds = Array.from(this._needsRender.values())
 
-    for (const toolGroupUID of toolGroupUIDs) {
-      this._triggerRender(toolGroupUID)
+    for (const toolGroupId of toolGroupIds) {
+      this._triggerRender(toolGroupId)
 
       // This viewport has been rendered, we can remove it from the set
-      this._needsRender.delete(toolGroupUID)
+      this._needsRender.delete(toolGroupId)
 
       // If there is nothing left that is flagged for rendering, stop here
       // and allow RAF to be called again
@@ -96,26 +96,26 @@ class SegmentationRenderingEngine {
       }
     }
   }
-  _triggerRender(toolGroupUID) {
-    const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
+  _triggerRender(toolGroupId) {
+    const toolGroup = getToolGroupByToolGroupId(toolGroupId)
 
     if (!toolGroup) {
-      console.warn(`No tool group found with toolGroupUID: ${toolGroupUID}`)
+      console.warn(`No tool group found with toolGroupId: ${toolGroupId}`)
       return
     }
 
     const { viewportsInfo } = toolGroup
     const viewports = []
 
-    viewportsInfo.forEach(({ viewportUID, renderingEngineUID }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineUID)
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const renderingEngine = getRenderingEngine(renderingEngineId)
 
       if (!renderingEngine) {
         console.warn('rendering Engine has been destroyed')
         return
       }
 
-      viewports.push(renderingEngine.getViewport(viewportUID))
+      viewports.push(renderingEngine.getViewport(viewportId))
     })
 
     const segmentationDisplayToolInstance = toolGroup.getToolInstance(
@@ -123,18 +123,18 @@ class SegmentationRenderingEngine {
     ) as SegmentationDisplayTool
 
     function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
-      const { element, viewportUID, renderingEngineUID } = evt.detail
+      const { element, viewportId, renderingEngineId } = evt.detail
 
       element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         onSegmentationRender
       )
 
-      const toolGroup = getToolGroup(viewportUID, renderingEngineUID)
+      const toolGroup = getToolGroup(viewportId, renderingEngineId)
 
       const eventDetail: SegmentationRenderedEventDetail = {
-        toolGroupUID: toolGroup.uid,
-        viewportUID,
+        toolGroupId: toolGroup.id,
+        viewportId,
       }
 
       triggerEvent(eventTarget, csToolsEvents.SEGMENTATION_RENDERED, {
@@ -160,7 +160,7 @@ class SegmentationRenderingEngine {
       )
     })
 
-    segmentationDisplayToolInstance.renderSegmentation(toolGroupUID)
+    segmentationDisplayToolInstance.renderSegmentation(toolGroupId)
   }
 
   /**
@@ -178,11 +178,11 @@ class SegmentationRenderingEngine {
 const segmentationRenderingEngine = new SegmentationRenderingEngine()
 
 /**
- * It triggers a render for all the segmentations of the tool group with the given UID.
- * @param toolGroupUID - The UID of the tool group to render.
+ * It triggers a render for all the segmentations of the tool group with the given Id.
+ * @param toolGroupId - The Id of the tool group to render.
  */
-function triggerSegmentationRender(toolGroupUID: string): void {
-  segmentationRenderingEngine.renderToolGroupSegmentations(toolGroupUID)
+function triggerSegmentationRender(toolGroupId: string): void {
+  segmentationRenderingEngine.renderToolGroupSegmentations(toolGroupId)
 }
 
 export { segmentationRenderingEngine, triggerSegmentationRender }

@@ -11,7 +11,7 @@ import eventTarget from '../eventTarget'
  * or it can trigger event on the eventTarget itself
  *
  * ```javascript
- * triggerEvent(eventTarget, CSTOOLS_EVENTS.ANNOTATION_MODIFIED, { viewportUID, annotationUID })
+ * triggerEvent(eventTarget, CSTOOLS_EVENTS.ANNOTATION_MODIFIED, { viewportId, annotationUID })
  * ```
  *
  * @param el - The element or EventTarget to trigger the event upon

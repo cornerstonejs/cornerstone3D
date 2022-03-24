@@ -3,20 +3,20 @@ import Synchronizer from './Synchronizer'
 
 /**
  * It returns all synchronizers that are not disabled and have a source viewport
- * with the given rendering engine UID and viewport UID
- * @param renderingEngineUID - The UID of the rendering engine
- * @param viewportUID - The UID of the viewport
+ * with the given rendering engine Id and viewport Id
+ * @param renderingEngineId - The Id of the rendering engine
+ * @param viewportId - The Id of the viewport
  * @returns An array of synchronizers
  */
 function getSynchronizers(
-  renderingEngineUID: string,
-  viewportUID: string
+  renderingEngineId: string,
+  viewportId: string
 ): Array<Synchronizer> {
-  const synchronizersFilteredByUIDs = []
+  const synchronizersFilteredByIds = []
 
-  if (!renderingEngineUID && !viewportUID) {
+  if (!renderingEngineId && !viewportId) {
     throw new Error(
-      'At least one of renderingEngineUID or viewportUID should be given'
+      'At least one of renderingEngineId or viewportId should be given'
     )
   }
 
@@ -24,16 +24,16 @@ function getSynchronizers(
     const synchronizer = state.synchronizers[i]
     const notDisabled = !synchronizer.isDisabled()
     const hasSourceViewport = synchronizer.hasSourceViewport(
-      renderingEngineUID,
-      viewportUID
+      renderingEngineId,
+      viewportId
     )
 
     if (notDisabled && hasSourceViewport) {
-      synchronizersFilteredByUIDs.push(synchronizer)
+      synchronizersFilteredByIds.push(synchronizer)
     }
   }
 
-  return synchronizersFilteredByUIDs
+  return synchronizersFilteredByIds
 }
 
 export default getSynchronizers

@@ -11,9 +11,9 @@ type NormalizedMouseEventDetail = {
   /** The normalized event name. */
   eventName: string
   /** The unique identifier of the rendering engine. */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The unique identifier of the viewport that the event was fired in. */
-  viewportUID: string
+  viewportId: string
   /** The camera at the time of the event. */
   camera: Record<string, unknown>
   /** The element that the event was fired on. */
@@ -26,9 +26,9 @@ type NormalizedMouseEventDetail = {
  */
 type AnnotationAddedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation
 }
@@ -38,9 +38,9 @@ type AnnotationAddedEventDetail = {
  */
 type AnnotationModifiedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation
 }
@@ -50,9 +50,9 @@ type AnnotationModifiedEventDetail = {
  */
 type AnnotationRemovedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation
 }
@@ -88,9 +88,9 @@ type AnnotationRenderedEventDetail = {
   /** The HTML element that the annotation was rendered on. */
   element: HTMLElement
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -98,7 +98,7 @@ type AnnotationRenderedEventDetail = {
  */
 type SegmentationDataModifiedEventDetail = {
   /** unique id of the toolGroup */
-  toolGroupUID: string
+  toolGroupId: string
   /** unique id of the segmentationData */
   segmentationDataUID: string
 }
@@ -108,9 +108,9 @@ type SegmentationDataModifiedEventDetail = {
  */
 type SegmentationRenderedEventDetail = {
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the toolGroup segmentation belongs to */
-  toolGroupUID: string
+  toolGroupId: string
 }
 
 /**
@@ -118,14 +118,14 @@ type SegmentationRenderedEventDetail = {
  */
 type SegmentationStateModifiedEventDetail = {
   /** unique id of the toolGroup */
-  toolGroupUID: string
+  toolGroupId: string
 }
 
 /**
  * EventDetail for when a Segmentation Global State is modified
  */
 type SegmentationGlobalStateModifiedEventDetail = {
-  /** unique id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeUID */
+  /** unique id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeId */
   segmentationUID: string
 }
 
@@ -136,9 +136,9 @@ type KeyDownEventDetail = {
   /** html element */
   element: HTMLElement
   /** unique id of the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id of the rendering engine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** The key that was pressed */
   key: string
   /** key code */

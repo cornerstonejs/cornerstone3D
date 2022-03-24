@@ -10,7 +10,7 @@ import { BaseTool } from '../base'
 import { PublicToolProps, ToolProps, EventTypes } from '../../types'
 import { fillInsideRectangle } from './strategies/fillRectangle'
 import { eraseInsideRectangle } from './strategies/eraseRectangle'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 
 import { Events } from '../../enums'
 import RectangleRoiTool from '../annotation/RectangleRoiTool'
@@ -20,7 +20,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 import {
   segmentationColor,
   segmentLocking,
@@ -45,7 +45,7 @@ export default class RectangleScissorsTool extends BaseTool {
     segmentIndex: number
     segmentsLocked: number[]
     segmentColor: [number, number, number, number]
-    viewportUIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
     newAnnotation?: boolean
@@ -91,10 +91,10 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
-    const toolGroupUID = this.toolGroupUID
+    const toolGroupId = this.toolGroupId
 
     const activeSegmentationInfo =
-      activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
+      activeSegmentation.getActiveSegmentationInfo(toolGroupId)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
@@ -103,18 +103,18 @@ export default class RectangleScissorsTool extends BaseTool {
 
     // Todo: we should have representation type check if we are going to use this
     // tool in other representations other than labelmap
-    const { segmentationDataUID, volumeUID } = activeSegmentationInfo
+    const { segmentationDataUID, volumeId } = activeSegmentationInfo
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupUID)
+      segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
+      segmentLocking.getSegmentsLockedForSegmentation(volumeId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
-      toolGroupUID,
+      toolGroupId,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex
     )
 
-    const segmentation = cache.getVolume(volumeUID)
+    const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const annotation = {
@@ -144,7 +144,7 @@ export default class RectangleScissorsTool extends BaseTool {
     // Ensure settings are initialized after annotation instantiation
     Settings.getObjectSettings(annotation, RectangleRoiTool)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleScissorsTool.toolName
     )
@@ -156,7 +156,7 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentsLocked,
       segmentColor,
       segmentationDataUID,
-      viewportUIDsToRender,
+      viewportIdsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
@@ -169,10 +169,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
@@ -181,7 +178,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const eventDetail = evt.detail
     const { element } = eventDetail
 
-    const { annotation, viewportUIDsToRender, handleIndex } = this.editData
+    const { annotation, viewportIdsToRender, handleIndex } = this.editData
     const { data } = annotation
 
     // Moving handle.
@@ -249,10 +246,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const { renderingEngine } = enabledElement
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseUpCallback = (
@@ -299,7 +293,7 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentationDataUID,
       segmentIndex,
       segmentsLocked,
-      toolGroupUID: this.toolGroupUID,
+      toolGroupId: this.toolGroupId,
     }
 
     this.applyActiveStrategy(enabledElement, operationData)

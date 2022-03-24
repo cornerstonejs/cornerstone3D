@@ -1,27 +1,27 @@
 import { _cloneDeep } from 'lodash.clonedeep'
 import {
-  getEnabledElementByUIDs,
+  getEnabledElementByIds,
   volumeLoader,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
-import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
+import { getToolGroupByToolGroupId } from '../../store/ToolGroupManager'
 
 /**
  * Create a new 3D segmentation volume from the default imageData presented in
  * the first viewport of the toolGroup. It looks at the metadata of the imageData
  * to determine the volume dimensions and spacing if particular options are not provided.
  *
- * @param toolGroupUID - The UID of the toolGroup
+ * @param toolGroupId - The Id of the toolGroup
  * @param options - LabelmapOptions
- * @returns A promise that resolves to the UID of the new labelmap.
+ * @returns A promise that resolves to the Id of the new labelmap volume.
  */
 async function createNewSegmentationForToolGroup(
-  toolGroupUID: string,
+  toolGroupId: string,
   options?: {
-    volumeUID?: string
+    volumeId?: string
     scalarData?: Float32Array | Uint8Array
     targetBuffer?: {
       type: 'Float32Array' | 'Uint8Array'
@@ -33,18 +33,15 @@ async function createNewSegmentationForToolGroup(
     direction?: Float32Array
   }
 ): Promise<string> {
-  const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
+  const toolGroup = getToolGroupByToolGroupId(toolGroupId)
 
   if (!toolGroup) {
-    throw new Error(`ToolGroup with UID ${toolGroupUID} not found`)
+    throw new Error(`ToolGroup with Id ${toolGroupId} not found`)
   }
 
-  const { viewportUID, renderingEngineUID } = toolGroup.viewportsInfo[0]
+  const { viewportId, renderingEngineId } = toolGroup.viewportsInfo[0]
 
-  const enabledElement = getEnabledElementByUIDs(
-    viewportUID,
-    renderingEngineUID
-  )
+  const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
 
   if (!enabledElement) {
     throw new Error('element disabled')
@@ -56,9 +53,9 @@ async function createNewSegmentationForToolGroup(
   }
 
   const { uid } = viewport.getDefaultActor()
-  // Name the segmentation volume with the viewport UID
+  // Name the segmentation volume with the viewport Id
   const segmentationUID = `${uid}-based-segmentation-${
-    options?.volumeUID ?? csUtils.uuidv4().slice(0, 8)
+    options?.volumeId ?? csUtils.uuidv4().slice(0, 8)
   }`
 
   if (options) {
@@ -68,9 +65,9 @@ async function createNewSegmentationForToolGroup(
     await volumeLoader.createLocalVolume(properties, segmentationUID)
   } else {
     // create a labelmap from a reference volume
-    const { uid: volumeUID } = viewport.getDefaultActor()
-    await volumeLoader.createAndCacheDerivedVolume(volumeUID, {
-      uid: segmentationUID,
+    const { uid: volumeId } = viewport.getDefaultActor()
+    await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+      volumeId: segmentationUID,
     })
   }
 

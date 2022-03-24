@@ -276,7 +276,7 @@ describe('Cache', () => {
       const volume = new StreamingImageVolume(
         // ImageVolume properties
         {
-          uid: volumeId,
+          volumeId,
           spacing: [1, 1, 1],
           origin: [0, 0, 0],
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
@@ -318,7 +318,7 @@ describe('Cache', () => {
         cancelFn: undefined,
       }
 
-      cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+      cache.putVolumeLoadObject(volume.volumeId, volumeLoadObject)
       await volumeLoadObject.promise
 
       let cacheSize = cache.getCacheSize()
@@ -355,7 +355,7 @@ describe('Cache', () => {
       this.volume = new StreamingImageVolume(
         // ImageVolume properties
         {
-          uid: volumeId,
+          volumeId,
           spacing: [1, 1, 1],
           origin: [0, 0, 0],
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
@@ -396,14 +396,14 @@ describe('Cache', () => {
       const volume = this.volume
       const volumeLoadObject = this.volumeLoadObject
 
-      cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+      cache.putVolumeLoadObject(volume.volumeId, volumeLoadObject)
       await volumeLoadObject.promise
 
       const cacheSize = cache.getCacheSize()
 
       expect(cacheSize).toBe(volume.sizeInBytes)
 
-      const volumeLoad = cache.getVolumeLoadObject(volume.uid)
+      const volumeLoad = cache.getVolumeLoadObject(volume.volumeId)
       expect(volumeLoad).toBeDefined()
     })
 
@@ -416,18 +416,18 @@ describe('Cache', () => {
     it('should throw an error if volumeLoadObject is not defined (putVolumeLoadObject)', function () {
       // Assert
       expect(function () {
-        cache.putVolumeLoadObject.bind(cache, this.volume.uid, undefined)
+        cache.putVolumeLoadObject.bind(cache, this.volume.volumeId, undefined)
       }).toThrow()
     })
 
     it('should throw an error if volumeId is already in the cache (putVolumeLoadObject)', async function () {
       // Arrange
-      cache.putImageLoadObject(this.volume.uid, this.volumeLoadObject)
+      cache.putImageLoadObject(this.volume.volumeId, this.volumeLoadObject)
       await this.volumeLoadObject.promise
 
       // Assert
       expect(function () {
-        cache.putImageLoadObject(this.volume.uid, this.volumeLoadObject)
+        cache.putImageLoadObject(this.volume.volumeId, this.volumeLoadObject)
       }).toThrow()
     })
 
@@ -436,11 +436,13 @@ describe('Cache', () => {
       const volumeLoadObject = this.volumeLoadObject
 
       // Act
-      cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+      cache.putVolumeLoadObject(volume.volumeId, volumeLoadObject)
       await volumeLoadObject.promise
 
       // Assert
-      const retrievedVolumeLoadObject = cache.getVolumeLoadObject(volume.uid)
+      const retrievedVolumeLoadObject = cache.getVolumeLoadObject(
+        volume.volumeId
+      )
 
       expect(retrievedVolumeLoadObject).toBe(volumeLoadObject)
     })
@@ -467,17 +469,17 @@ describe('Cache', () => {
       const volumeLoadObject = this.volumeLoadObject
 
       // Arrange
-      cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+      cache.putVolumeLoadObject(volume.volumeId, volumeLoadObject)
       await volumeLoadObject.promise
 
       expect(cache.getCacheSize()).not.toBe(0)
       // Act
-      cache.removeVolumeLoadObject(volume.uid)
+      cache.removeVolumeLoadObject(volume.volumeId)
 
       // Assert
       expect(cache.getCacheSize()).toBe(0)
 
-      expect(cache.getVolumeLoadObject(this.volume.uid)).toBeUndefined()
+      expect(cache.getVolumeLoadObject(this.volume.volumeId)).toBeUndefined()
     })
 
     it('should fail if volumeId is not defined (removeVolumeLoadObject)', function () {
@@ -497,7 +499,7 @@ describe('Cache', () => {
       const volumeLoadObject = this.volumeLoadObject
 
       // Arrange
-      await cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+      await cache.putVolumeLoadObject(volume.volumeId, volumeLoadObject)
 
       cache.purgeCache()
 
@@ -521,7 +523,7 @@ describe('Cache', () => {
       const volume = new StreamingImageVolume(
         // ImageVolume properties
         {
-          uid: volumeId,
+          volumeId,
           spacing: [1, 1, 1],
           origin: [0, 0, 0],
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
@@ -566,7 +568,7 @@ describe('Cache', () => {
       expect(cacheSize).toBe(image1.sizeInBytes)
 
       expect(function () {
-        cache.putVolumeLoadObject(volume.uid, volumeLoadObject)
+        cache.putVolumeLoadObject(volume.volumeId, volumeLoadObject)
       }).not.toThrow()
 
       await volumeLoadObject.promise
@@ -592,7 +594,7 @@ describe('Cache', () => {
       const volume1 = new StreamingImageVolume(
         // ImageVolume properties
         {
-          uid: volumeId1,
+          volumeId: volumeId1,
           spacing: [1, 1, 1],
           origin: [0, 0, 0],
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
@@ -621,7 +623,7 @@ describe('Cache', () => {
       const volume2 = new StreamingImageVolume(
         // ImageVolume properties
         {
-          uid: volumeId2,
+          volumeId: volumeId2,
           spacing: [1, 1, 1],
           origin: [0, 0, 0],
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
@@ -647,17 +649,20 @@ describe('Cache', () => {
         cancelFn: undefined,
       }
 
-      const promise1 = cache.putVolumeLoadObject(volume1.uid, volumeLoadObject1)
+      const promise1 = cache.putVolumeLoadObject(
+        volume1.volumeId,
+        volumeLoadObject1
+      )
       await promise1
 
       let cacheSize = cache.getCacheSize()
       expect(cacheSize).toBe(volume1.sizeInBytes)
 
       await expectAsync(
-        cache.putImageLoadObject(volume2.uid, volumeLoadObject2)
+        cache.putImageLoadObject(volume2.volumeId, volumeLoadObject2)
       ).toBeRejectedWithError(Enums.Events.CACHE_SIZE_EXCEEDED)
 
-      expect(cache.getVolumeLoadObject(volume2.uid)).not.toBeDefined()
+      expect(cache.getVolumeLoadObject(volume2.volumeId)).not.toBeDefined()
 
       cacheSize = cache.getCacheSize()
       expect(cacheSize).toBe(volume1.sizeInBytes)

@@ -29,17 +29,15 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleToolDisplayConfiguration.css'
 import {
-  renderingEngineUID,
-  ctVolumeUID,
+  renderingEngineId,
+  ctVolumeId,
   ctStackUID,
   VIEWPORT_IDS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@cornerstonejs/core'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
@@ -69,7 +67,7 @@ class ToolDisplayConfigurationExample extends Component {
   colorImageIds = null
   renderingEngine = null
   viewportGridResizeObserver = null
-  ctVolumeUID = null
+  ctVolumeId = null
   ctStackUID = null
 
   activeToolByGroup = new WeakMap()
@@ -91,7 +89,6 @@ class ToolDisplayConfigurationExample extends Component {
   constructor(props) {
     super(props)
 
-    registerWebImageLoader(cs)
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
@@ -128,7 +125,7 @@ class ToolDisplayConfigurationExample extends Component {
     ;({ ctSceneToolGroup, stackCTViewportToolGroup, stackDXViewportToolGroup } =
       initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
+    this.ctVolumeId = ctVolumeId
     this.ctStackUID = ctStackUID
 
     // Create volumes
@@ -137,14 +134,14 @@ class ToolDisplayConfigurationExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     const colorImageIds = this.colorImageIds
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -152,7 +149,7 @@ class ToolDisplayConfigurationExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -161,7 +158,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -170,7 +167,7 @@ class ToolDisplayConfigurationExample extends Component {
       },
       // dx
       {
-        viewportUID: VIEWPORT_IDS.STACK.DX,
+        viewportId: VIEWPORT_IDS.STACK.DX,
         type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -182,19 +179,19 @@ class ToolDisplayConfigurationExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     // dx and color
     stackDXViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.DX,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({
@@ -225,7 +222,7 @@ class ToolDisplayConfigurationExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -245,7 +242,7 @@ class ToolDisplayConfigurationExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
+          volumeId: ctVolumeId,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL]

@@ -6,27 +6,27 @@ import {
 
 /**
  * Get the active segmentation info for the first viewport in the tool group with
- * the given toolGroupUID.
- * @param toolGroupUID - The UID of the tool group that the user is
+ * the given toolGroupId.
+ * @param toolGroupId - The Id of the tool group that the user is
  * currently interacting with.
  */
-function getActiveSegmentationInfo(toolGroupUID: string): {
-  volumeUID: string
+function getActiveSegmentationInfo(toolGroupId: string): {
+  volumeId: string
   segmentationDataUID: string
   activeSegmentIndex: number
 } {
-  const activeSegmentationData = getActiveSegmentationData(toolGroupUID)
+  const activeSegmentationData = getActiveSegmentationData(toolGroupId)
 
   if (!activeSegmentationData) {
     return null
   }
 
   const globalState = getGlobalSegmentationDataByUID(
-    activeSegmentationData.volumeUID
+    activeSegmentationData.volumeId
   )
 
   return {
-    volumeUID: activeSegmentationData.volumeUID,
+    volumeId: activeSegmentationData.volumeId,
     segmentationDataUID: activeSegmentationData.segmentationDataUID,
     activeSegmentIndex: globalState.activeSegmentIndex,
   }
@@ -35,16 +35,16 @@ function getActiveSegmentationInfo(toolGroupUID: string): {
 /**
  * Set the active segmentation for the given tool group for all its viewports
  *
- * @param toolGroupUID - The ID of the tool group to set the active
+ * @param toolGroupId - The Id of the tool group to set the active
  * segmentation for.
  * @param segmentationDataUID - The UID of the segmentation data to set as
  * active.
  */
 function setActiveSegmentation(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentationDataUID: string
 ): void {
-  setActiveSegmentationData(toolGroupUID, segmentationDataUID)
+  setActiveSegmentationData(toolGroupId, segmentationDataUID)
 }
 
 export {

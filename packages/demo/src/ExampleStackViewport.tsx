@@ -14,21 +14,21 @@ import {
   Enums as csToolsEnums,
   synchronizers,
   cancelActiveManipulations,
-  removeAnnotation,
   destroy as CS3dToolsDestroy,
   CrosshairsTool,
   WindowLevelTool,
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ctVolumeUID,
-  ptVolumeUID,
+  renderingEngineId,
+  ctVolumeId,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -37,7 +37,6 @@ import * as cs from '@cornerstonejs/core'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 import {
   setCTWWWC,
   setPetTransferFunction,
@@ -89,7 +88,6 @@ class StackViewportExample extends Component {
   constructor(props) {
     super(props)
 
-    registerWebImageLoader(cs)
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
@@ -153,7 +151,7 @@ class StackViewportExample extends Component {
     const ctStackImageIds = await this.ctStackImageIdsPromise
     const ptStackImageIds = await this.ptStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -161,7 +159,7 @@ class StackViewportExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -169,7 +167,7 @@ class StackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -178,7 +176,7 @@ class StackViewportExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -187,7 +185,7 @@ class StackViewportExample extends Component {
       },
       // pt volume
       {
-        viewportUID: VIEWPORT_IDS.PT.AXIAL,
+        viewportId: VIEWPORT_IDS.PT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -196,7 +194,7 @@ class StackViewportExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.PT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {
@@ -206,7 +204,7 @@ class StackViewportExample extends Component {
       },
       // dx
       // {
-      //   viewportUID: VIEWPORT_IDS.STACK.DX,
+      //   viewportId: VIEWPORT_IDS.STACK.DX,
       //   type: ViewportType.STACK,
       //   element: this._elementNodes.get(4),
       //   defaultOptions: {
@@ -215,7 +213,7 @@ class StackViewportExample extends Component {
       // },
       // PT stack
       {
-        viewportUID: VIEWPORT_IDS.STACK.PT,
+        viewportId: VIEWPORT_IDS.STACK.PT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(5),
         defaultOptions: {
@@ -227,27 +225,27 @@ class StackViewportExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
 
     // pt volume axial
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineId)
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     // stackDXViewportToolGroup.addViewport(
     //   VIEWPORT_IDS.STACK.DX,
-    //   renderingEngineUID,
+    //   renderingEngineId,
     // )
 
     stackPTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.PT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({
@@ -302,11 +300,11 @@ class StackViewportExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
-    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptVolumeImageIds,
     })
 
@@ -327,7 +325,7 @@ class StackViewportExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
+          volumeId: ctVolumeId,
           callback: setCTWWWC,
         },
       ],
@@ -338,7 +336,7 @@ class StackViewportExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ptVolumeUID,
+          volumeId: ptVolumeId,
           callback: setPetTransferFunction,
         },
       ],
@@ -406,11 +404,11 @@ class StackViewportExample extends Component {
   }
 
   updateAnnotationAdded = (evt) => {
-    const { annotation, viewportUID } = evt.detail
+    const { annotation, viewportId } = evt.detail
 
     const { metadata, annotationUID } = annotation
     const detail = {
-      viewportUID,
+      viewportId,
       toolName: metadata.toolName,
       toolId: annotationUID,
     }
@@ -420,11 +418,11 @@ class StackViewportExample extends Component {
   }
 
   updateAnnotationRemoved = (evt) => {
-    const { annotation, viewportUID } = evt.detail
+    const { annotation, viewportId } = evt.detail
 
     const { metadata, annotationUID } = annotation
     const detail = {
-      viewportUID,
+      viewportId,
       toolName: metadata.toolName,
       toolId: annotationUID,
     }
@@ -676,7 +674,7 @@ class StackViewportExample extends Component {
                             0,
                             5
                           )}`}</h4>
-                          <p>{`viewportUID: ${m.viewportUID}`}</p>
+                          <p>{`viewportId: ${m.viewportId}`}</p>
                           <hr></hr>
                           <hr></hr>
                         </div>
@@ -701,7 +699,7 @@ class StackViewportExample extends Component {
                                 0,
                                 5
                               )}`}</h4>
-                              <p>{`viewportUID: ${value.viewportUID}`}</p>
+                              <p>{`viewportId: ${value.viewportId}`}</p>
                               <div>
                                 {Object.keys(value.stats).map((statName) => {
                                   return (
@@ -732,7 +730,7 @@ class StackViewportExample extends Component {
                             0,
                             5
                           )}`}</h4>
-                          <p>{`viewportUID: ${m.viewportUID}`}</p>
+                          <p>{`viewportId: ${m.viewportId}`}</p>
                           <hr></hr>
                           <hr></hr>
                         </div>

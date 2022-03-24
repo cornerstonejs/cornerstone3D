@@ -27,9 +27,9 @@ const { ORIENTATION } = CONSTANTS
 const { MouseBindings } = csToolsEnums
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
+const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeUID = `${volumeLoaderProtocolName}:${volumeName}` // VolumeUID with loader id + volume id
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -75,7 +75,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupUID = 'STACK_TOOL_GROUP_UID'
+  const toolGroupId = 'STACK_TOOL_GROUP_ID'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool)
@@ -83,10 +83,10 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeUID } })
+  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeId } })
   toolGroup.addTool(StackScrollMouseWheelTool.toolName)
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -113,11 +113,11 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
-  const viewportUIDs = [
+  const viewportIds = [
     'CT_AXIAL_STACK',
     'CT_SAGITTAL_STACK',
     'CT_OBLIQUE_STACK',
@@ -125,7 +125,7 @@ async function run() {
 
   const viewportInputArray = [
     {
-      viewportUID: viewportUIDs[0],
+      viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -134,7 +134,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[1],
+      viewportId: viewportIds[1],
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
@@ -143,7 +143,7 @@ async function run() {
       },
     },
     {
-      viewportUID: viewportUIDs[2],
+      viewportId: viewportIds[2],
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
@@ -164,22 +164,22 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray)
 
   // Set the tool group on the viewports
-  viewportUIDs.forEach((viewportUID) =>
-    toolGroup.addViewport(viewportUID, renderingEngineUID)
+  viewportIds.forEach((viewportId) =>
+    toolGroup.addViewport(viewportId, renderingEngineId)
   )
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeUID, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   })
 
   // Set the volume to load
   volume.load()
 
-  setVolumesForViewports(renderingEngine, [{ volumeUID }], viewportUIDs)
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)
 
   // // Set the volume on the viewport
-  // viewport.setVolumes([{ volumeUID }])
+  // viewport.setVolumes([{ volumeId }])
 
   // Render the image
   renderingEngine.render()

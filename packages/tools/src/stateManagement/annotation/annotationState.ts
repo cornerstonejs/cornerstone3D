@@ -74,14 +74,14 @@ function addAnnotation(element: HTMLElement, annotation: Annotation): void {
 
   const enabledElement = getEnabledElement(element)
   const { renderingEngine } = enabledElement
-  const { viewportUID } = enabledElement
+  const { viewportId } = enabledElement
 
   const eventType = Events.ANNOTATION_ADDED
 
   const eventDetail: AnnotationAddedEventDetail = {
     annotation,
-    viewportUID,
-    renderingEngineUID: renderingEngine.uid,
+    viewportId,
+    renderingEngineId: renderingEngine.id,
   }
 
   triggerEvent(eventTarget, eventType, eventDetail)
@@ -101,14 +101,14 @@ function removeAnnotation(element: HTMLElement, annotationUID: string): void {
   // trigger annotation removed
   const enabledElement = getEnabledElement(element)
   const { renderingEngine } = enabledElement
-  const { viewportUID } = enabledElement
+  const { viewportId } = enabledElement
 
   const eventType = Events.ANNOTATION_REMOVED
 
   const eventDetail: AnnotationRemovedEventDetail = {
     annotation,
-    viewportUID,
-    renderingEngineUID: renderingEngine.uid,
+    viewportId,
+    renderingEngineId: renderingEngine.id,
   }
 
   triggerEvent(eventTarget, eventType, eventDetail)

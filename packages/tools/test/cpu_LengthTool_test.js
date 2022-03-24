@@ -34,9 +34,9 @@ const {
   createNormalizedMouseEvent,
 } = utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -57,7 +57,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: viewportType,
       element,
       defaultOptions: {
@@ -88,13 +88,13 @@ describe('Length Tool (CPU):', () => {
 
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
     this.stackToolGroup.addTool(LengthTool.toolName, {
-      configuration: { volumeUID: volumeId },
+      configuration: { volumeId: volumeId },
     })
     this.stackToolGroup.setToolActive(LengthTool.toolName, {
       bindings: [{ mouseButton: 1 }],
     })
 
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    this.renderingEngine = new RenderingEngine(renderingEngineId)
     imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
     volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
@@ -107,7 +107,7 @@ describe('Length Tool (CPU):', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     imageLoader.unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
+    ToolGroupManager.destroyToolGroupByToolGroupId('stack')
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -126,7 +126,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 
@@ -215,7 +215,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)
@@ -235,7 +235,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p2, p3
 
@@ -358,7 +358,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)
@@ -378,7 +378,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2
 
@@ -493,7 +493,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)
@@ -513,7 +513,7 @@ describe('Length Tool (CPU):', () => {
     this.DOMElements.push(element)
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0'
-    const vp = this.renderingEngine.getViewport(viewportUID)
+    const vp = this.renderingEngine.getViewport(viewportId)
 
     let p1, p2, p3, p4
 
@@ -687,7 +687,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)

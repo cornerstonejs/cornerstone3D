@@ -12,9 +12,9 @@ import {
   RectangleRoiStartEndThresholdTool,
 } from '@cornerstonejs/tools'
 
-const renderingEngineUID = 'PETCTRenderingEngine'
-const ptVolumeUID = 'cornerstoneStreamingImageVolume:PET_VOLUME'
-const ctVolumeUID = 'cornerstoneStreamingImageVolume:CT_VOLUME'
+const renderingEngineId = 'PETCTRenderingEngine'
+const ptVolumeId = 'cornerstoneStreamingImageVolume:PET_VOLUME'
+const ctVolumeId = 'cornerstoneStreamingImageVolume:CT_VOLUME'
 const prostateVolumeUID = 'cornerstoneStreamingImageVolume:PROSTATE_VOLUME'
 const ctVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 const ptVolumeTestUID = 'fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0'
@@ -72,7 +72,7 @@ const VIEWPORT_IDS = {
 
 // IDs for each toolgroup used. We currently use one toolGroup per scene in the demos, but you could have
 // Different viewports of the same scene with different toolgroup setups.
-const TOOL_GROUP_UIDS = {
+const TOOL_GROUP_IDS = {
   STACK_CT: 'stackCTToolGroup',
   STACK_PT: 'stackPTToolGroup',
   STACK_DX: 'stackDXToolGroup',
@@ -110,16 +110,16 @@ const SEGMENTATION_TOOLS = [
 const colormaps = ['hsv', 'Inferno (matplotlib)']
 
 export {
-  renderingEngineUID,
-  ptVolumeUID,
-  ctVolumeUID,
+  renderingEngineId,
+  ptVolumeId,
+  ctVolumeId,
   prostateVolumeUID,
   ctStackUID,
   ctVolumeTestUID,
   ptVolumeTestUID,
   petStackUID,
   VIEWPORT_IDS,
-  TOOL_GROUP_UIDS,
+  TOOL_GROUP_IDS,
   colormaps,
   ANNOTATION_TOOLS,
   SEGMENTATION_TOOLS,

@@ -39,17 +39,17 @@ const { SegmentationRepresentations } = csToolsEnums
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
+const viewportId1 = 'AXIAL'
 const AXIAL = 'AXIAL'
 
-const TOOL_GROUP_UID = 'segToolGroup'
+const TOOL_GROUP_ID = 'segToolGroup'
 
 function createViewport(
   renderingEngine,
   orientation,
-  viewportUID = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -58,7 +58,7 @@ function createViewport(
   document.body.appendChild(element)
 
   renderingEngine.enableElement({
-    viewportUID: viewportUID,
+    viewportId: viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -85,14 +85,14 @@ describe('Segmentation Controller --', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
+      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(RectangleScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -108,7 +108,7 @@ describe('Segmentation Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID(TOOL_GROUP_UID)
+      ToolGroupManager.destroyToolGroupByToolGroupId(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -134,7 +134,7 @@ describe('Segmentation Controller --', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const seg1VolumeID =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const compareImageCallback = () => {
         const canvas1 = vp1.getCanvas()
@@ -148,12 +148,12 @@ describe('Segmentation Controller --', () => {
 
         const representationConfig =
           segmentation.segmentationConfig.getRepresentationConfig(
-            TOOL_GROUP_UID,
+            TOOL_GROUP_ID,
             SegmentationRepresentations.Labelmap
           )
 
         const segmentationConfig =
-          segmentation.segmentationConfig.getSegmentationConfig(TOOL_GROUP_UID)
+          segmentation.segmentationConfig.getSegmentationConfig(TOOL_GROUP_ID)
 
         const representationConfigFromSegmentationConfig =
           segmentationConfig.representations[
@@ -194,24 +194,24 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
-              [viewportUID1]
+              [{ volumeId: volumeId }],
+              [viewportId1]
             ).then(() => {
               vp1.render()
 
               // add two volumes on the segmentation
               addSegmentationsForToolGroup(
-                TOOL_GROUP_UID,
+                TOOL_GROUP_ID,
                 [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                   },
                 ],
                 toolGroupSpecificConfig
@@ -237,7 +237,7 @@ describe('Segmentation Controller --', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const seg1VolumeID =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_30_30_3_80_80_6'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const compareImageCallback = () => {
         const canvas1 = vp1.getCanvas()
@@ -255,15 +255,15 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
-              [viewportUID1]
+              [{ volumeId: volumeId }],
+              [viewportId1]
             ).then(() => {
               vp1.render()
 
@@ -281,9 +281,9 @@ describe('Segmentation Controller --', () => {
               )
 
               // add two volumes on the segmentation
-              addSegmentationsForToolGroup(TOOL_GROUP_UID, [
+              addSegmentationsForToolGroup(TOOL_GROUP_ID, [
                 {
-                  volumeUID: seg1VolumeID,
+                  volumeId: seg1VolumeID,
                   colorLUTIndex: 1,
                 },
               ])
@@ -317,7 +317,7 @@ describe('Segmentation Controller --', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const seg1VolumeID =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_70_30_3_80_80_6'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const compareImageCallback = () => {
         const canvas1 = vp1.getCanvas()
@@ -335,15 +335,15 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
-              [viewportUID1]
+              [{ volumeId: volumeId }],
+              [viewportId1]
             ).then(() => {
               vp1.render()
 
@@ -362,10 +362,10 @@ describe('Segmentation Controller --', () => {
 
               // add two volumes on the segmentation
               addSegmentationsForToolGroup(
-                TOOL_GROUP_UID,
+                TOOL_GROUP_ID,
                 [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                     colorLUTIndex: 1,
                   },
                 ],

@@ -99,7 +99,7 @@ export default class StreamingImageVolume extends ImageVolume {
   /**
    * It cancels loading the images of the volume. It sets the loading status to false
    * and filters any imageLoad request in the requestPoolManager that has the same
-   * volumeUID
+   * volumeId
    */
   public cancelLoading(): void {
     const { loadStatus } = this
@@ -115,9 +115,9 @@ export default class StreamingImageVolume extends ImageVolume {
     this.clearLoadCallbacks()
 
     // Create a filter function which only keeps requests
-    // which do not match this volume's UID
+    // which do not match this volume's Id
     const filterFunction = ({ additionalDetails }) => {
-      return additionalDetails.volumeUID !== this.uid
+      return additionalDetails.volumeId !== this.volumeId
     }
 
     // Instruct the request pool manager to filter queued
@@ -146,7 +146,9 @@ export default class StreamingImageVolume extends ImageVolume {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
-      console.log(`loadVolume: Loading is already in progress for ${this.uid}`)
+      console.log(
+        `loadVolume: Loading is already in progress for ${this.volumeId}`
+      )
       return // Already loading, will get callbacks from main load.
     }
 
@@ -182,19 +184,13 @@ export default class StreamingImageVolume extends ImageVolume {
    * moving to the next slice.
    *
    * @returns Array of requests including imageId of the request, its imageIdIndex,
-   * options (targetBuffer and scaling parameters), and additionalDetails (volumeUID)
+   * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
   public getImageLoadRequests = () => {
     const { scalarData, loadStatus } = this
     const { cachedFrames } = loadStatus
 
-    const {
-      imageIds,
-      vtkOpenGLTexture,
-      imageData,
-      metadata,
-      uid: volumeUID,
-    } = this
+    const { imageIds, vtkOpenGLTexture, imageData, metadata, volumeId } = this
 
     const { FrameOfReferenceUID } = metadata
     loadStatus.loading = true
@@ -241,7 +237,7 @@ export default class StreamingImageVolume extends ImageVolume {
         ) {
           reRenderTarget += reRenderFraction
 
-          autoLoad(volumeUID)
+          autoLoad(volumeId)
         }
       }
 
@@ -438,7 +434,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageIdIndex,
         options,
         additionalDetails: {
-          volumeUID: this.uid,
+          volumeId: this.volumeId,
         },
       }
     })
@@ -543,9 +539,9 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   private _removeFromCache() {
-    // TODO: not 100% sure this is the same UID as the volume loader's volumeId?
+    // TODO: not 100% sure this is the same Id as the volume loader's volumeId?
     // so I have no idea if this will work
-    cache.removeVolumeLoadObject(this.uid)
+    cache.removeVolumeLoadObject(this.volumeId)
   }
 
   /**

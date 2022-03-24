@@ -9,7 +9,7 @@ import deepMerge from './deepMerge'
 import throttle from './throttle'
 import isObject from './isObject'
 import calibrateImageSpacing from './calibrateImageSpacing'
-import triggerAnnotationRenderForViewportUIDs from './triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds'
 import transformPhysicalToIndex from './transformPhysicalToIndex'
 
 import pointInShapeCallback from './pointInShapeCallback'
@@ -39,7 +39,7 @@ export {
   triggerEvent,
   calibrateImageSpacing,
   segmentation,
-  triggerAnnotationRenderForViewportUIDs,
+  triggerAnnotationRenderForViewportIds,
   pointInShapeCallback,
   pointInSurroundingSphereCallback,
   getAnnotationNearPoint,
@@ -61,7 +61,7 @@ export default {
   calibrateImageSpacing,
   transformPhysicalToIndex,
   segmentation,
-  triggerAnnotationRenderForViewportUIDs,
+  triggerAnnotationRenderForViewportIds,
   pointInShapeCallback,
   pointInSurroundingSphereCallback,
   getAnnotationNearPoint,

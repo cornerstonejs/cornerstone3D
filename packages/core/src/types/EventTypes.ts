@@ -19,9 +19,9 @@ type CameraModifiedEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -29,9 +29,9 @@ type CameraModifiedEventDetail = {
  */
 type VoiModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the volume in the cache */
-  volumeUID: string
+  volumeId: string
   /** new VOI range */
   range: VOIRange
 }
@@ -43,9 +43,9 @@ type ElementDisabledEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -55,9 +55,9 @@ type ElementEnabledEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -67,9 +67,9 @@ type ImageRenderedEventDetail = {
   /** Viewport HTML element in the DOM */
   element: HTMLElement
   /** Viewport Unique ID in the renderingEngine */
-  viewportUID: string
+  viewportId: string
   /** Unique ID for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
   /** Whether to suppress the event */
   suppressEvents?: boolean
 }
@@ -158,9 +158,9 @@ type StackNewImageEventDetail = {
   /** the image imageId */
   imageId: string
   /** unique id for the viewport */
-  viewportUID: string
+  viewportId: string
   /** unique id for the renderingEngine */
-  renderingEngineUID: string
+  renderingEngineId: string
 }
 
 /**
@@ -168,8 +168,8 @@ type StackNewImageEventDetail = {
  */
 type ImageSpacingCalibratedEventDetail = {
   element: HTMLElement
-  viewportUID: string
-  renderingEngineUID: string
+  viewportId: string
+  renderingEngineId: string
   imageId: string
   rowScale: number
   columnScale: number

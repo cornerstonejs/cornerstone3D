@@ -38,19 +38,19 @@ class AnnotationRenderingEngine {
    * Add the viewport's HTMLElement to the viewports for rendering. This method
    * just informs the annotationRenderingEngine about the viewport and
    * does not initiate a render.
-   * @param viewportUID - Viewport Unique identifier
+   * @param viewportId - Viewport Unique identifier
    * @param element - HTMLElement
    */
-  public addViewportElement(viewportUID: string, element: HTMLElement) {
-    this._viewportElements.set(viewportUID, element)
+  public addViewportElement(viewportId: string, element: HTMLElement) {
+    this._viewportElements.set(viewportId, element)
   }
 
   /**
    * Remove the viewport's HTMLElement from subsequent annotation renders
-   * @param viewportUID - Viewport Unique identifier
+   * @param viewportId - Viewport Unique identifier
    */
-  public removeViewportElement(viewportUID: string) {
-    this._viewportElements.delete(viewportUID)
+  public removeViewportElement(viewportId: string) {
+    this._viewportElements.delete(viewportId)
 
     // Reset the request animation frame if no enabled elements
     if (this._viewportElements.size === 0) {
@@ -138,9 +138,7 @@ class AnnotationRenderingEngine {
       return
     }
 
-    const renderingEngine = getRenderingEngine(
-      enabledElement.renderingEngineUID
-    )
+    const renderingEngine = getRenderingEngine(enabledElement.renderingEngineId)
     if (!renderingEngine) {
       console.warn('rendering Engine has been destroyed')
       return
@@ -152,11 +150,11 @@ class AnnotationRenderingEngine {
       Enabled,
     ])
 
-    const { renderingEngineUID, viewportUID } = enabledElement
+    const { renderingEngineId, viewportId } = enabledElement
     const eventDetail: AnnotationRenderedEventDetail = {
       element,
-      renderingEngineUID,
-      viewportUID,
+      renderingEngineId,
+      viewportId,
     }
 
     // const enabledToolsWithAnnotations = enabledTools.filter((tool) => {

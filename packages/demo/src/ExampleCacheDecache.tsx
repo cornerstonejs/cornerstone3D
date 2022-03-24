@@ -16,15 +16,14 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ctVolumeUID,
+  renderingEngineId,
+  ctVolumeId,
   ctStackUID,
   VIEWPORT_IDS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import * as cs from '@cornerstonejs/core'
-
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -60,7 +59,6 @@ class CacheDecacheExample extends Component {
   constructor(props) {
     super(props)
 
-    registerWebImageLoader(cs)
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
@@ -87,13 +85,13 @@ class CacheDecacheExample extends Component {
     csTools3d.init()
     ;({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
+    this.ctVolumeId = ctVolumeId
     this.ctStackUID = ctStackUID
 
     // Create volumes
     const ctStackImageIds = await this.ctStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -103,7 +101,7 @@ class CacheDecacheExample extends Component {
     this.viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -111,7 +109,7 @@ class CacheDecacheExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -119,7 +117,7 @@ class CacheDecacheExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -128,7 +126,7 @@ class CacheDecacheExample extends Component {
       },
       // stack CT
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -140,14 +138,14 @@ class CacheDecacheExample extends Component {
     renderingEngine.setViewports(this.viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({ ctSceneToolGroup, stackCTViewportToolGroup })
@@ -184,7 +182,7 @@ class CacheDecacheExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -200,7 +198,7 @@ class CacheDecacheExample extends Component {
 
     setVolumesForViewports(
       this.renderingEngine,
-      [{ volumeUID: ctVolumeUID }],
+      [{ volumeId: ctVolumeId }],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
     )
 
@@ -216,7 +214,7 @@ class CacheDecacheExample extends Component {
   }
 
   decacheVolume = () => {
-    const volume = cache.getVolume(ctVolumeUID)
+    const volume = cache.getVolume(ctVolumeId)
 
     if (!volume) {
       throw new Error('Volume is not loaded')
@@ -227,7 +225,7 @@ class CacheDecacheExample extends Component {
   }
 
   convertVolumeToImage = () => {
-    const volume = cache.getVolume(ctVolumeUID)
+    const volume = cache.getVolume(ctVolumeId)
 
     if (!volume) {
       throw new Error('Volume is not loaded')

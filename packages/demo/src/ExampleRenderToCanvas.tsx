@@ -8,7 +8,7 @@ import {
 import * as csTools3d from '@cornerstonejs/tools'
 import { WindowLevelTool } from '@cornerstonejs/tools'
 import getImageIds from './helpers/getImageIds'
-import { renderingEngineUID } from './constants'
+import { renderingEngineId } from './constants'
 
 const STACK = 'stack'
 
@@ -54,7 +54,7 @@ class RenderToCanvasExample extends Component {
    */
   async componentDidMount() {
     await cs3dInit()
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -70,7 +70,7 @@ class RenderToCanvasExample extends Component {
   }
 
   renderToCanvas = (imageId) => {
-    renderToCanvas(imageId, this._canvasNodes.get(0), renderingEngineUID).then(
+    renderToCanvas(imageId, this._canvasNodes.get(0), renderingEngineId).then(
       () => {
         this.setState({
           thumbnailLoaded: true,

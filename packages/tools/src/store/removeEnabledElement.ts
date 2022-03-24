@@ -29,7 +29,7 @@ function removeEnabledElement(
   elementDisabledEvt: Types.EventTypes.ElementDisabledEvent
 ): void {
   // Is DOM element
-  const { element, viewportUID } = elementDisabledEvt.detail
+  const { element, viewportId } = elementDisabledEvt.detail
 
   _resetSvgNodeCache(element)
 
@@ -43,7 +43,7 @@ function removeEnabledElement(
   }
 
   // Remove this element from the annotation rendering engine
-  annotationRenderingEngine.removeViewportElement(viewportUID)
+  annotationRenderingEngine.removeViewportElement(viewportId)
 
   // Listeners
   mouseEventListeners.disable(element)
@@ -73,8 +73,8 @@ const _removeViewportFromSynchronizers = (element: HTMLElement) => {
   const enabledElement = getEnabledElement(element)
 
   const synchronizers = getSynchronizers(
-    enabledElement.renderingEngineUID,
-    enabledElement.viewportUID
+    enabledElement.renderingEngineId,
+    enabledElement.viewportId
   )
   synchronizers.forEach((sync) => {
     sync.remove(enabledElement)
@@ -82,12 +82,12 @@ const _removeViewportFromSynchronizers = (element: HTMLElement) => {
 }
 
 const _removeViewportFromToolGroup = (element: HTMLElement) => {
-  const { renderingEngineUID, viewportUID } = getEnabledElement(element)
+  const { renderingEngineId, viewportId } = getEnabledElement(element)
 
-  const toolGroup = getToolGroup(viewportUID, renderingEngineUID)
+  const toolGroup = getToolGroup(viewportId, renderingEngineId)
 
   if (toolGroup) {
-    toolGroup.removeViewports(renderingEngineUID, viewportUID)
+    toolGroup.removeViewports(renderingEngineId, viewportId)
   }
 }
 
@@ -106,9 +106,9 @@ const _removeAllToolsForElement = function (element) {
 }
 
 function _resetSvgNodeCache(element: HTMLElement) {
-  const { viewportUid: viewportUID, renderingEngineUid: renderingEngineUID } =
+  const { viewportUid: viewportId, renderingEngineUid: renderingEngineId } =
     element.dataset
-  const elementHash = `${viewportUID}:${renderingEngineUID}`
+  const elementHash = `${viewportId}:${renderingEngineId}`
 
   delete state.svgNodeCache[elementHash]
 }

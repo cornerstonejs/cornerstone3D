@@ -5,10 +5,7 @@ import {
   volumeLoader,
   init as cs3dInit,
 } from '@cornerstonejs/core'
-import {
-  SynchronizerManager,
-  synchronizers,
-} from '@cornerstonejs/tools'
+import { SynchronizerManager, synchronizers } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
@@ -21,9 +18,9 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ptVolumeUID,
-  ctVolumeUID,
+  renderingEngineId,
+  ptVolumeId,
+  ctVolumeId,
   colormaps,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -108,7 +105,7 @@ class MPRExample extends Component {
   async componentDidMount() {
     await cs3dInit()
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
   }
@@ -152,10 +149,10 @@ class MPRExample extends Component {
       ptTypesSceneToolGroup,
     } = initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
-    this.ptVolumeUID = ptVolumeUID
+    this.ctVolumeId = ctVolumeId
+    this.ptVolumeId = ptVolumeId
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
@@ -196,10 +193,10 @@ class MPRExample extends Component {
     const ctVolumeImageIds = await this.ctVolumeImageIds
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -226,8 +223,8 @@ class MPRExample extends Component {
 
     ptCtFusion.setVolumes(
       this.renderingEngine,
-      ctVolumeUID,
-      ptVolumeUID,
+      ctVolumeId,
+      ptVolumeId,
       colormaps[this.state.petColorMapIndex]
     )
 

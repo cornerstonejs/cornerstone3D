@@ -27,8 +27,8 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ptVolumeUID,
+  renderingEngineId,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -102,7 +102,7 @@ class OneVolumeExample extends Component {
 
     const volumeImageIds = await this.volumeImageIds
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -110,7 +110,7 @@ class OneVolumeExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.PT.AXIAL,
+        viewportId: VIEWPORT_IDS.PT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -119,7 +119,7 @@ class OneVolumeExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.PT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -128,7 +128,7 @@ class OneVolumeExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.CORONAL,
+        viewportId: VIEWPORT_IDS.PT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -141,9 +141,9 @@ class OneVolumeExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineUID)
-    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.CORONAL, renderingEngineUID)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.SAGITTAL, renderingEngineId)
+    ptSceneToolGroup.addViewport(VIEWPORT_IDS.PT.CORONAL, renderingEngineId)
 
     addToolsToToolGroups({ ptSceneToolGroup })
 
@@ -151,7 +151,7 @@ class OneVolumeExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: volumeImageIds,
     })
 
@@ -171,7 +171,7 @@ class OneVolumeExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ptVolumeUID,
+          volumeId: ptVolumeId,
           callback: setPetTransferFunction,
           blendMode: Enums.BlendModes.COMPOSITE,
         },

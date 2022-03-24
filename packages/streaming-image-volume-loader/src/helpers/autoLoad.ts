@@ -2,60 +2,55 @@ import { getRenderingEngines, utilities } from '@cornerstonejs/core'
 
 //import type { Types } from '@cornerstonejs/core'
 
-type RenderingEngineAndViewportUIDs = {
+type RenderingEngineAndViewportIds = {
   renderingEngine: any | undefined //Types.IRenderingEngine | undefined
-  viewportUIDs: Array<string>
+  viewportIds: Array<string>
 }
 
 /**
- * Given a volumeUID, it finds the viewports and renderingEngines that
+ * Given a volumeId, it finds the viewports and renderingEngines that
  * include that volume, and triggers a render if renderingEngine is available.
  *
- * @param volumeUID - The UID of the volume
+ * @param volumeId - The Id of the volume
  */
-const autoLoad = (volumeUID: string): void => {
-  const renderingEngineAndViewportUIDs =
-    getRenderingEngineAndViewportsContainingVolume(volumeUID)
+const autoLoad = (volumeId: string): void => {
+  const renderingEngineAndViewportIds =
+    getRenderingEngineAndViewportsContainingVolume(volumeId)
 
-  if (
-    !renderingEngineAndViewportUIDs ||
-    !renderingEngineAndViewportUIDs.length
-  ) {
+  if (!renderingEngineAndViewportIds || !renderingEngineAndViewportIds.length) {
     return
   }
 
-  renderingEngineAndViewportUIDs.forEach(
-    ({ renderingEngine, viewportUIDs }) => {
-      if (!renderingEngine.hasBeenDestroyed) {
-        renderingEngine.renderViewports(viewportUIDs)
-      }
+  renderingEngineAndViewportIds.forEach(({ renderingEngine, viewportIds }) => {
+    if (!renderingEngine.hasBeenDestroyed) {
+      renderingEngine.renderViewports(viewportIds)
     }
-  )
+  })
 }
 
 function getRenderingEngineAndViewportsContainingVolume(
-  volumeUID: string
-): Array<RenderingEngineAndViewportUIDs> {
+  volumeId: string
+): Array<RenderingEngineAndViewportIds> {
   const renderingEnginesArray = getRenderingEngines()
 
-  const renderingEngineAndViewportUIDs = []
+  const renderingEngineAndViewportIds = []
 
   for (let i = 0; i < renderingEnginesArray.length; i++) {
     const renderingEngine = renderingEnginesArray[i]
-    const viewports = utilities.getVolumeViewportsContainingVolumeUID(
-      volumeUID,
-      renderingEngine.uid
+    const viewports = utilities.getVolumeViewportsContainingVolumeId(
+      volumeId,
+      renderingEngine.id
     )
 
     if (viewports.length) {
-      renderingEngineAndViewportUIDs.push({
+      renderingEngineAndViewportIds.push({
         renderingEngine,
-        viewportUIDs: viewports.map((viewport) => viewport.uid),
+        viewportIds: viewports.map((viewport) => viewport.id),
       })
     }
   }
 
-  return renderingEngineAndViewportUIDs
+  return renderingEngineAndViewportIds
 }
 
 export default autoLoad

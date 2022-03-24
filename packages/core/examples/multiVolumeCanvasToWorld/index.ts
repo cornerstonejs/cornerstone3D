@@ -21,12 +21,12 @@ const { ORIENTATION } = CONSTANTS
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
-const ctVolumeUID = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeUID with loader id + volume id
+const ctVolumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
 
 // Define a unique id for the volume
-const ptVolumeName = 'PT_VOLUME_UID'
-const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const ptVolumeName = 'PT_VOLUME_ID'
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -91,13 +91,13 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
-  const viewportUID = 'CT_SAGITTAL_STACK'
+  const viewportId = 'CT_SAGITTAL_STACK'
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -110,11 +110,11 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   })
 
@@ -122,7 +122,7 @@ async function run() {
   ctVolume.load()
 
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   })
 
@@ -131,8 +131,8 @@ async function run() {
 
   // Set the volume on the viewport
   viewport.setVolumes([
-    { volumeUID: ctVolumeUID },
-    { volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction },
+    { volumeId: ctVolumeId },
+    { volumeId: ptVolumeId, callback: setPetColorMapTransferFunction },
   ])
 
   // Render the image

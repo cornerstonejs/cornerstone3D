@@ -9,7 +9,7 @@ import { VolumeViewport } from '@cornerstonejs/core'
  *
  * @param viewport - Volume viewport
  * @param worldPos - World coordinates of the clicked location
- * @param targetVolumeUID - target Volume UID in the viewport
+ * @param targetVolumeId - target Volume ID in the viewport
  * @param criteriaFunction - A function that returns the point if it passes a certain
  * written logic, for instance, it can be a maxValue function that keeps the
  * records of all intensity values, and only return the point if its intensity
@@ -21,7 +21,7 @@ import { VolumeViewport } from '@cornerstonejs/core'
 export default function getPointInLineOfSightWithCriteria(
   viewport: Types.IVolumeViewport,
   worldPos: Types.Point3,
-  targetVolumeUID: string,
+  targetVolumeId: string,
   criteriaFunction: (intensity: number, point: Types.Point3) => Types.Point3,
   stepSize = 0.25
 ): Types.Point3 {
@@ -35,7 +35,7 @@ export default function getPointInLineOfSightWithCriteria(
     csUtils.getTargetVolumeAndSpacingInNormalDir(
       viewport,
       camera,
-      targetVolumeUID
+      targetVolumeId
     )
   // 2.1 Making sure, we are not missing any point
   const step = spacingInNormalDirection * stepSize

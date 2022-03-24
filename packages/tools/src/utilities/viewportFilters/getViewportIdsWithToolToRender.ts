@@ -4,7 +4,7 @@ import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled'
 import filterViewportsWithSameOrientation from './filterViewportsWithSameOrientation'
 
 /**
- * Given a cornerstone3D enabled `element`, and a `toolName`, find all viewportUIDs
+ * Given a cornerstone3D enabled `element`, and a `toolName`, find all viewportIds
  * looking at the same Frame Of Reference that have the tool with the given `toolName`
  * active, passive or enabled.
  *
@@ -12,9 +12,9 @@ import filterViewportsWithSameOrientation from './filterViewportsWithSameOrienta
  * @param toolName - The string toolName.
  * @param requireSameOrientation - If true, only return viewports matching the orientation of the original viewport
  *
- * @returns An array of viewportUIDs.
+ * @returns An array of viewportIds.
  */
-export default function getViewportUIDsWithToolToRender(
+export default function getViewportIdsWithToolToRender(
   element: HTMLElement,
   toolName: string,
   requireSameOrientation = true
@@ -30,7 +30,7 @@ export default function getViewportUIDsWithToolToRender(
   )
   viewports = filterViewportsWithToolEnabled(viewports, toolName)
 
-  const viewport = renderingEngine.getViewport(enabledElement.viewportUID)
+  const viewport = renderingEngine.getViewport(enabledElement.viewportId)
 
   if (requireSameOrientation) {
     viewports = filterViewportsWithSameOrientation(
@@ -39,7 +39,7 @@ export default function getViewportUIDsWithToolToRender(
     )
   }
 
-  const viewportUIDs = viewports.map((vp) => vp.uid)
+  const viewportIds = viewports.map((vp) => vp.id)
 
-  return viewportUIDs
+  return viewportIds
 }

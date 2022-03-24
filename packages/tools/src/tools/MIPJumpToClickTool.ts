@@ -7,7 +7,7 @@ import { PublicToolProps, ToolProps } from '../types'
 
 /**
  * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the
- * user to click on a point in the MIP and the targetViewportUIDS (provided in the
+ * user to click on a point in the MIP and the targetViewportIdS (provided in the
  * tool configuration) will be scrolled (jumped) to the location of the point with
  * the highest intensity value in the MIP.
  */
@@ -21,7 +21,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        targetViewportUIDs: [],
+        targetViewportIds: [],
       },
     }
   ) {
@@ -45,7 +45,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     const { viewport, renderingEngine } = enabledElement
 
     // 2. Getting the target volume that is clicked on
-    const targetVolumeUID = this.getTargetUID(viewport as Types.IVolumeViewport)
+    const targetVolumeId = this.getTargetId(viewport as Types.IVolumeViewport)
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity
@@ -60,7 +60,7 @@ export default class MIPJumpToClickTool extends BaseTool {
     const brightestPoint = getPointInLineOfSightWithCriteria(
       viewport as Types.IVolumeViewport,
       currentPoints.world,
-      targetVolumeUID,
+      targetVolumeId,
       maxFn
     )
 
@@ -68,13 +68,13 @@ export default class MIPJumpToClickTool extends BaseTool {
       return
     }
 
-    const { targetViewportUIDs } = this.configuration
+    const { targetViewportIds } = this.configuration
 
     // 6. Update all the targetedViewports to jump
-    targetViewportUIDs.forEach((viewportUID) => {
+    targetViewportIds.forEach((viewportId) => {
       // Todo: current limitation is that we cannot jump in viewports
       // that don't belong to the renderingEngine of the source clicked viewport
-      const viewport = renderingEngine.getViewport(viewportUID)
+      const viewport = renderingEngine.getViewport(viewportId)
 
       if (viewport instanceof VolumeViewport) {
         jumpToWorld(viewport, brightestPoint)

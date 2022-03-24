@@ -1,15 +1,15 @@
 import createToolGroup from './createToolGroup'
-import destroyToolGroupByToolGroupUID from './destroyToolGroupByToolGroupUID'
+import destroyToolGroupByToolGroupId from './destroyToolGroupByToolGroupId'
 import destroy from './destroy'
-import getToolGroupByToolGroupUID from './getToolGroupByToolGroupUID'
+import getToolGroupByToolGroupId from './getToolGroupByToolGroupId'
 import getToolGroup from './getToolGroup'
 import getAllToolGroups from './getAllToolGroups'
 
 export default {
   createToolGroup,
   destroy,
-  destroyToolGroupByToolGroupUID,
-  getToolGroupByToolGroupUID,
+  destroyToolGroupByToolGroupId,
+  getToolGroupByToolGroupId,
   getToolGroup,
   getAllToolGroups,
 }
@@ -17,8 +17,8 @@ export default {
 export {
   createToolGroup,
   destroy,
-  destroyToolGroupByToolGroupUID,
-  getToolGroupByToolGroupUID,
+  destroyToolGroupByToolGroupId,
+  getToolGroupByToolGroupId,
   getToolGroup,
   getAllToolGroups,
 }

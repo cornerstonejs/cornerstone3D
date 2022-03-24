@@ -6,8 +6,8 @@ import {
 
 /**
  * Returns the viewports containing the same volume actors (all actors) the same
- * as the target viewport. If renderingEngineUID is provided, it will only return
- * viewports that are associated with the renderingEngineUID; otherwise, it will
+ * as the target viewport. If renderingEngineId is provided, it will only return
+ * viewports that are associated with the renderingEngineId; otherwise, it will
  * return search in all rendering engines.
  *
  * This method is useful for finding viewports that are associated with the same
@@ -18,12 +18,12 @@ import {
  */
 function getVolumeViewportsContainingSameVolumes(
   targetViewport: IVolumeViewport,
-  renderingEngineUID?: string
+  renderingEngineId?: string
 ): Array<IVolumeViewport> {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines
-  if (renderingEngineUID) {
-    renderingEngines = [getRenderingEngine(renderingEngineUID)]
+  if (renderingEngineId) {
+    renderingEngines = [getRenderingEngine(renderingEngineId)]
   } else {
     renderingEngines = getRenderingEngines()
   }

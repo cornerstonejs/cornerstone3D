@@ -5,7 +5,7 @@ import { state } from './state'
  * should be called before creating the toolGroups and adding tools and setting their mode.
  * The flow is:
  * - addTool(ToolClass) // where ToolClass is the tool constructor imported from CornerstoneTools or created by a 3rd party
- * - createToolGroup(toolGroupUID)
+ * - createToolGroup(toolGroupId)
  * - toolGroup.addTool(${toolName}) // NOT THE TOOL CLASS
  * - toolGroup.setToolActive(${toolName})
  *

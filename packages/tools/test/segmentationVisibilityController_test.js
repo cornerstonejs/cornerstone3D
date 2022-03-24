@@ -38,18 +38,18 @@ const { addSegmentationsForToolGroup } = segmentation
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
+const viewportId1 = 'AXIAL'
 
 const AXIAL = 'AXIAL'
 
-const TOOL_GROUP_UID = 'segToolGroup'
+const TOOL_GROUP_ID = 'segToolGroup'
 
 function createViewport(
   renderingEngine,
   orientation,
-  viewportUID = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -58,7 +58,7 @@ function createViewport(
   document.body.appendChild(element)
 
   renderingEngine.enableElement({
-    viewportUID: viewportUID,
+    viewportId: viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -82,14 +82,14 @@ describe('Segmentation Controller --', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
+      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(RectangleScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -105,7 +105,7 @@ describe('Segmentation Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID(TOOL_GROUP_UID)
+      ToolGroupManager.destroyToolGroupByToolGroupId(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -124,7 +124,7 @@ describe('Segmentation Controller --', () => {
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
       const seg2VolumeID =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const compareImageCallback = () => {
         const canvas1 = vp1.getCanvas()
@@ -142,7 +142,7 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
@@ -150,18 +150,18 @@ describe('Segmentation Controller --', () => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
               setVolumesForViewports(
                 this.renderingEngine,
-                [{ volumeUID: volumeId }],
-                [viewportUID1]
+                [{ volumeId: volumeId }],
+                [viewportId1]
               ).then(() => {
                 vp1.render()
 
                 // add two volumes on the segmentation
-                addSegmentationsForToolGroup(TOOL_GROUP_UID, [
+                addSegmentationsForToolGroup(TOOL_GROUP_ID, [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                   },
                   {
-                    volumeUID: seg2VolumeID,
+                    volumeId: seg2VolumeID,
                   },
                 ])
               })
@@ -183,7 +183,7 @@ describe('Segmentation Controller --', () => {
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
       const seg2VolumeID =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const compareImageCallback = () => {
         const canvas1 = vp1.getCanvas()
@@ -201,7 +201,7 @@ describe('Segmentation Controller --', () => {
         compareImageCallback
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
@@ -209,8 +209,8 @@ describe('Segmentation Controller --', () => {
             createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
               setVolumesForViewports(
                 this.renderingEngine,
-                [{ volumeUID: volumeId }],
-                [viewportUID1]
+                [{ volumeId: volumeId }],
+                [viewportId1]
               ).then(() => {
                 vp1.render()
 
@@ -221,13 +221,13 @@ describe('Segmentation Controller --', () => {
                 )
 
                 // add two volumes on the segmentation
-                addSegmentationsForToolGroup(TOOL_GROUP_UID, [
+                addSegmentationsForToolGroup(TOOL_GROUP_ID, [
                   {
-                    volumeUID: seg1VolumeID,
+                    volumeId: seg1VolumeID,
                     colorLUTIndex: 1,
                   },
                   {
-                    volumeUID: seg2VolumeID,
+                    volumeId: seg2VolumeID,
                   },
                 ])
               })
@@ -248,7 +248,7 @@ describe('Segmentation Controller --', () => {
     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
     //   const seg2VolumeID =
     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
-    //   const vp1 = this.renderingEngine.getViewport(viewportUID1)
+    //   const vp1 = this.renderingEngine.getViewport(viewportId1)
 
     //   const compareImageCallback = () => {
     //     console.log('calling compare ************')
@@ -262,7 +262,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.segmentation.state.getSegmentationState(TOOL_GROUP_UID)
+    //       csTools3d.segmentation.state.getSegmentationState(TOOL_GROUP_ID)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].visibility).toBe(true)
@@ -278,7 +278,7 @@ describe('Segmentation Controller --', () => {
     //     compareImageCallback
     //   )
 
-    //   this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
     //   try {
     //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
@@ -286,27 +286,27 @@ describe('Segmentation Controller --', () => {
     //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
     //           setVolumesForViewports(
     //             this.renderingEngine,
-    //             [{ volumeUID: volumeId }],
-    //             [viewportUID1]
+    //             [{ volumeId: volumeId }],
+    //             [viewportId1]
     //           ).then(() => {
     //             vp1.render()
 
     //             // add two volumes on the segmentation
-    //             addSegmentationsForToolGroup(TOOL_GROUP_UID, [
+    //             addSegmentationsForToolGroup(TOOL_GROUP_ID, [
     //               {
-    //                 volumeUID: seg1VolumeID,
+    //                 volumeId: seg1VolumeID,
     //               },
     //               {
-    //                 volumeUID: seg2VolumeID,
+    //                 volumeId: seg2VolumeID,
     //               },
     //             ]).then(() => {
     //               const segmentationData =
     //                 segmentation.activeSegmentation.getActiveSegmentationInfo(
-    //                   TOOL_GROUP_UID
+    //                   TOOL_GROUP_ID
     //                 )
 
     //               segmentation.segmentationVisibility.setSegmentationVisibility(
-    //                 TOOL_GROUP_UID,
+    //                 TOOL_GROUP_ID,
     //                 segmentationData.segmentationDataUID,
     //                 false
     //               )

@@ -38,10 +38,10 @@ function addColorLUT_2(colorLUT: ColorLUT, colorLUTIndex: number): void;
 function addGlobalSegmentationData(segmentationData: GlobalSegmentationData, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationData(toolGroupUID: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
+function addSegmentationData(toolGroupId: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationsForToolGroup(toolGroupUID: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
+function addSegmentationsForToolGroup(toolGroupId: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
 
 // @public (undocumented)
 export function addTool(ToolClass: any): void;
@@ -60,7 +60,7 @@ type Annotation = {
         FrameOfReferenceUID: string;
         toolName: string;
         referencedImageId?: string;
-        volumeUID?: string;
+        volumeId?: string;
     };
     data: {
         handles?: {
@@ -94,8 +94,8 @@ export { annotation }
 
 // @public (undocumented)
 type AnnotationAddedEventDetail = {
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
     annotation: Annotation;
 };
 
@@ -117,8 +117,8 @@ type AnnotationLockChangeEventType = Types_2.CustomEventType<AnnotationLockChang
 
 // @public (undocumented)
 type AnnotationModifiedEventDetail = {
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
     annotation: Annotation;
 };
 
@@ -127,8 +127,8 @@ type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEve
 
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
     annotation: Annotation;
 };
 
@@ -138,8 +138,8 @@ type AnnotationRemovedEventType = Types_2.CustomEventType<AnnotationRemovedEvent
 // @public (undocumented)
 type AnnotationRenderedEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)
@@ -201,9 +201,9 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
-    protected getTargetUID(viewport: Types_2.IViewport): string | undefined;
+    protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
-    protected getTargetUIDViewportAndImage(targetUID: string, renderingEngine: Types_2.IRenderingEngine): {
+    protected getTargetIdViewportAndImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): {
         viewport: Types_2.IViewport;
         image: Types_2.IImageData;
     };
@@ -218,7 +218,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     supportedInteractionTypes: InteractionTypes[];
     // (undocumented)
-    toolGroupUID: string;
+    toolGroupId: string;
     // (undocumented)
     static toolName: string;
 }
@@ -245,14 +245,14 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines: (data: any, targetUID: any) => string[];
+    _getTextLines: (data: any, targetId: any) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: BidirectionalAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -300,8 +300,8 @@ type CameraModifiedEventDetail = {
     previousCamera: ICamera
     camera: ICamera
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 // @public (undocumented)
@@ -327,7 +327,7 @@ export class CircleScissorsTool extends BaseTool {
         segmentationDataUID: string;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -636,11 +636,11 @@ type CPUImageData = {
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, uid?: string): Types_2.IImageVolume;
+function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
-function createNewSegmentationForToolGroup(toolGroupUID: string, options?: {
-    volumeUID?: string;
+function createNewSegmentationForToolGroup(toolGroupId: string, options?: {
+    volumeId?: string;
     scalarData?: Float32Array | Uint8Array;
     targetBuffer?: {
         type: 'Float32Array' | 'Uint8Array';
@@ -656,7 +656,7 @@ function createNewSegmentationForToolGroup(toolGroupUID: string, options?: {
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
 
 // @public (undocumented)
-function createToolGroup(toolGroupUID: string): IToolGroup | undefined;
+function createToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function createVOISynchronizer(synchronizerName: string): Synchronizer;
@@ -673,9 +673,9 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _applyDeltaShiftToViewportCamera(renderingEngine: Types_2.IRenderingEngine, annotation: any, delta: any): void;
     // (undocumented)
-    _areViewportUIDArraysEqual: (viewportUIDArrayOne: any, viewportUIDArrayTwo: any) => boolean;
+    _areViewportIdArraysEqual: (viewportIdArrayOne: any, viewportIdArrayTwo: any) => boolean;
     // (undocumented)
-    _autoPanViewportIfNecessary(viewportUID: string, renderingEngine: Types_2.IRenderingEngine): void;
+    _autoPanViewportIfNecessary(viewportId: string, renderingEngine: Types_2.IRenderingEngine): void;
     // (undocumented)
     cancel: () => void;
     // (undocumented)
@@ -697,13 +697,13 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    _getReferenceLineColor?: (viewportUID: string) => string;
+    _getReferenceLineColor?: (viewportId: string) => string;
     // (undocumented)
-    _getReferenceLineControllable?: (viewportUID: string) => boolean;
+    _getReferenceLineControllable?: (viewportId: string) => boolean;
     // (undocumented)
-    _getReferenceLineDraggableRotatable?: (viewportUID: string) => boolean;
+    _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
     // (undocumented)
-    _getReferenceLineSlabThicknessControlsOn?: (viewportUID: string) => boolean;
+    _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
     // (undocumented)
     _getRotationHandleNearImagePoint(viewport: any, annotation: any, canvasCoords: any, proximity: any): any;
     // (undocumented)
@@ -713,7 +713,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     init: (viewports: ViewportInputs) => void;
     // (undocumented)
-    initializeViewport: ({ renderingEngineUID, viewportUID, }: Types_2.IViewportUID) => {
+    initializeViewport: ({ renderingEngineId, viewportId, }: Types_2.IViewportId) => {
         normal: Types_2.Point3;
         point: Types_2.Point3;
     };
@@ -787,8 +787,8 @@ function deepmerge(target?: {}, source?: {}, optionsArgument?: any): any;
 const _default: {
     createToolGroup: typeof createToolGroup;
     destroy: typeof destroy_3;
-    destroyToolGroupByToolGroupUID: typeof destroyToolGroupByToolGroupUID;
-    getToolGroupByToolGroupUID: typeof getToolGroupByToolGroupUID;
+    destroyToolGroupByToolGroupId: typeof destroyToolGroupByToolGroupId;
+    getToolGroupByToolGroupId: typeof getToolGroupByToolGroupId;
     getToolGroup: typeof getToolGroup;
     getAllToolGroups: typeof getAllToolGroups;
 };
@@ -817,7 +817,7 @@ const _default_12: {
 const _default_13: {
     filterViewportsWithToolEnabled: typeof filterViewportsWithToolEnabled;
     filterViewportsWithFrameOfReferenceUID: typeof filterViewportsWithFrameOfReferenceUID;
-    getViewportUIDsWithToolToRender: typeof getViewportUIDsWithToolToRender;
+    getViewportIdsWithToolToRender: typeof getViewportIdsWithToolToRender;
 };
 
 // @public (undocumented)
@@ -858,7 +858,7 @@ const _default_17: {
     calibrateImageSpacing: typeof calibrateImageSpacing;
     transformPhysicalToIndex: typeof transformPhysicalToIndex;
     segmentation: typeof segmentation_2;
-    triggerAnnotationRenderForViewportUIDs: typeof triggerAnnotationRenderForViewportUIDs;
+    triggerAnnotationRenderForViewportIds: typeof triggerAnnotationRenderForViewportIds;
     pointInShapeCallback: typeof pointInShapeCallback;
     pointInSurroundingSphereCallback: typeof pointInSurroundingSphereCallback;
     getAnnotationNearPoint: typeof getAnnotationNearPoint;
@@ -959,7 +959,7 @@ function destroy_3(): void;
 function destroySynchronizerById(synchronizerId: string): void;
 
 // @public (undocumented)
-function destroyToolGroupByToolGroupUID(toolGroupUID: string): void;
+function destroyToolGroupByToolGroupId(toolGroupId: string): void;
 
 // @public (undocumented)
 function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void;
@@ -1022,8 +1022,8 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>
 // @public
 type ElementDisabledEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 // @public
@@ -1032,8 +1032,8 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>
 // @public
 type ElementEnabledEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 // @public (undocumented)
@@ -1058,7 +1058,7 @@ export class EllipticalRoiTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: Array<string>;
+        viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
         centerCanvas?: Array<number>;
@@ -1069,7 +1069,7 @@ export class EllipticalRoiTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines: (data: any, targetUID: any) => any[];
+    _getTextLines: (data: any, targetId: any) => any[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalRoiAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -1224,17 +1224,17 @@ type FrameOfReferenceSpecificAnnotations = {
 };
 
 // @public (undocumented)
-function getActiveSegmentationData(toolGroupUID: string): ToolGroupSpecificSegmentationData | undefined;
+function getActiveSegmentationData(toolGroupId: string): ToolGroupSpecificSegmentationData | undefined;
 
 // @public (undocumented)
-function getActiveSegmentationInfo(toolGroupUID: string): {
-    volumeUID: string;
+function getActiveSegmentationInfo(toolGroupId: string): {
+    volumeId: string;
     segmentationDataUID: string;
     activeSegmentIndex: number;
 };
 
 // @public (undocumented)
-function getActiveSegmentIndex(toolGroupUID: string): number | undefined;
+function getActiveSegmentIndex(toolGroupId: string): number | undefined;
 
 // @public (undocumented)
 function getActiveSegmentIndexForSegmentation(segmentationUID: string): number | undefined;
@@ -1279,7 +1279,7 @@ function getAnnotationsSelectedCount(): number;
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-function getColorForSegmentIndex(toolGroupUID: string, segmentationDataUID: string, segmentIndex: number): Color;
+function getColorForSegmentIndex(toolGroupId: string, segmentationDataUID: string, segmentIndex: number): Color;
 
 // @public (undocumented)
 function getColorLut(index: number): ColorLUT | undefined;
@@ -1312,28 +1312,28 @@ function getGlobalSegmentationDataByUID(segmentationUID: string): GlobalSegmenta
 function getGlobalSegmentationState(): GlobalSegmentationState | [];
 
 // @public (undocumented)
-function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeUID: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
+function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
 
 // @public (undocumented)
-function getRepresentationConfig(toolGroupUID: string, representationType: SegmentationRepresentations): RepresentationConfig;
+function getRepresentationConfig(toolGroupId: string, representationType: SegmentationRepresentations): RepresentationConfig;
 
 // @public (undocumented)
-function getSegmentationConfig(toolGroupUID: string): SegmentationConfig;
+function getSegmentationConfig(toolGroupId: string): SegmentationConfig;
 
 // @public (undocumented)
-function getSegmentationConfig_2(toolGroupUID: string): SegmentationConfig;
+function getSegmentationConfig_2(toolGroupId: string): SegmentationConfig;
 
 // @public (undocumented)
-function getSegmentationDataByUID(toolGroupUID: string, segmentationDataUID: string): ToolGroupSpecificSegmentationData | undefined;
+function getSegmentationDataByUID(toolGroupId: string, segmentationDataUID: string): ToolGroupSpecificSegmentationData | undefined;
 
 // @public (undocumented)
-function getSegmentationState(toolGroupUID: string): ToolGroupSpecificSegmentationState | [];
+function getSegmentationState(toolGroupId: string): ToolGroupSpecificSegmentationState | [];
 
 // @public (undocumented)
-function getSegmentationVisibility(toolGroupUID: string, segmentationDataUID: string): boolean | undefined;
+function getSegmentationVisibility(toolGroupId: string, segmentationDataUID: string): boolean | undefined;
 
 // @public (undocumented)
-function getSegmentIndexLocked(toolGroupUID: string, segmentIndex: number): boolean;
+function getSegmentIndexLocked(toolGroupId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number): boolean;
@@ -1358,16 +1358,16 @@ function getStyle(toolName?: string, annotation?: Record<string, unknown>): Sett
 function getSynchronizerById(synchronizerId: string): Synchronizer | void;
 
 // @public (undocumented)
-function getSynchronizers(renderingEngineUID: string, viewportUID: string): Array<Synchronizer>;
+function getSynchronizers(renderingEngineId: string, viewportId: string): Array<Synchronizer>;
 
 // @public (undocumented)
 function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): Types_2.Point2;
 
 // @public (undocumented)
-function getToolGroup(viewportUID: string, renderingEngineUID: string): IToolGroup | undefined;
+function getToolGroup(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroupByToolGroupUID(toolGroupUID: string): IToolGroup | undefined;
+function getToolGroupByToolGroupId(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroups(): string[];
@@ -1376,10 +1376,10 @@ function getToolGroups(): string[];
 function getToolGroupsWithSegmentation(segmentationUID: string): string[];
 
 // @public (undocumented)
-function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLElement): FrameOfReferenceSpecificAnnotationManager;
+function getViewportIdsWithToolToRender(element: HTMLElement, toolName: string, requireSameOrientation?: boolean): string[];
 
 // @public (undocumented)
-function getViewportUIDsWithToolToRender(element: HTMLElement, toolName: string, requireSameOrientation?: boolean): string[];
+function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLElement): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
 function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, topLeftWorld: Types_2.Point3, bottomRightWorld: Types_2.Point3): {
@@ -1389,9 +1389,9 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 
 // @public (undocumented)
 type GlobalSegmentationData = {
-    volumeUID: string;
+    volumeId: string;
     label: string;
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     referenceImageId?: string;
     activeSegmentIndex: number;
     segmentsLocked: Set<number>;
@@ -1481,9 +1481,9 @@ interface ICamera {
 interface IEnabledElement {
     FrameOfReferenceUID: string
     renderingEngine: IRenderingEngine
-    renderingEngineUID: string
+    renderingEngineId: string
     viewport: IStackViewport | IVolumeViewport
-    viewportUID: string
+    viewportId: string
 }
 
 // @public
@@ -1581,7 +1581,7 @@ interface IImageVolume {
     metadata: Metadata
     numVoxels: number
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: any
     scaling?: {
         PET?: {
@@ -1593,7 +1593,7 @@ interface IImageVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    readonly uid: string
+    readonly volumeId: string
     vtkOpenGLTexture: any
 }
 
@@ -1669,8 +1669,8 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>
 // @public
 type ImageRenderedEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
     suppressEvents?: boolean
 }
 
@@ -1681,8 +1681,8 @@ CustomEvent_2<ImageSpacingCalibratedEventDetail>
 // @public
 type ImageSpacingCalibratedEventDetail = {
     element: HTMLElement
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
     imageId: string
     rowScale: number
     columnScale: number
@@ -1729,7 +1729,7 @@ interface IRenderingEngine {
     // (undocumented)
     destroy(): void
     // (undocumented)
-    disableElement(viewportUID: string): void
+    disableElement(viewportId: string): void
     // (undocumented)
     enableElement(viewportInputEntry: PublicViewportInput): void
     // (undocumented)
@@ -1740,13 +1740,15 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport
+    getViewport(id: string): IStackViewport | IVolumeViewport
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>
     // (undocumented)
     hasBeenDestroyed: boolean
+    // (undocumented)
+    id: string
     // (undocumented)
     offScreenCanvasContainer: any
     // (undocumented)
@@ -1756,15 +1758,13 @@ interface IRenderingEngine {
     // (undocumented)
     renderFrameOfReference(FrameOfReferenceUID: string): void
     // (undocumented)
-    renderViewport(viewportUID: string): void
+    renderViewport(viewportId: string): void
     // (undocumented)
-    renderViewports(viewportUIDs: Array<string>): void
+    renderViewports(viewportIds: Array<string>): void
     // (undocumented)
     resize(): void
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void
-    // (undocumented)
-    uid: string
 }
 
 // @public (undocumented)
@@ -1783,8 +1783,8 @@ interface IStackViewport extends IViewport {
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement
         element: HTMLElement
-        viewportUID: string
-        renderingEngineUID: string
+        viewportId: string
+        renderingEngineId: string
     }
     getCamera(): ICamera
     getCurrentImageId: () => string
@@ -1854,7 +1854,7 @@ interface IToolGroup {
     };
     // (undocumented)
     addViewport: {
-        (viewportUID: string, renderingEngineUID?: string): void;
+        (viewportId: string, renderingEngineId?: string): void;
     };
     // (undocumented)
     getActivePrimaryMouseButtonTool: {
@@ -1869,10 +1869,12 @@ interface IToolGroup {
         (toolName: string): ToolOptionsType;
     };
     // (undocumented)
-    getViewportUIDs: () => string[];
+    getViewportIds: () => string[];
+    // (undocumented)
+    id: string;
     // (undocumented)
     removeViewports: {
-        (renderingEngineUID: string, viewportUID?: string): void;
+        (renderingEngineId: string, viewportId?: string): void;
     };
     // (undocumented)
     setToolActive: {
@@ -1899,9 +1901,7 @@ interface IToolGroup {
     // (undocumented)
     toolOptions: Record<string, any>;
     // (undocumented)
-    uid: string;
-    // (undocumented)
-    viewportsInfo: Array<Types_2.IViewportUID>;
+    viewportsInfo: Array<Types_2.IViewportId>;
 }
 
 // @public
@@ -1923,10 +1923,11 @@ interface IViewport {
     getFrameOfReferenceUID: () => string
     getRenderer(): void
     getRenderingEngine(): any
+    id: string
     options: ViewportInputOptions
     removeAllActors(): void
     render(): void
-    renderingEngineUID: string
+    renderingEngineId: string
     reset(immediate: boolean): void
     setActors(actors: Array<ActorEntry>): void
     setCamera(cameraInterface: ICamera): void
@@ -1937,16 +1938,15 @@ interface IViewport {
     sx: number
     sy: number
     type: ViewportType
-    uid: string
     worldToCanvas: (worldPos: Point3) => Point2
 }
 
 // @public
-interface IViewportUID {
+interface IViewportId {
     // (undocumented)
-    renderingEngineUID: string
+    renderingEngineId: string
     // (undocumented)
-    viewportUID: string
+    viewportId: string
 }
 
 // @public
@@ -1956,7 +1956,7 @@ interface IVolume {
     imageData?: vtkImageData
     metadata: Metadata
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: Float32Array | Uint8Array
     scaling?: {
         PET?: {
@@ -1970,28 +1970,28 @@ interface IVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    uid: string
+    volumeId: string
 }
 
 // @public
 interface IVolumeInput {
     // (undocumented)
     actorUID?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     blendMode?: string
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     callback?: VolumeInputCallback
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     slabThickness?: number
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     visibility?: boolean
-    // actorUID for segmentations, since two segmentations with the same volumeUID
+    // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    volumeUID: string
+    volumeId: string
 }
 
 // @public
@@ -2034,8 +2034,8 @@ interface IVolumeViewport extends IViewport {
 // @public (undocumented)
 type KeyDownEventDetail = {
     element: HTMLElement;
-    viewportUID: string;
-    renderingEngineUID: string;
+    viewportId: string;
+    renderingEngineId: string;
     key: string;
     keyCode: number;
 };
@@ -2080,14 +2080,14 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines(data: any, targetUID: any): string[];
+    _getTextLines(data: any, targetId: any): string[];
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: LengthAnnotation, handle: ToolHandle, interactionType?: string): void;
     // (undocumented)
@@ -2286,8 +2286,8 @@ type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 type NormalizedMouseEventDetail = {
     event: Record<string, unknown> | MouseEvent;
     eventName: string;
-    renderingEngineUID: string;
-    viewportUID: string;
+    renderingEngineId: string;
+    viewportId: string;
     camera: Record<string, unknown>;
     element: HTMLElement;
 };
@@ -2366,17 +2366,17 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
     } | null;
     // (undocumented)
     eventDispatchDetail: {
-        viewportUID: string;
-        renderingEngineUID: string;
+        viewportId: string;
+        renderingEngineId: string;
     };
     // (undocumented)
     getHandleNearImagePoint(element: HTMLElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    _getTextLines(data: any, targetUID: any): any[];
+    _getTextLines(data: any, targetId: any): any[];
     // (undocumented)
     _getValueForModality(value: any, imageVolume: any, modality: any): {};
     // (undocumented)
@@ -2417,7 +2417,7 @@ type PublicToolProps = SharedToolProp & {
 // @public
 type PublicViewportInput = {
     element: HTMLElement
-    viewportUID: string
+    viewportId: string
     type: ViewportType
     defaultOptions: ViewportInputOptions
 }
@@ -2441,7 +2441,7 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
             FrameOfReferenceUID: string;
             referencedImageId: any;
             toolName: string;
-            volumeUID: any;
+            volumeId: any;
             spacingInNormal: number;
         };
         data: {
@@ -2471,7 +2471,7 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
         hasMoved?: boolean;
@@ -2504,7 +2504,7 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
             FrameOfReferenceUID: string;
             referencedImageId: any;
             toolName: string;
-            volumeUID: any;
+            volumeId: any;
         };
         data: {
             label: string;
@@ -2523,7 +2523,7 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
         hasMoved?: boolean;
@@ -2560,7 +2560,7 @@ export class RectangleRoiTool extends AnnotationTool {
     // (undocumented)
     editData: {
         annotation: any;
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
         newAnnotation?: boolean;
@@ -2574,7 +2574,7 @@ export class RectangleRoiTool extends AnnotationTool {
         height: number;
     };
     // (undocumented)
-    _getTextLines: (data: any, targetUID: string) => any[];
+    _getTextLines: (data: any, targetId: string) => any[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleRoiAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -2616,7 +2616,7 @@ export class RectangleScissorsTool extends BaseTool {
         segmentIndex: number;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -2648,10 +2648,10 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 function removeAnnotation(element: HTMLElement, annotationUID: string): void;
 
 // @public (undocumented)
-function removeSegmentationData(toolGroupUID: string, segmentationDataUID: string): void;
+function removeSegmentationData(toolGroupId: string, segmentationDataUID: string): void;
 
 // @public (undocumented)
-function removeSegmentationsFromToolGroup(toolGroupUID: string, segmentationDataUIDs?: string[] | undefined): void;
+function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationDataUIDs?: string[] | undefined): void;
 
 // @public (undocumented)
 export function removeTool(ToolClass: any): void;
@@ -2678,7 +2678,7 @@ type ScalingParameters = {
 }
 
 // @public (undocumented)
-function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeUID: string, invert?: boolean): void;
+function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeId: string, invert?: boolean): void;
 
 declare namespace segmentation {
     export {
@@ -2744,7 +2744,7 @@ declare namespace segmentationConfig {
 
 // @public (undocumented)
 type SegmentationDataModifiedEventDetail = {
-    toolGroupUID: string;
+    toolGroupId: string;
     segmentationDataUID: string;
 };
 
@@ -2759,9 +2759,9 @@ export class SegmentationDisplayTool extends BaseTool {
     // (undocumented)
     enableCallback(): void;
     // (undocumented)
-    _getSegmentationConfig(toolGroupUID: string): SegmentationConfig;
+    _getSegmentationConfig(toolGroupId: string): SegmentationConfig;
     // (undocumented)
-    renderSegmentation: (toolGroupUID: string) => void;
+    renderSegmentation: (toolGroupId: string) => void;
     // (undocumented)
     static toolName: string;
 }
@@ -2776,8 +2776,8 @@ type SegmentationGlobalStateModifiedEventType = Types_2.CustomEventType<Segmenta
 
 // @public (undocumented)
 type SegmentationRenderedEventDetail = {
-    viewportUID: string;
-    toolGroupUID: string;
+    viewportId: string;
+    toolGroupId: string;
 };
 
 // @public (undocumented)
@@ -2788,7 +2788,7 @@ type SegmentationRepresentation = LabelmapRepresentation;
 
 // @public (undocumented)
 type SegmentationStateModifiedEventDetail = {
-    toolGroupUID: string;
+    toolGroupId: string;
 };
 
 // @public (undocumented)
@@ -2835,13 +2835,13 @@ declare namespace selection {
 }
 
 // @public (undocumented)
-function setActiveSegmentation(toolGroupUID: string, segmentationDataUID: string): void;
+function setActiveSegmentation(toolGroupId: string, segmentationDataUID: string): void;
 
 // @public (undocumented)
-function setActiveSegmentationData(toolGroupUID: string, segmentationDataUID: string, suppressEvents?: boolean): void;
+function setActiveSegmentationData(toolGroupId: string, segmentationDataUID: string, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setActiveSegmentIndex(toolGroupUID: string, segmentIndex: number): void;
+function setActiveSegmentIndex(toolGroupId: string, segmentIndex: number): void;
 
 // @public (undocumented)
 function setActiveSegmentIndexForSegmentation(segmentationUID: string, segmentIndex: number): void;
@@ -2874,19 +2874,19 @@ function setGlobalSegmentationConfig_2(segmentationConfig: SegmentationConfig): 
 function setGlobalStyle(style: Record<string, unknown>): boolean;
 
 // @public (undocumented)
-function setRepresentationConfig(toolGroupUID: string, representationType: SegmentationRepresentations, representationConfig: RepresentationConfig): void;
+function setRepresentationConfig(toolGroupId: string, representationType: SegmentationRepresentations, representationConfig: RepresentationConfig): void;
 
 // @public (undocumented)
-function setSegmentationConfig(toolGroupUID: string, config: SegmentationConfig, suppressEvents?: boolean): void;
+function setSegmentationConfig(toolGroupId: string, config: SegmentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setSegmentationConfig_2(toolGroupUID: string, segmentationConfig: SegmentationConfig): void;
+function setSegmentationConfig_2(toolGroupId: string, segmentationConfig: SegmentationConfig): void;
 
 // @public (undocumented)
-function setSegmentationVisibility(toolGroupUID: string, segmentationDataUID: string, visibility: boolean): void;
+function setSegmentationVisibility(toolGroupId: string, segmentationDataUID: string, visibility: boolean): void;
 
 // @public (undocumented)
-function setSegmentIndexLocked(toolGroupUID: string, segmentIndex: number, locked?: boolean): void;
+function setSegmentIndexLocked(toolGroupId: string, segmentIndex: number, locked?: boolean): void;
 
 // @public (undocumented)
 function setSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number, locked?: boolean): void;
@@ -2921,9 +2921,9 @@ export class SphereScissorsTool extends BaseTool {
         segmentIndex: number;
         segmentsLocked: number[];
         segmentationDataUID: string;
-        toolGroupUID: string;
+        toolGroupId: string;
         segmentColor: [number, number, number, number];
-        viewportUIDsToRender: string[];
+        viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
         newAnnotation?: boolean;
@@ -2951,8 +2951,8 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>
 type StackNewImageEventDetail = {
     image: IImage
     imageId: string
-    viewportUID: string
-    renderingEngineUID: string
+    viewportId: string
+    renderingEngineId: string
 }
 
 // @public (undocumented)
@@ -3061,29 +3061,29 @@ type SVGPoint_2 = {
 export class Synchronizer {
     constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler);
     // (undocumented)
-    add(viewportInfo: Types_2.IViewportUID): void;
+    add(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
-    addSource(viewportInfo: Types_2.IViewportUID): void;
+    addSource(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
-    addTarget(viewportInfo: Types_2.IViewportUID): void;
+    addTarget(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
     destroy(): void;
     // (undocumented)
-    getSourceViewports(): Array<Types_2.IViewportUID>;
+    getSourceViewports(): Array<Types_2.IViewportId>;
     // (undocumented)
-    getTargetViewports(): Array<Types_2.IViewportUID>;
+    getTargetViewports(): Array<Types_2.IViewportId>;
     // (undocumented)
-    hasSourceViewport(renderingEngineUID: string, viewportUID: string): boolean;
+    hasSourceViewport(renderingEngineId: string, viewportId: string): boolean;
     // (undocumented)
     id: string;
     // (undocumented)
     isDisabled(): boolean;
     // (undocumented)
-    remove(viewportInfo: Types_2.IViewportUID): void;
+    remove(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
-    removeSource(viewportInfo: Types_2.IViewportUID): void;
+    removeSource(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
-    removeTarget(viewportInfo: Types_2.IViewportUID): void;
+    removeTarget(viewportInfo: Types_2.IViewportId): void;
 }
 
 declare namespace SynchronizerManager {
@@ -3119,10 +3119,10 @@ type TextBoxHandle = {
 };
 
 // @public (undocumented)
-function thresholdVolumeByRange(toolGroupUID: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRangeOptions): Types_2.IImageVolume;
+function thresholdVolumeByRange(toolGroupId: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRangeOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
-function thresholdVolumeByRoiStats(toolGroupUID: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRoiStatsOptions): void;
+function thresholdVolumeByRoiStats(toolGroupId: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRoiStatsOptions): void;
 
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
@@ -3135,8 +3135,8 @@ declare namespace ToolGroupManager {
         _default as default,
         createToolGroup,
         destroy_3 as destroy,
-        destroyToolGroupByToolGroupUID,
-        getToolGroupByToolGroupUID,
+        destroyToolGroupByToolGroupId,
+        getToolGroupByToolGroupId,
         getToolGroup,
         getAllToolGroups
     }
@@ -3145,7 +3145,7 @@ export { ToolGroupManager }
 
 // @public (undocumented)
 type ToolGroupSpecificSegmentationData = {
-    volumeUID: string;
+    volumeId: string;
     segmentationDataUID: string;
     active: boolean;
     segmentsHidden: Set<number>;
@@ -3182,7 +3182,7 @@ type TransformMatrix2D = [number, number, number, number, number, number]
 function transformPhysicalToIndex(imageData: any, physicalPoint: any): any;
 
 // @public (undocumented)
-function triggerAnnotationRenderForViewportUIDs(renderingEngine: Types_2.IRenderingEngine, viewportUIDsToRender: string[]): void;
+function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
 
 // @public
 function triggerEvent(
@@ -3204,7 +3204,7 @@ detail: unknown = null
 }
 
 // @public (undocumented)
-function triggerSegmentationDataModified(toolGroupUID: string, segmentationDataUID: string): void;
+function triggerSegmentationDataModified(toolGroupId: string, segmentationDataUID: string): void;
 
 declare namespace triggerSegmentationEvents {
     export {
@@ -3218,7 +3218,7 @@ declare namespace triggerSegmentationEvents {
 function triggerSegmentationGlobalStateModified(segmentationUID?: string): void;
 
 // @public (undocumented)
-function triggerSegmentationStateModified(toolGroupUID: string): void;
+function triggerSegmentationStateModified(toolGroupId: string): void;
 
 declare namespace Types {
     export {
@@ -3280,7 +3280,7 @@ declare namespace utilities {
         triggerEvent,
         calibrateImageSpacing,
         segmentation_2 as segmentation,
-        triggerAnnotationRenderForViewportUIDs,
+        triggerAnnotationRenderForViewportIds,
         pointInShapeCallback,
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
@@ -3296,7 +3296,7 @@ declare namespace viewportFilters {
         _default_13 as default,
         filterViewportsWithToolEnabled,
         filterViewportsWithFrameOfReferenceUID,
-        getViewportUIDsWithToolToRender
+        getViewportIdsWithToolToRender
     }
 }
 
@@ -3318,8 +3318,8 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>
 
 // @public
 type VoiModifiedEventDetail = {
-    viewportUID: string
-    volumeUID: string
+    viewportId: string
+    volumeId: string
     range: VOIRange
 }
 
@@ -3353,7 +3353,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 // @public
 type VolumeInputCallback = (params: {
     volumeActor: VolumeActor
-    volumeUID: string
+    volumeId: string
 }) => unknown
 
 // @public
@@ -3402,14 +3402,14 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     _dragCallback(evt: any): void;
     // (undocumented)
-    _getImageDynamicRange: (volumeUID: string) => number;
+    _getImageDynamicRange: (volumeId: string) => number;
     // (undocumented)
-    _getMultiplyerFromDynamicRange(volumeUID: any): number;
+    _getMultiplyerFromDynamicRange(volumeId: any): number;
     // (undocumented)
-    getNewRange({ deltaPointsCanvas, useDynamicRange, volumeUID, lower, upper }: {
+    getNewRange({ deltaPointsCanvas, useDynamicRange, volumeId, lower, upper }: {
         deltaPointsCanvas: any;
         useDynamicRange: any;
-        volumeUID: any;
+        volumeId: any;
         lower: any;
         upper: any;
     }): {

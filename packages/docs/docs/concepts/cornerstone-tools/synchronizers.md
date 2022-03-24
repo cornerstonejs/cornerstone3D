@@ -46,7 +46,7 @@ const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
 )
 
 // Add viewports to synchronize
-const firstViewport = { renderingEngineUID, sceneUID, viewportUID }
+const firstViewport = { renderingEngineId, sceneUID, viewportId }
 const secondViewport = {
   /* */
 }
@@ -63,7 +63,7 @@ It synchronize the camera properties including the zoom, pan and scrolling betwe
 ```js
 const ctAxial = {
   sceneUID: SCENE_IDS.CT,
-  viewportUID: VIEWPORT_IDS.CT.AXIAL,
+  viewportId: VIEWPORT_IDS.CT.AXIAL,
   type: ViewportType.ORTHOGRAPHIC,
   canvas: canvasContainers.get(0),
   defaultOptions: {
@@ -73,7 +73,7 @@ const ctAxial = {
 
 const ptAxial = {
   sceneUID: SCENE_IDS.PT,
-  viewportUID: VIEWPORT_IDS.PT.AXIAL,
+  viewportId: VIEWPORT_IDS.PT.AXIAL,
   type: ViewportType.ORTHOGRAPHIC,
   canvas: canvasContainers.get(3),
   defaultOptions: {
@@ -85,8 +85,8 @@ const ptAxial = {
 const axialSync = createCameraPositionSynchronizer('axialSync')
 
 [ctAxial, ptAxial].forEach(vp => {
-  const { renderingEngineUID, sceneUID, viewportUID } = vp;
-  axialSync.add({ renderingEngineUID, sceneUID, viewportUID });
+  const { renderingEngineId, sceneUID, viewportId } = vp;
+  axialSync.add({ renderingEngineId, sceneUID, viewportId });
 });
 
 ```
@@ -101,13 +101,13 @@ It synchronizes the VOI between the viewports. For instance, if in the 3x3 layou
 const ctWLSync = createVOISynchronizer('ctWLSync')
 
 ctViewports.forEach(viewport => {
-  const { renderingEngineUID, sceneUID, viewportUID } = viewport;
-  ctWLSync.addSource({ renderingEngineUID, sceneUID, viewportUID });
+  const { renderingEngineId, sceneUID, viewportId } = viewport;
+  ctWLSync.addSource({ renderingEngineId, sceneUID, viewportId });
 });
 
 fusionViewports.forEach(viewport => {
-  const { renderingEngineUID, sceneUID, viewportUID } = viewport;
-  ctWLSync.addTarget({ renderingEngineUID, sceneUID, viewportUID });
+  const { renderingEngineId, sceneUID, viewportId } = viewport;
+  ctWLSync.addTarget({ renderingEngineId, sceneUID, viewportId });
 });
 ```
 

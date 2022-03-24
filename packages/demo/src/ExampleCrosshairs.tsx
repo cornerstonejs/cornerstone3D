@@ -27,9 +27,9 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ctVolumeUID,
-  ptVolumeUID,
+  renderingEngineId,
+  ctVolumeId,
+  ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
   prostateVolumeUID,
@@ -106,7 +106,7 @@ class CrosshairsExample extends Component {
     const ctImageIds = await this.ctImageIds
     const prostateImageIds = await this.prostateImageIds
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
@@ -114,7 +114,7 @@ class CrosshairsExample extends Component {
     const viewportInput = [
       // CT volume axial
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -123,7 +123,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.SAGITTAL,
+        viewportId: VIEWPORT_IDS.CT.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -132,7 +132,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -141,7 +141,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PROSTATE.AXIAL,
+        viewportId: VIEWPORT_IDS.PROSTATE.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(3),
         defaultOptions: {
@@ -150,7 +150,7 @@ class CrosshairsExample extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PROSTATE.SAGITTAL,
+        viewportId: VIEWPORT_IDS.PROSTATE.SAGITTAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(4),
         defaultOptions: {
@@ -163,15 +163,15 @@ class CrosshairsExample extends Component {
     renderingEngine.setViewports(viewportInput)
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineUID)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineUID)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
     prostateSceneToolGroup.addViewport(
-      renderingEngineUID,
+      renderingEngineId,
       VIEWPORT_IDS.PROSTATE.AXIAL
     )
     prostateSceneToolGroup.addViewport(
-      renderingEngineUID,
+      renderingEngineId,
       VIEWPORT_IDS.PROSTATE.SAGITTAL
     )
 
@@ -192,7 +192,7 @@ class CrosshairsExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctImageIds,
     })
     const prostateVolume = await volumeLoader.createAndCacheVolume(
@@ -209,7 +209,7 @@ class CrosshairsExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: ctVolumeUID,
+          volumeId: ctVolumeId,
           callback: setCTWWWC,
           blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
@@ -220,7 +220,7 @@ class CrosshairsExample extends Component {
       renderingEngine,
       [
         {
-          volumeUID: prostateVolumeUID,
+          volumeId: prostateVolumeUID,
           blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         },
       ],

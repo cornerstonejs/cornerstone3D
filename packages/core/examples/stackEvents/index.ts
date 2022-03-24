@@ -15,8 +15,8 @@ import { vec3 } from 'gl-matrix'
 const { ViewportType } = Enums
 
 // ======== Constants ======= //
-const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_STACK'
+const renderingEngineId = 'myRenderingEngine'
+const viewportId = 'CT_STACK'
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -81,11 +81,11 @@ element.addEventListener(
   STACK_NEW_IMAGE,
   (evt: Types.EventTypes.StackNewImageEvent) => {
     // Remove the image since then we serialize a bunch of pixelData to the screen.
-    const { imageId, renderingEngineUID, viewportUID } = evt.detail
+    const { imageId, renderingEngineId, viewportId } = evt.detail
     const detail = {
       imageId,
-      renderingEngineUID,
-      viewportUID,
+      renderingEngineId,
+      viewportId,
       image: 'cornerstoneImageObject',
     }
 
@@ -96,12 +96,10 @@ element.addEventListener(
 
 addButtonToToolbar('Set VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Set a range to highlight bones
   viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } })
@@ -111,12 +109,10 @@ addButtonToToolbar('Set VOI Range', () => {
 
 addButtonToToolbar('Next Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Get the current index of the image displayed
   const currentImageIdIndex = viewport.getCurrentImageIdIndex()
@@ -133,12 +129,10 @@ addButtonToToolbar('Next Image', () => {
 
 addButtonToToolbar('Previous Image', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Get the current index of the image displayed
   const currentImageIdIndex = viewport.getCurrentImageIdIndex()
@@ -154,12 +148,10 @@ addButtonToToolbar('Previous Image', () => {
 
 addButtonToToolbar('Apply Random Zoom And Pan', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Reset the camera so that we can set some pan and zoom relative to the
   // defaults for this demo. Note that changes could be relative instead.
@@ -214,12 +206,10 @@ addButtonToToolbar('Apply Random Zoom And Pan', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Resets the viewport's camera
   viewport.resetCamera()
@@ -246,12 +236,12 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
 
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.STACK,
     element,
     defaultOptions: {
@@ -262,9 +252,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput)
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]]

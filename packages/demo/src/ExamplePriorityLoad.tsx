@@ -21,9 +21,9 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ptVolumeUID,
-  ctVolumeUID,
+  renderingEngineId,
+  ptVolumeId,
+  ctVolumeId,
   colormaps,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -139,10 +139,10 @@ class PriorityLoadExample extends Component {
       ptTypesSceneToolGroup,
     } = initToolGroups())
 
-    this.ctVolumeUID = ctVolumeUID
-    this.ptVolumeUID = ptVolumeUID
+    this.ctVolumeId = ctVolumeId
+    this.ptVolumeId = ptVolumeId
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
@@ -172,10 +172,10 @@ class PriorityLoadExample extends Component {
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+    const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptImageIds,
     })
-    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
     })
 
@@ -219,13 +219,13 @@ class PriorityLoadExample extends Component {
 
     for (let i = 0; i < ctPetInterleaved.length; i++) {
       const { imageId } = ctPetInterleaved[i]
-      const additionalDetails = { volumeUID: '' }
+      const additionalDetails = { volumeId: '' }
 
       const ctRequest = ctRequests.filter((req) => req.imageId === imageId)
 
       // if ct request
       if (ctRequest.length) {
-        additionalDetails.volumeUID = ctVolumeUID
+        additionalDetails.volumeId = ctVolumeId
         const { callLoadImage, imageId, imageIdIndex, options } = ctRequest[0]
         requests.push({
           callLoadImage: callLoadImage.bind(
@@ -244,7 +244,7 @@ class PriorityLoadExample extends Component {
 
       // if pet request
       if (ptRequest.length) {
-        additionalDetails.volumeUID = ptVolumeUID
+        additionalDetails.volumeId = ptVolumeId
         const { callLoadImage, imageId, imageIdIndex, options } = ptRequest[0]
         requests.push({
           callLoadImage: callLoadImage.bind(
@@ -274,8 +274,8 @@ class PriorityLoadExample extends Component {
 
     ptCtFusion.setVolumes(
       renderingEngine,
-      ctVolumeUID,
-      ptVolumeUID,
+      ctVolumeId,
+      ptVolumeId,
       colormaps[this.state.petColorMapIndex]
     )
 
@@ -324,28 +324,28 @@ class PriorityLoadExample extends Component {
 
         ptCtFusion.setVolumes(
           renderingEngine,
-          ctVolumeUID,
-          ptVolumeUID,
+          ctVolumeId,
+          ptVolumeId,
           colormaps[this.state.petColorMapIndex]
         )
       } else if (layout === 'ObliqueCT') {
         obliqueCT.setLayout(renderingEngine, this._elementNodes, {
           ctObliqueToolGroup,
         })
-        obliqueCT.setVolumes(renderingEngine, ctVolumeUID)
+        obliqueCT.setVolumes(renderingEngine, ctVolumeId)
       } else if (layout === 'CTVR') {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._elementNodes, {
           ctSceneToolGroup,
           ctVRSceneToolGroup,
         })
-        fourUpCT.setVolumes(renderingEngine, ctVolumeUID)
+        fourUpCT.setVolumes(renderingEngine, ctVolumeId)
       } else if (layout === 'PetTypes') {
         // petTypes
         petTypes.setLayout(renderingEngine, this._elementNodes, {
           ptTypesSceneToolGroup,
         })
-        petTypes.setVolumes(renderingEngine, ptVolumeUID)
+        petTypes.setVolumes(renderingEngine, ptVolumeId)
       } else {
         throw new Error('Unrecognised layout index')
       }
@@ -411,7 +411,7 @@ class PriorityLoadExample extends Component {
   swapPetTransferFunction() {
     const renderingEngine = this.renderingEngine
 
-    const volumeActor = petCTScene.getVolumeActor(ptVolumeUID)
+    const volumeActor = petCTScene.getVolumeActor(ptVolumeId)
 
     let petColorMapIndex = this.state.petColorMapIndex
 

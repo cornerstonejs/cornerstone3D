@@ -1,9 +1,6 @@
-import {
-  eventTarget,
-  getRenderingEngine,
-} from '@cornerstonejs/core'
+import { eventTarget, getRenderingEngine } from '@cornerstonejs/core'
 import Events from '../enums/Events'
-import triggerAnnotationRenderForViewportUIDs from '../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds'
 import { AnnotationModifiedEventType } from '../types/EventTypes'
 
 /**
@@ -19,9 +16,9 @@ import { AnnotationModifiedEventType } from '../types/EventTypes'
  * no svg update happens since the attributes for handles are the same)
  */
 const onAnnotationModified = function (evt: AnnotationModifiedEventType) {
-  const { viewportUID, renderingEngineUID } = evt.detail
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
-  triggerAnnotationRenderForViewportUIDs(renderingEngine, [viewportUID])
+  const { viewportId, renderingEngineId } = evt.detail
+  const renderingEngine = getRenderingEngine(renderingEngineId)
+  triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId])
 }
 
 const enable = function () {

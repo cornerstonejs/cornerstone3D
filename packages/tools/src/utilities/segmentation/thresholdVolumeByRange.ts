@@ -36,14 +36,14 @@ export type AnnotationForThresholding = {
  * Given an array of rectangle annotation, and a segmentation and referenceVolumes:
  * It fills the segmentation at SegmentIndex=1 based on a range of thresholds of the referenceVolumes
  * inside the drawn annotations.
- * @param toolGroupUID - - The toolGroupUID of the tool that is performing the operation
+ * @param toolGroupId - - The toolGroupId of the tool that is performing the operation
  * @param annotations - Array of rectangle annotations
  * @param segmentationData - - The segmentation data to be modified
  * @param segmentation - segmentation volume
  * @param options - Options for thresholding
  */
 function thresholdVolumeByRange(
-  toolGroupUID: string,
+  toolGroupId: string,
   annotations: AnnotationForThresholding[],
   referenceVolumes: Types.IImageVolume[],
   segmentationData: ToolGroupSpecificSegmentationData,
@@ -54,15 +54,15 @@ function thresholdVolumeByRange(
   }
 
   const globalState = SegmentationState.getGlobalSegmentationDataByUID(
-    segmentationData.volumeUID
+    segmentationData.volumeId
   )
 
   if (!globalState) {
     throw new Error('No Segmentation Found')
   }
 
-  const { volumeUID } = globalState
-  const segmentation = cache.getVolume(volumeUID)
+  const { volumeId } = globalState
+  const segmentation = cache.getVolume(volumeId)
 
   const { segmentationDataUID } = segmentationData
 
@@ -122,7 +122,7 @@ function thresholdVolumeByRange(
     pointInShapeCallback(segmentationImageData, () => true, callback, boundsIJK)
   })
 
-  triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
+  triggerSegmentationDataModified(toolGroupId, segmentationDataUID)
 
   return segmentation
 }

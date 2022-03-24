@@ -18,13 +18,12 @@ import {
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 import config from './config/default'
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
-import { renderingEngineUID, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
 
 const STACK = 'stack'
 
@@ -96,14 +95,13 @@ class OneStackExampleCPU extends Component {
   async componentDidMount() {
     await csRenderInit()
     csTools3d.init()
-    registerWebImageLoader(cs)
     ;({ stackCTViewportToolGroup, stackPTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise
     const ptStackImageIds = await this.ptStackImageIdsPromise
     const dxStackImageIds = await this.dxStackImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     const colorImageIds = config.colorImages.imageIds
 
@@ -118,7 +116,7 @@ class OneStackExampleCPU extends Component {
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.STACK.CT,
+        viewportId: VIEWPORT_IDS.STACK.CT,
         type: ViewportType.STACK,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -131,7 +129,7 @@ class OneStackExampleCPU extends Component {
 
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
-      renderingEngineUID
+      renderingEngineId
     )
 
     addToolsToToolGroups({
@@ -313,16 +311,16 @@ class OneStackExampleCPU extends Component {
   switchStack = (evt) => {
     const stackName = evt.target.value
 
-    stackCTViewportToolGroup.removeViewports(renderingEngineUID)
-    stackPTViewportToolGroup.removeViewports(renderingEngineUID)
+    stackCTViewportToolGroup.removeViewports(renderingEngineId)
+    stackPTViewportToolGroup.removeViewports(renderingEngineId)
 
     let activeToolGroup
     if (stackName === 'pt') {
       activeToolGroup = stackPTViewportToolGroup
-      activeToolGroup.addViewport(VIEWPORT_IDS.STACK.CT, renderingEngineUID)
+      activeToolGroup.addViewport(VIEWPORT_IDS.STACK.CT, renderingEngineId)
     } else {
       activeToolGroup = stackCTViewportToolGroup
-      activeToolGroup.addViewport(VIEWPORT_IDS.STACK.CT, renderingEngineUID)
+      activeToolGroup.addViewport(VIEWPORT_IDS.STACK.CT, renderingEngineId)
     }
 
     const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)

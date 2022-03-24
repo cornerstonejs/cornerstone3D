@@ -19,17 +19,17 @@ import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
-const renderingEngineUID = 'myRenderingEngine'
-const viewportUID = 'CT_SAGITTAL_STACK'
+const renderingEngineId = 'myRenderingEngine'
+const viewportId = 'CT_SAGITTAL_STACK'
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
-const ctVolumeUID = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeUID with loader id + volume id
+const ctVolumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
 
 // Define a unique id for the volume
-const ptVolumeName = 'PT_VOLUME_UID'
-const ptVolumeUID = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const ptVolumeName = 'PT_VOLUME_ID'
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -51,15 +51,15 @@ content.appendChild(element)
 // Buttons
 addButtonToToolbar('Set CT VOI Range', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the stack viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Get the volume actor from the viewport
-  const actor = viewport.getActor(ctVolumeUID)
+  const actor = viewport.getActor(ctVolumeId)
 
   // Set the mapping range of the actor to a range to highlight bones
   actor.volumeActor
@@ -72,11 +72,11 @@ addButtonToToolbar('Set CT VOI Range', () => {
 
 addButtonToToolbar('Reset Viewport', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Resets the viewport's camera
@@ -90,22 +90,22 @@ let fused = false
 
 addButtonToToolbar('toggle PET', () => {
   // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineUID)
+  const renderingEngine = getRenderingEngine(renderingEngineId)
 
   // Get the volume viewport
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
   if (fused) {
     // Removes the PT actor from the scene
-    viewport.removeVolumeActors([ptVolumeUID], true)
+    viewport.removeVolumeActors([ptVolumeId], true)
 
     fused = false
   } else {
     // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
     // If it was in a different frame of reference, you would need to register it first.
     viewport.addVolumes(
-      [{ volumeUID: ptVolumeUID, callback: setPetColorMapTransferFunction }],
+      [{ volumeId: ptVolumeId, callback: setPetColorMapTransferFunction }],
       true
     )
 
@@ -127,11 +127,11 @@ addDropdownToToolbar(
   },
   (selectedValue) => {
     // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineUID)
+    const renderingEngine = getRenderingEngine(renderingEngineId)
 
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportUID)
+      renderingEngine.getViewport(viewportId)
     )
 
     // TODO -> Maybe we should rename sliceNormal to viewPlaneNormal everywhere?
@@ -204,11 +204,11 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -221,11 +221,11 @@ async function run() {
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportUID)
+    renderingEngine.getViewport(viewportId)
   )
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   })
 
@@ -233,7 +233,7 @@ async function run() {
   ctVolume.load()
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeUID: ctVolumeUID }])
+  viewport.setVolumes([{ volumeId: ctVolumeId }])
 
   // Render the image
   renderingEngine.render()
@@ -241,7 +241,7 @@ async function run() {
   // Load the PT in the background as we know we'll need it
 
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   })
 

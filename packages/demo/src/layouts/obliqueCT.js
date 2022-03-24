@@ -13,7 +13,7 @@ function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
     // CT
     {
       sceneUID: SCENE_IDS.CTOBLIQUE,
-      viewportUID: VIEWPORT_IDS.CTOBLIQUE.OBLIQUE,
+      viewportId: VIEWPORT_IDS.CTOBLIQUE.OBLIQUE,
       type: ViewportType.ORTHOGRAPHIC,
       canvas: canvasContainers.get(0),
       defaultOptions: {
@@ -24,18 +24,18 @@ function setLayout(renderingEngine, canvasContainers, { ctObliqueToolGroup }) {
 
   renderingEngine.setViewports(viewportInput)
 
-  const renderingEngineUID = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid
   const viewportInputEntry = viewportInput[0]
 
-  const { sceneUID, viewportUID } = viewportInputEntry
+  const { sceneUID, viewportId } = viewportInputEntry
 
-  ctObliqueToolGroup.addViewport(viewportUID, renderingEngineUID)
+  ctObliqueToolGroup.addViewport(viewportId, renderingEngineId)
 }
 
-function setVolumes(renderingEngine, ctVolumeUID) {
+function setVolumes(renderingEngine, ctVolumeId) {
   const ctObliqueScene = renderingEngine.getScene(SCENE_IDS.CTOBLIQUE)
 
-  ctObliqueScene.setVolumes([{ volumeUID: ctVolumeUID, callback: setCTWWWC }])
+  ctObliqueScene.setVolumes([{ volumeId: ctVolumeId, callback: setCTWWWC }])
 }
 
 export default { setLayout, setVolumes }

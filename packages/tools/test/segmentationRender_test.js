@@ -40,10 +40,10 @@ const { SegmentationRepresentations } = csToolsEnums
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
-const viewportUID2 = 'SAGITTAL'
+const viewportId1 = 'AXIAL'
+const viewportId2 = 'SAGITTAL'
 const viewportUID3 = 'CORONAL'
 
 const LABELMAP = SegmentationRepresentations.Labelmap
@@ -55,7 +55,7 @@ const CORONAL = 'CORONAL'
 function createViewport(
   renderingEngine,
   orientation,
-  viewportUID = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -64,7 +64,7 @@ function createViewport(
   document.body.appendChild(element)
 
   renderingEngine.enableElement({
-    viewportUID: viewportUID,
+    viewportId: viewportId,
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
@@ -90,7 +90,7 @@ describe('Segmentation Render -- ', () => {
       this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -106,7 +106,7 @@ describe('Segmentation Render -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
+      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -122,13 +122,13 @@ describe('Segmentation Render -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID1)
+      const vp = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
-        expect(evt.detail.toolGroupUID).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe('segToolGroup')
         compareImages(
           image,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -136,7 +136,7 @@ describe('Segmentation Render -- ', () => {
         ).then(done, done.fail)
       })
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -145,13 +145,13 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
-            [viewportUID1]
+            [{ volumeId: volumeId, callback }],
+            [viewportId1]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
+              { volumeId: segVolumeId },
             ])
           })
         })
@@ -161,8 +161,8 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render a segmentation on a volume with more than one viewport', function (done) {
-      const el1 = createViewport(this.renderingEngine, AXIAL, viewportUID1)
-      const el2 = createViewport(this.renderingEngine, SAGITTAL, viewportUID2)
+      const el1 = createViewport(this.renderingEngine, AXIAL, viewportId1)
+      const el2 = createViewport(this.renderingEngine, SAGITTAL, viewportId2)
       const el3 = createViewport(this.renderingEngine, CORONAL, viewportUID3)
 
       this.DOMElements.push(el1)
@@ -172,8 +172,8 @@ describe('Segmentation Render -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
-      const vp2 = this.renderingEngine.getViewport(viewportUID2)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
+      const vp2 = this.renderingEngine.getViewport(viewportId2)
       const vp3 = this.renderingEngine.getViewport(viewportUID3)
 
       let renderedViewportCounts = 0
@@ -191,7 +191,7 @@ describe('Segmentation Render -- ', () => {
         const image2 = canvas2.toDataURL('image/png')
         const image3 = canvas3.toDataURL('image/png')
 
-        expect(evt.detail.toolGroupUID).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe('segToolGroup')
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -211,9 +211,9 @@ describe('Segmentation Render -- ', () => {
         })
       })
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
-      this.segToolGroup.addViewport(vp2.uid, this.renderingEngine.uid)
-      this.segToolGroup.addViewport(vp3.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+      this.segToolGroup.addViewport(vp2.id, this.renderingEngine.id)
+      this.segToolGroup.addViewport(vp3.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -222,13 +222,13 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
-            [viewportUID1, viewportUID2, viewportUID3]
+            [{ volumeId: volumeId, callback }],
+            [viewportId1, viewportId2, viewportUID3]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
-              { volumeUID: segVolumeId },
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
+              { volumeId: segVolumeId },
             ])
           })
         })
@@ -238,7 +238,7 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render two segmentations on a viewport', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      const element = createViewport(this.renderingEngine, AXIAL, viewportId1)
       this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
@@ -247,13 +247,13 @@ describe('Segmentation Render -- ', () => {
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_50_50_6'
       const segVolumeId2 =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_60_60_2_80_80_7'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
 
-        expect(evt.detail.toolGroupUID).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe('segToolGroup')
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_2SEGs_AX,
@@ -261,7 +261,7 @@ describe('Segmentation Render -- ', () => {
         ).then(done, done.fail)
       })
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -270,15 +270,15 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
-            [viewportUID1]
+            [{ volumeId: volumeId, callback }],
+            [viewportId1]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             createAndCacheVolume(segVolumeId2, { imageIds: [] }).then(() => {
-              addSegmentationsForToolGroup(this.segToolGroup.uid, [
-                { volumeUID: segVolumeId },
-                { volumeUID: segVolumeId2 },
+              addSegmentationsForToolGroup(this.segToolGroup.id, [
+                { volumeId: segVolumeId },
+                { volumeId: segVolumeId2 },
               ])
             })
           })
@@ -289,7 +289,7 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render a segmentation with toolGroup specific config', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      const element = createViewport(this.renderingEngine, AXIAL, viewportId1)
       this.DOMElements.push(element)
 
       const customToolGroupSeConfig = {
@@ -304,12 +304,12 @@ describe('Segmentation Render -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
-        expect(evt.detail.toolGroupUID).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe('segToolGroup')
 
         compareImages(
           image1,
@@ -322,14 +322,14 @@ describe('Segmentation Render -- ', () => {
         Events.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
           const toolGroupState = segmentation.state.getSegmentationState(
-            this.segToolGroup.uid
+            this.segToolGroup.id
           )
 
           expect(toolGroupState).toBeDefined()
 
           const toolGroupConfig =
             segmentation.segmentationConfig.getSegmentationConfig(
-              this.segToolGroup.uid
+              this.segToolGroup.id
             )
 
           expect(toolGroupConfig).toBeDefined()
@@ -340,7 +340,7 @@ describe('Segmentation Render -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -349,14 +349,14 @@ describe('Segmentation Render -- ', () => {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
-            [{ volumeUID: volumeId, callback }],
-            [viewportUID1]
+            [{ volumeId: volumeId, callback }],
+            [viewportId1]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentationsForToolGroup(
-              this.segToolGroup.uid,
-              [{ volumeUID: segVolumeId }],
+              this.segToolGroup.id,
+              [{ volumeId: segVolumeId }],
               {
                 ...customToolGroupSeConfig,
               }

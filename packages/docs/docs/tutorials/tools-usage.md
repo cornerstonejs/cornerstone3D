@@ -46,11 +46,11 @@ csTools3d.addTool(ProbeTool)
 // 3. All tools need a toolGroup
 const stackToolGroup = ToolGroupManager.createToolGroup('stack')
 
-// 4. Adding a tool to the tool group. Note the volumeUID that is
+// 4. Adding a tool to the tool group. Note the volumeId that is
 // being passed since csTools need to know which volume it should
 // grab the pixel data from
 stackToolGroup.addTool(ProbeTool.toolName, {
-  configuration: { volumeUID: volumeId },
+  configuration: { volumeId: volumeId },
 })
 
 // 5. Activating the probeTool and assigning primary mouse button to it.
@@ -89,7 +89,7 @@ In order to use the slab thickness you need to set the `blendMode` on the `Scene
 ```js
 await ctScene.setVolumes([
   {
-    volumeUID: ctVolumeUID,
+    volumeId: ctVolumeId,
     blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
   },
 ])

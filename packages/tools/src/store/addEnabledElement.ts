@@ -24,7 +24,7 @@ import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender'
 export default function addEnabledElement(
   evt: Types.EventTypes.ElementEnabledEvent
 ): void {
-  const { element, viewportUID } = evt.detail
+  const { element, viewportId } = evt.detail
   const svgLayer = _createSvgAnnotationLayer()
 
   // Reset/Create svgNodeCache for element
@@ -32,7 +32,7 @@ export default function addEnabledElement(
   _appendChild(svgLayer, element)
 
   // Add this element to the annotation rendering engine
-  annotationRenderingEngine.addViewportElement(viewportUID, element)
+  annotationRenderingEngine.addViewportElement(viewportId, element)
 
   // Listeners
   mouseEventListeners.enable(element)
@@ -119,9 +119,9 @@ function _createSvgAnnotationLayer(): SVGElement {
 }
 
 function _setSvgNodeCache(element) {
-  const { viewportUid: viewportUID, renderingEngineUid: renderingEngineUID } =
+  const { viewportUid: viewportId, renderingEngineUid: renderingEngineId } =
     element.dataset
-  const elementHash = `${viewportUID}:${renderingEngineUID}`
+  const elementHash = `${viewportId}:${renderingEngineId}`
 
   // Create or reset
   // TODO: If... Reset, we should blow out any nodes in DOM

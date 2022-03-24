@@ -5,15 +5,15 @@ import { loadVolume } from '../../volumeLoader'
 import createVolumeMapper from './createVolumeMapper'
 
 interface createVolumeActorInterface {
-  volumeUID: string
-  callback?: ({ volumeActor: any, volumeUID: string }) => void
+  volumeId: string
+  callback?: ({ volumeActor: any, volumeId: string }) => void
   blendMode?: string
 }
 
 /**
- * Given a volumeUID, it creates a vtk volume actor and returns it. If
+ * Given a volumeId, it creates a vtk volume actor and returns it. If
  * callback is provided, it will be called with the volume actor and the
- * volumeUID. If blendMode is provided, it will be set on the volume actor.
+ * volumeId. If blendMode is provided, it will be set on the volume actor.
  *
  * @param props - createVolumeActorInterface
  * @returns A promise that resolves to a VolumeActor.
@@ -21,12 +21,14 @@ interface createVolumeActorInterface {
 async function createVolumeActor(
   props: createVolumeActorInterface
 ): Promise<VolumeActor> {
-  const { volumeUID, callback, blendMode } = props
+  const { volumeId, callback, blendMode } = props
 
-  const imageVolume = await loadVolume(volumeUID)
+  const imageVolume = await loadVolume(volumeId)
 
   if (!imageVolume) {
-    throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`)
+    throw new Error(
+      `imageVolume with id: ${imageVolume.volumeId} does not exist`
+    )
   }
 
   const { imageData, vtkOpenGLTexture } = imageVolume
@@ -41,7 +43,7 @@ async function createVolumeActor(
   volumeActor.setMapper(volumeMapper)
 
   if (callback) {
-    callback({ volumeActor, volumeUID })
+    callback({ volumeActor, volumeId })
   }
 
   return volumeActor

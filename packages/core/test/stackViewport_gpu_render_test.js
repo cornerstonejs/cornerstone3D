@@ -34,9 +34,9 @@ const { calibratedPixelSpacingMetadataProvider } = utilities
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 
@@ -49,7 +49,7 @@ function createViewport(renderingEngine, orientation, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: ViewportType.STACK,
       element,
       defaultOptions: {
@@ -70,7 +70,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -93,7 +93,7 @@ describe('renderingCore -- Stack', () => {
       // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
       const imageId = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
@@ -120,7 +120,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId = 'fakeImageLoader:imageURI_64_33_20_5_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -148,7 +148,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -182,7 +182,7 @@ describe('renderingCore -- Stack', () => {
       const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
 
       this.renderingEngine.enableElement({
-        viewportUID: viewportUID,
+        viewportId: viewportId,
         type: ViewportType.STACK,
         element: element,
         defaultOptions: {
@@ -190,7 +190,7 @@ describe('renderingCore -- Stack', () => {
         },
       })
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -221,7 +221,7 @@ describe('renderingCore -- Stack', () => {
       const imageId2 = 'fakeImageLoader:imageURI_64_64_10_20_5_5_0'
       const imageId3 = 'fakeImageLoader:imageURI_64_64_20_30_5_5_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -252,7 +252,7 @@ describe('renderingCore -- Stack', () => {
       const imageId2 = 'fakeImageLoader:imageURI_64_64_10_20_5_5_0'
       const imageId3 = 'fakeImageLoader:imageURI_64_64_54_10_5_5_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -281,7 +281,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -315,7 +315,7 @@ describe('renderingCore -- Stack', () => {
       const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
       const imageId2 = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -345,7 +345,7 @@ describe('renderingCore -- Stack', () => {
       const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0'
       const imageId2 = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -373,7 +373,7 @@ describe('renderingCore -- Stack', () => {
     beforeEach(function () {
       cache.purgeCache()
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -395,7 +395,7 @@ describe('renderingCore -- Stack', () => {
       this.DOMElements.push(element)
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
@@ -422,7 +422,7 @@ describe('renderingCore -- Stack', () => {
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
       const imageId2 = 'fakeImageLoader:imageURI_256_256_50_10_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
@@ -447,7 +447,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -470,7 +470,7 @@ describe('renderingCore -- Stack', () => {
 
       // color image generation with 10 strips of different colors
       const imageId1 = 'fakeImageLoader:imageURI_100_100_0_10_1_1_1'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
@@ -496,7 +496,7 @@ describe('renderingCore -- Stack', () => {
 
       // color image generation with 10 strips of different colors
       const imageId1 = 'fakeImageLoader:imageURI_100_100_0_10_1_1_1'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
@@ -523,7 +523,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -552,7 +552,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0_1'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         expect(vp.scaling.PET).toEqual({
           suvbwToSuvlbm: 1,
@@ -574,7 +574,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const imageRenderedCallback = () => {
         calibratedPixelSpacingMetadataProvider.add(imageId1, [2, 2])
@@ -616,7 +616,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -646,7 +646,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const subscribeToImageRendered = () => {
         element.addEventListener(Events.IMAGE_RENDERED, (evt) => {
@@ -689,7 +689,7 @@ describe('renderingCore -- Stack', () => {
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const firstImageRenderedCallback = () => {
         element.removeEventListener(
@@ -750,7 +750,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -779,13 +779,13 @@ describe('renderingCore -- Stack', () => {
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0_1'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const firstCallback = () => {
         element.removeEventListener(Events.IMAGE_RENDERED, firstCallback)
         element.addEventListener(Events.IMAGE_RENDERED, secondCallback)
         const imageId = this.renderingEngine
-          .getViewport(viewportUID)
+          .getViewport(viewportId)
           .getCurrentImageId()
 
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
@@ -816,7 +816,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
       metaData.addProvider(
@@ -847,7 +847,7 @@ describe('renderingCore -- Stack', () => {
       // are basically modifying the metadata of the image to be calibrated
       const imageId1 = 'fakeImageLoader:imageURI_64_46_4_1_1_1_0_1'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       const imageRenderedCallback = () => {
         element.removeEventListener(
@@ -856,7 +856,7 @@ describe('renderingCore -- Stack', () => {
         )
 
         const imageId = this.renderingEngine
-          .getViewport(viewportUID)
+          .getViewport(viewportId)
           .getCurrentImageId()
 
         calibrateImageSpacing(imageId, this.renderingEngine, 1, 5)
@@ -877,7 +877,7 @@ describe('renderingCore -- Stack', () => {
         expect(evt.detail).toBeDefined()
         expect(evt.detail.rowScale).toBe(1)
         expect(evt.detail.columnScale).toBe(5)
-        expect(evt.detail.viewportUID).toBe(viewportUID)
+        expect(evt.detail.viewportId).toBe(viewportId)
       })
 
       try {
@@ -894,7 +894,7 @@ describe('renderingCore -- Stack', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
       metaData.addProvider(fakeMetaDataProvider, 10000)
     })
@@ -918,7 +918,7 @@ describe('renderingCore -- Stack', () => {
       // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
       const imageId = 'fakeImageLoader:imageURI_64_64_5_5_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
@@ -950,7 +950,7 @@ describe('renderingCore -- Stack', () => {
       // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
       const imageId = 'fakeImageLoader:imageURI_64_64_5_5_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')

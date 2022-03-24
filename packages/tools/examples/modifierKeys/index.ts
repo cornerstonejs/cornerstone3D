@@ -1,8 +1,4 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-} from '@cornerstonejs/core'
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -48,7 +44,7 @@ instructions.innerText = 'Left Click to use selected tool TODO'
 content.append(instructions)
 // ============================= //
 
-const toolGroupUID = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_ID'
 
 /**
  * Runs the demo
@@ -65,7 +61,7 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group
   toolGroup.addTool(WindowLevelTool.toolName)
@@ -120,13 +116,13 @@ async function run() {
   })
 
   // Instantiate a rendering engine
-  const renderingEngineUID = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineUID)
+  const renderingEngineId = 'myRenderingEngine'
+  const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
-  const viewportUID = 'CT_STACK'
+  const viewportId = 'CT_STACK'
   const viewportInput = {
-    viewportUID,
+    viewportId,
     type: ViewportType.STACK,
     element,
     defaultOptions: {
@@ -137,12 +133,10 @@ async function run() {
   renderingEngine.enableElement(viewportInput)
 
   // Set the tool group on the viewport
-  toolGroup.addViewport(viewportUID, renderingEngineUID)
+  toolGroup.addViewport(viewportId, renderingEngineId)
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportUID)
-  )
+  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
 
   // Define a stack containing a single image
   const stack = [imageIds[0]]

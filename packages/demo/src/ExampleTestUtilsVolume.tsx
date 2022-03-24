@@ -10,10 +10,7 @@ import {
   init as csRenderInit,
   setVolumesForViewports,
 } from '@cornerstonejs/core'
-import {
-  Enums as csToolsEnums,
-  synchronizers,
-} from '@cornerstonejs/tools'
+import { Enums as csToolsEnums, synchronizers } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 
 import {
@@ -26,8 +23,8 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import './ExampleVTKMPR.css'
 import {
-  renderingEngineUID,
-  ctVolumeUID,
+  renderingEngineId,
+  ctVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants'
@@ -99,14 +96,14 @@ class testUtilVolume extends Component {
     csTools3d.init()
     ;({ ctTestSceneToolGroup, ptTestSceneToolGroup } = initToolGroups())
 
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
     window.renderingEngine = renderingEngine
 
     const viewportInput = [
       {
-        viewportUID: VIEWPORT_IDS.CT.AXIAL,
+        viewportId: VIEWPORT_IDS.CT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(0),
         defaultOptions: {
@@ -115,7 +112,7 @@ class testUtilVolume extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.PT.AXIAL,
+        viewportId: VIEWPORT_IDS.PT.AXIAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(1),
         defaultOptions: {
@@ -124,7 +121,7 @@ class testUtilVolume extends Component {
         },
       },
       {
-        viewportUID: VIEWPORT_IDS.CT.CORONAL,
+        viewportId: VIEWPORT_IDS.CT.CORONAL,
         type: ViewportType.ORTHOGRAPHIC,
         element: this._elementNodes.get(2),
         defaultOptions: {
@@ -136,17 +133,14 @@ class testUtilVolume extends Component {
 
     renderingEngine.setViewports(viewportInput)
 
-    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineUID)
+    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
     // ctTestSceneToolGroup.addViewport(
     //   VIEWPORT_IDS.CT.AXIAL,
-    //   renderingEngineUID,
+    //   renderingEngineId,
     // )
-    ctTestSceneToolGroup.addViewport(
-      VIEWPORT_IDS.CT.CORONAL,
-      renderingEngineUID
-    )
+    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
 
-    ptTestSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineUID)
+    ptTestSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId)
 
     addToolsToToolGroups({ ctTestSceneToolGroup })
     addToolsToToolGroups({ ptTestSceneToolGroup })
@@ -159,19 +153,19 @@ class testUtilVolume extends Component {
     await volumeLoader.createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
 
     axialSync.addSource({
-      renderingEngineUID: renderingEngineUID,
-      viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
+      renderingEngineId: renderingEngineId,
+      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).id,
     })
     axialSync.addTarget({
-      renderingEngineUID: renderingEngineUID,
-      viewportUID: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
+      renderingEngineId: renderingEngineId,
+      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).id,
     })
 
     await setVolumesForViewports(
       renderingEngine,
       [
         {
-          volumeUID: this.ctVolumeId,
+          volumeId: this.ctVolumeId,
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.CORONAL]
@@ -181,7 +175,7 @@ class testUtilVolume extends Component {
       renderingEngine,
       [
         {
-          volumeUID: this.ptVolumeId,
+          volumeId: this.ptVolumeId,
         },
       ],
       [VIEWPORT_IDS.PT.AXIAL]

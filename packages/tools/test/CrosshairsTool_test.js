@@ -34,10 +34,10 @@ const { Events: csToolsEvents } = csToolsEnums
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'VIEWPORT1'
-const viewportUID2 = 'VIEWPORT2'
+const viewportId1 = 'VIEWPORT1'
+const viewportId2 = 'VIEWPORT2'
 const viewportUID3 = 'VIEWPORT3'
 
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
@@ -63,7 +63,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID1,
+      viewportId: viewportId1,
       type: viewportType,
       element: element1,
       defaultOptions: {
@@ -72,7 +72,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
       },
     },
     {
-      viewportUID: viewportUID2,
+      viewportId: viewportId2,
       type: viewportType,
       element: element2,
       defaultOptions: {
@@ -81,7 +81,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
       },
     },
     {
-      viewportUID: viewportUID3,
+      viewportId: viewportUID3,
       type: viewportType,
       element: element3,
       defaultOptions: {
@@ -110,7 +110,7 @@ describe('Cornerstone Tools: ', () => {
       configuration: {},
     })
 
-    this.renderingEngine = new RenderingEngine(renderingEngineUID)
+    this.renderingEngine = new RenderingEngine(renderingEngineId)
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
     metaData.addProvider(fakeMetaDataProvider, 10000)
   })
@@ -122,7 +122,7 @@ describe('Cornerstone Tools: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupByToolGroupUID('volume')
+    ToolGroupManager.destroyToolGroupByToolGroupId('volume')
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -152,7 +152,7 @@ describe('Cornerstone Tools: ', () => {
         return
       }
 
-      const vp = this.renderingEngine.getViewport(viewportUID1)
+      const vp = this.renderingEngine.getViewport(viewportId1)
       const { imageData } = vp.getImageData()
 
       const indexMiddle = imageData
@@ -221,16 +221,16 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
     element3.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
 
-    this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
-    this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
-    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
-          [viewportUID1, viewportUID2, viewportUID3]
+          [{ volumeId: volumeId }],
+          [viewportId1, viewportId2, viewportUID3]
         )
         this.renderingEngine.render()
       })
@@ -310,7 +310,7 @@ describe('Cornerstone Tools: ', () => {
         bindings: [{ mouseButton: 1 }],
       })
 
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
       const { imageData } = vp1.getImageData()
 
       const crosshairAnnotations = annotation.state.getAnnotations(
@@ -368,16 +368,16 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
     element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
-    this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
-    this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
-    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
-          [viewportUID1, viewportUID2, viewportUID3]
+          [{ volumeId: volumeId }],
+          [viewportId1, viewportId2, viewportUID3]
         )
         this.renderingEngine.render()
       })
@@ -410,7 +410,7 @@ describe('Cornerstone Tools: ', () => {
         bindings: [{ mouseButton: 1 }],
       })
 
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
       const { imageData } = vp1.getImageData()
 
       setTimeout(() => {
@@ -512,16 +512,16 @@ describe('Cornerstone Tools: ', () => {
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
     element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
-    this.testToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
-    this.testToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
-    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.uid)
+    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id)
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
-          [{ volumeUID: volumeId }],
-          [viewportUID1, viewportUID2, viewportUID3]
+          [{ volumeId: volumeId }],
+          [viewportId1, viewportId2, viewportUID3]
         )
         this.renderingEngine.render()
       })

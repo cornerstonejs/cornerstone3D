@@ -17,9 +17,9 @@ import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
 } from '../../drawingSvg'
-import { getViewportUIDsWithToolToRender } from '../../utilities/viewportFilters'
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
@@ -36,7 +36,7 @@ export interface RectangleRoiThresholdAnnotation extends Annotation {
     referencedImageId?: string
     toolName: string
     enabledElement: any // Todo: how to remove this from the annotation??
-    volumeUID: string
+    volumeId: string
   }
   data: {
     label: string
@@ -59,7 +59,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportUIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     newAnnotation?: boolean
     hasMoved?: boolean
@@ -101,13 +101,13 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
 
-    let referencedImageId, volumeUID
+    let referencedImageId, volumeId
     if (viewport instanceof StackViewport) {
       referencedImageId =
         viewport.getCurrentImageId && viewport.getCurrentImageId()
     } else {
-      volumeUID = this.getTargetUID(viewport)
-      const imageVolume = cache.getVolume(volumeUID)
+      volumeId = this.getTargetId(viewport)
+      const imageVolume = cache.getVolume(volumeId)
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
@@ -133,7 +133,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
         toolName: RectangleRoiThresholdTool.toolName,
-        volumeUID,
+        volumeId,
       },
       data: {
         label: '',
@@ -161,14 +161,14 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     addAnnotation(element, annotation)
 
-    const viewportUIDsToRender = getViewportUIDsWithToolToRender(
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleRoiThresholdTool.toolName
     )
 
     this.editData = {
       annotation,
-      viewportUIDsToRender,
+      viewportIdsToRender,
       handleIndex: 3,
       newAnnotation: true,
       hasMoved: false,
@@ -179,10 +179,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
 
     return annotation
   }
@@ -198,7 +195,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
-    const { viewport, renderingEngineUID } = enabledElement
+    const { viewport, renderingEngineId } = enabledElement
     const { element } = viewport
     let annotations = getAnnotations(
       element,
@@ -246,8 +243,8 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,
-        viewportUID: viewport.uid,
-        renderingEngineUID,
+        viewportId: viewport.id,
+        renderingEngineId,
       }
 
       triggerEvent(eventTarget, eventType, eventDetail)

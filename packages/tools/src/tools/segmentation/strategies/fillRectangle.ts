@@ -7,7 +7,7 @@ import transformPhysicalToIndex from '../../../utilities/transformPhysicalToInde
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
 
 type OperationData = {
-  toolGroupUID: string
+  toolGroupId: string
   segmentationDataUID: string
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
   volume: ImageVolume
@@ -19,7 +19,7 @@ type OperationData = {
 /**
  * For each point in the bounding box around the rectangle, if the point is inside
  * the rectangle, set the scalar value to the segmentIndex
- * @param toolGroupUID - string
+ * @param toolGroupId - string
  * @param operationData - OperationData
  * @param constraintFn - can be used to perform threshold segmentation
  * @param inside - boolean
@@ -36,7 +36,7 @@ function fillRectangle(
     segmentsLocked,
     segmentIndex,
     segmentationDataUID,
-    toolGroupUID,
+    toolGroupId,
     constraintFn,
   } = operationData
   const { imageData, dimensions, scalarData } = segmentation
@@ -78,12 +78,12 @@ function fillRectangle(
 
   pointInShapeCallback(imageData, pointInRectangle, callback, boundsIJK)
 
-  triggerSegmentationDataModified(toolGroupUID, segmentationDataUID)
+  triggerSegmentationDataModified(toolGroupId, segmentationDataUID)
 }
 
 /**
  * Fill the inside of a rectangle
- * @param toolGroupUID - The unique identifier of the tool group.
+ * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.
  * @param constraintFn - can be used to perform threshold segmentation
@@ -96,8 +96,8 @@ export function fillInsideRectangle(
 }
 
 /**
- * Fill the area outside of a rectangle for the toolGroupUID and segmentationDataUID.
- * @param toolGroupUID - The unique identifier of the tool group.
+ * Fill the area outside of a rectangle for the toolGroupId and segmentationDataUID.
+ * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.
  * @param constraintFn - can be used to perform threshold segmentation

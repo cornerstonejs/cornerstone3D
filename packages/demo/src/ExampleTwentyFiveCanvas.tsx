@@ -32,23 +32,22 @@ class TwentyFiveCanvasExample extends Component {
 
   async componentDidMount() {
     await csRenderInit()
-    const renderingEngineUID = 'ExampleRenderingEngineID'
-    const renderingEngine = new RenderingEngine(renderingEngineUID)
+    const renderingEngineId = 'ExampleRenderingEngineID'
+    const renderingEngine = new RenderingEngine(renderingEngineId)
 
     this.renderingEngine = renderingEngine
 
     const viewportUIDS = []
-    const sceneUID = 'SCENE_UID'
     const viewports = []
 
     for (let i = 0; i < NUM_VIEWPORTS; i++) {
-      const viewportUID = `viewportUID_${0}`
+      const viewportId = `viewportUID_${0}`
 
-      viewportUIDS.push(viewportUID)
+      viewportUIDS.push(viewportId)
 
       viewports.push({
         sceneUID,
-        viewportUID,
+        viewportId,
         type: ViewportType.ORTHOGRAPHIC,
         element: this.containers[i].current,
         defaultOptions: {

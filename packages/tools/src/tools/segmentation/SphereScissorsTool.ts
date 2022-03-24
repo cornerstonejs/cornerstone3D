@@ -1,8 +1,4 @@
-import {
-  cache,
-  getEnabledElement,
-  StackViewport,
-} from '@cornerstonejs/core'
+import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
 import { BaseTool } from '../base'
@@ -16,7 +12,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportUIDs'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 import {
   segmentationColor,
   segmentLocking,
@@ -40,9 +36,9 @@ export default class SphereScissorsTool extends BaseTool {
     segmentIndex: number
     segmentsLocked: number[]
     segmentationDataUID: string
-    toolGroupUID: string
+    toolGroupId: string
     segmentColor: [number, number, number, number]
-    viewportUIDsToRender: string[]
+    viewportIdsToRender: string[]
     handleIndex?: number
     movingTextBox: boolean
     newAnnotation?: boolean
@@ -89,28 +85,28 @@ export default class SphereScissorsTool extends BaseTool {
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
-    const toolGroupUID = this.toolGroupUID
+    const toolGroupId = this.toolGroupId
 
     const activeSegmentationInfo =
-      activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
+      activeSegmentation.getActiveSegmentationInfo(toolGroupId)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       )
     }
 
-    const { volumeUID, segmentationDataUID } = activeSegmentationInfo
+    const { volumeId, segmentationDataUID } = activeSegmentationInfo
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupUID)
+      segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
+      segmentLocking.getSegmentsLockedForSegmentation(volumeId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
-      toolGroupUID,
+      toolGroupId,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex
     )
 
-    const segmentation = cache.getVolume(volumeUID)
+    const segmentation = cache.getVolume(volumeId)
     this.isDrawing = true
 
     // Used for drawing the svg only, we might not need it at all
@@ -134,7 +130,7 @@ export default class SphereScissorsTool extends BaseTool {
       },
     }
 
-    const viewportUIDsToRender = [viewport.uid]
+    const viewportIdsToRender = [viewport.id]
 
     this.editData = {
       annotation,
@@ -144,8 +140,8 @@ export default class SphereScissorsTool extends BaseTool {
       segmentsLocked,
       segmentColor,
       segmentationDataUID,
-      toolGroupUID,
-      viewportUIDsToRender,
+      toolGroupId,
+      viewportIdsToRender,
       handleIndex: 3,
       movingTextBox: false,
       newAnnotation: true,
@@ -158,10 +154,7 @@ export default class SphereScissorsTool extends BaseTool {
 
     evt.preventDefault()
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
@@ -175,7 +168,7 @@ export default class SphereScissorsTool extends BaseTool {
     const { canvasToWorld } = viewport
 
     //////
-    const { annotation, viewportUIDsToRender, centerCanvas } = this.editData
+    const { annotation, viewportIdsToRender, centerCanvas } = this.editData
     const { data } = annotation
 
     const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
@@ -204,10 +197,7 @@ export default class SphereScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportUIDsToRender
-    )
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
   _mouseUpCallback = (
@@ -255,7 +245,7 @@ export default class SphereScissorsTool extends BaseTool {
       segmentIndex,
       segmentsLocked,
       segmentationDataUID,
-      toolGroupUID: this.toolGroupUID,
+      toolGroupId: this.toolGroupId,
       viewPlaneNormal,
       viewUp,
     }
@@ -304,9 +294,9 @@ export default class SphereScissorsTool extends BaseTool {
     }
 
     const { viewport } = enabledElement
-    const { viewportUIDsToRender } = this.editData
+    const { viewportIdsToRender } = this.editData
 
-    if (!viewportUIDsToRender.includes(viewport.uid)) {
+    if (!viewportIdsToRender.includes(viewport.id)) {
       return
     }
 

@@ -11,16 +11,16 @@ import { SegmentationDataModifiedEventType } from '../../types/EventTypes'
 const onSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
-  const { toolGroupUID, segmentationDataUID } = evt.detail
+  const { toolGroupId, segmentationDataUID } = evt.detail
 
   const segmentationData = SegmentationState.getSegmentationDataByUID(
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID
   )
 
   if (!segmentationData) {
     console.warn(
-      `onSegmentationDataModified: segmentationDataUID ${segmentationDataUID} not found in toolGroupUID ${toolGroupUID}`
+      `onSegmentationDataModified: segmentationDataUID ${segmentationDataUID} not found in toolGroupId ${toolGroupId}`
     )
     return
   }
@@ -29,17 +29,17 @@ const onSegmentationDataModified = function (
     representation: { type },
   } = segmentationData
 
-  let toolGroupUIDs
+  let toolGroupIds
   if (type === SegmentationRepresentations.Labelmap) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
-    const { volumeUID } = segmentationData
-    const segmentation = cache.getVolume(volumeUID)
+    const { volumeId } = segmentationData
+    const segmentation = cache.getVolume(volumeId)
 
     if (!segmentation) {
       console.warn('segmentation not found in cache')
       return
     }
-    const { imageData, vtkOpenGLTexture, uid } = segmentation
+    const { imageData, vtkOpenGLTexture } = segmentation
 
     // Todo: this can be optimized to not use the full texture from all slices
     const numSlices = imageData.getDimensions()[2]
@@ -52,15 +52,15 @@ const onSegmentationDataModified = function (
 
     // Trigger modified on the imageData to update the image
     imageData.modified()
-    toolGroupUIDs = SegmentationState.getToolGroupsWithSegmentation(uid)
+    toolGroupIds = SegmentationState.getToolGroupsWithSegmentation(volumeId)
   } else {
     throw new Error(
       `onSegmentationDataModified: representationType ${type} not supported yet`
     )
   }
 
-  toolGroupUIDs.forEach((toolGroupUID) => {
-    triggerSegmentationRender(toolGroupUID)
+  toolGroupIds.forEach((toolGroupId) => {
+    triggerSegmentationRender(toolGroupId)
   })
 }
 

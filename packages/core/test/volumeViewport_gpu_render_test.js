@@ -34,9 +34,9 @@ const { unregisterAllImageLoaders } = imageLoader
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   utilities.testUtils
 
-const renderingEngineUID = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4()
 
-const viewportUID = 'VIEWPORT'
+const viewportId = 'VIEWPORT'
 
 const AXIAL = 'AXIAL'
 const SAGITTAL = 'SAGITTAL'
@@ -51,7 +51,7 @@ function createViewport(renderingEngine, orientation) {
 
   renderingEngine.setViewports([
     {
-      viewportUID: viewportUID,
+      viewportId: viewportId,
       type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
@@ -73,7 +73,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -98,7 +98,7 @@ describe('Volume Viewport GPU -- ', () => {
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -119,8 +119,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -135,7 +135,7 @@ describe('Volume Viewport GPU -- ', () => {
       this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -153,8 +153,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
-              [viewportUID]
+              [{ volumeId: volumeId }],
+              [viewportId]
             )
             vp.render()
           })
@@ -169,7 +169,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
 
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -195,7 +195,7 @@ describe('Volume Viewport GPU -- ', () => {
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -216,8 +216,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -232,7 +232,7 @@ describe('Volume Viewport GPU -- ', () => {
       this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -250,8 +250,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
-              [viewportUID]
+              [{ volumeId: volumeId }],
+              [viewportId]
             )
             vp.render()
           })
@@ -268,7 +268,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       this.DOMElements = []
 
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -295,7 +295,7 @@ describe('Volume Viewport GPU -- ', () => {
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -318,8 +318,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -334,7 +334,7 @@ describe('Volume Viewport GPU -- ', () => {
       this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -352,8 +352,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId }],
-              [viewportUID]
+              [{ volumeId: volumeId }],
+              [viewportId]
             )
             vp.render()
           })
@@ -369,7 +369,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
 
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -394,7 +394,7 @@ describe('Volume Viewport GPU -- ', () => {
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -417,8 +417,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -428,7 +428,7 @@ describe('Volume Viewport GPU -- ', () => {
       }
     })
 
-    it('Should be able to filter viewports based on volumeUID', function (done) {
+    it('Should be able to filter viewports based on volumeId', function (done) {
       const element = createViewport(this.renderingEngine, CORONAL)
       this.DOMElements.push(element)
 
@@ -437,10 +437,10 @@ describe('Volume Viewport GPU -- ', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const viewport = this.renderingEngine.getViewport(viewportUID)
-        const viewports = utilities.getVolumeViewportsContainingVolumeUID(
+        const viewport = this.renderingEngine.getViewport(viewportId)
+        const viewports = utilities.getVolumeViewportsContainingVolumeId(
           volumeId,
-          this.renderingEngine.uid
+          this.renderingEngine.id
         )
 
         expect(viewports.length).toBe(1)
@@ -460,8 +460,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             this.renderingEngine.render()
           })
@@ -475,7 +475,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL)
       this.DOMElements.push(element)
 
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
       const canvas = vp.getCanvas()
 
       // fake volume generator follows the pattern of
@@ -502,8 +502,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -520,7 +520,7 @@ describe('Volume Viewport GPU -- ', () => {
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -543,8 +543,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -561,7 +561,7 @@ describe('Volume Viewport GPU -- ', () => {
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -582,8 +582,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -600,7 +600,7 @@ describe('Volume Viewport GPU -- ', () => {
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -623,8 +623,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             ).then(() => {
               this.renderingEngine.renderFrameOfReference(
                 'Volume_Frame_Of_Reference'
@@ -643,7 +643,7 @@ describe('Volume Viewport GPU -- ', () => {
       cache.purgeCache()
 
       this.DOMElements = []
-      this.renderingEngine = new RenderingEngine(renderingEngineUID)
+      this.renderingEngine = new RenderingEngine(renderingEngineId)
 
       metaData.addProvider(fakeMetaDataProvider, 10000)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -669,7 +669,7 @@ describe('Volume Viewport GPU -- ', () => {
       // fake volume generator follows the pattern of
       // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -694,8 +694,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
@@ -710,7 +710,7 @@ describe('Volume Viewport GPU -- ', () => {
       this.DOMElements.push(element)
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1'
-      const vp = this.renderingEngine.getViewport(viewportUID)
+      const vp = this.renderingEngine.getViewport(viewportId)
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas()
@@ -733,8 +733,8 @@ describe('Volume Viewport GPU -- ', () => {
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
-              [{ volumeUID: volumeId, callback }],
-              [viewportUID]
+              [{ volumeId: volumeId, callback }],
+              [viewportId]
             )
             vp.render()
           })
