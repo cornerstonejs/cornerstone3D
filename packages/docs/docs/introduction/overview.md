@@ -5,13 +5,13 @@ id: overview
 # Overview
 
 
-`cornerstone3D` is a lightweight Javascript library for visualization of medical images in modern web browsers that support the HTML5 canvas element.
-Using `cornerstone3D` and its accompanying libraries such as `cornerstone3DTools`, you can achieve a wide range of imaging applications:
+`Cornerstone3D` is a lightweight Javascript library for visualization of medical images in modern web browsers that support the HTML5 canvas element.
+Using `Cornerstone3D` and its accompanying libraries such as `cornerstone3DTools`, you can achieve a wide range of imaging applications:
 
 ## Features
 
 ### Rendering
-Using the new `cornerstone3D` renderingEngine and its Stack and Volume viewports, you can:
+Using the new `Cornerstone3D` renderingEngine and its Stack and Volume viewports, you can:
 
 - render all transfer syntaxes including various compressed formats such as JPEG2000, JPEG Lossless
 - stream the slices of a volume and view them in real-time
@@ -53,7 +53,7 @@ In addition, you can:
 ![](../assets/overview-annotation.gif)
 
 ### Segmentation
-`cornerstone3D` supports rendering segmentations of images as labelmaps in the volume viewport.
+`Cornerstone3D` supports rendering segmentations of images as labelmaps in the volume viewport.
 You can:
 
 - render segmentations as labelmaps in the volume viewport (e.g. segmentation of CT lung)
@@ -64,8 +64,8 @@ You can:
 
 
 ### Synchronization
-`cornerstone3D` supports synchronization between multiple viewports. Currently, there
-are two implemented synchronizers in `cornerstone3D` and we are working on more.
+`Cornerstone3D` supports synchronization between multiple viewports. Currently, there
+are two implemented synchronizers in `Cornerstone3D` and we are working on more.
 
 - windowLevel synchronizer: synchronizes the window level of the source and target viewports
 - camera synchronizer: synchronizes the camera of the source and target viewports
@@ -81,7 +81,7 @@ Our documentation can be broken down into the following sections:
 - **Concepts**: explains an in-depth look at various technical concepts that are used in the library
 - **API Reference**: provides a detailed description of the API and how to use each function
 - [**Contributing**](/docs/category/contributing/): explains how to contribute to the project and how to report bugs
-- **Migration Guides**: includes instructions for upgrading from legacy `cornerstone-core` and `cornerstone-tools` to `cornerstone3D` and `cornerstone3DTools`
+- **Migration Guides**: includes instructions for upgrading from legacy `cornerstone-core` and `cornerstone-tools` to `Cornerstone3D` and `cornerstone3DTools`
 - **Test Coverage Report**: provides a detailed report of the test coverage of the library
 - **FAQ**: provides answers to frequently asked questions
 

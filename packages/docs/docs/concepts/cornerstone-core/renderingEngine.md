@@ -6,6 +6,13 @@ title: Rendering Engine
 
 # Rendering Engine
 
+- 3D rendering of medical images
+
+  - _New engine:_ We have re-architectured the rendering engine for Cornerstone which implemented a `WebGL` rendering, and have created a wrapper around [vtk.js](https://github.com/kitware/vtk-js)
+  - _Shared Texture:_ Our rendering engine can optimally share textures between canvases, so for complex scenarios that may require > 10 viewports, we share the texture between the viewports that _might_ look into the same data from different
+    angles (axial, sagittal, or coronal) or fuse them on top of each other.
+
+
 A `RenderingEngine` allows the user to create Scenes with Viewports, associate these Viewports with onscreen canvases, and render data to these canvases using an offscreen WebGL canvas.
 
 It should be noted that `RenderingEngine` is capable of rendering multiple viewports, and you don't need to
