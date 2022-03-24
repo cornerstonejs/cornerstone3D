@@ -39,7 +39,7 @@ export default function getViewportIdsWithToolToRender(
     )
   }
 
-  const viewportUIDs = viewports.map((vp) => vp.uid)
+  const viewportUIDs = viewports.map((vp) => vp.id)
 
   return viewportUIDs
 }

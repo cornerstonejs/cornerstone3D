@@ -19,13 +19,13 @@ import type {
 } from '../types/IViewport'
 
 export interface IRenderingEngine {
-  uid: string
+  id: string
   hasBeenDestroyed: boolean
   offscreenMultiRenderWindow: any
   offScreenCanvasContainer: any
   setViewports(viewports: Array<PublicViewportInput>): void
   resize(): void
-  getViewport(uid: string): IStackViewport | IVolumeViewport
+  getViewport(id: string): IStackViewport | IVolumeViewport
   getViewports(): Array<IStackViewport | IVolumeViewport>
   render(): void
   renderViewports(viewportUIDs: Array<string>): void
@@ -84,7 +84,7 @@ type ViewportDisplayCoords = {
  */
 class RenderingEngine implements IRenderingEngine {
   /** Unique identifier for renderingEngine */
-  readonly uid: string
+  readonly id: string
   /** A flag which tells if the renderingEngine has been destroyed */
   public hasBeenDestroyed: boolean
   public offscreenMultiRenderWindow: any
@@ -98,8 +98,8 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * @param uid - Unique identifier for RenderingEngine
    */
-  constructor(uid?: string) {
-    this.uid = uid ? uid : uuidv4()
+  constructor(id?: string) {
+    this.id = id ? id : uuidv4()
     this.useCPURendering = getShouldUseCPURendering()
 
     renderingEngineCache.set(this)
@@ -352,8 +352,8 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @returns viewport
    */
-  public getViewport(uid: string): IStackViewport | IVolumeViewport {
-    return this._viewports.get(uid)
+  public getViewport(viewportId: string): IStackViewport | IVolumeViewport {
+    return this._viewports.get(viewportId)
   }
 
   /**
@@ -410,7 +410,7 @@ class RenderingEngine implements IRenderingEngine {
    */
   public render(): void {
     const viewports = this.getViewports()
-    const viewportUIDs = viewports.map((vp) => vp.uid)
+    const viewportUIDs = viewports.map((vp) => vp.id)
 
     this._setViewportsToBeRenderedNextFrame(viewportUIDs)
   }
@@ -423,13 +423,13 @@ class RenderingEngine implements IRenderingEngine {
    */
   public renderFrameOfReference = (FrameOfReferenceUID: string): void => {
     const viewports = this._getViewportsAsArray()
-    const viewportUidsWithSameFrameOfReferenceUID = viewports.map((vp) => {
+    const viewportIdsWithSameFrameOfReferenceUID = viewports.map((vp) => {
       if (vp.getFrameOfReferenceUID() === FrameOfReferenceUID) {
-        return vp.uid
+        return vp.id
       }
     })
 
-    return this.renderViewports(viewportUidsWithSameFrameOfReferenceUID)
+    return this.renderViewports(viewportIdsWithSameFrameOfReferenceUID)
   }
 
   /**
@@ -460,7 +460,7 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     this._reset()
-    renderingEngineCache.delete(this.uid)
+    renderingEngineCache.delete(this.id)
 
     if (!this.useCPURendering) {
       // Free up WebGL resources
@@ -672,9 +672,9 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. ViewportInput to be passed to a stack/volume viewport
     const viewportInput = <ViewportInput>{
-      uid: viewportId,
+      id: viewportId,
       element, // div
-      renderingEngineId: this.uid,
+      renderingEngineId: this.id,
       type,
       canvas,
       sx,
@@ -702,7 +702,7 @@ class RenderingEngine implements IRenderingEngine {
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
       viewportId,
-      renderingEngineId: this.uid,
+      renderingEngineId: this.id,
     }
 
     if (!viewport.suppressEvents) {
@@ -734,8 +734,8 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     const viewportInput = <ViewportInput>{
-      uid: viewportId,
-      renderingEngineId: this.uid,
+      id: viewportId,
+      renderingEngineId: this.id,
       element, // div
       type,
       canvas,
@@ -763,7 +763,7 @@ class RenderingEngine implements IRenderingEngine {
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
       viewportId,
-      renderingEngineId: this.uid,
+      renderingEngineId: this.id,
     }
 
     triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail)
@@ -905,7 +905,7 @@ class RenderingEngine implements IRenderingEngine {
       viewport.sHeight = sHeight
 
       // Updating the renderer for the viewport
-      const renderer = this.offscreenMultiRenderWindow.getRenderer(viewport.uid)
+      const renderer = this.offscreenMultiRenderWindow.getRenderer(viewport.id)
       renderer.setViewport([
         sxStartDisplayCoords,
         syStartDisplayCoords,
@@ -1018,13 +1018,13 @@ class RenderingEngine implements IRenderingEngine {
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i]
-      if (this._needsRender.has(viewport.uid)) {
+      if (this._needsRender.has(viewport.id)) {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport)
         eventDetailArray.push(eventDetail)
 
         // This viewport has been rendered, we can remove it from the set
-        this._needsRender.delete(viewport.uid)
+        this._needsRender.delete(viewport.id)
 
         // If there is nothing left that is flagged for rendering, stop the loop
         if (this._needsRender.size === 0) {
@@ -1129,7 +1129,7 @@ class RenderingEngine implements IRenderingEngine {
       sy,
       sWidth,
       sHeight,
-      uid,
+      id: viewportId,
       renderingEngineId,
       suppressEvents,
     } = viewport
@@ -1153,7 +1153,7 @@ class RenderingEngine implements IRenderingEngine {
     return {
       element,
       suppressEvents,
-      viewportId: uid,
+      viewportId,
       renderingEngineId,
     }
   }
@@ -1165,9 +1165,9 @@ class RenderingEngine implements IRenderingEngine {
    * @param viewport - The `Viewport` to render.
    */
   private _resetViewport(viewport) {
-    const renderingEngineId = this.uid
+    const renderingEngineId = this.id
 
-    const { element, canvas, uid: viewportId } = viewport
+    const { element, canvas, id: viewportId } = viewport
 
     const eventDetail: EventTypes.ElementDisabledEventDetail = {
       element,

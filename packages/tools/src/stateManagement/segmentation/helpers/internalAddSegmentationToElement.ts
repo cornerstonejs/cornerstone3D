@@ -25,7 +25,7 @@ async function internalAddSegmentationToElement(
 
   const enabledElement = getEnabledElement(element)
   const { renderingEngine, viewport } = enabledElement
-  const { uid: viewportId } = viewport
+  const { id: viewportId } = viewport
 
   // Default to true since we are setting a new segmentation, however,
   // in the event listener, we will make other segmentations visible/invisible

@@ -15,7 +15,7 @@ function destroy(): void {
   const toolGroups = [...csToolsState.toolGroups]
 
   for (const toolGroup of toolGroups) {
-    destroyToolGroupByToolGroupId(toolGroup.uid)
+    destroyToolGroupByToolGroupId(toolGroup.id)
   }
 
   csToolsState.toolGroups = []

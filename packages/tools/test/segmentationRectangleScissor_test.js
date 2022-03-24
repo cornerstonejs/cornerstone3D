@@ -138,7 +138,7 @@ describe('Segmentation Tools --', () => {
         done()
       })
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -150,9 +150,9 @@ describe('Segmentation Tools --', () => {
             vp.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
                   { volumeId: segmentationUID },
                 ])
               })
@@ -263,7 +263,7 @@ describe('Segmentation Tools --', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -275,9 +275,9 @@ describe('Segmentation Tools --', () => {
             vp.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
                   { volumeId: segmentationUID },
                 ])
               })
@@ -430,8 +430,8 @@ describe('Segmentation Tools --', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
-      this.segToolGroup.addViewport(vp2.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+      this.segToolGroup.addViewport(vp2.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -444,9 +444,9 @@ describe('Segmentation Tools --', () => {
             vp2.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
                   { volumeId: segmentationUID },
                 ])
               })

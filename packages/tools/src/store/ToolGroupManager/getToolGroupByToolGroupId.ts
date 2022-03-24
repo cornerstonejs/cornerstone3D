@@ -10,7 +10,7 @@ import { IToolGroup } from '../../types'
 function getToolGroupByToolGroupId(
   toolGroupId: string
 ): IToolGroup | undefined {
-  return state.toolGroups.find((s) => s.uid === toolGroupId)
+  return state.toolGroups.find((s) => s.id === toolGroupId)
 }
 
 export default getToolGroupByToolGroupId

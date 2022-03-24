@@ -567,7 +567,7 @@ function getMinMax(storedPixelData: number[]): {
 export function getOrCreateCanvas(element: HTMLElement): HTMLCanvasElement;
 
 // @public (undocumented)
-export function getRenderingEngine(uid: string): IRenderingEngine | undefined;
+export function getRenderingEngine(id: string): IRenderingEngine | undefined;
 
 // @public (undocumented)
 export function getRenderingEngines(): IRenderingEngine[] | undefined;
@@ -594,7 +594,7 @@ function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
-function getVolumeViewportsContainingVolumeId(uid: string, renderingEngineId?: string): Array<IVolumeViewport>;
+function getVolumeViewportsContainingVolumeId(volumeId: string, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
 interface ICache {
@@ -1040,13 +1040,15 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport;
+    getViewport(id: string): IStackViewport | IVolumeViewport;
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
     hasBeenDestroyed: boolean;
+    // (undocumented)
+    id: string;
     // (undocumented)
     offScreenCanvasContainer: any;
     // (undocumented)
@@ -1063,8 +1065,6 @@ interface IRenderingEngine {
     resize(): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
-    // (undocumented)
-    uid: string;
 }
 
 // @public (undocumented)
@@ -1189,6 +1189,8 @@ interface IViewport {
     // (undocumented)
     getRenderingEngine(): any;
     // (undocumented)
+    id: string;
+    // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
     removeAllActors(): void;
@@ -1216,8 +1218,6 @@ interface IViewport {
     sy: number;
     // (undocumented)
     type: ViewportType;
-    // (undocumented)
-    uid: string;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
@@ -1430,7 +1430,7 @@ function registerVolumeLoader(scheme: string, volumeLoader: Types.VolumeLoaderFn
 
 // @public (undocumented)
 export class RenderingEngine implements IRenderingEngine {
-    constructor(uid?: string);
+    constructor(id?: string);
     // (undocumented)
     _debugRender(): void;
     // (undocumented)
@@ -1446,13 +1446,15 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>;
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport;
+    getViewport(viewportId: string): IStackViewport | IVolumeViewport;
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>;
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>;
     // (undocumented)
     hasBeenDestroyed: boolean;
+    // (undocumented)
+    readonly id: string;
     // (undocumented)
     readonly offScreenCanvasContainer: any;
     // (undocumented)
@@ -1469,8 +1471,6 @@ export class RenderingEngine implements IRenderingEngine {
     resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
     // (undocumented)
     setViewports(viewportInputEntries: Array<PublicViewportInput>): void;
-    // (undocumented)
-    readonly uid: string;
 }
 
 // @public (undocumented)
@@ -1807,6 +1807,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
+    readonly id: string;
+    // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
     options: ViewportInputOptions;
@@ -1848,8 +1850,6 @@ export class Viewport implements IViewport {
     sy: number;
     // (undocumented)
     readonly type: ViewportType;
-    // (undocumented)
-    readonly uid: string;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)

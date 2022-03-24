@@ -25,7 +25,7 @@ export default function filterViewportsWithToolEnabled(
     const viewport = viewports[vp]
 
     const toolGroup = ToolGroupManager.getToolGroup(
-      viewport.uid,
+      viewport.id,
       viewport.renderingEngineId
     )
 

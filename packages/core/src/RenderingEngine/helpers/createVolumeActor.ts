@@ -27,7 +27,7 @@ async function createVolumeActor(
 
   if (!imageVolume) {
     throw new Error(
-      `imageVolume with uid: ${imageVolume.volumeId} does not exist`
+      `imageVolume with id: ${imageVolume.volumeId} does not exist`
     )
   }
 

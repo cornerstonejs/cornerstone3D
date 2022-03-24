@@ -61,7 +61,7 @@ export default class WindowLevelTool extends BaseTool {
       viewportsContainingVolumeUID =
         utilities.getVolumeViewportsContainingVolumeId(
           volumeId,
-          renderingEngine.uid
+          renderingEngine.id
         )
       ;[lower, upper] = rgbTransferFunction.getRange()
       modality = cache.getVolume(volumeId).metadata.Modality

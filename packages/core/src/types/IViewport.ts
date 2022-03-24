@@ -10,7 +10,7 @@ import ViewportType from '../enums/ViewportType'
  */
 interface IViewport {
   /** unique identifier of the viewport */
-  uid: string
+  id: string
   /** renderingEngineId the viewport belongs to */
   renderingEngineId: string
   /** viewport type, can be ORTHOGRAPHIC or STACK for now */
@@ -97,7 +97,7 @@ type InternalViewportInput = {
 }
 
 type ViewportInput = {
-  uid: string
+  id: string
   element: HTMLElement
   canvas: HTMLCanvasElement
   renderingEngineId: string

@@ -307,14 +307,14 @@ export default class CrosshairsTool extends AnnotationTool {
     for (let i = 0; i < rotationPoints.length - 1; ++i) {
       const otherViewport = rotationPoints[i][1]
       const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+        this._getReferenceLineDraggableRotatable(otherViewport.id)
       if (!viewportControllable || !viewportDraggableRotatable) {
         continue
       }
-      viewportUIDArray.push(otherViewport.uid)
+      viewportUIDArray.push(otherViewport.id)
       // rotation handles are two per viewport
       i++
     }
@@ -496,11 +496,9 @@ export default class CrosshairsTool extends AnnotationTool {
     viewportAnnotation.metadata.cameraPosition = [...currentCamera.position]
     viewportAnnotation.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
 
-    const viewportControllable = this._getReferenceLineControllable(
-      viewport.uid
-    )
+    const viewportControllable = this._getReferenceLineControllable(viewport.id)
     const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-      viewport.uid
+      viewport.id
     )
     if (
       !csUtils.isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
@@ -568,12 +566,12 @@ export default class CrosshairsTool extends AnnotationTool {
     if (this.configuration.autoPan.enabled) {
       const viewports = csUtils.getVolumeViewportsContainingSameVolumes(
         viewport,
-        renderingEngine.uid
+        renderingEngine.id
       )
 
-      viewports.forEach(({ uid: viewportId }) => {
+      viewports.forEach(({ id: viewportId }) => {
         // other viewports in the scene
-        if (viewportId !== viewport.uid) {
+        if (viewportId !== viewport.id) {
           this._autoPanViewportIfNecessary(viewportId, renderingEngine)
         }
       })
@@ -719,12 +717,12 @@ export default class CrosshairsTool extends AnnotationTool {
       const otherCamera = otherViewport.getCamera()
 
       const otherViewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       const otherViewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+        this._getReferenceLineDraggableRotatable(otherViewport.id)
       const otherViewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id)
 
       // get coordinates for the reference line
       const { sWidth, sHeight } = otherViewport
@@ -1015,23 +1013,23 @@ export default class CrosshairsTool extends AnnotationTool {
 
     const newRtpoints = []
     const newStpoints = []
-    const viewportColor = this._getReferenceLineColor(viewport.uid)
+    const viewportColor = this._getReferenceLineColor(viewport.id)
     const color =
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)'
 
     referenceLines.forEach((line, lineIndex) => {
       // get color for the reference line
       const otherViewport = line[0]
-      const viewportColor = this._getReferenceLineColor(otherViewport.uid)
+      const viewportColor = this._getReferenceLineColor(otherViewport.id)
       const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+        this._getReferenceLineDraggableRotatable(otherViewport.id)
       const viewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id)
       const selectedViewportId = data.activeViewportIds.find(
-        (uid) => uid === otherViewport.uid
+        (uid) => uid === otherViewport.id
       )
 
       let color =
@@ -1479,16 +1477,14 @@ export default class CrosshairsTool extends AnnotationTool {
     annotations
   ) => {
     const { renderingEngine, viewport } = enabledElement
-    const viewportControllable = this._getReferenceLineControllable(
-      viewport.uid
-    )
+    const viewportControllable = this._getReferenceLineControllable(viewport.id)
 
     const otherLinkedViewportAnnotationsFromSameScene = annotations.filter(
       (annotation) => {
         const { data } = annotation
         const otherViewport = renderingEngine.getViewport(data.viewportId)
         const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.uid
+          otherViewport.id
         )
 
         return (
@@ -1542,7 +1538,7 @@ export default class CrosshairsTool extends AnnotationTool {
         const { data } = annotation
         const otherViewport = renderingEngine.getViewport(data.viewportId)
         const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.uid
+          otherViewport.id
         )
 
         return (
@@ -1607,7 +1603,7 @@ export default class CrosshairsTool extends AnnotationTool {
         const { data } = annotation
         const otherViewport = renderingEngine.getViewport(data.viewportId)
         const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.uid
+          otherViewport.id
         )
 
         return (
@@ -1777,8 +1773,8 @@ export default class CrosshairsTool extends AnnotationTool {
         )
 
         return (
-          this._getReferenceLineControllable(otherViewport.uid) &&
-          this._getReferenceLineDraggableRotatable(otherViewport.uid) &&
+          this._getReferenceLineControllable(otherViewport.id) &&
+          this._getReferenceLineDraggableRotatable(otherViewport.id) &&
           sameScene
         )
       }
@@ -1898,7 +1894,7 @@ export default class CrosshairsTool extends AnnotationTool {
           const otherViewport = renderingEngine.getViewport(data.viewportId)
 
           return viewportAnnotation.data.activeViewportIds.find(
-            (uid) => uid === otherViewport.uid
+            (uid) => uid === otherViewport.id
           )
         }
       )
@@ -1922,10 +1918,10 @@ export default class CrosshairsTool extends AnnotationTool {
           data.handles.toolCenter = center
           const otherViewport = renderingEngine.getViewport(data.viewportId)
           const otherViewportControllable = this._getReferenceLineControllable(
-            otherViewport.uid
+            otherViewport.id
           )
           const otherViewportRotatable =
-            this._getReferenceLineDraggableRotatable(otherViewport.uid)
+            this._getReferenceLineDraggableRotatable(otherViewport.id)
 
           return (
             // scene === otherScene &&
@@ -2007,7 +2003,7 @@ export default class CrosshairsTool extends AnnotationTool {
           viewUp,
           focalPoint,
         })
-        otherViewportsUIDs.push(otherViewport.uid)
+        otherViewportsUIDs.push(otherViewport.id)
       })
       renderingEngine.renderViewports(otherViewportsUIDs)
     } else if (handles.activeOperation === OPERATION.SLAB) {
@@ -2019,7 +2015,7 @@ export default class CrosshairsTool extends AnnotationTool {
           const otherViewport = renderingEngine.getViewport(data.viewportId)
 
           return viewportAnnotation.data.activeViewportIds.find(
-            (uid) => uid === otherViewport.uid
+            (uid) => uid === otherViewport.id
           )
         }
       )
@@ -2060,11 +2056,12 @@ export default class CrosshairsTool extends AnnotationTool {
 
             // use this.toolCenter only if viewportDraggableRotatable
             const viewportDraggableRotatable =
-              this._getReferenceLineDraggableRotatable(otherViewport.uid)
+              this._getReferenceLineDraggableRotatable(otherViewport.id)
             if (!viewportDraggableRotatable) {
               const { rotationPoints } = this.editData.annotation.data.handles
+              // Todo: what is a point uid?
               const otherViewportRotationPoints = rotationPoints.filter(
-                (point) => point[1].uid === otherViewport.uid
+                (point) => point[1].uid === otherViewport.id
               )
               if (otherViewportRotationPoints.length === 2) {
                 const point1 = viewport.canvasToWorld(
@@ -2200,12 +2197,12 @@ export default class CrosshairsTool extends AnnotationTool {
 
     for (let i = 0; i < rotationPoints.length - 1; ++i) {
       const otherViewport = rotationPoints[i][1]
-      if (otherViewport.uid !== lineViewport.uid) {
+      if (otherViewport.id !== lineViewport.id) {
         continue
       }
 
       const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       if (!viewportControllable) {
         continue
@@ -2269,14 +2266,14 @@ export default class CrosshairsTool extends AnnotationTool {
       const point = rotationPoints[i][0]
       const otherViewport = rotationPoints[i][1]
       const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       if (!viewportControllable) {
         continue
       }
 
       const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+        this._getReferenceLineDraggableRotatable(otherViewport.id)
       if (!viewportDraggableRotatable) {
         continue
       }
@@ -2309,14 +2306,14 @@ export default class CrosshairsTool extends AnnotationTool {
       const point = slabThicknessPoints[i][0]
       const otherViewport = slabThicknessPoints[i][1]
       const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       if (!viewportControllable) {
         continue
       }
 
       const viewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id)
       if (!viewportSlabThicknessControlsOn) {
         continue
       }
@@ -2325,7 +2322,7 @@ export default class CrosshairsTool extends AnnotationTool {
       if (vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity) {
         data.handles.activeOperation = OPERATION.SLAB
 
-        data.activeViewportIds = [otherViewport.uid]
+        data.activeViewportIds = [otherViewport.id]
 
         this.editData = {
           annotation,
@@ -2352,10 +2349,10 @@ export default class CrosshairsTool extends AnnotationTool {
     for (let i = 0; i < rotationPoints.length - 1; ++i) {
       const otherViewport = rotationPoints[i][1]
       const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.uid)
+        this._getReferenceLineDraggableRotatable(otherViewport.id)
 
       if (!viewportControllable || !viewportDraggableRotatable) {
         continue
@@ -2396,7 +2393,7 @@ export default class CrosshairsTool extends AnnotationTool {
       )
 
       if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
-        viewportUIDArray.push(otherViewport.uid)
+        viewportUIDArray.push(otherViewport.id)
         data.handles.activeOperation = OPERATION.DRAG
       }
 
@@ -2406,15 +2403,15 @@ export default class CrosshairsTool extends AnnotationTool {
 
     for (let i = 0; i < slabThicknessPoints.length - 1; ++i) {
       const otherViewport = slabThicknessPoints[i][1]
-      if (viewportUIDArray.find((uid) => uid === otherViewport.uid)) {
+      if (viewportUIDArray.find((uid) => uid === otherViewport.id)) {
         continue
       }
 
       const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.uid
+        otherViewport.id
       )
       const viewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.uid)
+        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id)
 
       if (!viewportControllable || !viewportSlabThicknessControlsOn) {
         continue
@@ -2490,7 +2487,7 @@ export default class CrosshairsTool extends AnnotationTool {
       )
 
       if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
-        viewportUIDArray.push(otherViewport.uid) // we still need this to draw inactive slab thickness handles
+        viewportUIDArray.push(otherViewport.id) // we still need this to draw inactive slab thickness handles
         data.handles.activeOperation = null // no operation
       }
 

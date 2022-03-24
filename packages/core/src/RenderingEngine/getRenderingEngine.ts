@@ -15,12 +15,12 @@ import type { IRenderingEngine } from './RenderingEngine'
  * const renderingEngine = getRenderingEngine('my-engine');
  * ```
  *
- * @param uid - The unique identifier that was used to create the RenderingEngine
+ * @param id - The identifier that was used to create the RenderingEngine
  * @returns the matching RenderingEngine, or `undefined` if there is no match
  * @public
  */
-export function getRenderingEngine(uid: string): IRenderingEngine | undefined {
-  return renderingEngineCache.get(uid)
+export function getRenderingEngine(id: string): IRenderingEngine | undefined {
+  return renderingEngineCache.get(id)
 }
 
 /**

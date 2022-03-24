@@ -164,20 +164,20 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.uid)
-    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.id)
+    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.id)
 
     try {
       const axialSync = createCameraPositionSynchronizer('axialSync')
       synchronizerId = axialSync.id
 
       axialSync.add({
-        renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportId1).uid,
+        renderingEngineId: this.renderingEngine.id,
+        viewportId: this.renderingEngine.getViewport(viewportId1).id,
       })
       axialSync.add({
-        renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportId2).uid,
+        renderingEngineId: this.renderingEngine.id,
+        viewportId: this.renderingEngine.getViewport(viewportId2).id,
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
@@ -331,19 +331,19 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.uid)
-    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.id)
+    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.id)
 
     try {
       const voiSync = createVOISynchronizer('ctWLSync')
 
       voiSync.addSource({
-        renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportId1).uid,
+        renderingEngineId: this.renderingEngine.id,
+        viewportId: this.renderingEngine.getViewport(viewportId1).id,
       })
       voiSync.addTarget({
-        renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportId2).uid,
+        renderingEngineId: this.renderingEngine.id,
+        viewportId: this.renderingEngine.getViewport(viewportId2).id,
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {

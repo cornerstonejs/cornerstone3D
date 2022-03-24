@@ -301,7 +301,7 @@ export default class ProbeTool extends AnnotationTool {
     const { viewportId } = enabledElement
     this.eventDispatchDetail = {
       viewportId,
-      renderingEngineId: renderingEngine.uid,
+      renderingEngineId: renderingEngine.id,
     }
 
     this._deactivateModify(element)

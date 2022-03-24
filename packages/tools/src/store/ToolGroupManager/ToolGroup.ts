@@ -21,13 +21,13 @@ const { Active, Passive, Enabled, Disabled } = ToolModes
  * ```
  */
 export default class ToolGroup implements IToolGroup {
-  uid: string
+  id: string
   viewportsInfo = []
   toolOptions = {}
   _toolInstances = {}
 
-  constructor(uid: string) {
-    this.uid = uid
+  constructor(id: string) {
+    this.id = id
   }
 
   /**
@@ -81,7 +81,7 @@ export default class ToolGroup implements IToolGroup {
 
     if (localToolInstance) {
       console.warn(
-        `'${toolName}' is already registered for ToolGroup ${this.uid}.`
+        `'${toolName}' is already registered for ToolGroup ${this.id}.`
       )
       return
     }
@@ -92,7 +92,7 @@ export default class ToolGroup implements IToolGroup {
 
     const toolProps = {
       name: toolName,
-      toolGroupId: this.uid,
+      toolGroupId: this.id,
       configuration,
     }
 
@@ -122,7 +122,7 @@ export default class ToolGroup implements IToolGroup {
       )
     }
 
-    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].uid
+    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id
 
     this.viewportsInfo.push({
       viewportId,
@@ -287,7 +287,7 @@ export default class ToolGroup implements IToolGroup {
     this._toolInstances[toolName].mode = Enabled
 
     if (this._toolInstances[toolName].enableCallback) {
-      this._toolInstances[toolName].enableCallback(this.uid)
+      this._toolInstances[toolName].enableCallback(this.id)
     }
 
     this._renderViewports()
@@ -319,7 +319,7 @@ export default class ToolGroup implements IToolGroup {
     this._toolInstances[toolName].mode = Disabled
 
     if (this._toolInstances[toolName].disableCallback) {
-      this._toolInstances[toolName].disableCallback(this.uid)
+      this._toolInstances[toolName].disableCallback(this.id)
     }
     this._renderViewports()
   }

@@ -675,7 +675,7 @@ class StackViewport extends Viewport implements IStackViewport {
       previousCamera,
       camera: updatedCamera,
       element: this.element,
-      viewportId: this.uid,
+      viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
     }
 
@@ -1225,7 +1225,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
-          viewportId: this.uid,
+          viewportId: this.id,
           renderingEngineId: this.renderingEngineId,
         }
 
@@ -1364,7 +1364,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
-          viewportId: this.uid,
+          viewportId: this.id,
           renderingEngineId: this.renderingEngineId,
         }
 
@@ -1537,7 +1537,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Create a VTK Volume actor to display the vtkImageData object
     const stackActor = this.createActorMapper(this._imageData)
 
-    this.setActors([{ uid: this.uid, volumeActor: stackActor }])
+    this.setActors([{ uid: this.id, volumeActor: stackActor }])
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
     const direction = this._imageData.getDirection() as Float32Array
@@ -1709,7 +1709,7 @@ class StackViewport extends Viewport implements IStackViewport {
       previousCamera,
       camera,
       element: this.element,
-      viewportId: this.uid,
+      viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
     }
 
@@ -1725,7 +1725,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Finally emit event for the full camera change cause during load image.
     const eventDetail: EventTypes.ImageSpacingCalibratedEventDetail = {
       element: this.element,
-      viewportId: this.uid,
+      viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
       imageId: this.getCurrentImageId(),
       // Todo: why do we need to pass imageData? isn't' indexToWorld and worldToIndex enough?
@@ -2028,7 +2028,7 @@ class StackViewport extends Viewport implements IStackViewport {
     return {
       canvas: this.canvas,
       element: this.element,
-      viewportId: this.uid,
+      viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
     }
   }

@@ -13,7 +13,7 @@ import { IToolGroup } from '../../types'
 function createToolGroup(toolGroupId: string): IToolGroup | undefined {
   // Exit early if ID conflict
   const toolGroupWithIdExists = state.toolGroups.some(
-    (tg) => tg.uid === toolGroupId
+    (tg) => tg.id === toolGroupId
   )
 
   if (toolGroupWithIdExists) {

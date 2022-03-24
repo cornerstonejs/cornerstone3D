@@ -678,13 +678,15 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport
+    getViewport(id: string): IStackViewport | IVolumeViewport
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>
     // (undocumented)
     hasBeenDestroyed: boolean
+    // (undocumented)
+    id: string
     // (undocumented)
     offScreenCanvasContainer: any
     // (undocumented)
@@ -701,8 +703,6 @@ interface IRenderingEngine {
     resize(): void
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void
-    // (undocumented)
-    uid: string
 }
 
 // @public
@@ -785,6 +785,7 @@ interface IViewport {
     getFrameOfReferenceUID: () => string
     getRenderer(): void
     getRenderingEngine(): any
+    id: string
     options: ViewportInputOptions
     removeAllActors(): void
     render(): void
@@ -799,7 +800,6 @@ interface IViewport {
     sx: number
     sy: number
     type: ViewportType
-    uid: string
     worldToCanvas: (worldPos: Point3) => Point2
 }
 

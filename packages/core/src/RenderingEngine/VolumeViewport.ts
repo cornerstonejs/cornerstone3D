@@ -89,7 +89,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     if (!firstImageVolume) {
       throw new Error(
-        `imageVolume with uid: ${firstImageVolume.volumeId} does not exist`
+        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
       )
     }
 
@@ -209,13 +209,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
       if (!imageVolume) {
         throw new Error(
-          `imageVolume with uid: ${imageVolume.volumeId} does not exist`
+          `imageVolume with id: ${imageVolume.volumeId} does not exist`
         )
       }
 
       if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
         throw new Error(
-          `Volumes being added to viewport ${this.uid} do not share the same FrameOfReferenceUID. This is not yet supported`
+          `Volumes being added to viewport ${this.id} do not share the same FrameOfReferenceUID. This is not yet supported`
         )
       }
     }

@@ -1740,13 +1740,15 @@ interface IRenderingEngine {
     // (undocumented)
     getStackViewports(): Array<IStackViewport>
     // (undocumented)
-    getViewport(uid: string): IStackViewport | IVolumeViewport
+    getViewport(id: string): IStackViewport | IVolumeViewport
     // (undocumented)
     getViewports(): Array<IStackViewport | IVolumeViewport>
     // (undocumented)
     getVolumeViewports(): Array<IVolumeViewport>
     // (undocumented)
     hasBeenDestroyed: boolean
+    // (undocumented)
+    id: string
     // (undocumented)
     offScreenCanvasContainer: any
     // (undocumented)
@@ -1763,8 +1765,6 @@ interface IRenderingEngine {
     resize(): void
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void
-    // (undocumented)
-    uid: string
 }
 
 // @public (undocumented)
@@ -1871,6 +1871,8 @@ interface IToolGroup {
     // (undocumented)
     getViewportIds: () => string[];
     // (undocumented)
+    id: string;
+    // (undocumented)
     removeViewports: {
         (renderingEngineId: string, viewportId?: string): void;
     };
@@ -1899,8 +1901,6 @@ interface IToolGroup {
     // (undocumented)
     toolOptions: Record<string, any>;
     // (undocumented)
-    uid: string;
-    // (undocumented)
     viewportsInfo: Array<Types_2.IViewportId>;
 }
 
@@ -1923,6 +1923,7 @@ interface IViewport {
     getFrameOfReferenceUID: () => string
     getRenderer(): void
     getRenderingEngine(): any
+    id: string
     options: ViewportInputOptions
     removeAllActors(): void
     render(): void
@@ -1937,7 +1938,6 @@ interface IViewport {
     sx: number
     sy: number
     type: ViewportType
-    uid: string
     worldToCanvas: (worldPos: Point3) => Point2
 }
 

@@ -440,7 +440,7 @@ describe('Volume Viewport GPU -- ', () => {
         const viewport = this.renderingEngine.getViewport(viewportId)
         const viewports = utilities.getVolumeViewportsContainingVolumeId(
           volumeId,
-          this.renderingEngine.uid
+          this.renderingEngine.id
         )
 
         expect(viewports.length).toBe(1)

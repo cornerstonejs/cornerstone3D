@@ -136,7 +136,7 @@ describe('Segmentation Render -- ', () => {
         ).then(done, done.fail)
       })
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -150,7 +150,7 @@ describe('Segmentation Render -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })
@@ -211,9 +211,9 @@ describe('Segmentation Render -- ', () => {
         })
       })
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
-      this.segToolGroup.addViewport(vp2.uid, this.renderingEngine.uid)
-      this.segToolGroup.addViewport(vp3.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+      this.segToolGroup.addViewport(vp2.id, this.renderingEngine.id)
+      this.segToolGroup.addViewport(vp3.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -227,7 +227,7 @@ describe('Segmentation Render -- ', () => {
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })
@@ -261,7 +261,7 @@ describe('Segmentation Render -- ', () => {
         ).then(done, done.fail)
       })
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -276,7 +276,7 @@ describe('Segmentation Render -- ', () => {
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             createAndCacheVolume(segVolumeId2, { imageIds: [] }).then(() => {
-              addSegmentationsForToolGroup(this.segToolGroup.uid, [
+              addSegmentationsForToolGroup(this.segToolGroup.id, [
                 { volumeId: segVolumeId },
                 { volumeId: segVolumeId2 },
               ])
@@ -322,14 +322,14 @@ describe('Segmentation Render -- ', () => {
         Events.SEGMENTATION_STATE_MODIFIED,
         (evt) => {
           const toolGroupState = segmentation.state.getSegmentationState(
-            this.segToolGroup.uid
+            this.segToolGroup.id
           )
 
           expect(toolGroupState).toBeDefined()
 
           const toolGroupConfig =
             segmentation.segmentationConfig.getSegmentationConfig(
-              this.segToolGroup.uid
+              this.segToolGroup.id
             )
 
           expect(toolGroupConfig).toBeDefined()
@@ -340,7 +340,7 @@ describe('Segmentation Render -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -355,7 +355,7 @@ describe('Segmentation Render -- ', () => {
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentationsForToolGroup(
-              this.segToolGroup.uid,
+              this.segToolGroup.id,
               [{ volumeId: segVolumeId }],
               {
                 ...customToolGroupSeConfig,

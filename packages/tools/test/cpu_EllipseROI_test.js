@@ -211,7 +211,7 @@ describe('EllipticalRoiTool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)
@@ -336,7 +336,7 @@ describe('EllipticalRoiTool (CPU):', () => {
       }, 100)
     }
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 

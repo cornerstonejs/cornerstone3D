@@ -8,7 +8,7 @@ export default interface IToolGroup {
   /** Unserializable instantiated tool classes, keyed by name */
   _toolInstances: Record<string, any>
   /** ToolGroup ID */
-  uid: string
+  id: string
   /** Viewports Info inside the ToolGroup - including viewportId and renderingEngineId */
   viewportsInfo: Array<Types.IViewportId>
   /** Options for each tool including bindings and mode */

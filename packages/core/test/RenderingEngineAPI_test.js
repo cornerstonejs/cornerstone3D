@@ -184,7 +184,7 @@ describe('RenderingEngineAPI -- ', () => {
       let viewport2 = this.renderingEngine.getViewport(sagittalViewportId)
 
       expect(viewport1).toBeTruthy()
-      expect(viewport1.uid).toBe(axialViewportId)
+      expect(viewport1.id).toBe(axialViewportId)
       expect(viewport2).toBeUndefined()
     })
 

@@ -130,7 +130,7 @@ export default class SphereScissorsTool extends BaseTool {
       },
     }
 
-    const viewportIDsToRender = [viewport.uid]
+    const viewportIDsToRender = [viewport.id]
 
     this.editData = {
       annotation,
@@ -296,7 +296,7 @@ export default class SphereScissorsTool extends BaseTool {
     const { viewport } = enabledElement
     const { viewportIDsToRender } = this.editData
 
-    if (!viewportIDsToRender.includes(viewport.uid)) {
+    if (!viewportIDsToRender.includes(viewport.id)) {
       return
     }
 

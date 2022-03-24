@@ -215,7 +215,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)
@@ -358,7 +358,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)
@@ -493,7 +493,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)
@@ -687,7 +687,7 @@ describe('Length Tool (CPU):', () => {
       document.dispatchEvent(evt)
     })
 
-    this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
     try {
       vp.setStack([imageId1], 0)

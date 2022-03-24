@@ -11,7 +11,7 @@ import {
  * @returns VolumeViewport viewports array
  */
 function getVolumeViewportsContainingVolumeId(
-  uid: string,
+  volumeId: string,
   renderingEngineId?: string
 ): Array<IVolumeViewport> {
   // If rendering engine is not provided, use all rendering engines
@@ -27,8 +27,8 @@ function getVolumeViewportsContainingVolumeId(
   renderingEngines.forEach((renderingEngine) => {
     const viewports = renderingEngine.getVolumeViewports()
     const filteredViewports = viewports.filter((vp) => {
-      const volActors = vp.getDefaultActor()
-      return volActors.volumeActor && volActors.uid === uid
+      const actor = vp.getDefaultActor()
+      return actor.volumeActor && actor.uid === volumeId
     })
     sameVolumeViewports.push(...filteredViewports)
   })

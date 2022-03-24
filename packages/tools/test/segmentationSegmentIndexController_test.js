@@ -216,7 +216,7 @@ describe('Segmentation Index Controller --', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -228,9 +228,9 @@ describe('Segmentation Index Controller --', () => {
             vp1.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
                   { volumeId: segmentationUID },
                 ])
               })
@@ -362,7 +362,7 @@ describe('Segmentation Index Controller --', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -374,9 +374,9 @@ describe('Segmentation Index Controller --', () => {
             vp1.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
                   { volumeId: segmentationUID },
                 ])
               })
@@ -536,7 +536,7 @@ describe('Segmentation Index Controller --', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp1.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
       try {
         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -548,9 +548,9 @@ describe('Segmentation Index Controller --', () => {
             vp1.render()
 
             segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.uid)
+              .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.uid, [
+                addSegmentationsForToolGroup(this.segToolGroup.id, [
                   { volumeId: segmentationUID },
                 ])
               })

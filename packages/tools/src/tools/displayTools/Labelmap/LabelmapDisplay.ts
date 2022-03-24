@@ -167,7 +167,7 @@ function render(
   const renderInactiveSegmentations = config.renderInactiveSegmentations
 
   _setLabelmapColorAndOpacity(
-    viewport.uid,
+    viewport.id,
     actor,
     cfun,
     ofun,

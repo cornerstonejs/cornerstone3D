@@ -116,7 +116,7 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportId1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       const tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg).toBeDefined()
@@ -186,7 +186,7 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportId1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       const tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg).toBeDefined()
@@ -231,7 +231,7 @@ describe('ToolGroup Manager: ', () => {
       // Remove viewports
       let tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
 
-      tg.addViewport(viewportId1, this.renderingEngine.uid)
+      tg.addViewport(viewportId1, this.renderingEngine.id)
       expect(tg.viewportsInfo.length).toBe(1)
 
       tg.removeViewports(renderingEngineId)
@@ -240,7 +240,7 @@ describe('ToolGroup Manager: ', () => {
       expect(tg.viewportsInfo.length).toBe(0)
 
       //
-      tg.addViewport(viewportId1, this.renderingEngine.uid)
+      tg.addViewport(viewportId1, this.renderingEngine.id)
       tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
       expect(tg.viewportsInfo.length).toBe(1)
 
@@ -274,7 +274,7 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportId1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       // Remove viewports
       let tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')
@@ -311,7 +311,7 @@ describe('ToolGroup Manager: ', () => {
         },
       ])
 
-      this.toolGroup.addViewport(viewportId1, this.renderingEngine.uid)
+      this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       // Remove viewports
       let tg = ToolGroupManager.getToolGroupByToolGroupId('volume1')

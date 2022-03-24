@@ -39,13 +39,13 @@ function getRenderingEngineAndViewportsContainingVolume(
     const renderingEngine = renderingEnginesArray[i]
     const viewports = utilities.getVolumeViewportsContainingVolumeId(
       volumeId,
-      renderingEngine.uid
+      renderingEngine.id
     )
 
     if (viewports.length) {
       renderingEngineAndViewportIds.push({
         renderingEngine,
-        viewportUIDs: viewports.map((viewport) => viewport.uid),
+        viewportUIDs: viewports.map((viewport) => viewport.id),
       })
     }
   }

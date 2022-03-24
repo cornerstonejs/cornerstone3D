@@ -140,13 +140,13 @@ describe('Segmentation State -- ', () => {
           expect(state.toolGroups).toBeDefined()
 
           const toolGroupSegmentationState =
-            state.toolGroups[this.segToolGroup.uid]
+            state.toolGroups[this.segToolGroup.id]
 
           expect(toolGroupSegmentationState).toBeDefined()
           expect(toolGroupSegmentationState.segmentations.length).toBe(1)
 
           const segState = segmentation.state.getSegmentationState(
-            this.segToolGroup.uid
+            this.segToolGroup.id
           )
 
           expect(toolGroupSegmentationState.segmentations).toEqual(segState)
@@ -165,7 +165,7 @@ describe('Segmentation State -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -179,7 +179,7 @@ describe('Segmentation State -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })
@@ -224,7 +224,7 @@ describe('Segmentation State -- ', () => {
         }
       )
 
-      this.segToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       const callback = ({ volumeActor }) =>
         volumeActor.getProperty().setInterpolationTypeToNearest()
@@ -238,7 +238,7 @@ describe('Segmentation State -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentationsForToolGroup(this.segToolGroup.uid, [
+            addSegmentationsForToolGroup(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })

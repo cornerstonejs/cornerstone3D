@@ -243,7 +243,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
       const eventDetail: AnnotationModifiedEventDetail = {
         annotation,
-        viewportId: viewport.uid,
+        viewportId: viewport.id,
         renderingEngineId,
       }
 

@@ -25,7 +25,7 @@ import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera'
  */
 class Viewport implements IViewport {
   /** unique identifier for the viewport */
-  readonly uid: string
+  readonly id: string
   /** HTML element in DOM that is used for rendering the viewport */
   readonly element: HTMLElement
   /** an internal canvas that is created on the provided HTML element */
@@ -56,7 +56,7 @@ class Viewport implements IViewport {
   readonly suppressEvents: boolean
 
   constructor(props: ViewportInput) {
-    this.uid = props.uid
+    this.id = props.id
     this.renderingEngineId = props.renderingEngineId
     this.type = props.type
     this.element = props.element
@@ -67,7 +67,7 @@ class Viewport implements IViewport {
     this.sHeight = props.sHeight
     this._actors = new Map()
     // Set data attributes for render events
-    this.element.setAttribute('data-viewport-uid', this.uid)
+    this.element.setAttribute('data-viewport-uid', this.id)
     this.element.setAttribute(
       'data-rendering-engine-uid',
       this.renderingEngineId
@@ -112,7 +112,7 @@ class Viewport implements IViewport {
       throw new Error('Rendering engine has been destroyed')
     }
 
-    return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.uid)
+    return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.id)
   }
 
   /**
@@ -121,7 +121,7 @@ class Viewport implements IViewport {
   public render() {
     const renderingEngine = this.getRenderingEngine()
 
-    renderingEngine.renderViewport(this.uid)
+    renderingEngine.renderViewport(this.id)
   }
 
   /**
@@ -620,7 +620,7 @@ class Viewport implements IViewport {
         camera: this.getCamera(),
         canvas: this.canvas,
         element: this.element,
-        viewportId: this.uid,
+        viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
       }
 
@@ -787,7 +787,7 @@ class Viewport implements IViewport {
         camera: updatedCamera,
         canvas: this.canvas,
         element: this.element,
-        viewportId: this.uid,
+        viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
       }
 

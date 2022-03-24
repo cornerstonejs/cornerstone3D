@@ -214,7 +214,7 @@ describe('LengthTool:', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         vp.setStack([imageId1], 0)
@@ -318,7 +318,7 @@ describe('LengthTool:', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         volumeLoader
@@ -469,7 +469,7 @@ describe('LengthTool:', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         vp.setStack([imageId1], 0)
@@ -604,7 +604,7 @@ describe('LengthTool:', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         vp.setStack([imageId1], 0)
@@ -801,7 +801,7 @@ describe('LengthTool:', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         vp.setStack([imageId1], 0)
@@ -919,7 +919,7 @@ describe('LengthTool:', () => {
         document.dispatchEvent(evt)
       })
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         vp.setStack([imageId1], 0)
@@ -1078,7 +1078,7 @@ describe('LengthTool:', () => {
         }, 100)
       }
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing)
 
@@ -1224,7 +1224,7 @@ describe('LengthTool:', () => {
 
       element.addEventListener(Events.IMAGE_RENDERED, firstCallback)
 
-      this.stackToolGroup.addViewport(vp.uid, this.renderingEngine.uid)
+      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
       try {
         vp.setStack([imageId1], 0)

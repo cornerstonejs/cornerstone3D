@@ -12,7 +12,7 @@ import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmenta
  */
 function destroyToolGroupByToolGroupId(toolGroupId: string): void {
   const toolGroupIndex = state.toolGroups.findIndex(
-    (tg) => tg.uid === toolGroupId
+    (tg) => tg.id === toolGroupId
   )
 
   if (toolGroupIndex > -1) {

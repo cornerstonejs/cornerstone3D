@@ -6,11 +6,11 @@ const renderingEngineCache = {
   /**
    * Returns the `RenderingEngine` instance with the given `uid`.
    *
-   * @param uid - The `uid` of the `RenderingEngine` instance to fetch.
+   * @param id - The `id` of the `RenderingEngine` instance to fetch.
    * @returns The `RenderingEngine` instance.
    */
-  get: (uid: string): IRenderingEngine => {
-    return cache[uid]
+  get: (id: string): IRenderingEngine => {
+    return cache[id]
   },
   /**
    * Adds the `RenderingEngine` instance to the cache.
@@ -18,9 +18,9 @@ const renderingEngineCache = {
    * @param re - The `RenderingEngine` to add.
    */
   set: (re: IRenderingEngine): void => {
-    const uid = re.uid
+    const renderingEngineId = re.id
 
-    cache[uid] = re
+    cache[renderingEngineId] = re
   },
   /**
    * Deletes the `RenderingEngine` instance from the cache.
@@ -28,13 +28,13 @@ const renderingEngineCache = {
    * @param uid - The `uid` of the `RenderingEngine` instance to delete.
    * @returns True if the delete was successful.
    */
-  delete: (uid: string) => {
-    return delete cache[uid]
+  delete: (id: string) => {
+    return delete cache[id]
   },
 
   getAll: (): Array<IRenderingEngine> => {
-    const uids = Object.keys(cache)
-    const renderingEngines = uids.map((uid) => cache[uid])
+    const renderingEngineIds = Object.keys(cache)
+    const renderingEngines = renderingEngineIds.map((id) => cache[id])
 
     return renderingEngines
   },
