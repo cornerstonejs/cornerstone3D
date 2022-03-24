@@ -18,7 +18,8 @@ import {
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
+
 import config from './config/default'
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -88,7 +89,6 @@ class OneStackExample extends Component {
   async componentDidMount() {
     await csRenderInit()
     csTools3d.init()
-    registerWebImageLoader(cs)
     ;({ stackCTViewportToolGroup } = initToolGroups())
 
     const ctStackImageIds = await this.ctStackImageIdsPromise

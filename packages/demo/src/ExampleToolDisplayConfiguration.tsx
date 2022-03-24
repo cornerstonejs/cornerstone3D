@@ -35,11 +35,9 @@ import {
   VIEWPORT_IDS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@cornerstonejs/core'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 
 const VIEWPORT_DX_COLOR = 'dx_and_color_viewport'
 
@@ -91,7 +89,6 @@ class ToolDisplayConfigurationExample extends Component {
   constructor(props) {
     super(props)
 
-    registerWebImageLoader(cs)
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()

@@ -19,7 +19,7 @@ import ViewportGrid from './components/ViewportGrid'
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
 import './ExampleVTKMPR.css'
 import {
@@ -89,8 +89,6 @@ class EnableDisableViewportExample extends Component {
         hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
       10000
     )
-
-    registerWebImageLoader(cs)
 
     this.numberOfViewports =
       this.state.viewportGrid.numCols * this.state.viewportGrid.numRows

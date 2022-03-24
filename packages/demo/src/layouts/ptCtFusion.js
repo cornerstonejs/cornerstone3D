@@ -130,7 +130,7 @@ function setLayout(
   renderingEngine.setViewports(viewportInput)
 
   // Add tools
-  const renderingEngineId = renderingEngine.uid
+  const renderingEngineId = renderingEngine.id
 
   // CT tool groups
   viewportInput.slice(0, 3).forEach(({ viewportId }, index) => {

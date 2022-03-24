@@ -23,8 +23,7 @@ import {
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import * as cs from '@cornerstonejs/core'
-
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
 const VOLUME = 'volume'
 const STACK = 'stack'
@@ -60,7 +59,6 @@ class CacheDecacheExample extends Component {
   constructor(props) {
     super(props)
 
-    registerWebImageLoader(cs)
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()

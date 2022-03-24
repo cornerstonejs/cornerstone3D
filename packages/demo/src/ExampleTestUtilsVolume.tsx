@@ -154,11 +154,11 @@ class testUtilVolume extends Component {
 
     axialSync.addSource({
       renderingEngineId: renderingEngineId,
-      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).uid,
+      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).id,
     })
     axialSync.addTarget({
       renderingEngineId: renderingEngineId,
-      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).uid,
+      viewportId: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).id,
     })
 
     await setVolumesForViewports(

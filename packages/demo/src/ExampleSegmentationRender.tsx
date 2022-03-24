@@ -22,6 +22,7 @@ import {
   RectangleRoiTool,
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -522,10 +523,10 @@ class SegmentationExample extends Component {
     const { imageData: backgroundImageData } = ctViewport.getImageData()
 
     await volumeLoader.createAndCacheDerivedVolume(ctVolumeId, {
-      uid: labelmap1UID,
+      volumeId: labelmap1UID,
     })
     await volumeLoader.createAndCacheDerivedVolume(ctVolumeId, {
-      uid: labelmap2UID,
+      volumeId: labelmap2UID,
     })
 
     const boneSoftVolume = cache.getVolume(labelmap1UID)

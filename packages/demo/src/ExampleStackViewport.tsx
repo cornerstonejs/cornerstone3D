@@ -14,12 +14,12 @@ import {
   Enums as csToolsEnums,
   synchronizers,
   cancelActiveManipulations,
-  removeAnnotation,
   destroy as CS3dToolsDestroy,
   CrosshairsTool,
   WindowLevelTool,
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'
@@ -37,7 +37,6 @@ import * as cs from '@cornerstonejs/core'
 import config from './config/default'
 import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
 
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 import {
   setCTWWWC,
   setPetTransferFunction,
@@ -89,7 +88,6 @@ class StackViewportExample extends Component {
   constructor(props) {
     super(props)
 
-    registerWebImageLoader(cs)
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()

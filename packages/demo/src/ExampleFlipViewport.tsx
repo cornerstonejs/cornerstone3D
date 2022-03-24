@@ -26,9 +26,8 @@ import {
   ANNOTATION_TOOLS,
 } from './constants'
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@cornerstonejs/core'
+import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
 
-import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 import { setCTWWWC } from './helpers/transferFunctionHelpers'
 
 const VOLUME = 'volume'
@@ -72,7 +71,6 @@ class FlipViewportExample extends Component {
   constructor(props) {
     super(props)
 
-    registerWebImageLoader(cs)
     this._elementNodes = new Map()
     this._viewportGridRef = React.createRef()
     this._offScreenRef = React.createRef()
