@@ -7,7 +7,7 @@ import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationState
  * a SEGMENTATION_STATE_MODIFIED event.
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
- * @param toolGroupId - The UID of the tool group that contains the segmentation.
+ * @param toolGroupId - The Id of the tool group that contains the segmentation.
  * @param segmentationDataUID - The UID of the segmentation data to modify its visibility.
  * @param visibility - boolean
  */
@@ -35,7 +35,7 @@ function setSegmentationVisibility(
 /**
  * Get the visibility of a segmentation data for a given tool group.
  *
- * @param toolGroupId - The UID of the tool group that the segmentation
+ * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
  * @param segmentationDataUID - The UID of the segmentation data to get
  * @returns A boolean value that indicates whether the segmentation data is visible or

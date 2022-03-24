@@ -32,7 +32,7 @@ function addColorLUT(colorLUT: ColorLUT, colorLUTIndex: number): void {
  * color for that segment. It can be used for segmentation tools that need to
  * display the color of their annotation.
  *
- * @param toolGroupId - The UID of the tool group that owns the segmentation data.
+ * @param toolGroupId - The Id of the tool group that owns the segmentation data.
  * @param segmentationDataUID - The UID of the segmentation data
  * @param segmentIndex - The index of the segment in the segmentation
  * @returns A color.

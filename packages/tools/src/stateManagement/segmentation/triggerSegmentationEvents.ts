@@ -71,7 +71,7 @@ function triggerSegmentationGlobalStateModified(
 
 /**
  * Trigger an event that a segmentation data has been modified
- * @param toolGroupId - The UID of the tool group that triggered the event.
+ * @param toolGroupId - The Id of the tool group that triggered the event.
  * @param segmentationDataUID - The UID of the segmentation data that was modified.
  */
 function triggerSegmentationDataModified(

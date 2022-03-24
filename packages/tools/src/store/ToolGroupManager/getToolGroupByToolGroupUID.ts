@@ -3,7 +3,7 @@ import { IToolGroup } from '../../types'
 
 /**
  * Given a tool group UID, return the tool group
- * @param toolGroupId - The UID of the tool group to be retrieved.
+ * @param toolGroupId - The Id of the tool group to be retrieved.
  * @returns The tool group that has the same uid as the tool group uid that was
  * passed in.
  */

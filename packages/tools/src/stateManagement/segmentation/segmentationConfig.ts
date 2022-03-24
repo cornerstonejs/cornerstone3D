@@ -99,7 +99,7 @@ function updateGlobalSegmentationConfig(
 
 /**
  * Get the toolGroup specific segmentation config
- * @param toolGroupId - The UID of the tool group
+ * @param toolGroupId - The Id of the tool group
  * @returns A SegmentationConfig object.
  */
 function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
@@ -110,7 +110,7 @@ function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
  * Set the toolGroup specific segmentation config.
  * It fires a SEGMENTATION_STATE_MODIFIED event.
  *
- * @param toolGroupId - The UID of the tool group that the segmentation config is for.
+ * @param toolGroupId - The Id of the tool group that the segmentation config is for.
  * @param segmentationConfig - The segmentation config to set.
  */
 function setSegmentationConfig(
@@ -151,7 +151,7 @@ function setRepresentationConfig(
 
 /**
  * Get the representation config for a given tool group and representation type
- * @param toolGroupId - The UID of the tool group that contains the tool that you
+ * @param toolGroupId - The Id of the tool group that contains the tool that you
  * want to get the representation config for.
  * @param representationType - The type of representation to get.
  * @returns A RepresentationConfig object.

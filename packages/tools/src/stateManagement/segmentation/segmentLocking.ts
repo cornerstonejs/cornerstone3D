@@ -6,7 +6,7 @@ import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEve
 /**
  * Get the locked status of a segment index in a segmentation
  *
- * @param toolGroupId - The UID of the tool group that contains the
+ * @param toolGroupId - The Id of the tool group that contains the
  * segmentation.
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not for modification

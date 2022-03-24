@@ -154,7 +154,7 @@ export default class SegmentationStateManager {
    * Get the segmentation state for the toolGroup containing array of
    * segmentation data objects.
    *
-   * @param toolGroupId - The UID of the tool group that the segmentation
+   * @param toolGroupId - The Id of the tool group that the segmentation
    * belongs to.
    * @returns An array of objects, each of which contains the data for a single
    * segmentation data
@@ -175,7 +175,7 @@ export default class SegmentationStateManager {
    * Given a tool group UID and a representation type, return toolGroup specific
    * config for that representation type.
    *
-   * @param toolGroupId - The UID of the tool group
+   * @param toolGroupId - The Id of the tool group
    * @param representationType - The type of representation, currently only Labelmap
    * @returns A SegmentationConfig object.
    */
@@ -193,7 +193,7 @@ export default class SegmentationStateManager {
    * Set the segmentation config for a given tool group. It will create a new
    * tool group specific config if one does not exist.
    *
-   * @param toolGroupId - The UID of the tool group that the segmentation
+   * @param toolGroupId - The Id of the tool group that the segmentation
    * belongs to.
    * @param config - SegmentationConfig
    */
@@ -220,7 +220,7 @@ export default class SegmentationStateManager {
 
   /**
    * Given a toolGroupId and a segmentationDataUID, return the segmentation data for that tool group.
-   * @param toolGroupId - The UID of the tool group that the segmentation
+   * @param toolGroupId - The Id of the tool group that the segmentation
    * data belongs to.
    * @param segmentationDataUID - string
    * @returns A ToolGroupSpecificSegmentationData object.
@@ -242,7 +242,7 @@ export default class SegmentationStateManager {
 
   /**
    * Get the active segmentation data for a tool group
-   * @param toolGroupId - The UID of the tool group that the segmentation
+   * @param toolGroupId - The Id of the tool group that the segmentation
    * data belongs to.
    * @returns A ToolGroupSpecificSegmentationData object.
    */
@@ -314,7 +314,7 @@ export default class SegmentationStateManager {
 
   /**
    * Add a new segmentation data to the toolGroup's segmentation state
-   * @param toolGroupId - The UID of the tool group that the segmentation
+   * @param toolGroupId - The Id of the tool group that the segmentation
    * belongs to.
    * @param segmentationData - ToolGroupSpecificSegmentationData
    */
@@ -337,7 +337,7 @@ export default class SegmentationStateManager {
 
   /**
    * Set the active segmentation data for a tool group
-   * @param toolGroupId - The UID of the tool group that owns the
+   * @param toolGroupId - The Id of the tool group that owns the
    * segmentation data.
    * @param segmentationDataUID - string
    */
@@ -370,7 +370,7 @@ export default class SegmentationStateManager {
 
   /**
    * Remove a segmentation data from the toolGroup specific segmentation state
-   * @param toolGroupId - The UID of the tool group that the segmentation
+   * @param toolGroupId - The Id of the tool group that the segmentation
    * data is associated with.
    * @param segmentationDataUID - string
    */
@@ -406,7 +406,7 @@ export default class SegmentationStateManager {
    * It handles the active segmentation data based on the active status of the
    * segmentation data that was added or removed.
    *
-   * @param toolGroupId - The UID of the tool group that the segmentation
+   * @param toolGroupId - The Id of the tool group that the segmentation
    * data belongs to.
    * @param recentlyAddedOrRemovedSegmentationData - ToolGroupSpecificSegmentationData
    */

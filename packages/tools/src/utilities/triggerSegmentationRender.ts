@@ -179,7 +179,7 @@ const segmentationRenderingEngine = new SegmentationRenderingEngine()
 
 /**
  * It triggers a render for all the segmentations of the tool group with the given UID.
- * @param toolGroupId - The UID of the tool group to render.
+ * @param toolGroupId - The Id of the tool group to render.
  */
 function triggerSegmentationRender(toolGroupId: string): void {
   segmentationRenderingEngine.renderToolGroupSegmentations(toolGroupId)

@@ -97,7 +97,7 @@ function getSegmentationState(
  * Get the segmentation data object for a given tool group and
  * segmentation data UID. It searches all the toolGroup specific segmentation
  * data objects and returns the first one that matches the UID.
- * @param toolGroupId - The UID of the tool group that the segmentation
+ * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
  * @param segmentationDataUID - The UID of the segmentation data to
  * retrieve.
@@ -120,7 +120,7 @@ function getSegmentationDataByUID(
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
  *
- * @param toolGroupId - The UID of the tool group that the segmentation
+ * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
  * @param segmentationDataUID - The UID of the segmentation data to
  * remove.
@@ -144,7 +144,7 @@ function removeSegmentationData(
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
  *
- * @param toolGroupId - The UID of the tool group that the segmentation data is for.
+ * @param toolGroupId - The Id of the tool group that the segmentation data is for.
  * @param segmentationData - The data to add to the segmentation state.
  * @param suppressEvents - boolean
  */
@@ -212,7 +212,7 @@ function setGlobalSegmentationConfig(
  * It fires SEGMENTATION_STATE_MODIFIED event if not suppressed.
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
- * @param toolGroupId - The UID of the tool group that the segmentation
+ * @param toolGroupId - The Id of the tool group that the segmentation
  * config is being set for.
  * @param config - The new configuration for the tool group.
  * @param suppressEvents - If true, the event will not be triggered.
@@ -233,7 +233,7 @@ function setSegmentationConfig(
 /**
  * Get the segmentation config for a given tool group which contains each
  * segmentation representation configuration.
- * @param toolGroupId - The UID of the tool group that the segmentation
+ * @param toolGroupId - The Id of the tool group that the segmentation
  * config belongs to.
  * @returns A SegmentationConfig object.
  */
@@ -296,7 +296,7 @@ function addColorLUT(colorLut: ColorLUT, index: number): void {
  *
  * @triggers SEGMENTATION_STATE_MODIFIED
  *
- * @param toolGroupId - The UID of the tool group that owns the segmentation data.
+ * @param toolGroupId - The Id of the tool group that owns the segmentation data.
  * @param segmentationDataUID - The UID of the segmentation data to set as active.
  * @param suppressEvents - If true, the segmentation state will be updated, but no events will be triggered.
  */
@@ -321,7 +321,7 @@ function setActiveSegmentationData(
  * segmentation state of the tool group and returning the segmentation data with
  * the given UID.
  *
- * @param toolGroupId - The UID of the tool group that the segmentation
+ * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
  * @returns The active segmentation data for the tool group.
  */

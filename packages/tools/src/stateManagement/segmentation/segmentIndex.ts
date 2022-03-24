@@ -5,7 +5,7 @@ import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEve
 /**
  * Returns the active segment index for the active segmentation in the tool group
  *
- * @param toolGroupId - The UID of the tool group that contains an active segmentation.
+ * @param toolGroupId - The Id of the tool group that contains an active segmentation.
  * @returns The active segment index.
  */
 function getActiveSegmentIndex(toolGroupId: string): number | undefined {
@@ -28,7 +28,7 @@ function getActiveSegmentIndex(toolGroupId: string): number | undefined {
  * It fires a global state modified event.
  *
  * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
- * @param toolGroupId - The UID of the tool group that contains the segmentation.
+ * @param toolGroupId - The Id of the tool group that contains the segmentation.
  * @param segmentIndex - The index of the segment to be activated.
  */
 function setActiveSegmentIndex(
