@@ -39,7 +39,7 @@ const onSegmentationDataModified = function (
       console.warn('segmentation not found in cache')
       return
     }
-    const { imageData, vtkOpenGLTexture, uid } = segmentation
+    const { imageData, vtkOpenGLTexture } = segmentation
 
     // Todo: this can be optimized to not use the full texture from all slices
     const numSlices = imageData.getDimensions()[2]
@@ -52,7 +52,7 @@ const onSegmentationDataModified = function (
 
     // Trigger modified on the imageData to update the image
     imageData.modified()
-    toolGroupIds = SegmentationState.getToolGroupsWithSegmentation(uid)
+    toolGroupIds = SegmentationState.getToolGroupsWithSegmentation(volumeId)
   } else {
     throw new Error(
       `onSegmentationDataModified: representationType ${type} not supported yet`

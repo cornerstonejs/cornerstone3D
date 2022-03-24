@@ -121,7 +121,7 @@ const fakeVolumeLoader = (volumeId) => {
   imageData.getPointData().setScalars(scalarArray)
 
   const imageVolume = new ImageVolume({
-    uid: volumeId,
+    volumeId,
     metadata: volumeMetadata,
     dimensions: dimensions,
     spacing: [1, 1, 1],

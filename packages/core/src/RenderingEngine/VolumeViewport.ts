@@ -89,7 +89,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     if (!firstImageVolume) {
       throw new Error(
-        `imageVolume with uid: ${firstImageVolume.uid} does not exist`
+        `imageVolume with uid: ${firstImageVolume.volumeId} does not exist`
       )
     }
 
@@ -209,7 +209,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
       if (!imageVolume) {
         throw new Error(
-          `imageVolume with uid: ${imageVolume.uid} does not exist`
+          `imageVolume with uid: ${imageVolume.volumeId} does not exist`
         )
       }
 

@@ -146,7 +146,9 @@ export default class StreamingImageVolume extends ImageVolume {
     const { imageIds, loadStatus } = this
 
     if (loadStatus.loading === true) {
-      console.log(`loadVolume: Loading is already in progress for ${this.uid}`)
+      console.log(
+        `loadVolume: Loading is already in progress for ${this.volumeId}`
+      )
       return // Already loading, will get callbacks from main load.
     }
 
@@ -188,13 +190,7 @@ export default class StreamingImageVolume extends ImageVolume {
     const { scalarData, loadStatus } = this
     const { cachedFrames } = loadStatus
 
-    const {
-      imageIds,
-      vtkOpenGLTexture,
-      imageData,
-      metadata,
-      uid: volumeId,
-    } = this
+    const { imageIds, vtkOpenGLTexture, imageData, metadata, volumeId } = this
 
     const { FrameOfReferenceUID } = metadata
     loadStatus.loading = true
@@ -438,7 +434,7 @@ export default class StreamingImageVolume extends ImageVolume {
         imageIdIndex,
         options,
         additionalDetails: {
-          volumeId: this.uid,
+          volumeId: this.volumeId,
         },
       }
     })

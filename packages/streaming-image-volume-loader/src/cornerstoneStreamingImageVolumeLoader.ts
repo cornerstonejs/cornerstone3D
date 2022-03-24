@@ -138,7 +138,7 @@ function cornerstoneStreamingImageVolumeLoader(
   const streamingImageVolume = new StreamingImageVolume(
     // ImageVolume properties
     {
-      uid: volumeId,
+      volumeId,
       metadata: volumeMetadata,
       dimensions,
       spacing,

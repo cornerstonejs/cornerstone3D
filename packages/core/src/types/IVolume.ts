@@ -7,7 +7,7 @@ import Metadata from './Metadata'
  */
 interface IVolume {
   /** unique identifier for the volume in the cache */
-  uid: string
+  volumeId: string
   /** volume metadata */
   metadata: Metadata
   /** volume dimensions */

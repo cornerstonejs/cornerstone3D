@@ -324,7 +324,7 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
-function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): ImageVolume;
+function createAndCacheDerivedVolume(referenceVolumeId: string, options: DerivedVolumeOptions): ImageVolume;
 
 // @public (undocumented)
 function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
@@ -333,7 +333,7 @@ function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): P
 function createFloat32SharedArray(length: number): Float32Array;
 
 // @public (undocumented)
-function createLocalVolume(options: LocalVolumeOptions, uid: string, preventCache?: boolean): ImageVolume;
+function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): ImageVolume;
 
 // @public (undocumented)
 function createNormalizedMouseEvent(imageData: vtkImageData, index: any, element: any, viewport: any): {
@@ -839,7 +839,7 @@ interface IImageVolume {
     // (undocumented)
     spacing: Point3;
     // (undocumented)
-    readonly uid: string;
+    readonly volumeId: string;
     // (undocumented)
     vtkOpenGLTexture: any;
 }
@@ -996,7 +996,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     spacing: Point3;
     // (undocumented)
-    readonly uid: string;
+    readonly volumeId: string;
     // (undocumented)
     vtkOpenGLTexture: any;
 }
@@ -1260,7 +1260,7 @@ interface IVolume {
     // (undocumented)
     spacing: Point3;
     // (undocumented)
-    uid: string;
+    volumeId: string;
 }
 
 // @public (undocumented)

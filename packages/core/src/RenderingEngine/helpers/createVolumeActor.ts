@@ -26,7 +26,9 @@ async function createVolumeActor(
   const imageVolume = await loadVolume(volumeId)
 
   if (!imageVolume) {
-    throw new Error(`imageVolume with uid: ${imageVolume.uid} does not exist`)
+    throw new Error(
+      `imageVolume with uid: ${imageVolume.volumeId} does not exist`
+    )
   }
 
   const { imageData, vtkOpenGLTexture } = imageVolume

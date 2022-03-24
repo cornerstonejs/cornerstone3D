@@ -51,10 +51,10 @@ export default function scrollThroughStack(
       return
     }
 
-    const actor = viewport.getActor(imageVolume.uid)
+    const actor = viewport.getActor(imageVolume.volumeId)
 
     if (!actor) {
-      console.warn('No actor found for with actorUID of', imageVolume.uid)
+      console.warn('No actor found for with actorUID of', imageVolume.volumeId)
     }
 
     const { volumeActor } = actor

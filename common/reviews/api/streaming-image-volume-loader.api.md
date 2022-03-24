@@ -557,7 +557,7 @@ interface IImageVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    readonly uid: string
+    readonly volumeId: string
     vtkOpenGLTexture: any
 }
 
@@ -832,7 +832,7 @@ interface IVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    uid: string
+    volumeId: string
 }
 
 // @public

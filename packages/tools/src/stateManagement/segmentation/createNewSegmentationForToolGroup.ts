@@ -67,7 +67,7 @@ async function createNewSegmentationForToolGroup(
     // create a labelmap from a reference volume
     const { uid: volumeId } = viewport.getDefaultActor()
     await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-      uid: segmentationUID,
+      volumeId: segmentationUID,
     })
   }
 

@@ -1376,10 +1376,10 @@ function getToolGroups(): string[];
 function getToolGroupsWithSegmentation(segmentationUID: string): string[];
 
 // @public (undocumented)
-function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLElement): FrameOfReferenceSpecificAnnotationManager;
+function getViewportIdsWithToolToRender(element: HTMLElement, toolName: string, requireSameOrientation?: boolean): string[];
 
 // @public (undocumented)
-function getViewportIdsWithToolToRender(element: HTMLElement, toolName: string, requireSameOrientation?: boolean): string[];
+function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLElement): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
 function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, topLeftWorld: Types_2.Point3, bottomRightWorld: Types_2.Point3): {
@@ -1593,7 +1593,7 @@ interface IImageVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    readonly uid: string
+    readonly volumeId: string
     vtkOpenGLTexture: any
 }
 
@@ -1970,7 +1970,7 @@ interface IVolume {
     }
     sizeInBytes?: number
     spacing: Point3
-    uid: string
+    volumeId: string
 }
 
 // @public
