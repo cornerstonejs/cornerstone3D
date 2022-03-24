@@ -36,7 +36,7 @@ export default class SphereScissorsTool extends BaseTool {
     segmentIndex: number
     segmentsLocked: number[]
     segmentationDataUID: string
-    toolGroupUID: string
+    toolGroupId: string
     segmentColor: [number, number, number, number]
     viewportUIDsToRender: string[]
     handleIndex?: number
@@ -85,10 +85,10 @@ export default class SphereScissorsTool extends BaseTool {
 
     const camera = viewport.getCamera()
     const { viewPlaneNormal, viewUp } = camera
-    const toolGroupUID = this.toolGroupUID
+    const toolGroupId = this.toolGroupId
 
     const activeSegmentationInfo =
-      activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
+      activeSegmentation.getActiveSegmentationInfo(toolGroupId)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
@@ -97,11 +97,11 @@ export default class SphereScissorsTool extends BaseTool {
 
     const { volumeUID, segmentationDataUID } = activeSegmentationInfo
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupUID)
+      segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
       segmentLocking.getSegmentsLockedForSegmentation(volumeUID)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
-      toolGroupUID,
+      toolGroupId,
       activeSegmentationInfo.segmentationDataUID,
       segmentIndex
     )
@@ -140,7 +140,7 @@ export default class SphereScissorsTool extends BaseTool {
       segmentsLocked,
       segmentColor,
       segmentationDataUID,
-      toolGroupUID,
+      toolGroupId,
       viewportUIDsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -245,7 +245,7 @@ export default class SphereScissorsTool extends BaseTool {
       segmentIndex,
       segmentsLocked,
       segmentationDataUID,
-      toolGroupUID: this.toolGroupUID,
+      toolGroupId: this.toolGroupId,
       viewPlaneNormal,
       viewUp,
     }

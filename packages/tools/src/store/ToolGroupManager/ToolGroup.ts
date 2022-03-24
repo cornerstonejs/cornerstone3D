@@ -17,7 +17,7 @@ const { Active, Passive, Enabled, Disabled } = ToolModes
  * ToolGroupManager helpers to create a new toolGroup or get a reference to an existing toolGroup.
  *
  * ```js
- * const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupUID')
+ * const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupId')
  * ```
  */
 export default class ToolGroup implements IToolGroup {
@@ -92,7 +92,7 @@ export default class ToolGroup implements IToolGroup {
 
     const toolProps = {
       name: toolName,
-      toolGroupUID: this.uid,
+      toolGroupId: this.uid,
       configuration,
     }
 

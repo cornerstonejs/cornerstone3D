@@ -105,7 +105,7 @@ export interface EllipticalRoiAnnotation extends Annotation {
  * ```js
  * cornerstoneTools.addTool(EllipticalRoiTool)
  *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
  * toolGroup.addTool(EllipticalRoiTool.toolName)
  *

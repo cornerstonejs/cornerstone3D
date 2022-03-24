@@ -233,7 +233,7 @@ export interface SegmentationState {
    * ToolGroup specific segmentation state with config
    */
   toolGroups: {
-    /** toolGroupUID and their toolGroup specific segmentation state with config */
+    /** toolGroupId and their toolGroup specific segmentation state with config */
     [key: string]: ToolGroupSpecificSegmentationStateWithConfig
   }
 }
@@ -244,5 +244,5 @@ export interface SegmentationState {
  */
 export type SegmentationDataInput =
   Partial<ToolGroupSpecificSegmentationData> & {
-    toolGroupUID: string
+    toolGroupId: string
   }

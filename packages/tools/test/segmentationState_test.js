@@ -135,7 +135,7 @@ describe('Segmentation State -- ', () => {
 
           const state = stateManager.getState()
 
-          expect(evt.detail.toolGroupUID).toBe('segToolGroup')
+          expect(evt.detail.toolGroupId).toBe('segToolGroup')
           expect(state).toBeDefined()
           expect(state.toolGroups).toBeDefined()
 

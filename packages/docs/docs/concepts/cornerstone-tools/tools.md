@@ -119,8 +119,8 @@ ToolGroupManager can be utilized to create a tool group using `createToolGroup`.
 ```js
 import { ToolGroupManager } from 'vtkjs-viewport-tools'
 
-const toolGroupUID = 'ctToolGroup'
-const ctSceneToolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+const toolGroupId = 'ctToolGroup'
+const ctSceneToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
 // Add tools to ToolGroup
 // Manipulation tools

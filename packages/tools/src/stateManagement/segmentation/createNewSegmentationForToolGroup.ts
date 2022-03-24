@@ -14,12 +14,12 @@ import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
  * the first viewport of the toolGroup. It looks at the metadata of the imageData
  * to determine the volume dimensions and spacing if particular options are not provided.
  *
- * @param toolGroupUID - The UID of the toolGroup
+ * @param toolGroupId - The UID of the toolGroup
  * @param options - LabelmapOptions
  * @returns A promise that resolves to the UID of the new labelmap.
  */
 async function createNewSegmentationForToolGroup(
-  toolGroupUID: string,
+  toolGroupId: string,
   options?: {
     volumeUID?: string
     scalarData?: Float32Array | Uint8Array
@@ -33,10 +33,10 @@ async function createNewSegmentationForToolGroup(
     direction?: Float32Array
   }
 ): Promise<string> {
-  const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
+  const toolGroup = getToolGroupByToolGroupUID(toolGroupId)
 
   if (!toolGroup) {
-    throw new Error(`ToolGroup with UID ${toolGroupUID} not found`)
+    throw new Error(`ToolGroup with UID ${toolGroupId} not found`)
   }
 
   const { viewportId, renderingEngineId } = toolGroup.viewportsInfo[0]

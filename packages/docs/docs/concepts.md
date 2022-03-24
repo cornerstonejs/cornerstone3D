@@ -134,7 +134,7 @@ destroy Tool Groups.
 import { ToolGroupManager } from 'vtkjs-viewport-tools'
 import { ctVolumeUID } from './constants'
 
-const toolGroupUID = 'TOOL_GROUP_UID'
+const toolGroupId = 'TOOL_GROUP_UID'
 const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
 
 // Add tools to ToolGroup

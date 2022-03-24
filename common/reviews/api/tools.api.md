@@ -38,10 +38,10 @@ function addColorLUT_2(colorLUT: ColorLUT, colorLUTIndex: number): void;
 function addGlobalSegmentationData(segmentationData: GlobalSegmentationData, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationData(toolGroupUID: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
+function addSegmentationData(toolGroupId: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationsForToolGroup(toolGroupUID: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
+function addSegmentationsForToolGroup(toolGroupId: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
 
 // @public (undocumented)
 export function addTool(ToolClass: any): void;
@@ -218,7 +218,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     supportedInteractionTypes: InteractionTypes[];
     // (undocumented)
-    toolGroupUID: string;
+    toolGroupId: string;
     // (undocumented)
     static toolName: string;
 }
@@ -639,7 +639,7 @@ function createCameraPositionSynchronizer(synchronizerName: string): Synchronize
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, uid?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
-function createNewSegmentationForToolGroup(toolGroupUID: string, options?: {
+function createNewSegmentationForToolGroup(toolGroupId: string, options?: {
     volumeUID?: string;
     scalarData?: Float32Array | Uint8Array;
     targetBuffer?: {
@@ -656,7 +656,7 @@ function createNewSegmentationForToolGroup(toolGroupUID: string, options?: {
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
 
 // @public (undocumented)
-function createToolGroup(toolGroupUID: string): IToolGroup | undefined;
+function createToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function createVOISynchronizer(synchronizerName: string): Synchronizer;
@@ -959,7 +959,7 @@ function destroy_3(): void;
 function destroySynchronizerById(synchronizerId: string): void;
 
 // @public (undocumented)
-function destroyToolGroupByToolGroupUID(toolGroupUID: string): void;
+function destroyToolGroupByToolGroupUID(toolGroupId: string): void;
 
 // @public (undocumented)
 function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void;
@@ -1224,17 +1224,17 @@ type FrameOfReferenceSpecificAnnotations = {
 };
 
 // @public (undocumented)
-function getActiveSegmentationData(toolGroupUID: string): ToolGroupSpecificSegmentationData | undefined;
+function getActiveSegmentationData(toolGroupId: string): ToolGroupSpecificSegmentationData | undefined;
 
 // @public (undocumented)
-function getActiveSegmentationInfo(toolGroupUID: string): {
+function getActiveSegmentationInfo(toolGroupId: string): {
     volumeUID: string;
     segmentationDataUID: string;
     activeSegmentIndex: number;
 };
 
 // @public (undocumented)
-function getActiveSegmentIndex(toolGroupUID: string): number | undefined;
+function getActiveSegmentIndex(toolGroupId: string): number | undefined;
 
 // @public (undocumented)
 function getActiveSegmentIndexForSegmentation(segmentationUID: string): number | undefined;
@@ -1279,7 +1279,7 @@ function getAnnotationsSelectedCount(): number;
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-function getColorForSegmentIndex(toolGroupUID: string, segmentationDataUID: string, segmentIndex: number): Color;
+function getColorForSegmentIndex(toolGroupId: string, segmentationDataUID: string, segmentIndex: number): Color;
 
 // @public (undocumented)
 function getColorLut(index: number): ColorLUT | undefined;
@@ -1315,25 +1315,25 @@ function getGlobalSegmentationState(): GlobalSegmentationState | [];
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeUID: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
 
 // @public (undocumented)
-function getRepresentationConfig(toolGroupUID: string, representationType: SegmentationRepresentations): RepresentationConfig;
+function getRepresentationConfig(toolGroupId: string, representationType: SegmentationRepresentations): RepresentationConfig;
 
 // @public (undocumented)
-function getSegmentationConfig(toolGroupUID: string): SegmentationConfig;
+function getSegmentationConfig(toolGroupId: string): SegmentationConfig;
 
 // @public (undocumented)
-function getSegmentationConfig_2(toolGroupUID: string): SegmentationConfig;
+function getSegmentationConfig_2(toolGroupId: string): SegmentationConfig;
 
 // @public (undocumented)
-function getSegmentationDataByUID(toolGroupUID: string, segmentationDataUID: string): ToolGroupSpecificSegmentationData | undefined;
+function getSegmentationDataByUID(toolGroupId: string, segmentationDataUID: string): ToolGroupSpecificSegmentationData | undefined;
 
 // @public (undocumented)
-function getSegmentationState(toolGroupUID: string): ToolGroupSpecificSegmentationState | [];
+function getSegmentationState(toolGroupId: string): ToolGroupSpecificSegmentationState | [];
 
 // @public (undocumented)
-function getSegmentationVisibility(toolGroupUID: string, segmentationDataUID: string): boolean | undefined;
+function getSegmentationVisibility(toolGroupId: string, segmentationDataUID: string): boolean | undefined;
 
 // @public (undocumented)
-function getSegmentIndexLocked(toolGroupUID: string, segmentIndex: number): boolean;
+function getSegmentIndexLocked(toolGroupId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number): boolean;
@@ -1367,7 +1367,7 @@ function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): 
 function getToolGroup(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroupByToolGroupUID(toolGroupUID: string): IToolGroup | undefined;
+function getToolGroupByToolGroupUID(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroups(): string[];
@@ -2648,10 +2648,10 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 function removeAnnotation(element: HTMLElement, annotationUID: string): void;
 
 // @public (undocumented)
-function removeSegmentationData(toolGroupUID: string, segmentationDataUID: string): void;
+function removeSegmentationData(toolGroupId: string, segmentationDataUID: string): void;
 
 // @public (undocumented)
-function removeSegmentationsFromToolGroup(toolGroupUID: string, segmentationDataUIDs?: string[] | undefined): void;
+function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationDataUIDs?: string[] | undefined): void;
 
 // @public (undocumented)
 export function removeTool(ToolClass: any): void;
@@ -2744,7 +2744,7 @@ declare namespace segmentationConfig {
 
 // @public (undocumented)
 type SegmentationDataModifiedEventDetail = {
-    toolGroupUID: string;
+    toolGroupId: string;
     segmentationDataUID: string;
 };
 
@@ -2759,9 +2759,9 @@ export class SegmentationDisplayTool extends BaseTool {
     // (undocumented)
     enableCallback(): void;
     // (undocumented)
-    _getSegmentationConfig(toolGroupUID: string): SegmentationConfig;
+    _getSegmentationConfig(toolGroupId: string): SegmentationConfig;
     // (undocumented)
-    renderSegmentation: (toolGroupUID: string) => void;
+    renderSegmentation: (toolGroupId: string) => void;
     // (undocumented)
     static toolName: string;
 }
@@ -2777,7 +2777,7 @@ type SegmentationGlobalStateModifiedEventType = Types_2.CustomEventType<Segmenta
 // @public (undocumented)
 type SegmentationRenderedEventDetail = {
     viewportId: string;
-    toolGroupUID: string;
+    toolGroupId: string;
 };
 
 // @public (undocumented)
@@ -2788,7 +2788,7 @@ type SegmentationRepresentation = LabelmapRepresentation;
 
 // @public (undocumented)
 type SegmentationStateModifiedEventDetail = {
-    toolGroupUID: string;
+    toolGroupId: string;
 };
 
 // @public (undocumented)
@@ -2835,13 +2835,13 @@ declare namespace selection {
 }
 
 // @public (undocumented)
-function setActiveSegmentation(toolGroupUID: string, segmentationDataUID: string): void;
+function setActiveSegmentation(toolGroupId: string, segmentationDataUID: string): void;
 
 // @public (undocumented)
-function setActiveSegmentationData(toolGroupUID: string, segmentationDataUID: string, suppressEvents?: boolean): void;
+function setActiveSegmentationData(toolGroupId: string, segmentationDataUID: string, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setActiveSegmentIndex(toolGroupUID: string, segmentIndex: number): void;
+function setActiveSegmentIndex(toolGroupId: string, segmentIndex: number): void;
 
 // @public (undocumented)
 function setActiveSegmentIndexForSegmentation(segmentationUID: string, segmentIndex: number): void;
@@ -2874,19 +2874,19 @@ function setGlobalSegmentationConfig_2(segmentationConfig: SegmentationConfig): 
 function setGlobalStyle(style: Record<string, unknown>): boolean;
 
 // @public (undocumented)
-function setRepresentationConfig(toolGroupUID: string, representationType: SegmentationRepresentations, representationConfig: RepresentationConfig): void;
+function setRepresentationConfig(toolGroupId: string, representationType: SegmentationRepresentations, representationConfig: RepresentationConfig): void;
 
 // @public (undocumented)
-function setSegmentationConfig(toolGroupUID: string, config: SegmentationConfig, suppressEvents?: boolean): void;
+function setSegmentationConfig(toolGroupId: string, config: SegmentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setSegmentationConfig_2(toolGroupUID: string, segmentationConfig: SegmentationConfig): void;
+function setSegmentationConfig_2(toolGroupId: string, segmentationConfig: SegmentationConfig): void;
 
 // @public (undocumented)
-function setSegmentationVisibility(toolGroupUID: string, segmentationDataUID: string, visibility: boolean): void;
+function setSegmentationVisibility(toolGroupId: string, segmentationDataUID: string, visibility: boolean): void;
 
 // @public (undocumented)
-function setSegmentIndexLocked(toolGroupUID: string, segmentIndex: number, locked?: boolean): void;
+function setSegmentIndexLocked(toolGroupId: string, segmentIndex: number, locked?: boolean): void;
 
 // @public (undocumented)
 function setSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number, locked?: boolean): void;
@@ -2921,7 +2921,7 @@ export class SphereScissorsTool extends BaseTool {
         segmentIndex: number;
         segmentsLocked: number[];
         segmentationDataUID: string;
-        toolGroupUID: string;
+        toolGroupId: string;
         segmentColor: [number, number, number, number];
         viewportUIDsToRender: string[];
         handleIndex?: number;
@@ -3119,10 +3119,10 @@ type TextBoxHandle = {
 };
 
 // @public (undocumented)
-function thresholdVolumeByRange(toolGroupUID: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRangeOptions): Types_2.IImageVolume;
+function thresholdVolumeByRange(toolGroupId: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRangeOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
-function thresholdVolumeByRoiStats(toolGroupUID: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRoiStatsOptions): void;
+function thresholdVolumeByRoiStats(toolGroupId: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRoiStatsOptions): void;
 
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
@@ -3204,7 +3204,7 @@ detail: unknown = null
 }
 
 // @public (undocumented)
-function triggerSegmentationDataModified(toolGroupUID: string, segmentationDataUID: string): void;
+function triggerSegmentationDataModified(toolGroupId: string, segmentationDataUID: string): void;
 
 declare namespace triggerSegmentationEvents {
     export {
@@ -3218,7 +3218,7 @@ declare namespace triggerSegmentationEvents {
 function triggerSegmentationGlobalStateModified(segmentationUID?: string): void;
 
 // @public (undocumented)
-function triggerSegmentationStateModified(toolGroupUID: string): void;
+function triggerSegmentationStateModified(toolGroupId: string): void;
 
 declare namespace Types {
     export {

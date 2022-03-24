@@ -279,9 +279,7 @@ function _removeLabelmapFromToolGroupViewports(
   const toolGroup = getToolGroupByToolGroupUID(toolGroupUID)
 
   if (toolGroup === undefined) {
-    throw new Error(
-      `ToolGroup with ToolGroupUID ${toolGroupUID} does not exist`
-    )
+    throw new Error(`ToolGroup with ToolGroupId ${toolGroupUID} does not exist`)
   }
 
   const { viewportsInfo } = toolGroup

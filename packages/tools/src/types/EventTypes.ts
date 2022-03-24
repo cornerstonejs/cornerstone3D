@@ -98,7 +98,7 @@ type AnnotationRenderedEventDetail = {
  */
 type SegmentationDataModifiedEventDetail = {
   /** unique id of the toolGroup */
-  toolGroupUID: string
+  toolGroupId: string
   /** unique id of the segmentationData */
   segmentationDataUID: string
 }
@@ -110,7 +110,7 @@ type SegmentationRenderedEventDetail = {
   /** unique id of the viewport */
   viewportId: string
   /** unique id of the toolGroup segmentation belongs to */
-  toolGroupUID: string
+  toolGroupId: string
 }
 
 /**
@@ -118,7 +118,7 @@ type SegmentationRenderedEventDetail = {
  */
 type SegmentationStateModifiedEventDetail = {
   /** unique id of the toolGroup */
-  toolGroupUID: string
+  toolGroupId: string
 }
 
 /**

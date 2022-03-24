@@ -8,16 +8,16 @@ import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmenta
  * Given a tool group UID, destroy the toolGroup. It will also cleanup all segmentations
  * associated with that tool group too
  *
- * @param toolGroupUID - The UID of the tool group to be destroyed.
+ * @param toolGroupId - The UID of the tool group to be destroyed.
  */
-function destroyToolGroupByToolGroupUID(toolGroupUID: string): void {
+function destroyToolGroupByToolGroupUID(toolGroupId: string): void {
   const toolGroupIndex = state.toolGroups.findIndex(
-    (tg) => tg.uid === toolGroupUID
+    (tg) => tg.uid === toolGroupId
   )
 
   if (toolGroupIndex > -1) {
     // Todo: this should not happen here)
-    removeSegmentationsFromToolGroup(toolGroupUID)
+    removeSegmentationsFromToolGroup(toolGroupId)
     state.toolGroups.splice(toolGroupIndex, 1)
   }
 }

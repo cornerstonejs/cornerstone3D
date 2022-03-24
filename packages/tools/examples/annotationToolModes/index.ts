@@ -41,7 +41,7 @@ instructions.innerText = instructionText[ToolModes.Active]
 content.append(instructions)
 // ============================= //
 
-const toolGroupUID = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_UID'
 
 const toolModes = [
   ToolModes.Active,
@@ -54,7 +54,7 @@ const selectedToolMode = ToolModes.Active
 addDropdownToToolbar(
   { options: toolModes, defaultOption: selectedToolMode },
   (newToolMode) => {
-    const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupUID)
+    const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupId)
 
     // Set the new tool active
     toolGroup[`setTool${newToolMode}`](LengthTool.toolName, {
@@ -81,7 +81,7 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName)

@@ -81,7 +81,7 @@ interface ProbeAnnotation extends Annotation {
  * ```js
  * cornerstoneTools.addTool(ProbeTool)
  *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
  * toolGroup.addTool(ProbeTool.toolName)
  *

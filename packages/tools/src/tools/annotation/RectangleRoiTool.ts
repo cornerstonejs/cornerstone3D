@@ -80,7 +80,7 @@ interface RectangleRoiCachedStats {
  * ```js
  * cornerstoneTools.addTool(RectangleRoiAnnotation)
  *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
  * toolGroup.addTool(RectangleRoiAnnotation.toolName)
  *

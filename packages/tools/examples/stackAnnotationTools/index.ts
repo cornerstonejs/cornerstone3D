@@ -44,7 +44,7 @@ instructions.innerText = 'Left Click to use selected tool'
 content.append(instructions)
 // ============================= //
 
-const toolGroupUID = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_UID'
 
 const toolsNames = [
   LengthTool.toolName,
@@ -58,7 +58,7 @@ let selectedToolName = toolsNames[0]
 addDropdownToToolbar(
   { options: toolsNames, defaultOption: selectedToolName },
   (newSelectedToolName) => {
-    const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupUID)
+    const toolGroup = ToolGroupManager.getToolGroupByToolGroupUID(toolGroupId)
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
@@ -92,7 +92,7 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName)

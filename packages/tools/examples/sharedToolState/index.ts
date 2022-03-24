@@ -70,7 +70,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupUID = 'STACK_TOOL_GROUP_UID'
+  const toolGroupId = 'STACK_TOOL_GROUP_UID'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool)
@@ -78,7 +78,7 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(LengthTool.toolName, { configuration: { volumeUID } })

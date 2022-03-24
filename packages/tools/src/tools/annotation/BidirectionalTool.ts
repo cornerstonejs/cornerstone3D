@@ -92,7 +92,7 @@ interface BidirectionalAnnotation extends Annotation {
  * ```js
  * cornerstoneTools.addTool(BidirectionalTool)
  *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupUID')
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
  * toolGroup.addTool(BidirectionalTool.toolName)
  *

@@ -24,14 +24,14 @@ export type ThresholdRoiStatsOptions = {
  * it thresholds the referenceVolumes based on a weighted value of the statistic.
  * For instance in radiation oncology, usually 41% of the maximum of the ROI is used
  * in radiation planning.
- * @param toolGroupUID - The toolGroupUID of the tool that is performing the operation
+ * @param toolGroupId - The toolGroupId of the tool that is performing the operation
  * @param annotations Array of rectangle annotation annotation
  * @param segmentationData - The segmentation data to be modified
  * @param labelmap segmentation volume
  * @param options Options for thresholding
  */
 function thresholdVolumeByRoiStats(
-  toolGroupUID: string,
+  toolGroupId: string,
   annotations: AnnotationForThresholding[],
   referenceVolumes: Types.IImageVolume[],
   segmentationData: ToolGroupSpecificSegmentationData,
@@ -115,7 +115,7 @@ function thresholdVolumeByRoiStats(
 
   // Run threshold volume by the new range
   thresholdVolumeByRange(
-    toolGroupUID,
+    toolGroupId,
     annotations,
     referenceVolumes,
     segmentationData,

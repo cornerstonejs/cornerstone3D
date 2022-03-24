@@ -5,11 +5,11 @@ import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEve
 /**
  * Returns the active segment index for the active segmentation in the tool group
  *
- * @param toolGroupUID - The UID of the tool group that contains an active segmentation.
+ * @param toolGroupId - The UID of the tool group that contains an active segmentation.
  * @returns The active segment index.
  */
-function getActiveSegmentIndex(toolGroupUID: string): number | undefined {
-  const segmentationInfo = getActiveSegmentationInfo(toolGroupUID)
+function getActiveSegmentIndex(toolGroupId: string): number | undefined {
+  const segmentationInfo = getActiveSegmentationInfo(toolGroupId)
 
   if (!segmentationInfo) {
     throw new Error('toolGroup does not contain an active segmentation')
@@ -29,14 +29,14 @@ function getActiveSegmentIndex(toolGroupUID: string): number | undefined {
  * It fires a global state modified event.
  *
  * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
- * @param toolGroupUID - The UID of the tool group that contains the segmentation.
+ * @param toolGroupId - The UID of the tool group that contains the segmentation.
  * @param segmentIndex - The index of the segment to be activated.
  */
 function setActiveSegmentIndex(
-  toolGroupUID: string,
+  toolGroupId: string,
   segmentIndex: number
 ): void {
-  const segmentationInfo = getActiveSegmentationInfo(toolGroupUID)
+  const segmentationInfo = getActiveSegmentationInfo(toolGroupId)
 
   if (!segmentationInfo) {
     throw new Error('element does not contain an active segmentation')

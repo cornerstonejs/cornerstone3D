@@ -55,7 +55,7 @@ content.append(instructions)
 // ============================= //
 
 const renderingEngineId = 'myRenderingEngine'
-const toolGroupUID = 'STACK_TOOL_GROUP_UID'
+const toolGroupId = 'STACK_TOOL_GROUP_UID'
 
 // Some annotations to demonstrate the demo
 const annotationsJSON =
@@ -102,7 +102,7 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupUID)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName)

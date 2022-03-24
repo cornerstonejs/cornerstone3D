@@ -11,16 +11,16 @@ import { SegmentationDataModifiedEventType } from '../../types/EventTypes'
 const onSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
-  const { toolGroupUID, segmentationDataUID } = evt.detail
+  const { toolGroupId, segmentationDataUID } = evt.detail
 
   const segmentationData = SegmentationState.getSegmentationDataByUID(
-    toolGroupUID,
+    toolGroupId,
     segmentationDataUID
   )
 
   if (!segmentationData) {
     console.warn(
-      `onSegmentationDataModified: segmentationDataUID ${segmentationDataUID} not found in toolGroupUID ${toolGroupUID}`
+      `onSegmentationDataModified: segmentationDataUID ${segmentationDataUID} not found in toolGroupId ${toolGroupId}`
     )
     return
   }
@@ -59,8 +59,8 @@ const onSegmentationDataModified = function (
     )
   }
 
-  toolGroupUIDs.forEach((toolGroupUID) => {
-    triggerSegmentationRender(toolGroupUID)
+  toolGroupUIDs.forEach((toolGroupId) => {
+    triggerSegmentationRender(toolGroupId)
   })
 }
 

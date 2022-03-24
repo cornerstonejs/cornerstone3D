@@ -362,14 +362,14 @@ class SegmentationExample extends Component {
   }
 
   onSegmentationStateModified = (evt) => {
-    const { toolGroupUID } = evt.detail
+    const { toolGroupId } = evt.detail
 
-    if (toolGroupUID !== this.state.selectedToolGroupName) {
+    if (toolGroupId !== this.state.selectedToolGroupName) {
       return
     }
 
     const activeSegmentationInfo =
-      segmentation.activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
+      segmentation.activeSegmentation.getActiveSegmentationInfo(toolGroupId)
 
     let selectedsegmentationUID, segmentLocked, activeSegmentIndex
 
@@ -385,7 +385,7 @@ class SegmentationExample extends Component {
     }
 
     const toolGroupSegmentations =
-      segmentation.state.getSegmentationState(toolGroupUID)
+      segmentation.state.getSegmentationState(toolGroupId)
 
     let segmentationDataUIDs
 
@@ -546,10 +546,10 @@ class SegmentationExample extends Component {
   }
 
   loadSegmentation = async (segmentationUID, initialConfig) => {
-    const toolGroupUID = this.state.selectedToolGroupName
+    const toolGroupId = this.state.selectedToolGroupName
 
     if (!initialConfig) {
-      await segmentation.addSegmentationsForToolGroup(toolGroupUID, [
+      await segmentation.addSegmentationsForToolGroup(toolGroupId, [
         {
           volumeUID: segmentationUID,
           active: true,
@@ -560,7 +560,7 @@ class SegmentationExample extends Component {
       ])
     } else {
       await segmentation.addSegmentationsForToolGroup(
-        toolGroupUID,
+        toolGroupId,
         [
           {
             volumeUID: segmentationUID,
@@ -611,9 +611,9 @@ class SegmentationExample extends Component {
   }
 
   changeActiveSegmentIndex = (direction) => {
-    const toolGroupUID = this.state.selectedToolGroupName
+    const toolGroupId = this.state.selectedToolGroupName
     const activeSegmentationInfo =
-      segmentation.activeSegmentation.getActiveSegmentationInfo(toolGroupUID)
+      segmentation.activeSegmentation.getActiveSegmentationInfo(toolGroupId)
 
     const { activeSegmentIndex } = activeSegmentationInfo
     let newIndex = activeSegmentIndex + direction
@@ -622,10 +622,10 @@ class SegmentationExample extends Component {
       newIndex = 0
     }
 
-    segmentation.segmentIndex.setActiveSegmentIndex(toolGroupUID, newIndex)
+    segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, newIndex)
 
     const segmentIsLocked = segmentation.segmentLocking.getSegmentIndexLocked(
-      toolGroupUID,
+      toolGroupId,
       newIndex
     )
 
@@ -1164,9 +1164,9 @@ class SegmentationExample extends Component {
             </select>
             <button
               onClick={async () => {
-                const toolGroupUID = this.state.selectedToolGroupName
+                const toolGroupId = this.state.selectedToolGroupName
                 segmentation
-                  .addSegmentationsForToolGroup(toolGroupUID, [
+                  .addSegmentationsForToolGroup(toolGroupId, [
                     {
                       volumeUID: this.state.selectedSegmentationUIDFromAll,
                       // no representation -> labelmap
@@ -1175,7 +1175,7 @@ class SegmentationExample extends Component {
                   .then(() => {
                     const { volumeUID, activeSegmentIndex } =
                       segmentation.activeSegmentation.getActiveSegmentationInfo(
-                        toolGroupUID
+                        toolGroupId
                       )
 
                     const activeSegmentIndexLocked =
