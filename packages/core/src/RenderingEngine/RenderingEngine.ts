@@ -664,7 +664,7 @@ class RenderingEngine implements IRenderingEngine {
         sxEndDisplayCoords,
         syEndDisplayCoords,
       ],
-      uid: viewportId,
+      id: viewportId,
       background: defaultOptions.background
         ? defaultOptions.background
         : [0, 0, 0],
@@ -1059,10 +1059,10 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     for (let i = 0; i < renderers.length; i++) {
-      const { renderer, uid } = renderers[i]
+      const { renderer, id } = renderers[i]
 
       // Requesting viewports that need rendering to be rendered only
-      if (this._needsRender.has(uid)) {
+      if (this._needsRender.has(id)) {
         renderer.setDraw(true)
       } else {
         renderer.setDraw(false)

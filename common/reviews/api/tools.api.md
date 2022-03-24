@@ -636,7 +636,7 @@ type CPUImageData = {
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, uid?: string): Types_2.IImageVolume;
+function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
 function createNewSegmentationForToolGroup(toolGroupId: string, options?: {
@@ -673,7 +673,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _applyDeltaShiftToViewportCamera(renderingEngine: Types_2.IRenderingEngine, annotation: any, delta: any): void;
     // (undocumented)
-    _areViewportIdArraysEqual: (viewportUIDArrayOne: any, viewportUIDArrayTwo: any) => boolean;
+    _areViewportIdArraysEqual: (viewportIdArrayOne: any, viewportIdArrayTwo: any) => boolean;
     // (undocumented)
     _autoPanViewportIfNecessary(viewportId: string, renderingEngine: Types_2.IRenderingEngine): void;
     // (undocumented)

@@ -4,7 +4,7 @@ const cache = {}
 
 const renderingEngineCache = {
   /**
-   * Returns the `RenderingEngine` instance with the given `uid`.
+   * Returns the `RenderingEngine` instance with the given `id`.
    *
    * @param id - The `id` of the `RenderingEngine` instance to fetch.
    * @returns The `RenderingEngine` instance.
@@ -25,7 +25,7 @@ const renderingEngineCache = {
   /**
    * Deletes the `RenderingEngine` instance from the cache.
    *
-   * @param uid - The `uid` of the `RenderingEngine` instance to delete.
+   * @param id - The `id` of the `RenderingEngine` instance to delete.
    * @returns True if the delete was successful.
    */
   delete: (id: string) => {

@@ -44,31 +44,31 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
   model.interactor.setView(model.openGLRenderWindow)
   model.interactor.initialize()
 
-  publicAPI.addRenderer = ({ viewport, uid, background }) => {
+  publicAPI.addRenderer = ({ viewport, id, background }) => {
     const renderer = vtkRenderer.newInstance({
       viewport,
       background: background || model.background,
     })
 
     model.renderWindow.addRenderer(renderer)
-    model.rendererMap[uid] = renderer
+    model.rendererMap[id] = renderer
   }
 
-  publicAPI.removeRenderer = (uid) => {
-    const renderer = publicAPI.getRenderer(uid)
+  publicAPI.removeRenderer = (id) => {
+    const renderer = publicAPI.getRenderer(id)
     model.renderWindow.removeRenderer(renderer)
-    delete model.rendererMap[uid]
+    delete model.rendererMap[id]
   }
 
-  publicAPI.getRenderer = (uid) => {
-    return model.rendererMap[uid]
+  publicAPI.getRenderer = (id) => {
+    return model.rendererMap[id]
   }
 
   publicAPI.getRenderers = () => {
     const { rendererMap } = model
 
-    const renderers = Object.keys(rendererMap).map((uid) => {
-      return { uid, renderer: rendererMap[uid] }
+    const renderers = Object.keys(rendererMap).map((id) => {
+      return { id, renderer: rendererMap[id] }
     })
 
     return renderers

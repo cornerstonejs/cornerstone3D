@@ -42,7 +42,7 @@ export class ImageVolume implements IImageVolume {
   loadStatus?: Record<string, any>
   /** optional image ids for the volume if it is made of separated images */
   imageIds?: Array<string>
-  /** optional reference volume uid if the volume is derived from another volume */
+  /** optional reference volume id if the volume is derived from another volume */
   referenceVolumeId?: string
 
   constructor(props: IVolume) {

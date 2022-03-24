@@ -30,7 +30,7 @@ class Viewport implements IViewport {
   readonly element: HTMLElement
   /** an internal canvas that is created on the provided HTML element */
   readonly canvas: HTMLCanvasElement
-  /** RenderingEngine uid that the viewport belongs to */
+  /** RenderingEngine id that the viewport belongs to */
   readonly renderingEngineId: string
   /** Type of viewport */
   readonly type: ViewportType
@@ -369,7 +369,7 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Add an actor to the viewport including its uid, its volumeActor and slabThickness
+   * Add an actor to the viewport including its id, its volumeActor and slabThickness
    * if defined
    * @param actorEntry - ActorEntry
    * @param actorEntry.uid - The unique identifier for the actor.

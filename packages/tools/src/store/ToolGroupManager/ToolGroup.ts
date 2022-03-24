@@ -135,8 +135,8 @@ export default class ToolGroup implements IToolGroup {
    * it removes all the viewports with the same renderingEngineId, if viewportId
    * is also provided, it will remove that specific viewport from the ToolGroup.
    *
-   * @param renderingEngineId - renderingEngine uid
-   * @param viewportId - viewport uid
+   * @param renderingEngineId - renderingEngine id
+   * @param viewportId - viewport id
    */
   removeViewports(renderingEngineId: string, viewportId?: string): void {
     const indices = []

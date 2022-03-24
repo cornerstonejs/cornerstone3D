@@ -4,7 +4,7 @@ import { IToolGroup } from '../../types'
 /**
  * Given a tool group Id, return the tool group
  * @param toolGroupId - The Id of the tool group to be retrieved.
- * @returns The tool group that has the same uid as the tool group uid that was
+ * @returns The tool group that has the same id as the tool group id that was
  * passed in.
  */
 function getToolGroupByToolGroupId(
