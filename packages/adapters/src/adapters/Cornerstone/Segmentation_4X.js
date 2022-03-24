@@ -620,7 +620,29 @@ function findReferenceSourceImageId(
         PerFrameFunctionalGroupsSequence[frameSegment];
     let imageId = undefined;
 
-    if (ReferencedSeriesSequence) {
+    let sourceImageSequence;
+    if (SourceImageSequence) {
+        sourceImageSequence = multiframe.SourceImageSequence[frameSegment];
+    } else if (PerFrameFunctionalGroup.DerivationImageSequence) {
+        let DerivationImageSequence =
+            PerFrameFunctionalGroup.DerivationImageSequence;
+        DerivationImageSequence = Array.isArray(DerivationImageSequence)
+            ? DerivationImageSequence[0]
+            : DerivationImageSequence;
+
+        sourceImageSequence = DerivationImageSequence.SourceImageSequence;
+        sourceImageSequence = Array.isArray(sourceImageSequence)
+            ? sourceImageSequence[0]
+            : sourceImageSequence;
+    }
+
+    imageId = getImageIdOfSourceImagebySourceImageSequence(
+        sourceImageSequence,
+        imageIds,
+        metadataProvider
+    );
+
+    if (imageId === undefined && ReferencedSeriesSequence) {
         const referencedSeriesSequence = Array.isArray(ReferencedSeriesSequence)
             ? ReferencedSeriesSequence[0]
             : ReferencedSeriesSequence;
@@ -633,30 +655,6 @@ function findReferenceSourceImageId(
             PerFrameFunctionalGroup,
             imageIds,
             tolerance
-        );
-    }
-
-    if (imageId === undefined) {
-        let sourceImageSequence;
-        if (SourceImageSequence) {
-            sourceImageSequence = multiframe.SourceImageSequence[frameSegment];
-        } else if (PerFrameFunctionalGroup.DerivationImageSequence) {
-            let DerivationImageSequence =
-                PerFrameFunctionalGroup.DerivationImageSequence;
-            DerivationImageSequence = Array.isArray(DerivationImageSequence)
-                ? DerivationImageSequence[0]
-                : DerivationImageSequence;
-
-            sourceImageSequence = DerivationImageSequence.SourceImageSequence;
-            sourceImageSequence = Array.isArray(sourceImageSequence)
-                ? sourceImageSequence[0]
-                : sourceImageSequence;
-        }
-
-        imageId = getImageIdOfSourceImagebySourceImageSequence(
-            sourceImageSequence,
-            imageIds,
-            metadataProvider
         );
     }
 
