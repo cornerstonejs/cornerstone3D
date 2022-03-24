@@ -42,8 +42,8 @@ const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
 
 const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
-const viewportUID2 = 'SAGITTAL'
+const viewportId1 = 'AXIAL'
+const viewportId2 = 'SAGITTAL'
 const viewportUID3 = 'CORONAL'
 
 const LABELMAP = SegmentationRepresentations.Labelmap
@@ -55,7 +55,7 @@ const CORONAL = 'CORONAL'
 function createViewport(
   renderingEngine,
   orientation,
-  viewportId = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -106,7 +106,7 @@ describe('Segmentation Render -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
+      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -122,7 +122,7 @@ describe('Segmentation Render -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID1)
+      const vp = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas = vp.getCanvas()
@@ -146,7 +146,7 @@ describe('Segmentation Render -- ', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
-            [viewportUID1]
+            [viewportId1]
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
@@ -161,8 +161,8 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render a segmentation on a volume with more than one viewport', function (done) {
-      const el1 = createViewport(this.renderingEngine, AXIAL, viewportUID1)
-      const el2 = createViewport(this.renderingEngine, SAGITTAL, viewportUID2)
+      const el1 = createViewport(this.renderingEngine, AXIAL, viewportId1)
+      const el2 = createViewport(this.renderingEngine, SAGITTAL, viewportId2)
       const el3 = createViewport(this.renderingEngine, CORONAL, viewportUID3)
 
       this.DOMElements.push(el1)
@@ -172,8 +172,8 @@ describe('Segmentation Render -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
-      const vp2 = this.renderingEngine.getViewport(viewportUID2)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
+      const vp2 = this.renderingEngine.getViewport(viewportId2)
       const vp3 = this.renderingEngine.getViewport(viewportUID3)
 
       let renderedViewportCounts = 0
@@ -223,7 +223,7 @@ describe('Segmentation Render -- ', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
-            [viewportUID1, viewportUID2, viewportUID3]
+            [viewportId1, viewportId2, viewportUID3]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
@@ -238,7 +238,7 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render two segmentations on a viewport', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      const element = createViewport(this.renderingEngine, AXIAL, viewportId1)
       this.DOMElements.push(element)
 
       // fake volume generator follows the pattern of
@@ -247,7 +247,7 @@ describe('Segmentation Render -- ', () => {
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_50_50_6'
       const segVolumeId2 =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_60_60_2_80_80_7'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
@@ -271,7 +271,7 @@ describe('Segmentation Render -- ', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
-            [viewportUID1]
+            [viewportId1]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
@@ -289,7 +289,7 @@ describe('Segmentation Render -- ', () => {
     })
 
     it('should successfully render a segmentation with toolGroup specific config', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, viewportUID1)
+      const element = createViewport(this.renderingEngine, AXIAL, viewportId1)
       this.DOMElements.push(element)
 
       const customToolGroupSeConfig = {
@@ -304,7 +304,7 @@ describe('Segmentation Render -- ', () => {
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
@@ -350,7 +350,7 @@ describe('Segmentation Render -- ', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
-            [viewportUID1]
+            [viewportId1]
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {

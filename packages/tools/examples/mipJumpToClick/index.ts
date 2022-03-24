@@ -31,9 +31,9 @@ const {
 const { MouseBindings } = csToolsEnums
 // Define a unique id for each volume
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
+const ctVolumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
-const ptVolumeName = 'PT_VOLUME_UID'
+const ptVolumeName = 'PT_VOLUME_ID'
 const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 function setPetTransferFunction({ volumeActor }) {

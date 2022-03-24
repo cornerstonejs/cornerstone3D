@@ -61,8 +61,8 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupId1 = 'STACK_TOOL_GROUP_UID_1'
-  const toolGroupId2 = 'STACK_TOOL_GROUP_UID_2'
+  const toolGroupId1 = 'STACK_TOOL_GROUP_ID_1'
+  const toolGroupId2 = 'STACK_TOOL_GROUP_ID_2'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool)

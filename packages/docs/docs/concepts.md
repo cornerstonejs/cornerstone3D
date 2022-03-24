@@ -18,8 +18,7 @@ import {
 
 // RENDER
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
-const volumeId = 'VOLUME_UID '
-const sceneUID = 'SCENE_UID'
+const volumeId = 'VOLUME_ID '
 const viewports = []
 const viewport = {
   sceneUID,
@@ -134,8 +133,8 @@ destroy Tool Groups.
 import { ToolGroupManager } from 'vtkjs-viewport-tools'
 import { ctVolumeId } from './constants'
 
-const toolGroupId = 'TOOL_GROUP_UID'
-const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
+const toolGroupId = 'TOOL_GROUP_ID'
+const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
 
 // Add tools to ToolGroup
 sceneToolGroup.addTool(PanTool.toolName)

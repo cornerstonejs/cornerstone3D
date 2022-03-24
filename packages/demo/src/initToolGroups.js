@@ -3,7 +3,7 @@ import * as csTools3d from '@cornerstonejs/tools'
 const { MouseBindings } = csTools3d.Enums
 
 import {
-  TOOL_GROUP_UIDS,
+  TOOL_GROUP_IDS,
   ptVolumeId,
   ctVolumeId,
   ctStackUID,
@@ -247,37 +247,37 @@ function initToolGroups() {
   csTools3d.addTool(SegmentationDisplayTool)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.STACK_CT
+    TOOL_GROUP_IDS.STACK_CT
   )
   const stackPTViewportToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.STACK_PT
+    TOOL_GROUP_IDS.STACK_PT
   )
   const stackDXViewportToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.STACK_DX
+    TOOL_GROUP_IDS.STACK_DX
   )
-  const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.CT)
-  const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UIDS.PT)
+  const ctSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_IDS.CT)
+  const ptSceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_IDS.PT)
   const colorSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.COLOR
+    TOOL_GROUP_IDS.COLOR
   )
   const prostateSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.PROSTATE
+    TOOL_GROUP_IDS.PROSTATE
   )
   const fusionSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.FUSION
+    TOOL_GROUP_IDS.FUSION
   )
   const ptMipSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.PTMIP
+    TOOL_GROUP_IDS.PTMIP
   )
   const ctVRSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.CTVR
+    TOOL_GROUP_IDS.CTVR
   )
   const ctObliqueToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.CTOBLIQUE
+    TOOL_GROUP_IDS.CTOBLIQUE
   )
 
   const ptTypesSceneToolGroup = ToolGroupManager.createToolGroup(
-    TOOL_GROUP_UIDS.PT_TYPES
+    TOOL_GROUP_IDS.PT_TYPES
   )
 
   const ctTestSceneToolGroup = ToolGroupManager.createToolGroup('ctTestVolume')

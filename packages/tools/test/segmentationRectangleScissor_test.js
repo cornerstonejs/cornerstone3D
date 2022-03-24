@@ -43,8 +43,8 @@ const {
 
 const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
-const viewportUID2 = 'SAGITTAL'
+const viewportId1 = 'AXIAL'
+const viewportId2 = 'SAGITTAL'
 
 const AXIAL = 'AXIAL'
 const SAGITTAL = 'SAGITTAL'
@@ -52,7 +52,7 @@ const SAGITTAL = 'SAGITTAL'
 function createViewport(
   renderingEngine,
   orientation,
-  viewportId = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -108,7 +108,7 @@ describe('Segmentation Tools --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
+      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -123,7 +123,7 @@ describe('Segmentation Tools --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID1)
+      const vp = this.renderingEngine.getViewport(viewportId1)
 
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
@@ -145,7 +145,7 @@ describe('Segmentation Tools --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportUID1]
+            [viewportId1]
           ).then(() => {
             vp.render()
 
@@ -169,7 +169,7 @@ describe('Segmentation Tools --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp = this.renderingEngine.getViewport(viewportUID1)
+      const vp = this.renderingEngine.getViewport(viewportId1)
 
       const drawRectangle = () => {
         eventTarget.addEventListener(
@@ -270,7 +270,7 @@ describe('Segmentation Tools --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportUID1]
+            [viewportId1]
           ).then(() => {
             vp.render()
 
@@ -293,15 +293,15 @@ describe('Segmentation Tools --', () => {
       const element2 = createViewport(
         this.renderingEngine,
         SAGITTAL,
-        viewportUID2
+        viewportId2
       )
       this.DOMElements.push(element1)
       this.DOMElements.push(element2)
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
-      const vp2 = this.renderingEngine.getViewport(viewportUID2)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
+      const vp2 = this.renderingEngine.getViewport(viewportId2)
 
       const drawRectangle = () => {
         eventTarget.removeEventListener(
@@ -438,7 +438,7 @@ describe('Segmentation Tools --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportUID1, viewportUID2]
+            [viewportId1, viewportId2]
           ).then(() => {
             vp1.render()
             vp2.render()

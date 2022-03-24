@@ -44,16 +44,16 @@ const {
 
 const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
+const viewportId1 = 'AXIAL'
 
 const AXIAL = 'AXIAL'
 
-const TOOL_GROUP_UID = 'segToolGroup'
+const TOOL_GROUP_ID = 'segToolGroup'
 
 function createViewport(
   renderingEngine,
   orientation,
-  viewportId = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -86,7 +86,7 @@ describe('Segmentation Index Controller --', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_UID)
+      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(RectangleScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
@@ -109,7 +109,7 @@ describe('Segmentation Index Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID(TOOL_GROUP_UID)
+      ToolGroupManager.destroyToolGroupByToolGroupId(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -124,7 +124,7 @@ describe('Segmentation Index Controller --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const drawRectangle = (index1, index2) => {
         const { imageData } = vp1.getImageData()
@@ -223,7 +223,7 @@ describe('Segmentation Index Controller --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportUID1]
+            [viewportId1]
           ).then(() => {
             vp1.render()
 
@@ -247,7 +247,7 @@ describe('Segmentation Index Controller --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const drawRectangle = (index1, index2) => {
         const { imageData } = vp1.getImageData()
@@ -307,7 +307,7 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_UID, 2)
+          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_ID, 2)
 
           eventTarget.addEventListener(
             Events.SEGMENTATION_RENDERED,
@@ -322,14 +322,14 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_UID)
+          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_ID)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationInfo =
           segmentation.activeSegmentation.getActiveSegmentationInfo(
-            TOOL_GROUP_UID
+            TOOL_GROUP_ID
           )
 
         expect(segmentationInfo.segmentationDataUID).toBeDefined()
@@ -369,7 +369,7 @@ describe('Segmentation Index Controller --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportUID1]
+            [viewportId1]
           ).then(() => {
             vp1.render()
 
@@ -393,7 +393,7 @@ describe('Segmentation Index Controller --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
 
       const drawRectangle = (index1, index2) => {
         const { imageData } = vp1.getImageData()
@@ -453,10 +453,10 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_UID, 2)
+          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_ID, 2)
 
           segmentation.segmentLocking.setSegmentIndexLocked(
-            TOOL_GROUP_UID,
+            TOOL_GROUP_ID,
             1,
             true
           )
@@ -474,14 +474,14 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_UID)
+          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_ID)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationInfo =
           segmentation.activeSegmentation.getActiveSegmentationInfo(
-            TOOL_GROUP_UID
+            TOOL_GROUP_ID
           )
 
         expect(segmentationInfo.segmentationDataUID).toBeDefined()
@@ -503,7 +503,7 @@ describe('Segmentation Index Controller --', () => {
         expect(locked1[0]).toBe(1)
 
         const lockedStatus1 = segmentation.segmentLocking.getSegmentIndexLocked(
-          TOOL_GROUP_UID,
+          TOOL_GROUP_ID,
           1
         )
 
@@ -543,7 +543,7 @@ describe('Segmentation Index Controller --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportUID1]
+            [viewportId1]
           ).then(() => {
             vp1.render()
 

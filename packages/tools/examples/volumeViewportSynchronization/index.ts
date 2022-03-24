@@ -35,7 +35,7 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
+const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
 
@@ -144,7 +144,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupId = 'TOOL_GROUP_UID'
+  const toolGroupId = 'TOOL_GROUP_ID'
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool)

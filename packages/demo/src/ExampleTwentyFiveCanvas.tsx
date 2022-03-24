@@ -38,7 +38,6 @@ class TwentyFiveCanvasExample extends Component {
     this.renderingEngine = renderingEngine
 
     const viewportUIDS = []
-    const sceneUID = 'SCENE_UID'
     const viewports = []
 
     for (let i = 0; i < NUM_VIEWPORTS; i++) {

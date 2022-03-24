@@ -95,7 +95,7 @@ describe('Probe Tool: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
+      ToolGroupManager.destroyToolGroupByToolGroupId('stack')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -735,7 +735,7 @@ describe('Probe Tool: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('stack')
+      ToolGroupManager.destroyToolGroupByToolGroupId('stack')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {

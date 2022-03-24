@@ -94,7 +94,7 @@ describe('Segmentation State -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
+      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {

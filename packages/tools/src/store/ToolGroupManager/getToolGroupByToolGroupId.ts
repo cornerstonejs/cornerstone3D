@@ -7,10 +7,10 @@ import { IToolGroup } from '../../types'
  * @returns The tool group that has the same uid as the tool group uid that was
  * passed in.
  */
-function getToolGroupByToolGroupUID(
+function getToolGroupByToolGroupId(
   toolGroupId: string
 ): IToolGroup | undefined {
   return state.toolGroups.find((s) => s.uid === toolGroupId)
 }
 
-export default getToolGroupByToolGroupUID
+export default getToolGroupByToolGroupId

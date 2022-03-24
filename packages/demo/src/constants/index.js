@@ -72,7 +72,7 @@ const VIEWPORT_IDS = {
 
 // IDs for each toolgroup used. We currently use one toolGroup per scene in the demos, but you could have
 // Different viewports of the same scene with different toolgroup setups.
-const TOOL_GROUP_UIDS = {
+const TOOL_GROUP_IDS = {
   STACK_CT: 'stackCTToolGroup',
   STACK_PT: 'stackPTToolGroup',
   STACK_DX: 'stackDXToolGroup',
@@ -119,7 +119,7 @@ export {
   ptVolumeTestUID,
   petStackUID,
   VIEWPORT_IDS,
-  TOOL_GROUP_UIDS,
+  TOOL_GROUP_IDS,
   colormaps,
   ANNOTATION_TOOLS,
   SEGMENTATION_TOOLS,

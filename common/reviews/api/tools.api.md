@@ -787,8 +787,8 @@ function deepmerge(target?: {}, source?: {}, optionsArgument?: any): any;
 const _default: {
     createToolGroup: typeof createToolGroup;
     destroy: typeof destroy_3;
-    destroyToolGroupByToolGroupUID: typeof destroyToolGroupByToolGroupUID;
-    getToolGroupByToolGroupUID: typeof getToolGroupByToolGroupUID;
+    destroyToolGroupByToolGroupId: typeof destroyToolGroupByToolGroupId;
+    getToolGroupByToolGroupId: typeof getToolGroupByToolGroupId;
     getToolGroup: typeof getToolGroup;
     getAllToolGroups: typeof getAllToolGroups;
 };
@@ -959,7 +959,7 @@ function destroy_3(): void;
 function destroySynchronizerById(synchronizerId: string): void;
 
 // @public (undocumented)
-function destroyToolGroupByToolGroupUID(toolGroupId: string): void;
+function destroyToolGroupByToolGroupId(toolGroupId: string): void;
 
 // @public (undocumented)
 function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void;
@@ -1367,7 +1367,7 @@ function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): 
 function getToolGroup(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroupByToolGroupUID(toolGroupId: string): IToolGroup | undefined;
+function getToolGroupByToolGroupId(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroups(): string[];
@@ -3135,8 +3135,8 @@ declare namespace ToolGroupManager {
         _default as default,
         createToolGroup,
         destroy_3 as destroy,
-        destroyToolGroupByToolGroupUID,
-        getToolGroupByToolGroupUID,
+        destroyToolGroupByToolGroupId,
+        getToolGroupByToolGroupId,
         getToolGroup,
         getAllToolGroups
     }

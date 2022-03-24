@@ -6,7 +6,7 @@ import { cache, getEnabledElementByUIDs, Types } from '@cornerstonejs/core'
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import { LabelmapRepresentation } from '../../../types/SegmentationRepresentationTypes'
 import Representations from '../../../enums/SegmentationRepresentations'
-import { getToolGroupByToolGroupUID } from '../../../store/ToolGroupManager'
+import { getToolGroupByToolGroupId } from '../../../store/ToolGroupManager'
 import type { LabelmapConfig } from './LabelmapConfig'
 import {
   SegmentationConfig,
@@ -276,7 +276,7 @@ function _removeLabelmapFromToolGroupViewports(
   toolGroupId: string,
   segmentationDataUID: string
 ): void {
-  const toolGroup = getToolGroupByToolGroupUID(toolGroupId)
+  const toolGroup = getToolGroupByToolGroupId(toolGroupId)
 
   if (toolGroup === undefined) {
     throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`)
@@ -306,7 +306,7 @@ async function _addLabelmapToToolGroupViewports(
   toolGroupId,
   segmentationData
 ): Promise<void> {
-  const toolGroup = getToolGroupByToolGroupUID(toolGroupId) as IToolGroup
+  const toolGroup = getToolGroupByToolGroupId(toolGroupId) as IToolGroup
   const { viewportsInfo } = toolGroup
 
   for (const viewportInfo of viewportsInfo) {

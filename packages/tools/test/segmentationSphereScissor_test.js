@@ -43,8 +43,8 @@ const {
 
 const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'AXIAL'
-const viewportUID2 = 'SAGITTAL'
+const viewportId1 = 'AXIAL'
+const viewportId2 = 'SAGITTAL'
 const viewportUID3 = 'CORONAL'
 
 const AXIAL = 'AXIAL'
@@ -54,7 +54,7 @@ const CORONAL = 'CORONAL'
 function createViewport(
   renderingEngine,
   orientation,
-  viewportId = viewportUID1
+  viewportId = viewportId1
 ) {
   const element = document.createElement('div')
 
@@ -110,7 +110,7 @@ describe('Segmentation Tools --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupUID('segToolGroup')
+      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -124,7 +124,7 @@ describe('Segmentation Tools --', () => {
       const element2 = createViewport(
         this.renderingEngine,
         SAGITTAL,
-        viewportUID2
+        viewportId2
       )
       const element3 = createViewport(
         this.renderingEngine,
@@ -137,8 +137,8 @@ describe('Segmentation Tools --', () => {
 
       // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const vp1 = this.renderingEngine.getViewport(viewportUID1)
-      const vp2 = this.renderingEngine.getViewport(viewportUID2)
+      const vp1 = this.renderingEngine.getViewport(viewportId1)
+      const vp2 = this.renderingEngine.getViewport(viewportId2)
       const vp3 = this.renderingEngine.getViewport(viewportUID3)
 
       const drawSphere = () => {
@@ -278,7 +278,7 @@ describe('Segmentation Tools --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportUID1, viewportUID2, viewportUID3]
+            [viewportId1, viewportId2, viewportUID3]
           ).then(() => {
             vp1.render()
             vp2.render()

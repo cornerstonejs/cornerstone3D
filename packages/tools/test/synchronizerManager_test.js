@@ -40,8 +40,8 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
 
 const renderingEngineId = utilities.uuidv4()
 
-const viewportUID1 = 'VIEWPORT1'
-const viewportUID2 = 'VIEWPORT2'
+const viewportId1 = 'VIEWPORT1'
+const viewportId2 = 'VIEWPORT2'
 
 const ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
 const ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_15_1_1_1_0`
@@ -92,7 +92,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
+    ToolGroupManager.destroyToolGroupByToolGroupId('volume1')
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -108,7 +108,7 @@ describe('Synchronizer Manager: ', () => {
 
     this.renderingEngine.setViewports([
       {
-        viewportId: viewportUID1,
+        viewportId: viewportId1,
         type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
@@ -117,7 +117,7 @@ describe('Synchronizer Manager: ', () => {
         },
       },
       {
-        viewportId: viewportUID2,
+        viewportId: viewportId2,
         type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
@@ -138,7 +138,7 @@ describe('Synchronizer Manager: ', () => {
 
       const synchronizers = SynchronizerManager.getSynchronizers(
         renderingEngineId,
-        viewportUID1
+        viewportId1
       )
 
       expect(synchronizers.length).toBe(1)
@@ -164,8 +164,8 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
-    this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.uid)
 
     try {
       const axialSync = createCameraPositionSynchronizer('axialSync')
@@ -173,25 +173,25 @@ describe('Synchronizer Manager: ', () => {
 
       axialSync.add({
         renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportUID1).uid,
+        viewportId: this.renderingEngine.getViewport(viewportId1).uid,
       })
       axialSync.add({
         renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportUID2).uid,
+        viewportId: this.renderingEngine.getViewport(viewportId2).uid,
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: ctVolumeId }],
-          [viewportUID1]
+          [viewportId1]
         )
       })
       createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: ptVolumeId }],
-          [viewportUID2]
+          [viewportId2]
         )
       })
     } catch (e) {
@@ -236,7 +236,7 @@ describe('Synchronizer Manager: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupByToolGroupUID('volume1')
+    ToolGroupManager.destroyToolGroupByToolGroupId('volume1')
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -252,7 +252,7 @@ describe('Synchronizer Manager: ', () => {
 
     this.renderingEngine.setViewports([
       {
-        viewportId: viewportUID1,
+        viewportId: viewportId1,
         type: ViewportType.ORTHOGRAPHIC,
         element: element1,
         defaultOptions: {
@@ -261,7 +261,7 @@ describe('Synchronizer Manager: ', () => {
         },
       },
       {
-        viewportId: viewportUID2,
+        viewportId: viewportId2,
         type: ViewportType.ORTHOGRAPHIC,
         element: element2,
         defaultOptions: {
@@ -277,7 +277,7 @@ describe('Synchronizer Manager: ', () => {
 
     const addEventListenerForVOI = () => {
       element2.addEventListener(Events.IMAGE_RENDERED, () => {
-        const vp2 = this.renderingEngine.getViewport(viewportUID2)
+        const vp2 = this.renderingEngine.getViewport(viewportId2)
         const canvas2 = vp2.getCanvas()
         const image2 = canvas2.toDataURL('image/png')
 
@@ -331,26 +331,26 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
 
-    this.firstToolGroup.addViewport(viewportUID1, this.renderingEngine.uid)
-    this.firstToolGroup.addViewport(viewportUID2, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.uid)
+    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.uid)
 
     try {
       const voiSync = createVOISynchronizer('ctWLSync')
 
       voiSync.addSource({
         renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportUID1).uid,
+        viewportId: this.renderingEngine.getViewport(viewportId1).uid,
       })
       voiSync.addTarget({
         renderingEngineId: this.renderingEngine.uid,
-        viewportId: this.renderingEngine.getViewport(viewportUID2).uid,
+        viewportId: this.renderingEngine.getViewport(viewportId2).uid,
       })
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: ctVolumeId }],
-          [viewportUID1, viewportUID2]
+          [viewportId1, viewportId2]
         )
         this.renderingEngine.render()
       })

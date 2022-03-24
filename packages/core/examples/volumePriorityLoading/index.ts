@@ -20,11 +20,11 @@ const { ORIENTATION } = CONSTANTS
 
 // Define unique ids for the volumes
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const ctVolumeName = 'CT_VOLUME_UID' // Id of the volume less loader prefix
+const ctVolumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
 
 // Define a unique id for the volume
-const ptVolumeName = 'PT_VOLUME_UID'
+const ptVolumeName = 'PT_VOLUME_ID'
 const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
 
 // ======== Set up page ======== //

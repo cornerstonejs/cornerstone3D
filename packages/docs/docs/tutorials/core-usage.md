@@ -32,9 +32,9 @@ import {
 } from '@ohif/cornerstone-render'
 
 const sceneUID = 'SCENE_UID'
-const volumeId = 'VOLUME_UID'
-const viewportUID1 = 'viewport_UID_1'
-const viewportUID2 = 'viewport_UID_2'
+const volumeId = 'VOLUME_ID'
+const viewportId1 = 'viewport_UID_1'
+const viewportId2 = 'viewport_UID_2'
 const viewportUID3 = 'viewport_UID_3'
 
 // 0. ImageIds to use for this volume, see: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration how to add metadata
@@ -61,7 +61,7 @@ const viewportInput = [
   // Volume viewport (axial)
   {
     sceneUID,
-    viewportId: viewportUID1,
+    viewportId: viewportId1,
     type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {
@@ -72,7 +72,7 @@ const viewportInput = [
   // Volume viewport (sagittal)
   {
     sceneUID,
-    viewportId: viewportUID2,
+    viewportId: viewportId2,
     type: ViewportType.ORTHOGRAPHIC,
     canvas: document.querySelector('.target-canvas-2'),
     defaultOptions: {

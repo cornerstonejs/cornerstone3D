@@ -7,7 +7,7 @@ import {
 } from '../../types/SegmentationStateTypes'
 import { checkSegmentationDataIsValid } from './helpers'
 import Representations from '../../enums/SegmentationRepresentations'
-import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
+import { getToolGroupByToolGroupId } from '../../store/ToolGroupManager'
 
 import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
 
@@ -30,7 +30,7 @@ async function addSegmentationsForToolGroup(
   checkSegmentationDataIsValid(segmentationDataArray)
 
   // Check if there exists a toolGroup with the toolGroupId
-  const toolGroup = getToolGroupByToolGroupUID(toolGroupId)
+  const toolGroup = getToolGroupByToolGroupId(toolGroupId)
 
   if (!toolGroup) {
     throw new Error(`No tool group found for toolGroupId: ${toolGroupId}`)
