@@ -27,7 +27,7 @@ export default function cameraSyncCallback(
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId)
   if (!renderingEngine) {
     throw new Error(
-      `No RenderingEngine for UID: ${targetViewport.renderingEngineId}`
+      `No RenderingEngine for Id: ${targetViewport.renderingEngineId}`
     )
   }
 

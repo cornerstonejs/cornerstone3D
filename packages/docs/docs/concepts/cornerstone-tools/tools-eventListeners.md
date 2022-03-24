@@ -48,11 +48,6 @@ The following table demonstrates some expected schema changes for events. The ke
   </tr>
   <tr>
     <td>N/A</td>
-    <td>sceneUID</td>
-    <td>The UID of the scene the viewport displays.</td>
-  </tr>
-  <tr>
-    <td>N/A</td>
     <td>viewportId</td>
     <td>The Id of the viewport itself.</td>
   </tr>

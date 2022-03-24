@@ -5,7 +5,7 @@ import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmenta
 // removing a ToolGroup from state is equivalent to killing it
 
 /**
- * Given a tool group UID, destroy the toolGroup. It will also cleanup all segmentations
+ * Given a tool group Id, destroy the toolGroup. It will also cleanup all segmentations
  * associated with that tool group too
  *
  * @param toolGroupId - The Id of the tool group to be destroyed.

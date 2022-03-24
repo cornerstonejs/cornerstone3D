@@ -16,7 +16,7 @@ import { getToolGroupByToolGroupUID } from '../../store/ToolGroupManager'
  *
  * @param toolGroupId - The Id of the toolGroup
  * @param options - LabelmapOptions
- * @returns A promise that resolves to the UID of the new labelmap.
+ * @returns A promise that resolves to the Id of the new labelmap volume.
  */
 async function createNewSegmentationForToolGroup(
   toolGroupId: string,
@@ -36,7 +36,7 @@ async function createNewSegmentationForToolGroup(
   const toolGroup = getToolGroupByToolGroupUID(toolGroupId)
 
   if (!toolGroup) {
-    throw new Error(`ToolGroup with UID ${toolGroupId} not found`)
+    throw new Error(`ToolGroup with Id ${toolGroupId} not found`)
   }
 
   const { viewportId, renderingEngineId } = toolGroup.viewportsInfo[0]

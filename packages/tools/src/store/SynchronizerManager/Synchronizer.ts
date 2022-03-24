@@ -305,7 +305,7 @@ function _containsViewport(
 function _getViewportElement(vp: Types.IViewportId): HTMLElement {
   const renderingEngine = getRenderingEngine(vp.renderingEngineId)
   if (!renderingEngine) {
-    throw new Error(`No RenderingEngine for UID: ${vp.renderingEngineId}`)
+    throw new Error(`No RenderingEngine for Id: ${vp.renderingEngineId}`)
   }
 
   return renderingEngine.getViewport(vp.viewportId).element

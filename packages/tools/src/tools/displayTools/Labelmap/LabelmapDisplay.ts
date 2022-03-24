@@ -152,7 +152,7 @@ function render(
   const labelmap = cache.getVolume(labelmapUID)
 
   if (!labelmap) {
-    throw new Error(`No Labelmap found for UID: ${labelmapUID}`)
+    throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`)
   }
 
   const actor = viewport.getActor(segmentationDataUID)

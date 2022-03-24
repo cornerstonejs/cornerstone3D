@@ -164,7 +164,7 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * Get the target UID for the viewport which will be used to store the cached
+   * Get the target Id for the viewport which will be used to store the cached
    * statistics scoped to that target in the annotations.
    * For StackViewport, targetUID is the viewportId, but for the volume viewport,
    * the targetUID will be grabbed from the volumeId if particularly specified
