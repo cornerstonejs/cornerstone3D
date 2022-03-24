@@ -24,8 +24,8 @@ interface IVolume {
   sizeInBytes?: number
   /** volume image data as vtkImageData */
   imageData?: vtkImageData
-  /** referenceVolumeUID if volume is derived from another volume */
-  referenceVolumeUID?: string
+  /** referenceVolumeId if volume is derived from another volume */
+  referenceVolumeId?: string
   /** volume scaling metadata */
   scaling?: {
     PET?: {

@@ -1391,7 +1391,7 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 type GlobalSegmentationData = {
     volumeId: string;
     label: string;
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     referenceImageId?: string;
     activeSegmentIndex: number;
     segmentsLocked: Set<number>;
@@ -1581,7 +1581,7 @@ interface IImageVolume {
     metadata: Metadata
     numVoxels: number
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: any
     scaling?: {
         PET?: {
@@ -1956,7 +1956,7 @@ interface IVolume {
     imageData?: vtkImageData
     metadata: Metadata
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: Float32Array | Uint8Array
     scaling?: {
         PET?: {

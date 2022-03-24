@@ -23,7 +23,7 @@ import Events from '../../enums/Events'
  * ```
  * @param imageId - The imageId to render
  * @param canvas - Canvas element to render to
- * @param renderingEngineId - [Default=null] The rendering engine UID
+ * @param renderingEngineId - [Default=null] The rendering engine Id
  * to use, if not provided, will create a new rendering engine with a random UID (this is preferred)
  * @param suppressEvents - [Default = true] boolean to suppress events during render,
  * if undefined, events will be suppressed

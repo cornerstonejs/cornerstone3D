@@ -40,7 +40,7 @@ export type GlobalSegmentationData = {
   /** segmentation label */
   label: string
   /** volumeId of the data that the segmentation was derived from - if any */
-  referenceVolumeUID?: string
+  referenceVolumeId?: string
   /** imageId of the image that the segmentation was derived from - if any */
   referenceImageId?: string
   /**
@@ -142,7 +142,7 @@ export type ToolGroupSpecificSegmentationStateWithConfig = {
  *       {
  *         volumeId: 'labelmapUID2',
  *         label: 'label1',
- *         referenceVolumeUID: 'referenceVolumeName',
+ *         referenceVolumeId: 'referenceVolumeName',
  *         referenceImageId: 'referenceImageId',
  *         activeSegmentIndex: 1,
  *         segmentsLocked: Set(),
@@ -151,7 +151,7 @@ export type ToolGroupSpecificSegmentationStateWithConfig = {
  *       {
  *         volumeId: 'labelmapUID2',
  *         label: 'label1',
- *         referenceVolumeUID: 'referenceVolumeName',
+ *         referenceVolumeId: 'referenceVolumeName',
  *         referenceImageId: 'referenceImageId',
  *         activeSegmentIndex: 1,
  *         segmentsLocked: Set(),

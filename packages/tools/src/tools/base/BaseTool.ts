@@ -5,7 +5,7 @@ import { ToolModes } from '../../enums'
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
 
 interface IBaseTool {
-  /** ToolGroup UID the tool instance belongs to */
+  /** ToolGroup ID the tool instance belongs to */
   toolGroupId: string
   /** Tool supported interaction types */
   supportedInteractionTypes: InteractionTypes[]
@@ -31,7 +31,7 @@ abstract class BaseTool implements IBaseTool {
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[]
   public configuration: Record<string, any>
-  /** ToolGroup UID the tool instance belongs to */
+  /** ToolGroup ID the tool instance belongs to */
   public toolGroupId: string
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes

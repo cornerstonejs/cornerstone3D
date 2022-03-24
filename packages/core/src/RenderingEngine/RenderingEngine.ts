@@ -204,7 +204,7 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @fires Events.ELEMENT_ENABLED
    *
-   * @param viewportId - viewport UID
+   * @param viewportId - viewport Id
    *
    */
   public disableElement(viewportId: string): void {
@@ -443,7 +443,7 @@ class RenderingEngine implements IRenderingEngine {
   /**
    * Renders only a specific `Viewport` on the next animation frame.
    *
-   * @param viewportId - The UID of the viewport.
+   * @param viewportId - The Id of the viewport.
    */
   public renderViewport(viewportId: string): void {
     this._setViewportsToBeRenderedNextFrame([viewportId])
@@ -598,7 +598,7 @@ class RenderingEngine implements IRenderingEngine {
    * 3) resetting the viewport to remove the canvas attributes and canvas data
    * 4) resize the offScreen appropriately
    *
-   * @param viewportId - viewport UID
+   * @param viewportId - viewport Id
    *
    */
   private _removeViewport(viewportId: string): void {

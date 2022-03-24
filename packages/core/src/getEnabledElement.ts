@@ -46,10 +46,10 @@ export default function getEnabledElement(
  * renderingEngine and viewport as parameters to return the associated
  * EnabledElement.
  *
- * @param viewportId - The UID of the viewport
- * @param renderingEngineId - The UID of the rendering engine.
+ * @param viewportId - The Id of the viewport
+ * @param renderingEngineId - The Id of the rendering engine.
  * @returns The enabled element which is an object that contains the viewport, rendering
- * engine, viewport UID, rendering engine UID, and the Frame of Reference UID.
+ * engine, viewport Id, rendering engine Id, and the Frame of Reference UID.
  */
 export function getEnabledElementByUIDs(
   viewportId: string,

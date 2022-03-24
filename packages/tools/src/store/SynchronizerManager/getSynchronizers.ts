@@ -3,9 +3,9 @@ import Synchronizer from './Synchronizer'
 
 /**
  * It returns all synchronizers that are not disabled and have a source viewport
- * with the given rendering engine UID and viewport UID
- * @param renderingEngineId - The UID of the rendering engine
- * @param viewportId - The UID of the viewport
+ * with the given rendering engine Id and viewport Id
+ * @param renderingEngineId - The Id of the rendering engine
+ * @param viewportId - The Id of the viewport
  * @returns An array of synchronizers
  */
 function getSynchronizers(

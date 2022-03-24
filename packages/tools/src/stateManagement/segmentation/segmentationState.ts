@@ -385,7 +385,7 @@ function _initGlobalStateIfNecessary(
     const defaultGlobalData: GlobalSegmentationData = {
       volumeId: volumeId,
       label: volumeId,
-      referenceVolumeUID: null,
+      referenceVolumeId: null,
       cachedStats: {},
       referenceImageId: null,
       activeSegmentIndex: 1,

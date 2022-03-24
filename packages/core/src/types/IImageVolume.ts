@@ -7,7 +7,7 @@ import { Metadata, Point3, IImageLoadObject } from '../types'
  */
 interface IImageVolume {
   /** unique identifier of the volume in the cache */
-  readonly uid: string
+  readonly volumeId: string
   /** volume dimensions */
   dimensions: Point3
   /** volume direction */
@@ -41,8 +41,8 @@ interface IImageVolume {
   loadStatus?: Record<string, any>
   /** imageIds of the volume (if it is built of separate imageIds) */
   imageIds?: Array<string>
-  /** volume referenceVolumeUID (if it is derived from another volume) */
-  referenceVolumeUID?: string // if volume is derived from another volume
+  /** volume referenceVolumeId (if it is derived from another volume) */
+  referenceVolumeId?: string // if volume is derived from another volume
   /** method to convert the volume data in the volume cache, to separate images in the image cache */
   convertToCornerstoneImage?: (
     imageId: string,

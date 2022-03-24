@@ -822,7 +822,7 @@ interface IImageVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     // (undocumented)
     scalarData: any;
     // (undocumented)
@@ -979,7 +979,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     // (undocumented)
     scalarData: Float32Array | Uint8Array;
     // (undocumented)
@@ -1243,7 +1243,7 @@ interface IVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeUID?: string;
+    referenceVolumeId?: string;
     // (undocumented)
     scalarData: Float32Array | Uint8Array;
     // (undocumented)

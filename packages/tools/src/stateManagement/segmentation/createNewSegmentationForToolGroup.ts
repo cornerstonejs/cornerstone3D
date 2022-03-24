@@ -53,7 +53,7 @@ async function createNewSegmentationForToolGroup(
   }
 
   const { uid } = viewport.getDefaultActor()
-  // Name the segmentation volume with the viewport UID
+  // Name the segmentation volume with the viewport Id
   const segmentationUID = `${uid}-based-segmentation-${
     options?.volumeId ?? csUtils.uuidv4().slice(0, 8)
   }`

@@ -44,7 +44,7 @@ The following table demonstrates some expected schema changes for events. The ke
   <tr>
     <td>N/A</td>
     <td>renderingEngineId</td>
-    <td>The UID of the rendering engine instance driving the viewport.</td>
+    <td>The Id of the rendering engine instance driving the viewport.</td>
   </tr>
   <tr>
     <td>N/A</td>
@@ -54,7 +54,7 @@ The following table demonstrates some expected schema changes for events. The ke
   <tr>
     <td>N/A</td>
     <td>viewportId</td>
-    <td>The UID of the viewport itself.</td>
+    <td>The Id of the viewport itself.</td>
   </tr>
   <tr>
     <td>N/A</td>

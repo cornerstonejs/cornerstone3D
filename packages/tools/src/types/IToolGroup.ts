@@ -7,7 +7,7 @@ import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions'
 export default interface IToolGroup {
   /** Unserializable instantiated tool classes, keyed by name */
   _toolInstances: Record<string, any>
-  /** ToolGroup UID */
+  /** ToolGroup ID */
   uid: string
   /** Viewports Info inside the ToolGroup - including viewportId and renderingEngineId */
   viewportsInfo: Array<Types.IViewportId>

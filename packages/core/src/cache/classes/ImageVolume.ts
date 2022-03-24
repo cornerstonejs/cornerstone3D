@@ -6,7 +6,7 @@ import { IVolume, Metadata, Point3, IImageVolume } from '../../types'
  */
 export class ImageVolume implements IImageVolume {
   /** Read-only unique identifier for the volume */
-  readonly uid: string
+  readonly volumeId: string
   /** Dimensions of the volume */
   dimensions: Point3
   /** volume direction in world space */
@@ -43,10 +43,10 @@ export class ImageVolume implements IImageVolume {
   /** optional image ids for the volume if it is made of separated images */
   imageIds?: Array<string>
   /** optional reference volume uid if the volume is derived from another volume */
-  referenceVolumeUID?: string
+  referenceVolumeId?: string
 
   constructor(props: IVolume) {
-    this.uid = props.uid
+    this.volumeId = props.volumeId
     this.metadata = props.metadata
     this.dimensions = props.dimensions
     this.spacing = props.spacing
@@ -63,8 +63,8 @@ export class ImageVolume implements IImageVolume {
       this.scaling = props.scaling
     }
 
-    if (props.referenceVolumeUID) {
-      this.referenceVolumeUID = props.referenceVolumeUID
+    if (props.referenceVolumeId) {
+      this.referenceVolumeId = props.referenceVolumeId
     }
   }
 }

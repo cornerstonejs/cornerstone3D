@@ -545,7 +545,7 @@ interface IImageVolume {
     metadata: Metadata
     numVoxels: number
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: any
     scaling?: {
         PET?: {
@@ -818,7 +818,7 @@ interface IVolume {
     imageData?: vtkImageData
     metadata: Metadata
     origin: Point3
-    referenceVolumeUID?: string
+    referenceVolumeId?: string
     scalarData: Float32Array | Uint8Array
     scaling?: {
         PET?: {

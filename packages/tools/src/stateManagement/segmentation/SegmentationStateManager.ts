@@ -295,7 +295,7 @@ export default class SegmentationStateManager {
       this.state.global.segmentations.push({
         volumeId,
         label: segmentationData.label,
-        referenceVolumeUID: segmentationData.referenceVolumeUID,
+        referenceVolumeId: segmentationData.referenceVolumeId,
         cachedStats: segmentationData.cachedStats,
         referenceImageId: segmentationData.referenceImageId,
         activeSegmentIndex: segmentationData.activeSegmentIndex,

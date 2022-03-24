@@ -17,7 +17,7 @@ interface VolumeLoaderOptions {
 }
 
 interface DerivedVolumeOptions {
-  uid: string
+  volumeId: string
   targetBuffer?: {
     type: 'Float32Array' | 'Uint8Array'
   }
@@ -201,22 +201,22 @@ export async function createAndCacheVolume(
  * @returns ImageVolume
  */
 export function createAndCacheDerivedVolume(
-  referencedVolumeUID: string,
+  referenceVolumeId: string,
   options: DerivedVolumeOptions
 ): ImageVolume {
-  const referencedVolume = cache.getVolume(referencedVolumeUID)
+  const referencedVolume = cache.getVolume(referenceVolumeId)
 
   if (!referencedVolume) {
     throw new Error(
-      `Cannot created derived volume: Referenced volume with UID ${referencedVolumeUID} does not exist.`
+      `Cannot created derived volume: Referenced volume with id ${referenceVolumeId} does not exist.`
     )
   }
 
-  let { uid } = options
+  let { volumeId } = options
   const { targetBuffer } = options
 
-  if (uid === undefined) {
-    uid = uuidv4()
+  if (volumeId === undefined) {
+    volumeId = uuidv4()
   }
 
   const { metadata, dimensions, spacing, origin, direction, scalarData } =
@@ -266,7 +266,7 @@ export function createAndCacheDerivedVolume(
   derivedImageData.getPointData().setScalars(scalarArray)
 
   const derivedVolume = new ImageVolume({
-    uid,
+    volumeId,
     metadata: cloneDeep(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
@@ -275,13 +275,13 @@ export function createAndCacheDerivedVolume(
     imageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
-    referenceVolumeUID: referencedVolumeUID,
+    referenceVolumeId,
   })
 
   const volumeLoadObject = {
     promise: Promise.resolve(derivedVolume),
   }
-  cache.putVolumeLoadObject(uid, volumeLoadObject)
+  cache.putVolumeLoadObject(volumeId, volumeLoadObject)
 
   return derivedVolume
 }
@@ -292,13 +292,13 @@ export function createAndCacheDerivedVolume(
  * scalarData should be provided for this function to work. If a volume with the same
  * UID exists in the cache it returns it immediately.
  * @param options -  { scalarData, metadata, dimensions, spacing, origin, direction }
- * @param uid - UID of the generated volume
+ * @param volumeId - Id of the generated volume
  *
  * @returns ImageVolume
  */
 export function createLocalVolume(
   options: LocalVolumeOptions,
-  uid: string,
+  volumeId: string,
   preventCache = false
 ): ImageVolume {
   const { scalarData, metadata, dimensions, spacing, origin, direction } =
@@ -314,11 +314,11 @@ export function createLocalVolume(
   }
 
   // Todo: handle default values for spacing, origin, direction if not provided
-  if (uid === undefined) {
-    uid = uuidv4()
+  if (volumeId === undefined) {
+    volumeId = uuidv4()
   }
 
-  const cachedVolume = cache.getVolume(uid)
+  const cachedVolume = cache.getVolume(volumeId)
 
   if (cachedVolume) {
     return cachedVolume
@@ -349,7 +349,7 @@ export function createLocalVolume(
   imageData.getPointData().setScalars(scalarArray)
 
   const derivedVolume = new ImageVolume({
-    uid,
+    volumeId,
     metadata: cloneDeep(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
@@ -367,7 +367,7 @@ export function createLocalVolume(
   const volumeLoadObject = {
     promise: Promise.resolve(derivedVolume),
   }
-  cache.putVolumeLoadObject(uid, volumeLoadObject)
+  cache.putVolumeLoadObject(volumeId, volumeLoadObject)
 
   return derivedVolume
 }
