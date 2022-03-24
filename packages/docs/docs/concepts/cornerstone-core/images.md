@@ -1,12 +1,17 @@
 ---
 id: images
-title: Images
+title: Image Object
 ---
 
 
-# Images
+# Image Object
 
-[Image Loaders](imageLoader.md) return an `image load` object.
+Cornerstone [Image Loaders](./imageLoader.md) return `Image Load Objects` which contain a Promise. The reason we have chosen to use an Object instead of solely returning a Promise is because now Image Loaders can also return other properties in their Image Load Objects. As an example, we intend to implement support for `cancelling` pending or ongoing requests using a `cancelFn` passed back by an Image Loader within an Image Load Object.
+
+
+Here is an interface of such Image Load Object. You can read more about each
+field in the [IImage section](/api/core/namespace/Types#IImage) of API reference.
+
 
 ```js
 interface IImage {
@@ -34,27 +39,11 @@ interface IImage {
   sizeInBytes: number
   scaling?: {
     PET?: {
-      // @TODO: Do these values exist?
       SUVlbmFactor?: number
       SUVbsaFactor?: number
-      // accessed in ProbeTool
       suvbwToSuvlbm?: number
       suvbwToSuvbsa?: number
     }
   }
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-The properties of image in Cornerstone
-can be seen in the API [here](../cornerstone-render/interfaces/Types.IImage.md)

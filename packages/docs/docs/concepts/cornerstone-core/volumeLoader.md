@@ -4,7 +4,13 @@ title: Volume Loaders
 ---
 
 
-# (New) Volume Loaders
+# Volume Loaders
+
+Similar to the [`Image Loaders`](./imageLoader.md), a volume loader takes a `volumeUID`.
+
+
+
+
 
 We have added [`Cornerstone-image-loader-streaming-volume`](/docs/cornerstone-image-loader-streaming-volume) library to support streaming in the images of
 a volume progressively into the GPU.

@@ -8,6 +8,7 @@
 /* https://infima.dev/docs/utilities/colors */
 /* https://docs.theochu.com/docusaurus/styling/ */
 :root {
+  --ifm-heading-margin-bottom: 0;
   --ifm-color-primary: #25c2a0;
   --ifm-color-primary-dark: rgb(33, 175, 144);
   --ifm-color-primary-darker: rgb(31, 165, 136);
@@ -131,12 +132,16 @@ blockquote {
 
 /* Temporary Type Size Changes */
 
+body h1 {
+  font-size: 2.2rem !important;
+}
+
 article header h1 {
   font-size: 2.6rem !important;
 }
 
 article h2 {
-  font-size: 1.85rem !important;
+  font-size: 1.85rem;
 }
 
 article header h3 {
@@ -276,6 +281,12 @@ html[data-theme='light'] .tsd-flag-optional {
   text-overflow: ellipsis;
   max-width: 60ch;
 }
+
+
+a.card > h2 {
+  font-size: 1.5rem
+}
+
 
 /* html[data-theme='light'] .tsd-signature {
   font-weight: 500;

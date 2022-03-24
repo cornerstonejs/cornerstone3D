@@ -24,7 +24,7 @@ module.exports = {
       items: [
         {
           type: 'doc',
-          docId: 'core-introduction',
+          docId: 'introduction/overview',
           position: 'left',
           label: 'Docs',
         },
@@ -128,8 +128,8 @@ module.exports = {
         },
         blog: false,
         googleAnalytics: {
-          trackingID: 'UA-110573590-1'
-        }
+          trackingID: 'UA-110573590-1',
+        },
       },
     ],
   ],
@@ -154,11 +154,9 @@ module.exports = {
       {
         projectRoot: path.join(__dirname, '../../'),
         packages: [
-          ...[
-            'core',
-            'tools',
-            'streaming-image-volume-loader',
-          ].map((pkg) => `packages/${pkg}`),
+          ...['core', 'tools', 'streaming-image-volume-loader'].map(
+            (pkg) => `packages/${pkg}`
+          ),
         ],
         minimal: false,
         readmes: true,
