@@ -29,7 +29,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { setSegmentationRepresentations } = segmentation
+const { addSegmentationRepresentations } = segmentation
 const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
@@ -141,7 +141,7 @@ describe('Segmentation State -- ', () => {
           expect(toolGroupSegmentationState).toBeDefined()
           expect(toolGroupSegmentationState.segmentations.length).toBe(1)
 
-          const segState = segmentation.state.getSegmentationState(
+          const segState = segmentation.state.getSegmentationRepresentations(
             this.segToolGroup.id
           )
 
@@ -175,7 +175,7 @@ describe('Segmentation State -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            setSegmentationRepresentations(this.segToolGroup.id, [
+            addSegmentationRepresentations(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })
@@ -231,7 +231,7 @@ describe('Segmentation State -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            setSegmentationRepresentations(this.segToolGroup.id, [
+            addSegmentationRepresentations(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })

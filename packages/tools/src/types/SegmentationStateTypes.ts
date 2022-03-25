@@ -113,7 +113,9 @@ type ToolGroupSpecificRepresentationState = {
  * we store ToolGroup specific segmentation data in this object
  */
 export type ToolGroupSpecificLabelmapRepresentation =
-  ToolGroupSpecificRepresentationState & LabelmapRenderingConfig
+  ToolGroupSpecificRepresentationState & {
+    config: LabelmapRenderingConfig
+  }
 
 export type ToolGroupSpecificRepresentation =
   ToolGroupSpecificLabelmapRepresentation // | other ones

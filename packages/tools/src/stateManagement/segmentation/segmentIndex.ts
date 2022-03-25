@@ -1,25 +1,26 @@
-import { getActiveSegmentationInfo } from './activeSegmentation'
+import { getActiveSegmentationRepresentation } from './activeSegmentation'
 import { getSegmentation } from './segmentationState'
 import { triggerSegmentationModified } from './triggerSegmentationEvents'
 
 /**
- * Returns the active segment index for the active segmentation in the tool group
+ * Returns the active segment index for the active segmentation representation in the tool group
  *
- * @param toolGroupId - The Id of the tool group that contains an active segmentation.
+ * @param toolGroupId - The Id of the tool group that contains an active segmentation representation.
  * @returns The active segment index.
  */
 function getActiveSegmentIndex(toolGroupId: string): number | undefined {
-  const segmentationInfo = getActiveSegmentationInfo(toolGroupId)
+  const segmentationRepresentation =
+    getActiveSegmentationRepresentation(toolGroupId)
 
-  if (!segmentationInfo) {
+  if (!segmentationRepresentation) {
     throw new Error('toolGroup does not contain an active segmentation')
   }
 
-  const { volumeId } = segmentationInfo
-  const activeSegmentationGlobalState = getSegmentation(volumeId)
+  const { segmentationId } = segmentationRepresentation
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState) {
-    return activeSegmentationGlobalState.activeSegmentIndex
+  if (segmentation) {
+    return segmentation.activeSegmentIndex
   }
 }
 
@@ -35,7 +36,7 @@ function setActiveSegmentIndex(
   toolGroupId: string,
   segmentIndex: number
 ): void {
-  const segmentationInfo = getActiveSegmentationInfo(toolGroupId)
+  const segmentationInfo = getActiveSegmentationRepresentation(toolGroupId)
 
   if (!segmentationInfo) {
     throw new Error('element does not contain an active segmentation')

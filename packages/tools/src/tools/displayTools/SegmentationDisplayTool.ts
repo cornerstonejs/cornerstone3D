@@ -10,6 +10,10 @@ import { getToolGroupById } from '../../store/ToolGroupManager'
 import { PublicToolProps, ToolProps } from '../../types'
 
 import { deepMerge } from '../../utilities'
+import {
+  SegmentationRepresentationConfig,
+  ToolGroupSpecificRepresentation,
+} from 'tools/src/types/SegmentationStateTypes'
 
 /**
  * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
@@ -102,7 +106,8 @@ export default class SegmentationDisplayTool extends BaseTool {
       return
     }
 
-    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
+    const toolGroupSegmentationRepresentations =
+      getSegmentationRepresentations(toolGroupId)
 
     // toolGroup Viewports
     const toolGroupViewports = toolGroup.viewportsInfo.map(
@@ -119,14 +124,13 @@ export default class SegmentationDisplayTool extends BaseTool {
     )
 
     // Render each segmentationData, in each viewport in the toolGroup
-    toolGroupSegmentationState.forEach(
-      (segmentationData: ToolGroupSpecificSegmentationData) => {
-        const config = this._getSegmentationConfig(toolGroupId)
-        const { representation } = segmentationData
+    toolGroupSegmentationRepresentations.forEach(
+      (representation: ToolGroupSpecificRepresentation) => {
+        const config = this._getMergedRepresentationsConfig(toolGroupId)
 
         toolGroupViewports.forEach((viewport) => {
           if (representation.type == Representations.Labelmap) {
-            LabelmapDisplay.render(viewport, segmentationData, config)
+            LabelmapDisplay.render(viewport, representation, config)
           } else {
             throw new Error(
               `Render for ${representation.type} is not supported yet`
@@ -142,11 +146,17 @@ export default class SegmentationDisplayTool extends BaseTool {
     })
   }
 
-  _getSegmentationConfig(toolGroupId: string): SegmentationConfig {
+  /**
+   * Merge the toolGroup specific configuration with the default global configuration
+   * @param toolGroupId
+   * @returns
+   */
+  _getMergedRepresentationsConfig(
+    toolGroupId: string
+  ): SegmentationRepresentationConfig {
     const toolGroupConfig =
-      segmentationConfig.getSegmentationConfig(toolGroupId)
-
-    const globalConfig = segmentationConfig.getGlobalSegmentationConfig()
+      segmentationConfig.getToolGroupSpecificConfig(toolGroupId)
+    const globalConfig = segmentationConfig.getGlobalConfig()
 
     // merge two configurations and override the global config
     const mergedConfig = deepMerge(globalConfig, toolGroupConfig)

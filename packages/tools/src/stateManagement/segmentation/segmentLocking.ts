@@ -1,4 +1,4 @@
-import { getActiveSegmentationInfo } from './activeSegmentation'
+import { getActiveSegmentationRepresentation } from './activeSegmentation'
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState'
 import { triggerSegmentationModified } from './triggerSegmentationEvents'
@@ -11,22 +11,20 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents'
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not for modification
  */
-// Todo: should this be based on a segmentationId instead of a toolGroupId?
 function getSegmentIndexLocked(
   toolGroupId: string,
   segmentIndex: number
 ): boolean {
-  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupId)
+  const activeSegmentationRepresentation =
+    getActiveSegmentationRepresentation(toolGroupId)
 
-  if (!activeSegmentationInfo) {
+  if (!activeSegmentationRepresentation) {
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeId: segmentationId } = activeSegmentationInfo
+  const { segmentationId } = activeSegmentationRepresentation
   const segmentationGlobalState = getSegmentation(segmentationId)
-
   const lockedSegments = segmentationGlobalState.segmentsLocked
-
   return lockedSegments.has(segmentIndex)
 }
 
@@ -47,13 +45,14 @@ function setSegmentIndexLocked(
   segmentIndex: number,
   locked = true
 ): void {
-  const activeSegmentationInfo = getActiveSegmentationInfo(toolGroupId)
+  const activeSegmentationInfo =
+    getActiveSegmentationRepresentation(toolGroupId)
 
   if (!activeSegmentationInfo) {
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeId: segmentationId } = activeSegmentationInfo
+  const { segmentationId } = activeSegmentationInfo
 
   const segmentationGlobalState = getSegmentation(segmentationId)
 
@@ -79,13 +78,13 @@ function getSegmentIndexLockedForSegmentation(
   segmentationId: string,
   segmentIndex: number
 ): boolean {
-  const globalState = getSegmentation(segmentationId)
+  const segmentation = getSegmentation(segmentationId)
 
-  if (!globalState) {
+  if (!segmentation) {
     throw new Error(`No segmentation state found for ${segmentationId}`)
   }
 
-  const { segmentsLocked } = globalState
+  const { segmentsLocked } = segmentation
   return segmentsLocked.has(segmentIndex)
 }
 

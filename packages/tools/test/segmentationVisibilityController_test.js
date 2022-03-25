@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { setSegmentationRepresentations } = segmentation
+const { addSegmentationRepresentations } = segmentation
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
@@ -156,7 +156,7 @@ describe('Segmentation Controller --', () => {
                 vp1.render()
 
                 // add two volumes on the segmentation
-                setSegmentationRepresentations(TOOL_GROUP_ID, [
+                addSegmentationRepresentations(TOOL_GROUP_ID, [
                   {
                     volumeId: seg1VolumeID,
                   },
@@ -221,7 +221,7 @@ describe('Segmentation Controller --', () => {
                 )
 
                 // add two volumes on the segmentation
-                setSegmentationRepresentations(TOOL_GROUP_ID, [
+                addSegmentationRepresentations(TOOL_GROUP_ID, [
                   {
                     volumeId: seg1VolumeID,
                     colorLUTIndex: 1,
@@ -262,7 +262,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.segmentation.state.getSegmentationState(TOOL_GROUP_ID)
+    //       csTools3d.segmentation.state.getSegmentationRepresentations(TOOL_GROUP_ID)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].visibility).toBe(true)
@@ -292,7 +292,7 @@ describe('Segmentation Controller --', () => {
     //             vp1.render()
 
     //             // add two volumes on the segmentation
-    //             setSegmentationRepresentations(TOOL_GROUP_ID, [
+    //             addSegmentationRepresentations(TOOL_GROUP_ID, [
     //               {
     //                 volumeId: seg1VolumeID,
     //               },
@@ -301,7 +301,7 @@ describe('Segmentation Controller --', () => {
     //               },
     //             ]).then(() => {
     //               const segmentationData =
-    //                 segmentation.activeSegmentation.getActiveSegmentationInfo(
+    //                 segmentation.activeSegmentation.getActiveSegmentationRepresentation(
     //                   TOOL_GROUP_ID
     //                 )
 

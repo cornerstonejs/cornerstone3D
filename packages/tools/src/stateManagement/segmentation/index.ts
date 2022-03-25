@@ -1,7 +1,7 @@
 import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup'
 import createNewSegmentationForToolGroup from './createNewSegmentationForToolGroup'
 import addSegmentations from './addSegmentations'
-import setSegmentationRepresentations from './setSegmentationRepresentations'
+import addSegmentationRepresentations from './addSegmentationRepresentations'
 import getSegmentationRepresentations from './getSegmentationRepresentations'
 
 import * as activeSegmentation from './activeSegmentation'
@@ -17,7 +17,7 @@ export {
   state,
   addSegmentations,
   activeSegmentation,
-  setSegmentationRepresentations,
+  addSegmentationRepresentations,
   getSegmentationRepresentations,
   removeSegmentationsFromToolGroup,
   createNewSegmentationForToolGroup,

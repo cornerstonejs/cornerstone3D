@@ -17,7 +17,7 @@ import {
 } from './annotation/annotationState'
 
 import {
-  setSegmentationRepresentations,
+  addSegmentationRepresentations,
   removeSegmentationsFromToolGroup,
 } from './segmentation'
 
@@ -37,6 +37,6 @@ export {
   getViewportSpecificAnnotationManager,
   getAnnotation,
   // segmentations
-  setSegmentationRepresentations,
+  addSegmentationRepresentations,
   removeSegmentationsFromToolGroup,
 }

@@ -12,7 +12,7 @@ import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
     export {
-        getActiveSegmentationInfo,
+        getActiveSegmentationRepresentation,
         setActiveSegmentation
     }
 }
@@ -40,7 +40,7 @@ function addGlobalSegmentationData(segmentationData: GlobalSegmentationData, sup
 function addSegmentationData(toolGroupId: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setSegmentationRepresentations(toolGroupId: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
+function addSegmentationRepresentations(toolGroupId: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
 
 // @public (undocumented)
 export function addTool(ToolClass: any): void;
@@ -1098,7 +1098,7 @@ type FrameOfReferenceSpecificAnnotations = {
 function getActiveSegmentationData(toolGroupId: string): ToolGroupSpecificSegmentationData | undefined;
 
 // @public (undocumented)
-function getActiveSegmentationInfo(toolGroupId: string): {
+function getActiveSegmentationRepresentation(toolGroupId: string): {
     volumeId: string;
     segmentationDataUID: string;
     activeSegmentIndex: number;
@@ -1201,7 +1201,7 @@ function getSegmentationConfig_2(toolGroupId: string): SegmentationConfig;
 function getSegmentationDataByUID(toolGroupId: string, segmentationDataUID: string): ToolGroupSpecificSegmentationData | undefined;
 
 // @public (undocumented)
-function getSegmentationState(toolGroupId: string): ToolGroupSpecificSegmentationState | [];
+function getSegmentationRepresentations(toolGroupId: string): ToolGroupSpecificSegmentationState | [];
 
 // @public (undocumented)
 function getSegmentationVisibility(toolGroupId: string, segmentationDataUID: string): boolean | undefined;
@@ -2565,7 +2565,7 @@ declare namespace segmentation {
     export {
         state_2 as state,
         activeSegmentation,
-        setSegmentationRepresentations,
+        addSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
         createNewSegmentationForToolGroup,
         segmentLocking,
@@ -2898,7 +2898,7 @@ declare namespace state_2 {
         getGlobalSegmentationState,
         getSegmentation,
         addGlobalSegmentationData,
-        getSegmentationState,
+        getSegmentationRepresentations,
         addSegmentationData,
         removeSegmentationData,
         getSegmentationDataByUID,

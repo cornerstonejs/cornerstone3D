@@ -2,7 +2,7 @@ import SegmentationRepresentations from '../../enums/SegmentationRepresentations
 import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
 
 import {
-  getSegmentationState,
+  getSegmentationRepresentations,
   getSegmentationDataByUID,
 } from './segmentationState'
 
@@ -17,7 +17,7 @@ function removeSegmentationsFromToolGroup(
   toolGroupId: string,
   segmentationDataUIDs?: string[] | undefined
 ): void {
-  const toolGroupSegmentations = getSegmentationState(toolGroupId)
+  const toolGroupSegmentations = getSegmentationRepresentations(toolGroupId)
   const toolGroupSegmentationDataUIDs = toolGroupSegmentations.map(
     (segData) => segData.segmentationDataUID
   )

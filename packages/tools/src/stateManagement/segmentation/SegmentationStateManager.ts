@@ -1,13 +1,14 @@
 import cloneDeep from 'lodash.clonedeep'
 import { utilities as csUtils } from '@cornerstonejs/core'
 
-import CORNERSTONE_COLOR_LUT from './helpers/COLOR_LUT'
+import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT'
 
 import type {
   SegmentationState,
   ColorLut,
   Segmentation,
   ToolGroupSpecificRepresentation,
+  SegmentationRepresentationConfig,
 } from '../../types/SegmentationStateTypes'
 
 /* A default initial state for the segmentation manager. */
@@ -44,7 +45,7 @@ export default class SegmentationStateManager {
    * @returns A deep copy of the state.
    */
   getState(): SegmentationState {
-    return cloneDeep(this.state)
+    return this.state
   }
 
   /**
@@ -87,6 +88,7 @@ export default class SegmentationStateManager {
    * @param segmentation - Segmentation
    */
   addSegmentation(segmentation: Segmentation): void {
+    this._initDefaultColorLutIfNecessary()
     this.state.segmentations.push(segmentation)
   }
 
@@ -106,6 +108,49 @@ export default class SegmentationStateManager {
     }
 
     return toolGroupSegRepresentationsWithConfig.segmentationRepresentations
+  }
+
+  /**
+   * Add a new segmentation representation to the toolGroup's segmentation representations.
+   * @param toolGroupId - The Id of the tool group .
+   * @param segmentationRepresentation - The segmentation representation to add.
+   */
+  addSegmentationRepresentation(
+    toolGroupId: string,
+    segmentationRepresentation: ToolGroupSpecificRepresentation
+  ): void {
+    // Initialize the default toolGroup state if not created yet
+    if (!this.state.toolGroups[toolGroupId]) {
+      this.state.toolGroups[toolGroupId] = {
+        segmentationRepresentations: [],
+        config: {} as SegmentationRepresentationConfig,
+      }
+    }
+
+    // local toolGroupSpecificSegmentationState
+    this.state.toolGroups[toolGroupId].segmentationRepresentations.push(
+      segmentationRepresentation
+    )
+
+    this._handleActiveSegmentation(toolGroupId, segmentationRepresentation)
+  }
+
+  /**
+   * Get the global config containing both representation config
+   * and render inactive segmentations config
+   * @returns The global config object.
+   */
+  getGlobalConfig(): SegmentationRepresentationConfig {
+    return this.state.globalConfig
+  }
+
+  /**
+   * It sets the global segmentation config including both representation config
+   * and render inactive segmentations config
+   * @param config - The global configuration for the segmentations.
+   */
+  setGlobalConfig(config: SegmentationRepresentationConfig): void {
+    this.state.globalConfig = config
   }
 
   /**
@@ -136,62 +181,14 @@ export default class SegmentationStateManager {
    */
 
   /**
-   * Get the global segmentation state for all the segmentations in the
-   * segmentation state manager.
-   * @returns An array of GlobalSegmentationData.
-   */
-  getGlobalSegmentationState(): GlobalSegmentationState | [] {
-    return this.state.global.segmentations
-  }
-
-  /**
-   * Get the global config containing both representation config
-   * and render inactive segmentations config
-   * @returns The global config object.
-   */
-  getGlobalSegmentationConfig(): SegmentationConfig {
-    return this.state.global.config
-  }
-
-  /**
-   * It sets the global segmentation config including both representation config
-   * and render inactive segmentations config
-   * @param config - The global configuration for the segmentations.
-   */
-  setGlobalSegmentationConfig(config: SegmentationConfig): void {
-    this.state.global.config = config
-  }
-
-  /**
-   * Get the segmentation state for the toolGroup containing array of
-   * segmentation data objects.
-   *
-   * @param toolGroupId - The Id of the tool group that the segmentation
-   * belongs to.
-   * @returns An array of objects, each of which contains the data for a single
-   * segmentation data
-   */
-  getSegmentationState(
-    toolGroupId: string
-  ): ToolGroupSpecificSegmentationState | [] {
-    const toolGroupSegmentationState = this.state.toolGroups[toolGroupId]
-
-    if (!toolGroupSegmentationState) {
-      return []
-    }
-
-    return this.state.toolGroups[toolGroupId].segmentations
-  }
-
-  /**
-   * Given a tool group UID and a representation type, return toolGroup specific
-   * config for that representation type.
+   * Given a tool group Id it returns the tool group specific representation config
    *
    * @param toolGroupId - The Id of the tool group
-   * @param representationType - The type of representation, currently only Labelmap
    * @returns A SegmentationConfig object.
    */
-  getSegmentationConfig(toolGroupId: string): SegmentationConfig | undefined {
+  getToolGroupSpecificConfig(
+    toolGroupId: string
+  ): SegmentationRepresentationConfig | undefined {
     const toolGroupStateWithConfig = this.state.toolGroups[toolGroupId]
 
     if (!toolGroupStateWithConfig) {
@@ -202,19 +199,22 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Set the segmentation config for a given tool group. It will create a new
+   * Set the segmentation representations config for a given tool group. It will create a new
    * tool group specific config if one does not exist.
    *
    * @param toolGroupId - The Id of the tool group that the segmentation
    * belongs to.
    * @param config - SegmentationConfig
    */
-  setSegmentationConfig(toolGroupId: string, config: SegmentationConfig): void {
+  setSegmentationRepresentationConfig(
+    toolGroupId: string,
+    config: SegmentationRepresentationConfig
+  ): void {
     let toolGroupStateWithConfig = this.state.toolGroups[toolGroupId]
 
     if (!toolGroupStateWithConfig) {
       this.state.toolGroups[toolGroupId] = {
-        segmentations: [],
+        segmentationRepresentations: [],
         config: {
           renderInactiveSegmentations: true,
           representations: {},
@@ -241,7 +241,7 @@ export default class SegmentationStateManager {
     toolGroupId: string,
     segmentationDataUID: string
   ): ToolGroupSpecificSegmentationData | undefined {
-    const toolGroupSegState = this.getSegmentationState(
+    const toolGroupSegState = this.getSegmentationRepresentations(
       toolGroupId
     ) as ToolGroupSpecificSegmentationState
 
@@ -261,7 +261,7 @@ export default class SegmentationStateManager {
   getActiveSegmentationData(
     toolGroupId: string
   ): ToolGroupSpecificSegmentationData | undefined {
-    const toolGroupSegState = this.getSegmentationState(
+    const toolGroupSegState = this.getSegmentationRepresentations(
       toolGroupId
     ) as ToolGroupSpecificSegmentationState
 
@@ -324,39 +324,17 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Add a new segmentation data to the toolGroup's segmentation state
-   * @param toolGroupId - The Id of the tool group that the segmentation
-   * belongs to.
-   * @param segmentationData - ToolGroupSpecificSegmentationData
-   */
-  addSegmentationData(
-    toolGroupId: string,
-    segmentationData: ToolGroupSpecificSegmentationData
-  ): void {
-    // Initialize the default toolGroup state if not created yet
-    if (!this.state.toolGroups[toolGroupId]) {
-      this.state.toolGroups[toolGroupId] = {
-        segmentations: [],
-        config: {} as SegmentationConfig,
-      }
-    }
-
-    // local toolGroupSpecificSegmentationState
-    this.state.toolGroups[toolGroupId].segmentations.push(segmentationData)
-    this._handleActiveSegmentation(toolGroupId, segmentationData)
-  }
-
-  /**
    * Set the active segmentation data for a tool group
    * @param toolGroupId - The Id of the tool group that owns the
    * segmentation data.
    * @param segmentationDataUID - string
    */
-  setActiveSegmentationData(
+  setActiveSegmentationRepresentation(
     toolGroupId: string,
-    segmentationDataUID: string
+    segmentationRepresentationUID: string
   ): void {
-    const toolGroupSegmentations = this.getSegmentationState(toolGroupId)
+    const toolGroupSegmentations =
+      this.getSegmentationRepresentations(toolGroupId)
 
     if (!toolGroupSegmentations || !toolGroupSegmentations.length) {
       throw new Error(
@@ -366,12 +344,13 @@ export default class SegmentationStateManager {
 
     const segmentationData = toolGroupSegmentations.find(
       (segmentationData) =>
-        segmentationData.segmentationDataUID === segmentationDataUID
+        segmentationData.segmentationRepresentationUID ===
+        segmentationRepresentationUID
     )
 
     if (!segmentationData) {
       throw new Error(
-        `No segmentation data found for segmentation data UID ${segmentationDataUID}`
+        `No segmentation data found for segmentation data UID ${segmentationRepresentationUID}`
       )
     }
 
@@ -389,7 +368,8 @@ export default class SegmentationStateManager {
     toolGroupId: string,
     segmentationDataUID: string
   ): void {
-    const toolGroupSegmentations = this.getSegmentationState(toolGroupId)
+    const toolGroupSegmentations =
+      this.getSegmentationRepresentations(toolGroupId)
 
     if (!toolGroupSegmentations || !toolGroupSegmentations.length) {
       throw new Error(
@@ -414,50 +394,50 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * It handles the active segmentation data based on the active status of the
-   * segmentation data that was added or removed.
+   * It handles the active segmentation representation based on the active status of the
+   * segmentation representation that was added or removed.
    *
-   * @param toolGroupId - The Id of the tool group that the segmentation
-   * data belongs to.
-   * @param recentlyAddedOrRemovedSegmentationData - ToolGroupSpecificSegmentationData
+   * @param toolGroupId - The Id of the tool group that the segmentation representation belongs to.
+   * @param recentlyAddedOrRemovedSegmentationRepresentation - ToolGroupSpecificSegmentationData
    */
   _handleActiveSegmentation(
     toolGroupId: string,
-    recentlyAddedOrRemovedSegmentationData: ToolGroupSpecificSegmentationData
+    recentlyAddedOrRemovedSegmentationRepresentation: ToolGroupSpecificRepresentation
   ): void {
-    const state = this.getSegmentationState(
-      toolGroupId
-    ) as ToolGroupSpecificSegmentationState
+    const segmentationRepresentations =
+      this.getSegmentationRepresentations(toolGroupId)
 
-    // 1. If there is no segmentationData, return early
-    if (state.length === 0) {
+    // 1. If there is no segmentation representations, return early
+    if (segmentationRepresentations.length === 0) {
       return
     }
 
-    // 2. If there is only one segmentationData, make that one active
-    if (state.length === 1) {
-      state[0].active = true
+    // 2. If there is only one segmentation representation, make that one active
+    if (segmentationRepresentations.length === 1) {
+      segmentationRepresentations[0].active = true
       return
     }
 
-    // 3. If removed SegmentationData was active, make the first one active
-    const activeSegmentations = state.filter(
-      (segmentationData) => segmentationData.active
-    )
+    // 3. If removed Segmentation representation was active, make the first one active
+    const activeSegmentationRepresentations =
+      segmentationRepresentations.filter(
+        (representation) => representation.active
+      )
 
-    if (activeSegmentations.length === 0) {
-      state[0].active = true
+    if (activeSegmentationRepresentations.length === 0) {
+      segmentationRepresentations[0].active = true
       return
     }
 
-    // 4. If the added segmentation data is active, make other segmentation data inactive
-    if (recentlyAddedOrRemovedSegmentationData.active) {
-      state.forEach((segmentationData) => {
+    // 4. If the added segmentation representation is active, make other segmentation
+    // representations inactive
+    if (recentlyAddedOrRemovedSegmentationRepresentation.active) {
+      segmentationRepresentations.forEach((representation) => {
         if (
-          segmentationData.segmentationDataUID !==
-          recentlyAddedOrRemovedSegmentationData.segmentationDataUID
+          representation.segmentationRepresentationUID !==
+          recentlyAddedOrRemovedSegmentationRepresentation.segmentationRepresentationUID
         ) {
-          segmentationData.active = false
+          representation.active = false
         }
       })
     }

@@ -19,7 +19,7 @@ import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
  * @param toolGroupSpecificRepresentationConfig - The toolGroup specific configuration
  * for the segmentation representations
  */
-async function setSegmentationRepresentations(
+async function addSegmentationRepresentations(
   toolGroupId: string,
   representationInputArray: RepresentationPublicInput[],
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
@@ -60,4 +60,4 @@ async function _addSegmentationRepresentation(
   }
 }
 
-export default setSegmentationRepresentations
+export default addSegmentationRepresentations

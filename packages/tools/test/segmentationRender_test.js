@@ -34,7 +34,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { setSegmentationRepresentations } = segmentation
+const { addSegmentationRepresentations } = segmentation
 const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
@@ -150,7 +150,7 @@ describe('Segmentation Render -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            setSegmentationRepresentations(this.segToolGroup.id, [
+            addSegmentationRepresentations(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })
@@ -227,7 +227,7 @@ describe('Segmentation Render -- ', () => {
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            setSegmentationRepresentations(this.segToolGroup.id, [
+            addSegmentationRepresentations(this.segToolGroup.id, [
               { volumeId: segVolumeId },
             ])
           })
@@ -276,7 +276,7 @@ describe('Segmentation Render -- ', () => {
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             createAndCacheVolume(segVolumeId2, { imageIds: [] }).then(() => {
-              setSegmentationRepresentations(this.segToolGroup.id, [
+              addSegmentationRepresentations(this.segToolGroup.id, [
                 { volumeId: segVolumeId },
                 { volumeId: segVolumeId2 },
               ])
@@ -321,9 +321,10 @@ describe('Segmentation Render -- ', () => {
       eventTarget.addEventListener(
         Events.SEGMENTATION_REPRESENTATION_MODIFIED,
         (evt) => {
-          const toolGroupState = segmentation.state.getSegmentationState(
-            this.segToolGroup.id
-          )
+          const toolGroupState =
+            segmentation.state.getSegmentationRepresentations(
+              this.segToolGroup.id
+            )
 
           expect(toolGroupState).toBeDefined()
 
@@ -354,7 +355,7 @@ describe('Segmentation Render -- ', () => {
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            setSegmentationRepresentations(
+            addSegmentationRepresentations(
               this.segToolGroup.id,
               [{ volumeId: segVolumeId }],
               {

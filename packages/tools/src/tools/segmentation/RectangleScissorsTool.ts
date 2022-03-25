@@ -94,7 +94,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const toolGroupId = this.toolGroupId
 
     const activeSegmentationInfo =
-      activeSegmentation.getActiveSegmentationInfo(toolGroupId)
+      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId)
     if (!activeSegmentationInfo) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'

@@ -1,33 +1,30 @@
-import {
-  getActiveSegmentationData,
-  setActiveSegmentationData,
-  getSegmentation,
-} from './segmentationState'
+import { ToolGroupSpecificRepresentation } from 'tools/src/types/SegmentationStateTypes'
+import { getDefaultSegmentationStateManager } from './segmentationState'
+import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents'
 
 /**
- * Get the active segmentation info for the first viewport in the tool group with
+ * Get the active segmentation representation for the tool group with
  * the given toolGroupId.
- * @param toolGroupId - The Id of the tool group that the user is
- * currently interacting with.
+ * @param toolGroupId - The Id of the tool group
+ * @returns The active segmentation representation for the tool group.
  */
-function getActiveSegmentationInfo(toolGroupId: string): {
-  volumeId: string
-  segmentationDataUID: string
-  activeSegmentIndex: number
-} {
-  const activeSegmentationData = getActiveSegmentationData(toolGroupId)
+function getActiveSegmentationRepresentation(
+  toolGroupId: string
+): ToolGroupSpecificRepresentation {
+  const segmentationStateManager = getDefaultSegmentationStateManager()
 
-  if (!activeSegmentationData) {
-    return null
+  const toolGroupSegmentationRepresentations =
+    segmentationStateManager.getSegmentationRepresentations(toolGroupId)
+
+  if (!toolGroupSegmentationRepresentations) {
+    return
   }
 
-  const globalState = getSegmentation(activeSegmentationData.volumeId)
+  const activeRepresentation = toolGroupSegmentationRepresentations.find(
+    (representation) => representation.active
+  )
 
-  return {
-    volumeId: activeSegmentationData.volumeId,
-    segmentationDataUID: activeSegmentationData.segmentationDataUID,
-    activeSegmentIndex: globalState.activeSegmentIndex,
-  }
+  return activeRepresentation
 }
 
 /**
@@ -38,16 +35,26 @@ function getActiveSegmentationInfo(toolGroupId: string): {
  * @param segmentationDataUID - The id of the segmentation data to set as
  * active.
  */
-function setActiveSegmentation(
+function setActiveSegmentationRepresentation(
   toolGroupId: string,
-  segmentationDataUID: string
+  segmentationRepresentationUID: string
 ): void {
-  setActiveSegmentationData(toolGroupId, segmentationDataUID)
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+
+  segmentationStateManager.setActiveSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUID
+  )
+
+  triggerSegmentationRepresentationModified(
+    toolGroupId,
+    segmentationRepresentationUID
+  )
 }
 
 export {
   // get
-  getActiveSegmentationInfo,
+  getActiveSegmentationRepresentation,
   // set
-  setActiveSegmentation,
+  setActiveSegmentationRepresentation,
 }

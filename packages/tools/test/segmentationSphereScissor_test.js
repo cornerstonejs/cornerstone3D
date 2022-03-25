@@ -32,7 +32,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { setSegmentationRepresentations } = segmentation
+const { addSegmentationRepresentations } = segmentation
 
 const {
   fakeVolumeLoader,
@@ -284,7 +284,7 @@ describe('Segmentation Tools --', () => {
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationId) => {
-                setSegmentationRepresentations(this.segToolGroup.id, [
+                addSegmentationRepresentations(this.segToolGroup.id, [
                   { volumeId: segmentationId },
                 ])
               })

@@ -8,6 +8,8 @@ import {
   cancelActiveManipulations,
 } from './store'
 
+import * as CONSTANTS from './constants'
+
 // Name spaces
 import * as synchronizers from './synchronizers'
 import * as drawing from './drawingSvg'
@@ -99,6 +101,8 @@ export {
   ToolGroupManager,
   // Enums
   Enums,
+  // Constants
+  CONSTANTS,
   // Drawing API
   drawing,
   // Annotation

@@ -3,7 +3,7 @@ import * as SegmentationState from '../../stateManagement/segmentation/segmentat
 
 import {
   RepresentationConfig,
-  SegmentationConfig,
+  SegmentationRepresentationConfig,
 } from '../../types/SegmentationStateTypes'
 
 /**
@@ -11,20 +11,46 @@ import {
  * @returns The global segmentation config containing the representations
  * config for each representation type and renderInactiveSegmentations flag.
  */
-function getGlobalSegmentationConfig(): SegmentationConfig {
-  const globalConfig = SegmentationState.getGlobalSegmentationConfig()
-  return globalConfig
+function getGlobalConfig(): SegmentationRepresentationConfig {
+  return SegmentationState.getGlobalConfig()
 }
 
 /**
  * Set the global segmentation config
  * @param segmentationConfig - SegmentationConfig
  */
-function setGlobalSegmentationConfig(
-  segmentationConfig: SegmentationConfig
+function setGlobalConfig(
+  segmentationConfig: SegmentationRepresentationConfig
 ): void {
-  SegmentationState.setGlobalSegmentationConfig(segmentationConfig)
+  SegmentationState.setGlobalConfig(segmentationConfig)
 }
+
+/**
+ * Get the toolGroup specific segmentation config
+ * @param toolGroupId - The Id of the tool group
+ * @returns A SegmentationConfig object.
+ */
+function getToolGroupSpecificConfig(
+  toolGroupId: string
+): SegmentationRepresentationConfig {
+  return SegmentationState.getToolGroupSpecificConfig(toolGroupId)
+}
+
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ * CORRECt
+ *
+ *
+ *
+ *
+ *
+ */
 
 /**
  * Given a representation type, return the corresponding global representation config
@@ -34,7 +60,7 @@ function setGlobalSegmentationConfig(
 function getGlobalRepresentationConfig(
   representationType: SegmentationRepresentations
 ): RepresentationConfig {
-  const globalConfig = getGlobalSegmentationConfig()
+  const globalConfig = getGlobalConfig()
   return globalConfig.representations[representationType]
 }
 
@@ -50,7 +76,7 @@ function setGlobalRepresentationConfig(
   representationType: SegmentationRepresentations,
   config: RepresentationConfig
 ): void {
-  const globalConfig = getGlobalSegmentationConfig()
+  const globalConfig = getGlobalConfig()
 
   setGlobalSegmentationConfig({
     ...globalConfig,
@@ -89,21 +115,12 @@ function updateGlobalRepresentationConfig(
 function updateGlobalSegmentationConfig(
   config: Partial<SegmentationConfig>
 ): void {
-  const globalConfig = getGlobalSegmentationConfig()
+  const globalConfig = getGlobalConfig()
 
   setGlobalSegmentationConfig({
     ...globalConfig,
     ...config,
   })
-}
-
-/**
- * Get the toolGroup specific segmentation config
- * @param toolGroupId - The Id of the tool group
- * @returns A SegmentationConfig object.
- */
-function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
-  return SegmentationState.getSegmentationConfig(toolGroupId)
 }
 
 /**
@@ -168,14 +185,16 @@ function getRepresentationConfig(
 }
 
 export {
-  getGlobalSegmentationConfig,
-  setGlobalSegmentationConfig,
-  getGlobalRepresentationConfig,
-  setGlobalRepresentationConfig,
-  updateGlobalSegmentationConfig,
-  updateGlobalRepresentationConfig,
-  getSegmentationConfig,
-  setSegmentationConfig,
-  setRepresentationConfig,
-  getRepresentationConfig,
+  getGlobalConfig,
+  setGlobalConfig,
+  getToolGroupSpecificConfig,
+  // setGlobalSegmentationConfig,
+  // getGlobalRepresentationConfig,
+  // setGlobalRepresentationConfig,
+  // updateGlobalSegmentationConfig,
+  // updateGlobalRepresentationConfig,
+  // getSegmentationConfig,
+  // setSegmentationConfig,
+  // setRepresentationConfig,
+  // getRepresentationConfig,
 }

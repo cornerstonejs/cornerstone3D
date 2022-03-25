@@ -3,8 +3,7 @@ import { triggerEvent, eventTarget } from '@cornerstonejs/core'
 import { Events } from '../../enums'
 import {
   getToolGroupsWithSegmentation,
-  getToolGroups,
-  getGlobalSegmentationState,
+  getSegmentationRepresentations,
 } from '../../stateManagement/segmentation/segmentationState'
 import {
   SegmentationRepresentationModifiedEventDetail,
@@ -19,18 +18,42 @@ import {
  */
 function triggerSegmentationRepresentationModified(
   toolGroupId: string,
-  segmentationRepresentationUID: string
+  segmentationRepresentationUID?: string
 ): void {
   const eventDetail: SegmentationRepresentationModifiedEventDetail = {
     toolGroupId,
     segmentationRepresentationUID,
   }
 
-  triggerEvent(
-    eventTarget,
-    Events.SEGMENTATION_REPRESENTATION_MODIFIED,
-    eventDetail
-  )
+  if (segmentationRepresentationUID) {
+    triggerEvent(
+      eventTarget,
+      Events.SEGMENTATION_REPRESENTATION_MODIFIED,
+      eventDetail
+    )
+    return
+  }
+
+  // If no segmentationRepresentationUID is provided, then we need to trigger
+  // the event for all segmentation representations in the toolGroup
+
+  // Get all segmentation representations in the toolGroup
+  const segmentationRepresentations =
+    getSegmentationRepresentations(toolGroupId) || []
+
+  segmentationRepresentations.forEach((segmentationRepresentation) => {
+    const { segmentationRepresentationUID } = segmentationRepresentation
+    const eventDetail: SegmentationRepresentationModifiedEventDetail = {
+      toolGroupId,
+      segmentationRepresentationUID,
+    }
+
+    triggerEvent(
+      eventTarget,
+      Events.SEGMENTATION_REPRESENTATION_MODIFIED,
+      eventDetail
+    )
+  })
 }
 
 /**

@@ -1,5 +1,5 @@
 import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents'
-import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState'
 import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
 
 /**
@@ -16,7 +16,7 @@ function setSegmentationVisibility(
   segmentationDataUID: string,
   visibility: boolean
 ): void {
-  const toolGroupSegmentations = getSegmentationState(toolGroupId)
+  const toolGroupSegmentations = getSegmentationRepresentations(toolGroupId)
 
   if (!toolGroupSegmentations) {
     return
@@ -45,7 +45,7 @@ function getSegmentationVisibility(
   toolGroupId: string,
   segmentationDataUID: string
 ): boolean | undefined {
-  const toolGroupSegmentations = getSegmentationState(toolGroupId)
+  const toolGroupSegmentations = getSegmentationRepresentations(toolGroupId)
 
   const segmentationData = toolGroupSegmentations.find(
     (segmentationData: ToolGroupSpecificSegmentationData) =>
