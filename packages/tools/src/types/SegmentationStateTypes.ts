@@ -1,7 +1,7 @@
-import SegmentationRepresentations from '../enums/SegmentationRepresentations'
+import * as Enums from '../enums'
 import type { LabelmapConfig } from '../tools/displayTools/Labelmap/LabelmapConfig'
-import {
-  LabelmapMainRepresentation,
+import type {
+  LabelmapRepresentationData,
   LabelmapRenderingConfig,
 } from './LabelmapTypes'
 
@@ -19,22 +19,31 @@ export type ColorLUT = Array<Color>
 /**
  * Segmentation Config
  */
+
+export type RepresentationConfig = {
+  /** labelmap configuration */
+  LABELMAP?: LabelmapConfig
+}
+
 export type SegmentationRepresentationConfig = {
   /** Whether to render Inactive segmentations  */
   renderInactiveSegmentations: boolean
   /** Representations configuration */
-  representations: {
-    /** labelmap configuration */
-    LABELMAP?: LabelmapConfig
-  }
+  representations: RepresentationConfig
+}
+
+type SegmentationRepresentationData = {
+  LABELMAP?: LabelmapRepresentationData
 }
 
 /**
  * Global Segmentation Data which is used for the segmentation
  */
 export type Segmentation = {
+  /** segmentation id  */
   segmentationId: string
-  type: SegmentationRepresentations
+  /** segmentation main representation type */
+  type: Enums.SegmentationRepresentations
   /** segmentation label */
   label: string
   /**
@@ -51,16 +60,33 @@ export type Segmentation = {
    * If there is any derived statistics for the segmentation (e.g., mean, volume, etc)
    */
   cachedStats: { [key: string]: number }
-
-  representations: {
-    LABELMAP?: LabelmapMainRepresentation
-  }
+  /**
+   * Representations of the segmentation. Each segmentation "can" be viewed
+   * in various representations. For instance, if a DICOM SEG is loaded, the main
+   * representation is the labelmap. However, for DICOM RT the main representation
+   * is contours, and other representations can be derived from the contour (currently
+   * only labelmap representation is supported)
+   */
+  representations: SegmentationRepresentationData
 }
 
-type RepresentationData = {
+/**
+ * Representation state of the segmentation which is common between all
+ * representations (we don't need to separate these states for each representation)
+ */
+type ToolGroupSpecificRepresentationState = {
+  /**
+   * Segmentation Representation UID
+   */
   segmentationRepresentationUID: string
+  /**
+   * The segmentationId that this representation is derived from
+   */
   segmentationId: string
-  type: SegmentationRepresentations
+  /**
+   * The representation type
+   */
+  type: Enums.SegmentationRepresentations
   /**
    * Whether the segmentation is the active (manipulatable) segmentation or not
    * which means it is inactive
@@ -86,9 +112,90 @@ type RepresentationData = {
  * can be represented in various ways (currently only labelmap is supported)
  * we store ToolGroup specific segmentation data in this object
  */
-export type ToolGroupSpecificSegmentationRepresentation = RepresentationData &
-  LabelmapRenderingConfig // Todo: add more representations
+export type ToolGroupSpecificLabelmapRepresentation =
+  ToolGroupSpecificRepresentationState & LabelmapRenderingConfig
 
+export type ToolGroupSpecificRepresentation =
+  ToolGroupSpecificLabelmapRepresentation // | other ones
+
+/**
+ * Segmentation State stored inside the cornerstone3DTools
+ *
+ * ```js
+ *  {
+ *   colorLUT: [],
+ *   globalConfig: {
+ *     renderInactiveSegmentations: false,
+ *     representations: {
+ *       LABELMAP: {
+ *         renderFill: true,
+ *         renderOutline: true,
+ *       },
+ *     },
+ *   },
+ *   segmentations: [
+ *     {
+ *       segmentationId: 'segmentation1',
+ *       mainType: 'Labelmap',
+ *       activeSegmentIndex: 0,
+ *       segmentsLocked: new Set(),
+ *       label: 'segmentation1',
+ *       cachedStats: {},
+ *       representations: {
+ *         LABELMAP: {
+ *           volumeId: 'segmentation1',
+ *         },
+ *         CONTOUR: {
+ *           point: Float32Array,
+ *         },
+ *       },
+ *     },
+ *     {
+ *       segmentationId: 'segmentation2',
+ *       type: 'Labelmap',
+ *       activeSegmentIndex: 1,
+ *       segmentsLocked: new Set(),
+ *       label: 'segmentation2',
+ *       cachedStats: {},
+ *       representations: {
+ *         CONTOUR: {
+ *           points: Float32Array,
+ *         },
+ *       },
+ *     },
+ *   ],
+ *   toolGroups: {
+ *     toolGroupUID1: {
+ *       segmentationRepresentations: [
+ *         {
+ *           segmentationRepresentationUID: '12123123123132',
+ *           segmentationId: '123123',
+ *           type: 'Labelmap',
+ *           active: true,
+ *           colorLUTIndex: 0,
+ *           visibility: true,
+ *           segmentsHidden: Set(),
+ *           // LabelmapRenderingConfig
+ *           config: {
+ *             "cfun",
+ *             "ofun",
+ *           },
+ *         },
+ *       ],
+ *       config: {
+ *         renderInactiveSegmentations: false,
+ *         representations: {
+ *           LABELMAP: {
+ *             renderFill: true,
+ *             renderOutline: true,
+ *           },
+ *         },
+ *       },
+ *     },
+ *   },
+ * }
+ * ```
+ */
 export interface SegmentationState {
   /** Array of colorLUT for segmentation to render */
   colorLutTables: ColorLUT[]
@@ -100,22 +207,16 @@ export interface SegmentationState {
   toolGroups: {
     /** toolGroupId and their toolGroup specific segmentation state with config */
     [key: string]: {
-      segmentationRepresentations: ToolGroupSpecificSegmentationRepresentation[]
+      segmentationRepresentations: ToolGroupSpecificRepresentation[]
       config: SegmentationRepresentationConfig
     }
   }
 }
 
 export type SegmentationPublicInput = {
-  type: SegmentationRepresentations
-  representationProps: LabelmapMainRepresentation
+  segmentationId: string
+  representationData: {
+    type: Enums.SegmentationRepresentations
+    data: LabelmapRepresentationData
+  }
 }
-
-/**
- * SegmentationDataInput that is used to add a segmentation to
- * a tooLGroup. It is partial of ToolGroupSpecificSegmentationData BUT REQUIRES volumeId
- */
-// export type SegmentationDataInput =
-//   Partial<ToolGroupSpecificSegmentationData> & {
-//     toolGroupId: string
-//   }
