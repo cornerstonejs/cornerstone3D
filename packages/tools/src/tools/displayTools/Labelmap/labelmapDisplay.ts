@@ -203,16 +203,14 @@ function _setLabelmapColorAndOpacity(
   const numColors = Math.min(256, colorLUT.length)
   const { volumeActor, uid } = actor
 
-  const needUpdate = _needsTransferFunctionUpdateUpdate(
+  const { needColorUpdate, needOpacityUpdate } = _needsTransferFunctionUpdate(
     viewportId,
-    actor.uid,
+    uid,
     fillAlpha,
     colorLUTIndex
   )
 
-  // recent change to ColorTransferFunction has aff
-
-  if (needUpdate) {
+  if (needColorUpdate) {
     for (let i = 0; i < numColors; i++) {
       const color = colorLUT[i]
       cfun.addRGBPoint(
@@ -221,13 +219,19 @@ function _setLabelmapColorAndOpacity(
         color[1] / MAX_NUMBER_COLORS,
         color[2] / MAX_NUMBER_COLORS
       )
+    }
+    volumeActor.getProperty().setRGBTransferFunction(0, cfun)
+  }
+
+  if (needOpacityUpdate) {
+    for (let i = 0; i < numColors; i++) {
+      const color = colorLUT[i]
 
       // Set the opacity per label.
       const segmentOpacity = (color[3] / 255) * fillAlpha
       ofun.addPoint(i, segmentOpacity)
     }
     ofun.setClamping(false)
-    volumeActor.getProperty().setRGBTransferFunction(0, cfun)
     volumeActor.getProperty().setScalarOpacity(0, ofun)
   }
 
@@ -244,29 +248,37 @@ function _setLabelmapColorAndOpacity(
   volumeActor.setVisibility(visible)
 }
 
-function _needsTransferFunctionUpdateUpdate(
+function _needsTransferFunctionUpdate(
   viewportId: string,
   actorUID: string,
   fillAlpha: number,
   colorLUTIndex: number
-): boolean {
+) {
   const cacheUID = `${viewportId}-${actorUID}`
   const config = labelMapConfigCache.get(cacheUID)
 
-  if (
-    config &&
-    config.fillAlpha === fillAlpha &&
-    config.colorLUTIndex === colorLUTIndex
-  ) {
-    return false
-  }
+  let needColorUpdate = false
+  let needOpacityUpdate = false
 
   labelMapConfigCache.set(cacheUID, {
     fillAlpha,
     colorLUTIndex,
   })
 
-  return true
+  if (!config) {
+    needColorUpdate = true
+    needOpacityUpdate = true
+  }
+
+  if (config && config.fillAlpha !== fillAlpha) {
+    needOpacityUpdate = true
+  }
+
+  if (config && config.colorLUTIndex !== colorLUTIndex) {
+    needColorUpdate = true
+  }
+
+  return { needColorUpdate, needOpacityUpdate }
 }
 
 function _removeLabelmapFromToolGroupViewports(

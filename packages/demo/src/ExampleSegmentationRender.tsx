@@ -1253,7 +1253,7 @@ class SegmentationExample extends Component {
                 onChange={(evt) => {
                   const selectedRepresentationUID = evt.target.value
 
-                  segmentation.activeSegmentation.setActiveSegmentation(
+                  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
                     this.state.selectedToolGroupName,
                     selectedRepresentationUID
                   )
