@@ -1,11 +1,12 @@
 import {
   RenderingEngine,
+  Types,
+  Enums,
   volumeLoader,
   getRenderingEngine,
   utilities,
   CONSTANTS,
 } from '@cornerstonejs/core'
-import type { Types, Enums } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -15,8 +16,10 @@ import {
   addSliderToToolbar,
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
+import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 
-const { ViewportType, BlendModes } = Enums
+const { ViewportType } = Enums
+const { BlendMode } = vtkConstants
 const { ORIENTATION } = CONSTANTS
 
 const renderingEngineId = 'myRenderingEngine'
@@ -238,14 +241,14 @@ addSliderToToolbar(
       renderingEngine.getViewport(viewportId)
     )
 
-    let blendMode = BlendModes.MAXIMUM_INTENSITY_BLEND
+    let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND
 
     if (value < 0.1) {
       // Cannot render zero thickness
       value = 0.1
 
       // Not a mip, just show slice
-      blendMode = BlendModes.COMPOSITE
+      blendMode = BlendMode.COMPOSITE_BLEND
     }
 
     // Get the volume actor from the viewport
