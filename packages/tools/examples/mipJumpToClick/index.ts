@@ -1,4 +1,3 @@
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
 import {
   RenderingEngine,
   volumeLoader,
@@ -14,11 +13,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@cornerstonejs/tools'
-// Auto registers volume loader
-import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
-const { BlendMode } = vtkConstants
 
-const { ViewportType } = Enums
+const { ViewportType, BlendModes } = Enums
 const { ORIENTATION } = CONSTANTS
 
 const {
@@ -220,7 +216,7 @@ async function run() {
       {
         volumeId: ptVolumeId,
         callback: setPetTransferFunction,
-        blendMode: BlendMode.MAXIMUM_INTENSITY_BLEND,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },
     ],

@@ -19,7 +19,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState'
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
-import { lineSegment } from '../../utilities/math'
+import * as lineSegment from '../../utilities/math/line'
 
 import {
   drawHandles as drawHandlesSvg,

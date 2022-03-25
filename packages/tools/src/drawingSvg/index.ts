@@ -21,14 +21,3 @@ export {
   drawRect,
   drawTextBox,
 }
-
-export default {
-  draw,
-  drawCircle,
-  drawEllipse,
-  drawHandles,
-  drawLine,
-  drawLinkedTextBox,
-  drawRect,
-  drawTextBox,
-}

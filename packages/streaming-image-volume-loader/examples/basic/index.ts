@@ -1,11 +1,10 @@
 import {
   RenderingEngine,
   Enums,
-  init as csRenderInit,
+  init as csInit,
   Types,
 } from '@cornerstonejs/core'
-import * as cs from '@cornerstonejs/core'
-import * as csTools3d from '@cornerstonejs/tools'
+import { init as csTools3dInit } from '@cornerstonejs/tools'
 
 // import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 
@@ -19,9 +18,8 @@ element.style.height = '500px'
 content.appendChild(element)
 
 async function setup() {
-  await csRenderInit()
-
-  csTools3d.init()
+  await csInit()
+  await csTools3dInit()
 
   // registerWebImageLoader(cs)
 

@@ -22,14 +22,16 @@ const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 var rules = [].concat(require('./rules-examples.js'), vtkRules);
 var modules = [path.resolve('../node_modules/'), path.resolve('../../../node_modules/')];
 
-console.log('modules', modules)
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ESLintPlugin = require('eslint-webpack-plugin');
+const CopyPlugin = require("copy-webpack-plugin");
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 var webpack = require('webpack');
 var path = require('path');
 module.exports = {
   mode: 'development',
-  devtool: 'inline-source-map',
+  devtool: 'eval-source-map',
   plugins: [
     new ESLintPlugin(),
     new HtmlWebpackPlugin({
@@ -41,6 +43,16 @@ module.exports = {
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
     }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from:
+            '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
+          to: '${destPath.replace(/\\/g, '\\\\')}',
+        },
+      ],
+    }),
+    // new BundleAnalyzerPlugin()
   ],
   entry: path.join('${exampleBasePath.replace(
     /\\/g,
@@ -61,13 +73,16 @@ module.exports = {
         /\\/g,
         '\\\\'
       )}',
+      // We use this alias and the CopyPlugin to support using the dynamic-import version
+      // of WADO Image Loader
+      'cornerstone-wado-image-loader': 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
       fs: false,
       path: require.resolve('path-browserify'),
-      events: false,
+      events: false
     },
   },
   devServer: {
@@ -80,6 +95,11 @@ module.exports = {
       "Cross-Origin-Opener-Policy": "same-origin"
     }
   },
+  /*optimization: {
+    minimize: false,
+    usedExports: true,
+    sideEffects: true
+  }*/
 };
 `
 }

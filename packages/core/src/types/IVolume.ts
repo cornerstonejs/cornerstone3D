@@ -1,6 +1,6 @@
 import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
-import Point3 from './Point3'
-import Metadata from './Metadata'
+import type Point3 from './Point3'
+import type Metadata from './Metadata'
 
 /**
  * Cornerstone ImageVolume interface.

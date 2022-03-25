@@ -17,12 +17,10 @@ import {
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
 import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
-// Auto registers volume loader
-import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
 const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
 const { BlendMode } = vtkConstants
+const { ORIENTATION } = CONSTANTS
 
 const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_SAGITTAL_STACK'

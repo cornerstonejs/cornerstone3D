@@ -148,13 +148,3 @@ export {
   setSegmentIndexLockedForSegmentation,
   getSegmentsLockedForSegmentation,
 }
-
-export default {
-  // toolGroup active segmentation
-  getSegmentIndexLocked,
-  setSegmentIndexLocked,
-  // set
-  getSegmentIndexLockedForSegmentation,
-  setSegmentIndexLockedForSegmentation,
-  getSegmentsLockedForSegmentation,
-}

@@ -1,4 +1,4 @@
-import lineSegment from '../src/utilities/math/line'
+import * as lineSegment from '../src/utilities/math/line'
 
 describe('LineSegment:', function () {
   beforeEach(() => {

@@ -11,8 +11,6 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@cornerstonejs/tools'
-// Auto registers volume loader
-import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
 const {
   LengthTool,

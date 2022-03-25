@@ -29,7 +29,7 @@ import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequ
 import CPU_COLORMAPS from './RenderingEngine/helpers/cpuFallback/colors/colormaps'
 
 import getEnabledElement, { getEnabledElementByIds } from './getEnabledElement'
-import metaData from './metaData'
+import * as metaData from './metaData'
 import {
   init,
   getShouldUseCPURendering,

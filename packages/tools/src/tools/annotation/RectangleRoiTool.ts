@@ -29,7 +29,7 @@ import {
 import { state } from '../../store'
 import { Events } from '../../enums'
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
-import rectangle from '../../utilities/math/rectangle'
+import * as rectangle from '../../utilities/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners'
 import {

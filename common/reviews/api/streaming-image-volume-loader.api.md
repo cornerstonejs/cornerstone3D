@@ -841,7 +841,7 @@ interface IVolumeInput {
     actorUID?: string
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    blendMode?: string
+    blendMode?: BlendModes
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     callback?: VolumeInputCallback

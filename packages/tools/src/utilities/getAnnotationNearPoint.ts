@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core'
 import { AnnotationTool, BaseTool } from '../tools'
 import { Annotation } from '../types'
 import { getAnnotations } from '../stateManagement/annotation/annotationState'
-import ToolGroupManager from '../store/ToolGroupManager'
+import * as ToolGroupManager from '../store/ToolGroupManager'
 
 /**
  * Get the annotation that is close to the provided canvas point, it will return

@@ -13,8 +13,7 @@ import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
 declare namespace activeSegmentation {
     export {
         getActiveSegmentationInfo,
-        setActiveSegmentation,
-        _default_3 as default
+        setActiveSegmentation
     }
 }
 
@@ -347,6 +346,9 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     static toolName: string;
 }
+
+// @public (undocumented)
+function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
 type Color = [number, number, number, number];
@@ -785,28 +787,6 @@ function deepmerge(target?: {}, source?: {}, optionsArgument?: any): any;
 
 // @public (undocumented)
 const _default: {
-    createToolGroup: typeof createToolGroup;
-    destroy: typeof destroy_3;
-    destroyToolGroupByToolGroupId: typeof destroyToolGroupByToolGroupId;
-    getToolGroupByToolGroupId: typeof getToolGroupByToolGroupId;
-    getToolGroup: typeof getToolGroup;
-    getAllToolGroups: typeof getAllToolGroups;
-};
-
-// @public (undocumented)
-const _default_10: {
-    findClosestPoint: typeof findClosestPoint;
-    liangBarksyClip: typeof clip;
-};
-
-// @public (undocumented)
-const _default_11: {
-    pointInEllipse: typeof pointInEllipse;
-    getCanvasEllipseCorners: typeof getCanvasEllipseCorners;
-};
-
-// @public (undocumented)
-const _default_12: {
     filterAnnotationsWithinSlice: typeof filterAnnotationsWithinSlice;
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
@@ -814,136 +794,10 @@ const _default_12: {
 };
 
 // @public (undocumented)
-const _default_13: {
-    filterViewportsWithToolEnabled: typeof filterViewportsWithToolEnabled;
-    filterViewportsWithFrameOfReferenceUID: typeof filterViewportsWithFrameOfReferenceUID;
-    getViewportIdsWithToolToRender: typeof getViewportIdsWithToolToRender;
-};
-
-// @public (undocumented)
-const _default_14: {
+const _default_2: {
     snapFocalPointToSlice: typeof snapFocalPointToSlice;
     getSliceRange: typeof getSliceRange;
     scrollThroughStack: typeof scrollThroughStack;
-};
-
-// @public (undocumented)
-const _default_15: {
-    getTextBoxCoordsCanvas: typeof getTextBoxCoordsCanvas;
-};
-
-// @public (undocumented)
-const _default_16: {
-    getBoundingBoxAroundShape: typeof getBoundingBoxAroundShape;
-    extend2DBoundingBoxInViewAxis: typeof extend2DBoundingBoxInViewAxis;
-    thresholdVolumeByRange: typeof thresholdVolumeByRange;
-    thresholdVolumeByRoiStats: typeof thresholdVolumeByRoiStats;
-    createMergedLabelmapForIndex: typeof createMergedLabelmapForIndex;
-    isValidRepresentationConfig: typeof isValidRepresentationConfig;
-    getDefaultRepresentationConfig: typeof getDefaultRepresentationConfig;
-};
-
-// @public (undocumented)
-const _default_17: {
-    math: typeof math;
-    planar: typeof planar;
-    viewportFilters: typeof viewportFilters;
-    stackScrollTool: typeof stackScrollTool;
-    drawing: typeof drawing_2;
-    debounce: typeof debounce;
-    deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
-    throttle: typeof throttle;
-    isObject: typeof isObject;
-    triggerEvent: typeof triggerEvent;
-    calibrateImageSpacing: typeof calibrateImageSpacing;
-    transformPhysicalToIndex: typeof transformPhysicalToIndex;
-    segmentation: typeof segmentation_2;
-    triggerAnnotationRenderForViewportIds: typeof triggerAnnotationRenderForViewportIds;
-    pointInShapeCallback: typeof pointInShapeCallback;
-    pointInSurroundingSphereCallback: typeof pointInSurroundingSphereCallback;
-    getAnnotationNearPoint: typeof getAnnotationNearPoint;
-    getAnnotationNearPointOnEnabledElement: typeof getAnnotationNearPointOnEnabledElement;
-};
-
-// @public (undocumented)
-const _default_2: {
-    draw: typeof draw;
-    drawCircle: typeof drawCircle;
-    drawEllipse: typeof drawEllipse;
-    drawHandles: typeof drawHandles;
-    drawLine: typeof drawLine;
-    drawLinkedTextBox: typeof drawLinkedTextBox;
-    drawRect: typeof drawRect;
-    drawTextBox: typeof drawTextBox;
-};
-
-// @public (undocumented)
-const _default_3: {
-    getActiveSegmentationInfo: typeof getActiveSegmentationInfo;
-    setActiveSegmentation: typeof setActiveSegmentation;
-};
-
-// @public (undocumented)
-const _default_4: {
-    getSegmentIndexLocked: typeof getSegmentIndexLocked;
-    setSegmentIndexLocked: typeof setSegmentIndexLocked;
-    getSegmentIndexLockedForSegmentation: typeof getSegmentIndexLockedForSegmentation;
-    setSegmentIndexLockedForSegmentation: typeof setSegmentIndexLockedForSegmentation;
-    getSegmentsLockedForSegmentation: typeof getSegmentsLockedForSegmentation;
-};
-
-// @public (undocumented)
-const _default_5: {
-    getColorForSegmentIndex: typeof getColorForSegmentIndex;
-    addColorLUT: typeof addColorLUT_2;
-};
-
-// @public (undocumented)
-const _default_6: {
-    getGlobalSegmentationConfig: typeof getGlobalSegmentationConfig_2;
-    setGlobalSegmentationConfig: typeof setGlobalSegmentationConfig_2;
-    getGlobalRepresentationConfig: typeof getGlobalRepresentationConfig;
-    setGlobalRepresentationConfig: typeof setGlobalRepresentationConfig;
-    updateGlobalSegmentationConfig: typeof updateGlobalSegmentationConfig;
-    updateGlobalRepresentationConfig: typeof updateGlobalRepresentationConfig;
-    getSegmentationConfig: typeof getSegmentationConfig_2;
-    setSegmentationConfig: typeof setSegmentationConfig_2;
-    setRepresentationConfig: typeof setRepresentationConfig;
-    getRepresentationConfig: typeof getRepresentationConfig;
-};
-
-// @public (undocumented)
-const _default_7: {
-    setSegmentationVisibility: typeof setSegmentationVisibility;
-    getSegmentationVisibility: typeof getSegmentationVisibility;
-};
-
-// @public (undocumented)
-const _default_8: {
-    getActiveSegmentIndex: typeof getActiveSegmentIndex;
-    setActiveSegmentIndex: typeof setActiveSegmentIndex;
-    getActiveSegmentIndexForSegmentation: typeof getActiveSegmentIndexForSegmentation;
-    setActiveSegmentIndexForSegmentation: typeof setActiveSegmentIndexForSegmentation;
-};
-
-// @public (undocumented)
-const _default_9: {
-    vec2: {
-        findClosestPoint: findClosestPoint;
-        liangBarksyClip: clip;
-    };
-    ellipse: {
-        pointInEllipse: pointInEllipse;
-        getCanvasEllipseCorners: getCanvasEllipseCorners;
-    };
-    lineSegment: {
-        distanceToPoint: distanceToPoint;
-        distanceToPointSquared: distanceToPointSquared;
-        intersectLine: intersectLine;
-    };
-    rectangle: {
-        distanceToPoint: distanceToPoint_2;
-    };
 };
 
 // @public (undocumented)
@@ -960,6 +814,15 @@ function destroySynchronizerById(synchronizerId: string): void;
 
 // @public (undocumented)
 function destroyToolGroupByToolGroupId(toolGroupId: string): void;
+
+// @public (undocumented)
+function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
+
+// @public (undocumented)
+function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
+
+// @public (undocumented)
+function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
 
 // @public (undocumented)
 function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void;
@@ -982,16 +845,14 @@ declare namespace drawing {
         drawLine,
         drawLinkedTextBox,
         drawRect,
-        drawTextBox,
-        _default_2 as default
+        drawTextBox
     }
 }
 export { drawing }
 
 declare namespace drawing_2 {
     export {
-        getTextBoxCoordsCanvas,
-        _default_15 as default
+        getTextBoxCoordsCanvas
     }
 }
 
@@ -1034,6 +895,13 @@ type ElementEnabledEventDetail = {
     element: HTMLElement
     viewportId: string
     renderingEngineId: string
+}
+
+declare namespace ellipse {
+    export {
+        pointInEllipse,
+        getCanvasEllipseCorners
+    }
 }
 
 // @public (undocumented)
@@ -1212,6 +1080,9 @@ function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IStackV
 // @public (undocumented)
 function filterViewportsWithToolEnabled(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
+// @public (undocumented)
+function findClosestPoint(sourcePoints: Array<Types_2.Point2>, targetPoint: Types_2.Point2): Types_2.Point2;
+
 // @public
 type FlipDirection = {
     flipHorizontal?: boolean
@@ -1277,6 +1148,9 @@ function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+
+// @public (undocumented)
+function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
 function getColorForSegmentIndex(toolGroupId: string, segmentationDataUID: string, segmentIndex: number): Color;
@@ -1709,6 +1583,9 @@ function initElementCursor(element: HTMLElement, cursor: MouseCursor | null): vo
 type InteractionTypes = 'Mouse';
 
 // @public (undocumented)
+function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
+
+// @public (undocumented)
 type IPoints = {
     page: Types_2.Point2;
     client: Types_2.Point2;
@@ -1979,7 +1856,7 @@ interface IVolumeInput {
     actorUID?: string
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    blendMode?: string
+    blendMode?: BlendModes
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     callback?: VolumeInputCallback
@@ -2116,12 +1993,13 @@ export class LengthTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// @public (undocumented)
-const lineSegment: {
-    distanceToPoint: typeof distanceToPoint;
-    distanceToPointSquared: typeof distanceToPointSquared;
-    intersectLine: typeof intersectLine;
-};
+declare namespace lineSegment {
+    export {
+        distanceToPoint,
+        distanceToPointSquared,
+        intersectLine
+    }
+}
 
 declare namespace locking {
     export {
@@ -2136,9 +2014,8 @@ declare namespace locking {
 
 declare namespace math {
     export {
-        _default_9 as default,
-        _default_10 as vec2,
-        _default_11 as ellipse,
+        vec2,
+        ellipse,
         lineSegment,
         rectangle
     }
@@ -2316,7 +2193,7 @@ export class PanTool extends BaseTool {
 
 declare namespace planar {
     export {
-        _default_12 as default,
+        _default as default,
         filterAnnotationsWithinSlice,
         getWorldWidthAndHeightFromCorners,
         filterAnnotationsForDisplay,
@@ -2343,6 +2220,9 @@ type Point3 = [number, number, number]
 
 // @public
 type Point4 = [number, number, number, number];
+
+// @public (undocumented)
+function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
 
 // @public (undocumented)
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK): void;
@@ -2422,10 +2302,11 @@ type PublicViewportInput = {
     defaultOptions: ViewportInputOptions
 }
 
-// @public (undocumented)
-const rectangle: {
-    distanceToPoint: typeof distanceToPoint_2;
-};
+declare namespace rectangle {
+    export {
+        distanceToPoint_2 as distanceToPoint
+    }
+}
 
 // @public (undocumented)
 export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
@@ -2705,14 +2586,12 @@ declare namespace segmentation_2 {
         thresholdVolumeByRoiStats,
         createMergedLabelmapForIndex,
         isValidRepresentationConfig,
-        getDefaultRepresentationConfig,
-        _default_16 as default
+        getDefaultRepresentationConfig
     }
 }
 
 declare namespace segmentationColor {
     export {
-        _default_5 as default,
         getColorForSegmentIndex,
         addColorLUT_2 as addColorLUT
     }
@@ -2737,8 +2616,7 @@ declare namespace segmentationConfig {
         getSegmentationConfig_2 as getSegmentationConfig,
         setSegmentationConfig_2 as setSegmentationConfig,
         setRepresentationConfig,
-        getRepresentationConfig,
-        _default_6 as default
+        getRepresentationConfig
     }
 }
 
@@ -2796,7 +2674,6 @@ type SegmentationStateModifiedEventType = Types_2.CustomEventType<SegmentationSt
 
 declare namespace segmentationVisibility {
     export {
-        _default_7 as default,
         setSegmentationVisibility,
         getSegmentationVisibility
     }
@@ -2804,7 +2681,6 @@ declare namespace segmentationVisibility {
 
 declare namespace segmentIndex {
     export {
-        _default_8 as default,
         getActiveSegmentIndex,
         setActiveSegmentIndex,
         getActiveSegmentIndexForSegmentation,
@@ -2818,8 +2694,7 @@ declare namespace segmentLocking {
         setSegmentIndexLocked,
         getSegmentIndexLockedForSegmentation,
         setSegmentIndexLockedForSegmentation,
-        getSegmentsLockedForSegmentation,
-        _default_4 as default
+        getSegmentsLockedForSegmentation
     }
 }
 
@@ -2987,7 +2862,7 @@ declare namespace stackScrollTool {
         snapFocalPointToSlice,
         getSliceRange,
         scrollThroughStack,
-        _default_14 as default
+        _default_2 as default
     }
 }
 
@@ -3132,7 +3007,6 @@ function throttle(func: Function, wait?: number, options?: {
 
 declare namespace ToolGroupManager {
     export {
-        _default as default,
         createToolGroup,
         destroy_3 as destroy,
         destroyToolGroupByToolGroupId,
@@ -3285,15 +3159,20 @@ declare namespace utilities {
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
-        transformPhysicalToIndex,
-        _default_17 as default
+        transformPhysicalToIndex
     }
 }
 export { utilities }
 
+declare namespace vec2 {
+    export {
+        findClosestPoint,
+        clip as liangBarksyClip
+    }
+}
+
 declare namespace viewportFilters {
     export {
-        _default_13 as default,
         filterViewportsWithToolEnabled,
         filterViewportsWithFrameOfReferenceUID,
         getViewportIdsWithToolToRender

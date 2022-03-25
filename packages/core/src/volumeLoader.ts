@@ -4,7 +4,7 @@ import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
 import cloneDeep from 'lodash.clonedeep'
 
 import { ImageVolume } from './cache/classes/ImageVolume'
-import * as Types from './types'
+import type * as Types from './types'
 import cache from './cache/cache'
 import Events from './enums/Events'
 import eventTarget from './eventTarget'

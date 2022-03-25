@@ -26,7 +26,7 @@ import {
 import { state } from '../../store'
 import { Events } from '../../enums'
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
-import lineSegment from '../../utilities/math/line'
+import * as lineSegment from '../../utilities/math/line'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
 import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
 import {

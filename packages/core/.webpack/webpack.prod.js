@@ -31,7 +31,6 @@ module.exports = (env, argv) => {
     },
     optimization: {
       minimize: true,
-      sideEffects: true,
     },
   });
 };

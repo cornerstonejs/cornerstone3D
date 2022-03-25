@@ -25,7 +25,7 @@ import { resetElementCursor, hideElementCursor } from '../cursors/elementCursor'
 import { math } from '../utilities'
 import vtkMath from 'vtk.js/Sources/Common/Core/Math'
 import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import { lineSegment } from '../utilities/math'
+import * as lineSegment from '../utilities/math/line'
 import {
   Annotation,
   Annotations,

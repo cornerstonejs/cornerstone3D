@@ -10,7 +10,6 @@ import {
 } from '../../../../utils/demo/helpers'
 import initCornerstoneWADOImageLoader from '../../../../utils/demo/helpers/initCornerstoneWADOImageLoader'
 import { init as csRenderInit } from '@cornerstonejs/core'
-import { init as csToolsInit } from '@cornerstonejs/tools'
 
 const { ViewportType } = Enums
 
@@ -86,7 +85,6 @@ async function run() {
   // Init Cornerstone and related libraries
   initCornerstoneWADOImageLoader()
   await csRenderInit()
-  await csToolsInit()
 
   const renderingEngine = new RenderingEngine(renderingEngineId)
 

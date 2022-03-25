@@ -3,11 +3,12 @@ import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
 import { loadVolume } from '../../volumeLoader'
 //@ts-ignore
 import createVolumeMapper from './createVolumeMapper'
+import BlendModes from '../../enums/BlendModes'
 
 interface createVolumeActorInterface {
   volumeId: string
   callback?: ({ volumeActor: any, volumeId: string }) => void
-  blendMode?: string
+  blendMode?: BlendModes
 }
 
 /**

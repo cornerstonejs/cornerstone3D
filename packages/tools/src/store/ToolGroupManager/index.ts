@@ -5,15 +5,6 @@ import getToolGroupByToolGroupId from './getToolGroupByToolGroupId'
 import getToolGroup from './getToolGroup'
 import getAllToolGroups from './getAllToolGroups'
 
-export default {
-  createToolGroup,
-  destroy,
-  destroyToolGroupByToolGroupId,
-  getToolGroupByToolGroupId,
-  getToolGroup,
-  getAllToolGroups,
-}
-
 export {
   createToolGroup,
   destroy,

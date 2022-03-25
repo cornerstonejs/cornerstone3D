@@ -1,6 +1,6 @@
-import colors from '../colors/index';
-import now from './now';
-import { IImage, CPUFallbackLookupTable } from '../../../../types';
+import * as colors from '../colors/index'
+import now from './now'
+import type { IImage, CPUFallbackLookupTable } from '../../../../types'
 
 /**
  *
@@ -18,49 +18,49 @@ function storedPixelDataToCanvasImageDataPseudocolorLUT(
   colorLut: CPUFallbackLookupTable,
   canvasImageDataData: Uint8ClampedArray
 ): void {
-  let start = now();
-  const pixelData = image.getPixelData();
+  let start = now()
+  const pixelData = image.getPixelData()
 
-  image.stats.lastGetPixelDataTime = now() - start;
+  image.stats.lastGetPixelDataTime = now() - start
 
-  const numPixels = pixelData.length;
-  const minPixelValue = image.minPixelValue;
-  let canvasImageDataIndex = 0;
-  let storedPixelDataIndex = 0;
-  let grayscale;
-  let rgba;
-  let clut;
+  const numPixels = pixelData.length
+  const minPixelValue = image.minPixelValue
+  let canvasImageDataIndex = 0
+  let storedPixelDataIndex = 0
+  let grayscale
+  let rgba
+  let clut
 
-  start = now();
+  start = now()
 
   if (colorLut instanceof colors.LookupTable) {
-    clut = colorLut.Table;
+    clut = colorLut.Table
   } else {
-    clut = colorLut;
+    clut = colorLut
   }
 
   if (minPixelValue < 0) {
     while (storedPixelDataIndex < numPixels) {
       grayscale =
-        grayscaleLut[pixelData[storedPixelDataIndex++] + -minPixelValue];
-      rgba = clut[grayscale];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[0];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[1];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[2];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[3];
+        grayscaleLut[pixelData[storedPixelDataIndex++] + -minPixelValue]
+      rgba = clut[grayscale]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[0]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[1]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[2]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[3]
     }
   } else {
     while (storedPixelDataIndex < numPixels) {
-      grayscale = grayscaleLut[pixelData[storedPixelDataIndex++]];
-      rgba = clut[grayscale];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[0];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[1];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[2];
-      canvasImageDataData[canvasImageDataIndex++] = rgba[3];
+      grayscale = grayscaleLut[pixelData[storedPixelDataIndex++]]
+      rgba = clut[grayscale]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[0]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[1]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[2]
+      canvasImageDataData[canvasImageDataIndex++] = rgba[3]
     }
   }
 
-  image.stats.lastStoredPixelDataToCanvasImageDataTime = now() - start;
+  image.stats.lastStoredPixelDataToCanvasImageDataTime = now() - start
 }
 
-export default storedPixelDataToCanvasImageDataPseudocolorLUT;
+export default storedPixelDataToCanvasImageDataPseudocolorLUT
