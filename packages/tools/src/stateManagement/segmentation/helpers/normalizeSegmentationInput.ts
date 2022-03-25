@@ -16,7 +16,7 @@ function normalizeSegmentationInput(
     label: segmentationId,
     segmentsLocked: new Set(),
     type: representation.type,
-    activeSegmentIndex: 0,
+    activeSegmentIndex: 1,
     representations: {
       [representation.type]: {
         ...representation.data,

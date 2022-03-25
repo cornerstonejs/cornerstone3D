@@ -97,10 +97,8 @@ type AnnotationRenderedEventDetail = {
  * EventDetail for when a Segmentation Data is modified by a tool
  */
 type SegmentationDataModifiedEventDetail = {
-  /** unique id of the toolGroup */
-  toolGroupId: string
-  /** unique id of the segmentationData */
-  segmentationDataUID: string
+  /** segmentation Id which has all the representation data  */
+  segmentationId: string
 }
 
 /**

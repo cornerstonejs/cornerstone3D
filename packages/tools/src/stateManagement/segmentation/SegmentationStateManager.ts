@@ -154,6 +154,29 @@ export default class SegmentationStateManager {
   }
 
   /**
+   * Given a toolGroupId and a segmentationRepresentationUID, return the segmentation
+   * representation for that tool group.
+   * @param toolGroupId - The Id of the tool group
+   * @param segmentationRepresentationUID - string
+   * @returns The segmentation representation.
+   */
+  getSegmentationRepresentationByUID(
+    toolGroupId: string,
+    segmentationRepresentationUID: string
+  ): ToolGroupSpecificRepresentation | undefined {
+    const toolGroupSegRepresentations =
+      this.getSegmentationRepresentations(toolGroupId)
+
+    const segmentationData = toolGroupSegRepresentations.find(
+      (representation) =>
+        representation.segmentationRepresentationUID ===
+        segmentationRepresentationUID
+    )
+
+    return segmentationData
+  }
+
+  /**
    *
    *
    *
@@ -228,28 +251,6 @@ export default class SegmentationStateManager {
       ...toolGroupStateWithConfig.config,
       ...config,
     }
-  }
-
-  /**
-   * Given a toolGroupId and a segmentationDataUID, return the segmentation data for that tool group.
-   * @param toolGroupId - The Id of the tool group that the segmentation
-   * data belongs to.
-   * @param segmentationDataUID - string
-   * @returns A ToolGroupSpecificSegmentationData object.
-   */
-  getSegmentationDataByUID(
-    toolGroupId: string,
-    segmentationDataUID: string
-  ): ToolGroupSpecificSegmentationData | undefined {
-    const toolGroupSegState = this.getSegmentationRepresentations(
-      toolGroupId
-    ) as ToolGroupSpecificSegmentationState
-
-    const segmentationData = toolGroupSegState.find(
-      (segData) => segData.segmentationDataUID === segmentationDataUID
-    )
-
-    return segmentationData
   }
 
   /**

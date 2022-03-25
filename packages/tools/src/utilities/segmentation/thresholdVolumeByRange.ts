@@ -64,8 +64,6 @@ function thresholdVolumeByRange(
   const { volumeId } = globalState
   const segmentation = cache.getVolume(volumeId)
 
-  const { segmentationDataUID } = segmentationData
-
   const { scalarData, imageData: segmentationImageData } = segmentation
   const { lowerThreshold, higherThreshold, numSlicesToProject, overwrite } =
     options
@@ -122,7 +120,7 @@ function thresholdVolumeByRange(
     pointInShapeCallback(segmentationImageData, () => true, callback, boundsIJK)
   })
 
-  triggerSegmentationDataModified(toolGroupId, segmentationDataUID)
+  triggerSegmentationDataModified(segmentationId)
 
   return segmentation
 }

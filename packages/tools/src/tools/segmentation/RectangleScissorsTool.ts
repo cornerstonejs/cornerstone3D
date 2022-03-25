@@ -28,6 +28,8 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation'
 
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState'
+
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -40,7 +42,7 @@ export default class RectangleScissorsTool extends BaseTool {
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    segmentationDataUID: string
+    segmentationId: string
     segmentation: any
     segmentIndex: number
     segmentsLocked: number[]
@@ -93,27 +95,31 @@ export default class RectangleScissorsTool extends BaseTool {
     const { viewPlaneNormal, viewUp } = camera
     const toolGroupId = this.toolGroupId
 
-    const activeSegmentationInfo =
+    const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId)
-    if (!activeSegmentationInfo) {
+    if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       )
     }
 
-    // Todo: we should have representation type check if we are going to use this
-    // tool in other representations other than labelmap
-    const { segmentationDataUID, volumeId } = activeSegmentationInfo
+    const { segmentationRepresentationUID, segmentationId, type } =
+      activeSegmentationRepresentation
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(volumeId)
+      segmentLocking.getSegmentsLockedForSegmentation(segmentationId)
+
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
-      activeSegmentationInfo.segmentationDataUID,
+      segmentationRepresentationUID,
       segmentIndex
     )
 
+    const { representations } = getSegmentation(segmentationId)
+
+    // Todo: are we going to support contour editing with rectangle scissors?
+    const { volumeId } = representations[type]
     const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all
@@ -155,7 +161,7 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentIndex,
       segmentsLocked,
       segmentColor,
-      segmentationDataUID,
+      segmentationId,
       viewportIdsToRender,
       handleIndex: 3,
       movingTextBox: false,
@@ -260,7 +266,7 @@ export default class RectangleScissorsTool extends BaseTool {
       newAnnotation,
       hasMoved,
       segmentation,
-      segmentationDataUID,
+      segmentationId,
       segmentIndex,
       segmentsLocked,
     } = this.editData
@@ -290,10 +296,9 @@ export default class RectangleScissorsTool extends BaseTool {
     const operationData = {
       points: data.handles.points,
       volume: segmentation,
-      segmentationDataUID,
+      segmentationId,
       segmentIndex,
       segmentsLocked,
-      toolGroupId: this.toolGroupId,
     }
 
     this.applyActiveStrategy(enabledElement, operationData)

@@ -241,6 +241,27 @@ function getActiveSegmentationRepresentation(
 }
 
 /**
+ * Get the segmentation data object for a given tool group and
+ * segmentation data UID. It searches all the toolGroup specific segmentation
+ * data objects and returns the first one that matches the UID.
+ * @param toolGroupId - The Id of the tool group that the segmentation
+ * data belongs to.
+ * @param segmentationDataUID - The id of the segmentation data to
+ * retrieve.
+ * @returns Segmentation Data object.
+ */
+function getSegmentationRepresentationByUID(
+  toolGroupId: string,
+  segmentationDataUID: string
+): ToolGroupSpecificRepresentation | undefined {
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+  return segmentationStateManager.getSegmentationRepresentationByUID(
+    toolGroupId,
+    segmentationDataUID
+  )
+}
+
+/**
  *
  *
  *
@@ -303,27 +324,6 @@ function getGlobalSegmentationState(): GlobalSegmentationState | [] {
  * ToolGroup Specific State
  *
  ***************************/
-
-/**
- * Get the segmentation data object for a given tool group and
- * segmentation data UID. It searches all the toolGroup specific segmentation
- * data objects and returns the first one that matches the UID.
- * @param toolGroupId - The Id of the tool group that the segmentation
- * data belongs to.
- * @param segmentationDataUID - The id of the segmentation data to
- * retrieve.
- * @returns Segmentation Data object.
- */
-function getSegmentationDataByUID(
-  toolGroupId: string,
-  segmentationDataUID: string
-): ToolGroupSpecificSegmentationData | undefined {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getSegmentationDataByUID(
-    toolGroupId,
-    segmentationDataUID
-  )
-}
 
 /**
  * Remove a segmentation data from the segmentation state manager for a toolGroup.
@@ -506,6 +506,7 @@ export {
   setGlobalConfig,
   // helpers
   getToolGroupsWithSegmentation,
+  getSegmentationRepresentationByUID,
   // color
   addColorLUT,
   getColorLut,

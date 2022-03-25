@@ -7,8 +7,7 @@ import transformPhysicalToIndex from '../../../utilities/transformPhysicalToInde
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
 
 type OperationData = {
-  toolGroupId: string
-  segmentationDataUID: string
+  segmentationId: string
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
   volume: ImageVolume
   constraintFn: (x: [number, number, number]) => boolean
@@ -35,8 +34,7 @@ function fillRectangle(
     points,
     segmentsLocked,
     segmentIndex,
-    segmentationDataUID,
-    toolGroupId,
+    segmentationId,
     constraintFn,
   } = operationData
   const { imageData, dimensions, scalarData } = segmentation
@@ -78,7 +76,7 @@ function fillRectangle(
 
   pointInShapeCallback(imageData, pointInRectangle, callback, boundsIJK)
 
-  triggerSegmentationDataModified(toolGroupId, segmentationDataUID)
+  triggerSegmentationDataModified(segmentationId)
 }
 
 /**
@@ -96,7 +94,7 @@ export function fillInsideRectangle(
 }
 
 /**
- * Fill the area outside of a rectangle for the toolGroupId and segmentationDataUID.
+ * Fill the area outside of a rectangle for the toolGroupId and segmentationRepresentationUID.
  * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.

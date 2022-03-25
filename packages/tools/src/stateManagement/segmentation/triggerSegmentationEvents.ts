@@ -100,13 +100,9 @@ function triggerSegmentationModified(segmentationId?: string): void {
  * @param toolGroupId - The Id of the tool group that triggered the event.
  * @param segmentationDataUID - The id of the segmentation data that was modified.
  */
-function triggerSegmentationDataModified(
-  toolGroupId: string,
-  segmentationDataUID: string
-): void {
+function triggerSegmentationDataModified(segmentationId: string): void {
   const eventDetail: SegmentationDataModifiedEventDetail = {
-    toolGroupId,
-    segmentationDataUID,
+    segmentationId,
   }
 
   triggerEvent(eventTarget, Events.SEGMENTATION_DATA_MODIFIED, eventDetail)
