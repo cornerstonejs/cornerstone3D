@@ -6,8 +6,7 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents'
 /**
  * Get the locked status of a segment index in a segmentation
  *
- * @param toolGroupId - The Id of the tool group that contains the
- * segmentation.
+ * @param toolGroupId - The Id of the tool group that contains the segmentation.
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not for modification
  */
@@ -30,9 +29,9 @@ function getSegmentIndexLocked(
 
 /**
  * Set the locked status of a segment in a segmentation globally. It fires
- * a global state modified event.
+ * a Segmentation Modified event.
  *
- * @triggers {SegmentationGlobalStateModifiedEvent}
+ * @triggers {SegmentationModifiedEvent}
  *
  * @param toolGroupId - the UID of the tool group that contains the
  * segmentation
@@ -45,18 +44,17 @@ function setSegmentIndexLocked(
   segmentIndex: number,
   locked = true
 ): void {
-  const activeSegmentationInfo =
+  const activeSegmentationRepresentation =
     getActiveSegmentationRepresentation(toolGroupId)
 
-  if (!activeSegmentationInfo) {
+  if (!activeSegmentationRepresentation) {
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { segmentationId } = activeSegmentationInfo
+  const { segmentationId } = activeSegmentationRepresentation
 
-  const segmentationGlobalState = getSegmentation(segmentationId)
-
-  const { segmentsLocked } = segmentationGlobalState
+  const segmentation = getSegmentation(segmentationId)
+  const { segmentsLocked } = segmentation
 
   if (locked) {
     segmentsLocked.add(segmentIndex)
@@ -99,13 +97,13 @@ function setSegmentIndexLockedForSegmentation(
   segmentIndex: number,
   locked = true
 ): void {
-  const segmentationGlobalState = getSegmentation(segmentationId)
+  const segmentation = getSegmentation(segmentationId)
 
-  if (!segmentationGlobalState) {
+  if (!segmentation) {
     throw new Error(`No segmentation state found for ${segmentationId}`)
   }
 
-  const { segmentsLocked } = segmentationGlobalState
+  const { segmentsLocked } = segmentation
 
   if (locked) {
     segmentsLocked.add(segmentIndex)
@@ -125,13 +123,13 @@ function setSegmentIndexLockedForSegmentation(
 function getSegmentsLockedForSegmentation(
   segmentationId: string
 ): number[] | [] {
-  const globalState = getSegmentation(segmentationId)
+  const segmentation = getSegmentation(segmentationId)
 
-  if (!globalState) {
+  if (!segmentation) {
     throw new Error(`No segmentation state found for ${segmentationId}`)
   }
 
-  const { segmentsLocked } = globalState
+  const { segmentsLocked } = segmentation
   return Array.from(segmentsLocked)
 }
 

@@ -75,9 +75,9 @@ function addSegmentation(
 
 /**
  * Get the segmentation state for a tool group. It will return an array of
- * segmentation data objects.
+ * segmentation representation objects.
  * @param toolGroupId - The unique identifier of the tool group.
- * @returns An array of segmentation data objects.
+ * @returns An array of segmentation representation objects.
  */
 function getSegmentationRepresentations(
   toolGroupId: string
@@ -136,7 +136,7 @@ function getToolGroupSpecificConfig(
  * @param config - The new configuration for the tool group.
  * @param suppressEvents - If true, the event will not be triggered.
  */
-function setToolGroupConfig(
+function setToolGroupSpecificConfig(
   toolGroupId: string,
   config: SegmentationRepresentationConfig,
   suppressEvents?: boolean
@@ -158,7 +158,7 @@ function setToolGroupConfig(
  *
  * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  *
- * @param toolGroupId - The Id of the tool group that the segmentation data is for.
+ * @param toolGroupId - The Id of the tool group that the segmentation representation is for.
  * @param segmentationData - The data to add to the segmentation state.
  * @param suppressEvents - boolean
  */
@@ -213,7 +213,7 @@ function setGlobalConfig(
 }
 
 /**
- * Get the active segmentation data for a given tool group by searching the
+ * Get the active segmentation representation for a given tool group by searching the
  * segmentation state of the tool group and returning the segmentation data with
  * the given UID.
  *
@@ -501,7 +501,7 @@ export {
   addSegmentationRepresentation,
   // config
   getToolGroupSpecificConfig,
-  setToolGroupConfig,
+  setToolGroupSpecificConfig,
   getGlobalConfig,
   setGlobalConfig,
   // helpers

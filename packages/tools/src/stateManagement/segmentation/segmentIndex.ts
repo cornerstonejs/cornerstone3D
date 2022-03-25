@@ -36,17 +36,18 @@ function setActiveSegmentIndex(
   toolGroupId: string,
   segmentIndex: number
 ): void {
-  const segmentationInfo = getActiveSegmentationRepresentation(toolGroupId)
+  const segmentationRepresentation =
+    getActiveSegmentationRepresentation(toolGroupId)
 
-  if (!segmentationInfo) {
+  if (!segmentationRepresentation) {
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeId: segmentationId } = segmentationInfo
-  const activeSegmentationGlobalState = getSegmentation(segmentationId)
+  const { segmentationId } = segmentationRepresentation
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
-    activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
+  if (segmentation?.activeSegmentIndex !== segmentIndex) {
+    segmentation.activeSegmentIndex = segmentIndex
 
     triggerSegmentationModified(segmentationId)
   }
@@ -64,10 +65,10 @@ function setActiveSegmentIndexForSegmentation(
   segmentationId: string,
   segmentIndex: number
 ): void {
-  const activeSegmentationGlobalState = getSegmentation(segmentationId)
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
-    activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
+  if (segmentation?.activeSegmentIndex !== segmentIndex) {
+    segmentation.activeSegmentIndex = segmentIndex
 
     triggerSegmentationModified(segmentationId)
   }
@@ -81,10 +82,10 @@ function setActiveSegmentIndexForSegmentation(
 function getActiveSegmentIndexForSegmentation(
   segmentationId: string
 ): number | undefined {
-  const activeSegmentationGlobalState = getSegmentation(segmentationId)
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState) {
-    return activeSegmentationGlobalState.activeSegmentIndex
+  if (segmentation) {
+    return segmentation.activeSegmentIndex
   }
 }
 

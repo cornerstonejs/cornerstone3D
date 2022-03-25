@@ -32,7 +32,7 @@ function getActiveSegmentationRepresentation(
  *
  * @param toolGroupId - The Id of the tool group to set the active
  * segmentation for.
- * @param segmentationDataUID - The id of the segmentation data to set as
+ * @param segmentationDataUID - The id of the segmentation representation to set as
  * active.
  */
 function setActiveSegmentationRepresentation(
