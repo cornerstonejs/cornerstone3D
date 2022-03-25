@@ -106,6 +106,11 @@ export interface SegmentationState {
   }
 }
 
+export type SegmentationPublicInput = {
+  type: SegmentationRepresentations
+  representationProps: LabelmapMainRepresentation
+}
+
 /**
  * SegmentationDataInput that is used to add a segmentation to
  * a tooLGroup. It is partial of ToolGroupSpecificSegmentationData BUT REQUIRES volumeId

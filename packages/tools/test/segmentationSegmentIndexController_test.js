@@ -109,7 +109,7 @@ describe('Segmentation Index Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId(TOOL_GROUP_ID)
+      ToolGroupManager.destroyToolGroupById(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {

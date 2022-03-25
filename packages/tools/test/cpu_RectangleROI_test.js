@@ -100,7 +100,7 @@ describe('RectangleRoiTool (CPU):', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     imageLoader.unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupByToolGroupId('stack')
+    ToolGroupManager.destroyToolGroupById('stack')
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {

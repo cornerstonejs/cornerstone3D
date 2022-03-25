@@ -3,7 +3,7 @@ import {
   triggerSegmentationStateModified,
   triggerSegmentationGlobalStateModified,
 } from './triggerSegmentationEvents'
-import { ColorLUT } from '../../types/SegmentationStateTypes'
+import { ColorLUT, Segmentation } from '../../types/SegmentationStateTypes'
 
 import {
   getDefaultRepresentationConfig,
@@ -25,16 +25,13 @@ function getDefaultSegmentationStateManager() {
  **************************/
 
 /**
- * Get the global segmentation data for a given segmentation UID
- * @param segmentationUID - The UID of the segmentation to get the global
- * data for.
+ * Get the segmentation for the given segmentationId
+ * @param segmentationId - The Id of the segmentation
  * @returns A GlobalSegmentationData object
  */
-function getGlobalSegmentationDataByUID(
-  segmentationUID: string
-): GlobalSegmentationData {
+function getSegmentation(segmentationId: string): Segmentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getGlobalSegmentationData(segmentationUID)
+  return segmentationStateManager.getSegmentation(segmentationId)
 }
 
 /**
@@ -350,9 +347,7 @@ function _initGlobalStateIfNecessary(
   segmentationStateManager,
   segmentationData
 ) {
-  const globalSegmentationData = getGlobalSegmentationDataByUID(
-    segmentationData.volumeId
-  )
+  const globalSegmentationData = getSegmentation(segmentationData.volumeId)
   // for the representation, if no global config exists, create default one
   const {
     representation: { type: representationType },
@@ -430,7 +425,7 @@ export {
   getColorLut,
   // get/set global state
   getGlobalSegmentationState,
-  getGlobalSegmentationDataByUID,
+  getSegmentation,
   addGlobalSegmentationData,
   // toolGroup state
   getSegmentationState,

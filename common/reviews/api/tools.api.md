@@ -813,7 +813,7 @@ function destroy_3(): void;
 function destroySynchronizerById(synchronizerId: string): void;
 
 // @public (undocumented)
-function destroyToolGroupByToolGroupId(toolGroupId: string): void;
+function destroyToolGroupById(toolGroupId: string): void;
 
 // @public (undocumented)
 function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
@@ -1180,7 +1180,7 @@ function getGlobalSegmentationConfig(): SegmentationConfig;
 function getGlobalSegmentationConfig_2(): SegmentationConfig;
 
 // @public (undocumented)
-function getGlobalSegmentationDataByUID(segmentationUID: string): GlobalSegmentationData;
+function getSegmentation(segmentationUID: string): GlobalSegmentationData;
 
 // @public (undocumented)
 function getGlobalSegmentationState(): GlobalSegmentationState | [];
@@ -1241,7 +1241,7 @@ function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): 
 function getToolGroup(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroupByToolGroupId(toolGroupId: string): IToolGroup | undefined;
+function getToolGroupById(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroups(): string[];
@@ -2896,7 +2896,7 @@ declare namespace state_2 {
         addColorLUT,
         getColorLut,
         getGlobalSegmentationState,
-        getGlobalSegmentationDataByUID,
+        getSegmentation,
         addGlobalSegmentationData,
         getSegmentationState,
         addSegmentationData,
@@ -3009,8 +3009,8 @@ declare namespace ToolGroupManager {
     export {
         createToolGroup,
         destroy_3 as destroy,
-        destroyToolGroupByToolGroupId,
-        getToolGroupByToolGroupId,
+        destroyToolGroupById,
+        getToolGroupById,
         getToolGroup,
         getAllToolGroups
     }

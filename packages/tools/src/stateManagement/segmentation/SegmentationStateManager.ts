@@ -87,9 +87,7 @@ export default class SegmentationStateManager {
    * @returns - The global segmentation data for the
    * segmentation with the given UID.
    */
-  getGlobalSegmentationData(
-    segmentationUID: string
-  ): GlobalSegmentationData | undefined {
+  getSegmentation(segmentationUID: string): GlobalSegmentationData | undefined {
     return this.state.global.segmentations?.find(
       (segmentationState) => segmentationState.volumeId === segmentationUID
     )
@@ -281,8 +279,7 @@ export default class SegmentationStateManager {
     this._initDefaultColorLutIfNecessary()
 
     // Don't allow overwriting existing labelmapState with the same labelmapUID
-    const existingGlobalSegmentationData =
-      this.getGlobalSegmentationData(volumeId)
+    const existingGlobalSegmentationData = this.getSegmentation(volumeId)
 
     // merge the new state with the existing state
     const updatedState = {

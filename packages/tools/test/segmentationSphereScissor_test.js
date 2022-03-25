@@ -110,7 +110,7 @@ describe('Segmentation Tools --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
+      ToolGroupManager.destroyToolGroupById('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {

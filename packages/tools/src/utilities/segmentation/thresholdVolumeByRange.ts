@@ -53,7 +53,7 @@ function thresholdVolumeByRange(
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
-  const globalState = SegmentationState.getGlobalSegmentationDataByUID(
+  const globalState = SegmentationState.getSegmentation(
     segmentationData.volumeId
   )
 

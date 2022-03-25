@@ -94,7 +94,7 @@ describe('Segmentation State -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
+      ToolGroupManager.destroyToolGroupById('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -115,8 +115,7 @@ describe('Segmentation State -- ', () => {
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const globalState =
-            segmentation.state.getGlobalSegmentationDataByUID(segVolumeId)
+          const globalState = segmentation.state.getSegmentation(segVolumeId)
 
           expect(evt.detail.segmentationUID.includes(segVolumeId)).toBe(true)
 

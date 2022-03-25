@@ -564,11 +564,9 @@ class SegmentationExample extends Component {
         toolGroupId,
         [
           {
-            volumeId: segmentationUID,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
+            representation: {},
             active: true,
-            representation: {
-              type: csToolsEnums.SegmentationRepresentations.Labelmap,
-            },
           },
         ],
         {
@@ -704,7 +702,7 @@ class SegmentationExample extends Component {
       this.state.selectedToolGroupName,
       this.state.selectedsegmentationUID
     )
-    const globalState = segmentation.state.getGlobalSegmentationDataByUID(
+    const globalState = segmentation.state.getSegmentation(
       segmentationData.volumeId
     )
 

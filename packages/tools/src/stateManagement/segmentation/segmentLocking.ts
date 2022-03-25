@@ -1,6 +1,6 @@
 import { getActiveSegmentationInfo } from './activeSegmentation'
 
-import { getGlobalSegmentationDataByUID } from '../../stateManagement/segmentation/segmentationState'
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState'
 import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'
 
 /**
@@ -23,8 +23,7 @@ function getSegmentIndexLocked(
   }
 
   const { volumeId: segmentationUID } = activeSegmentationInfo
-  const segmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const segmentationGlobalState = getSegmentation(segmentationUID)
 
   const lockedSegments = segmentationGlobalState.segmentsLocked
 
@@ -56,8 +55,7 @@ function setSegmentIndexLocked(
 
   const { volumeId: segmentationUID } = activeSegmentationInfo
 
-  const segmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const segmentationGlobalState = getSegmentation(segmentationUID)
 
   const { segmentsLocked } = segmentationGlobalState
 
@@ -81,7 +79,7 @@ function getSegmentIndexLockedForSegmentation(
   segmentationUID: string,
   segmentIndex: number
 ): boolean {
-  const globalState = getGlobalSegmentationDataByUID(segmentationUID)
+  const globalState = getSegmentation(segmentationUID)
 
   if (!globalState) {
     throw new Error(`No segmentation state found for ${segmentationUID}`)
@@ -102,8 +100,7 @@ function setSegmentIndexLockedForSegmentation(
   segmentIndex: number,
   locked = true
 ): void {
-  const segmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const segmentationGlobalState = getSegmentation(segmentationUID)
 
   if (!segmentationGlobalState) {
     throw new Error(`No segmentation state found for ${segmentationUID}`)
@@ -129,7 +126,7 @@ function setSegmentIndexLockedForSegmentation(
 function getSegmentsLockedForSegmentation(
   segmentationUID: string
 ): number[] | [] {
-  const globalState = getGlobalSegmentationDataByUID(segmentationUID)
+  const globalState = getSegmentation(segmentationUID)
 
   if (!globalState) {
     throw new Error(`No segmentation state found for ${segmentationUID}`)

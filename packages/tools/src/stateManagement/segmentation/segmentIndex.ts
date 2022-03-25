@@ -1,5 +1,5 @@
 import { getActiveSegmentationInfo } from './activeSegmentation'
-import { getGlobalSegmentationDataByUID } from './segmentationState'
+import { getSegmentation } from './segmentationState'
 import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'
 
 /**
@@ -16,7 +16,7 @@ function getActiveSegmentIndex(toolGroupId: string): number | undefined {
   }
 
   const { volumeId } = segmentationInfo
-  const activeSegmentationGlobalState = getGlobalSegmentationDataByUID(volumeId)
+  const activeSegmentationGlobalState = getSegmentation(volumeId)
 
   if (activeSegmentationGlobalState) {
     return activeSegmentationGlobalState.activeSegmentIndex
@@ -42,8 +42,7 @@ function setActiveSegmentIndex(
   }
 
   const { volumeId: segmentationUID } = segmentationInfo
-  const activeSegmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const activeSegmentationGlobalState = getSegmentation(segmentationUID)
 
   if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
     activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
@@ -64,8 +63,7 @@ function setActiveSegmentIndexForSegmentation(
   segmentationUID: string,
   segmentIndex: number
 ): void {
-  const activeSegmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const activeSegmentationGlobalState = getSegmentation(segmentationUID)
 
   if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
     activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
@@ -82,8 +80,7 @@ function setActiveSegmentIndexForSegmentation(
 function getActiveSegmentIndexForSegmentation(
   segmentationUID: string
 ): number | undefined {
-  const activeSegmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const activeSegmentationGlobalState = getSegmentation(segmentationUID)
 
   if (activeSegmentationGlobalState) {
     return activeSegmentationGlobalState.activeSegmentIndex
