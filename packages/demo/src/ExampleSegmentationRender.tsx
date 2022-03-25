@@ -427,12 +427,18 @@ class SegmentationExample extends Component {
         toolGroupId
       )
 
+    let selectedRepresentationUID
+
+    if (activeSegRepresentation) {
+      selectedRepresentationUID =
+        activeSegRepresentation.segmentationRepresentationUID
+    }
+
     this.setState({
       selectedToolGroupSegRepresentationsUIDs: segRepresentations.map(
         (representation) => representation.segmentationRepresentationUID
       ),
-      selectedRepresentationUID:
-        activeSegRepresentation.segmentationRepresentationUID,
+      selectedRepresentationUID: selectedRepresentationUID,
     })
   }
 
@@ -446,15 +452,17 @@ class SegmentationExample extends Component {
     segmentation
       .createNewSegmentationForToolGroup(this.state.selectedToolGroupName)
       .then((segmentationId) => {
-        segmentation.addSegmentationRepresentations(
-          this.state.selectedToolGroupName,
-          [
-            {
-              volumeId: segmentationId,
-              // default representation which is labelmap
+        segmentation.addSegmentations([
+          {
+            segmentationId: segmentationId,
+            representation: {
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              data: {
+                volumeId: segmentationId,
+              },
             },
-          ]
-        )
+          },
+        ])
       })
   }
 
