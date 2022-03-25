@@ -8,13 +8,12 @@ import {
   addButtonToToolbar,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers'
-
 import initCornerstoneWADOImageLoader from '../../../../utils/demo/helpers/initCornerstoneWADOImageLoader'
 import { init as csRenderInit } from '@cornerstonejs/core'
 
 const { ViewportType } = Enums
 
-// // ======== Set up page ======== //
+// ======== Set up page ======== //
 setTitleAndDescription('WADO URI example', 'WADO URI example')
 
 const content = document.getElementById('content')
@@ -79,7 +78,6 @@ addButtonToToolbar('Load PT Image', () => {
 
   viewport.setStack([ptImageId])
 })
-
 /**
  * Runs the demo
  */
