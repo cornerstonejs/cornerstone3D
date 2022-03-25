@@ -16,7 +16,7 @@ import SegmentationRepresentations from '../../../enums/SegmentationRepresentati
  *
  * @internal
  */
-function internalRemoveSegmentationFromElement(
+function removeSegmentationRepresentationFromElement(
   element: HTMLElement,
   segmentationData: ToolGroupSpecificSegmentationData,
   removeFromCache = false // Todo
@@ -35,4 +35,4 @@ function internalRemoveSegmentationFromElement(
   }
 }
 
-export default internalRemoveSegmentationFromElement
+export default removeSegmentationRepresentationFromElement

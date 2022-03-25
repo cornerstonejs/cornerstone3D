@@ -1,9 +1,9 @@
 import validateSegmentationInput from './validateSegmentationInput'
-import internalAddSegmentationToElement from './internalAddSegmentationToElement'
-import internalRemoveSegmentationFromElement from './internalRemoveSegmentationFromElement'
+import addSegmentationRepresentationToElement from './addSegmentationRepresentationToElement'
+import removeSegmentationRepresentationFromElement from './removeSegmentationRepresentationFromElement'
 
 export {
   validateSegmentationInput,
-  internalAddSegmentationToElement,
-  internalRemoveSegmentationFromElement,
+  addSegmentationRepresentationToElement,
+  removeSegmentationRepresentationFromElement,
 }

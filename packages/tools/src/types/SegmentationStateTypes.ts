@@ -222,3 +222,8 @@ export type SegmentationPublicInput = {
     data: LabelmapRepresentationData
   }
 }
+
+export type RepresentationPublicInput = {
+  segmentationId: string
+  type: Enums.SegmentationRepresentations
+}

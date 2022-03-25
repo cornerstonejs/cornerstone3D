@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationsForToolGroup } = segmentation
+const { setSegmentationRepresentations } = segmentation
 const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
@@ -207,7 +207,7 @@ describe('Segmentation Controller --', () => {
               vp1.render()
 
               // add two volumes on the segmentation
-              addSegmentationsForToolGroup(
+              setSegmentationRepresentations(
                 TOOL_GROUP_ID,
                 [
                   {
@@ -281,7 +281,7 @@ describe('Segmentation Controller --', () => {
               )
 
               // add two volumes on the segmentation
-              addSegmentationsForToolGroup(TOOL_GROUP_ID, [
+              setSegmentationRepresentations(TOOL_GROUP_ID, [
                 {
                   volumeId: seg1VolumeID,
                   colorLUTIndex: 1,
@@ -361,7 +361,7 @@ describe('Segmentation Controller --', () => {
               )
 
               // add two volumes on the segmentation
-              addSegmentationsForToolGroup(
+              setSegmentationRepresentations(
                 TOOL_GROUP_ID,
                 [
                   {

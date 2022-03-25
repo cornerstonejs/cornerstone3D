@@ -9,13 +9,14 @@ import Representations from '../../../enums/SegmentationRepresentations'
 import { getToolGroupById } from '../../../store/ToolGroupManager'
 import type { LabelmapConfig } from './LabelmapConfig'
 import {
+  RepresentationPublicInput,
   SegmentationConfig,
   ToolGroupSpecificSegmentationData,
 } from '../../../types/SegmentationStateTypes'
 
 import {
-  internalAddSegmentationToElement,
-  internalRemoveSegmentationFromElement,
+  addSegmentationRepresentationToElement,
+  removeSegmentationRepresentationFromElement,
 } from '../../../stateManagement/segmentation/helpers'
 
 import { deepMerge } from '../../../utilities'
@@ -25,20 +26,22 @@ const MAX_NUMBER_COLORS = 255
 const labelMapConfigCache = new Map()
 
 /**
- * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
- * Initializes the global and viewport specific state for the segmentation in the
- * SegmentationStateManager.
+ * For each viewport, in the toolGroup it adds the segmentation labelmap
+ * representation to its viewports.
  * @param toolGroup - the tool group that contains the viewports
- * @param segmentationDataArray - the array of segmentation data
+ * @param representationInput - The segmentation representation input
+ * @param toolGroupSpecificConfig - The configuration object for toolGroup
  */
-async function addSegmentationData(
+async function addSegmentationRepresentation(
   toolGroupId: string,
-  segmentationData: Partial<ToolGroupSpecificSegmentationData>,
+  representationInput: RepresentationPublicInput,
   toolGroupSpecificConfig?: SegmentationConfig
 ): Promise<void> {
-  const { volumeId, segmentationDataUID, representation } = segmentationData
+  const { segmentationId } = representationInput
+  const segmentation = SegmentationState.getSegmentation(segmentationId)
+  const { volumeId } = segmentation.representations[Representations.Labelmap]
 
-  await _addLabelmapToToolGroupViewports(toolGroupId, segmentationData)
+  await _addLabelmapToToolGroupViewports(toolGroupId, volumeId)
 
   // Viewport Specific Rendering State for the segmentation
   // Merging the default configuration with the configuration passed in the arguments
@@ -46,24 +49,19 @@ async function addSegmentationData(
     segmentationData.segmentsHidden !== undefined
       ? segmentationData.segmentsHidden
       : (new Set() as Set<number>)
-
   const visibility =
     segmentationData.visibility !== undefined
       ? segmentationData.visibility
       : true
-
   const colorLUTIndex =
     segmentationData.colorLUTIndex !== undefined
       ? segmentationData.colorLUTIndex
       : 0
-
   const active =
     segmentationData.active !== undefined ? segmentationData.active : true
-
   const cfun =
     representation.config.cfun || vtkColorTransferFunction.newInstance()
   const ofun = representation.config.ofun || vtkPiecewiseFunction.newInstance()
-
   const mergedSegmentationData = {
     volumeId,
     segmentationDataUID,
@@ -79,7 +77,6 @@ async function addSegmentationData(
       },
     },
   } as ToolGroupSpecificSegmentationData
-
   // Update the toolGroup specific configuration
   if (toolGroupSpecificConfig) {
     // Since setting configuration on toolGroup will trigger a segmentationState
@@ -88,12 +85,10 @@ async function addSegmentationData(
     const suppressEvents = true
     const currentToolGroupConfig =
       SegmentationState.getSegmentationConfig(toolGroupId)
-
     const mergedConfig = deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
     )
-
     SegmentationState.setSegmentationConfig(
       toolGroupId,
       {
@@ -106,7 +101,6 @@ async function addSegmentationData(
       suppressEvents
     )
   }
-
   // Add data first
   SegmentationState.addSegmentationData(toolGroupId, mergedSegmentationData)
 }
@@ -292,7 +286,7 @@ function _removeLabelmapFromToolGroupViewports(
   for (const viewportInfo of viewportsInfo) {
     const { viewportId, renderingEngineId } = viewportInfo
     const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
-    internalRemoveSegmentationFromElement(
+    removeSegmentationRepresentationFromElement(
       enabledElement.viewport.element,
       segmentationData
     )
@@ -300,8 +294,8 @@ function _removeLabelmapFromToolGroupViewports(
 }
 
 async function _addLabelmapToToolGroupViewports(
-  toolGroupId,
-  segmentationData
+  toolGroupId: string,
+  volumeId: string
 ): Promise<void> {
   const toolGroup = getToolGroupById(toolGroupId) as IToolGroup
   const { viewportsInfo } = toolGroup
@@ -317,12 +311,12 @@ async function _addLabelmapToToolGroupViewports(
     }
 
     const { viewport } = enabledElement
-    internalAddSegmentationToElement(viewport.element, segmentationData)
+    addSegmentationRepresentationToElement(viewport.element, segmentationData)
   }
 }
 
 export default {
   render,
-  addSegmentationData,
-  removeSegmentationData,
+  addSegmentationRepresentation,
+  removeSegmentationRepresentation,
 }

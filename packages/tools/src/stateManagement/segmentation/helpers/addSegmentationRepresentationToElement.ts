@@ -1,7 +1,15 @@
+import * as Enums from '../../../enums'
 import { getEnabledElement, addVolumesToViewports } from '@cornerstonejs/core'
+import { LabelmapRepresentationData } from 'tools/src/types/LabelmapTypes'
 
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations'
-import { ToolGroupSpecificSegmentationData } from '../../../types/SegmentationStateTypes'
+
+type LabelmapType = {
+  type: Enums.SegmentationRepresentations
+  data: LabelmapRepresentationData
+}
+
+type representationType = LabelmapType
 
 /**
  * It adds a segmentation data to the viewport's HTML Element. NOTE: This function
@@ -15,9 +23,9 @@ import { ToolGroupSpecificSegmentationData } from '../../../types/SegmentationSt
  *
  * @internal
  */
-async function internalAddSegmentationToElement(
+async function addSegmentationRepresentationToElement(
   element: HTMLElement,
-  segmentationData: ToolGroupSpecificSegmentationData
+  representation: representationType
 ): Promise<void> {
   if (!element || !segmentationData) {
     throw new Error('You need to provide an element and a segmentation')
@@ -53,4 +61,4 @@ async function internalAddSegmentationToElement(
   }
 }
 
-export default internalAddSegmentationToElement
+export default addSegmentationRepresentationToElement

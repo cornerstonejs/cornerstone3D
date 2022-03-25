@@ -40,7 +40,7 @@ function addGlobalSegmentationData(segmentationData: GlobalSegmentationData, sup
 function addSegmentationData(toolGroupId: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationsForToolGroup(toolGroupId: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
+function setSegmentationRepresentations(toolGroupId: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
 
 // @public (undocumented)
 export function addTool(ToolClass: any): void;
@@ -2565,7 +2565,7 @@ declare namespace segmentation {
     export {
         state_2 as state,
         activeSegmentation,
-        addSegmentationsForToolGroup,
+        setSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
         createNewSegmentationForToolGroup,
         segmentLocking,

@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationsForToolGroup } = segmentation
+const { setSegmentationRepresentations } = segmentation
 
 const {
   fakeVolumeLoader,
@@ -227,7 +227,7 @@ describe('Segmentation Index Controller --', () => {
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationId) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
+                setSegmentationRepresentations(this.segToolGroup.id, [
                   { volumeId: segmentationId },
                 ])
               })
@@ -370,7 +370,7 @@ describe('Segmentation Index Controller --', () => {
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationId) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
+                setSegmentationRepresentations(this.segToolGroup.id, [
                   { volumeId: segmentationId },
                 ])
               })
@@ -541,7 +541,7 @@ describe('Segmentation Index Controller --', () => {
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationId) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
+                setSegmentationRepresentations(this.segToolGroup.id, [
                   { volumeId: segmentationId },
                 ])
               })

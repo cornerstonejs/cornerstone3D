@@ -155,8 +155,8 @@ class SegmentationExample extends Component {
     selectedToolGroupName: '',
     selectedToolGroupSegmentationDataUIDs: [],
     // all segmentations
-    allSegmentationUIDs: [],
-    selectedSegmentationUIDFromAll: '',
+    allSegmentationIds: [],
+    selectedSegmentationIdFromAll: '',
     tmtv: null,
   }
 
@@ -361,14 +361,14 @@ class SegmentationExample extends Component {
       .getSegmentations()
       .map(({ segmentationId }) => segmentationId)
 
-    let newSelectedSegmentationUID = this.state.selectedSegmentationUIDFromAll
+    let newSelectedSegmentationUID = this.state.selectedSegmentationIdFromAll
     if (newSelectedSegmentationUID === '') {
-      newSelectedSegmentationUID = allSegmentationIds[0]
+      newSelectedSegmentationUID = segmentationId
     }
 
     this.setState({
-      allSegmentationUIDs: allSegmentationIds,
-      selectedSegmentationUIDFromAll: newSelectedSegmentationUID,
+      allSegmentationIds: allSegmentationIds,
+      selectedSegmentationIdFromAll: newSelectedSegmentationUID,
     })
   }
 
@@ -437,7 +437,7 @@ class SegmentationExample extends Component {
     segmentation
       .createNewSegmentationForToolGroup(this.state.selectedToolGroupName)
       .then((segmentationId) => {
-        segmentation.addSegmentationsForToolGroup(
+        segmentation.setSegmentationRepresentations(
           this.state.selectedToolGroupName,
           [
             {
@@ -526,7 +526,10 @@ class SegmentationExample extends Component {
   }
 
   preLoadSegmentations = async () => {
-    this.setState({ segmentationStatus: '(Calculating...)' })
+    this.setState({
+      segmentationStatus: '(Calculating...)',
+      segmentationToolActive: true,
+    })
 
     // Use ct as background for segmentation threshold
     const ctViewport = this.renderingEngine.getViewport('ctAxial')
@@ -581,7 +584,7 @@ class SegmentationExample extends Component {
     const toolGroupId = this.state.selectedToolGroupName
 
     // if (!initialConfig) {
-    //   await segmentation.addSegmentationsForToolGroup(toolGroupId, [
+    //   await segmentation.setSegmentationRepresentations(toolGroupId, [
     //     {
     //       volumeId: segmentationId,
     //       active: true,
@@ -591,7 +594,7 @@ class SegmentationExample extends Component {
     //     },
     //   ])
     // } else {
-    //   await segmentation.addSegmentationsForToolGroup(
+    //   await segmentation.setSegmentationRepresentations(
     //     toolGroupId,
     //     [
     //       {
@@ -609,10 +612,6 @@ class SegmentationExample extends Component {
     //     }
     //   )
     // }
-
-    this.setState({
-      segmentationToolActive: true,
-    })
   }
 
   toggleLockedSegmentIndex = (evt) => {
@@ -1177,16 +1176,16 @@ class SegmentationExample extends Component {
               : this.getScissorsUI()}
             <span> All global segmentations </span>
             <select
-              value={this.state.selectedSegmentationUIDFromAll}
+              value={this.state.selectedSegmentationIdFromAll}
               style={{ minWidth: '50px', margin: '0px 8px' }}
               onChange={(evt) => {
                 this.setState({
-                  selectedSegmentationUIDFromAll: evt.target.value,
+                  selectedSegmentationIdFromAll: evt.target.value,
                 })
               }}
               size={3}
             >
-              {this.state.allSegmentationUIDs.map((segmentationId) => (
+              {this.state.allSegmentationIds.map((segmentationId) => (
                 <option key={`${segmentationId}-all`} value={segmentationId}>
                   {segmentationId}
                 </option>
@@ -1195,14 +1194,16 @@ class SegmentationExample extends Component {
             <button
               onClick={async () => {
                 const toolGroupId = this.state.selectedToolGroupName
+
                 segmentation
-                  .addSegmentationsForToolGroup(toolGroupId, [
+                  .setSegmentationRepresentations(toolGroupId, [
                     {
-                      volumeId: this.state.selectedSegmentationUIDFromAll,
-                      // no representation -> labelmap
+                      segmentationId: this.state.selectedSegmentationIdFromAll,
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     },
                   ])
                   .then(() => {
+                    debugger
                     const { volumeId, activeSegmentIndex } =
                       segmentation.activeSegmentation.getActiveSegmentationInfo(
                         toolGroupId
@@ -1223,7 +1224,7 @@ class SegmentationExample extends Component {
               className="btn btn-primary"
               style={{ margin: '2px 4px' }}
             >
-              Add Segmentation to selected toolGroup
+              Add Labelmap Representation to selected toolGroup
             </button>
             <div
               style={{
@@ -1233,10 +1234,7 @@ class SegmentationExample extends Component {
                 marginTop: '5px',
               }}
             >
-              <span>
-                {' '}
-                ToolGroup Segmentations (selected is active Segmentation){' '}
-              </span>
+              <span> ToolGroup Segmentation Representations</span>
               <select
                 value={this.state.selectedSegmentationUID}
                 style={{ minWidth: '150px', margin: '0px 8px' }}
@@ -1272,7 +1270,10 @@ class SegmentationExample extends Component {
               >
                 Delete From ToolGroup
               </button>
-
+            </div>
+            <div
+              style={{ display: 'flex', marginTop: '5px', marginBottom: '5px' }}
+            >
               <button
                 onClick={() => this.changeActiveSegmentIndex(-1)}
                 className="btn btn-primary"
@@ -1323,7 +1324,7 @@ class SegmentationExample extends Component {
               1) Pre-compute bone & softTissue and fatTissue labelmaps
             </button>
             <span>{this.state.segmentationStatus}</span>
-            {this.state.segmentationStatus !== 'done' ? null : (
+            {/* {this.state.segmentationStatus !== 'done' ? null : (
               <>
                 <button
                   onClick={() => this.loadSegmentation(labelmap1UID)}
@@ -1347,7 +1348,7 @@ class SegmentationExample extends Component {
                   2.b) Load Fat Tissue Labelmap With Initial Config
                 </button>
               </>
-            )}
+            )} */}
           </div>
 
           <div>
