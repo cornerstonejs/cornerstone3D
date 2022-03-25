@@ -27,11 +27,11 @@ function triggerSegmentationStateModified(toolGroupId: string): void {
 
 /**
  * Triggers segmentation global state updated event, notifying all toolGroups
- * that the global state has been updated, If a segmentationUID is provided
+ * that the global state has been updated, If a segmentationId is provided
  * the event will only be triggered for that segmentation, otherwise it will
  * be triggered for all segmentations.
  *
- * @param segmentationUID - The UID of the segmentation that has been updated
+ * @param segmentationId - The id of the segmentation that has been updated
  */
 function triggerSegmentationGlobalStateModified(
   segmentationUID?: string

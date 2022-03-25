@@ -215,7 +215,7 @@ export interface SegmentationState {
 
 export type SegmentationPublicInput = {
   segmentationId: string
-  representationData: {
+  representation: {
     type: Enums.SegmentationRepresentations
     data: LabelmapRepresentationData
   }

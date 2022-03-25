@@ -1,9 +1,9 @@
-import validateSegmentationInputArray from './validateSegmentationInputArray'
+import validateSegmentationInput from './validateSegmentationInput'
 import internalAddSegmentationToElement from './internalAddSegmentationToElement'
 import internalRemoveSegmentationFromElement from './internalRemoveSegmentationFromElement'
 
 export {
-  validateSegmentationInputArray,
+  validateSegmentationInput,
   internalAddSegmentationToElement,
   internalRemoveSegmentationFromElement,
 }

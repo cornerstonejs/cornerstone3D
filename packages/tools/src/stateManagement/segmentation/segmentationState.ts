@@ -3,7 +3,11 @@ import {
   triggerSegmentationStateModified,
   triggerSegmentationGlobalStateModified,
 } from './triggerSegmentationEvents'
-import { ColorLUT, Segmentation } from '../../types/SegmentationStateTypes'
+import {
+  ColorLUT,
+  Segmentation,
+  SegmentationPublicInput,
+} from '../../types/SegmentationStateTypes'
 
 import {
   getDefaultRepresentationConfig,
@@ -32,6 +36,17 @@ function getDefaultSegmentationStateManager() {
 function getSegmentation(segmentationId: string): Segmentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   return segmentationStateManager.getSegmentation(segmentationId)
+}
+
+function addSegmentation(
+  segmentationInput: SegmentationPublicInput,
+  suppressEvents?: boolean
+): void {
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+  segmentationStateManager.addSegmentation(segmentationInput)
+  if (!suppressEvents) {
+    triggerSegmentationGlobalStateModified(segmentationInput.segmentationId)
+  }
 }
 
 /**
@@ -415,27 +430,28 @@ function _initGlobalStateIfNecessary(
 }
 
 export {
-  // config
-  getGlobalSegmentationConfig,
-  getSegmentationConfig,
-  setGlobalSegmentationConfig,
-  setSegmentationConfig,
-  // colorLUT
-  addColorLUT,
-  getColorLut,
-  // get/set global state
-  getGlobalSegmentationState,
   getSegmentation,
-  addGlobalSegmentationData,
+  addSegmentation,
+  // config
+  // getGlobalSegmentationConfig,
+  // getSegmentationConfig,
+  // setGlobalSegmentationConfig,
+  // setSegmentationConfig,
+  // colorLUT
+  // addColorLUT,
+  // getColorLut,
+  // get/set global state
+  // getGlobalSegmentationState,
+  // addGlobalSegmentationData,
   // toolGroup state
-  getSegmentationState,
-  addSegmentationData,
-  removeSegmentationData,
-  getSegmentationDataByUID,
-  setActiveSegmentationData,
-  getActiveSegmentationData,
-  getToolGroupsWithSegmentation,
-  getToolGroups,
+  // getSegmentationState,
+  // addSegmentationData,
+  // removeSegmentationData,
+  // getSegmentationDataByUID,
+  // setActiveSegmentationData,
+  // getActiveSegmentationData,
+  // getToolGroupsWithSegmentation,
+  // getToolGroups,
   // Utility
-  getDefaultSegmentationStateManager,
+  // getDefaultSegmentationStateManager,
 }
