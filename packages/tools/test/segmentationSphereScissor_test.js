@@ -261,13 +261,10 @@ describe('Segmentation Tools --', () => {
         newSegRenderedCallback
       )
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const { segmentationId } = evt.detail
-          expect(segmentationId.includes(volumeId)).toBe(true)
-        }
-      )
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const { segmentationId } = evt.detail
+        expect(segmentationId.includes(volumeId)).toBe(true)
+      })
 
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
       this.segToolGroup.addViewport(vp2.id, this.renderingEngine.id)

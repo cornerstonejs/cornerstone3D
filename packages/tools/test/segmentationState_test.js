@@ -112,22 +112,19 @@ describe('Segmentation State -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportId)
 
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const globalState = segmentation.state.getSegmentation(segVolumeId)
+
+        expect(evt.detail.segmentationId.includes(segVolumeId)).toBe(true)
+
+        expect(globalState).toBeDefined()
+
+        expect(globalState.volumeId).toBe(segVolumeId)
+        expect(globalState.label).toBe(segVolumeId)
+        expect(globalState.activeSegmentIndex).toBe(1)
+      })
       eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const globalState = segmentation.state.getSegmentation(segVolumeId)
-
-          expect(evt.detail.segmentationId.includes(segVolumeId)).toBe(true)
-
-          expect(globalState).toBeDefined()
-
-          expect(globalState.volumeId).toBe(segVolumeId)
-          expect(globalState.label).toBe(segVolumeId)
-          expect(globalState.activeSegmentIndex).toBe(1)
-        }
-      )
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_STATE_MODIFIED,
+        Events.SEGMENTATION_REPRESENTATION_MODIFIED,
         (evt) => {
           const stateManager =
             segmentation.state.getDefaultSegmentationStateManager(segVolumeId)
@@ -197,31 +194,28 @@ describe('Segmentation State -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportId)
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const globalConfig = segmentation.state.getGlobalSegmentationConfig()
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const globalConfig = segmentation.state.getGlobalSegmentationConfig()
 
-          expect(globalConfig.renderInactiveSegmentations).toBe(true)
-          expect(globalConfig.representations).toBeDefined()
-          expect(globalConfig.representations[LABELMAP]).toBeDefined()
+        expect(globalConfig.renderInactiveSegmentations).toBe(true)
+        expect(globalConfig.representations).toBeDefined()
+        expect(globalConfig.representations[LABELMAP]).toBeDefined()
 
-          const representationConfig =
-            segUtils.getDefaultRepresentationConfig(LABELMAP)
+        const representationConfig =
+          segUtils.getDefaultRepresentationConfig(LABELMAP)
 
-          const stateConfig = globalConfig.representations[LABELMAP]
+        const stateConfig = globalConfig.representations[LABELMAP]
 
-          expect(Object.keys(stateConfig)).toEqual(
-            Object.keys(representationConfig)
-          )
+        expect(Object.keys(stateConfig)).toEqual(
+          Object.keys(representationConfig)
+        )
 
-          expect(Object.values(stateConfig)).toEqual(
-            Object.values(representationConfig)
-          )
+        expect(Object.values(stateConfig)).toEqual(
+          Object.values(representationConfig)
+        )
 
-          done()
-        }
-      )
+        done()
+      })
 
       this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 

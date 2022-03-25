@@ -1,7 +1,7 @@
 import { getActiveSegmentationInfo } from './activeSegmentation'
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState'
-import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'
+import { triggerSegmentationModified } from './triggerSegmentationEvents'
 
 /**
  * Get the locked status of a segment index in a segmentation
@@ -65,7 +65,7 @@ function setSegmentIndexLocked(
     segmentsLocked.delete(segmentIndex)
   }
 
-  triggerSegmentationGlobalStateModified(segmentationId)
+  triggerSegmentationModified(segmentationId)
 }
 
 /**
@@ -114,7 +114,7 @@ function setSegmentIndexLockedForSegmentation(
     segmentsLocked.delete(segmentIndex)
   }
 
-  triggerSegmentationGlobalStateModified(segmentationId)
+  triggerSegmentationModified(segmentationId)
 }
 
 /**

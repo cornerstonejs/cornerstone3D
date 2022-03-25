@@ -7,22 +7,30 @@ import {
   getGlobalSegmentationState,
 } from '../../stateManagement/segmentation/segmentationState'
 import {
-  SegmentationStateModifiedEventDetail,
+  SegmentationRepresentationModifiedEventDetail,
   SegmentationDataModifiedEventDetail,
-  SegmentationGlobalStateModifiedEventDetail,
+  SegmentationModifiedEventDetail,
 } from '../../types/EventTypes'
 
 /**
- * Trigger an event on the eventTarget that the segmentation state for
+ * Trigger an event on the eventTarget that the segmentation representation for
  * toolGroupId has been updated
  * @param toolGroupId - The Id of the toolGroup
  */
-function triggerSegmentationStateModified(toolGroupId: string): void {
-  const eventDetail: SegmentationStateModifiedEventDetail = {
+function triggerSegmentationRepresentationModified(
+  toolGroupId: string,
+  segmentationRepresentationUID: string
+): void {
+  const eventDetail: SegmentationRepresentationModifiedEventDetail = {
     toolGroupId,
+    segmentationRepresentationUID,
   }
 
-  triggerEvent(eventTarget, Events.SEGMENTATION_STATE_MODIFIED, eventDetail)
+  triggerEvent(
+    eventTarget,
+    Events.SEGMENTATION_REPRESENTATION_MODIFIED,
+    eventDetail
+  )
 }
 
 /**
@@ -33,7 +41,7 @@ function triggerSegmentationStateModified(toolGroupId: string): void {
  *
  * @param segmentationId - The id of the segmentation that has been updated
  */
-function triggerSegmentationGlobalStateModified(segmentationId?: string): void {
+function triggerSegmentationModified(segmentationId?: string): void {
   let toolGroupIds, segmentationUIDs
 
   if (segmentationId) {
@@ -50,21 +58,18 @@ function triggerSegmentationGlobalStateModified(segmentationId?: string): void {
   // 1. Trigger an event notifying all listeners about the segmentationId
   // that has been updated.
   segmentationUIDs.forEach((segmentationId) => {
-    const eventDetail: SegmentationGlobalStateModifiedEventDetail = {
+    const eventDetail: SegmentationModifiedEventDetail = {
       segmentationId,
     }
-    triggerEvent(
-      eventTarget,
-      Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-      eventDetail
-    )
+    triggerEvent(eventTarget, Events.SEGMENTATION_MODIFIED, eventDetail)
   })
 
-  // 2. Notify all viewports that render the segmentationId in order to update the
-  // rendering based on the new global state.
-  toolGroupIds.forEach((toolGroupId) => {
-    triggerSegmentationStateModified(toolGroupId)
-  })
+  // Todo: I don't think we need the following line of code
+  // // 2. Notify all viewports that render the segmentationId in order to update the
+  // // rendering based on the new global state.
+  // toolGroupIds.forEach((toolGroupId) => {
+  //   triggerSegmentationRepresentationModified(toolGroupId)
+  // })
 }
 
 /**
@@ -86,8 +91,8 @@ function triggerSegmentationDataModified(
 
 export {
   // ToolGroup Specific
-  triggerSegmentationStateModified,
+  triggerSegmentationRepresentationModified,
   // Global
   triggerSegmentationDataModified,
-  triggerSegmentationGlobalStateModified,
+  triggerSegmentationModified,
 }

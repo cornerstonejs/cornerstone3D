@@ -319,7 +319,7 @@ describe('Segmentation Render -- ', () => {
       })
 
       eventTarget.addEventListener(
-        Events.SEGMENTATION_STATE_MODIFIED,
+        Events.SEGMENTATION_REPRESENTATION_MODIFIED,
         (evt) => {
           const toolGroupState = segmentation.state.getSegmentationState(
             this.segToolGroup.id

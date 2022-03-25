@@ -3,37 +3,29 @@ import { utilities as csUtils } from '@cornerstonejs/core'
 
 import CORNERSTONE_COLOR_LUT from './helpers/COLOR_LUT'
 
-import {
+import type {
   SegmentationState,
-  GlobalSegmentationState,
-  GlobalSegmentationData,
-  ColorLUT,
-  ToolGroupSpecificSegmentationData,
-  ToolGroupSpecificSegmentationState,
-  SegmentationConfig,
+  ColorLut,
+  Segmentation,
+  ToolGroupSpecificRepresentation,
 } from '../../types/SegmentationStateTypes'
 
 /* A default initial state for the segmentation manager. */
-const initialDefaultState = {
-  colorLutTables: [],
-  global: {
-    segmentations: [],
-    config: {
-      renderInactiveSegmentations: true,
-      representations: {},
-    },
+const initialDefaultState: SegmentationState = {
+  colorLut: [],
+  segmentations: [],
+  globalConfig: {
+    renderInactiveSegmentations: true,
+    representations: {},
   },
   toolGroups: {},
 }
 
 /**
  * The SegmentationStateManager Class is responsible for managing the state of the
- * segmentations. It stores a global state and a toolGroup specific state.
- * In global state it stores the global configuration of each segmentation,
- * but in toolGroup specific state it stores the toolGroup specific configuration
- * which will override the global configuration.
- *
- * Note that this is a singleton state manager.
+ * segmentations. It stores the segmentations and toolGroup specific representations
+ * of the segmentation. It also stores a global config and a toolGroup specific
+ * config. Note that this is a singleton state manager.
  */
 export default class SegmentationStateManager {
   private state: SegmentationState
@@ -66,10 +58,10 @@ export default class SegmentationStateManager {
   /**
    * It returns the colorLut at the specified index.
    * @param lutIndex - The index of the color LUT to retrieve.
-   * @returns A ColorLUT object.
+   * @returns A ColorLut object.
    */
-  getColorLut(lutIndex: number): ColorLUT | undefined {
-    return this.state.colorLutTables[lutIndex]
+  getColorLut(lutIndex: number): ColorLut | undefined {
+    return this.state.colorLut[lutIndex]
   }
 
   /**
@@ -80,18 +72,68 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Given a segmentation Id, return the global segmentation data for that
-   * segmentation
-   * @param segmentationId - The id of the segmentation to get the
-   * global data for.
-   * @returns - The global segmentation data for the
-   * segmentation with the given Id.
+   * Given a segmentation Id, return the segmentation state
+   * @param segmentationId - The id of the segmentation to get the data for.
+   * @returns - The segmentation data
    */
-  getSegmentation(segmentationId: string): GlobalSegmentationData | undefined {
-    return this.state.global.segmentations?.find(
-      (segmentationState) => segmentationState.volumeId === segmentationId
+  getSegmentation(segmentationId: string): Segmentation | undefined {
+    return this.state.segmentations.find(
+      (segmentation) => segmentation.segmentationId === segmentationId
     )
   }
+
+  /**
+   * It adds a segmentation to the segmentations array.
+   * @param segmentation - Segmentation
+   */
+  addSegmentation(segmentation: Segmentation): void {
+    this.state.segmentations.push(segmentation)
+  }
+
+  /**
+   * Get the segmentation representations for a tool group
+   * @param toolGroupId - string
+   * @returns A list of segmentation representations.
+   */
+  getSegmentationRepresentations(
+    toolGroupId: string
+  ): ToolGroupSpecificRepresentation[] | undefined {
+    const toolGroupSegRepresentationsWithConfig =
+      this.state.toolGroups[toolGroupId]
+
+    if (!toolGroupSegRepresentationsWithConfig) {
+      return
+    }
+
+    return toolGroupSegRepresentationsWithConfig.segmentationRepresentations
+  }
+
+  /**
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   * @returns COrrect
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   */
 
   /**
    * Get the global segmentation state for all the segmentations in the
@@ -118,34 +160,6 @@ export default class SegmentationStateManager {
    */
   setGlobalSegmentationConfig(config: SegmentationConfig): void {
     this.state.global.config = config
-  }
-
-  /**
-   * Given a segmentation Id, return a list of tool group IDs that have that
-   * segmentation in their segmentation state (segmentation has been added
-   * to the tool group).
-   * @param segmentationId - The id of the segmentation volume.
-   * @returns An array of toolGroupIds.
-   */
-  getToolGroupsWithSegmentation(segmentationId: string): string[] {
-    const toolGroupIds = Object.keys(this.state.toolGroups)
-
-    const foundToolGroupIds = []
-    toolGroupIds.forEach((toolGroupId) => {
-      const toolGroupSegmentationState = this.getSegmentationState(
-        toolGroupId
-      ) as ToolGroupSpecificSegmentationState
-
-      const segmentationData = toolGroupSegmentationState.find(
-        (segmentationData) => segmentationData.volumeId === segmentationId
-      )
-
-      if (segmentationData) {
-        foundToolGroupIds.push(toolGroupId)
-      }
-    })
-
-    return foundToolGroupIds
   }
 
   /**
@@ -256,15 +270,15 @@ export default class SegmentationStateManager {
 
   /**
    * It adds a color LUT to the state.
-   * @param colorLut - ColorLUT
+   * @param colorLut - ColorLut
    * @param lutIndex - The index of the color LUT table to add.
    */
-  addColorLUT(colorLut: ColorLUT, lutIndex: number): void {
-    if (this.state.colorLutTables[lutIndex]) {
+  addColorLUT(colorLut: ColorLut, lutIndex: number): void {
+    if (this.state.colorLut[lutIndex]) {
       console.log('Color LUT table already exists, overwriting')
     }
 
-    this.state.colorLutTables[lutIndex] = colorLut
+    this.state.colorLut[lutIndex] = colorLut
   }
 
   /**
@@ -453,14 +467,12 @@ export default class SegmentationStateManager {
 
   _initDefaultColorLutIfNecessary() {
     // if colorLutTable is not specified or the default one is not found
-    if (
-      this.state.colorLutTables.length === 0 ||
-      !this.state.colorLutTables[0]
-    ) {
-      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLUT, 0)
+    if (this.state.colorLut.length === 0 || !this.state.colorLut[0]) {
+      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLut, 0)
     }
   }
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT')
+window.state = defaultSegmentationStateManager.state
 export { defaultSegmentationStateManager }

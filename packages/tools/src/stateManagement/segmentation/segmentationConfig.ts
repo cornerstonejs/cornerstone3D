@@ -40,9 +40,9 @@ function getGlobalRepresentationConfig(
 
 /**
  * Set the global configuration for a given representation type. It fires
- * a SEGMENTATION_GLOBAL_STATE_MODIFIED event.
+ * a SEGMENTATION_MODIFIED event.
  *
- * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @triggers SEGMENTATION_MODIFIED
  * @param representationType - The type of representation to set config for
  * @param config - The configuration for the representation.
  */
@@ -64,9 +64,9 @@ function setGlobalRepresentationConfig(
 /**
  * It takes a representation type and a partial representation config, and updates
  * the global representation config with the partial config. It fires a
- * SEGMENTATION_GLOBAL_STATE_MODIFIED event.
+ * SEGMENTATION_MODIFIED event.
  *
- * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @triggers SEGMENTATION_MODIFIED
  * @param representationType - The type of representation to update.
  * @param config - Partial<RepresentationConfig>
  */
@@ -108,7 +108,7 @@ function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
 
 /**
  * Set the toolGroup specific segmentation config.
- * It fires a SEGMENTATION_STATE_MODIFIED event.
+ * It fires a SEGMENTATION_REPRESENTATION_MODIFIED event.
  *
  * @param toolGroupId - The Id of the tool group that the segmentation config is for.
  * @param segmentationConfig - The segmentation config to set.
@@ -122,7 +122,7 @@ function setSegmentationConfig(
 
 /**
  * Set the representation config for a given tool group for the given representation type.
- * It fires a SEGMENTATION_STATE_MODIFIED event.
+ * It fires a SEGMENTATION_REPRESENTATION_MODIFIED event.
  *
  * @param toolGroupId - The unique identifier of the tool group.
  * @param representationType - The type of representation to set config for.

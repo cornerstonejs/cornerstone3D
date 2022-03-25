@@ -1,15 +1,11 @@
 import { BaseTool } from '../base'
 import { getEnabledElementByIds } from '@cornerstonejs/core'
 import Representations from '../../enums/SegmentationRepresentations'
-import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState'
 import { LabelmapDisplay } from './Labelmap'
 import { segmentationConfig } from '../../stateManagement/segmentation'
-import { triggerSegmentationStateModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
+import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
 import { getToolGroupById } from '../../store/ToolGroupManager'
-import {
-  ToolGroupSpecificSegmentationData,
-  SegmentationConfig,
-} from '../../types/SegmentationStateTypes'
 
 import { PublicToolProps, ToolProps } from '../../types'
 
@@ -19,10 +15,10 @@ import { deepMerge } from '../../utilities'
  * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
  * Generally, any Segmentation can be viewed in various representations such as
  * labelmap (3d), contours, surface etc. As of now, Cornerstone3DTools only implements
- * Labelmap representation (default).
+ * Labelmap representation.
  *
  * SegmentationDisplayTool works at ToolGroup level, and is responsible for displaying the
- * segmentation for ALL viewports of a toolGroup, this way we can support complex
+ * segmentation representation for ALL viewports of a toolGroup, this way we can support complex
  * scenarios for displaying segmentations.
  *
  * Current Limitations:
@@ -34,17 +30,8 @@ import { deepMerge } from '../../utilities'
  * and a toolGroup should be created for it using the ToolGroupManager API, finally
  * viewports information such as viewportId and renderingEngineId should be provided
  * to the toolGroup and the SegmentationDisplayTool should be set to be activated.
- * For adding segmentations to be displayed you can addSegmentationsForToolGroup helper.
  *
- * ```js
  *
- *  addSegmentationsForToolGroup('toolGroupId', [
- *     {
- *       volumeId: segmentationId,
- *     },
- *  ])
- *
- * ```
  */
 export default class SegmentationDisplayTool extends BaseTool {
   static toolName = 'SegmentationDisplay'
@@ -59,36 +46,46 @@ export default class SegmentationDisplayTool extends BaseTool {
 
   enableCallback(): void {
     const toolGroupId = this.toolGroupId
-    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
+    const toolGroupSegmentationRepresentations =
+      getSegmentationRepresentations(toolGroupId)
 
-    if (toolGroupSegmentationState.length === 0) {
+    if (
+      !toolGroupSegmentationRepresentations ||
+      toolGroupSegmentationRepresentations.length === 0
+    ) {
       return
     }
 
     // for each segmentationData, make the visibility false
-    for (const segmentationData of toolGroupSegmentationState) {
-      segmentationData.visibility = true
+    for (const segmentationRepresentation of toolGroupSegmentationRepresentations) {
+      segmentationRepresentation.visibility = true
+      triggerSegmentationRepresentationModified(
+        toolGroupId,
+        segmentationRepresentation.segmentationRepresentationUID
+      )
     }
-
-    // trigger the update
-    triggerSegmentationStateModified(toolGroupId)
   }
 
   disableCallback(): void {
     const toolGroupId = this.toolGroupId
-    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
+    const toolGroupSegmentationRepresentations =
+      getSegmentationRepresentations(toolGroupId)
 
-    if (toolGroupSegmentationState.length === 0) {
+    if (
+      !toolGroupSegmentationRepresentations ||
+      toolGroupSegmentationRepresentations.length === 0
+    ) {
       return
     }
 
     // for each segmentationData, make the visibility false
-    for (const segmentationData of toolGroupSegmentationState) {
-      segmentationData.visibility = false
+    for (const segmentationRepresentation of toolGroupSegmentationRepresentations) {
+      segmentationRepresentation.visibility = false
+      triggerSegmentationRepresentationModified(
+        toolGroupId,
+        segmentationRepresentation.segmentationRepresentationUID
+      )
     }
-
-    // trigger the update
-    triggerSegmentationStateModified(toolGroupId)
   }
 
   /**

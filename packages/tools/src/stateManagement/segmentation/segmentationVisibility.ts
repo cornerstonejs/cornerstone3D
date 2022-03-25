@@ -1,12 +1,12 @@
-import { triggerSegmentationStateModified } from './triggerSegmentationEvents'
+import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents'
 import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
 import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
 
 /**
  * Set the visibility of a segmentation data for a given tool group. It fires
- * a SEGMENTATION_STATE_MODIFIED event.
+ * a SEGMENTATION_REPRESENTATION_MODIFIED event.
  *
- * @triggers SEGMENTATION_STATE_MODIFIED
+ * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  * @param toolGroupId - The Id of the tool group that contains the segmentation.
  * @param segmentationDataUID - The id of the segmentation data to modify its visibility.
  * @param visibility - boolean
@@ -26,7 +26,7 @@ function setSegmentationVisibility(
     (segmentationData: ToolGroupSpecificSegmentationData) => {
       if (segmentationData.segmentationDataUID === segmentationDataUID) {
         segmentationData.visibility = visibility
-        triggerSegmentationStateModified(toolGroupId)
+        triggerSegmentationRepresentationModified(toolGroupId)
       }
     }
   )

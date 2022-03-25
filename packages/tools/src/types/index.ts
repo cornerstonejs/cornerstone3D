@@ -24,7 +24,7 @@ import type {
 } from './SegmentationRepresentationTypes'
 import type {
   Color,
-  ColorLUT,
+  ColorLut,
   RepresentationConfig,
   SegmentationConfig,
   GlobalSegmentationData,
@@ -62,7 +62,7 @@ export type {
   SegmentationRepresentation,
   LabelmapRepresentation,
   Color,
-  ColorLUT,
+  ColorLut,
   RepresentationConfig,
   SegmentationConfig,
   GlobalSegmentationData,

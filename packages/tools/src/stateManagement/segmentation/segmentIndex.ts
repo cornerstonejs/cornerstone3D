@@ -1,6 +1,6 @@
 import { getActiveSegmentationInfo } from './activeSegmentation'
 import { getSegmentation } from './segmentationState'
-import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'
+import { triggerSegmentationModified } from './triggerSegmentationEvents'
 
 /**
  * Returns the active segment index for the active segmentation in the tool group
@@ -27,7 +27,7 @@ function getActiveSegmentIndex(toolGroupId: string): number | undefined {
  * Set the active segment index for the active segmentation of the toolGroup.
  * It fires a global state modified event.
  *
- * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @triggers SEGMENTATION_MODIFIED
  * @param toolGroupId - The Id of the tool group that contains the segmentation.
  * @param segmentIndex - The index of the segment to be activated.
  */
@@ -47,7 +47,7 @@ function setActiveSegmentIndex(
   if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
     activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
 
-    triggerSegmentationGlobalStateModified(segmentationId)
+    triggerSegmentationModified(segmentationId)
   }
 }
 
@@ -55,7 +55,7 @@ function setActiveSegmentIndex(
  * Set the active segment index for a segmentation Id. It fires a global state
  * modified event.
  *
- * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @triggers SEGMENTATION_MODIFIED
  * @param segmentationId - The id of the segmentation that the segment belongs to.
  * @param segmentIndex - The index of the segment to be activated.
  */
@@ -68,7 +68,7 @@ function setActiveSegmentIndexForSegmentation(
   if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
     activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
 
-    triggerSegmentationGlobalStateModified(segmentationId)
+    triggerSegmentationModified(segmentationId)
   }
 }
 

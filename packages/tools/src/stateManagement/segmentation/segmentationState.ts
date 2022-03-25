@@ -1,12 +1,13 @@
 import { defaultSegmentationStateManager } from './SegmentationStateManager'
 import {
-  triggerSegmentationStateModified,
-  triggerSegmentationGlobalStateModified,
+  triggerSegmentationRepresentationModified,
+  triggerSegmentationModified,
 } from './triggerSegmentationEvents'
-import {
-  ColorLUT,
+import type {
+  ColorLut,
   Segmentation,
   SegmentationPublicInput,
+  ToolGroupSpecificRepresentation,
 } from '../../types/SegmentationStateTypes'
 
 import {
@@ -25,7 +26,7 @@ function getDefaultSegmentationStateManager() {
 
 /*************************
  *
- * GLOBAL STATE
+ * Segmentation State
  *
  **************************/
 
@@ -39,6 +40,22 @@ function getSegmentation(segmentationId: string): Segmentation | undefined {
   return segmentationStateManager.getSegmentation(segmentationId)
 }
 
+/**
+ * Get the segmentations inside the state
+ * @returns Segmentation array
+ */
+function getSegmentations(): Segmentation[] | [] {
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const state = segmentationStateManager.getState()
+
+  return state.segmentations
+}
+
+/**
+ * It takes a segmentation input and adds it to the segmentation state manager
+ * @param segmentationInput - The segmentation to add.
+ * @param suppressEvents - If true, the event will not be triggered.
+ */
 function addSegmentation(
   segmentationInput: SegmentationPublicInput,
   suppressEvents?: boolean
@@ -47,13 +64,80 @@ function addSegmentation(
   const segmentation = normalizeSegmentationInput(segmentationInput)
   segmentationStateManager.addSegmentation(segmentation)
   if (!suppressEvents) {
-    triggerSegmentationGlobalStateModified(segmentation.segmentationId)
+    triggerSegmentationModified(segmentation.segmentationId)
   }
 }
 
 /**
+ * Get the segmentation state for a tool group. It will return an array of
+ * segmentation data objects.
+ * @param toolGroupId - The unique identifier of the tool group.
+ * @returns An array of segmentation data objects.
+ */
+function getSegmentationRepresentations(
+  toolGroupId: string
+): ToolGroupSpecificRepresentation[] | [] {
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+  return segmentationStateManager.getSegmentationRepresentations(toolGroupId)
+}
+
+/**
+ * Get the tool group IDs that have a segmentation representation with the given
+ * segmentationId
+ * @param segmentationId - The id of the segmentation
+ * @returns An array of tool group IDs.
+ */
+function getToolGroupsWithSegmentation(segmentationId: string): string[] {
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const state = segmentationStateManager.getState()
+  const toolGroupIds = Object.keys(state.toolGroups)
+
+  const foundToolGroupIds = []
+  toolGroupIds.forEach((toolGroupId) => {
+    const toolGroupSegmentationRepresentations =
+      segmentationStateManager.getSegmentationRepresentations(toolGroupId)
+
+    toolGroupSegmentationRepresentations.forEach((representation) => {
+      if (representation.segmentationId === segmentationId) {
+        foundToolGroupIds.push(toolGroupId)
+      }
+    })
+  })
+
+  return foundToolGroupIds
+}
+
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *  Correct
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+
+/**
  * Add a new global segmentation data to the segmentation state manager, and
- * triggers SEGMENTATION_STATE_MODIFIED event if not suppressed.
+ * triggers SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
  *
  * @param  segmentationData - The data to add to the global segmentation state
  * @param  suppressEvents - If true, the event will not be triggered.
@@ -66,7 +150,7 @@ function addGlobalSegmentationData(
   segmentationStateManager.addGlobalSegmentationData(segmentationData)
 
   if (!suppressEvents) {
-    triggerSegmentationGlobalStateModified(segmentationData.volumeId)
+    triggerSegmentationModified(segmentationData.volumeId)
   }
 }
 
@@ -86,19 +170,6 @@ function getGlobalSegmentationState(): GlobalSegmentationState | [] {
  * ToolGroup Specific State
  *
  ***************************/
-
-/**
- * Get the segmentation state for a tool group. It will return an array of
- * segmentation data objects.
- * @param toolGroupId - The unique identifier of the tool group.
- * @returns An array of segmentation data objects.
- */
-function getSegmentationState(
-  toolGroupId: string
-): ToolGroupSpecificSegmentationState | [] {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getSegmentationState(toolGroupId)
-}
 
 /**
  * Get the segmentation data object for a given tool group and
@@ -123,9 +194,9 @@ function getSegmentationDataByUID(
 
 /**
  * Remove a segmentation data from the segmentation state manager for a toolGroup.
- * It fires SEGMENTATION_STATE_MODIFIED event.
+ * It fires SEGMENTATION_REPRESENTATION_MODIFIED event.
  *
- * @triggers SEGMENTATION_STATE_MODIFIED
+ * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  *
  * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
@@ -142,14 +213,14 @@ function removeSegmentationData(
     segmentationDataUID
   )
 
-  triggerSegmentationStateModified(toolGroupId)
+  triggerSegmentationRepresentationModified(toolGroupId)
 }
 
 /**
  * Add the given segmentation data to the given tool group state. It fires
- * SEGMENTATION_STATE_MODIFIED event if not suppressed.
+ * SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
  *
- * @triggers SEGMENTATION_STATE_MODIFIED
+ * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  *
  * @param toolGroupId - The Id of the tool group that the segmentation data is for.
  * @param segmentationData - The data to add to the segmentation state.
@@ -166,7 +237,7 @@ function addSegmentationData(
   segmentationStateManager.addSegmentationData(toolGroupId, segmentationData)
 
   if (!suppressEvents) {
-    triggerSegmentationStateModified(toolGroupId)
+    triggerSegmentationRepresentationModified(toolGroupId)
   }
 }
 
@@ -188,10 +259,10 @@ function getGlobalSegmentationConfig(): SegmentationConfig {
 }
 
 /**
- * Set the global segmentation configuration. It fires SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * Set the global segmentation configuration. It fires SEGMENTATION_MODIFIED
  * event if not suppressed.
  *
- * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @triggers SEGMENTATION_MODIFIED
  * @param config - The new global segmentation config.
  * @param suppressEvents - If true, the `segmentationGlobalStateModified` event will not be triggered.
  */
@@ -203,7 +274,7 @@ function setGlobalSegmentationConfig(
   segmentationStateManager.setGlobalSegmentationConfig(config)
 
   if (!suppressEvents) {
-    triggerSegmentationGlobalStateModified()
+    triggerSegmentationModified()
   }
 }
 
@@ -216,9 +287,9 @@ function setGlobalSegmentationConfig(
 /**
  * Set the segmentation config for the provided toolGroup. ToolGroup specific
  * configuration overwrites the global configuration for each representation.
- * It fires SEGMENTATION_STATE_MODIFIED event if not suppressed.
+ * It fires SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
  *
- * @triggers SEGMENTATION_STATE_MODIFIED
+ * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  * @param toolGroupId - The Id of the tool group that the segmentation
  * config is being set for.
  * @param config - The new configuration for the tool group.
@@ -233,7 +304,7 @@ function setSegmentationConfig(
   segmentationStateManager.setSegmentationConfig(toolGroupId, config)
 
   if (!suppressEvents) {
-    triggerSegmentationStateModified(toolGroupId)
+    triggerSegmentationRepresentationModified(toolGroupId)
   }
 }
 
@@ -256,17 +327,6 @@ function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
  ***************************/
 
 /**
- * Get the tool group IDs that have a segmentation with the given Id
- * @param segmentationId - The id of the segmentation to get the tool
- * groups for.
- * @returns An array of tool group IDs.
- */
-function getToolGroupsWithSegmentation(segmentationId: string): string[] {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getToolGroupsWithSegmentation(segmentationId)
-}
-
-/**
  * Get the list of all tool groups currently in the segmentation state manager.
  * @returns An array of tool group IDs.
  */
@@ -278,9 +338,9 @@ function getToolGroups(): string[] {
 /**
  * Get the color lut for a given index
  * @param index - The index of the color lut to retrieve.
- * @returns A ColorLUT array.
+ * @returns A ColorLut array.
  */
-function getColorLut(index: number): ColorLUT | undefined {
+function getColorLut(index: number): ColorLut | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   return segmentationStateManager.getColorLut(index)
 }
@@ -290,7 +350,7 @@ function getColorLut(index: number): ColorLUT | undefined {
  * @param colorLut - The color LUT array to add.
  * @param index - The index of the color LUT to add.
  */
-function addColorLUT(colorLut: ColorLUT, index: number): void {
+function addColorLUT(colorLut: ColorLut, index: number): void {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   segmentationStateManager.addColorLUT(colorLut, index)
   // Todo: trigger event color LUT added
@@ -299,9 +359,9 @@ function addColorLUT(colorLut: ColorLUT, index: number): void {
 /**
  * Set the active segmentation data for a tool group. It searches the segmentation
  * state of the toolGroup and sets the active segmentation data to the one with
- * the given UID. It fires SEGMENTATION_STATE_MODIFIED event if not suppressed.
+ * the given UID. It fires SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
  *
- * @triggers SEGMENTATION_STATE_MODIFIED
+ * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  *
  * @param toolGroupId - The Id of the tool group that owns the segmentation data.
  * @param segmentationDataUID - The id of the segmentation data to set as active.
@@ -319,7 +379,7 @@ function setActiveSegmentationData(
   )
 
   if (!suppressEvents) {
-    triggerSegmentationStateModified(toolGroupId)
+    triggerSegmentationRepresentationModified(toolGroupId)
   }
 }
 
@@ -427,13 +487,19 @@ function _initGlobalStateIfNecessary(
   // and/or a new default config for the representation, so we need to trigger
   // the event to notify the listeners.
   if (suppressEvents) {
-    triggerSegmentationGlobalStateModified(segmentationData.volumeId)
+    triggerSegmentationModified(segmentationData.volumeId)
   }
 }
 
 export {
+  // Segmentation
   getSegmentation,
+  getSegmentations,
   addSegmentation,
+  // ToolGroup specific Segmentation Representation
+  getSegmentationRepresentations,
+  getToolGroupsWithSegmentation,
+  //
   // config
   // getGlobalSegmentationConfig,
   // getSegmentationConfig,

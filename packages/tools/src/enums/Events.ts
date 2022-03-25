@@ -71,20 +71,20 @@ enum Events {
   SEGMENTATION_RENDERED = 'CORNERSTONE_TOOLS_SEGMENTATION_RENDERED',
 
   /**
-   * Triggers on the eventTarget when a Segmentation state of a toolGroup is modified in the state manager.
-   * Make use of {@link EventTypes.SegmentationStateModifiedEventType | Segmentation State Modified Event Type}
-   * for typing your event listeners for this segmentation state modified event, and see what
-   * event detail is included in {@link EventTypes.SegmentationStateModifiedEventDetail | Segmentation State Modified Event Detail}.
+   * Triggers on the eventTarget when a Segmentation representation of a toolGroup is modified in the state manager.
+   * Make use of {@link EventTypes.SegmentationRepresentationModifiedEventType | Segmentation Representation Modified Event Type}
+   * for typing your event listeners for this segmentation representation modified event, and see what
+   * event detail is included in {@link EventTypes.SegmentationRepresentationModifiedEventDetail | Segmentation Representation Modified Event Detail}.
    */
-  SEGMENTATION_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_STATE_MODIFIED',
+  SEGMENTATION_REPRESENTATION_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_MODIFIED',
 
   /**
-   * Triggers on the eventTarget when a Segmentation global state is updated in the state manager.
-   * Make use of {@link EventTypes.SegmentationGlobalStateModifiedEventType | Segmentation Global State Modified Event Type}
-   * for typing your event listeners for this segmentation global state modified event, and see what
-   * event detail is included in {@link EventTypes.SegmentationGlobalStateModifiedEventDetail | Segmentation Global State Modified Event Detail}.
+   * Triggers on the eventTarget when a Segmentation is updated in the state manager.
+   * Make use of {@link EventTypes.SegmentationModifiedEventType | Segmentation Modified Event Type}
+   * for typing your event listeners for this segmentation modified event, and see what
+   * event detail is included in {@link EventTypes.SegmentationModifiedEventDetail | Segmentation Modified Event Detail}.
    */
-  SEGMENTATION_GLOBAL_STATE_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_GLOBAL_STATE_MODIFIED',
+  SEGMENTATION_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED',
 
   /**
    * Triggers on the eventTarget when a Segmentation data is modified (e.g., by brush tool).

@@ -97,7 +97,8 @@ function _addCornerstoneToolsEventListeners() {
 
   const selectionEvent = TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE
   const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
-  const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
+  const segmentationStateModified =
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED
   const modifiedEvent = TOOLS_EVENTS.ANNOTATION_MODIFIED
 
   eventTarget.addEventListener(selectionEvent, annotationSelectionListener)
@@ -121,7 +122,8 @@ function _removeCornerstoneToolsEventListeners() {
   const selectionEvent = TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE
   const modifiedEvent = TOOLS_EVENTS.ANNOTATION_MODIFIED
   const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
-  const segmentationStateModified = TOOLS_EVENTS.SEGMENTATION_STATE_MODIFIED
+  const segmentationStateModified =
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED
 
   eventTarget.removeEventListener(selectionEvent, annotationSelectionListener)
   eventTarget.removeEventListener(

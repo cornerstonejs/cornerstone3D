@@ -28,10 +28,10 @@ type ActorEntry = {
 function addAnnotation(element: HTMLElement, annotation: Annotation): void;
 
 // @public (undocumented)
-function addColorLUT(colorLut: ColorLUT, index: number): void;
+function addColorLUT(colorLut: ColorLut, index: number): void;
 
 // @public (undocumented)
-function addColorLUT_2(colorLUT: ColorLUT, colorLUTIndex: number): void;
+function addColorLUT_2(colorLUT: ColorLut, colorLUTIndex: number): void;
 
 // @public (undocumented)
 function addGlobalSegmentationData(segmentationData: GlobalSegmentationData, suppressEvents?: boolean): void;
@@ -354,7 +354,7 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 type Color = [number, number, number, number];
 
 // @public (undocumented)
-type ColorLUT = Array<Color>;
+type ColorLut = Array<Color>;
 
 declare namespace config {
     export {
@@ -1035,13 +1035,13 @@ declare namespace EventTypes_2 {
         AnnotationLockChangeEventDetail,
         AnnotationLockChangeEventType,
         SegmentationDataModifiedEventType,
-        SegmentationStateModifiedEventDetail,
+        SegmentationRepresentationModifiedEventDetail,
         SegmentationStateModifiedEventType,
         SegmentationDataModifiedEventDetail,
         SegmentationRenderedEventType,
         SegmentationRenderedEventDetail,
-        SegmentationGlobalStateModifiedEventType,
-        SegmentationGlobalStateModifiedEventDetail,
+        SegmentationModifiedEventType,
+        SegmentationModifiedEventDetail,
         KeyDownEventDetail,
         KeyDownEventType,
         KeyUpEventDetail,
@@ -1156,7 +1156,7 @@ function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<
 function getColorForSegmentIndex(toolGroupId: string, segmentationDataUID: string, segmentIndex: number): Color;
 
 // @public (undocumented)
-function getColorLut(index: number): ColorLUT | undefined;
+function getColorLut(index: number): ColorLut | undefined;
 
 // @public (undocumented)
 function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
@@ -2645,12 +2645,12 @@ export class SegmentationDisplayTool extends BaseTool {
 }
 
 // @public (undocumented)
-type SegmentationGlobalStateModifiedEventDetail = {
+type SegmentationModifiedEventDetail = {
     segmentationId: string;
 };
 
 // @public (undocumented)
-type SegmentationGlobalStateModifiedEventType = Types_2.CustomEventType<SegmentationGlobalStateModifiedEventDetail>;
+type SegmentationModifiedEventType = Types_2.CustomEventType<SegmentationModifiedEventDetail>;
 
 // @public (undocumented)
 type SegmentationRenderedEventDetail = {
@@ -2665,12 +2665,12 @@ type SegmentationRenderedEventType = Types_2.CustomEventType<SegmentationRendere
 type SegmentationRepresentation = LabelmapRepresentation;
 
 // @public (undocumented)
-type SegmentationStateModifiedEventDetail = {
+type SegmentationRepresentationModifiedEventDetail = {
     toolGroupId: string;
 };
 
 // @public (undocumented)
-type SegmentationStateModifiedEventType = Types_2.CustomEventType<SegmentationStateModifiedEventDetail>;
+type SegmentationStateModifiedEventType = Types_2.CustomEventType<SegmentationRepresentationModifiedEventDetail>;
 
 declare namespace segmentationVisibility {
     export {
@@ -3082,17 +3082,17 @@ function triggerSegmentationDataModified(toolGroupId: string, segmentationDataUI
 
 declare namespace triggerSegmentationEvents {
     export {
-        triggerSegmentationStateModified,
+        triggerSegmentationRepresentationModified,
         triggerSegmentationDataModified,
-        triggerSegmentationGlobalStateModified
+        triggerSegmentationModified
     }
 }
 
 // @public (undocumented)
-function triggerSegmentationGlobalStateModified(segmentationId?: string): void;
+function triggerSegmentationModified(segmentationId?: string): void;
 
 // @public (undocumented)
-function triggerSegmentationStateModified(toolGroupId: string): void;
+function triggerSegmentationRepresentationModified(toolGroupId: string): void;
 
 declare namespace Types {
     export {
@@ -3116,7 +3116,7 @@ declare namespace Types {
         SegmentationRepresentation,
         LabelmapRepresentation,
         Color,
-        ColorLUT,
+        ColorLut,
         RepresentationConfig,
         SegmentationConfig,
         GlobalSegmentationData,

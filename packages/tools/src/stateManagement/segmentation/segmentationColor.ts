@@ -1,7 +1,7 @@
 import { utilities } from '@cornerstonejs/core'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
 import { Color } from '../../types/SegmentationStateTypes'
-import { ColorLUT } from '../../types/SegmentationStateTypes'
+import { ColorLut } from '../../types/SegmentationStateTypes'
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -11,7 +11,7 @@ import { ColorLUT } from '../../types/SegmentationStateTypes'
  * @param colorLUT - An array of The colorLUT to set.
  * @returns
  */
-function addColorLUT(colorLUT: ColorLUT, colorLUTIndex: number): void {
+function addColorLUT(colorLUT: ColorLut, colorLUTIndex: number): void {
   if (!colorLUT) {
     throw new Error('addColorLUT: colorLUT is required')
   }
