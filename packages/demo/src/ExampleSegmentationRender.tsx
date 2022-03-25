@@ -625,22 +625,26 @@ class SegmentationExample extends Component {
 
   toggleLockedSegmentIndex = (evt) => {
     const checked = evt.target.checked
+    const toolGroupId = this.state.selectedToolGroupName
 
-    const activeSegmentationInfo =
+    const activeSegmentationRepresentation =
       segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-        this.state.selectedToolGroupName
+        toolGroupId
       )
 
-    const { volumeId, activeSegmentIndex } = activeSegmentationInfo
+    const { segmentationId } = activeSegmentationRepresentation
+
+    const activeSegmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
 
     const activeSegmentLockedStatus =
       segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
-        volumeId,
+        segmentationId,
         activeSegmentIndex
       )
 
     segmentation.segmentLocking.setSegmentIndexLockedForSegmentation(
-      volumeId,
+      segmentationId,
       activeSegmentIndex,
       !activeSegmentLockedStatus
     )
@@ -650,12 +654,9 @@ class SegmentationExample extends Component {
 
   changeActiveSegmentIndex = (direction) => {
     const toolGroupId = this.state.selectedToolGroupName
-    const activeSegmentationInfo =
-      segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-        toolGroupId
-      )
 
-    const { activeSegmentIndex } = activeSegmentationInfo
+    const activeSegmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
     let newIndex = activeSegmentIndex + direction
 
     if (newIndex < 0) {
