@@ -1,12 +1,11 @@
 import {
   RenderingEngine,
-  Types,
-  Enums,
   volumeLoader,
   getRenderingEngine,
   utilities,
   CONSTANTS,
 } from '@cornerstonejs/core'
+import type { Types, Enums } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,

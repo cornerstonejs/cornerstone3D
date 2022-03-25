@@ -1276,7 +1276,7 @@ interface IVolumeInput {
     // (undocumented)
     actorUID?: string;
     // (undocumented)
-    blendMode?: string;
+    blendMode?: BlendModes;
     // (undocumented)
     callback?: VolumeInputCallback;
     // (undocumented)

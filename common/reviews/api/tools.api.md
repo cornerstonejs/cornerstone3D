@@ -787,11 +787,6 @@ function deepmerge(target?: {}, source?: {}, optionsArgument?: any): any;
 
 // @public (undocumented)
 const _default: {
-    distanceToPoint: typeof distanceToPoint_2;
-};
-
-// @public (undocumented)
-const _default_2: {
     filterAnnotationsWithinSlice: typeof filterAnnotationsWithinSlice;
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
@@ -799,7 +794,7 @@ const _default_2: {
 };
 
 // @public (undocumented)
-const _default_3: {
+const _default_2: {
     snapFocalPointToSlice: typeof snapFocalPointToSlice;
     getSliceRange: typeof getSliceRange;
     scrollThroughStack: typeof scrollThroughStack;
@@ -822,6 +817,9 @@ function destroyToolGroupByToolGroupId(toolGroupId: string): void;
 
 // @public (undocumented)
 function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
+
+// @public (undocumented)
+function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 
 // @public (undocumented)
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
@@ -1858,7 +1856,7 @@ interface IVolumeInput {
     actorUID?: string
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    blendMode?: string
+    blendMode?: BlendModes
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     callback?: VolumeInputCallback
@@ -2195,7 +2193,7 @@ export class PanTool extends BaseTool {
 
 declare namespace planar {
     export {
-        _default_2 as default,
+        _default as default,
         filterAnnotationsWithinSlice,
         getWorldWidthAndHeightFromCorners,
         filterAnnotationsForDisplay,
@@ -2306,7 +2304,7 @@ type PublicViewportInput = {
 
 declare namespace rectangle {
     export {
-        _default as default
+        distanceToPoint_2 as distanceToPoint
     }
 }
 
@@ -2864,7 +2862,7 @@ declare namespace stackScrollTool {
         snapFocalPointToSlice,
         getSliceRange,
         scrollThroughStack,
-        _default_3 as default
+        _default_2 as default
     }
 }
 

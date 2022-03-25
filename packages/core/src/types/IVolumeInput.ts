@@ -1,4 +1,5 @@
 import { VolumeActor } from './IActor'
+import BlendModes from '../enums/BlendModes'
 
 /**
  * Volume input callback type, used to perform operations on the volume data
@@ -27,7 +28,7 @@ interface IVolumeInput {
   /** Callback to be called when the volume is added to the viewport */
   callback?: VolumeInputCallback
   /** Blend mode of the volume - by default it is `additive` */
-  blendMode?: string
+  blendMode?: BlendModes
   /** Slab thickness of the volume - by default it is calculated by the image size*/
   slabThickness?: number
 }
