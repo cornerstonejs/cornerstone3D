@@ -177,31 +177,84 @@ export default class SegmentationStateManager {
   }
 
   /**
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   * @returns COrrect
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
+   * Remove a segmentation representation from the toolGroup
+   * @param toolGroupId - The Id of the tool group
+   * @param segmentationRepresentationUID - the uid of the segmentation representation to remove
    */
+  removeSegmentationRepresentation(
+    toolGroupId: string,
+    segmentationRepresentationUID: string
+  ): void {
+    const toolGroupSegmentationRepresentations =
+      this.getSegmentationRepresentations(toolGroupId)
+
+    if (
+      !toolGroupSegmentationRepresentations ||
+      !toolGroupSegmentationRepresentations.length
+    ) {
+      throw new Error(
+        `No viewport specific segmentation state found for viewport ${toolGroupId}`
+      )
+    }
+
+    const state =
+      toolGroupSegmentationRepresentations as ToolGroupSpecificRepresentation[]
+    const index = state.findIndex(
+      (segData) =>
+        segData.segmentationRepresentationUID === segmentationRepresentationUID
+    )
+
+    if (index === -1) {
+      console.warn(
+        `No viewport specific segmentation state data found for viewport ${toolGroupId} and segmentation data UID ${segmentationRepresentationUID}`
+      )
+    }
+
+    const removedSegmentationRepresentation =
+      toolGroupSegmentationRepresentations[index]
+
+    toolGroupSegmentationRepresentations.splice(index, 1)
+
+    this._handleActiveSegmentation(
+      toolGroupId,
+      removedSegmentationRepresentation
+    )
+  }
+
+  /**
+   * Set the active segmentation data for a tool group
+   * @param toolGroupId - The Id of the tool group that owns the
+   * segmentation data.
+   * @param segmentationDataUID - string
+   */
+  setActiveSegmentationRepresentation(
+    toolGroupId: string,
+    segmentationRepresentationUID: string
+  ): void {
+    const toolGroupSegmentations =
+      this.getSegmentationRepresentations(toolGroupId)
+
+    if (!toolGroupSegmentations || !toolGroupSegmentations.length) {
+      throw new Error(
+        `No segmentation data found for toolGroupId: ${toolGroupId}`
+      )
+    }
+
+    const segmentationData = toolGroupSegmentations.find(
+      (segmentationData) =>
+        segmentationData.segmentationRepresentationUID ===
+        segmentationRepresentationUID
+    )
+
+    if (!segmentationData) {
+      throw new Error(
+        `No segmentation data found for segmentation data UID ${segmentationRepresentationUID}`
+      )
+    }
+
+    segmentationData.active = true
+    this._handleActiveSegmentation(toolGroupId, segmentationData)
+  }
 
   /**
    * Given a tool group Id it returns the tool group specific representation config
@@ -254,22 +307,6 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Get the active segmentation data for a tool group
-   * @param toolGroupId - The Id of the tool group that the segmentation
-   * data belongs to.
-   * @returns A ToolGroupSpecificSegmentationData object.
-   */
-  getActiveSegmentationData(
-    toolGroupId: string
-  ): ToolGroupSpecificSegmentationData | undefined {
-    const toolGroupSegState = this.getSegmentationRepresentations(
-      toolGroupId
-    ) as ToolGroupSpecificSegmentationState
-
-    return toolGroupSegState.find((segmentationData) => segmentationData.active)
-  }
-
-  /**
    * It adds a color LUT to the state.
    * @param colorLut - ColorLut
    * @param lutIndex - The index of the color LUT table to add.
@@ -280,118 +317,6 @@ export default class SegmentationStateManager {
     }
 
     this.state.colorLut[lutIndex] = colorLut
-  }
-
-  /**
-   * It adds a new segmentation to the global segmentation state. It will merge
-   * the segmentation data with the existing global segmentation data if it exists.
-   * @param segmentationData - GlobalSegmentationData
-   */
-  addGlobalSegmentationData(segmentationData: GlobalSegmentationData): void {
-    const { volumeId } = segmentationData
-
-    // Creating the default color LUT if not created yet
-    this._initDefaultColorLutIfNecessary()
-
-    // Don't allow overwriting existing labelmapState with the same labelmapUID
-    const existingGlobalSegmentationData = this.getSegmentation(volumeId)
-
-    // merge the new state with the existing state
-    const updatedState = {
-      ...existingGlobalSegmentationData,
-      ...segmentationData,
-    }
-
-    // Is there any existing state?
-    if (!existingGlobalSegmentationData) {
-      this.state.global.segmentations.push({
-        volumeId,
-        label: segmentationData.label,
-        referenceVolumeId: segmentationData.referenceVolumeId,
-        cachedStats: segmentationData.cachedStats,
-        referenceImageId: segmentationData.referenceImageId,
-        activeSegmentIndex: segmentationData.activeSegmentIndex,
-        segmentsLocked: segmentationData.segmentsLocked,
-      })
-
-      return
-    }
-
-    // If there is an existing state, replace it
-    const index = this.state.global.segmentations.findIndex(
-      (segmentationState) => segmentationState.volumeId === volumeId
-    )
-    this.state.global.segmentations[index] = updatedState
-  }
-
-  /**
-   * Set the active segmentation data for a tool group
-   * @param toolGroupId - The Id of the tool group that owns the
-   * segmentation data.
-   * @param segmentationDataUID - string
-   */
-  setActiveSegmentationRepresentation(
-    toolGroupId: string,
-    segmentationRepresentationUID: string
-  ): void {
-    const toolGroupSegmentations =
-      this.getSegmentationRepresentations(toolGroupId)
-
-    if (!toolGroupSegmentations || !toolGroupSegmentations.length) {
-      throw new Error(
-        `No segmentation data found for toolGroupId: ${toolGroupId}`
-      )
-    }
-
-    const segmentationData = toolGroupSegmentations.find(
-      (segmentationData) =>
-        segmentationData.segmentationRepresentationUID ===
-        segmentationRepresentationUID
-    )
-
-    if (!segmentationData) {
-      throw new Error(
-        `No segmentation data found for segmentation data UID ${segmentationRepresentationUID}`
-      )
-    }
-
-    segmentationData.active = true
-    this._handleActiveSegmentation(toolGroupId, segmentationData)
-  }
-
-  /**
-   * Remove a segmentation data from the toolGroup specific segmentation state
-   * @param toolGroupId - The Id of the tool group that the segmentation
-   * data is associated with.
-   * @param segmentationDataUID - string
-   */
-  removeSegmentationData(
-    toolGroupId: string,
-    segmentationDataUID: string
-  ): void {
-    const toolGroupSegmentations =
-      this.getSegmentationRepresentations(toolGroupId)
-
-    if (!toolGroupSegmentations || !toolGroupSegmentations.length) {
-      throw new Error(
-        `No viewport specific segmentation state found for viewport ${toolGroupId}`
-      )
-    }
-
-    const state = toolGroupSegmentations as ToolGroupSpecificSegmentationState
-    const index = state.findIndex(
-      (segData) => segData.segmentationDataUID === segmentationDataUID
-    )
-
-    if (index === -1) {
-      console.warn(
-        `No viewport specific segmentation state data found for viewport ${toolGroupId} and segmentation data UID ${segmentationDataUID}`
-      )
-    }
-
-    const removedSegmentationData = toolGroupSegmentations[index]
-    toolGroupSegmentations.splice(index, 1)
-    this._handleActiveSegmentation(toolGroupId, removedSegmentationData)
   }
 
   /**

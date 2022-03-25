@@ -2,14 +2,38 @@ import { triggerEvent, eventTarget } from '@cornerstonejs/core'
 
 import { Events } from '../../enums'
 import {
-  getToolGroupsWithSegmentation,
   getSegmentationRepresentations,
+  getSegmentations,
 } from '../../stateManagement/segmentation/segmentationState'
 import {
   SegmentationRepresentationModifiedEventDetail,
   SegmentationDataModifiedEventDetail,
   SegmentationModifiedEventDetail,
+  SegmentationRepresentationRemovedEventDetail,
 } from '../../types/EventTypes'
+
+/**
+ * Trigger an event that a segmentation representation was removed
+ * @param toolGroupId - The id of the tool group that the segmentation
+ * representation was removed from.
+ * @param segmentationRepresentationUID - The UID of the segmentation
+ * representation that was removed.
+ */
+function triggerSegmentationRepresentationRemoved(
+  toolGroupId: string,
+  segmentationRepresentationUID: string
+): void {
+  const eventDetail: SegmentationRepresentationRemovedEventDetail = {
+    toolGroupId,
+    segmentationRepresentationUID,
+  }
+
+  triggerEvent(
+    eventTarget,
+    Events.SEGMENTATION_REPRESENTATION_REMOVED,
+    eventDetail
+  )
+}
 
 /**
  * Trigger an event on the eventTarget that the segmentation representation for
@@ -65,29 +89,27 @@ function triggerSegmentationRepresentationModified(
  * @param segmentationId - The id of the segmentation that has been updated
  */
 function triggerSegmentationModified(segmentationId?: string): void {
-  let toolGroupIds, segmentationUIDs
+  let segmentationIds
 
   if (segmentationId) {
-    toolGroupIds = getToolGroupsWithSegmentation(segmentationId)
-    segmentationUIDs = [segmentationId]
+    segmentationIds = [segmentationId]
   } else {
     // get all toolGroups
-    toolGroupIds = getToolGroups()
-    segmentationUIDs = getGlobalSegmentationState().map(
-      ({ volumeId }) => volumeId
+    segmentationIds = getSegmentations().map(
+      ({ segmentationId }) => segmentationId
     )
   }
 
   // 1. Trigger an event notifying all listeners about the segmentationId
   // that has been updated.
-  segmentationUIDs.forEach((segmentationId) => {
+  segmentationIds.forEach((segmentationId) => {
     const eventDetail: SegmentationModifiedEventDetail = {
       segmentationId,
     }
     triggerEvent(eventTarget, Events.SEGMENTATION_MODIFIED, eventDetail)
   })
 
-  // Todo: I don't think we need the following line of code
+  // Todo: I don't think we need the following lines of code
   // // 2. Notify all viewports that render the segmentationId in order to update the
   // // rendering based on the new global state.
   // toolGroupIds.forEach((toolGroupId) => {
@@ -97,8 +119,7 @@ function triggerSegmentationModified(segmentationId?: string): void {
 
 /**
  * Trigger an event that a segmentation data has been modified
- * @param toolGroupId - The Id of the tool group that triggered the event.
- * @param segmentationDataUID - The id of the segmentation data that was modified.
+ * @param segmentationId - The Id of segmentation
  */
 function triggerSegmentationDataModified(segmentationId: string): void {
   const eventDetail: SegmentationDataModifiedEventDetail = {
@@ -111,6 +132,7 @@ function triggerSegmentationDataModified(segmentationId: string): void {
 export {
   // ToolGroup Specific
   triggerSegmentationRepresentationModified,
+  triggerSegmentationRepresentationRemoved,
   // Global
   triggerSegmentationDataModified,
   triggerSegmentationModified,

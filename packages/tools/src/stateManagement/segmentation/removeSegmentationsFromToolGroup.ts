@@ -3,64 +3,80 @@ import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
 
 import {
   getSegmentationRepresentations,
-  getSegmentationDataByUID,
+  getSegmentationRepresentationByUID,
 } from './segmentationState'
 
 /**
  * Remove the segmentation representation (representation) from the viewports of the toolGroup.
  * @param toolGroupId - The Id of the toolGroup to remove the segmentation from.
- * @param segmentationDataArray - Array of segmentationData
- * containing at least volumeId. If no representation type is provided, it will
- * assume the default labelmap representation should be removed from the viewports.
+ * @param segmentationRepresentationUIDs - The UIDs of the segmentation representations to remove.
  */
 function removeSegmentationsFromToolGroup(
   toolGroupId: string,
-  segmentationDataUIDs?: string[] | undefined
+  segmentationRepresentationUIDs?: string[] | undefined
 ): void {
-  const toolGroupSegmentations = getSegmentationRepresentations(toolGroupId)
-  const toolGroupSegmentationDataUIDs = toolGroupSegmentations.map(
-    (segData) => segData.segmentationDataUID
+  const toolGroupSegRepresentations =
+    getSegmentationRepresentations(toolGroupId)
+
+  if (
+    !segmentationRepresentationUIDs ||
+    segmentationRepresentationUIDs.length === 0
+  ) {
+    console.warn(
+      'removeSegmentationsFromToolGroup: No segmentationRepresentations found for toolGroupId: ',
+      toolGroupId
+    )
+    return
+  }
+
+  const toolGroupSegRepresentationUIDs = toolGroupSegRepresentations.map(
+    (representation) => representation.segmentationRepresentationUID
   )
 
-  let segmentationDataUIDsToRemove = segmentationDataUIDs
-  if (segmentationDataUIDsToRemove) {
+  let segRepresentationUIDsToRemove = segmentationRepresentationUIDs
+  if (segRepresentationUIDsToRemove) {
     // make sure the segmentationDataUIDs that are going to be removed belong
     // to the toolGroup
-    const invalidSegmentationDataUIDs = segmentationDataUIDs.filter(
-      (segmentationDataUID) =>
-        !toolGroupSegmentationDataUIDs.includes(segmentationDataUID)
+    const invalidSegRepresentationUIDs = segmentationRepresentationUIDs.filter(
+      (segRepresentationUID) =>
+        !toolGroupSegRepresentationUIDs.includes(segRepresentationUID)
     )
 
-    if (invalidSegmentationDataUIDs.length > 0) {
+    if (invalidSegRepresentationUIDs.length > 0) {
       throw new Error(
-        `You are trying to remove segmentationDataUIDs that are not in the toolGroup: segmentationDataUID: ${invalidSegmentationDataUIDs}`
+        `The following segmentationRepresentationUIDs are not part of the toolGroup: ${JSON.stringify(
+          invalidSegRepresentationUIDs
+        )}`
       )
     }
   } else {
-    // remove all segmentations
-    segmentationDataUIDsToRemove = toolGroupSegmentationDataUIDs
+    // remove all segmentation representations
+    segRepresentationUIDsToRemove = toolGroupSegRepresentationUIDs
   }
 
-  segmentationDataUIDsToRemove.forEach((segmentationDataUID) => {
+  segRepresentationUIDsToRemove.forEach((segmentationDataUID) => {
     _removeSegmentation(toolGroupId, segmentationDataUID)
   })
 }
 
 function _removeSegmentation(
   toolGroupId: string,
-  segmentationDataUID: string
+  segmentationRepresentationUID: string
 ): void {
-  const segmentationData = getSegmentationDataByUID(
+  const segmentationRepresentation = getSegmentationRepresentationByUID(
     toolGroupId,
-    segmentationDataUID
+    segmentationRepresentationUID
   )
 
-  const { representation } = segmentationData
+  const { type } = segmentationRepresentation
 
-  if (representation.type === SegmentationRepresentations.Labelmap) {
-    LabelmapDisplay.removeSegmentationData(toolGroupId, segmentationDataUID)
+  if (type === SegmentationRepresentations.Labelmap) {
+    LabelmapDisplay.removeSegmentationRepresentation(
+      toolGroupId,
+      segmentationRepresentationUID
+    )
   } else {
-    throw new Error(`The representation ${representation} is not supported`)
+    throw new Error(`The representation ${type} is not supported yet`)
   }
 }
 

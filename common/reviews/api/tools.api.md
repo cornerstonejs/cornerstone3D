@@ -1036,7 +1036,7 @@ declare namespace EventTypes_2 {
         AnnotationLockChangeEventType,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
-        SegmentationStateModifiedEventType,
+        SegmentationModifiedEventType,
         SegmentationDataModifiedEventDetail,
         SegmentationRenderedEventType,
         SegmentationRenderedEventDetail,
@@ -2670,7 +2670,7 @@ type SegmentationRepresentationModifiedEventDetail = {
 };
 
 // @public (undocumented)
-type SegmentationStateModifiedEventType = Types_2.CustomEventType<SegmentationRepresentationModifiedEventDetail>;
+type SegmentationModifiedEventType = Types_2.CustomEventType<SegmentationRepresentationModifiedEventDetail>;
 
 declare namespace segmentationVisibility {
     export {

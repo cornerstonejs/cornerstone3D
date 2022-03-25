@@ -112,9 +112,19 @@ type SegmentationRenderedEventDetail = {
 }
 
 /**
- * EventDetail for when a Segmentation State for a toolGroup is modified
+ * EventDetail for when a Segmentation Representation for a toolGroup is modified
  */
 type SegmentationRepresentationModifiedEventDetail = {
+  /** unique id of the toolGroup */
+  toolGroupId: string
+  /** segmentation representationUID */
+  segmentationRepresentationUID: string
+}
+
+/**
+ * EventDetail for when a Segmentation Representation is removed
+ */
+type SegmentationRepresentationRemovedEventDetail = {
   /** unique id of the toolGroup */
   toolGroupId: string
   /** segmentation representationUID */
@@ -326,10 +336,16 @@ type SegmentationDataModifiedEventType =
   Types.CustomEventType<SegmentationDataModifiedEventDetail>
 
 /**
- * Event for when SegmentationState is modified
+ * Event for when Segmentation Representation is modified
  */
-type SegmentationStateModifiedEventType =
+type SegmentationRepresentationModifiedEventType =
   Types.CustomEventType<SegmentationRepresentationModifiedEventDetail>
+
+/**
+ * Event for when Segmentation Representation is modified
+ */
+type SegmentationRepresentationRemovedEventType =
+  Types.CustomEventType<SegmentationRepresentationRemovedEventDetail>
 
 /**
  * Event for when Segmentation is rendered
@@ -412,7 +428,9 @@ export {
   AnnotationLockChangeEventType,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,
-  SegmentationStateModifiedEventType,
+  SegmentationRepresentationModifiedEventType,
+  SegmentationRepresentationRemovedEventDetail,
+  SegmentationRepresentationRemovedEventType,
   SegmentationDataModifiedEventDetail,
   SegmentationRenderedEventType,
   SegmentationRenderedEventDetail,

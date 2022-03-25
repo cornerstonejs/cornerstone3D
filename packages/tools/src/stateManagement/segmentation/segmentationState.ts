@@ -2,6 +2,7 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager'
 import {
   triggerSegmentationRepresentationModified,
   triggerSegmentationModified,
+  triggerSegmentationRepresentationRemoved,
 } from './triggerSegmentationEvents'
 import type {
   ColorLut,
@@ -262,6 +263,33 @@ function getSegmentationRepresentationByUID(
 }
 
 /**
+ * Remove a segmentation representation from the segmentation state manager for a toolGroup.
+ * It fires SEGMENTATION_REPRESENTATION_MODIFIED event.
+ *
+ * @triggers SEGMENTATION_REPRESENTATION_REMOVED
+ *
+ * @param toolGroupId - The Id of the tool group that the segmentation
+ * data belongs to.
+ * @param segmentationRepresentationUID - The uid of the segmentation representation to remove.
+ * remove.
+ */
+function removeSegmentationRepresentation(
+  toolGroupId: string,
+  segmentationRepresentationUID: string
+): void {
+  const segmentationStateManager = getDefaultSegmentationStateManager()
+  segmentationStateManager.removeSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUID
+  )
+
+  triggerSegmentationRepresentationRemoved(
+    toolGroupId,
+    segmentationRepresentationUID
+  )
+}
+
+/**
  *
  *
  *
@@ -324,30 +352,6 @@ function getGlobalSegmentationState(): GlobalSegmentationState | [] {
  * ToolGroup Specific State
  *
  ***************************/
-
-/**
- * Remove a segmentation data from the segmentation state manager for a toolGroup.
- * It fires SEGMENTATION_REPRESENTATION_MODIFIED event.
- *
- * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
- *
- * @param toolGroupId - The Id of the tool group that the segmentation
- * data belongs to.
- * @param segmentationDataUID - The id of the segmentation data to
- * remove.
- */
-function removeSegmentationData(
-  toolGroupId: string,
-  segmentationDataUID: string
-): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  segmentationStateManager.removeSegmentationData(
-    toolGroupId,
-    segmentationDataUID
-  )
-
-  triggerSegmentationRepresentationModified(toolGroupId)
-}
 
 /***************************
  *
@@ -499,6 +503,7 @@ export {
   // ToolGroup specific Segmentation Representation
   getSegmentationRepresentations,
   addSegmentationRepresentation,
+  removeSegmentationRepresentation,
   // config
   getToolGroupSpecificConfig,
   setToolGroupSpecificConfig,

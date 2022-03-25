@@ -6,12 +6,12 @@ import type { Types } from '@cornerstonejs/core'
  * NOTE: This function should not be called directly.
  *
  * @param element - The element that the segmentation is being added to.
- * @param segmentationData - ToolGroupSpecificSegmentationData
+ * @param segmentationRepresentationUID - The UID of the labelmap representation to remove.
  * @param removeFromCache - boolean
  *
  * @internal
  */
-function removeSegmentationRepresentationFromElement(
+function removeLabelmapFromElement(
   element: HTMLElement,
   segmentationRepresentationUID: string,
   removeFromCache = false // Todo
@@ -24,4 +24,4 @@ function removeSegmentationRepresentationFromElement(
   ])
 }
 
-export default removeSegmentationRepresentationFromElement
+export default removeLabelmapFromElement

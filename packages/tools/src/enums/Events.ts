@@ -63,6 +63,14 @@ enum Events {
   ///////////////////////////////////////
 
   /**
+   * Triggers on the eventTarget when a Segmentation is updated in the state manager.
+   * Make use of {@link EventTypes.SegmentationModifiedEventType | Segmentation Modified Event Type}
+   * for typing your event listeners for this segmentation modified event, and see what
+   * event detail is included in {@link EventTypes.SegmentationModifiedEventDetail | Segmentation Modified Event Detail}.
+   */
+  SEGMENTATION_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED',
+
+  /**
    * Triggers on the eventTarget when a Segmentation is rendered by the Segmentation Rendering Engine.
    * Make use of {@link EventTypes.SegmentationRenderedEventType | Segmentation Rendered Event Type}
    * for typing your event listeners for this segmentation rendered event, and see what
@@ -79,12 +87,12 @@ enum Events {
   SEGMENTATION_REPRESENTATION_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_MODIFIED',
 
   /**
-   * Triggers on the eventTarget when a Segmentation is updated in the state manager.
-   * Make use of {@link EventTypes.SegmentationModifiedEventType | Segmentation Modified Event Type}
-   * for typing your event listeners for this segmentation modified event, and see what
-   * event detail is included in {@link EventTypes.SegmentationModifiedEventDetail | Segmentation Modified Event Detail}.
+   * Triggers on the eventTarget when a Segmentation representation of a toolGroup is removed in the state manager.
+   * Make use of {@link EventTypes.SegmentationRepresentationRemovedEventType | Segmentation Representation Removed Event Type}
+   * for typing your event listeners for this segmentation representation removed event, and see what
+   * event detail is included in {@link EventTypes.SegmentationRepresentationRemovedEventDetail | Segmentation Representation Removed Event Detail}.
    */
-  SEGMENTATION_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED',
+  SEGMENTATION_REPRESENTATION_REMOVED = 'CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED',
 
   /**
    * Triggers on the eventTarget when a Segmentation data is modified (e.g., by brush tool).

@@ -322,7 +322,7 @@ class SegmentationExample extends Component {
     )
 
     eventTarget.removeEventListener(
-      csToolsEnums.Events.SEGMENTATION_REMOVED,
+      csToolsEnums.Events.SEGMENTATION_REPRESENTATION_REMOVED,
       this.onSegmentationRemoved
     )
   }
@@ -339,7 +339,7 @@ class SegmentationExample extends Component {
     )
 
     eventTarget.addEventListener(
-      csToolsEnums.Events.SEGMENTATION_REMOVED,
+      csToolsEnums.Events.SEGMENTATION_REPRESENTATION_REMOVED,
       this.onSegmentationRemoved
     )
   }
@@ -401,16 +401,16 @@ class SegmentationExample extends Component {
     const toolGroupSegmentationRepresentations =
       segmentation.state.getSegmentationRepresentations(toolGroupId)
 
-    let segmentationDataUIDs
+    let segRepresentationUIDs
 
     if (toolGroupSegmentationRepresentations) {
-      segmentationDataUIDs = toolGroupSegmentationRepresentations.map(
+      segRepresentationUIDs = toolGroupSegmentationRepresentations.map(
         (representation) => representation.segmentationRepresentationUID
       )
     }
 
     this.setState({
-      selectedToolGroupSegRepresentationsUIDs: segmentationDataUIDs,
+      selectedToolGroupSegRepresentationsUIDs: segRepresentationUIDs,
       selectedRepresentationUID: selectedRepresentationUID,
       selectedViewportActiveSegmentIndex: activeSegmentIndex ?? 1,
       segmentLocked: segmentLocked ?? false,
@@ -418,15 +418,21 @@ class SegmentationExample extends Component {
   }
 
   onSegmentationRemoved = (evt) => {
-    const { element } = evt.detail
+    const toolGroupId = this.state.selectedToolGroupName
 
-    const segmentationUIDs =
-      segmentation.state.getSegmentationUIDsForElement(element)
-    const activeSegmentationUID =
-      segmentation.activeSegmentation.getActiveSegmentationUID(element)
+    const segRepresentations =
+      segmentation.state.getSegmentationRepresentations(toolGroupId)
+    const activeSegRepresentation =
+      segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        toolGroupId
+      )
+
     this.setState({
-      availableSegmentations: segmentationUIDs,
-      selectedRepresentationUID: activeSegmentationUID,
+      selectedToolGroupSegRepresentationsUIDs: segRepresentations.map(
+        (representation) => representation.segmentationRepresentationUID
+      ),
+      selectedRepresentationUID:
+        activeSegRepresentation.segmentationRepresentationUID,
     })
   }
 
@@ -985,11 +991,12 @@ class SegmentationExample extends Component {
     )
   }
 
-  deleteSegmentation = () => {
-    const segmentationDataUID = this.state.selectedRepresentationUID
+  deleteSegmentationRepresentation = () => {
+    const segmentationRepresentationUID = this.state.selectedRepresentationUID
+    debugger
     segmentation.removeSegmentationsFromToolGroup(
       this.state.selectedToolGroupName,
-      [segmentationDataUID]
+      [segmentationRepresentationUID]
     )
   }
 
@@ -1112,7 +1119,7 @@ class SegmentationExample extends Component {
                     representation.segmentationRepresentationUID
                 ),
               selectedRepresentationUID:
-                activeSegmentationRepresentation?.segmentationDataUIDsegmentationRepresentationUID,
+                activeSegmentationRepresentation?.segmentationRepresentationUID,
               renderOutlineToolGroup:
                 toolGroupSpecificConfig?.renderOutline || true,
               renderInactiveSegmentationsToolGroup:
@@ -1276,7 +1283,7 @@ class SegmentationExample extends Component {
                 )}
               </select>
               <button
-                onClick={() => this.deleteSegmentation()}
+                onClick={() => this.deleteSegmentationRepresentation()}
                 className="btn btn-primary"
                 style={{ margin: '2px 4px' }}
               >

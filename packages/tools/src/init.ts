@@ -7,7 +7,8 @@ import { resetCornerstoneToolsState } from './store/state'
 import {
   annotationSelectionListener,
   segmentationDataModifiedEventListener,
-  segmentationStateModifiedEventListener,
+  segmentationRepresentationModifiedEventListener,
+  segmentationRepresentationRemovedEventListener,
   annotationModifiedListener,
 } from './eventListeners'
 
@@ -95,48 +96,80 @@ function _addCornerstoneToolsEventListeners() {
   // Clear any listeners that may already be set
   _removeCornerstoneToolsEventListeners()
 
-  const selectionEvent = TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE
-  const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
-  const segmentationStateModified =
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED
-  const modifiedEvent = TOOLS_EVENTS.ANNOTATION_MODIFIED
-
-  eventTarget.addEventListener(selectionEvent, annotationSelectionListener)
+  /**
+   * Annotation
+   */
   eventTarget.addEventListener(
-    segmentationDataModified,
+    TOOLS_EVENTS.ANNOTATION_MODIFIED,
+    annotationModifiedListener
+  )
+
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
+    annotationSelectionListener
+  )
+
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
+    annotationSelectionListener
+  )
+
+  /**
+   * Segmentation
+   */
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   )
   eventTarget.addEventListener(
-    segmentationStateModified,
-    segmentationStateModifiedEventListener
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
+    segmentationRepresentationModifiedEventListener
   )
 
-  eventTarget.addEventListener(selectionEvent, annotationSelectionListener)
-  eventTarget.addEventListener(modifiedEvent, annotationModifiedListener)
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
+    segmentationRepresentationRemovedEventListener
+  )
 }
 
 /**
  * Remove the event listener for the the annotation selected and annotation modified events.
  */
 function _removeCornerstoneToolsEventListeners() {
-  const selectionEvent = TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE
-  const modifiedEvent = TOOLS_EVENTS.ANNOTATION_MODIFIED
-  const segmentationDataModified = TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED
-  const segmentationStateModified =
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED
-
-  eventTarget.removeEventListener(selectionEvent, annotationSelectionListener)
+  /**
+   * Annotation
+   */
   eventTarget.removeEventListener(
-    segmentationDataModified,
+    TOOLS_EVENTS.ANNOTATION_MODIFIED,
+    annotationModifiedListener
+  )
+
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
+    annotationSelectionListener
+  )
+
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
+    annotationSelectionListener
+  )
+
+  /**
+   * Segmentation
+   */
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   )
   eventTarget.removeEventListener(
-    segmentationStateModified,
-    segmentationStateModifiedEventListener
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
+    segmentationRepresentationModifiedEventListener
   )
 
-  eventTarget.removeEventListener(selectionEvent, annotationSelectionListener)
-  eventTarget.removeEventListener(modifiedEvent, annotationModifiedListener)
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
+    segmentationRepresentationRemovedEventListener
+  )
 }
 
 export default init

@@ -22,6 +22,7 @@ import addLabelmapToElement from './addLabelmapToElement'
 
 import { deepMerge } from '../../../utilities'
 import { IToolGroup } from '../../../types'
+import removeLabelmapFromElement from './removeLabelmapFromElement'
 
 const MAX_NUMBER_COLORS = 255
 const labelMapConfigCache = new Map()
@@ -110,14 +111,20 @@ async function addSegmentationRepresentation(
  * Initializes the global and viewport specific state for the segmentation in the
  * SegmentationStateManager.
  * @param toolGroup - the tool group that contains the viewports
- * @param segmentationDataArray - the array of segmentation data
+ * @param segmentationRepresentationUID - The uid of the segmentation representation
  */
 function removeSegmentationRepresentation(
   toolGroupId: string,
-  segmentationDataUID: string
+  segmentationRepresentationUID: string
 ): void {
-  _removeLabelmapFromToolGroupViewports(toolGroupId, segmentationDataUID)
-  SegmentationState.removeSegmentationData(toolGroupId, segmentationDataUID)
+  _removeLabelmapFromToolGroupViewports(
+    toolGroupId,
+    segmentationRepresentationUID
+  )
+  SegmentationState.removeSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUID
+  )
 }
 
 /**
@@ -293,17 +300,12 @@ function _removeLabelmapFromToolGroupViewports(
 
   const { viewportsInfo } = toolGroup
 
-  const segmentationData = SegmentationState.getSegmentationDataByUID(
-    toolGroupId,
-    segmentationDataUID
-  )
-
   for (const viewportInfo of viewportsInfo) {
     const { viewportId, renderingEngineId } = viewportInfo
     const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
-    removeSegmentationRepresentationFromElement(
+    removeLabelmapFromElement(
       enabledElement.viewport.element,
-      segmentationData
+      segmentationRepresentationUID
     )
   }
 }
