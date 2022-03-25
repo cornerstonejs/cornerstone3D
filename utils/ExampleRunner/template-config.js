@@ -42,7 +42,7 @@ module.exports = {
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
     }),
-    new BundleAnalyzerPlugin()
+    // new BundleAnalyzerPlugin()
   ],
   entry: path.join('${exampleBasePath.replace(
     /\\/g,
