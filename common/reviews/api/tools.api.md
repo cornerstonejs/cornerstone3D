@@ -1108,7 +1108,7 @@ function getActiveSegmentationInfo(toolGroupId: string): {
 function getActiveSegmentIndex(toolGroupId: string): number | undefined;
 
 // @public (undocumented)
-function getActiveSegmentIndexForSegmentation(segmentationUID: string): number | undefined;
+function getActiveSegmentIndexForSegmentation(segmentationId: string): number | undefined;
 
 // @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
@@ -1180,7 +1180,7 @@ function getGlobalSegmentationConfig(): SegmentationConfig;
 function getGlobalSegmentationConfig_2(): SegmentationConfig;
 
 // @public (undocumented)
-function getSegmentation(segmentationUID: string): GlobalSegmentationData;
+function getSegmentation(segmentationId: string): GlobalSegmentationData;
 
 // @public (undocumented)
 function getGlobalSegmentationState(): GlobalSegmentationState | [];
@@ -1210,10 +1210,10 @@ function getSegmentationVisibility(toolGroupId: string, segmentationDataUID: str
 function getSegmentIndexLocked(toolGroupId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
-function getSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number): boolean;
+function getSegmentIndexLockedForSegmentation(segmentationId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
-function getSegmentsLockedForSegmentation(segmentationUID: string): number[] | [];
+function getSegmentsLockedForSegmentation(segmentationId: string): number[] | [];
 
 // @public (undocumented)
 function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
@@ -1247,7 +1247,7 @@ function getToolGroupById(toolGroupId: string): IToolGroup | undefined;
 function getToolGroups(): string[];
 
 // @public (undocumented)
-function getToolGroupsWithSegmentation(segmentationUID: string): string[];
+function getToolGroupsWithSegmentation(segmentationId: string): string[];
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLElement, toolName: string, requireSameOrientation?: boolean): string[];
@@ -2398,7 +2398,7 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
                 points: Types_2.Point3[];
                 activeHandleIndex: any;
             };
-            segmentationUID: any;
+            segmentationId: any;
         };
     };
     // (undocumented)
@@ -2646,7 +2646,7 @@ export class SegmentationDisplayTool extends BaseTool {
 
 // @public (undocumented)
 type SegmentationGlobalStateModifiedEventDetail = {
-    segmentationUID: string;
+    segmentationId: string;
 };
 
 // @public (undocumented)
@@ -2719,7 +2719,7 @@ function setActiveSegmentationData(toolGroupId: string, segmentationDataUID: str
 function setActiveSegmentIndex(toolGroupId: string, segmentIndex: number): void;
 
 // @public (undocumented)
-function setActiveSegmentIndexForSegmentation(segmentationUID: string, segmentIndex: number): void;
+function setActiveSegmentIndexForSegmentation(segmentationId: string, segmentIndex: number): void;
 
 // @public (undocumented)
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
@@ -2764,7 +2764,7 @@ function setSegmentationVisibility(toolGroupId: string, segmentationDataUID: str
 function setSegmentIndexLocked(toolGroupId: string, segmentIndex: number, locked?: boolean): void;
 
 // @public (undocumented)
-function setSegmentIndexLockedForSegmentation(segmentationUID: string, segmentIndex: number, locked?: boolean): void;
+function setSegmentIndexLockedForSegmentation(segmentationId: string, segmentIndex: number, locked?: boolean): void;
 
 // @public (undocumented)
 type SetToolBindingsType = {
@@ -3089,7 +3089,7 @@ declare namespace triggerSegmentationEvents {
 }
 
 // @public (undocumented)
-function triggerSegmentationGlobalStateModified(segmentationUID?: string): void;
+function triggerSegmentationGlobalStateModified(segmentationId?: string): void;
 
 // @public (undocumented)
 function triggerSegmentationStateModified(toolGroupId: string): void;

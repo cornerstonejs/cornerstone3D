@@ -40,7 +40,7 @@ import { deepMerge } from '../../utilities'
  *
  *  addSegmentationsForToolGroup('toolGroupId', [
  *     {
- *       volumeId: segmentationUID,
+ *       volumeId: segmentationId,
  *     },
  *  ])
  *

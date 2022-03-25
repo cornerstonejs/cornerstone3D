@@ -35,7 +35,7 @@ function getActiveSegmentationInfo(toolGroupId: string): {
  *
  * @param toolGroupId - The Id of the tool group to set the active
  * segmentation for.
- * @param segmentationDataUID - The UID of the segmentation data to set as
+ * @param segmentationDataUID - The id of the segmentation data to set as
  * active.
  */
 function setActiveSegmentation(

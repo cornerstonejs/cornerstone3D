@@ -80,16 +80,16 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Given a segmentation UID, return the global segmentation data for that
+   * Given a segmentation Id, return the global segmentation data for that
    * segmentation
-   * @param segmentationUID - The UID of the segmentation to get the
+   * @param segmentationId - The id of the segmentation to get the
    * global data for.
    * @returns - The global segmentation data for the
-   * segmentation with the given UID.
+   * segmentation with the given Id.
    */
-  getSegmentation(segmentationUID: string): GlobalSegmentationData | undefined {
+  getSegmentation(segmentationId: string): GlobalSegmentationData | undefined {
     return this.state.global.segmentations?.find(
-      (segmentationState) => segmentationState.volumeId === segmentationUID
+      (segmentationState) => segmentationState.volumeId === segmentationId
     )
   }
 
@@ -121,13 +121,13 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Given a segmentation UID, return a list of tool group IDs that have that
+   * Given a segmentation Id, return a list of tool group IDs that have that
    * segmentation in their segmentation state (segmentation has been added
    * to the tool group).
-   * @param segmentationUID - The UID of the segmentation volume.
+   * @param segmentationId - The id of the segmentation volume.
    * @returns An array of toolGroupIds.
    */
-  getToolGroupsWithSegmentation(segmentationUID: string): string[] {
+  getToolGroupsWithSegmentation(segmentationId: string): string[] {
     const toolGroupIds = Object.keys(this.state.toolGroups)
 
     const foundToolGroupIds = []
@@ -137,7 +137,7 @@ export default class SegmentationStateManager {
       ) as ToolGroupSpecificSegmentationState
 
       const segmentationData = toolGroupSegmentationState.find(
-        (segmentationData) => segmentationData.volumeId === segmentationUID
+        (segmentationData) => segmentationData.volumeId === segmentationId
       )
 
       if (segmentationData) {

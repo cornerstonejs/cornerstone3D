@@ -127,10 +127,10 @@ function removeSegmentationData(
 }
 
 /**
- * It takes the enabled element, the segmentation UID, and the configuration, and
+ * It takes the enabled element, the segmentation Id, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
  * @param enabledElement - The cornerstone enabled element
- * @param segmentationUID - The UID of the segmentation to be rendered.
+ * @param segmentationId - The id of the segmentation to be rendered.
  * @param configuration - The configuration object for the labelmap.
  */
 function render(

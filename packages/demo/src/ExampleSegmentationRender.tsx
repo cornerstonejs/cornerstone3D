@@ -346,7 +346,7 @@ class SegmentationExample extends Component {
   }
 
   onGlobalSegmentationStateUpdated = (evt) => {
-    const { segmentationUID } = evt.detail
+    const { segmentationId } = evt.detail
     const allSegmentationUIDs = segmentation.state
       .getGlobalSegmentationState()
       .map(({ volumeId }) => volumeId)
@@ -426,12 +426,12 @@ class SegmentationExample extends Component {
 
     segmentation
       .createNewSegmentationForToolGroup(this.state.selectedToolGroupName)
-      .then((segmentationUID) => {
+      .then((segmentationId) => {
         segmentation.addSegmentationsForToolGroup(
           this.state.selectedToolGroupName,
           [
             {
-              volumeId: segmentationUID,
+              volumeId: segmentationId,
               // default representation which is labelmap
             },
           ]
@@ -546,13 +546,13 @@ class SegmentationExample extends Component {
     this.setState({ segmentationStatus: 'done' })
   }
 
-  loadSegmentation = async (segmentationUID, initialConfig) => {
+  loadSegmentation = async (segmentationId, initialConfig) => {
     const toolGroupId = this.state.selectedToolGroupName
 
     if (!initialConfig) {
       await segmentation.addSegmentationsForToolGroup(toolGroupId, [
         {
-          volumeId: segmentationUID,
+          volumeId: segmentationId,
           active: true,
           representation: {
             type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -1155,9 +1155,9 @@ class SegmentationExample extends Component {
               }}
               size={3}
             >
-              {this.state.allSegmentationUIDs.map((segmentationUID) => (
-                <option key={`${segmentationUID}-all`} value={segmentationUID}>
-                  {segmentationUID}
+              {this.state.allSegmentationUIDs.map((segmentationId) => (
+                <option key={`${segmentationId}-all`} value={segmentationId}>
+                  {segmentationId}
                 </option>
               ))}
             </select>
@@ -1224,12 +1224,12 @@ class SegmentationExample extends Component {
                 size={3}
               >
                 {this.state.selectedToolGroupSegmentationDataUIDs.map(
-                  (segmentationUID) => (
+                  (segmentationId) => (
                     <option
-                      key={`${segmentationUID}-viewport`}
-                      value={segmentationUID}
+                      key={`${segmentationId}-viewport`}
+                      value={segmentationId}
                     >
-                      {segmentationUID}
+                      {segmentationId}
                     </option>
                   )
                 )}

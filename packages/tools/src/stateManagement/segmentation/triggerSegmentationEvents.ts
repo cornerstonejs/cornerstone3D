@@ -33,14 +33,12 @@ function triggerSegmentationStateModified(toolGroupId: string): void {
  *
  * @param segmentationId - The id of the segmentation that has been updated
  */
-function triggerSegmentationGlobalStateModified(
-  segmentationUID?: string
-): void {
+function triggerSegmentationGlobalStateModified(segmentationId?: string): void {
   let toolGroupIds, segmentationUIDs
 
-  if (segmentationUID) {
-    toolGroupIds = getToolGroupsWithSegmentation(segmentationUID)
-    segmentationUIDs = [segmentationUID]
+  if (segmentationId) {
+    toolGroupIds = getToolGroupsWithSegmentation(segmentationId)
+    segmentationUIDs = [segmentationId]
   } else {
     // get all toolGroups
     toolGroupIds = getToolGroups()
@@ -49,11 +47,11 @@ function triggerSegmentationGlobalStateModified(
     )
   }
 
-  // 1. Trigger an event notifying all listeners about the segmentationUID
+  // 1. Trigger an event notifying all listeners about the segmentationId
   // that has been updated.
-  segmentationUIDs.forEach((segmentationUID) => {
+  segmentationUIDs.forEach((segmentationId) => {
     const eventDetail: SegmentationGlobalStateModifiedEventDetail = {
-      segmentationUID,
+      segmentationId,
     }
     triggerEvent(
       eventTarget,
@@ -62,7 +60,7 @@ function triggerSegmentationGlobalStateModified(
     )
   })
 
-  // 2. Notify all viewports that render the segmentationUID in order to update the
+  // 2. Notify all viewports that render the segmentationId in order to update the
   // rendering based on the new global state.
   toolGroupIds.forEach((toolGroupId) => {
     triggerSegmentationStateModified(toolGroupId)
@@ -72,7 +70,7 @@ function triggerSegmentationGlobalStateModified(
 /**
  * Trigger an event that a segmentation data has been modified
  * @param toolGroupId - The Id of the tool group that triggered the event.
- * @param segmentationDataUID - The UID of the segmentation data that was modified.
+ * @param segmentationDataUID - The id of the segmentation data that was modified.
  */
 function triggerSegmentationDataModified(
   toolGroupId: string,

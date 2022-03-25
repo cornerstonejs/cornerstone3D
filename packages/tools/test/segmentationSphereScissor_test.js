@@ -264,8 +264,8 @@ describe('Segmentation Tools --', () => {
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
+          const { segmentationId } = evt.detail
+          expect(segmentationId.includes(volumeId)).toBe(true)
         }
       )
 
@@ -286,9 +286,9 @@ describe('Segmentation Tools --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
+              .then((segmentationId) => {
                 addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+                  { volumeId: segmentationId },
                 ])
               })
           })

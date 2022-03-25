@@ -117,7 +117,7 @@ describe('Segmentation State -- ', () => {
         (evt) => {
           const globalState = segmentation.state.getSegmentation(segVolumeId)
 
-          expect(evt.detail.segmentationUID.includes(segVolumeId)).toBe(true)
+          expect(evt.detail.segmentationId.includes(segVolumeId)).toBe(true)
 
           expect(globalState).toBeDefined()
 

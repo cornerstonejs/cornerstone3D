@@ -211,8 +211,8 @@ describe('Segmentation Index Controller --', () => {
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
+          const { segmentationId } = evt.detail
+          expect(segmentationId.includes(volumeId)).toBe(true)
         }
       )
 
@@ -229,9 +229,9 @@ describe('Segmentation Index Controller --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
+              .then((segmentationId) => {
                 addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+                  { volumeId: segmentationId },
                 ])
               })
           })
@@ -357,8 +357,8 @@ describe('Segmentation Index Controller --', () => {
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
+          const { segmentationId } = evt.detail
+          expect(segmentationId.includes(volumeId)).toBe(true)
         }
       )
 
@@ -375,9 +375,9 @@ describe('Segmentation Index Controller --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
+              .then((segmentationId) => {
                 addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+                  { volumeId: segmentationId },
                 ])
               })
           })
@@ -531,8 +531,8 @@ describe('Segmentation Index Controller --', () => {
       eventTarget.addEventListener(
         Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
         (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
+          const { segmentationId } = evt.detail
+          expect(segmentationId.includes(volumeId)).toBe(true)
         }
       )
 
@@ -549,9 +549,9 @@ describe('Segmentation Index Controller --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
+              .then((segmentationId) => {
                 addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+                  { volumeId: segmentationId },
                 ])
               })
           })

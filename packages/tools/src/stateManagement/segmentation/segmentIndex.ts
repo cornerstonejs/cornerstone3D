@@ -41,46 +41,46 @@ function setActiveSegmentIndex(
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeId: segmentationUID } = segmentationInfo
-  const activeSegmentationGlobalState = getSegmentation(segmentationUID)
+  const { volumeId: segmentationId } = segmentationInfo
+  const activeSegmentationGlobalState = getSegmentation(segmentationId)
 
   if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
     activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
 
-    triggerSegmentationGlobalStateModified(segmentationUID)
+    triggerSegmentationGlobalStateModified(segmentationId)
   }
 }
 
 /**
- * Set the active segment index for a segmentation UID. It fires a global state
+ * Set the active segment index for a segmentation Id. It fires a global state
  * modified event.
  *
  * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
- * @param segmentationUID - The UID of the segmentation that the segment belongs to.
+ * @param segmentationId - The id of the segmentation that the segment belongs to.
  * @param segmentIndex - The index of the segment to be activated.
  */
 function setActiveSegmentIndexForSegmentation(
-  segmentationUID: string,
+  segmentationId: string,
   segmentIndex: number
 ): void {
-  const activeSegmentationGlobalState = getSegmentation(segmentationUID)
+  const activeSegmentationGlobalState = getSegmentation(segmentationId)
 
   if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
     activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
 
-    triggerSegmentationGlobalStateModified(segmentationUID)
+    triggerSegmentationGlobalStateModified(segmentationId)
   }
 }
 
 /**
  * Get the active segment index for a segmentation in the global state
- * @param segmentationUID - The UID of the segmentation to get the active segment index from.
+ * @param segmentationId - The id of the segmentation to get the active segment index from.
  * @returns The active segment index for the given segmentation.
  */
 function getActiveSegmentIndexForSegmentation(
-  segmentationUID: string
+  segmentationId: string
 ): number | undefined {
-  const activeSegmentationGlobalState = getSegmentation(segmentationUID)
+  const activeSegmentationGlobalState = getSegmentation(segmentationId)
 
   if (activeSegmentationGlobalState) {
     return activeSegmentationGlobalState.activeSegmentIndex

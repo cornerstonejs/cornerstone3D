@@ -54,7 +54,7 @@ async function createNewSegmentationForToolGroup(
 
   const { uid } = viewport.getDefaultActor()
   // Name the segmentation volume with the viewport Id
-  const segmentationUID = `${uid}-based-segmentation-${
+  const segmentationId = `${uid}-based-segmentation-${
     options?.volumeId ?? csUtils.uuidv4().slice(0, 8)
   }`
 
@@ -62,16 +62,16 @@ async function createNewSegmentationForToolGroup(
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
     const properties = _cloneDeep(options)
-    await volumeLoader.createLocalVolume(properties, segmentationUID)
+    await volumeLoader.createLocalVolume(properties, segmentationId)
   } else {
     // create a labelmap from a reference volume
     const { uid: volumeId } = viewport.getDefaultActor()
     await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-      volumeId: segmentationUID,
+      volumeId: segmentationId,
     })
   }
 
-  return segmentationUID
+  return segmentationId
 }
 
 export default createNewSegmentationForToolGroup

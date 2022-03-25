@@ -14,6 +14,7 @@ import {
   isValidRepresentationConfig,
 } from '../../utilities/segmentation'
 import { deepMerge } from '../../utilities'
+import normalizeSegmentationInput from './helpers/normalizeSegmentationInput'
 
 /**
  * It returns the defaultSegmentationStateManager.
@@ -43,9 +44,10 @@ function addSegmentation(
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager()
-  segmentationStateManager.addSegmentation(segmentationInput)
+  const segmentation = normalizeSegmentationInput(segmentationInput)
+  segmentationStateManager.addSegmentation(segmentation)
   if (!suppressEvents) {
-    triggerSegmentationGlobalStateModified(segmentationInput.segmentationId)
+    triggerSegmentationGlobalStateModified(segmentation.segmentationId)
   }
 }
 
@@ -104,7 +106,7 @@ function getSegmentationState(
  * data objects and returns the first one that matches the UID.
  * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
- * @param segmentationDataUID - The UID of the segmentation data to
+ * @param segmentationDataUID - The id of the segmentation data to
  * retrieve.
  * @returns Segmentation Data object.
  */
@@ -127,7 +129,7 @@ function getSegmentationDataByUID(
  *
  * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
- * @param segmentationDataUID - The UID of the segmentation data to
+ * @param segmentationDataUID - The id of the segmentation data to
  * remove.
  */
 function removeSegmentationData(
@@ -254,14 +256,14 @@ function getSegmentationConfig(toolGroupId: string): SegmentationConfig {
  ***************************/
 
 /**
- * Get the tool group IDs that have a segmentation with the given UID
- * @param segmentationUID - The UID of the segmentation to get the tool
+ * Get the tool group IDs that have a segmentation with the given Id
+ * @param segmentationId - The id of the segmentation to get the tool
  * groups for.
  * @returns An array of tool group IDs.
  */
-function getToolGroupsWithSegmentation(segmentationUID: string): string[] {
+function getToolGroupsWithSegmentation(segmentationId: string): string[] {
   const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getToolGroupsWithSegmentation(segmentationUID)
+  return segmentationStateManager.getToolGroupsWithSegmentation(segmentationId)
 }
 
 /**
@@ -302,7 +304,7 @@ function addColorLUT(colorLut: ColorLUT, index: number): void {
  * @triggers SEGMENTATION_STATE_MODIFIED
  *
  * @param toolGroupId - The Id of the tool group that owns the segmentation data.
- * @param segmentationDataUID - The UID of the segmentation data to set as active.
+ * @param segmentationDataUID - The id of the segmentation data to set as active.
  * @param suppressEvents - If true, the segmentation state will be updated, but no events will be triggered.
  */
 function setActiveSegmentationData(
