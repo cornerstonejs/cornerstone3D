@@ -1,7 +1,5 @@
 import distanceToPoint from './distanceToPoint'
 
-const rectangle = {
+export default {
   distanceToPoint,
 }
-
-export default rectangle

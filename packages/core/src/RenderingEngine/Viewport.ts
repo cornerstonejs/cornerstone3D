@@ -7,11 +7,18 @@ import _cloneDeep from 'lodash.clonedeep'
 
 import Events from '../enums/Events'
 import ViewportType from '../enums/ViewportType'
-import { ICamera, ActorEntry, IRenderingEngine } from '../types'
-import { ViewportInput, IViewport } from '../types/IViewport'
 import renderingEngineCache from './renderingEngineCache'
 import { triggerEvent, planar } from '../utilities'
-import { ViewportInputOptions, Point2, Point3, FlipDirection } from '../types'
+import type {
+  ICamera,
+  ActorEntry,
+  IRenderingEngine,
+  ViewportInputOptions,
+  Point2,
+  Point3,
+  FlipDirection,
+} from '../types'
+import type { ViewportInput, IViewport } from '../types/IViewport'
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera'
 
 /**
@@ -87,7 +94,7 @@ class Viewport implements IViewport {
   resize: () => void
   getProperties: () => void
 
-  static get useCustomRenderingPipeline() {
+  static get useCustomRenderingPipeline(): boolean {
     return false
   }
 
@@ -118,7 +125,7 @@ class Viewport implements IViewport {
   /**
    * Renders the `Viewport` using the `RenderingEngine`.
    */
-  public render() {
+  public render(): void {
     const renderingEngine = this.getRenderingEngine()
 
     renderingEngine.renderViewport(this.id)
@@ -414,7 +421,7 @@ class Viewport implements IViewport {
   /**
    * Reset the camera to the default viewport camera without firing events
    */
-  protected resetCameraNoEvent() {
+  protected resetCameraNoEvent(): void {
     this._suppressCameraModifiedEvents = true
     this.resetCamera()
     this._suppressCameraModifiedEvents = false

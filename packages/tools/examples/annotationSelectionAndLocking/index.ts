@@ -11,15 +11,16 @@ import {
   addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@cornerstonejs/tools'
-
-const {
+import {
   LengthTool,
   BidirectionalTool,
   ToolGroupManager,
-  Enums: { MouseBindings },
+  Enums as csToolsEnums,
   annotation,
-} = cornerstoneTools
+  addTool,
+} from '@cornerstonejs/tools'
+
+const { MouseBindings } = csToolsEnums
 
 const { locking, selection } = annotation
 const { ViewportType } = Enums
@@ -97,8 +98,8 @@ async function run() {
   await initDemo()
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool)
-  cornerstoneTools.addTool(BidirectionalTool)
+  addTool(LengthTool)
+  addTool(BidirectionalTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group

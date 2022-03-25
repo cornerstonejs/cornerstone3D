@@ -90,15 +90,6 @@ function getActiveSegmentIndexForSegmentation(
   }
 }
 
-export default {
-  // toolGroup Active Segmentation
-  getActiveSegmentIndex,
-  setActiveSegmentIndex,
-  // global segmentation
-  getActiveSegmentIndexForSegmentation,
-  setActiveSegmentIndexForSegmentation,
-}
-
 export {
   // toolGroup Active Segmentation
   getActiveSegmentIndex,

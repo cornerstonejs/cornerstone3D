@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix'
-import { metaData } from '../metaData'
-import { IImageVolume, Point3 } from '../types'
+import * as metaData from '../metaData'
+import type { IImageVolume, Point3 } from '../types'
 
 import getSpacingInNormalDirection from './getSpacingInNormalDirection'
 

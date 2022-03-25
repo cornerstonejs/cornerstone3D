@@ -53,10 +53,3 @@ export {
   // set
   setActiveSegmentation,
 }
-
-export default {
-  // get
-  getActiveSegmentationInfo,
-  // set
-  setActiveSegmentation,
-}

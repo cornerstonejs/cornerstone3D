@@ -1,4 +1,4 @@
-import { volumeLoader, cache, utilities, Enums } from '@cornerstonejs/core'
+import { cache, utilities, Enums } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 import { vec3 } from 'gl-matrix'
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers'
@@ -167,11 +167,5 @@ function cornerstoneStreamingImageVolumeLoader(
     },
   }
 }
-
-volumeLoader.registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
-volumeLoader.registerVolumeLoader(
-  'cornerstoneStreamingImageVolume',
-  cornerstoneStreamingImageVolumeLoader
-)
 
 export default cornerstoneStreamingImageVolumeLoader

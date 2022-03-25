@@ -111,6 +111,9 @@ module.exports = {
       "Cross-Origin-Opener-Policy": "same-origin"
     }
   },
+  optimization: {
+    minimize: true
+  },
 };
 `
 }

@@ -30,7 +30,6 @@ module.exports = (env, argv) => {
     },
     optimization: {
       minimize: true,
-      sideEffects: true,
     },
     externals: [
       /\b(vtk.js)/,

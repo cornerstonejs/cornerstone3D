@@ -11,7 +11,7 @@ import {
   annotationModifiedListener,
 } from './eventListeners'
 
-import ToolGroupManager from './store/ToolGroupManager'
+import * as ToolGroupManager from './store/ToolGroupManager'
 
 let csToolsInitialized = false
 

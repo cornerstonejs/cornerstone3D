@@ -11,6 +11,7 @@
   "directories": {
     "test": "test"
   },
+  "sideEffects": false,
   "scripts": {
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",

@@ -26,7 +26,6 @@ module.exports = (env, argv) => {
     },
     optimization: {
       minimize: false,
-      sideEffects: true,
       splitChunks: {
         chunks: 'all',
       },

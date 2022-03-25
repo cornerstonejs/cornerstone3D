@@ -46,24 +46,3 @@ export {
   getAnnotationNearPointOnEnabledElement,
   transformPhysicalToIndex,
 }
-
-export default {
-  math,
-  planar,
-  viewportFilters,
-  stackScrollTool,
-  drawing,
-  debounce,
-  deepMerge,
-  throttle,
-  isObject,
-  triggerEvent,
-  calibrateImageSpacing,
-  transformPhysicalToIndex,
-  segmentation,
-  triggerAnnotationRenderForViewportIds,
-  pointInShapeCallback,
-  pointInSurroundingSphereCallback,
-  getAnnotationNearPoint,
-  getAnnotationNearPointOnEnabledElement,
-}

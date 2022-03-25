@@ -19,14 +19,3 @@ export {
   isValidRepresentationConfig,
   getDefaultRepresentationConfig,
 }
-
-export default {
-  getBoundingBoxAroundShape,
-  extend2DBoundingBoxInViewAxis,
-  // fillOutsideBoundingBox,
-  thresholdVolumeByRange,
-  thresholdVolumeByRoiStats,
-  createMergedLabelmapForIndex,
-  isValidRepresentationConfig,
-  getDefaultRepresentationConfig,
-}

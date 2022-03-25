@@ -16,13 +16,9 @@ import {
   addSliderToToolbar,
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
-// Auto registers volume loader
-import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
-const { ViewportType } = Enums
+const { ViewportType, BlendModes } = Enums
 const { ORIENTATION } = CONSTANTS
-const { BlendMode } = vtkConstants
 
 const renderingEngineId = 'myRenderingEngine'
 const viewportId = 'CT_SAGITTAL_STACK'
@@ -243,14 +239,14 @@ addSliderToToolbar(
       renderingEngine.getViewport(viewportId)
     )
 
-    let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND
+    let blendMode = BlendModes.MAXIMUM_INTENSITY_BLEND
 
     if (value < 0.1) {
       // Cannot render zero thickness
       value = 0.1
 
       // Not a mip, just show slice
-      blendMode = BlendMode.COMPOSITE_BLEND
+      blendMode = BlendModes.COMPOSITE
     }
 
     // Get the volume actor from the viewport

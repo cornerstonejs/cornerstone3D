@@ -7,7 +7,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import vtkCamera from 'vtk.js/Sources/Rendering/Core/Camera'
 import { vec2, vec3, mat4 } from 'gl-matrix'
 
-import metaData from '../metaData'
+import * as metaData from '../metaData'
 import Viewport from './Viewport'
 import eventTarget from '../eventTarget'
 import Events from '../enums/Events'
@@ -2037,7 +2037,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * Sets the colormap for the current viewport.
    * @param colormap - The colormap data to use.
    */
-  public setColormap(colormap: CPUFallbackColormapData) {
+  public setColormap(colormap: CPUFallbackColormapData): void {
     if (this.useCPURendering) {
       this.setColormapCPU(colormap)
     } else {
@@ -2048,7 +2048,7 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * It sets the colormap to the default colormap.
    */
-  public unsetColormap() {
+  public unsetColormap(): void {
     if (this.useCPURendering) {
       this.unsetColormapCPU()
     } else {

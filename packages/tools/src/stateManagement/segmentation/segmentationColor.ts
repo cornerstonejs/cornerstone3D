@@ -60,5 +60,4 @@ function getColorForSegmentIndex(
   return colorLut[segmentIndex]
 }
 
-export default { getColorForSegmentIndex, addColorLUT }
 export { getColorForSegmentIndex, addColorLUT }

@@ -81,13 +81,4 @@ function getMetaData(type: string, imageId: string): any {
   }
 }
 
-const metaData = {
-  addProvider,
-  removeProvider,
-  removeAllProviders,
-  get: getMetaData,
-}
-
-export { metaData }
-
-export default metaData
+export { getMetaData as get }

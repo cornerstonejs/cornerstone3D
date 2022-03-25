@@ -22,9 +22,10 @@ const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 var rules = [].concat(require('./rules-examples.js'), vtkRules);
 var modules = [path.resolve('../node_modules/'), path.resolve('../../../node_modules/')];
 
-console.log('modules', modules)
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ESLintPlugin = require('eslint-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 var webpack = require('webpack');
 var path = require('path');
 module.exports = {
@@ -41,6 +42,7 @@ module.exports = {
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
     }),
+    new BundleAnalyzerPlugin()
   ],
   entry: path.join('${exampleBasePath.replace(
     /\\/g,
@@ -67,7 +69,7 @@ module.exports = {
     fallback: {
       fs: false,
       path: require.resolve('path-browserify'),
-      events: false,
+      events: false
     },
   },
   devServer: {
@@ -80,6 +82,11 @@ module.exports = {
       "Cross-Origin-Opener-Policy": "same-origin"
     }
   },
+  /*optimization: {
+    minimize: false,
+    usedExports: true,
+    sideEffects: true
+  }*/
 };
 `
 }

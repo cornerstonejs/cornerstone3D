@@ -59,5 +59,4 @@ function getSegmentationVisibility(
   return segmentationData.visibility
 }
 
-export default { setSegmentationVisibility, getSegmentationVisibility }
 export { setSegmentationVisibility, getSegmentationVisibility }

@@ -19,6 +19,11 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
+function addProvider(provider: (type: string, imageId: string) => {
+    any: any;
+}, priority?: number): void;
+
+// @public (undocumented)
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // @public (undocumented)
@@ -556,6 +561,9 @@ export function getEnabledElement(element: HTMLElement | undefined): IEnabledEle
 
 // @public (undocumented)
 export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
+
+// @public (undocumented)
+function getMetaData(type: string, imageId: string): any;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -1359,13 +1367,15 @@ type Metadata = {
     voiLut: Array<VOI>;
 };
 
-// @public (undocumented)
-export const metaData: {
-    addProvider: typeof addProvider;
-    removeProvider: typeof removeProvider;
-    removeAllProviders: typeof removeAllProviders;
-    get: typeof getMetaData;
-};
+declare namespace metaData {
+    export {
+        addProvider,
+        removeProvider,
+        removeAllProviders,
+        getMetaData as get
+    }
+}
+export { metaData }
 
 // @public (undocumented)
 const metadataProvider: {
@@ -1427,6 +1437,14 @@ function registerUnknownVolumeLoader(volumeLoader: Types.VolumeLoaderFn): Types.
 
 // @public (undocumented)
 function registerVolumeLoader(scheme: string, volumeLoader: Types.VolumeLoaderFn): void;
+
+// @public (undocumented)
+function removeAllProviders(): void;
+
+// @public (undocumented)
+function removeProvider(provider: (type: string, imageId: string) => {
+    any: any;
+}): void;
 
 // @public (undocumented)
 export class RenderingEngine implements IRenderingEngine {

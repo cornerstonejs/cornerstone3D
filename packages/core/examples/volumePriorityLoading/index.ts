@@ -12,8 +12,6 @@ import {
   setTitleAndDescription,
   setPetColorMapTransferFunction,
 } from '../../../../utils/demo/helpers'
-// Auto registers volume loader
-import '@cornerstonejs/streaming-image-volume-loader' // Registers volume loader
 
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS

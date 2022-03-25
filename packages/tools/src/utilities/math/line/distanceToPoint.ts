@@ -1,5 +1,5 @@
 import distanceToPointSquared from './distanceToPointSquared'
-import { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core'
 
 /**
  * Calculates the distance of a point to a line

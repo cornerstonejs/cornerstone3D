@@ -1,9 +1,11 @@
-import * as cornerstoneStreamingImageVolumeLoader from '../src'
+import {
+  cornerstoneStreamingImageVolumeLoader,
+  StreamingImageVolume,
+} from '../src'
 import * as cornerstone from '@cornerstonejs/core'
 
 const { cache, metaData, utilities, imageLoader, volumeLoader } = cornerstone
 const { testUtils } = utilities
-const { StreamingImageVolume } = cornerstoneStreamingImageVolumeLoader
 
 const imageIds = [
   'fakeSharedBufferImageLoader:imageId1',
@@ -65,6 +67,14 @@ const fakeImageLoader = (imageId) => {
 }
 
 function setupLoaders() {
+  volumeLoader.registerUnknownVolumeLoader(
+    cornerstoneStreamingImageVolumeLoader
+  )
+  volumeLoader.registerVolumeLoader(
+    'cornerstoneStreamingImageVolume',
+    cornerstoneStreamingImageVolumeLoader
+  )
+
   imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader)
   imageLoader.registerImageLoader(
     'fakeSharedBufferImageLoader',
@@ -396,6 +406,14 @@ describe('StreamingImageVolume', () => {
     beforeEach(function () {
       cache.purgeCache()
       metaData.addProvider(testUtils.fakeMetaDataProvider, 10000)
+      volumeLoader.registerUnknownVolumeLoader(
+        cornerstoneStreamingImageVolumeLoader
+      )
+      volumeLoader.registerVolumeLoader(
+        'cornerstoneStreamingImageVolume',
+        cornerstoneStreamingImageVolumeLoader
+      )
+
       imageLoader.registerImageLoader(
         'fakeSharedBufferImageLoader',
         fakeSharedBufferImageLoader
@@ -412,6 +430,8 @@ describe('StreamingImageVolume', () => {
       imageLoader.unregisterAllImageLoaders()
     })
 
+    // TODO: This function is missing `done` but if I add it the test fails..
+    // Maybe we should not be using async function definitions?
     it('should successfully use metadata for streaming image volume', async function () {
       const imageIds = [
         'fakeSharedBufferImageLoader:myImag1_256_256_0_20_1_1_0',

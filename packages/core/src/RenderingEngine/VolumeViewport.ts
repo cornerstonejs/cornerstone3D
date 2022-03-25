@@ -3,14 +3,20 @@ import { vec3 } from 'gl-matrix'
 import cache from '../cache'
 import ViewportType from '../enums/ViewportType'
 import Viewport from './Viewport'
-import { Point2, Point3, IImageData, IVolumeInput } from '../types'
-import { ViewportInput } from '../types/IViewport'
 import { createVolumeActor } from './helpers'
 import { loadVolume } from '../volumeLoader'
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera'
-import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera'
-import { ActorEntry, FlipDirection } from '../types'
 import { getShouldUseCPURendering } from '../init'
+import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera'
+import type {
+  Point2,
+  Point3,
+  IImageData,
+  IVolumeInput,
+  ActorEntry,
+  FlipDirection,
+} from '../types'
+import type { ViewportInput } from '../types/IViewport'
 import type IVolumeViewport from '../types/IVolumeViewport'
 
 const EPSILON = 1e-3
@@ -68,7 +74,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     this.resetCamera()
   }
 
-  static get useCustomRenderingPipeline() {
+  static get useCustomRenderingPipeline(): boolean {
     return false
   }
 

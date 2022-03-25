@@ -5,6 +5,7 @@
   "workspaces": [
     "packages/*"
   ],
+  "sideEffects": false,
   "engines": {
     "node": ">=12",
     "yarn": ">=1.19.1"

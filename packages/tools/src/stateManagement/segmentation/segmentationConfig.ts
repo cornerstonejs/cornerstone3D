@@ -179,16 +179,3 @@ export {
   setRepresentationConfig,
   getRepresentationConfig,
 }
-
-export default {
-  getGlobalSegmentationConfig,
-  setGlobalSegmentationConfig,
-  getGlobalRepresentationConfig,
-  setGlobalRepresentationConfig,
-  updateGlobalSegmentationConfig,
-  updateGlobalRepresentationConfig,
-  getSegmentationConfig,
-  setSegmentationConfig,
-  setRepresentationConfig,
-  getRepresentationConfig,
-}
