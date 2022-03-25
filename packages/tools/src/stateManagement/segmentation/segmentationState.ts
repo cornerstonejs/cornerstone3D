@@ -3,14 +3,7 @@ import {
   triggerSegmentationStateModified,
   triggerSegmentationGlobalStateModified,
 } from './triggerSegmentationEvents'
-import {
-  GlobalSegmentationState,
-  GlobalSegmentationData,
-  ColorLUT,
-  ToolGroupSpecificSegmentationState,
-  ToolGroupSpecificSegmentationData,
-  SegmentationConfig,
-} from '../../types/SegmentationStateTypes'
+import { ColorLUT } from '../../types/SegmentationStateTypes'
 
 import {
   getDefaultRepresentationConfig,
