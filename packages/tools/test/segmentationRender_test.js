@@ -34,7 +34,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationRepresentations } = segmentation
+const { addSegmentationRepresentations, addSegmentations } = segmentation
 const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
@@ -150,8 +150,23 @@ describe('Segmentation Render -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+            addSegmentations([
+              {
+                segmentationId: segVolumeId,
+                representation: {
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  data: {
+                    volumeId: segVolumeId,
+                  },
+                },
+              },
+            ])
+
             addSegmentationRepresentations(this.segToolGroup.id, [
-              { volumeId: segVolumeId },
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
             ])
           })
         })
@@ -227,8 +242,23 @@ describe('Segmentation Render -- ', () => {
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+            addSegmentations([
+              {
+                segmentationId: segVolumeId,
+                representation: {
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  data: {
+                    volumeId: segVolumeId,
+                  },
+                },
+              },
+            ])
+
             addSegmentationRepresentations(this.segToolGroup.id, [
-              { volumeId: segVolumeId },
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
             ])
           })
         })
@@ -276,9 +306,36 @@ describe('Segmentation Render -- ', () => {
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
             createAndCacheVolume(segVolumeId2, { imageIds: [] }).then(() => {
+              addSegmentations([
+                {
+                  segmentationId: segVolumeId,
+                  representation: {
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                    data: {
+                      volumeId: segVolumeId,
+                    },
+                  },
+                },
+                {
+                  segmentationId: segVolumeId2,
+                  representation: {
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                    data: {
+                      volumeId: segVolumeId2,
+                    },
+                  },
+                },
+              ])
+
               addSegmentationRepresentations(this.segToolGroup.id, [
-                { volumeId: segVolumeId },
-                { volumeId: segVolumeId2 },
+                {
+                  segmentationId: segVolumeId,
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                },
+                {
+                  segmentationId: segVolumeId2,
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                },
               ])
             })
           })
@@ -292,7 +349,7 @@ describe('Segmentation Render -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, viewportId1)
       this.DOMElements.push(element)
 
-      const customToolGroupSeConfig = {
+      const customToolGroupSegConfig = {
         representations: {
           [SegmentationRepresentations.Labelmap]: {
             renderOutline: false,
@@ -329,14 +386,14 @@ describe('Segmentation Render -- ', () => {
           expect(toolGroupState).toBeDefined()
 
           const toolGroupConfig =
-            segmentation.segmentationConfig.getSegmentationConfig(
+            segmentation.segmentationConfig.getToolGroupSpecificConfig(
               this.segToolGroup.id
             )
 
           expect(toolGroupConfig).toBeDefined()
           expect(toolGroupConfig.renderInactiveSegmentations).toBe(true)
           expect(toolGroupConfig.representations[LABELMAP]).toEqual(
-            customToolGroupSeConfig.representations[LABELMAP]
+            customToolGroupSegConfig.representations[LABELMAP]
           )
         }
       )
@@ -355,11 +412,28 @@ describe('Segmentation Render -- ', () => {
           )
           this.renderingEngine.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+            addSegmentations([
+              {
+                segmentationId: segVolumeId,
+                representation: {
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  data: {
+                    volumeId: segVolumeId,
+                  },
+                },
+              },
+            ])
+
             addSegmentationRepresentations(
               this.segToolGroup.id,
-              [{ volumeId: segVolumeId }],
+              [
+                {
+                  segmentationId: segVolumeId,
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                },
+              ],
               {
-                ...customToolGroupSeConfig,
+                ...customToolGroupSegConfig,
               }
             )
           })

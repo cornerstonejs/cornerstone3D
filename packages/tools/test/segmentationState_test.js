@@ -29,7 +29,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationRepresentations } = segmentation
+const { addSegmentationRepresentations, addSegmentations } = segmentation
 const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
@@ -119,7 +119,7 @@ describe('Segmentation State -- ', () => {
 
         expect(globalState).toBeDefined()
 
-        expect(globalState.volumeId).toBe(segVolumeId)
+        expect(globalState.segmentationId).toBe(segVolumeId)
         expect(globalState.label).toBe(segVolumeId)
         expect(globalState.activeSegmentIndex).toBe(1)
       })
@@ -139,23 +139,27 @@ describe('Segmentation State -- ', () => {
             state.toolGroups[this.segToolGroup.id]
 
           expect(toolGroupSegmentationState).toBeDefined()
-          expect(toolGroupSegmentationState.segmentations.length).toBe(1)
+          expect(
+            toolGroupSegmentationState.segmentationRepresentations.length
+          ).toBe(1)
 
-          const segState = segmentation.state.getSegmentationRepresentations(
-            this.segToolGroup.id
-          )
+          const toolGroupSegRepresentations =
+            segmentation.state.getSegmentationRepresentations(
+              this.segToolGroup.id
+            )
 
-          expect(toolGroupSegmentationState.segmentations).toEqual(segState)
+          expect(
+            toolGroupSegmentationState.segmentationRepresentations
+          ).toEqual(toolGroupSegRepresentations)
 
-          const segData = segState[0]
+          const segRepresentation = toolGroupSegRepresentations[0]
 
-          expect(segData.active).toBe(true)
-          expect(segData.visibility).toBe(true)
-          expect(segData.segmentationDataUID).toBeDefined()
-          expect(segData.volumeId).toBe(segVolumeId)
-          expect(segData.representation).toBeDefined()
-          expect(segData.representation.type).toBe(LABELMAP)
-          expect(segData.representation.config).toBeDefined()
+          expect(segRepresentation.active).toBe(true)
+          expect(segRepresentation.visibility).toBe(true)
+          expect(segRepresentation.segmentationRepresentationUID).toBeDefined()
+          expect(segRepresentation.segmentationId).toBe(segVolumeId)
+          expect(segRepresentation.type).toBe(LABELMAP)
+          expect(segRepresentation.config).toBeDefined()
 
           done()
         }
@@ -175,8 +179,23 @@ describe('Segmentation State -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+            addSegmentations([
+              {
+                segmentationId: segVolumeId,
+                representation: {
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  data: {
+                    volumeId: segVolumeId,
+                  },
+                },
+              },
+            ])
+
             addSegmentationRepresentations(this.segToolGroup.id, [
-              { volumeId: segVolumeId },
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
             ])
           })
         })
@@ -195,14 +214,15 @@ describe('Segmentation State -- ', () => {
       const vp = this.renderingEngine.getViewport(viewportId)
 
       eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
-        const globalConfig = segmentation.state.getGlobalSegmentationConfig()
+        const globalConfig = segmentation.state.getGlobalConfig()
 
         expect(globalConfig.renderInactiveSegmentations).toBe(true)
         expect(globalConfig.representations).toBeDefined()
         expect(globalConfig.representations[LABELMAP]).toBeDefined()
 
-        const representationConfig =
-          segUtils.getDefaultRepresentationConfig(LABELMAP)
+        const representationConfig = segUtils.getDefaultRepresentationConfig({
+          type: LABELMAP,
+        })
 
         const stateConfig = globalConfig.representations[LABELMAP]
 
@@ -213,7 +233,6 @@ describe('Segmentation State -- ', () => {
         expect(Object.values(stateConfig)).toEqual(
           Object.values(representationConfig)
         )
-
         done()
       })
 
@@ -231,8 +250,23 @@ describe('Segmentation State -- ', () => {
           )
           vp.render()
           createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+            addSegmentations([
+              {
+                segmentationId: segVolumeId,
+                representation: {
+                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  data: {
+                    volumeId: segVolumeId,
+                  },
+                },
+              },
+            ])
+
             addSegmentationRepresentations(this.segToolGroup.id, [
-              { volumeId: segVolumeId },
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
             ])
           })
         })

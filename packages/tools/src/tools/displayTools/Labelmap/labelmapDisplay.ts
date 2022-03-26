@@ -87,7 +87,7 @@ async function addSegmentationRepresentation(
       toolGroupSpecificConfig
     )
 
-    SegmentationState.setToolGroupConfig(
+    SegmentationState.setToolGroupSpecificConfig(
       toolGroupId,
       {
         renderInactiveSegmentations:

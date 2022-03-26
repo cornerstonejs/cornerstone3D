@@ -32,7 +32,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationRepresentations } = segmentation
+const { addSegmentationRepresentations, addSegmentations } = segmentation
 
 const {
   fakeVolumeLoader,
@@ -149,8 +149,23 @@ describe('Segmentation Tools --', () => {
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
                 addSegmentationRepresentations(this.segToolGroup.id, [
-                  { volumeId: segmentationId },
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })
@@ -271,8 +286,23 @@ describe('Segmentation Tools --', () => {
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
                 addSegmentationRepresentations(this.segToolGroup.id, [
-                  { volumeId: segmentationId },
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })
@@ -437,8 +467,23 @@ describe('Segmentation Tools --', () => {
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
               .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
                 addSegmentationRepresentations(this.segToolGroup.id, [
-                  { volumeId: segmentationId },
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })

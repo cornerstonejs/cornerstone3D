@@ -1,7 +1,6 @@
 import _cloneDeep from 'lodash.clonedeep'
 import {
   SegmentationRepresentationConfig,
-  SegmentationPublicInput,
   RepresentationPublicInput,
 } from '../../types/SegmentationStateTypes'
 import Representations from '../../enums/SegmentationRepresentations'
