@@ -9,6 +9,7 @@ import {
   segmentationDataModifiedEventListener,
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
+  segmentationModifiedListener,
   annotationModifiedListener,
 } from './eventListeners'
 
@@ -118,6 +119,11 @@ function _addCornerstoneToolsEventListeners() {
    * Segmentation
    */
   eventTarget.addEventListener(
+    TOOLS_EVENTS.SEGMENTATION_MODIFIED,
+    segmentationModifiedListener
+  )
+
+  eventTarget.addEventListener(
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   )
@@ -157,6 +163,12 @@ function _removeCornerstoneToolsEventListeners() {
   /**
    * Segmentation
    */
+
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.SEGMENTATION_MODIFIED,
+    segmentationModifiedListener
+  )
+
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener

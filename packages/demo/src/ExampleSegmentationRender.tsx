@@ -21,6 +21,7 @@ import {
   PanTool,
   ZoomTool,
   RectangleRoiTool,
+  SegmentationDisplayTool,
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
@@ -1457,7 +1458,7 @@ class SegmentationExample extends Component {
               </div>
               <button
                 onClick={() => {
-                  segmentation.segmentationConfig.setSegmentationConfig(
+                  segmentation.segmentationConfig.setToolGroupSpecificConfig(
                     this.state.selectedToolGroupName,
                     {
                       renderInactiveSegmentations:
@@ -1490,9 +1491,15 @@ class SegmentationExample extends Component {
 
                 const representationType =
                   csToolsEnums.SegmentationRepresentations.Labelmap
-                segmentation.segmentationConfig.updateGlobalRepresentationConfig(
+
+                const globalRepresentationConfig =
+                  segmentation.segmentationConfig.getGlobalRepresentationConfig(
+                    representationType
+                  )
+
+                segmentation.segmentationConfig.setGlobalRepresentationConfig(
                   representationType,
-                  { renderOutline }
+                  { ...globalRepresentationConfig, renderOutline }
                 )
 
                 this.setState({
@@ -1512,7 +1519,11 @@ class SegmentationExample extends Component {
                 const renderInactiveSegmentations =
                   !this.state.renderInactiveSegmentationsGlobal
 
-                segmentation.segmentationConfig.updateGlobalSegmentationConfig({
+                const globalConfig =
+                  segmentation.segmentationConfig.getGlobalConfig()
+
+                segmentation.segmentationConfig.setGlobalConfig({
+                  ...globalConfig,
                   renderInactiveSegmentations,
                 })
 
@@ -1542,9 +1553,15 @@ class SegmentationExample extends Component {
                     const representationType =
                       csToolsEnums.SegmentationRepresentations.Labelmap
 
-                    segmentation.segmentationConfig.updateGlobalRepresentationConfig(
+                    const globalRepresentationConfig =
+                      segmentation.segmentationConfig.getGlobalRepresentationConfig(
+                        representationType
+                      )
+
+                    segmentation.segmentationConfig.setGlobalRepresentationConfig(
                       representationType,
                       {
+                        ...globalRepresentationConfig,
                         fillAlpha,
                       }
                     )
@@ -1568,9 +1585,15 @@ class SegmentationExample extends Component {
                     const representationType =
                       csToolsEnums.SegmentationRepresentations.Labelmap
 
-                    segmentation.segmentationConfig.updateGlobalRepresentationConfig(
+                    const globalRepresentationConfig =
+                      segmentation.segmentationConfig.getGlobalRepresentationConfig(
+                        representationType
+                      )
+
+                    segmentation.segmentationConfig.setGlobalRepresentationConfig(
                       representationType,
                       {
+                        ...globalRepresentationConfig,
                         fillAlphaInactive,
                       }
                     )

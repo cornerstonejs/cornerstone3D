@@ -5,6 +5,7 @@ import {
   segmentationDataModifiedEventListener,
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
+  segmentationModifiedListener,
 } from './segmentation'
 import {
   annotationSelectionListener,
@@ -17,6 +18,7 @@ export {
   wheelEventListener,
   keyEventListener,
   segmentationRepresentationModifiedEventListener,
+  segmentationModifiedListener,
   segmentationRepresentationRemovedEventListener,
   segmentationDataModifiedEventListener,
   annotationSelectionListener,
