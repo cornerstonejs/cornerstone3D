@@ -1430,9 +1430,6 @@ class SegmentationExample extends Component {
                   step="0.001"
                   onChange={(evt) => {
                     const fillAlpha = Number(evt.target.value)
-                    const representationType =
-                      csToolsEnums.SegmentationRepresentations.Labelmap
-
                     this.setState({ fillAlphaToolGroup: fillAlpha })
                   }}
                 />
