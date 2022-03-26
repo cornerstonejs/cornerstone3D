@@ -1,4 +1,4 @@
-import { SegmentationPublicInput } from 'tools/src/types/SegmentationStateTypes'
+import { SegmentationPublicInput } from '../../../types/SegmentationStateTypes'
 import { cache } from '@cornerstonejs/core'
 
 function validate(segmentationInput: SegmentationPublicInput): void {

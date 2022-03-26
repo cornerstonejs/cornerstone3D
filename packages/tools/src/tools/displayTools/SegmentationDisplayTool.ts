@@ -2,7 +2,7 @@ import { BaseTool } from '../base'
 import { getEnabledElementByIds } from '@cornerstonejs/core'
 import Representations from '../../enums/SegmentationRepresentations'
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState'
-import { LabelmapDisplay } from './Labelmap'
+import { labelmapDisplay } from './Labelmap'
 import { segmentationConfig } from '../../stateManagement/segmentation'
 import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
 import { getToolGroupById } from '../../store/ToolGroupManager'
@@ -13,7 +13,7 @@ import { deepMerge } from '../../utilities'
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from 'tools/src/types/SegmentationStateTypes'
+} from '../../types/SegmentationStateTypes'
 
 /**
  * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
@@ -130,7 +130,7 @@ export default class SegmentationDisplayTool extends BaseTool {
 
         toolGroupViewports.forEach((viewport) => {
           if (representation.type == Representations.Labelmap) {
-            LabelmapDisplay.render(viewport, representation, config)
+            labelmapDisplay.render(viewport, representation, config)
           } else {
             throw new Error(
               `Render for ${representation.type} is not supported yet`

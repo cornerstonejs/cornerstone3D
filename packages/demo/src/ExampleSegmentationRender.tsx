@@ -749,15 +749,16 @@ class SegmentationExample extends Component {
     // Todo: this only works for volumeViewport
     const { uid } = volumeActorInfo
 
-    const segmentationData = SegmentationState.getSegmentationDataByUID(
-      this.state.selectedToolGroupName,
-      this.state.selectedRepresentationUID
-    )
-    const globalState = segmentation.state.getSegmentation(
-      segmentationData.volumeId
+    const segmentationRepresentation =
+      segmentation.state.getSegmentationRepresentationByUID(
+        this.state.selectedToolGroupName,
+        this.state.selectedRepresentationUID
+      )
+    const segmentationObj = segmentation.state.getSegmentation(
+      segmentationRepresentation.segmentationId
     )
 
-    if (!globalState) {
+    if (!segmentationObj) {
       throw new Error('No Segmentation Found')
     }
 
@@ -845,38 +846,21 @@ class SegmentationExample extends Component {
     const { uid } = volumeActorInfo
     const referenceVolume = cache.getVolume(uid)
 
-    const segmentationData = SegmentationState.getSegmentationDataByUID(
-      this.state.selectedToolGroupName,
-      this.state.selectedRepresentationUID
-    )
+    const segmentationRepresentation =
+      segmentation.state.getSegmentationRepresentationByUID(
+        this.state.selectedToolGroupName,
+        this.state.selectedRepresentationUID
+      )
 
     const numSlices = this.state.numSlicesForThreshold
     const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
       this.state.ptCtLeftClickTool
     )
 
-    if (mode === 'max') {
-      csToolsUtils.segmentation.thresholdVolumeByRoiStats(
-        this.state.selectedToolGroupName,
-        selectedAnnotations,
-        [referenceVolume],
-        segmentationData,
-        {
-          statistic: 'max',
-          weight: 0.41,
-          numSlicesToProject: numSlices,
-          overwrite: false,
-        }
-      )
-
-      return
-    }
-
     csToolsUtils.segmentation.thresholdVolumeByRange(
-      this.state.selectedToolGroupName,
       selectedAnnotations,
       [referenceVolume],
-      segmentationData,
+      segmentationRepresentation,
       {
         lowerThreshold: Number(this.state.thresholdMin),
         higherThreshold: Number(this.state.thresholdMax),
@@ -961,12 +945,6 @@ class SegmentationExample extends Component {
           onClick={() => this.executeThresholding('')}
         >
           Execute Range Thresholding on Selected Annotation
-        </button>
-        <button
-          style={{ marginLeft: '5px' }}
-          onClick={() => this.executeThresholding('max')}
-        >
-          Execute Max Thresholding on Selected Annotation
         </button>
         <button
           style={{ marginLeft: '5px' }}

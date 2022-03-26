@@ -13,7 +13,7 @@ import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
 declare namespace activeSegmentation {
     export {
         getActiveSegmentationRepresentation,
-        setActiveSegmentation
+        setActiveSegmentationRepresentation
     }
 }
 
@@ -34,13 +34,16 @@ function addColorLUT(colorLut: ColorLut, index: number): void;
 function addColorLUT_2(colorLUT: ColorLut, colorLUTIndex: number): void;
 
 // @public (undocumented)
-function addGlobalSegmentationData(segmentationData: GlobalSegmentationData, suppressEvents?: boolean): void;
+function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationData(toolGroupId: string, segmentationData: ToolGroupSpecificSegmentationData, suppressEvents?: boolean): void;
+function addSegmentationRepresentation(toolGroupId: string, segmentationRepresentation: ToolGroupSpecificRepresentation, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationRepresentations(toolGroupId: string, segmentationDataArray: SegmentationDataInput[], toolGroupSpecificConfig?: SegmentationConfig): Promise<void>;
+function addSegmentationRepresentations(toolGroupId: string, representationInputArray: RepresentationPublicInput[], toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig): Promise<void>;
+
+// @public (undocumented)
+function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): void;
 
 // @public (undocumented)
 export function addTool(ToolClass: any): void;
@@ -161,6 +164,18 @@ type AnnotationSelectionChangeEventType = Types_2.CustomEventType<AnnotationSele
 type AnnotationState = {
     [key: string]: FrameOfReferenceSpecificAnnotations;
 };
+
+// @public (undocumented)
+enum AnnotationStyleStates {
+    // (undocumented)
+    Default = "",
+    // (undocumented)
+    Highlighted = "Highlighted",
+    // (undocumented)
+    Locked = "Locked",
+    // (undocumented)
+    Selected = "Selected"
+}
 
 // @public (undocumented)
 export abstract class AnnotationTool extends BaseTool {
@@ -323,7 +338,7 @@ export class CircleScissorsTool extends BaseTool {
         annotation: any;
         segmentation: any;
         segmentIndex: number;
-        segmentationDataUID: string;
+        segmentationId: string;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -366,6 +381,16 @@ declare namespace config {
         setToolStyle
     }
 }
+
+declare namespace CONSTANTS {
+    export {
+        CORNERSTONE_COLOR_LUT as COLOR_LUT
+    }
+}
+export { CONSTANTS }
+
+// @public (undocumented)
+const CORNERSTONE_COLOR_LUT: number[][];
 
 // @public (undocumented)
 interface CPUFallbackColormap {
@@ -979,6 +1004,52 @@ export const Enums: {
     SegmentationRepresentations: typeof SegmentationRepresentations;
 };
 
+// @public (undocumented)
+enum Events {
+    // (undocumented)
+    ANNOTATION_ADDED = "CORNERSTONE_TOOLS_ANNOTATION_ADDED",
+    // (undocumented)
+    ANNOTATION_LOCK_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE",
+    // (undocumented)
+    ANNOTATION_MODIFIED = "CORNERSTONE_TOOLS_ANNOTATION_MODIFIED",
+    // (undocumented)
+    ANNOTATION_REMOVED = "CORNERSTONE_TOOLS_ANNOTATION_REMOVED",
+    // (undocumented)
+    ANNOTATION_RENDERED = "CORNERSTONE_TOOLS_ANNOTATION_RENDERED",
+    // (undocumented)
+    ANNOTATION_SELECTION_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_SELECTION_CHANGE",
+    // (undocumented)
+    KEY_DOWN = "CORNERSTONE_TOOLS_KEY_DOWN",
+    // (undocumented)
+    KEY_UP = "CORNERSTONE_TOOLS_KEY_UP",
+    // (undocumented)
+    MOUSE_CLICK = "CORNERSTONE_TOOLS_MOUSE_CLICK",
+    // (undocumented)
+    MOUSE_DOUBLE_CLICK = "CORNERSTONE_TOOLS_MOUSE_DOUBLE_CLICK",
+    // (undocumented)
+    MOUSE_DOWN = "CORNERSTONE_TOOLS_MOUSE_DOWN",
+    // (undocumented)
+    MOUSE_DOWN_ACTIVATE = "CORNERSTONE_TOOLS_MOUSE_DOWN_ACTIVATE",
+    // (undocumented)
+    MOUSE_DRAG = "CORNERSTONE_TOOLS_MOUSE_DRAG",
+    // (undocumented)
+    MOUSE_MOVE = "CORNERSTONE_TOOLS_MOUSE_MOVE",
+    // (undocumented)
+    MOUSE_UP = "CORNERSTONE_TOOLS_MOUSE_UP",
+    // (undocumented)
+    MOUSE_WHEEL = "CORNERSTONE_TOOLS_MOUSE_WHEEL",
+    // (undocumented)
+    SEGMENTATION_DATA_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED",
+    // (undocumented)
+    SEGMENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED",
+    // (undocumented)
+    SEGMENTATION_RENDERED = "CORNERSTONE_TOOLS_SEGMENTATION_RENDERED",
+    // (undocumented)
+    SEGMENTATION_REPRESENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_MODIFIED",
+    // (undocumented)
+    SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED"
+}
+
 declare namespace EventTypes {
     export {
         CameraModifiedEventDetail,
@@ -1036,7 +1107,9 @@ declare namespace EventTypes_2 {
         AnnotationLockChangeEventType,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
-        SegmentationModifiedEventType,
+        SegmentationRepresentationModifiedEventType,
+        SegmentationRepresentationRemovedEventDetail,
+        SegmentationRepresentationRemovedEventType,
         SegmentationDataModifiedEventDetail,
         SegmentationRenderedEventType,
         SegmentationRenderedEventDetail,
@@ -1095,14 +1168,7 @@ type FrameOfReferenceSpecificAnnotations = {
 };
 
 // @public (undocumented)
-function getActiveSegmentationData(toolGroupId: string): ToolGroupSpecificSegmentationData | undefined;
-
-// @public (undocumented)
-function getActiveSegmentationRepresentation(toolGroupId: string): {
-    volumeId: string;
-    segmentationDataUID: string;
-    activeSegmentIndex: number;
-};
+function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpecificRepresentation;
 
 // @public (undocumented)
 function getActiveSegmentIndex(toolGroupId: string): number | undefined;
@@ -1153,7 +1219,7 @@ function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Type
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
-function getColorForSegmentIndex(toolGroupId: string, segmentationDataUID: string, segmentIndex: number): Color;
+function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): Color;
 
 // @public (undocumented)
 function getColorLut(index: number): ColorLut | undefined;
@@ -1162,7 +1228,7 @@ function getColorLut(index: number): ColorLut | undefined;
 function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
-function getDefaultRepresentationConfig(representationType: string): LabelmapConfig;
+function getDefaultRepresentationConfig(segmentation: Segmentation): labelmapConfig;
 
 // @public (undocumented)
 function getDefaultSegmentationStateManager(): SegmentationStateManager;
@@ -1171,40 +1237,31 @@ function getDefaultSegmentationStateManager(): SegmentationStateManager;
 function getFont(settings?: Settings, state?: AnnotationStyleStates, mode?: ToolModes): string;
 
 // @public (undocumented)
-function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig;
+function getGlobalConfig(): SegmentationRepresentationConfig;
 
 // @public (undocumented)
-function getGlobalSegmentationConfig(): SegmentationConfig;
+function getGlobalConfig_2(): SegmentationRepresentationConfig;
 
 // @public (undocumented)
-function getGlobalSegmentationConfig_2(): SegmentationConfig;
-
-// @public (undocumented)
-function getSegmentation(segmentationId: string): GlobalSegmentationData;
-
-// @public (undocumented)
-function getGlobalSegmentationState(): GlobalSegmentationState | [];
+function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig['LABELMAP'];
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
 
 // @public (undocumented)
-function getRepresentationConfig(toolGroupId: string, representationType: SegmentationRepresentations): RepresentationConfig;
+function getSegmentation(segmentationId: string): Segmentation | undefined;
 
 // @public (undocumented)
-function getSegmentationConfig(toolGroupId: string): SegmentationConfig;
+function getSegmentationRepresentationByUID(toolGroupId: string, segmentationRepresentationUID: string): ToolGroupSpecificRepresentation | undefined;
 
 // @public (undocumented)
-function getSegmentationConfig_2(toolGroupId: string): SegmentationConfig;
+function getSegmentationRepresentations(toolGroupId: string): ToolGroupSpecificRepresentation[] | [];
 
 // @public (undocumented)
-function getSegmentationDataByUID(toolGroupId: string, segmentationDataUID: string): ToolGroupSpecificSegmentationData | undefined;
+function getSegmentations(): Segmentation[] | [];
 
 // @public (undocumented)
-function getSegmentationRepresentations(toolGroupId: string): ToolGroupSpecificSegmentationState | [];
-
-// @public (undocumented)
-function getSegmentationVisibility(toolGroupId: string, segmentationDataUID: string): boolean | undefined;
+function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
 
 // @public (undocumented)
 function getSegmentIndexLocked(toolGroupId: string, segmentIndex: number): boolean;
@@ -1244,7 +1301,10 @@ function getToolGroup(viewportId: string, renderingEngineId: string): IToolGroup
 function getToolGroupById(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroups(): string[];
+function getToolGroupSpecificConfig(toolGroupId: string): SegmentationRepresentationConfig;
+
+// @public (undocumented)
+function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresentationConfig;
 
 // @public (undocumented)
 function getToolGroupsWithSegmentation(segmentationId: string): string[];
@@ -1259,28 +1319,6 @@ function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement 
 function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, topLeftWorld: Types_2.Point3, bottomRightWorld: Types_2.Point3): {
     worldWidth: number;
     worldHeight: number;
-};
-
-// @public (undocumented)
-type GlobalSegmentationData = {
-    volumeId: string;
-    label: string;
-    referenceVolumeId?: string;
-    referenceImageId?: string;
-    activeSegmentIndex: number;
-    segmentsLocked: Set<number>;
-    cachedStats: {
-        [key: string]: number;
-    };
-};
-
-// @public (undocumented)
-type GlobalSegmentationState = GlobalSegmentationData[];
-
-// @public (undocumented)
-type GlobalSegmentationStateWithConfig = {
-    segmentations: GlobalSegmentationState;
-    config: SegmentationConfig;
 };
 
 // @public (undocumented)
@@ -1909,6 +1947,16 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
+enum KeyboardBindings {
+    // (undocumented)
+    Alt = 17,
+    // (undocumented)
+    Ctrl = 18,
+    // (undocumented)
+    Shift = 16
+}
+
+// @public (undocumented)
 type KeyDownEventDetail = {
     element: HTMLElement;
     viewportId: string;
@@ -1925,15 +1973,6 @@ type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
-
-// @public (undocumented)
-type LabelmapRepresentation = {
-    type: typeof SegmentationRepresentations.Labelmap;
-    config: {
-        cfun?: vtkColorTransferFunction;
-        ofun?: vtkPiecewiseFunction;
-    };
-};
 
 // @public (undocumented)
 export class LengthTool extends AnnotationTool {
@@ -2047,6 +2086,28 @@ export class MIPJumpToClickTool extends BaseTool {
     mouseClickCallback(evt: any): void;
     // (undocumented)
     static toolName: string;
+}
+
+// @public (undocumented)
+enum MouseBindings {
+    // (undocumented)
+    Auxiliary = 4,
+    // (undocumented)
+    Fifth_Button = 16,
+    // (undocumented)
+    Fourth_Button = 8,
+    // (undocumented)
+    Primary = 1,
+    // (undocumented)
+    Primary_And_Auxiliary = 5,
+    // (undocumented)
+    Primary_And_Secondary = 3,
+    // (undocumented)
+    Primary_And_Secondary_And_Auxiliary = 7,
+    // (undocumented)
+    Secondary = 2,
+    // (undocumented)
+    Secondary_And_Auxiliary = 6
 }
 
 // @public (undocumented)
@@ -2492,7 +2553,7 @@ export class RectangleScissorsTool extends BaseTool {
     // (undocumented)
     editData: {
         annotation: any;
-        segmentationDataUID: string;
+        segmentationId: string;
         segmentation: any;
         segmentIndex: number;
         segmentsLocked: number[];
@@ -2529,16 +2590,18 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 function removeAnnotation(element: HTMLElement, annotationUID: string): void;
 
 // @public (undocumented)
-function removeSegmentationData(toolGroupId: string, segmentationDataUID: string): void;
+function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
-function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationDataUIDs?: string[] | undefined): void;
+function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationRepresentationUIDs?: string[] | undefined): void;
 
 // @public (undocumented)
 export function removeTool(ToolClass: any): void;
 
 // @public (undocumented)
-type RepresentationConfig = LabelmapConfig;
+type RepresentationConfig = {
+    LABELMAP?: labelmapConfig;
+};
 
 // @public (undocumented)
 function resetElementCursor(element: HTMLElement): void;
@@ -2561,9 +2624,23 @@ type ScalingParameters = {
 // @public (undocumented)
 function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeId: string, invert?: boolean): void;
 
+// @public (undocumented)
+type Segmentation = {
+    segmentationId: string;
+    type: Enums_2.SegmentationRepresentations;
+    label: string;
+    activeSegmentIndex: number;
+    segmentsLocked: Set<number>;
+    cachedStats: {
+        [key: string]: number;
+    };
+    representations: SegmentationRepresentationData;
+};
+
 declare namespace segmentation {
     export {
         state_2 as state,
+        addSegmentations,
         activeSegmentation,
         addSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
@@ -2583,7 +2660,6 @@ declare namespace segmentation_2 {
         getBoundingBoxAroundShape,
         extend2DBoundingBoxInViewAxis,
         thresholdVolumeByRange,
-        thresholdVolumeByRoiStats,
         createMergedLabelmapForIndex,
         isValidRepresentationConfig,
         getDefaultRepresentationConfig
@@ -2597,33 +2673,20 @@ declare namespace segmentationColor {
     }
 }
 
-// @public (undocumented)
-type SegmentationConfig = {
-    renderInactiveSegmentations: boolean;
-    representations: {
-        LABELMAP?: LabelmapConfig;
-    };
-};
-
 declare namespace segmentationConfig {
     export {
-        getGlobalSegmentationConfig_2 as getGlobalSegmentationConfig,
-        setGlobalSegmentationConfig_2 as setGlobalSegmentationConfig,
+        getGlobalConfig_2 as getGlobalConfig,
+        setGlobalConfig_2 as setGlobalConfig,
         getGlobalRepresentationConfig,
         setGlobalRepresentationConfig,
-        updateGlobalSegmentationConfig,
-        updateGlobalRepresentationConfig,
-        getSegmentationConfig_2 as getSegmentationConfig,
-        setSegmentationConfig_2 as setSegmentationConfig,
-        setRepresentationConfig,
-        getRepresentationConfig
+        getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
+        setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig
     }
 }
 
 // @public (undocumented)
 type SegmentationDataModifiedEventDetail = {
-    toolGroupId: string;
-    segmentationDataUID: string;
+    segmentationId: string;
 };
 
 // @public (undocumented)
@@ -2637,7 +2700,7 @@ export class SegmentationDisplayTool extends BaseTool {
     // (undocumented)
     enableCallback(): void;
     // (undocumented)
-    _getSegmentationConfig(toolGroupId: string): SegmentationConfig;
+    _getMergedRepresentationsConfig(toolGroupId: string): SegmentationRepresentationConfig;
     // (undocumented)
     renderSegmentation: (toolGroupId: string) => void;
     // (undocumented)
@@ -2662,15 +2725,52 @@ type SegmentationRenderedEventDetail = {
 type SegmentationRenderedEventType = Types_2.CustomEventType<SegmentationRenderedEventDetail>;
 
 // @public (undocumented)
-type SegmentationRepresentation = LabelmapRepresentation;
+type SegmentationRepresentationConfig = {
+    renderInactiveSegmentations: boolean;
+    representations: RepresentationConfig;
+};
+
+// @public (undocumented)
+type SegmentationRepresentationData = {
+    LABELMAP?: LabelmapRepresentationData;
+};
 
 // @public (undocumented)
 type SegmentationRepresentationModifiedEventDetail = {
     toolGroupId: string;
+    segmentationRepresentationUID: string;
 };
 
 // @public (undocumented)
-type SegmentationModifiedEventType = Types_2.CustomEventType<SegmentationRepresentationModifiedEventDetail>;
+type SegmentationRepresentationModifiedEventType = Types_2.CustomEventType<SegmentationRepresentationModifiedEventDetail>;
+
+// @public (undocumented)
+type SegmentationRepresentationRemovedEventDetail = {
+    toolGroupId: string;
+    segmentationRepresentationUID: string;
+};
+
+// @public (undocumented)
+type SegmentationRepresentationRemovedEventType = Types_2.CustomEventType<SegmentationRepresentationRemovedEventDetail>;
+
+// @public (undocumented)
+enum SegmentationRepresentations {
+    // (undocumented)
+    Labelmap = "LABELMAP"
+}
+
+// @public (undocumented)
+type SegmentationState = {
+    colorLut: ColorLut[];
+    segmentations: Segmentation[];
+    globalConfig: SegmentationRepresentationConfig;
+    toolGroups: {
+        [key: string]: {
+            segmentationRepresentations: ToolGroupSpecificRepresentation[];
+            config: SegmentationRepresentationConfig;
+        };
+    };
+};
 
 declare namespace segmentationVisibility {
     export {
@@ -2710,10 +2810,7 @@ declare namespace selection {
 }
 
 // @public (undocumented)
-function setActiveSegmentation(toolGroupId: string, segmentationDataUID: string): void;
-
-// @public (undocumented)
-function setActiveSegmentationData(toolGroupId: string, segmentationDataUID: string, suppressEvents?: boolean): void;
+function setActiveSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
 function setActiveSegmentIndex(toolGroupId: string, segmentIndex: number): void;
@@ -2737,28 +2834,19 @@ function setCursorForElement(element: HTMLElement, cursorName: string): void;
 function _setElementCursor(element: HTMLElement, cursor: MouseCursor | null): void;
 
 // @public (undocumented)
-function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig): void;
+function setGlobalConfig(config: SegmentationRepresentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setGlobalSegmentationConfig(config: SegmentationConfig, suppressEvents?: boolean): void;
+function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig): void;
 
 // @public (undocumented)
-function setGlobalSegmentationConfig_2(segmentationConfig: SegmentationConfig): void;
+function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
 
 // @public (undocumented)
 function setGlobalStyle(style: Record<string, unknown>): boolean;
 
 // @public (undocumented)
-function setRepresentationConfig(toolGroupId: string, representationType: SegmentationRepresentations, representationConfig: RepresentationConfig): void;
-
-// @public (undocumented)
-function setSegmentationConfig(toolGroupId: string, config: SegmentationConfig, suppressEvents?: boolean): void;
-
-// @public (undocumented)
-function setSegmentationConfig_2(toolGroupId: string, segmentationConfig: SegmentationConfig): void;
-
-// @public (undocumented)
-function setSegmentationVisibility(toolGroupId: string, segmentationDataUID: string, visibility: boolean): void;
+function setSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string, visibility: boolean): void;
 
 // @public (undocumented)
 function setSegmentIndexLocked(toolGroupId: string, segmentIndex: number, locked?: boolean): void;
@@ -2770,6 +2858,12 @@ function setSegmentIndexLockedForSegmentation(segmentationId: string, segmentInd
 type SetToolBindingsType = {
     bindings: IToolBinding[];
 };
+
+// @public (undocumented)
+function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRepresentationConfig, suppressEvents?: boolean): void;
+
+// @public (undocumented)
+function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
 
 // @public (undocumented)
 function setToolStyle(toolName: string, style: Record<string, unknown>): boolean;
@@ -2795,7 +2889,7 @@ export class SphereScissorsTool extends BaseTool {
         segmentation: any;
         segmentIndex: number;
         segmentsLocked: number[];
-        segmentationDataUID: string;
+        segmentationId: string;
         toolGroupId: string;
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -2889,24 +2983,21 @@ declare namespace state {
 
 declare namespace state_2 {
     export {
-        getGlobalSegmentationConfig,
-        getSegmentationConfig,
-        setGlobalSegmentationConfig,
-        setSegmentationConfig,
-        addColorLUT,
-        getColorLut,
-        getGlobalSegmentationState,
+        getDefaultSegmentationStateManager,
         getSegmentation,
-        addGlobalSegmentationData,
+        getSegmentations,
+        addSegmentation,
         getSegmentationRepresentations,
-        addSegmentationData,
-        removeSegmentationData,
-        getSegmentationDataByUID,
-        setActiveSegmentationData,
-        getActiveSegmentationData,
+        addSegmentationRepresentation,
+        removeSegmentationRepresentation,
+        getToolGroupSpecificConfig,
+        setToolGroupSpecificConfig,
+        getGlobalConfig,
+        setGlobalConfig,
         getToolGroupsWithSegmentation,
-        getToolGroups,
-        getDefaultSegmentationStateManager
+        getSegmentationRepresentationByUID,
+        addColorLUT,
+        getColorLut
     }
 }
 
@@ -2994,10 +3085,7 @@ type TextBoxHandle = {
 };
 
 // @public (undocumented)
-function thresholdVolumeByRange(toolGroupId: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRangeOptions): Types_2.IImageVolume;
-
-// @public (undocumented)
-function thresholdVolumeByRoiStats(toolGroupId: string, annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationData: ToolGroupSpecificSegmentationData, options: ThresholdRoiStatsOptions): void;
+function thresholdVolumeByRange(annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationRepresentation: ToolGroupSpecificRepresentation, options: ThresholdRangeOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
@@ -3018,27 +3106,38 @@ declare namespace ToolGroupManager {
 export { ToolGroupManager }
 
 // @public (undocumented)
-type ToolGroupSpecificSegmentationData = {
-    volumeId: string;
-    segmentationDataUID: string;
+type ToolGroupSpecificLabelmapRepresentation = ToolGroupSpecificRepresentationState & {
+    config: LabelmapRenderingConfig;
+};
+
+// @public (undocumented)
+type ToolGroupSpecificRepresentation = ToolGroupSpecificLabelmapRepresentation;
+
+// @public (undocumented)
+type ToolGroupSpecificRepresentationState = {
+    segmentationRepresentationUID: string;
+    segmentationId: string;
+    type: Enums_2.SegmentationRepresentations;
     active: boolean;
     segmentsHidden: Set<number>;
     visibility: boolean;
     colorLUTIndex: number;
-    representation: SegmentationRepresentation;
-};
-
-// @public (undocumented)
-type ToolGroupSpecificSegmentationState = ToolGroupSpecificSegmentationData[];
-
-// @public (undocumented)
-type ToolGroupSpecificSegmentationStateWithConfig = {
-    segmentations: ToolGroupSpecificSegmentationState;
-    config: SegmentationConfig;
 };
 
 // @public (undocumented)
 type ToolHandle = AnnotationHandle | TextBoxHandle;
+
+// @public (undocumented)
+enum ToolModes {
+    // (undocumented)
+    Active = "Active",
+    // (undocumented)
+    Disabled = "Disabled",
+    // (undocumented)
+    Enabled = "Enabled",
+    // (undocumented)
+    Passive = "Passive"
+}
 
 // @public (undocumented)
 type ToolOptionsType = {
@@ -3078,11 +3177,12 @@ detail: unknown = null
 }
 
 // @public (undocumented)
-function triggerSegmentationDataModified(toolGroupId: string, segmentationDataUID: string): void;
+function triggerSegmentationDataModified(segmentationId: string): void;
 
 declare namespace triggerSegmentationEvents {
     export {
         triggerSegmentationRepresentationModified,
+        triggerSegmentationRepresentationRemoved,
         triggerSegmentationDataModified,
         triggerSegmentationModified
     }
@@ -3092,7 +3192,10 @@ declare namespace triggerSegmentationEvents {
 function triggerSegmentationModified(segmentationId?: string): void;
 
 // @public (undocumented)
-function triggerSegmentationRepresentationModified(toolGroupId: string): void;
+function triggerSegmentationRepresentationModified(toolGroupId: string, segmentationRepresentationUID?: string): void;
+
+// @public (undocumented)
+function triggerSegmentationRepresentationRemoved(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 declare namespace Types {
     export {
@@ -3113,18 +3216,16 @@ declare namespace Types {
         ToolHandle,
         AnnotationHandle,
         TextBoxHandle,
-        SegmentationRepresentation,
-        LabelmapRepresentation,
+        Segmentation,
+        SegmentationState,
+        SegmentationRepresentationData,
+        SegmentationRepresentationConfig,
+        RepresentationConfig,
+        ToolGroupSpecificRepresentationState,
+        ToolGroupSpecificLabelmapRepresentation,
+        ToolGroupSpecificRepresentation,
         Color,
         ColorLut,
-        RepresentationConfig,
-        SegmentationConfig,
-        GlobalSegmentationData,
-        GlobalSegmentationState,
-        GlobalSegmentationStateWithConfig,
-        ToolGroupSpecificSegmentationData,
-        ToolGroupSpecificSegmentationStateWithConfig,
-        ToolGroupSpecificSegmentationState,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint
     }
@@ -3133,12 +3234,6 @@ export { Types }
 
 // @public (undocumented)
 function unlockAllAnnotations(): void;
-
-// @public (undocumented)
-function updateGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: Partial<RepresentationConfig>): void;
-
-// @public (undocumented)
-function updateGlobalSegmentationConfig(config: Partial<SegmentationConfig>): void;
 
 declare namespace utilities {
     export {

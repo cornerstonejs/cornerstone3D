@@ -6,7 +6,7 @@ import {
 import Representations from '../../enums/SegmentationRepresentations'
 import { getToolGroupById } from '../../store/ToolGroupManager'
 
-import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
+import { labelmapDisplay } from '../../tools/displayTools/Labelmap'
 
 /**
  * Set the specified segmentation representations on the viewports of the specified
@@ -47,7 +47,7 @@ async function _addSegmentationRepresentation(
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
 ) {
   if (representationInput.type === Representations.Labelmap) {
-    await LabelmapDisplay.addSegmentationRepresentation(
+    await labelmapDisplay.addSegmentationRepresentation(
       toolGroupId,
       representationInput,
       toolGroupSpecificRepresentationConfig

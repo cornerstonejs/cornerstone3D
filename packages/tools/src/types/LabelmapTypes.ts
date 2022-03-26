@@ -4,7 +4,7 @@ import type { vtkPiecewiseFunction } from 'vtk.js/Sources/Common/DataModel/Piece
 /**
  * Label map config for the label map representation
  */
-export type LabelmapConfig = {
+export type labelmapConfig = {
   /** whether to render segmentation outline  */
   renderOutline?: boolean
   /** thickness of the outline */

@@ -1,4 +1,4 @@
-import { ToolGroupSpecificRepresentation } from 'tools/src/types/SegmentationStateTypes'
+import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes'
 import { getDefaultSegmentationStateManager } from './segmentationState'
 import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents'
 
@@ -32,7 +32,7 @@ function getActiveSegmentationRepresentation(
  *
  * @param toolGroupId - The Id of the tool group to set the active
  * segmentation for.
- * @param segmentationDataUID - The id of the segmentation representation to set as
+ * @param segmentationRepresentationUID - The id of the segmentation representation to set as
  * active.
  */
 function setActiveSegmentationRepresentation(

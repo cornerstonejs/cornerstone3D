@@ -1,6 +1,6 @@
-import { LabelmapConfig } from '../../../types/LabelmapTypes'
+import { labelmapConfig } from '../../../types/LabelmapTypes'
 
-const defaultLabelmapConfig: LabelmapConfig = {
+const defaultLabelmapConfig: labelmapConfig = {
   renderOutline: true,
   outlineWidth: 3,
   outlineWidthActive: 3,
@@ -14,7 +14,7 @@ const defaultLabelmapConfig: LabelmapConfig = {
   // Fill inside the render maps
 }
 
-function getDefaultLabelmapConfig(): LabelmapConfig {
+function getDefaultLabelmapConfig(): labelmapConfig {
   return defaultLabelmapConfig
 }
 

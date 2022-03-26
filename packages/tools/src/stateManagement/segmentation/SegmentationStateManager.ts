@@ -225,7 +225,7 @@ export default class SegmentationStateManager {
    * Set the active segmentation data for a tool group
    * @param toolGroupId - The Id of the tool group that owns the
    * segmentation data.
-   * @param segmentationDataUID - string
+   * @param segmentationRepresentationUID - string
    */
   setActiveSegmentationRepresentation(
     toolGroupId: string,
@@ -380,5 +380,4 @@ export default class SegmentationStateManager {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT')
-window.state = defaultSegmentationStateManager.state
 export { defaultSegmentationStateManager }

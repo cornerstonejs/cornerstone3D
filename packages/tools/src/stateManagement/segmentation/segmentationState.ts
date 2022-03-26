@@ -247,18 +247,17 @@ function getActiveSegmentationRepresentation(
  * data objects and returns the first one that matches the UID.
  * @param toolGroupId - The Id of the tool group that the segmentation
  * data belongs to.
- * @param segmentationDataUID - The id of the segmentation data to
- * retrieve.
+ * @param segmentationRepresentationUID - The uid of the segmentation representation
  * @returns Segmentation Data object.
  */
 function getSegmentationRepresentationByUID(
   toolGroupId: string,
-  segmentationDataUID: string
+  segmentationRepresentationUID: string
 ): ToolGroupSpecificRepresentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   return segmentationStateManager.getSegmentationRepresentationByUID(
     toolGroupId,
-    segmentationDataUID
+    segmentationRepresentationUID
   )
 }
 
@@ -287,97 +286,6 @@ function removeSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
   )
-}
-
-/**
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *  Correct
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
-/**
- * Add a new global segmentation data to the segmentation state manager, and
- * triggers SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
- *
- * @param  segmentationData - The data to add to the global segmentation state
- * @param  suppressEvents - If true, the event will not be triggered.
- */
-function addGlobalSegmentationData(
-  segmentationData: GlobalSegmentationData,
-  suppressEvents?: boolean
-): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  segmentationStateManager.addGlobalSegmentationData(segmentationData)
-
-  if (!suppressEvents) {
-    triggerSegmentationModified(segmentationData.volumeId)
-  }
-}
-
-/**
- * Get all global segmentation states, which includes array of all global
- * segmentation data.
- * @returns An array of objects, each of which represents a global segmentation
- * data.
- */
-function getGlobalSegmentationState(): GlobalSegmentationState | [] {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getGlobalSegmentationState()
-}
-
-/***************************
- *
- * ToolGroup Specific State
- *
- ***************************/
-
-/***************************
- *
- * Global Configuration
- *
- ***************************/
-
-/***************************
- *
- * ToolGroup Specific Configuration
- *
- ***************************/
-
-/***************************
- *
- * Utilities
- *
- ***************************/
-
-/**
- * Get the list of all tool groups currently in the segmentation state manager.
- * @returns An array of tool group IDs.
- */
-function getToolGroups(): string[] {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getToolGroups()
 }
 
 /**
@@ -414,85 +322,6 @@ function _initializeDefaultConfig(segmentation: Segmentation) {
   setGlobalConfig(newGlobalConfig, suppressEvents)
 }
 
-/**
- * If no global state exists, it create a default one and If the global config
- * is not valid, create a default one
- *
- * @param segmentationStateManager - The state manager for the segmentation.
- * @param segmentationData - The segmentation data that we want to add to the
- * global state.
- */
-function _initGlobalStateIfNecessary(
-  segmentationStateManager,
-  segmentationData
-) {
-  const globalSegmentationData = getSegmentation(segmentationData.volumeId)
-  // for the representation, if no global config exists, create default one
-  const {
-    representation: { type: representationType },
-  } = segmentationData
-
-  const globalConfig = getGlobalSegmentationConfig()
-  const globalRepresentationConfig =
-    globalConfig.representations[representationType]
-  const validConfig = isValidRepresentationConfig(
-    representationType,
-    globalRepresentationConfig
-  )
-
-  // If global segmentationData is not found, or if the global config is not
-  // valid, we use default values to create both, but we need to only
-  // fire the event for global state modified once, so we suppress each events.
-  const suppressEvents = !globalSegmentationData || !validConfig
-
-  // if no global state exists, create a default one
-  if (!globalSegmentationData) {
-    const { volumeId } = segmentationData
-
-    const defaultGlobalData: GlobalSegmentationData = {
-      volumeId: volumeId,
-      label: volumeId,
-      referenceVolumeId: null,
-      cachedStats: {},
-      referenceImageId: null,
-      activeSegmentIndex: 1,
-      segmentsLocked: new Set(),
-    }
-
-    addGlobalSegmentationData(defaultGlobalData, suppressEvents)
-  }
-
-  // Todo: we can check the validity of global config for each representation
-  // when we are setting it up at the setGlobalSegmentationConfig function, not here
-  if (!validConfig) {
-    // create default config
-    const defaultRepresentationConfig =
-      getDefaultRepresentationConfig(representationType)
-
-    const mergedRepresentationConfig = deepMerge(
-      defaultRepresentationConfig,
-      globalRepresentationConfig
-    )
-
-    const newGlobalConfig = {
-      ...globalConfig,
-      representations: {
-        ...globalConfig.representations,
-        [representationType]: mergedRepresentationConfig,
-      },
-    }
-
-    setGlobalSegmentationConfig(newGlobalConfig, suppressEvents)
-  }
-
-  // If we have suppressed events, means that we have created a new global state
-  // and/or a new default config for the representation, so we need to trigger
-  // the event to notify the listeners.
-  if (suppressEvents) {
-    triggerSegmentationModified(segmentationData.volumeId)
-  }
-}
-
 export {
   // state manager
   getDefaultSegmentationStateManager,
@@ -515,23 +344,4 @@ export {
   // color
   addColorLUT,
   getColorLut,
-  // getGlobalSegmentationConfig,
-  // getSegmentationConfig,
-  // setGlobalSegmentationConfig,
-  // setSegmentationConfig,
-  // colorLUT
-  // get/set global state
-  // getGlobalSegmentationState,
-  // addGlobalSegmentationData,
-  // toolGroup state
-  // getSegmentationRepresentations,
-  // addSegmentationData,
-  // removeSegmentationData,
-  // getSegmentationDataByUID,
-  // setActiveSegmentationData,
-  // getActiveSegmentationData,
-  // getToolGroupsWithSegmentation,
-  // getToolGroups,
-  // Utility
-  // getDefaultSegmentationStateManager,
 }

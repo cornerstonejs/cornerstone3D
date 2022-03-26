@@ -19,20 +19,16 @@ import type InteractionTypes from './InteractionTypes'
 import type { ToolProps, PublicToolProps } from './ToolProps'
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes'
 import type {
-  SegmentationRepresentation,
-  LabelmapRepresentation,
-} from './SegmentationRepresentationTypes'
-import type {
   Color,
   ColorLut,
   RepresentationConfig,
-  SegmentationConfig,
-  GlobalSegmentationData,
-  GlobalSegmentationState,
-  GlobalSegmentationStateWithConfig,
-  ToolGroupSpecificSegmentationData,
-  ToolGroupSpecificSegmentationStateWithConfig,
-  ToolGroupSpecificSegmentationState,
+  SegmentationRepresentationConfig,
+  SegmentationRepresentationData,
+  Segmentation,
+  ToolGroupSpecificRepresentationState,
+  ToolGroupSpecificLabelmapRepresentation,
+  ToolGroupSpecificRepresentation,
+  SegmentationState,
 } from './SegmentationStateTypes'
 
 export type {
@@ -59,18 +55,16 @@ export type {
   AnnotationHandle,
   TextBoxHandle,
   // Segmentation
-  SegmentationRepresentation,
-  LabelmapRepresentation,
+  Segmentation,
+  SegmentationState,
+  SegmentationRepresentationData,
+  SegmentationRepresentationConfig,
+  RepresentationConfig,
+  ToolGroupSpecificRepresentationState,
+  ToolGroupSpecificLabelmapRepresentation,
+  ToolGroupSpecificRepresentation,
   Color,
   ColorLut,
-  RepresentationConfig,
-  SegmentationConfig,
-  GlobalSegmentationData,
-  GlobalSegmentationState,
-  GlobalSegmentationStateWithConfig,
-  ToolGroupSpecificSegmentationData,
-  ToolGroupSpecificSegmentationStateWithConfig,
-  ToolGroupSpecificSegmentationState,
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,

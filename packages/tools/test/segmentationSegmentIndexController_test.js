@@ -339,17 +339,19 @@ describe('Segmentation Index Controller --', () => {
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
-        const segmentationInfo =
+        const segmentationRepresentation =
           segmentation.activeSegmentation.getActiveSegmentationRepresentation(
             TOOL_GROUP_ID
           )
 
-        expect(segmentationInfo.segmentationDataUID).toBeDefined()
-        expect(segmentationInfo.volumeId).toBeDefined()
+        expect(
+          segmentationRepresentation.segmentationRepresentationUID
+        ).toBeDefined()
+        expect(segmentationRepresentation.segmentationId).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
           segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
-            segmentationInfo.volumeId
+            segmentationRepresentation.segmentationId
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)

@@ -7,9 +7,10 @@ import {
 } from '../segmentation'
 import { pointInShapeCallback } from '../../utilities'
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
-import { ToolGroupSpecificSegmentationData } from '../../types/SegmentationStateTypes'
+import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes'
 import transformPhysicalToIndex from '../transformPhysicalToIndex'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
+import { LabelmapRepresentationData } from '../../types/LabelmapTypes'
 
 export type ThresholdRangeOptions = {
   higherThreshold: number
@@ -36,35 +37,36 @@ export type AnnotationForThresholding = {
  * Given an array of rectangle annotation, and a segmentation and referenceVolumes:
  * It fills the segmentation at SegmentIndex=1 based on a range of thresholds of the referenceVolumes
  * inside the drawn annotations.
- * @param toolGroupId - - The toolGroupId of the tool that is performing the operation
  * @param annotations - Array of rectangle annotations
  * @param segmentationData - - The segmentation data to be modified
  * @param segmentation - segmentation volume
  * @param options - Options for thresholding
  */
 function thresholdVolumeByRange(
-  toolGroupId: string,
   annotations: AnnotationForThresholding[],
   referenceVolumes: Types.IImageVolume[],
-  segmentationData: ToolGroupSpecificSegmentationData,
+  segmentationRepresentation: ToolGroupSpecificRepresentation,
   options: ThresholdRangeOptions
 ): Types.IImageVolume {
   if (referenceVolumes.length > 1) {
     throw new Error('thresholding more than one volumes is not supported yet')
   }
 
-  const globalState = SegmentationState.getSegmentation(
-    segmentationData.volumeId
+  const segmentation = SegmentationState.getSegmentation(
+    segmentationRepresentation.segmentationId
   )
+  const { segmentationId } = segmentationRepresentation
 
-  if (!globalState) {
+  if (!segmentation) {
     throw new Error('No Segmentation Found')
   }
 
-  const { volumeId } = globalState
-  const segmentation = cache.getVolume(volumeId)
+  const { type, representations } = segmentation
+  const { volumeId } = representations[type] as LabelmapRepresentationData
 
-  const { scalarData, imageData: segmentationImageData } = segmentation
+  const segmentationVolume = cache.getVolume(volumeId)
+
+  const { scalarData, imageData: segmentationImageData } = segmentationVolume
   const { lowerThreshold, higherThreshold, numSlicesToProject, overwrite } =
     options
 
@@ -122,7 +124,7 @@ function thresholdVolumeByRange(
 
   triggerSegmentationDataModified(segmentationId)
 
-  return segmentation
+  return segmentationVolume
 }
 
 export function extendBoundingBoxInSliceAxisIfNecessary(

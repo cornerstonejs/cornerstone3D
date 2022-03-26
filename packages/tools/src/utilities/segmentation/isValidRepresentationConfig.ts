@@ -1,4 +1,4 @@
-import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/LabelmapConfig'
+import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/labelmapConfig'
 import SegmentationRepresentation from '../../enums/SegmentationRepresentations'
 import { RepresentationConfig } from '../../types/SegmentationStateTypes'
 

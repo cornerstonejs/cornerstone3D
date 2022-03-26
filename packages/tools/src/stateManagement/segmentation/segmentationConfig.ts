@@ -32,7 +32,7 @@ function setGlobalConfig(
  */
 function getGlobalRepresentationConfig(
   representationType: SegmentationRepresentations
-): RepresentationConfig {
+): RepresentationConfig['LABELMAP'] {
   const globalConfig = getGlobalConfig()
   return globalConfig.representations[representationType]
 }
@@ -47,7 +47,7 @@ function getGlobalRepresentationConfig(
  */
 function setGlobalRepresentationConfig(
   representationType: SegmentationRepresentations,
-  config: RepresentationConfig
+  config: RepresentationConfig['LABELMAP']
 ): void {
   const globalConfig = getGlobalConfig()
 

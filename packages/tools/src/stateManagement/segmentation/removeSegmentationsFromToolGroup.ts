@@ -1,5 +1,5 @@
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
-import { LabelmapDisplay } from '../../tools/displayTools/Labelmap'
+import { labelmapDisplay } from '../../tools/displayTools/Labelmap'
 
 import {
   getSegmentationRepresentations,
@@ -71,7 +71,7 @@ function _removeSegmentation(
   const { type } = segmentationRepresentation
 
   if (type === SegmentationRepresentations.Labelmap) {
-    LabelmapDisplay.removeSegmentationRepresentation(
+    labelmapDisplay.removeSegmentationRepresentation(
       toolGroupId,
       segmentationRepresentationUID
     )

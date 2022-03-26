@@ -11,7 +11,7 @@ import {
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import Representations from '../../../enums/SegmentationRepresentations'
 import { getToolGroupById } from '../../../store/ToolGroupManager'
-import type { LabelmapConfig } from '../../../types/LabelmapTypes'
+import type { labelmapConfig } from '../../../types/LabelmapTypes'
 import {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
@@ -189,7 +189,7 @@ function _setLabelmapColorAndOpacity(
   cfun: vtkColorTransferFunction,
   ofun: vtkPiecewiseFunction,
   colorLUTIndex: number,
-  labelmapConfig: LabelmapConfig,
+  labelmapConfig: labelmapConfig,
   isActiveLabelmap: boolean,
   renderInactiveSegmentations: boolean,
   visibility = true

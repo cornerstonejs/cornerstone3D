@@ -332,7 +332,7 @@ describe('Segmentation Controller --', () => {
 
     //               segmentation.segmentationVisibility.setSegmentationVisibility(
     //                 TOOL_GROUP_ID,
-    //                 segmentationData.segmentationDataUID,
+    //                 segmentationData.segmentationRepresentationUID,
     //                 false
     //               )
     //             })

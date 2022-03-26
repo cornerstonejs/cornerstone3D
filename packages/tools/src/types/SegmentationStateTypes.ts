@@ -1,5 +1,5 @@
 import * as Enums from '../enums'
-import type { LabelmapConfig } from '../tools/displayTools/Labelmap/LabelmapConfig'
+import type { labelmapConfig } from './LabelmapTypes'
 import type {
   LabelmapRepresentationData,
   LabelmapRenderingConfig,
@@ -22,7 +22,7 @@ export type ColorLut = Array<Color>
 
 export type RepresentationConfig = {
   /** labelmap configuration */
-  LABELMAP?: LabelmapConfig
+  LABELMAP?: labelmapConfig
 }
 
 export type SegmentationRepresentationConfig = {
@@ -32,7 +32,7 @@ export type SegmentationRepresentationConfig = {
   representations: RepresentationConfig
 }
 
-type SegmentationRepresentationData = {
+export type SegmentationRepresentationData = {
   LABELMAP?: LabelmapRepresentationData
 }
 
@@ -74,7 +74,7 @@ export type Segmentation = {
  * Representation state of the segmentation which is common between all
  * representations (we don't need to separate these states for each representation)
  */
-type ToolGroupSpecificRepresentationState = {
+export type ToolGroupSpecificRepresentationState = {
   /**
    * Segmentation Representation UID
    */
