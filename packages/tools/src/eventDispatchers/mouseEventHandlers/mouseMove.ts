@@ -38,6 +38,15 @@ export default function mouseMove(evt: MouseMoveEventType) {
     activeAndPassiveTools
   )
 
+  const toolsWithoutAnnotations = activeAndPassiveTools.filter((tool) => {
+    const doesNotHaveAnnotations = !toolsWithAnnotations.some(
+      (toolAndAnnotation) =>
+        toolAndAnnotation.tool.getToolName() === tool.getToolName()
+    )
+
+    return doesNotHaveAnnotations
+  })
+
   let annotationsNeedToBeRedrawn = false
 
   for (const { tool, annotations } of toolsWithAnnotations) {
@@ -46,6 +55,13 @@ export default function mouseMove(evt: MouseMoveEventType) {
         tool.mouseMoveCallback(evt, annotations) || annotationsNeedToBeRedrawn
     }
   }
+
+  // Run mouse move handlers for non-annotation tools
+  toolsWithoutAnnotations.forEach((tool) => {
+    if (typeof tool.mouseMoveCallback === 'function') {
+      tool.mouseMoveCallback(evt)
+    }
+  })
 
   // Annotation activation status changed, redraw the annotations
   if (annotationsNeedToBeRedrawn === true) {

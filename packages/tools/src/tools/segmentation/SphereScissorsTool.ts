@@ -74,7 +74,7 @@ export default class SphereScissorsTool extends BaseTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (evt: EventTypes.MouseDownActivateEventType) => {
+  preMouseDownCallback = (evt: EventTypes.MouseDownActivateEventType): true => {
     const eventDetail = evt.detail
     const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
@@ -164,6 +164,8 @@ export default class SphereScissorsTool extends BaseTool {
     evt.preventDefault()
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+
+    return true
   }
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
