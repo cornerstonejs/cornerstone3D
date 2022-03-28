@@ -10,7 +10,7 @@ import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmenta
  *
  * @param toolGroupId - The Id of the tool group to be destroyed.
  */
-function destroyToolGroupById(toolGroupId: string): void {
+function destroyToolGroup(toolGroupId: string): void {
   const toolGroupIndex = state.toolGroups.findIndex(
     (tg) => tg.id === toolGroupId
   )
@@ -22,4 +22,4 @@ function destroyToolGroupById(toolGroupId: string): void {
   }
 }
 
-export default destroyToolGroupById
+export default destroyToolGroup

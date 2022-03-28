@@ -118,7 +118,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
-      const tg = ToolGroupManager.getToolGroupById('volume1')
+      const tg = ToolGroupManager.getToolGroup('volume1')
       expect(tg).toBeDefined()
     })
   })
@@ -147,7 +147,7 @@ describe('ToolGroup Manager: ', () => {
     afterEach(function () {
       // Destroy synchronizer manager to test it first since csTools3D also destroy
       // synchronizers
-      ToolGroupManager.destroyToolGroupById('volume1')
+      ToolGroupManager.destroyToolGroup('volume1')
       csTools3d.destroy()
       cache.purgeCache()
       this.renderingEngine.destroy()
@@ -188,7 +188,7 @@ describe('ToolGroup Manager: ', () => {
 
       this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
-      const tg = ToolGroupManager.getToolGroupById('volume1')
+      const tg = ToolGroupManager.getToolGroup('volume1')
       expect(tg).toBeDefined()
 
       const tg2 = ToolGroupManager.getToolGroupForViewport(
@@ -232,19 +232,19 @@ describe('ToolGroup Manager: ', () => {
       ])
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupById('volume1')
+      let tg = ToolGroupManager.getToolGroup('volume1')
 
       tg.addViewport(viewportId1, this.renderingEngine.id)
       expect(tg.viewportsInfo.length).toBe(1)
 
       tg.removeViewports(renderingEngineId)
 
-      tg = ToolGroupManager.getToolGroupById('volume1')
+      tg = ToolGroupManager.getToolGroup('volume1')
       expect(tg.viewportsInfo.length).toBe(0)
 
       //
       tg.addViewport(viewportId1, this.renderingEngine.id)
-      tg = ToolGroupManager.getToolGroupById('volume1')
+      tg = ToolGroupManager.getToolGroup('volume1')
       expect(tg.viewportsInfo.length).toBe(1)
 
       tg.removeViewports(renderingEngineId, viewportId2)
@@ -280,7 +280,7 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupById('volume1')
+      let tg = ToolGroupManager.getToolGroup('volume1')
       expect(tg.getToolInstance(ProbeTool.toolName).mode).toBe('Active')
       expect(tg.getToolInstance(LengthTool.toolName)).toBeUndefined()
 
@@ -317,7 +317,7 @@ describe('ToolGroup Manager: ', () => {
       this.toolGroup.addViewport(viewportId1, this.renderingEngine.id)
 
       // Remove viewports
-      let tg = ToolGroupManager.getToolGroupById('volume1')
+      let tg = ToolGroupManager.getToolGroup('volume1')
       tg.setToolActive()
       tg.setToolPassive()
       tg.setToolEnabled()

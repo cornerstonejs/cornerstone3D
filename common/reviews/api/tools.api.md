@@ -851,7 +851,7 @@ function destroy_3(): void;
 function destroySynchronizerById(synchronizerId: string): void;
 
 // @public (undocumented)
-function destroyToolGroupById(toolGroupId: string): void;
+function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
 function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
@@ -1311,7 +1311,7 @@ function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): 
 function getToolGroupForViewport(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroupById(toolGroupId: string): IToolGroup | undefined;
+function getToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupSpecificConfig(toolGroupId: string): SegmentationRepresentationConfig;
@@ -3111,8 +3111,8 @@ declare namespace ToolGroupManager {
     export {
         createToolGroup,
         destroy_3 as destroy,
-        destroyToolGroupById,
-        getToolGroupById,
+        destroyToolGroup,
+        getToolGroup,
         getToolGroupForViewport,
         getAllToolGroups
     }

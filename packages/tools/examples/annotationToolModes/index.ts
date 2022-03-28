@@ -54,7 +54,7 @@ const selectedToolMode = ToolModes.Active
 addDropdownToToolbar(
   { options: toolModes, defaultOption: selectedToolMode },
   (newToolMode) => {
-    const toolGroup = ToolGroupManager.getToolGroupById(toolGroupId)
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId)
 
     // Set the new tool active
     toolGroup[`setTool${newToolMode}`](LengthTool.toolName, {
