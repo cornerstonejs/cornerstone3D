@@ -13,13 +13,15 @@ const onSegmentationDataModified = function (
 ): void {
   const { segmentationId, modifiedSlicesToUse } = evt.detail
 
-  const { representations, type } =
+  const { representationData, type } =
     SegmentationState.getSegmentation(segmentationId)
 
   let toolGroupIds
   if (type === SegmentationRepresentations.Labelmap) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
-    const segmentationVolume = cache.getVolume(representations[type].volumeId)
+    const segmentationVolume = cache.getVolume(
+      representationData[type].volumeId
+    )
 
     if (!segmentationVolume) {
       console.warn('segmentation not found in cache')

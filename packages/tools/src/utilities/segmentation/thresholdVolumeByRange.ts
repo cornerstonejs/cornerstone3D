@@ -10,7 +10,7 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes'
 import transformPhysicalToIndex from '../transformPhysicalToIndex'
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
-import { LabelmapRepresentationData } from '../../types/LabelmapTypes'
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes'
 
 export type ThresholdRangeOptions = {
   higherThreshold: number
@@ -61,8 +61,8 @@ function thresholdVolumeByRange(
     throw new Error('No Segmentation Found')
   }
 
-  const { type, representations } = segmentation
-  const { volumeId } = representations[type] as LabelmapRepresentationData
+  const { type, representationData } = segmentation
+  const { volumeId } = representationData[type] as LabelmapSegmentationData
 
   const segmentationVolume = cache.getVolume(volumeId)
 

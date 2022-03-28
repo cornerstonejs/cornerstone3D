@@ -41,7 +41,7 @@ async function addSegmentationRepresentation(
 ): Promise<void> {
   const { segmentationId } = representationInput
   const segmentation = SegmentationState.getSegmentation(segmentationId)
-  const { volumeId } = segmentation.representations[Representations.Labelmap]
+  const { volumeId } = segmentation.representationData[Representations.Labelmap]
   const segmentationRepresentationUID = utilities.uuidv4()
 
   // only add the labelmap to ToolGroup viewports if it is not already added
@@ -149,7 +149,7 @@ function render(
   } = representation
 
   const segmentation = SegmentationState.getSegmentation(segmentationId)
-  const labelmapData = segmentation.representations[Representations.Labelmap]
+  const labelmapData = segmentation.representationData[Representations.Labelmap]
   const { volumeId: labelmapUID } = labelmapData
 
   const labelmap = cache.getVolume(labelmapUID)

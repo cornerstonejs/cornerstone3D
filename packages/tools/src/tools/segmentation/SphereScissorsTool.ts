@@ -110,10 +110,10 @@ export default class SphereScissorsTool extends BaseTool {
       segmentIndex
     )
 
-    const { representations } = getSegmentation(segmentationId)
+    const { representationData } = getSegmentation(segmentationId)
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representations[type]
+    const { volumeId } = representationData[type]
     const segmentation = cache.getVolume(volumeId)
 
     this.isDrawing = true
