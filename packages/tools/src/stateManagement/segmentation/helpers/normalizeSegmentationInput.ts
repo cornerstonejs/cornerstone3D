@@ -3,6 +3,12 @@ import {
   Segmentation,
 } from '../../../types/SegmentationStateTypes'
 
+/**
+ * It takes in a segmentation input and returns a segmentation with default values
+ * @param segmentationInput - The input to the segmentation.
+ * @returns A Segmentation object.
+ * @internal
+ */
 function normalizeSegmentationInput(
   segmentationInput: SegmentationPublicInput
 ): Segmentation {

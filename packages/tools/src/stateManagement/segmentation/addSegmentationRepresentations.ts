@@ -30,7 +30,7 @@ async function addSegmentationRepresentations(
     throw new Error(`No tool group found for toolGroupId: ${toolGroupId}`)
   }
 
-  const promises = representationInputArray.map(async (representationInput) => {
+  const promises = representationInputArray.map((representationInput) => {
     return _addSegmentationRepresentation(
       toolGroupId,
       representationInput,

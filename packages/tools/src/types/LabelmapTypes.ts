@@ -33,5 +33,5 @@ export type LabelmapRenderingConfig = {
 
 export type LabelmapRepresentationData = {
   volumeId: string
-  referenceVolumeId?: string
+  referencedVolumeId?: string
 }

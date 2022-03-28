@@ -89,6 +89,14 @@ export default class SegmentationStateManager {
    */
   addSegmentation(segmentation: Segmentation): void {
     this._initDefaultColorLutIfNecessary()
+
+    // Check if the segmentation already exists with the segmentationId
+    if (this.getSegmentation(segmentation.segmentationId)) {
+      throw new Error(
+        `Segmentation with id ${segmentation.segmentationId} already exists`
+      )
+    }
+
     this.state.segmentations.push(segmentation)
   }
 

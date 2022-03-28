@@ -329,7 +329,7 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
-function createAndCacheDerivedVolume(referenceVolumeId: string, options: DerivedVolumeOptions): ImageVolume;
+function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): ImageVolume;
 
 // @public (undocumented)
 function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
@@ -830,7 +830,7 @@ interface IImageVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeId?: string;
+    referencedVolumeId?: string;
     // (undocumented)
     scalarData: any;
     // (undocumented)
@@ -987,7 +987,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeId?: string;
+    referencedVolumeId?: string;
     // (undocumented)
     scalarData: Float32Array | Uint8Array;
     // (undocumented)
@@ -1251,7 +1251,7 @@ interface IVolume {
     // (undocumented)
     origin: Point3;
     // (undocumented)
-    referenceVolumeId?: string;
+    referencedVolumeId?: string;
     // (undocumented)
     scalarData: Float32Array | Uint8Array;
     // (undocumented)

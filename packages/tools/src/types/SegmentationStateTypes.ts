@@ -1,6 +1,6 @@
 import * as Enums from '../enums'
-import type { labelmapConfig } from './LabelmapTypes'
 import type {
+  labelmapConfig,
   LabelmapRepresentationData,
   LabelmapRenderingConfig,
 } from './LabelmapTypes'

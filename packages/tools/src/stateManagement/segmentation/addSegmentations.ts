@@ -17,7 +17,7 @@ function addSegmentations(
 ): void {
   validateSegmentationInput(segmentationInputArray)
 
-  segmentationInputArray.map(async (segInput) => {
+  segmentationInputArray.map((segInput) => {
     const segmentationInput = _cloneDeep(segInput)
 
     addSegmentationToState(segmentationInput)
