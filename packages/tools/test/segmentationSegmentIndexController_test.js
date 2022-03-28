@@ -87,7 +87,7 @@ describe('Segmentation Index Controller --', () => {
       this.DOMElements = []
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
-
+      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(RectangleScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
@@ -111,7 +111,7 @@ describe('Segmentation Index Controller --', () => {
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroup(toolGroupId)
 
-
+      this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
@@ -319,7 +319,7 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2
+          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2)
 
           eventTarget.addEventListener(
             Events.SEGMENTATION_RENDERED,
@@ -336,13 +336,13 @@ describe('Segmentation Index Controller --', () => {
         const activeSegmentIndex =
           segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
 
-
+        expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationRepresentation =
           segmentation.activeSegmentation.getActiveSegmentationRepresentation(
             toolGroupId
-
+          )
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -479,11 +479,11 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2
+          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2)
 
           segmentation.segmentLocking.setSegmentIndexLocked(
             toolGroupId,
-
+            1,
             true
           )
 
@@ -502,13 +502,13 @@ describe('Segmentation Index Controller --', () => {
         const activeSegmentIndex =
           segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
 
-
+        expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationRepresentation =
           segmentation.activeSegmentation.getActiveSegmentationRepresentation(
             toolGroupId
-
+          )
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -532,7 +532,7 @@ describe('Segmentation Index Controller --', () => {
 
         const lockedStatus1 = segmentation.segmentLocking.getSegmentIndexLocked(
           toolGroupId,
-
+          1
         )
 
         expect(lockedStatus1).toBe(true)

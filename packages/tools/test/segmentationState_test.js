@@ -77,7 +77,7 @@ describe('Segmentation State -- ', () => {
       this.DOMElements = []
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
- ''      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
+      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -96,7 +96,7 @@ describe('Segmentation State -- ', () => {
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
       ToolGroupManager.destroyToolGroup(toolGroupId)
- ''
+      ;('')
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -133,7 +133,7 @@ describe('Segmentation State -- ', () => {
           const state = stateManager.getState()
 
           expect(evt.detail.toolGroupId).toBe(toolGroupId)
- ''          expect(state).toBeDefined()
+          expect(state).toBeDefined()
           expect(state.toolGroups).toBeDefined()
 
           const toolGroupSegmentationState =
