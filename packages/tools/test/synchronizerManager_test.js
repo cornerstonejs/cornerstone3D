@@ -86,7 +86,7 @@ describe('Synchronizer Manager: ', () => {
   afterEach(function () {
     // Destroy synchronizer manager to test it first since csTools3D also destroy
     // synchronizers
-    SynchronizerManager.destroySynchronizerById(synchronizerId)
+    SynchronizerManager.destroySynchronizer(synchronizerId)
     csTools3d.destroy()
     cache.purgeCache()
     this.renderingEngine.destroy()
@@ -136,15 +136,15 @@ describe('Synchronizer Manager: ', () => {
         return
       }
 
-      const synchronizers = SynchronizerManager.getSynchronizers(
-        renderingEngineId,
-        viewportId1
+      const synchronizers = SynchronizerManager.getSynchronizersForViewport(
+        viewportId1,
+        renderingEngineId
       )
 
       expect(synchronizers.length).toBe(1)
 
       const synchronizerById =
-        SynchronizerManager.getSynchronizerById(synchronizerId)
+        SynchronizerManager.getSynchronizer(synchronizerId)
 
       expect(synchronizerById).toBe(synchronizers[0])
 

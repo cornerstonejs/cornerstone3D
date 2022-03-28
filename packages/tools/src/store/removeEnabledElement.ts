@@ -19,7 +19,7 @@ import { state } from './state'
 import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement'
 import { ToolModes } from '../enums'
 import { removeAnnotation } from '../stateManagement'
-import getSynchronizers from './SynchronizerManager/getSynchronizers'
+import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersForViewport'
 import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport'
 import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender'
 
@@ -72,9 +72,9 @@ function removeEnabledElement(
 const _removeViewportFromSynchronizers = (element: HTMLElement) => {
   const enabledElement = getEnabledElement(element)
 
-  const synchronizers = getSynchronizers(
-    enabledElement.renderingEngineId,
-    enabledElement.viewportId
+  const synchronizers = getSynchronizersForViewport(
+    enabledElement.viewportId,
+    enabledElement.renderingEngineId
   )
   synchronizers.forEach((sync) => {
     sync.remove(enabledElement)

@@ -1,15 +1,15 @@
 import createSynchronizer from './createSynchronizer'
 import destroy from './destroy'
-import getSynchronizers from './getSynchronizers'
-import getSynchronizerById from './getSynchronizerById'
+import getSynchronizersForViewport from './getSynchronizersForViewport'
+import getSynchronizer from './getSynchronizer'
 import getAllSynchronizers from './getAllSynchronizers'
-import destroySynchronizerById from './destroySynchronizerById'
+import destroySynchronizer from './destroySynchronizer'
 
 export {
   createSynchronizer,
   destroy,
-  getSynchronizerById,
-  getSynchronizers,
+  getSynchronizer,
+  getSynchronizersForViewport,
   getAllSynchronizers,
-  destroySynchronizerById,
+  destroySynchronizer,
 }
