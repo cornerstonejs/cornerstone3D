@@ -196,7 +196,7 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     abstract isPointNearTool(element: HTMLElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredAnnotations: Annotations) => boolean;
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredAnnotations?: Annotations) => boolean;
     // (undocumented)
     onImageSpacingCalibrated: (evt: Types_2.EventTypes.ImageSpacingCalibratedEvent) => void;
     // (undocumented)
@@ -307,7 +307,9 @@ export class BidirectionalTool extends AnnotationTool {
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => void;
+    mouseMoveCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any): void;
     // (undocumented)
@@ -341,8 +343,6 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     _activateDraw: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => void;
-    // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
     editData: {
@@ -367,6 +367,8 @@ export class CircleScissorsTool extends BaseTool {
     _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
     // (undocumented)
@@ -2558,8 +2560,6 @@ export class RectangleScissorsTool extends BaseTool {
     // (undocumented)
     _activateDraw: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => void;
-    // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
     editData: {
@@ -2583,6 +2583,8 @@ export class RectangleScissorsTool extends BaseTool {
     _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
     // (undocumented)
@@ -2892,8 +2894,6 @@ export class SphereScissorsTool extends BaseTool {
     // (undocumented)
     _activateDraw: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => void;
-    // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
     editData: {
@@ -2919,6 +2919,8 @@ export class SphereScissorsTool extends BaseTool {
     _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => true;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
     // (undocumented)
