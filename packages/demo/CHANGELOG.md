@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.3.0](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/cornerstone3D-demo@1.2.0...@cornerstonejs/cornerstone3D-demo@1.3.0) (2022-03-28)
+
+
+### Features
+
+* Add a basic Brush tool ([6358b12](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/commit/6358b126c9d03bd349f864cec53d22c92f8b1405))
+
+
+
+
+
 # [1.2.0](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/cornerstone3D-demo@1.1.3...@cornerstonejs/cornerstone3D-demo@1.2.0) (2022-03-28)
 
 
