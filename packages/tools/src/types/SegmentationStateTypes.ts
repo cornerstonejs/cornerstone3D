@@ -1,6 +1,9 @@
-import { SegmentationRepresentation } from './SegmentationRepresentationTypes'
-
-import type { LabelmapConfig } from '../tools/displayTools/Labelmap/LabelmapConfig'
+import * as Enums from '../enums'
+import type {
+  labelmapConfig,
+  LabelmapRepresentationData,
+  LabelmapRenderingConfig,
+} from './LabelmapTypes'
 
 /**
  * Four elements RGBA as 0-255
@@ -11,38 +14,38 @@ export type Color = [number, number, number, number]
  * Color LUT Array - Array of colors
  * [[0,0,0,0], [200,200,200,200], ....]
  */
-export type ColorLUT = Array<Color>
-
-/**
- * Representation Config
- */
-export type RepresentationConfig = LabelmapConfig
+export type ColorLut = Array<Color>
 
 /**
  * Segmentation Config
  */
-export type SegmentationConfig = {
+
+export type RepresentationConfig = {
+  /** labelmap configuration */
+  LABELMAP?: labelmapConfig
+}
+
+export type SegmentationRepresentationConfig = {
   /** Whether to render Inactive segmentations  */
   renderInactiveSegmentations: boolean
   /** Representations configuration */
-  representations: {
-    /** labelmap configuration */
-    LABELMAP?: LabelmapConfig
-  }
+  representations: RepresentationConfig
+}
+
+export type SegmentationRepresentationData = {
+  LABELMAP?: LabelmapRepresentationData
 }
 
 /**
  * Global Segmentation Data which is used for the segmentation
  */
-export type GlobalSegmentationData = {
-  /** volume Id of the segmentation in the cache */
-  volumeId: string
+export type Segmentation = {
+  /** segmentation id  */
+  segmentationId: string
+  /** segmentation main representation type */
+  type: Enums.SegmentationRepresentations
   /** segmentation label */
   label: string
-  /** volumeId of the data that the segmentation was derived from - if any */
-  referenceVolumeId?: string
-  /** imageId of the image that the segmentation was derived from - if any */
-  referenceImageId?: string
   /**
    * Active segment index in the segmentation, this index will get used
    * inside the segmentation tools
@@ -57,37 +60,33 @@ export type GlobalSegmentationData = {
    * If there is any derived statistics for the segmentation (e.g., mean, volume, etc)
    */
   cachedStats: { [key: string]: number }
+  /**
+   * Representations of the segmentation. Each segmentation "can" be viewed
+   * in various representations. For instance, if a DICOM SEG is loaded, the main
+   * representation is the labelmap. However, for DICOM RT the main representation
+   * is contours, and other representations can be derived from the contour (currently
+   * only labelmap representation is supported)
+   */
+  representations: SegmentationRepresentationData
 }
 
 /**
- * Global Segmentation State which is array of global segmentation data
+ * Representation state of the segmentation which is common between all
+ * representations (we don't need to separate these states for each representation)
  */
-export type GlobalSegmentationState = GlobalSegmentationData[]
-
-/**
- * Global Segmentation State with the shared config for all the segmentations
- */
-export type GlobalSegmentationStateWithConfig = {
-  /** Global segmentation state */
-  segmentations: GlobalSegmentationState
-  /** shared config for all the segmentations */
-  config: SegmentationConfig
-}
-
-/**
- * ToolGroup Specific Segmentation Data for segmentations. As one segmentation
- * can be represented in various ways (currently only labelmap is supported)
- * we store ToolGroup specific segmentation data in this object
- */
-export type ToolGroupSpecificSegmentationData = {
+export type ToolGroupSpecificRepresentationState = {
   /**
-   * VolumeId for the segmentation
+   * Segmentation Representation UID
    */
-  volumeId: string
+  segmentationRepresentationUID: string
   /**
-   * unique id for this segmentationData in this viewport which will be `{volumeId}-{representationType}`
+   * The segmentationId that this representation is derived from
    */
-  segmentationDataUID: string
+  segmentationId: string
+  /**
+   * The representation type
+   */
+  type: Enums.SegmentationRepresentations
   /**
    * Whether the segmentation is the active (manipulatable) segmentation or not
    * which means it is inactive
@@ -106,143 +105,127 @@ export type ToolGroupSpecificSegmentationData = {
    * using to render
    */
   colorLUTIndex: number
-  /**
-   * The representation type and representation config for this segmentation
-   */
-  representation: SegmentationRepresentation
 }
 
 /**
- * ToolGroup Specific Segmentation State which is array of ToolGroup specific segmentation data
+ * ToolGroup Specific Segmentation Data for segmentations. As one segmentation
+ * can be represented in various ways (currently only labelmap is supported)
+ * we store ToolGroup specific segmentation data in this object
  */
-export type ToolGroupSpecificSegmentationState =
-  ToolGroupSpecificSegmentationData[]
+export type ToolGroupSpecificLabelmapRepresentation =
+  ToolGroupSpecificRepresentationState & {
+    config: LabelmapRenderingConfig
+  }
+
+export type ToolGroupSpecificRepresentation =
+  ToolGroupSpecificLabelmapRepresentation // | other ones
 
 /**
- * ToolGroup Specific Segmentation State with the shared config for all the segmentations
- * in the toolGroup
- */
-export type ToolGroupSpecificSegmentationStateWithConfig = {
-  segmentations: ToolGroupSpecificSegmentationState
-  config: SegmentationConfig
-}
-
-/**
- * Segmentation State. It stores both the global and the toolGroup specific
- * segmentation data and the shared config for all the segmentations in the
- * toolGroup and the global segmentation data.
+ * Segmentation State stored inside the cornerstone3DTools
  *
- * An example of segmentation state looks like
- * @example
  * ```js
  *  {
  *   colorLUT: [],
- *   global: {
- *     segmentations: [
- *       {
- *         volumeId: 'labelmapUID2',
- *         label: 'label1',
- *         referenceVolumeId: 'referenceVolumeName',
- *         referenceImageId: 'referenceImageId',
- *         activeSegmentIndex: 1,
- *         segmentsLocked: Set(),
- *         cacheStats: {},
+ *   globalConfig: {
+ *     renderInactiveSegmentations: false,
+ *     representations: {
+ *       LABELMAP: {
+ *         renderFill: true,
+ *         renderOutline: true,
  *       },
- *       {
- *         volumeId: 'labelmapUID2',
- *         label: 'label1',
- *         referenceVolumeId: 'referenceVolumeName',
- *         referenceImageId: 'referenceImageId',
- *         activeSegmentIndex: 1,
- *         segmentsLocked: Set(),
- *         cacheStats: {},
- *       },
- *     ],
- *   config: {
- *       renderInactiveSegmentations: true,
- *       representations:{
- *         LABELMAP: {
- *           renderOutline: true,
- *           outlineWidth: 3,
- *           outlineWidthActive: 3,
- *           outlineWidthInactive: 2,
- *           renderFill: true,
- *           fillAlpha: 0.9,
- *           fillAlphaInactive: 0.85,
- *         }
- *       }
- *       }
- *     }
+ *     },
  *   },
+ *   segmentations: [
+ *     {
+ *       segmentationId: 'segmentation1',
+ *       mainType: 'Labelmap',
+ *       activeSegmentIndex: 0,
+ *       segmentsLocked: new Set(),
+ *       label: 'segmentation1',
+ *       cachedStats: {},
+ *       representations: {
+ *         LABELMAP: {
+ *           volumeId: 'segmentation1',
+ *         },
+ *         CONTOUR: {
+ *           point: Float32Array,
+ *         },
+ *       },
+ *     },
+ *     {
+ *       segmentationId: 'segmentation2',
+ *       type: 'Labelmap',
+ *       activeSegmentIndex: 1,
+ *       segmentsLocked: new Set(),
+ *       label: 'segmentation2',
+ *       cachedStats: {},
+ *       representations: {
+ *         CONTOUR: {
+ *           points: Float32Array,
+ *         },
+ *       },
+ *     },
+ *   ],
  *   toolGroups: {
- *     toolGroupId1: {
- *       segmentations: [
+ *     toolGroupUID1: {
+ *       segmentationRepresentations: [
  *         {
- *           volumeId: 'labelmapUID1',
- *           segmentationDataUID: "123123"
+ *           segmentationRepresentationUID: '12123123123132',
+ *           segmentationId: '123123',
+ *           type: 'Labelmap',
  *           active: true,
  *           colorLUTIndex: 0,
  *           visibility: true,
  *           segmentsHidden: Set(),
- *           representation: {
- *             type: "labelmap"
- *             config: {
- *              cfun: cfun,
- *              ofun: ofun,
- *             },
- *           }
- *         },
- *         {
- *           volumeId: 'labelmapUID1',
- *           segmentationDataUID: "5987123"
- *           colorLUTIndex: 1,
- *           visibility: true,
- *           segmentsHidden: Set(),
- *           representation: {
- *             type: "labelmap"
- *             config: {
- *              cfun: cfun,
- *              ofun: ofun,
- *             },
- *           }
+ *           // LabelmapRenderingConfig
+ *           config: {
+ *             "cfun",
+ *             "ofun",
+ *           },
  *         },
  *       ],
- *     ],
  *       config: {
- *         renderInactiveSegmentations: true,
- *         representations:{
+ *         renderInactiveSegmentations: false,
+ *         representations: {
  *           LABELMAP: {
- *           renderOutline: false,
- *         }
- *         }
- *       }
+ *             renderFill: true,
+ *             renderOutline: true,
+ *           },
+ *         },
+ *       },
  *     },
- *     toolGroup2: {
- *       //
- *     }
- *   },
  *   },
  * }
+ * ```
  */
-export interface SegmentationState {
+export type SegmentationState = {
   /** Array of colorLUT for segmentation to render */
-  colorLutTables: ColorLUT[]
+  colorLut: ColorLut[]
+  /** segmentations */
+  segmentations: Segmentation[]
   /** global segmentation state with config */
-  global: GlobalSegmentationStateWithConfig
+  globalConfig: SegmentationRepresentationConfig
   /**
    * ToolGroup specific segmentation state with config
    */
   toolGroups: {
     /** toolGroupId and their toolGroup specific segmentation state with config */
-    [key: string]: ToolGroupSpecificSegmentationStateWithConfig
+    [key: string]: {
+      segmentationRepresentations: ToolGroupSpecificRepresentation[]
+      config: SegmentationRepresentationConfig
+    }
   }
 }
 
-/**
- * SegmentationDataInput that is used to add a segmentation to
- * a tooLGroup. It is partial of ToolGroupSpecificSegmentationData BUT REQUIRES volumeId
- */
-export type SegmentationDataInput =
-  Partial<ToolGroupSpecificSegmentationData> & {
-    toolGroupId: string
+export type SegmentationPublicInput = {
+  segmentationId: string
+  representation: {
+    type: Enums.SegmentationRepresentations
+    data: LabelmapRepresentationData
   }
+}
+
+export type RepresentationPublicInput = {
+  segmentationId: string
+  type: Enums.SegmentationRepresentations
+}

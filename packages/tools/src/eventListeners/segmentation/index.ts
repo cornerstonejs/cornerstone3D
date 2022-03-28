@@ -1,7 +1,11 @@
-import segmentationStateModifiedEventListener from './segmentationStateModifiedEventListener'
+import segmentationRepresentationModifiedEventListener from './segmentationRepresentationModifiedEventListener'
 import segmentationDataModifiedEventListener from './segmentationDataModifiedEventListener'
+import segmentationRepresentationRemovedEventListener from './segmentationRepresentationRemovedEventListener'
+import segmentationModifiedListener from './segmentationModifiedEventListener'
 
 export {
-  segmentationStateModifiedEventListener,
+  segmentationRepresentationModifiedEventListener,
   segmentationDataModifiedEventListener,
+  segmentationRepresentationRemovedEventListener,
+  segmentationModifiedListener,
 }

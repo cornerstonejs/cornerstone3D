@@ -7,8 +7,7 @@ import { triggerSegmentationDataModified } from '../../../stateManagement/segmen
 import { pointInShapeCallback } from '../../../utilities'
 
 type EraseOperationData = {
-  toolGroupId: string
-  segmentationDataUID: string
+  segmentationId: string
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
   volume: ImageVolume
   constraintFn: (x: [number, number, number]) => boolean
@@ -24,8 +23,7 @@ function eraseRectangle(
     volume: segmentation,
     points,
     segmentsLocked,
-    segmentationDataUID,
-    toolGroupId,
+    segmentationId,
   } = operationData
   const { imageData, dimensions, scalarData } = segmentation
 
@@ -51,7 +49,7 @@ function eraseRectangle(
 
   pointInShapeCallback(imageData, pointInShape, callback, boundsIJK)
 
-  triggerSegmentationDataModified(toolGroupId, segmentationDataUID)
+  triggerSegmentationDataModified(segmentationId)
 }
 
 /**

@@ -32,7 +32,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationsForToolGroup } = segmentation
+const { addSegmentationRepresentations, addSegmentations } = segmentation
 
 const {
   fakeVolumeLoader,
@@ -108,7 +108,7 @@ describe('Segmentation Tools --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId('segToolGroup')
+      ToolGroupManager.destroyToolGroupById('segToolGroup')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -125,13 +125,10 @@ describe('Segmentation Tools --', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
       const vp = this.renderingEngine.getViewport(viewportId1)
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
-        }
-      )
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const { segmentationId } = evt.detail
+        expect(segmentationId.includes(volumeId)).toBe(true)
+      })
 
       // wait until the render loop is done before we say done
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
@@ -151,9 +148,24 @@ describe('Segmentation Tools --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+              .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })
@@ -255,13 +267,10 @@ describe('Segmentation Tools --', () => {
         newSegRenderedCallback
       )
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
-        }
-      )
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const { segmentationId } = evt.detail
+        expect(segmentationId.includes(volumeId)).toBe(true)
+      })
 
       this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 
@@ -276,9 +285,24 @@ describe('Segmentation Tools --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+              .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })
@@ -422,13 +446,10 @@ describe('Segmentation Tools --', () => {
         newSegRenderedCallback
       )
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
-        }
-      )
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const { segmentationId } = evt.detail
+        expect(segmentationId.includes(volumeId)).toBe(true)
+      })
 
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
       this.segToolGroup.addViewport(vp2.id, this.renderingEngine.id)
@@ -445,9 +466,24 @@ describe('Segmentation Tools --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+              .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })

@@ -58,7 +58,7 @@ let selectedToolName = toolsNames[0]
 addDropdownToToolbar(
   { options: toolsNames, defaultOption: selectedToolName },
   (newSelectedToolName) => {
-    const toolGroup = ToolGroupManager.getToolGroupByToolGroupId(toolGroupId)
+    const toolGroup = ToolGroupManager.getToolGroupById(toolGroupId)
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {

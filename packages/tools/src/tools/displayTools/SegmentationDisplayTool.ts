@@ -1,28 +1,28 @@
 import { BaseTool } from '../base'
 import { getEnabledElementByIds } from '@cornerstonejs/core'
 import Representations from '../../enums/SegmentationRepresentations'
-import { getSegmentationState } from '../../stateManagement/segmentation/segmentationState'
-import { LabelmapDisplay } from './Labelmap'
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState'
+import { labelmapDisplay } from './Labelmap'
 import { segmentationConfig } from '../../stateManagement/segmentation'
-import { triggerSegmentationStateModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
-import { getToolGroupByToolGroupId } from '../../store/ToolGroupManager'
-import {
-  ToolGroupSpecificSegmentationData,
-  SegmentationConfig,
-} from '../../types/SegmentationStateTypes'
+import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
+import { getToolGroupById } from '../../store/ToolGroupManager'
 
 import { PublicToolProps, ToolProps } from '../../types'
 
 import { deepMerge } from '../../utilities'
+import {
+  SegmentationRepresentationConfig,
+  ToolGroupSpecificRepresentation,
+} from '../../types/SegmentationStateTypes'
 
 /**
  * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
  * Generally, any Segmentation can be viewed in various representations such as
  * labelmap (3d), contours, surface etc. As of now, Cornerstone3DTools only implements
- * Labelmap representation (default).
+ * Labelmap representation.
  *
  * SegmentationDisplayTool works at ToolGroup level, and is responsible for displaying the
- * segmentation for ALL viewports of a toolGroup, this way we can support complex
+ * segmentation representation for ALL viewports of a toolGroup, this way we can support complex
  * scenarios for displaying segmentations.
  *
  * Current Limitations:
@@ -34,17 +34,8 @@ import { deepMerge } from '../../utilities'
  * and a toolGroup should be created for it using the ToolGroupManager API, finally
  * viewports information such as viewportId and renderingEngineId should be provided
  * to the toolGroup and the SegmentationDisplayTool should be set to be activated.
- * For adding segmentations to be displayed you can addSegmentationsForToolGroup helper.
  *
- * ```js
  *
- *  addSegmentationsForToolGroup('toolGroupId', [
- *     {
- *       volumeId: segmentationUID,
- *     },
- *  ])
- *
- * ```
  */
 export default class SegmentationDisplayTool extends BaseTool {
   static toolName = 'SegmentationDisplay'
@@ -59,36 +50,46 @@ export default class SegmentationDisplayTool extends BaseTool {
 
   enableCallback(): void {
     const toolGroupId = this.toolGroupId
-    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
+    const toolGroupSegmentationRepresentations =
+      getSegmentationRepresentations(toolGroupId)
 
-    if (toolGroupSegmentationState.length === 0) {
+    if (
+      !toolGroupSegmentationRepresentations ||
+      toolGroupSegmentationRepresentations.length === 0
+    ) {
       return
     }
 
     // for each segmentationData, make the visibility false
-    for (const segmentationData of toolGroupSegmentationState) {
-      segmentationData.visibility = true
+    for (const segmentationRepresentation of toolGroupSegmentationRepresentations) {
+      segmentationRepresentation.visibility = true
+      triggerSegmentationRepresentationModified(
+        toolGroupId,
+        segmentationRepresentation.segmentationRepresentationUID
+      )
     }
-
-    // trigger the update
-    triggerSegmentationStateModified(toolGroupId)
   }
 
   disableCallback(): void {
     const toolGroupId = this.toolGroupId
-    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
+    const toolGroupSegmentationRepresentations =
+      getSegmentationRepresentations(toolGroupId)
 
-    if (toolGroupSegmentationState.length === 0) {
+    if (
+      !toolGroupSegmentationRepresentations ||
+      toolGroupSegmentationRepresentations.length === 0
+    ) {
       return
     }
 
     // for each segmentationData, make the visibility false
-    for (const segmentationData of toolGroupSegmentationState) {
-      segmentationData.visibility = false
+    for (const segmentationRepresentation of toolGroupSegmentationRepresentations) {
+      segmentationRepresentation.visibility = false
+      triggerSegmentationRepresentationModified(
+        toolGroupId,
+        segmentationRepresentation.segmentationRepresentationUID
+      )
     }
-
-    // trigger the update
-    triggerSegmentationStateModified(toolGroupId)
   }
 
   /**
@@ -99,13 +100,14 @@ export default class SegmentationDisplayTool extends BaseTool {
    * @param toolGroupId - the toolGroupId
    */
   renderSegmentation = (toolGroupId: string): void => {
-    const toolGroup = getToolGroupByToolGroupId(toolGroupId)
+    const toolGroup = getToolGroupById(toolGroupId)
 
     if (!toolGroup) {
       return
     }
 
-    const toolGroupSegmentationState = getSegmentationState(toolGroupId)
+    const toolGroupSegmentationRepresentations =
+      getSegmentationRepresentations(toolGroupId)
 
     // toolGroup Viewports
     const toolGroupViewports = toolGroup.viewportsInfo.map(
@@ -122,14 +124,13 @@ export default class SegmentationDisplayTool extends BaseTool {
     )
 
     // Render each segmentationData, in each viewport in the toolGroup
-    toolGroupSegmentationState.forEach(
-      (segmentationData: ToolGroupSpecificSegmentationData) => {
-        const config = this._getSegmentationConfig(toolGroupId)
-        const { representation } = segmentationData
+    toolGroupSegmentationRepresentations.forEach(
+      (representation: ToolGroupSpecificRepresentation) => {
+        const config = this._getMergedRepresentationsConfig(toolGroupId)
 
         toolGroupViewports.forEach((viewport) => {
           if (representation.type == Representations.Labelmap) {
-            LabelmapDisplay.render(viewport, segmentationData, config)
+            labelmapDisplay.render(viewport, representation, config)
           } else {
             throw new Error(
               `Render for ${representation.type} is not supported yet`
@@ -145,11 +146,17 @@ export default class SegmentationDisplayTool extends BaseTool {
     })
   }
 
-  _getSegmentationConfig(toolGroupId: string): SegmentationConfig {
+  /**
+   * Merge the toolGroup specific configuration with the default global configuration
+   * @param toolGroupId
+   * @returns
+   */
+  _getMergedRepresentationsConfig(
+    toolGroupId: string
+  ): SegmentationRepresentationConfig {
     const toolGroupConfig =
-      segmentationConfig.getSegmentationConfig(toolGroupId)
-
-    const globalConfig = segmentationConfig.getGlobalSegmentationConfig()
+      segmentationConfig.getToolGroupSpecificConfig(toolGroupId)
+    const globalConfig = segmentationConfig.getGlobalConfig()
 
     // merge two configurations and override the global config
     const mergedConfig = deepMerge(globalConfig, toolGroupConfig)

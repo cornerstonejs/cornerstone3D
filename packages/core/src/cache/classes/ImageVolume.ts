@@ -43,7 +43,7 @@ export class ImageVolume implements IImageVolume {
   /** optional image ids for the volume if it is made of separated images */
   imageIds?: Array<string>
   /** optional reference volume id if the volume is derived from another volume */
-  referenceVolumeId?: string
+  referencedVolumeId?: string
 
   constructor(props: IVolume) {
     this.volumeId = props.volumeId
@@ -63,8 +63,8 @@ export class ImageVolume implements IImageVolume {
       this.scaling = props.scaling
     }
 
-    if (props.referenceVolumeId) {
-      this.referenceVolumeId = props.referenceVolumeId
+    if (props.referencedVolumeId) {
+      this.referencedVolumeId = props.referencedVolumeId
     }
   }
 }

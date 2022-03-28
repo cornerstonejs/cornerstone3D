@@ -201,14 +201,14 @@ export async function createAndCacheVolume(
  * @returns ImageVolume
  */
 export function createAndCacheDerivedVolume(
-  referenceVolumeId: string,
+  referencedVolumeId: string,
   options: DerivedVolumeOptions
 ): ImageVolume {
-  const referencedVolume = cache.getVolume(referenceVolumeId)
+  const referencedVolume = cache.getVolume(referencedVolumeId)
 
   if (!referencedVolume) {
     throw new Error(
-      `Cannot created derived volume: Referenced volume with id ${referenceVolumeId} does not exist.`
+      `Cannot created derived volume: Referenced volume with id ${referencedVolumeId} does not exist.`
     )
   }
 
@@ -275,7 +275,7 @@ export function createAndCacheDerivedVolume(
     imageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
-    referenceVolumeId,
+    referencedVolumeId,
   })
 
   const volumeLoadObject = {

@@ -3,7 +3,9 @@ import wheelEventListener from './wheel'
 import keyEventListener from './keyboard'
 import {
   segmentationDataModifiedEventListener,
-  segmentationStateModifiedEventListener,
+  segmentationRepresentationModifiedEventListener,
+  segmentationRepresentationRemovedEventListener,
+  segmentationModifiedListener,
 } from './segmentation'
 import {
   annotationSelectionListener,
@@ -15,7 +17,9 @@ export {
   mouseEventListeners,
   wheelEventListener,
   keyEventListener,
-  segmentationStateModifiedEventListener,
+  segmentationRepresentationModifiedEventListener,
+  segmentationModifiedListener,
+  segmentationRepresentationRemovedEventListener,
   segmentationDataModifiedEventListener,
   annotationSelectionListener,
   annotationModifiedListener,

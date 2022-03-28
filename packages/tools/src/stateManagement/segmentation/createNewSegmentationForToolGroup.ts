@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
-import { getToolGroupByToolGroupId } from '../../store/ToolGroupManager'
+import { getToolGroupById } from '../../store/ToolGroupManager'
 
 /**
  * Create a new 3D segmentation volume from the default imageData presented in
@@ -33,7 +33,7 @@ async function createNewSegmentationForToolGroup(
     direction?: Float32Array
   }
 ): Promise<string> {
-  const toolGroup = getToolGroupByToolGroupId(toolGroupId)
+  const toolGroup = getToolGroupById(toolGroupId)
 
   if (!toolGroup) {
     throw new Error(`ToolGroup with Id ${toolGroupId} not found`)
@@ -54,7 +54,7 @@ async function createNewSegmentationForToolGroup(
 
   const { uid } = viewport.getDefaultActor()
   // Name the segmentation volume with the viewport Id
-  const segmentationUID = `${uid}-based-segmentation-${
+  const segmentationId = `${uid}-based-segmentation-${
     options?.volumeId ?? csUtils.uuidv4().slice(0, 8)
   }`
 
@@ -62,16 +62,16 @@ async function createNewSegmentationForToolGroup(
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
     const properties = _cloneDeep(options)
-    await volumeLoader.createLocalVolume(properties, segmentationUID)
+    await volumeLoader.createLocalVolume(properties, segmentationId)
   } else {
     // create a labelmap from a reference volume
     const { uid: volumeId } = viewport.getDefaultActor()
     await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-      volumeId: segmentationUID,
+      volumeId: segmentationId,
     })
   }
 
-  return segmentationUID
+  return segmentationId
 }
 
 export default createNewSegmentationForToolGroup

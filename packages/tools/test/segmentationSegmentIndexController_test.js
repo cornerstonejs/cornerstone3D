@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationsForToolGroup } = segmentation
+const { addSegmentationRepresentations, addSegmentations } = segmentation
 
 const {
   fakeVolumeLoader,
@@ -109,7 +109,7 @@ describe('Segmentation Index Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId(TOOL_GROUP_ID)
+      ToolGroupManager.destroyToolGroupById(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -208,13 +208,10 @@ describe('Segmentation Index Controller --', () => {
         newSegRenderedCallback
       )
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
-        }
-      )
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const { segmentationId } = evt.detail
+        expect(segmentationId.includes(volumeId)).toBe(true)
+      })
 
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
@@ -229,9 +226,24 @@ describe('Segmentation Index Controller --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+              .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })
@@ -327,17 +339,19 @@ describe('Segmentation Index Controller --', () => {
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
-        const segmentationInfo =
-          segmentation.activeSegmentation.getActiveSegmentationInfo(
+        const segmentationRepresentation =
+          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
             TOOL_GROUP_ID
           )
 
-        expect(segmentationInfo.segmentationDataUID).toBeDefined()
-        expect(segmentationInfo.volumeId).toBeDefined()
+        expect(
+          segmentationRepresentation.segmentationRepresentationUID
+        ).toBeDefined()
+        expect(segmentationRepresentation.segmentationId).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
           segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
-            segmentationInfo.volumeId
+            segmentationRepresentation.segmentationId
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)
@@ -354,13 +368,10 @@ describe('Segmentation Index Controller --', () => {
         newSegRenderedCallback
       )
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
-        }
-      )
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const { segmentationId } = evt.detail
+        expect(segmentationId.includes(volumeId)).toBe(true)
+      })
 
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
@@ -375,9 +386,24 @@ describe('Segmentation Index Controller --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+              .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })
@@ -479,24 +505,26 @@ describe('Segmentation Index Controller --', () => {
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
-        const segmentationInfo =
-          segmentation.activeSegmentation.getActiveSegmentationInfo(
+        const segmentationRepresentation =
+          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
             TOOL_GROUP_ID
           )
 
-        expect(segmentationInfo.segmentationDataUID).toBeDefined()
-        expect(segmentationInfo.volumeId).toBeDefined()
+        expect(
+          segmentationRepresentation.segmentationRepresentationUID
+        ).toBeDefined()
+        expect(segmentationRepresentation.segmentationId).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
           segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
-            segmentationInfo.volumeId
+            segmentationRepresentation.segmentationId
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)
 
         const locked1 =
           segmentation.segmentLocking.getSegmentsLockedForSegmentation(
-            segmentationInfo.volumeId
+            segmentationRepresentation.segmentationId
           )
 
         expect(locked1.length).toBe(1)
@@ -511,7 +539,7 @@ describe('Segmentation Index Controller --', () => {
 
         const lockedStatus2 =
           segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
-            segmentationInfo.volumeId,
+            segmentationRepresentation.segmentationId,
             2
           )
         expect(lockedStatus2).toBe(false)
@@ -528,13 +556,10 @@ describe('Segmentation Index Controller --', () => {
         newSegRenderedCallback
       )
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_GLOBAL_STATE_MODIFIED,
-        (evt) => {
-          const { segmentationUID } = evt.detail
-          expect(segmentationUID.includes(volumeId)).toBe(true)
-        }
-      )
+      eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
+        const { segmentationId } = evt.detail
+        expect(segmentationId.includes(volumeId)).toBe(true)
+      })
 
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
@@ -549,9 +574,24 @@ describe('Segmentation Index Controller --', () => {
 
             segmentation
               .createNewSegmentationForToolGroup(this.segToolGroup.id)
-              .then((segmentationUID) => {
-                addSegmentationsForToolGroup(this.segToolGroup.id, [
-                  { volumeId: segmentationUID },
+              .then((segmentationId) => {
+                addSegmentations([
+                  {
+                    segmentationId: segmentationId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segmentationId,
+                      },
+                    },
+                  },
+                ])
+
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
                 ])
               })
           })

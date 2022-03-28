@@ -1,9 +1,3 @@
-import checkSegmentationDataIsValid from './checkSegmentationDataIsValid'
-import internalAddSegmentationToElement from './internalAddSegmentationToElement'
-import internalRemoveSegmentationFromElement from './internalRemoveSegmentationFromElement'
+import validateSegmentationInput from './validateSegmentationInput'
 
-export {
-  checkSegmentationDataIsValid,
-  internalAddSegmentationToElement,
-  internalRemoveSegmentationFromElement,
-}
+export { validateSegmentationInput }

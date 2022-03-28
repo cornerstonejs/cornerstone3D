@@ -105,7 +105,7 @@ describe('LengthTool:', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId('stack')
+      ToolGroupManager.destroyToolGroupById('stack')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -958,7 +958,7 @@ describe('LengthTool:', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId('stack')
+      ToolGroupManager.destroyToolGroupById('stack')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -1124,7 +1124,7 @@ describe('LengthTool:', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId('stack')
+      ToolGroupManager.destroyToolGroupById('stack')
 
       DOMElements.forEach((el) => {
         if (el.parentNode) {

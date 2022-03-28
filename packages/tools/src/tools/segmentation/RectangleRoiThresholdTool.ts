@@ -44,7 +44,7 @@ export interface RectangleRoiThresholdAnnotation extends Annotation {
       points: Types.Point3[]
       activeHandleIndex: number | null
     }
-    // segmentationUID: string
+    // segmentationId: string
   }
 }
 
@@ -152,7 +152,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
           ],
           activeHandleIndex: null,
         },
-        segmentationUID: null,
+        segmentationId: null,
       },
     }
 

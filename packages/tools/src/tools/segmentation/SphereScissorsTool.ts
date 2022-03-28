@@ -20,6 +20,8 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation'
 
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState'
+
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -35,7 +37,7 @@ export default class SphereScissorsTool extends BaseTool {
     segmentation: any
     segmentIndex: number
     segmentsLocked: number[]
-    segmentationDataUID: string
+    segmentationId: string
     toolGroupId: string
     segmentColor: [number, number, number, number]
     viewportIdsToRender: string[]
@@ -87,26 +89,33 @@ export default class SphereScissorsTool extends BaseTool {
     const { viewPlaneNormal, viewUp } = camera
     const toolGroupId = this.toolGroupId
 
-    const activeSegmentationInfo =
-      activeSegmentation.getActiveSegmentationInfo(toolGroupId)
-    if (!activeSegmentationInfo) {
+    const activeSegmentationRepresentation =
+      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId)
+    if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       )
     }
 
-    const { volumeId, segmentationDataUID } = activeSegmentationInfo
+    const { segmentationRepresentationUID, segmentationId, type } =
+      activeSegmentationRepresentation
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(toolGroupId)
     const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(volumeId)
+      segmentLocking.getSegmentsLockedForSegmentation(segmentationId)
+
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
-      activeSegmentationInfo.segmentationDataUID,
+      segmentationRepresentationUID,
       segmentIndex
     )
 
+    const { representations } = getSegmentation(segmentationId)
+
+    // Todo: are we going to support contour editing with rectangle scissors?
+    const { volumeId } = representations[type]
     const segmentation = cache.getVolume(volumeId)
+
     this.isDrawing = true
 
     // Used for drawing the svg only, we might not need it at all
@@ -139,7 +148,7 @@ export default class SphereScissorsTool extends BaseTool {
       segmentIndex,
       segmentsLocked,
       segmentColor,
-      segmentationDataUID,
+      segmentationId,
       toolGroupId,
       viewportIdsToRender,
       handleIndex: 3,
@@ -213,7 +222,7 @@ export default class SphereScissorsTool extends BaseTool {
       segmentation,
       segmentIndex,
       segmentsLocked,
-      segmentationDataUID,
+      segmentationId,
     } = this.editData
     const { data } = annotation
     const { viewPlaneNormal, viewUp } = annotation.metadata
@@ -244,8 +253,7 @@ export default class SphereScissorsTool extends BaseTool {
       volume: segmentation,
       segmentIndex,
       segmentsLocked,
-      segmentationDataUID,
-      toolGroupId: this.toolGroupId,
+      segmentationId,
       viewPlaneNormal,
       viewUp,
     }

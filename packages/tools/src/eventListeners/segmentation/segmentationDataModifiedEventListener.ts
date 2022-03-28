@@ -11,35 +11,22 @@ import { SegmentationDataModifiedEventType } from '../../types/EventTypes'
 const onSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
-  const { toolGroupId, segmentationDataUID } = evt.detail
+  const { segmentationId } = evt.detail
 
-  const segmentationData = SegmentationState.getSegmentationDataByUID(
-    toolGroupId,
-    segmentationDataUID
-  )
-
-  if (!segmentationData) {
-    console.warn(
-      `onSegmentationDataModified: segmentationDataUID ${segmentationDataUID} not found in toolGroupId ${toolGroupId}`
-    )
-    return
-  }
-
-  const {
-    representation: { type },
-  } = segmentationData
+  const { representations, type } =
+    SegmentationState.getSegmentation(segmentationId)
 
   let toolGroupIds
   if (type === SegmentationRepresentations.Labelmap) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
-    const { volumeId } = segmentationData
-    const segmentation = cache.getVolume(volumeId)
+    const segmentationVolume = cache.getVolume(representations[type].volumeId)
 
-    if (!segmentation) {
+    if (!segmentationVolume) {
       console.warn('segmentation not found in cache')
       return
     }
-    const { imageData, vtkOpenGLTexture } = segmentation
+
+    const { imageData, vtkOpenGLTexture } = segmentationVolume
 
     // Todo: this can be optimized to not use the full texture from all slices
     const numSlices = imageData.getDimensions()[2]
@@ -52,7 +39,8 @@ const onSegmentationDataModified = function (
 
     // Trigger modified on the imageData to update the image
     imageData.modified()
-    toolGroupIds = SegmentationState.getToolGroupsWithSegmentation(volumeId)
+    toolGroupIds =
+      SegmentationState.getToolGroupsWithSegmentation(segmentationId)
   } else {
     throw new Error(
       `onSegmentationDataModified: representationType ${type} not supported yet`

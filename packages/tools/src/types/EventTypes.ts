@@ -97,10 +97,8 @@ type AnnotationRenderedEventDetail = {
  * EventDetail for when a Segmentation Data is modified by a tool
  */
 type SegmentationDataModifiedEventDetail = {
-  /** unique id of the toolGroup */
-  toolGroupId: string
-  /** unique id of the segmentationData */
-  segmentationDataUID: string
+  /** segmentation Id which has all the representation data  */
+  segmentationId: string
 }
 
 /**
@@ -114,19 +112,31 @@ type SegmentationRenderedEventDetail = {
 }
 
 /**
- * EventDetail for when a Segmentation State for a toolGroup is modified
+ * EventDetail for when a Segmentation Representation for a toolGroup is modified
  */
-type SegmentationStateModifiedEventDetail = {
+type SegmentationRepresentationModifiedEventDetail = {
   /** unique id of the toolGroup */
   toolGroupId: string
+  /** segmentation representationUID */
+  segmentationRepresentationUID: string
+}
+
+/**
+ * EventDetail for when a Segmentation Representation is removed
+ */
+type SegmentationRepresentationRemovedEventDetail = {
+  /** unique id of the toolGroup */
+  toolGroupId: string
+  /** segmentation representationUID */
+  segmentationRepresentationUID: string
 }
 
 /**
  * EventDetail for when a Segmentation Global State is modified
  */
-type SegmentationGlobalStateModifiedEventDetail = {
+type SegmentationModifiedEventDetail = {
   /** unique id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeId */
-  segmentationUID: string
+  segmentationId: string
 }
 
 /**
@@ -326,10 +336,16 @@ type SegmentationDataModifiedEventType =
   Types.CustomEventType<SegmentationDataModifiedEventDetail>
 
 /**
- * Event for when SegmentationState is modified
+ * Event for when Segmentation Representation is modified
  */
-type SegmentationStateModifiedEventType =
-  Types.CustomEventType<SegmentationStateModifiedEventDetail>
+type SegmentationRepresentationModifiedEventType =
+  Types.CustomEventType<SegmentationRepresentationModifiedEventDetail>
+
+/**
+ * Event for when Segmentation Representation is modified
+ */
+type SegmentationRepresentationRemovedEventType =
+  Types.CustomEventType<SegmentationRepresentationRemovedEventDetail>
 
 /**
  * Event for when Segmentation is rendered
@@ -340,8 +356,8 @@ type SegmentationRenderedEventType =
 /**
  * Event for when Segmentation Global State is modified
  */
-type SegmentationGlobalStateModifiedEventType =
-  Types.CustomEventType<SegmentationGlobalStateModifiedEventDetail>
+type SegmentationModifiedEventType =
+  Types.CustomEventType<SegmentationModifiedEventDetail>
 
 /**
  * Event for when a key is pressed
@@ -411,13 +427,15 @@ export {
   AnnotationLockChangeEventDetail,
   AnnotationLockChangeEventType,
   SegmentationDataModifiedEventType,
-  SegmentationStateModifiedEventDetail,
-  SegmentationStateModifiedEventType,
+  SegmentationRepresentationModifiedEventDetail,
+  SegmentationRepresentationModifiedEventType,
+  SegmentationRepresentationRemovedEventDetail,
+  SegmentationRepresentationRemovedEventType,
   SegmentationDataModifiedEventDetail,
   SegmentationRenderedEventType,
   SegmentationRenderedEventDetail,
-  SegmentationGlobalStateModifiedEventType,
-  SegmentationGlobalStateModifiedEventDetail,
+  SegmentationModifiedEventType,
+  SegmentationModifiedEventDetail,
   KeyDownEventDetail,
   KeyDownEventType,
   KeyUpEventDetail,

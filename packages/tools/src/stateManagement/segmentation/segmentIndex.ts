@@ -1,25 +1,26 @@
-import { getActiveSegmentationInfo } from './activeSegmentation'
-import { getGlobalSegmentationDataByUID } from './segmentationState'
-import { triggerSegmentationGlobalStateModified } from './triggerSegmentationEvents'
+import { getActiveSegmentationRepresentation } from './activeSegmentation'
+import { getSegmentation } from './segmentationState'
+import { triggerSegmentationModified } from './triggerSegmentationEvents'
 
 /**
- * Returns the active segment index for the active segmentation in the tool group
+ * Returns the active segment index for the active segmentation representation in the tool group
  *
- * @param toolGroupId - The Id of the tool group that contains an active segmentation.
+ * @param toolGroupId - The Id of the tool group that contains an active segmentation representation.
  * @returns The active segment index.
  */
 function getActiveSegmentIndex(toolGroupId: string): number | undefined {
-  const segmentationInfo = getActiveSegmentationInfo(toolGroupId)
+  const segmentationRepresentation =
+    getActiveSegmentationRepresentation(toolGroupId)
 
-  if (!segmentationInfo) {
+  if (!segmentationRepresentation) {
     throw new Error('toolGroup does not contain an active segmentation')
   }
 
-  const { volumeId } = segmentationInfo
-  const activeSegmentationGlobalState = getGlobalSegmentationDataByUID(volumeId)
+  const { segmentationId } = segmentationRepresentation
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState) {
-    return activeSegmentationGlobalState.activeSegmentIndex
+  if (segmentation) {
+    return segmentation.activeSegmentIndex
   }
 }
 
@@ -27,7 +28,7 @@ function getActiveSegmentIndex(toolGroupId: string): number | undefined {
  * Set the active segment index for the active segmentation of the toolGroup.
  * It fires a global state modified event.
  *
- * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
+ * @triggers SEGMENTATION_MODIFIED
  * @param toolGroupId - The Id of the tool group that contains the segmentation.
  * @param segmentIndex - The index of the segment to be activated.
  */
@@ -35,58 +36,56 @@ function setActiveSegmentIndex(
   toolGroupId: string,
   segmentIndex: number
 ): void {
-  const segmentationInfo = getActiveSegmentationInfo(toolGroupId)
+  const segmentationRepresentation =
+    getActiveSegmentationRepresentation(toolGroupId)
 
-  if (!segmentationInfo) {
+  if (!segmentationRepresentation) {
     throw new Error('element does not contain an active segmentation')
   }
 
-  const { volumeId: segmentationUID } = segmentationInfo
-  const activeSegmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const { segmentationId } = segmentationRepresentation
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
-    activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
+  if (segmentation?.activeSegmentIndex !== segmentIndex) {
+    segmentation.activeSegmentIndex = segmentIndex
 
-    triggerSegmentationGlobalStateModified(segmentationUID)
+    triggerSegmentationModified(segmentationId)
   }
 }
 
 /**
- * Set the active segment index for a segmentation UID. It fires a global state
+ * Set the active segment index for a segmentation Id. It fires a global state
  * modified event.
  *
- * @triggers SEGMENTATION_GLOBAL_STATE_MODIFIED
- * @param segmentationUID - The UID of the segmentation that the segment belongs to.
+ * @triggers SEGMENTATION_MODIFIED
+ * @param segmentationId - The id of the segmentation that the segment belongs to.
  * @param segmentIndex - The index of the segment to be activated.
  */
 function setActiveSegmentIndexForSegmentation(
-  segmentationUID: string,
+  segmentationId: string,
   segmentIndex: number
 ): void {
-  const activeSegmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState?.activeSegmentIndex !== segmentIndex) {
-    activeSegmentationGlobalState.activeSegmentIndex = segmentIndex
+  if (segmentation?.activeSegmentIndex !== segmentIndex) {
+    segmentation.activeSegmentIndex = segmentIndex
 
-    triggerSegmentationGlobalStateModified(segmentationUID)
+    triggerSegmentationModified(segmentationId)
   }
 }
 
 /**
  * Get the active segment index for a segmentation in the global state
- * @param segmentationUID - The UID of the segmentation to get the active segment index from.
+ * @param segmentationId - The id of the segmentation to get the active segment index from.
  * @returns The active segment index for the given segmentation.
  */
 function getActiveSegmentIndexForSegmentation(
-  segmentationUID: string
+  segmentationId: string
 ): number | undefined {
-  const activeSegmentationGlobalState =
-    getGlobalSegmentationDataByUID(segmentationUID)
+  const segmentation = getSegmentation(segmentationId)
 
-  if (activeSegmentationGlobalState) {
-    return activeSegmentationGlobalState.activeSegmentIndex
+  if (segmentation) {
+    return segmentation.activeSegmentIndex
   }
 }
 

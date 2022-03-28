@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums
 
-const { addSegmentationsForToolGroup } = segmentation
+const { addSegmentationRepresentations, addSegmentations } = segmentation
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
@@ -105,7 +105,7 @@ describe('Segmentation Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupByToolGroupId(TOOL_GROUP_ID)
+      ToolGroupManager.destroyToolGroupById(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -156,12 +156,35 @@ describe('Segmentation Controller --', () => {
                 vp1.render()
 
                 // add two volumes on the segmentation
-                addSegmentationsForToolGroup(TOOL_GROUP_ID, [
+                addSegmentations([
                   {
-                    volumeId: seg1VolumeID,
+                    segmentationId: seg1VolumeID,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: seg1VolumeID,
+                      },
+                    },
                   },
                   {
-                    volumeId: seg2VolumeID,
+                    segmentationId: seg2VolumeID,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: seg2VolumeID,
+                      },
+                    },
+                  },
+                ])
+
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: seg1VolumeID,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
+                  {
+                    segmentationId: seg2VolumeID,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
                   },
                 ])
               })
@@ -173,71 +196,73 @@ describe('Segmentation Controller --', () => {
       }
     })
 
-    it('should be able to load two segmentations on the toolGroup with different colorIndices', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL)
-      this.DOMElements.push(element)
+    // Todo: we don't have the ability to initially change the colorLut of the segmentation representation yet
 
-      // fake volume generator follows the pattern of
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-      const seg1VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
-      const seg2VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
-      const vp1 = this.renderingEngine.getViewport(viewportId1)
+    // it('should be able to load two segmentations on the toolGroup with different colorIndices', function (done) {
+    //   const element = createViewport(this.renderingEngine, AXIAL)
+    //   this.DOMElements.push(element)
 
-      const compareImageCallback = () => {
-        const canvas1 = vp1.getCanvas()
-        const image1 = canvas1.toDataURL('image/png')
+    //   // fake volume generator follows the pattern of
+    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+    //   const seg1VolumeID =
+    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
+    //   const seg2VolumeID =
+    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
+    //   const vp1 = this.renderingEngine.getViewport(viewportId1)
 
-        compareImages(
-          image1,
-          volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT,
-          'volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT'
-        ).then(done, done.fail)
-      }
+    //   const compareImageCallback = () => {
+    //     const canvas1 = vp1.getCanvas()
+    //     const image1 = canvas1.toDataURL('image/png')
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_RENDERED,
-        compareImageCallback
-      )
+    //     compareImages(
+    //       image1,
+    //       volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT,
+    //       'volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT'
+    //     ).then(done, done.fail)
+    //   }
 
-      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+    //   eventTarget.addEventListener(
+    //     Events.SEGMENTATION_RENDERED,
+    //     compareImageCallback
+    //   )
 
-      try {
-        createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-          createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-            createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-              setVolumesForViewports(
-                this.renderingEngine,
-                [{ volumeId: volumeId }],
-                [viewportId1]
-              ).then(() => {
-                vp1.render()
+    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
-                const colorLUTIndex = 1
-                segmentation.segmentationColor.addColorLUT(
-                  [[245, 209, 145, 255]],
-                  colorLUTIndex
-                )
+    //   try {
+    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
+    //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+    //           setVolumesForViewports(
+    //             this.renderingEngine,
+    //             [{ volumeId: volumeId }],
+    //             [viewportId1]
+    //           ).then(() => {
+    //             vp1.render()
 
-                // add two volumes on the segmentation
-                addSegmentationsForToolGroup(TOOL_GROUP_ID, [
-                  {
-                    volumeId: seg1VolumeID,
-                    colorLUTIndex: 1,
-                  },
-                  {
-                    volumeId: seg2VolumeID,
-                  },
-                ])
-              })
-            })
-          })
-        })
-      } catch (e) {
-        done.fail(e)
-      }
-    })
+    //             const colorLUTIndex = 1
+    //             segmentation.segmentationColor.addColorLUT(
+    //               [[245, 209, 145, 255]],
+    //               colorLUTIndex
+    //             )
+
+    //             // add two volumes on the segmentation
+    //             addSegmentationRepresentations(TOOL_GROUP_ID, [
+    //               {
+    //                 volumeId: seg1VolumeID,
+    //                 colorLUTIndex: 1,
+    //               },
+    //               {
+    //                 volumeId: seg2VolumeID,
+    //               },
+    //             ])
+    //           })
+    //         })
+    //       })
+    //     })
+    //   } catch (e) {
+    //     done.fail(e)
+    //   }
+    // })
 
     // it('should be able to load two segmentations on the toolGroup and make one invisible', function (done) {
     //   const element = createViewport(this.renderingEngine, AXIAL)
@@ -262,7 +287,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.segmentation.state.getSegmentationState(TOOL_GROUP_ID)
+    //       csTools3d.segmentation.state.getSegmentationRepresentations(TOOL_GROUP_ID)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].visibility).toBe(true)
@@ -292,7 +317,7 @@ describe('Segmentation Controller --', () => {
     //             vp1.render()
 
     //             // add two volumes on the segmentation
-    //             addSegmentationsForToolGroup(TOOL_GROUP_ID, [
+    //             addSegmentationRepresentations(TOOL_GROUP_ID, [
     //               {
     //                 volumeId: seg1VolumeID,
     //               },
@@ -301,13 +326,13 @@ describe('Segmentation Controller --', () => {
     //               },
     //             ]).then(() => {
     //               const segmentationData =
-    //                 segmentation.activeSegmentation.getActiveSegmentationInfo(
+    //                 segmentation.activeSegmentation.getActiveSegmentationRepresentation(
     //                   TOOL_GROUP_ID
     //                 )
 
     //               segmentation.segmentationVisibility.setSegmentationVisibility(
     //                 TOOL_GROUP_ID,
-    //                 segmentationData.segmentationDataUID,
+    //                 segmentationData.segmentationRepresentationUID,
     //                 false
     //               )
     //             })

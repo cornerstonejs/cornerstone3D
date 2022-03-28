@@ -122,7 +122,7 @@ describe('Cornerstone Tools: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupByToolGroupId('volume')
+    ToolGroupManager.destroyToolGroupById('volume')
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {

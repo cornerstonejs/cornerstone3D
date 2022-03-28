@@ -3,6 +3,7 @@ import {
   cache,
   RenderingEngine,
   volumeLoader,
+  imageLoader,
   init as csRenderInit,
 } from '@cornerstonejs/core'
 import {
@@ -30,9 +31,18 @@ import {
 } from './constants'
 import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
 import config from './config/default'
+import { cornerstoneStreamingImageVolumeLoader } from '@cornerstonejs/streaming-image-volume-loader'
+import { sharedArrayBufferImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
 
 import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
 import limitImageIds from './helpers/limitImageIds'
+
+volumeLoader.registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
+volumeLoader.registerVolumeLoader(
+  'cornerstoneStreamingImageVolume',
+  cornerstoneStreamingImageVolumeLoader
+)
+imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
 
 const VOLUME = 'volume'
 const STACK = 'stack'

@@ -6,9 +6,8 @@ import { pointInSurroundingSphereCallback } from '../../../utilities'
 type OperationData = {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
   volume: Types.IImageVolume
-  toolGroupId: string
   segmentIndex: number
-  segmentationDataUID: string
+  segmentationId: string
   segmentsLocked: number[]
   viewPlaneNormal: Types.Point3
   viewUp: Types.Point3
@@ -25,8 +24,7 @@ function fillSphere(
     volume: segmentation,
     segmentsLocked,
     segmentIndex,
-    toolGroupId,
-    segmentationDataUID,
+    segmentationId,
     points,
   } = operationData
 
@@ -46,7 +44,7 @@ function fillSphere(
     callback
   )
 
-  triggerSegmentationDataModified(toolGroupId, segmentationDataUID)
+  triggerSegmentationDataModified(segmentationId)
 }
 
 /**

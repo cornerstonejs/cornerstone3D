@@ -11,8 +11,7 @@ import { triggerSegmentationDataModified } from '../../../stateManagement/segmen
 import { pointInShapeCallback } from '../../../utilities'
 
 type OperationData = {
-  toolGroupId: string
-  segmentationDataUID: string
+  segmentationId: string
   points: any // Todo:fix
   volume: Types.IImageVolume
   segmentIndex: number
@@ -32,8 +31,7 @@ function fillCircle(
     points,
     segmentsLocked,
     segmentIndex,
-    toolGroupId,
-    segmentationDataUID,
+    segmentationId,
   } = operationData
   const { imageData, dimensions, scalarData } = segmentationVolume
   const { viewport } = enabledElement
@@ -89,7 +87,7 @@ function fillCircle(
     boundsIJK
   )
 
-  triggerSegmentationDataModified(toolGroupId, segmentationDataUID)
+  triggerSegmentationDataModified(segmentationId)
 }
 
 /**

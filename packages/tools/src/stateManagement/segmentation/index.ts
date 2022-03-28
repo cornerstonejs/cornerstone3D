@@ -1,6 +1,7 @@
-import addSegmentationsForToolGroup from './addSegmentationsForToolGroup'
 import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup'
 import createNewSegmentationForToolGroup from './createNewSegmentationForToolGroup'
+import addSegmentations from './addSegmentations'
+import addSegmentationRepresentations from './addSegmentationRepresentations'
 
 import * as activeSegmentation from './activeSegmentation'
 import * as segmentLocking from './segmentLocking'
@@ -13,8 +14,9 @@ import * as triggerSegmentationEvents from './triggerSegmentationEvents'
 
 export {
   state,
+  addSegmentations,
   activeSegmentation,
-  addSegmentationsForToolGroup,
+  addSegmentationRepresentations,
   removeSegmentationsFromToolGroup,
   createNewSegmentationForToolGroup,
   segmentLocking,
