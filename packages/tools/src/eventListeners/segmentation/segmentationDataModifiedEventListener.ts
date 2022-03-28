@@ -11,7 +11,7 @@ import { SegmentationDataModifiedEventType } from '../../types/EventTypes'
 const onSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
-  const { segmentationId } = evt.detail
+  const { segmentationId, modifiedSlicesToUse } = evt.detail
 
   const { representations, type } =
     SegmentationState.getSegmentation(segmentationId)
@@ -28,12 +28,16 @@ const onSegmentationDataModified = function (
 
     const { imageData, vtkOpenGLTexture } = segmentationVolume
 
-    // Todo: this can be optimized to not use the full texture from all slices
-    const numSlices = imageData.getDimensions()[2]
-    const modifiedSlicesToUse = [...Array(numSlices).keys()]
-
     // Update the texture for the volume in the GPU
-    modifiedSlicesToUse.forEach((i) => {
+    let slicesToUpdate
+    if (modifiedSlicesToUse && Array.isArray(modifiedSlicesToUse)) {
+      slicesToUpdate = modifiedSlicesToUse
+    } else {
+      const numSlices = imageData.getDimensions()[2]
+      slicesToUpdate = [...Array(numSlices).keys()]
+    }
+
+    slicesToUpdate.forEach((i) => {
       vtkOpenGLTexture.setUpdatedFrame(i)
     })
 

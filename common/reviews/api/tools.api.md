@@ -304,6 +304,17 @@ export class BidirectionalTool extends AnnotationTool {
 }
 
 // @public (undocumented)
+export class BrushTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => void;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any): void;
+    // (undocumented)
+    static toolName: string;
+}
+
+// @public (undocumented)
 function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, rowPixelSpacing: number, columnPixelSpacing: number): void;
 
 // @public
@@ -2687,6 +2698,7 @@ declare namespace segmentationConfig {
 // @public (undocumented)
 type SegmentationDataModifiedEventDetail = {
     segmentationId: string;
+    modifiedSlicesToUse?: number[];
 };
 
 // @public (undocumented)
@@ -3177,7 +3189,7 @@ detail: unknown = null
 }
 
 // @public (undocumented)
-function triggerSegmentationDataModified(segmentationId: string): void;
+function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[]): void;
 
 declare namespace triggerSegmentationEvents {
     export {

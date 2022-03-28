@@ -41,6 +41,7 @@ import {
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
   SegmentationDisplayTool,
+  BrushTool,
 } from './tools'
 
 import {
@@ -92,6 +93,7 @@ export {
   SphereScissorsTool,
   RectangleRoiThresholdTool,
   RectangleRoiStartEndThresholdTool,
+  BrushTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

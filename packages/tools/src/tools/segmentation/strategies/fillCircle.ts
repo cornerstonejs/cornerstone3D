@@ -73,11 +73,14 @@ function fillCircle(
     zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
   }
 
-  const callback = ({ value, index }) => {
+  const modifiedSlicesToUse = new Set() as Set<number>
+  const callback = ({ value, index, pointIJK }) => {
     if (segmentsLocked.includes(value)) {
       return
     }
     scalarData[index] = segmentIndex
+    //Todo: I don't think this will always be index 2 in streamingImageVolume?
+    modifiedSlicesToUse.add(pointIJK[2])
   }
 
   pointInShapeCallback(
@@ -87,7 +90,9 @@ function fillCircle(
     boundsIJK
   )
 
-  triggerSegmentationDataModified(segmentationId)
+  const arrayOfSlices: number[] = Array.from(modifiedSlicesToUse)
+
+  triggerSegmentationDataModified(segmentationId, arrayOfSlices)
 }
 
 /**

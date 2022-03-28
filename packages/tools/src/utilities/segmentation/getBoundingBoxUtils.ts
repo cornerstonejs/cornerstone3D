@@ -39,11 +39,11 @@ function getBoundingBoxAroundShape(
   if (dimensions) {
     const [width, height, depth] = dimensions
     xMin = Math.max(0, xMin)
-    xMax = Math.min(width, xMax)
+    xMax = Math.min(width - 1, xMax)
     yMin = Math.max(0, yMin)
-    yMax = Math.min(height, yMax)
+    yMax = Math.min(height - 1, yMax)
     zMin = Math.max(0, zMin)
-    zMax = Math.min(depth, zMax)
+    zMax = Math.min(depth - 1, zMax)
   }
 
   return [
