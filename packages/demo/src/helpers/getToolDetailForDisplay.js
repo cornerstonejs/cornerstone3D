@@ -54,13 +54,13 @@ export default function getToolDetailForDisplay(eventDetail) {
       }
     }
 
-    if (metadata.toolName === RectangleRoiTool.toolName) {
+    if (metadata.toolName === RectangleROITool.toolName) {
       detail.stats[`${target}-area`] = stat.area
       detail.stats[`${target}-mean`] = stat.mean
       detail.stats[`${target}-std`] = stat.stdDev
     }
 
-    if (metadata.toolName === EllipticalRoiTool.toolName) {
+    if (metadata.toolName === EllipticalROITool.toolName) {
       detail.stats[`${target}-area`] = stat.area
       detail.stats[`${target}-mean`] = stat.mean
       detail.stats[`${target}-std`] = stat.stdDev

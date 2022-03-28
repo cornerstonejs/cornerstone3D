@@ -943,14 +943,14 @@ declare namespace ellipse {
 }
 
 // @public (undocumented)
-export class EllipticalRoiTool extends AnnotationTool {
+export class EllipticalROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => EllipticalRoiAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => EllipticalROIAnnotation;
     // (undocumented)
     _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
@@ -977,7 +977,7 @@ export class EllipticalRoiTool extends AnnotationTool {
     // (undocumented)
     _getTextLines: (data: any, targetId: any) => any[];
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalRoiAnnotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -985,7 +985,7 @@ export class EllipticalRoiTool extends AnnotationTool {
     // (undocumented)
     _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLElement, annotation: EllipticalRoiAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLElement, annotation: EllipticalROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
@@ -1003,7 +1003,7 @@ export class EllipticalRoiTool extends AnnotationTool {
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalRoiAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalROIAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -2383,7 +2383,7 @@ declare namespace rectangle {
 }
 
 // @public (undocumented)
-export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
+export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => {
@@ -2422,7 +2422,7 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
     // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
     // (undocumented)
-    _computeProjectionPoints(annotation: RectangleRoiStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
+    _computeProjectionPoints(annotation: RectangleROIStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
     // (undocumented)
     editData: {
         annotation: any;
@@ -2446,7 +2446,7 @@ export class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
 }
 
 // @public (undocumented)
-export class RectangleRoiThresholdTool extends RectangleRoiTool {
+export class RectangleROIThresholdTool extends RectangleROITool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => {
@@ -2496,14 +2496,14 @@ export class RectangleRoiThresholdTool extends RectangleRoiTool {
 }
 
 // @public (undocumented)
-export class RectangleRoiTool extends AnnotationTool {
+export class RectangleROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => RectangleRoiAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => RectangleROIAnnotation;
     // (undocumented)
     _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
@@ -2531,7 +2531,7 @@ export class RectangleRoiTool extends AnnotationTool {
     // (undocumented)
     _getTextLines: (data: any, targetId: string) => any[];
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleRoiAnnotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -2539,7 +2539,7 @@ export class RectangleRoiTool extends AnnotationTool {
     // (undocumented)
     _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLElement, annotation: RectangleRoiAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLElement, annotation: RectangleROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     _mouseDragCallback: (evt: EventTypes_2.MouseMoveEventType | EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
@@ -2551,7 +2551,7 @@ export class RectangleRoiTool extends AnnotationTool {
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleRoiAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, interactionType: InteractionTypes) => void;
 }
 
 // @public (undocumented)

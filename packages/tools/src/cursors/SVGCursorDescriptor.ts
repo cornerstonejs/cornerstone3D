@@ -86,14 +86,14 @@ const DefinedDescriptorsMap = {
       y: 32,
     },
   }),
-  CircleRoi: extend(BASE, {
+  CircleROI: extend(BASE, {
     iconContent: `<circle stroke="{{color}}" fill="none" stroke-width="3" cx="16" cy="16" r="14" />`,
     viewBox: {
       x: 32,
       y: 32,
     },
   }),
-  EllipticalRoi: extend(BASE, {
+  EllipticalROI: extend(BASE, {
     iconContent: `<path stroke="{{color}}" fill="none" stroke-width="3" d="M30.74 15.76C30.74 20.99 24.14 25.23 16
     25.23C7.86 25.23 1.26 20.99 1.26 15.76C1.26 10.54 7.86 6.3 16 6.3C24.14
     6.3 30.74 10.54 30.74 15.76Z" />`,
@@ -102,7 +102,7 @@ const DefinedDescriptorsMap = {
       y: 32,
     },
   }),
-  FreehandRoi: extend(BASE, {
+  FreehandROI: extend(BASE, {
     iconContent: `<g fill="{{color}}" stroke="{{color}}" stroke-width="2">
     <ellipse ry="1" rx="1" id="svg_3" cy="4.240343" cx="14.306499"/>
     <line id="svg_4" y2="3.58462" x2="12.242186" y1="3.997482" x1="13.432202"/>
@@ -140,7 +140,7 @@ const DefinedDescriptorsMap = {
       y: 18,
     },
   }),
-  FreehandRoiSculptor: extend(BASE, {
+  FreehandROISculptor: extend(BASE, {
     iconContent: `<g id="icon-freehand-sculpt" fill="none" stroke-width="1.5" stroke="{{color}}" stroke-linecap="round" stroke-linejoin="round">
     <line id="svg_1" y2="2.559367" x2="10.184807" y1="4.467781" x1="8.81711"/>
     <line id="svg_4" y2="1.493836" x2="11.727442" y1="2.766112" x1="10.089386"/>
@@ -200,7 +200,7 @@ const DefinedDescriptorsMap = {
       y: 1792,
     },
   }),
-  RectangleRoi: extend(BASE, {
+  RectangleROI: extend(BASE, {
     iconContent: `<path fill="{{color}}" d="M1312 256h-832q-66 0-113 47t-47 113v832q0 66 47
     113t113 47h832q66 0 113-47t47-113v-832q0-66-47-113t-113-47zm288 160v832q0
     119-84.5 203.5t-203.5 84.5h-832q-119 0-203.5-84.5t-84.5-203.5v-832q0-119

@@ -11,8 +11,8 @@ import CrosshairsTool from './CrosshairsTool'
 import BidirectionalTool from './annotation/BidirectionalTool'
 import LengthTool from './annotation/LengthTool'
 import ProbeTool from './annotation/ProbeTool'
-import RectangleRoiTool from './annotation/RectangleRoiTool'
-import EllipticalRoiTool from './annotation/EllipticalRoiTool'
+import RectangleROITool from './annotation/RectangleROITool'
+import EllipticalROITool from './annotation/EllipticalROITool'
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool'
@@ -21,8 +21,8 @@ import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool'
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool'
 import CircleScissorsTool from './segmentation/CircleScissorsTool'
 import SphereScissorsTool from './segmentation/SphereScissorsTool'
-import RectangleRoiThresholdTool from './segmentation/RectangleRoiThresholdTool'
-import RectangleRoiStartEndThresholdTool from './segmentation/RectangleRoiStartEndThresholdTool'
+import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool'
+import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool'
 import BrushTool from './segmentation/BrushTool'
 
 export {
@@ -42,15 +42,15 @@ export {
   BidirectionalTool,
   LengthTool,
   ProbeTool,
-  RectangleRoiTool,
-  EllipticalRoiTool,
+  RectangleROITool,
+  EllipticalROITool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,
-  RectangleRoiThresholdTool,
-  RectangleRoiStartEndThresholdTool,
+  RectangleROIThresholdTool,
+  RectangleROIStartEndThresholdTool,
   BrushTool,
 }
