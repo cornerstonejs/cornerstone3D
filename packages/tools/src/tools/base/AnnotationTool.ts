@@ -150,8 +150,12 @@ abstract class AnnotationTool extends BaseTool {
    */
   public mouseMoveCallback = (
     evt: EventTypes.MouseMoveEventType,
-    filteredAnnotations: Annotations
+    filteredAnnotations?: Annotations
   ): boolean => {
+    if (!filteredAnnotations) {
+      return false
+    }
+
     const { element, currentPoints } = evt.detail
     const canvasCoords = currentPoints.canvas
     let annotationsNeedToBeRedrawn = false
