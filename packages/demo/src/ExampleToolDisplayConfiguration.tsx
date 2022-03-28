@@ -18,9 +18,9 @@ import {
   WindowLevelTool,
   LengthTool,
   BidirectionalTool,
-  RectangleRoiTool,
+  RectangleROITool,
   ProbeTool,
-  EllipticalRoiTool,
+  EllipticalROITool,
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
 
@@ -53,8 +53,8 @@ class ToolDisplayConfigurationExample extends Component {
     WindowLevelTool.toolName,
     LengthTool.toolName,
     BidirectionalTool.toolName,
-    RectangleRoiTool.toolName,
-    EllipticalRoiTool.toolName,
+    RectangleROITool.toolName,
+    EllipticalROITool.toolName,
     ProbeTool.toolName,
   ]
 

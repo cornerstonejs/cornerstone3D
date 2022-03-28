@@ -49,7 +49,7 @@ import {
 } from '../../types'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
-interface RectangleRoiCachedStats {
+interface RectangleROICachedStats {
   [targetId: string]: {
     Modality: string
     area: number
@@ -60,13 +60,13 @@ interface RectangleRoiCachedStats {
 }
 
 /**
- * RectangleRoiAnnotation let you draw annotations that measures the statistics
+ * RectangleROIAnnotation let you draw annotations that measures the statistics
  * such as area, max, mean and stdDev of a Rectangular region of interest.
- * You can use RectangleRoiAnnotation in all perpendicular views (axial, sagittal, coronal).
+ * You can use RectangleROIAnnotation in all perpendicular views (axial, sagittal, coronal).
  * Note: annotation tools in cornerstone3DTools exists in the exact location
  * in the physical 3d space, as a result, by default, all annotations that are
  * drawing in the same frameOfReference will get shared between viewports that
- * are in the same frameOfReference. RectangleRoi tool's text box lines are dynamically
+ * are in the same frameOfReference. RectangleROI tool's text box lines are dynamically
  * generated based on the viewport's underlying Modality. For instance, if
  * the viewport is displaying CT, the text box will shown the statistics in Hounsfield units,
  * and if the viewport is displaying PET, the text box will show the statistics in
@@ -78,15 +78,15 @@ interface RectangleRoiCachedStats {
  * or similar methods.
  *
  * ```js
- * cornerstoneTools.addTool(RectangleRoiAnnotation)
+ * cornerstoneTools.addTool(RectangleROIAnnotation)
  *
  * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
- * toolGroup.addTool(RectangleRoiAnnotation.toolName)
+ * toolGroup.addTool(RectangleROIAnnotation.toolName)
  *
  * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
- * toolGroup.setToolActive(RectangleRoiAnnotation.toolName, {
+ * toolGroup.setToolActive(RectangleROIAnnotation.toolName, {
  *   bindings: [
  *    {
  *       mouseButton: MouseBindings.Primary, // Left Click
@@ -97,7 +97,7 @@ interface RectangleRoiCachedStats {
  *
  * Read more in the Docs section of the website.
  */
-export interface RectangleRoiAnnotation extends Annotation {
+export interface RectangleROIAnnotation extends Annotation {
   data: {
     handles: {
       points: Types.Point3[]
@@ -115,7 +115,7 @@ export interface RectangleRoiAnnotation extends Annotation {
     }
     label: string
     cachedStats?:
-      | RectangleRoiCachedStats
+      | RectangleROICachedStats
       | {
           projectionPoints?: Types.Point3[]
           projectionPointsImageIds?: string[]
@@ -123,8 +123,8 @@ export interface RectangleRoiAnnotation extends Annotation {
   }
 }
 
-export default class RectangleRoiTool extends AnnotationTool {
-  static toolName = 'RectangleRoi'
+export default class RectangleROITool extends AnnotationTool {
+  static toolName = 'RectangleROI'
 
   _throttledCalculateCachedStats: any
   editData: {
@@ -159,7 +159,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a RectangleRoi Annotation and stores it in the annotationManager
+   * a RectangleROI Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
    * @returns The annotation object.
@@ -167,7 +167,7 @@ export default class RectangleRoiTool extends AnnotationTool {
    */
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): RectangleRoiAnnotation => {
+  ): RectangleROIAnnotation => {
     const eventDetail = evt.detail
     const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
@@ -208,7 +208,7 @@ export default class RectangleRoiTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleRoiTool.toolName,
+        toolName: RectangleROITool.toolName,
       },
       data: {
         label: '',
@@ -236,13 +236,13 @@ export default class RectangleRoiTool extends AnnotationTool {
     }
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleRoiTool)
+    Settings.getObjectSettings(annotation, RectangleROITool)
 
     addAnnotation(element, annotation)
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiTool.toolName
+      RectangleROITool.toolName
     )
 
     this.editData = {
@@ -277,7 +277,7 @@ export default class RectangleRoiTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLElement,
-    annotation: RectangleRoiAnnotation,
+    annotation: RectangleROIAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -312,7 +312,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: RectangleRoiAnnotation,
+    annotation: RectangleROIAnnotation,
     interactionType: InteractionTypes
   ): void => {
     const eventDetail = evt.detail
@@ -322,7 +322,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiTool.toolName
+      RectangleROITool.toolName
     )
 
     this.editData = {
@@ -345,7 +345,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
   handleSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: RectangleRoiAnnotation,
+    annotation: RectangleROIAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void => {
@@ -367,7 +367,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiTool.toolName
+      RectangleROITool.toolName
     )
 
     this.editData = {
@@ -624,7 +624,7 @@ export default class RectangleRoiTool extends AnnotationTool {
   }
 
   /**
-   * it is used to draw the rectangleRoi annotation in each
+   * it is used to draw the rectangleROI annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
@@ -638,7 +638,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let annotations = getAnnotations(element, RectangleRoiTool.toolName)
+    let annotations = getAnnotations(element, RectangleROITool.toolName)
 
     if (!annotations?.length) {
       return
@@ -657,8 +657,8 @@ export default class RectangleRoiTool extends AnnotationTool {
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as RectangleRoiAnnotation
-      const settings = Settings.getObjectSettings(annotation, RectangleRoiTool)
+      const annotation = annotations[i] as RectangleROIAnnotation
+      const settings = Settings.getObjectSettings(annotation, RectangleROITool)
       const annotationUID = annotation.annotationUID
 
       const data = annotation.data
@@ -747,7 +747,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleRoiTool.toolName,
+          RectangleROITool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -760,7 +760,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       const rectangleUID = '0'
       drawRectSvg(
         svgDrawingHelper,
-        RectangleRoiTool.toolName,
+        RectangleROITool.toolName,
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],
@@ -791,7 +791,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       const textBoxUID = '1'
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        RectangleRoiTool.toolName,
+        RectangleROITool.toolName,
         annotationUID,
         textBoxUID,
         textLines,

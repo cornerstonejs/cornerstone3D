@@ -24,16 +24,16 @@ const {
   MIPJumpToClickTool,
   LengthTool,
   ProbeTool,
-  RectangleRoiTool,
-  EllipticalRoiTool,
+  RectangleROITool,
+  EllipticalROITool,
   BidirectionalTool,
   CrosshairsTool,
   RectangleScissorsTool,
   CircleScissorsTool,
   BrushTool,
   SphereScissorsTool,
-  RectangleRoiThresholdTool,
-  RectangleRoiStartEndThresholdTool,
+  RectangleROIThresholdTool,
+  RectangleROIStartEndThresholdTool,
   SegmentationDisplayTool,
 } = csTools3d
 
@@ -235,8 +235,8 @@ function initToolGroups() {
   csTools3d.addTool(MIPJumpToClickTool)
   csTools3d.addTool(LengthTool)
   csTools3d.addTool(ProbeTool)
-  csTools3d.addTool(RectangleRoiTool)
-  csTools3d.addTool(EllipticalRoiTool)
+  csTools3d.addTool(RectangleROITool)
+  csTools3d.addTool(EllipticalROITool)
   csTools3d.addTool(BidirectionalTool)
   csTools3d.addTool(CrosshairsTool)
   // Segmentation
@@ -244,8 +244,8 @@ function initToolGroups() {
   csTools3d.addTool(CircleScissorsTool)
   csTools3d.addTool(BrushTool)
   csTools3d.addTool(SphereScissorsTool)
-  csTools3d.addTool(RectangleRoiThresholdTool)
-  csTools3d.addTool(RectangleRoiStartEndThresholdTool)
+  csTools3d.addTool(RectangleROIThresholdTool)
+  csTools3d.addTool(RectangleROIStartEndThresholdTool)
   csTools3d.addTool(SegmentationDisplayTool)
 
   const stackCTViewportToolGroup = ToolGroupManager.createToolGroup(
@@ -337,14 +337,14 @@ function addToolsToToolGroups({
     stackPTViewportToolGroup.addTool(BidirectionalTool.toolName)
     stackPTViewportToolGroup.addTool(LengthTool.toolName)
     stackPTViewportToolGroup.addTool(ProbeTool.toolName)
-    stackPTViewportToolGroup.addTool(RectangleRoiTool.toolName)
-    stackPTViewportToolGroup.addTool(EllipticalRoiTool.toolName)
+    stackPTViewportToolGroup.addTool(RectangleROITool.toolName)
+    stackPTViewportToolGroup.addTool(EllipticalROITool.toolName)
 
     stackPTViewportToolGroup.setToolPassive(BidirectionalTool.toolName)
     stackPTViewportToolGroup.setToolPassive(LengthTool.toolName)
     stackPTViewportToolGroup.setToolPassive(ProbeTool.toolName)
-    stackPTViewportToolGroup.setToolPassive(RectangleRoiTool.toolName)
-    stackPTViewportToolGroup.setToolPassive(EllipticalRoiTool.toolName)
+    stackPTViewportToolGroup.setToolPassive(RectangleROITool.toolName)
+    stackPTViewportToolGroup.setToolPassive(EllipticalROITool.toolName)
     stackPTViewportToolGroup.setToolDisabled(CrosshairsTool.toolName)
 
     stackPTViewportToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
@@ -381,8 +381,8 @@ function addToolsToToolGroups({
     stackCTViewportToolGroup.addTool(BidirectionalTool.toolName)
     stackCTViewportToolGroup.addTool(LengthTool.toolName)
     stackCTViewportToolGroup.addTool(ProbeTool.toolName)
-    stackCTViewportToolGroup.addTool(RectangleRoiTool.toolName)
-    stackCTViewportToolGroup.addTool(EllipticalRoiTool.toolName)
+    stackCTViewportToolGroup.addTool(RectangleROITool.toolName)
+    stackCTViewportToolGroup.addTool(EllipticalROITool.toolName)
 
     stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
@@ -393,8 +393,8 @@ function addToolsToToolGroups({
     })
     stackCTViewportToolGroup.setToolPassive(BidirectionalTool.toolName)
     stackCTViewportToolGroup.setToolPassive(ProbeTool.toolName)
-    stackCTViewportToolGroup.setToolPassive(RectangleRoiTool.toolName)
-    stackCTViewportToolGroup.setToolPassive(EllipticalRoiTool.toolName)
+    stackCTViewportToolGroup.setToolPassive(RectangleROITool.toolName)
+    stackCTViewportToolGroup.setToolPassive(EllipticalROITool.toolName)
     stackCTViewportToolGroup.setToolDisabled(CrosshairsTool.toolName)
 
     stackCTViewportToolGroup.setToolPassive(LengthTool.toolName)
@@ -431,8 +431,8 @@ function addToolsToToolGroups({
     stackDXViewportToolGroup.addTool(BidirectionalTool.toolName)
     stackDXViewportToolGroup.addTool(LengthTool.toolName)
     stackDXViewportToolGroup.addTool(ProbeTool.toolName)
-    stackDXViewportToolGroup.addTool(RectangleRoiTool.toolName)
-    stackDXViewportToolGroup.addTool(EllipticalRoiTool.toolName)
+    stackDXViewportToolGroup.addTool(RectangleROITool.toolName)
+    stackDXViewportToolGroup.addTool(EllipticalROITool.toolName)
 
     stackDXViewportToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [
@@ -444,8 +444,8 @@ function addToolsToToolGroups({
     stackDXViewportToolGroup.setToolPassive(BidirectionalTool.toolName)
     stackDXViewportToolGroup.setToolPassive(LengthTool.toolName)
     stackDXViewportToolGroup.setToolPassive(ProbeTool.toolName)
-    stackDXViewportToolGroup.setToolPassive(RectangleRoiTool.toolName)
-    stackDXViewportToolGroup.setToolPassive(EllipticalRoiTool.toolName)
+    stackDXViewportToolGroup.setToolPassive(RectangleROITool.toolName)
+    stackDXViewportToolGroup.setToolPassive(EllipticalROITool.toolName)
     stackDXViewportToolGroup.setToolDisabled(CrosshairsTool.toolName)
 
     stackDXViewportToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
@@ -478,10 +478,10 @@ function addToolsToToolGroups({
     // @TODO: This kills the volumeId and tool configuration
     ctSceneToolGroup.addTool(StackScrollTool.toolName)
     ctSceneToolGroup.addTool(RectangleScissorsTool.toolName)
-    ctSceneToolGroup.addTool(RectangleRoiThresholdTool.toolName)
+    ctSceneToolGroup.addTool(RectangleROIThresholdTool.toolName)
     ctSceneToolGroup.addTool(SegmentationDisplayTool.toolName)
     ctSceneToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
-    ctSceneToolGroup.addTool(RectangleRoiStartEndThresholdTool.toolName)
+    ctSceneToolGroup.addTool(RectangleROIStartEndThresholdTool.toolName)
     ctSceneToolGroup.addTool(CircleScissorsTool.toolName)
     ctSceneToolGroup.addTool(SphereScissorsTool.toolName)
     ctSceneToolGroup.addTool(WindowLevelTool.toolName)
@@ -494,8 +494,8 @@ function addToolsToToolGroups({
     ctSceneToolGroup.addTool(BidirectionalTool.toolName)
     ctSceneToolGroup.addTool(LengthTool.toolName)
     ctSceneToolGroup.addTool(ProbeTool.toolName)
-    ctSceneToolGroup.addTool(RectangleRoiTool.toolName)
-    ctSceneToolGroup.addTool(EllipticalRoiTool.toolName)
+    ctSceneToolGroup.addTool(RectangleROITool.toolName)
+    ctSceneToolGroup.addTool(EllipticalROITool.toolName)
     ctSceneToolGroup.addTool(CrosshairsTool.toolName, {
       getReferenceLineColor,
       getReferenceLineControllable,
@@ -506,8 +506,8 @@ function addToolsToToolGroups({
     ctSceneToolGroup.setToolPassive(BidirectionalTool.toolName)
     ctSceneToolGroup.setToolPassive(LengthTool.toolName)
     ctSceneToolGroup.setToolPassive(ProbeTool.toolName)
-    ctSceneToolGroup.setToolPassive(RectangleRoiTool.toolName)
-    ctSceneToolGroup.setToolPassive(EllipticalRoiTool.toolName)
+    ctSceneToolGroup.setToolPassive(RectangleROITool.toolName)
+    ctSceneToolGroup.setToolPassive(EllipticalROITool.toolName)
     ctSceneToolGroup.setToolDisabled(CrosshairsTool.toolName)
 
     ctSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
@@ -547,8 +547,8 @@ function addToolsToToolGroups({
     prostateSceneToolGroup.addTool(BidirectionalTool.toolName)
     prostateSceneToolGroup.addTool(LengthTool.toolName)
     prostateSceneToolGroup.addTool(ProbeTool.toolName)
-    prostateSceneToolGroup.addTool(RectangleRoiTool.toolName)
-    prostateSceneToolGroup.addTool(EllipticalRoiTool.toolName)
+    prostateSceneToolGroup.addTool(RectangleROITool.toolName)
+    prostateSceneToolGroup.addTool(EllipticalROITool.toolName)
     prostateSceneToolGroup.addTool(CrosshairsTool.toolName, {
       getReferenceLineColor,
       getReferenceLineControllable,
@@ -559,8 +559,8 @@ function addToolsToToolGroups({
     prostateSceneToolGroup.setToolPassive(BidirectionalTool.toolName)
     prostateSceneToolGroup.setToolPassive(LengthTool.toolName)
     prostateSceneToolGroup.setToolPassive(ProbeTool.toolName)
-    prostateSceneToolGroup.setToolPassive(RectangleRoiTool.toolName)
-    prostateSceneToolGroup.setToolPassive(EllipticalRoiTool.toolName)
+    prostateSceneToolGroup.setToolPassive(RectangleROITool.toolName)
+    prostateSceneToolGroup.setToolPassive(EllipticalROITool.toolName)
     prostateSceneToolGroup.setToolDisabled(CrosshairsTool.toolName)
 
     prostateSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
@@ -590,19 +590,19 @@ function addToolsToToolGroups({
   if (ptSceneToolGroup) {
     // Set up PT Scene tools
     ptSceneToolGroup.addTool(RectangleScissorsTool.toolName)
-    ptSceneToolGroup.addTool(RectangleRoiThresholdTool.toolName)
+    ptSceneToolGroup.addTool(RectangleROIThresholdTool.toolName)
     ptSceneToolGroup.addTool(BrushTool.toolName)
     ptSceneToolGroup.addTool(SegmentationDisplayTool.toolName)
     ptSceneToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
-    ptSceneToolGroup.addTool(RectangleRoiStartEndThresholdTool.toolName)
+    ptSceneToolGroup.addTool(RectangleROIStartEndThresholdTool.toolName)
     ptSceneToolGroup.addTool(CircleScissorsTool.toolName)
     ptSceneToolGroup.addTool(SphereScissorsTool.toolName)
     ptSceneToolGroup.addTool(BidirectionalTool.toolName)
     ptSceneToolGroup.addTool(LengthTool.toolName)
     ptSceneToolGroup.addTool(WindowLevelTool.toolName)
     ptSceneToolGroup.addTool(ProbeTool.toolName)
-    ptSceneToolGroup.addTool(RectangleRoiTool.toolName)
-    ptSceneToolGroup.addTool(EllipticalRoiTool.toolName)
+    ptSceneToolGroup.addTool(RectangleROITool.toolName)
+    ptSceneToolGroup.addTool(EllipticalROITool.toolName)
     ptSceneToolGroup.addTool(CrosshairsTool.toolName, {
       getReferenceLineColor,
       getReferenceLineControllable,
@@ -615,8 +615,8 @@ function addToolsToToolGroups({
     ptSceneToolGroup.addTool(StackScrollMouseWheelTool.toolName)
     ptSceneToolGroup.setToolPassive(ProbeTool.toolName)
     ptSceneToolGroup.setToolPassive(LengthTool.toolName)
-    ptSceneToolGroup.setToolPassive(RectangleRoiTool.toolName)
-    ptSceneToolGroup.setToolPassive(EllipticalRoiTool.toolName)
+    ptSceneToolGroup.setToolPassive(RectangleROITool.toolName)
+    ptSceneToolGroup.setToolPassive(EllipticalROITool.toolName)
     ptSceneToolGroup.setToolPassive(BidirectionalTool.toolName)
     ptSceneToolGroup.setToolDisabled(CrosshairsTool.toolName)
 
@@ -655,10 +655,10 @@ function addToolsToToolGroups({
       volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(ProbeTool.toolName, { volumeId: ptVolumeId })
-    fusionSceneToolGroup.addTool(RectangleRoiTool.toolName, {
+    fusionSceneToolGroup.addTool(RectangleROITool.toolName, {
       volumeId: ptVolumeId,
     })
-    fusionSceneToolGroup.addTool(EllipticalRoiTool.toolName, {
+    fusionSceneToolGroup.addTool(EllipticalROITool.toolName, {
       volumeId: ptVolumeId,
     })
     fusionSceneToolGroup.addTool(ZoomTool.toolName)
@@ -676,8 +676,8 @@ function addToolsToToolGroups({
     fusionSceneToolGroup.setToolPassive(BidirectionalTool.toolName)
     fusionSceneToolGroup.setToolPassive(LengthTool.toolName)
     fusionSceneToolGroup.setToolPassive(ProbeTool.toolName)
-    fusionSceneToolGroup.setToolPassive(RectangleRoiTool.toolName)
-    fusionSceneToolGroup.setToolPassive(EllipticalRoiTool.toolName)
+    fusionSceneToolGroup.setToolPassive(RectangleROITool.toolName)
+    fusionSceneToolGroup.setToolPassive(EllipticalROITool.toolName)
     fusionSceneToolGroup.setToolDisabled(CrosshairsTool.toolName)
 
     fusionSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)

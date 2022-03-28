@@ -3,13 +3,13 @@ import {
   CrosshairsTool,
   LengthTool,
   BidirectionalTool,
-  RectangleRoiTool,
-  EllipticalRoiTool,
+  RectangleROITool,
+  EllipticalROITool,
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,
-  RectangleRoiThresholdTool,
-  RectangleRoiStartEndThresholdTool,
+  RectangleROIThresholdTool,
+  RectangleROIStartEndThresholdTool,
   BrushTool,
 } from '@cornerstonejs/tools'
 
@@ -94,8 +94,8 @@ const ANNOTATION_TOOLS = [
   CrosshairsTool.toolName,
   LengthTool.toolName,
   BidirectionalTool.toolName,
-  RectangleRoiTool.toolName,
-  EllipticalRoiTool.toolName,
+  RectangleROITool.toolName,
+  EllipticalROITool.toolName,
 ]
 
 // A string helper for the drop down.
@@ -103,8 +103,8 @@ const SEGMENTATION_TOOLS = [
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
   SphereScissorsTool.toolName,
-  RectangleRoiThresholdTool.toolName,
-  RectangleRoiStartEndThresholdTool.toolName,
+  RectangleROIThresholdTool.toolName,
+  RectangleROIStartEndThresholdTool.toolName,
   BrushTool.toolName,
 ]
 
