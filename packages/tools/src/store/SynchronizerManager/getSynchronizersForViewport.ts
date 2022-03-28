@@ -8,9 +8,9 @@ import Synchronizer from './Synchronizer'
  * @param viewportId - The Id of the viewport
  * @returns An array of synchronizers
  */
-function getSynchronizers(
-  renderingEngineId: string,
-  viewportId: string
+function getSynchronizersForViewport(
+  viewportId: string,
+  renderingEngineId: string
 ): Array<Synchronizer> {
   const synchronizersFilteredByIds = []
 
@@ -36,4 +36,4 @@ function getSynchronizers(
   return synchronizersFilteredByIds
 }
 
-export default getSynchronizers
+export default getSynchronizersForViewport

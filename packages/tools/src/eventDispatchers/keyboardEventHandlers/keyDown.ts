@@ -17,7 +17,10 @@ export default function keyDown(evt: KeyDownEventType): void {
 
   const { renderingEngineId, viewportId } = evt.detail
 
-  const toolGroup = ToolGroupManager.getToolGroup(viewportId, renderingEngineId)
+  const toolGroup = ToolGroupManager.getToolGroupForViewport(
+    viewportId,
+    renderingEngineId
+  )
 
   const toolName = activeTool.getToolName()
   if (Object.keys(toolGroup.toolOptions).includes(toolName)) {

@@ -10,8 +10,8 @@ import * as cornerstoneTools from '@cornerstonejs/tools'
 const {
   LengthTool,
   ProbeTool,
-  RectangleRoiTool,
-  EllipticalRoiTool,
+  RectangleROITool,
+  EllipticalROITool,
   BidirectionalTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -49,8 +49,8 @@ const toolGroupId = 'STACK_TOOL_GROUP_ID'
 const toolsNames = [
   LengthTool.toolName,
   ProbeTool.toolName,
-  RectangleRoiTool.toolName,
-  EllipticalRoiTool.toolName,
+  RectangleROITool.toolName,
+  EllipticalROITool.toolName,
   BidirectionalTool.toolName,
 ]
 let selectedToolName = toolsNames[0]
@@ -58,7 +58,7 @@ let selectedToolName = toolsNames[0]
 addDropdownToToolbar(
   { options: toolsNames, defaultOption: selectedToolName },
   (newSelectedToolName) => {
-    const toolGroup = ToolGroupManager.getToolGroupById(toolGroupId)
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId)
 
     // Set the new tool active
     toolGroup.setToolActive(newSelectedToolName, {
@@ -86,8 +86,8 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool)
   cornerstoneTools.addTool(ProbeTool)
-  cornerstoneTools.addTool(RectangleRoiTool)
-  cornerstoneTools.addTool(EllipticalRoiTool)
+  cornerstoneTools.addTool(RectangleROITool)
+  cornerstoneTools.addTool(EllipticalROITool)
   cornerstoneTools.addTool(BidirectionalTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -97,8 +97,8 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName)
   toolGroup.addTool(ProbeTool.toolName)
-  toolGroup.addTool(RectangleRoiTool.toolName)
-  toolGroup.addTool(EllipticalRoiTool.toolName)
+  toolGroup.addTool(RectangleROITool.toolName)
+  toolGroup.addTool(EllipticalROITool.toolName)
   toolGroup.addTool(BidirectionalTool.toolName)
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -113,8 +113,8 @@ async function run() {
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
   toolGroup.setToolPassive(ProbeTool.toolName)
-  toolGroup.setToolPassive(RectangleRoiTool.toolName)
-  toolGroup.setToolPassive(EllipticalRoiTool.toolName)
+  toolGroup.setToolPassive(RectangleROITool.toolName)
+  toolGroup.setToolPassive(EllipticalROITool.toolName)
   toolGroup.setToolPassive(BidirectionalTool.toolName)
 
   // Get Cornerstone imageIds and fetch metadata into RAM

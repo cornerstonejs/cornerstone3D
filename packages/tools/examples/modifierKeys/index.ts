@@ -9,7 +9,7 @@ import * as cornerstoneTools from '@cornerstonejs/tools'
 const {
   WindowLevelTool,
   LengthTool,
-  RectangleRoiTool,
+  RectangleROITool,
   BidirectionalTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -56,7 +56,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool)
   cornerstoneTools.addTool(LengthTool)
-  cornerstoneTools.addTool(RectangleRoiTool)
+  cornerstoneTools.addTool(RectangleROITool)
   cornerstoneTools.addTool(BidirectionalTool)
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -66,7 +66,7 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(WindowLevelTool.toolName)
   toolGroup.addTool(LengthTool.toolName)
-  toolGroup.addTool(RectangleRoiTool.toolName)
+  toolGroup.addTool(RectangleROITool.toolName)
   toolGroup.addTool(BidirectionalTool.toolName)
 
   // TODO Why doesn't this work?
@@ -88,7 +88,7 @@ async function run() {
       },
     ],
   })
-  toolGroup.setToolActive(RectangleRoiTool.toolName, {
+  toolGroup.setToolActive(RectangleROITool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Ctrl + Left Click

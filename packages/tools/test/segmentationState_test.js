@@ -35,6 +35,7 @@ const { SegmentationRepresentations } = csToolsEnums
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
 const renderingEngineId = utilities.uuidv4()
+const TOOL_GROUP_ID = utilities.uuidv4()
 
 const viewportId = 'VIEWPORT'
 
@@ -75,7 +76,7 @@ describe('Segmentation State -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
+      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.renderingEngine = new RenderingEngine(renderingEngineId)
@@ -94,7 +95,7 @@ describe('Segmentation State -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById('segToolGroup')
+      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -131,7 +132,7 @@ describe('Segmentation State -- ', () => {
 
           const state = stateManager.getState()
 
-          expect(evt.detail.toolGroupId).toBe('segToolGroup')
+          expect(evt.detail.toolGroupId).toBe(TOOL_GROUP_ID)
           expect(state).toBeDefined()
           expect(state.toolGroups).toBeDefined()
 

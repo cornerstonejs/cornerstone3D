@@ -13,7 +13,7 @@ import { eraseInsideRectangle } from './strategies/eraseRectangle'
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 
 import { Events } from '../../enums'
-import RectangleRoiTool from '../annotation/RectangleRoiTool'
+import RectangleROITool from '../annotation/RectangleROITool'
 import { drawRect as drawRectSvg } from '../../drawingSvg'
 import {
   resetElementCursor,
@@ -150,7 +150,7 @@ export default class RectangleScissorsTool extends BaseTool {
     }
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleRoiTool)
+    Settings.getObjectSettings(annotation, RectangleROITool)
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -352,7 +352,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const { annotation } = this.editData
 
     // Todo: rectangle color based on segment index
-    const settings = Settings.getObjectSettings(annotation, RectangleRoiTool)
+    const settings = Settings.getObjectSettings(annotation, RectangleROITool)
     const toolMetadata = annotation.metadata
     const annotationUID = annotation.annotationUID
 

@@ -18,7 +18,7 @@ const { Events, ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
 const {
-  EllipticalRoiTool,
+  EllipticalROITool,
   ToolGroupManager,
   cancelActiveManipulations,
   annotation,
@@ -71,15 +71,15 @@ describe('Ellipse Tool: ', () => {
   describe('Ellipse Tool: ', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(EllipticalRoiTool)
+      csTools3d.addTool(EllipticalROITool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-      this.stackToolGroup.addTool(EllipticalRoiTool.toolName, {
+      this.stackToolGroup.addTool(EllipticalROITool.toolName, {
         configuration: { volumeId: volumeId },
       })
-      this.stackToolGroup.setToolActive(EllipticalRoiTool.toolName, {
+      this.stackToolGroup.setToolActive(EllipticalROITool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
@@ -97,7 +97,7 @@ describe('Ellipse Tool: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById('stack')
+      ToolGroupManager.destroyToolGroup('stack')
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -121,7 +121,7 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             element,
-            EllipticalRoiTool.toolName
+            EllipticalROITool.toolName
           )
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined()
@@ -133,7 +133,7 @@ describe('Ellipse Tool: ', () => {
           )
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
-            EllipticalRoiTool.toolName
+            EllipticalROITool.toolName
           )
           expect(ellipseAnnotation.invalidated).toBe(false)
 
@@ -230,7 +230,7 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             element,
-            EllipticalRoiTool.toolName
+            EllipticalROITool.toolName
           )
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined()
@@ -238,7 +238,7 @@ describe('Ellipse Tool: ', () => {
 
           const ellipseAnnotation = ellipseAnnotations[0]
           expect(ellipseAnnotation.metadata.toolName).toBe(
-            EllipticalRoiTool.toolName
+            EllipticalROITool.toolName
           )
           expect(ellipseAnnotation.invalidated).toBe(false)
 
@@ -329,15 +329,15 @@ describe('Ellipse Tool: ', () => {
   describe('Should successfully cancel a EllipseTool', () => {
     beforeEach(function () {
       csTools3d.init()
-      csTools3d.addTool(EllipticalRoiTool)
+      csTools3d.addTool(EllipticalROITool)
       cache.purgeCache()
       this.DOMElements = []
 
       this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-      this.stackToolGroup.addTool(EllipticalRoiTool.toolName, {
+      this.stackToolGroup.addTool(EllipticalROITool.toolName, {
         configuration: { volumeId: volumeId },
       })
-      this.stackToolGroup.setToolActive(EllipticalRoiTool.toolName, {
+      this.stackToolGroup.setToolActive(EllipticalROITool.toolName, {
         bindings: [{ mouseButton: 1 }],
       })
 
@@ -354,7 +354,7 @@ describe('Ellipse Tool: ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       imageLoader.unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById('stack')
+      ToolGroupManager.destroyToolGroup('stack')
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -444,7 +444,7 @@ describe('Ellipse Tool: ', () => {
         setTimeout(() => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             element,
-            EllipticalRoiTool.toolName
+            EllipticalROITool.toolName
           )
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined()
@@ -456,7 +456,7 @@ describe('Ellipse Tool: ', () => {
           )
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
-            EllipticalRoiTool.toolName
+            EllipticalROITool.toolName
           )
           expect(ellipseAnnotation.invalidated).toBe(false)
           expect(ellipseAnnotation.highlighted).toBe(false)

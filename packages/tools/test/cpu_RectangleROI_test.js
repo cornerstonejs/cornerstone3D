@@ -19,7 +19,7 @@ const { Events, ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
 
 const {
-  RectangleRoiTool,
+  RectangleROITool,
   ToolGroupManager,
   cancelActiveManipulations,
   annotation,
@@ -64,7 +64,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`
 
-describe('RectangleRoiTool (CPU):', () => {
+describe('RectangleROITool (CPU):', () => {
   beforeAll(() => {
     setUseCPURendering(true)
   })
@@ -75,15 +75,15 @@ describe('RectangleRoiTool (CPU):', () => {
 
   beforeEach(function () {
     csTools3d.init()
-    csTools3d.addTool(RectangleRoiTool)
+    csTools3d.addTool(RectangleROITool)
     cache.purgeCache()
     this.DOMElements = []
 
     this.stackToolGroup = ToolGroupManager.createToolGroup('stack')
-    this.stackToolGroup.addTool(RectangleRoiTool.toolName, {
+    this.stackToolGroup.addTool(RectangleROITool.toolName, {
       configuration: { volumeId: volumeId },
     })
-    this.stackToolGroup.setToolActive(RectangleRoiTool.toolName, {
+    this.stackToolGroup.setToolActive(RectangleROITool.toolName, {
       bindings: [{ mouseButton: 1 }],
     })
 
@@ -100,7 +100,7 @@ describe('RectangleRoiTool (CPU):', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     imageLoader.unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupById('stack')
+    ToolGroupManager.destroyToolGroup('stack')
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -125,7 +125,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const rectangleAnnotations = annotation.state.getAnnotations(
           element,
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         // Can successfully add rectangleROI to annotationManager
         expect(rectangleAnnotations).toBeDefined()
@@ -137,7 +137,7 @@ describe('RectangleRoiTool (CPU):', () => {
         )
 
         expect(rectangleAnnotation.metadata.toolName).toBe(
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         expect(rectangleAnnotation.invalidated).toBe(false)
 
@@ -233,7 +233,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const rectangleAnnotations = annotation.state.getAnnotations(
           element,
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         // Can successfully add rectangleROI to annotationManager
         expect(rectangleAnnotations).toBeDefined()
@@ -244,7 +244,7 @@ describe('RectangleRoiTool (CPU):', () => {
           imageId1.split(':')[1]
         )
         expect(rectangleAnnotation.metadata.toolName).toBe(
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         expect(rectangleAnnotation.invalidated).toBe(false)
 
@@ -375,7 +375,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const rectangleAnnotations = annotation.state.getAnnotations(
           element,
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         // Can successfully add rectangleROI to annotationManager
         expect(rectangleAnnotations).toBeDefined()
@@ -386,7 +386,7 @@ describe('RectangleRoiTool (CPU):', () => {
           imageId1.split(':')[1]
         )
         expect(rectangleAnnotation.metadata.toolName).toBe(
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         expect(rectangleAnnotation.invalidated).toBe(false)
 
@@ -510,7 +510,7 @@ describe('RectangleRoiTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const rectangleAnnotations = annotation.state.getAnnotations(
           element,
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         // Can successfully add rectangleROI to annotationManager
         expect(rectangleAnnotations).toBeDefined()
@@ -521,7 +521,7 @@ describe('RectangleRoiTool (CPU):', () => {
           imageId1.split(':')[1]
         )
         expect(rectangleAnnotation.metadata.toolName).toBe(
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         expect(rectangleAnnotation.invalidated).toBe(false)
 
@@ -824,7 +824,7 @@ describe('RectangleRoiTool (CPU):', () => {
       setTimeout(() => {
         const rectangleAnnotations = annotation.state.getAnnotations(
           element,
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         // Can successfully add rectangleROI to annotationManager
         expect(rectangleAnnotations).toBeDefined()
@@ -835,7 +835,7 @@ describe('RectangleRoiTool (CPU):', () => {
           imageId1.split(':')[1]
         )
         expect(rectangleAnnotation.metadata.toolName).toBe(
-          RectangleRoiTool.toolName
+          RectangleROITool.toolName
         )
         expect(rectangleAnnotation.invalidated).toBe(false)
 

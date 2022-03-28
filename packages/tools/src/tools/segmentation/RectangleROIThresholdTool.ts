@@ -23,9 +23,9 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 
 import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
-import RectangleRoiTool from '../annotation/RectangleRoiTool'
+import RectangleROITool from '../annotation/RectangleROITool'
 
-export interface RectangleRoiThresholdAnnotation extends Annotation {
+export interface RectangleROIThresholdAnnotation extends Annotation {
   metadata: {
     cameraPosition?: Types.Point3
     cameraFocalPoint?: Types.Point3
@@ -49,13 +49,13 @@ export interface RectangleRoiThresholdAnnotation extends Annotation {
 }
 
 /**
- * This tool is exactly the RectangleRoiTool but only draws a rectangle on the image,
- * and by using utility functions such as thresholdByRange and thresholdByRoiStat it can be used to
+ * This tool is exactly the RectangleROITool but only draws a rectangle on the image,
+ * and by using utility functions such as thresholdByRange and thresholdByROIStat it can be used to
  * create a segmentation. This tool, however, does not calculate the statistics
- * as RectangleRoiTool does.
+ * as RectangleROITool does.
  */
-export default class RectangleRoiThresholdTool extends RectangleRoiTool {
-  static toolName = 'RectangleRoiThreshold'
+export default class RectangleROIThresholdTool extends RectangleROITool {
+  static toolName = 'RectangleROIThreshold'
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
@@ -132,7 +132,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleRoiThresholdTool.toolName,
+        toolName: RectangleROIThresholdTool.toolName,
         volumeId,
       },
       data: {
@@ -157,13 +157,13 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     }
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleRoiThresholdTool)
+    Settings.getObjectSettings(annotation, RectangleROIThresholdTool)
 
     addAnnotation(element, annotation)
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiThresholdTool.toolName
+      RectangleROIThresholdTool.toolName
     )
 
     this.editData = {
@@ -185,7 +185,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
   }
 
   /**
-   * it is used to draw the RectangleRoi Threshold annotation in each
+   * it is used to draw the RectangleROI Threshold annotation in each
    * request animation frame.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
@@ -199,7 +199,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     const { element } = viewport
     let annotations = getAnnotations(
       element,
-      RectangleRoiThresholdTool.toolName
+      RectangleROIThresholdTool.toolName
     )
 
     if (!annotations?.length) {
@@ -216,10 +216,10 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
     }
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as RectangleRoiThresholdAnnotation
+      const annotation = annotations[i] as RectangleROIThresholdAnnotation
       const settings = Settings.getObjectSettings(
         annotation,
-        RectangleRoiThresholdTool
+        RectangleROIThresholdTool
       )
       const annotationUID = annotation.annotationUID
 
@@ -265,7 +265,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleRoiThresholdTool.toolName,
+          RectangleROIThresholdTool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -278,7 +278,7 @@ export default class RectangleRoiThresholdTool extends RectangleRoiTool {
       const rectangleUID = '0'
       drawRectSvg(
         svgDrawingHelper,
-        RectangleRoiThresholdTool.toolName,
+        RectangleROIThresholdTool.toolName,
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],

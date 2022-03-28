@@ -25,9 +25,9 @@ import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
-import RectangleRoiTool from '../annotation/RectangleRoiTool'
+import RectangleROITool from '../annotation/RectangleROITool'
 
-export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
+export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
   metadata: {
     cameraPosition?: Types.Point3
     cameraFocalPoint?: Types.Point3
@@ -57,9 +57,9 @@ export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
 }
 
 /**
- * This tool is similar to the RectangleRoiThresholdTool which
+ * This tool is similar to the RectangleROIThresholdTool which
  * only draws a rectangle on the image, and by using utility functions
- * such as thresholdByRange and thresholdByRoiStat it can be used to
+ * such as thresholdByRange and thresholdByROIStat it can be used to
  * create a segmentation. The only difference is that it only acts on the
  * acquisition plane and not the 3D volume, and accepts a start and end
  * slice, and renders a dashed rectangle on the image between the start and end
@@ -68,8 +68,8 @@ export interface RectangleRoiStartEndThresholdAnnotation extends Annotation {
  * // Todo: right now only the first slice has grabbable handles, need to make
  * // it so that the handles are grabbable on all slices.
  */
-export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool {
-  static toolName = 'RectangleRoiStartEndThreshold'
+export default class RectangleROIStartEndThresholdTool extends RectangleROITool {
+  static toolName = 'RectangleROIStartEndThreshold'
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
@@ -166,7 +166,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleRoiStartEndThresholdTool.toolName,
+        toolName: RectangleROIStartEndThresholdTool.toolName,
         volumeId,
         spacingInNormal,
       },
@@ -203,13 +203,13 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     this._computeProjectionPoints(annotation, imageVolume)
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleRoiStartEndThresholdTool)
+    Settings.getObjectSettings(annotation, RectangleROIStartEndThresholdTool)
 
     addAnnotation(element, annotation)
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiStartEndThresholdTool.toolName
+      RectangleROIStartEndThresholdTool.toolName
     )
 
     this.editData = {
@@ -232,7 +232,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
   // Todo: make it work for other acquisition planes
   _computeProjectionPoints(
-    annotation: RectangleRoiStartEndThresholdAnnotation,
+    annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
   ): void {
     const { data, metadata } = annotation
@@ -300,7 +300,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     const imageVolume = cache.getVolume(volumeId)
 
     // Todo: this shouldn't be here, this is a performance issue
-    // Since we are extending the RectangleRoi class, we need to
+    // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume)
 
@@ -320,7 +320,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   }
 
   /**
-   * it is used to draw the rectangleRoiStartEnd annotation in each
+   * it is used to draw the rectangleROIStartEnd annotation in each
    * request animation frame.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
@@ -332,7 +332,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
   ): void => {
     const annotations = getAnnotations(
       enabledElement.viewport.element,
-      RectangleRoiStartEndThresholdTool.toolName
+      RectangleROIStartEndThresholdTool.toolName
     )
 
     if (!annotations?.length) {
@@ -351,10 +351,10 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[
         i
-      ] as RectangleRoiStartEndThresholdAnnotation
+      ] as RectangleROIStartEndThresholdAnnotation
       const settings = Settings.getObjectSettings(
         annotation,
-        RectangleRoiStartEndThresholdTool
+        RectangleROIStartEndThresholdTool
       )
       const annotationUID = annotation.annotationUID
 
@@ -414,7 +414,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleRoiStartEndThresholdTool.toolName,
+          RectangleROIStartEndThresholdTool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -433,7 +433,7 @@ export default class RectangleRoiStartEndThresholdTool extends RectangleRoiTool 
       const rectangleUID = '0'
       drawRectSvg(
         svgDrawingHelper,
-        RectangleRoiStartEndThresholdTool.toolName,
+        RectangleROIStartEndThresholdTool.toolName,
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],

@@ -39,12 +39,11 @@ const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
 const renderingEngineId = utilities.uuidv4()
+const TOOL_GROUP_ID = utilities.uuidv4()
 
 const viewportId1 = 'AXIAL'
 
 const AXIAL = 'AXIAL'
-
-const TOOL_GROUP_ID = 'segToolGroup'
 
 function createViewport(
   renderingEngine,
@@ -105,7 +104,7 @@ describe('Segmentation Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById(TOOL_GROUP_ID)
+      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {

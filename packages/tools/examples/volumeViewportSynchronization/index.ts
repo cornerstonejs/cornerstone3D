@@ -104,7 +104,7 @@ const SynchronizerButtonInfo = [
 SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
   addToggleButtonToToolbar(`Camera ${viewportLabel}`, (evt, toggle) => {
     const synchronizer =
-      SynchronizerManager.getSynchronizerById(cameraSynchronizerId)
+      SynchronizerManager.getSynchronizer(cameraSynchronizerId)
 
     if (!synchronizer) {
       return
@@ -120,8 +120,7 @@ SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
 
 SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
   addToggleButtonToToolbar(`VOI ${viewportLabel}`, (evt, toggle) => {
-    const synchronizer =
-      SynchronizerManager.getSynchronizerById(voiSynchronizerId)
+    const synchronizer = SynchronizerManager.getSynchronizer(voiSynchronizerId)
 
     if (!synchronizer) {
       return

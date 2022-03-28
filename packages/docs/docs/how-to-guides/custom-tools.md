@@ -43,10 +43,10 @@ that's called when a mouse event is not captured. This allows the active tool to
 create Annotations for the interaction. Example `AnnotationTool`s include:
 
 - Bidirectional
-- EllipticalRoi
+- EllipticalROI
 - Length
 - Probe
-- RectangleRoi
+- RectangleROI
 
 ## Next steps
 

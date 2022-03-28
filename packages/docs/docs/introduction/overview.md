@@ -45,7 +45,7 @@ In addition, you can:
 - activate certain tools on certain viewports with ToolGroups (e.g., on scroll activate slice scrolling on CT Axial viewport but volume rotation for PT MIP viewport)
 - measure distances between two points using the Length tool
 - measure length and width using bidirectional line tools
-- calculate statistics such as mean, standard deviation of a region of interest using Rectangle/Elliptical Roi Tool
+- calculate statistics such as mean, standard deviation of a region of interest using Rectangle/Elliptical ROI Tool
 - use crosshairs to find corresponding points in images of different viewports and navigate slices using reference lines
 - assign different tools to be activated while holding a specific modifier key (e.g. shift, ctrl, alt)
 - create your own custom tools

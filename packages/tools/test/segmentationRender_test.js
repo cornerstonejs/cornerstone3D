@@ -41,6 +41,7 @@ const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
   utilities.testUtils
 
 const renderingEngineId = utilities.uuidv4()
+const TOOL_GROUP_ID = utilities.uuidv4()
 
 const viewportId1 = 'AXIAL'
 const viewportId2 = 'SAGITTAL'
@@ -87,7 +88,7 @@ describe('Segmentation Render -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
+      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.renderingEngine = new RenderingEngine(renderingEngineId)
@@ -106,7 +107,7 @@ describe('Segmentation Render -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroupById('segToolGroup')
+      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -128,7 +129,7 @@ describe('Segmentation Render -- ', () => {
         const canvas = vp.getCanvas()
         const image = canvas.toDataURL('image/png')
 
-        expect(evt.detail.toolGroupId).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe(TOOL_GROUP_ID)
         compareImages(
           image,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -206,7 +207,7 @@ describe('Segmentation Render -- ', () => {
         const image2 = canvas2.toDataURL('image/png')
         const image3 = canvas3.toDataURL('image/png')
 
-        expect(evt.detail.toolGroupId).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe(TOOL_GROUP_ID)
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -283,7 +284,7 @@ describe('Segmentation Render -- ', () => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
 
-        expect(evt.detail.toolGroupId).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe(TOOL_GROUP_ID)
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_2SEGs_AX,
@@ -366,7 +367,7 @@ describe('Segmentation Render -- ', () => {
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
-        expect(evt.detail.toolGroupId).toBe('segToolGroup')
+        expect(evt.detail.toolGroupId).toBe(TOOL_GROUP_ID)
 
         compareImages(
           image1,

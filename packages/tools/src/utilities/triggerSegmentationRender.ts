@@ -6,7 +6,10 @@ import {
   Types,
 } from '@cornerstonejs/core'
 import { Events as csToolsEvents } from '../enums'
-import { getToolGroupById, getToolGroup } from '../store/ToolGroupManager'
+import {
+  getToolGroup,
+  getToolGroupForViewport,
+} from '../store/ToolGroupManager'
 
 import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
 import { SegmentationRenderedEventDetail } from '../types/EventTypes'
@@ -94,7 +97,7 @@ class SegmentationRenderingEngine {
     }
   }
   _triggerRender(toolGroupId) {
-    const toolGroup = getToolGroupById(toolGroupId)
+    const toolGroup = getToolGroup(toolGroupId)
 
     if (!toolGroup) {
       console.warn(`No tool group found with toolGroupId: ${toolGroupId}`)
@@ -127,7 +130,7 @@ class SegmentationRenderingEngine {
         onSegmentationRender
       )
 
-      const toolGroup = getToolGroup(viewportId, renderingEngineId)
+      const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId)
 
       const eventDetail: SegmentationRenderedEventDetail = {
         toolGroupId: toolGroup.id,

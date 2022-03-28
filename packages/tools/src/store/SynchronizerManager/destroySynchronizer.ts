@@ -9,7 +9,7 @@ import { state } from '../index'
  * Destroy a synchronizer by its ID.
  * @param synchronizerId - The id of the synchronizer to destroy.
  */
-function destroySynchronizerById(synchronizerId: string): void {
+function destroySynchronizer(synchronizerId: string): void {
   const synchronizerIndex = state.synchronizers.findIndex(
     (sync) => sync.id === synchronizerId
   )
@@ -22,4 +22,4 @@ function destroySynchronizerById(synchronizerId: string): void {
   }
 }
 
-export default destroySynchronizerById
+export default destroySynchronizer

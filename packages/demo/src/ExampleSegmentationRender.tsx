@@ -20,7 +20,7 @@ import {
   WindowLevelTool,
   PanTool,
   ZoomTool,
-  RectangleRoiTool,
+  RectangleROITool,
   SegmentationDisplayTool,
 } from '@cornerstonejs/tools'
 import * as csTools3d from '@cornerstonejs/tools'
@@ -82,8 +82,8 @@ const toolsToUse = [
 ]
 const labelmap1UID = 'boneAndSoftTissue'
 const labelmap2UID = 'fatTissue'
-const RECTANGLE_ROI_THRESHOLD = 'RectangleRoiThreshold'
-const RECTANGLE_ROI_THRESHOLD_MANUAL = 'RectangleRoiStartEndThreshold'
+const RECTANGLE_ROI_THRESHOLD = 'RectangleROIThreshold'
+const RECTANGLE_ROI_THRESHOLD_MANUAL = 'RectangleROIStartEndThreshold'
 
 class SegmentationExample extends Component {
   _elementNodes = null
@@ -1174,7 +1174,7 @@ class SegmentationExample extends Component {
         <div>{this.getSetToolModes()}</div>
         {this.state.segmentationToolActive && (
           <div style={{ marginTop: '15px' }}>
-            {this.state.ptCtLeftClickTool.includes(RectangleRoiTool.toolName)
+            {this.state.ptCtLeftClickTool.includes(RectangleROITool.toolName)
               ? this.getThresholdUID()
               : this.getScissorsUI()}
             <span> All global segmentations </span>

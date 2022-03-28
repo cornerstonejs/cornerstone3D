@@ -18,7 +18,10 @@ export default function keyUp(evt: KeyDownEventType): void {
 
   const { renderingEngineId, viewportId } = evt.detail
 
-  const toolGroup = ToolGroupManager.getToolGroup(viewportId, renderingEngineId)
+  const toolGroup = ToolGroupManager.getToolGroupForViewport(
+    viewportId,
+    renderingEngineId
+  )
 
   // Reset the modifier key
   resetModifierKey()

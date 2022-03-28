@@ -1,4 +1,4 @@
-import getModalityLUT from './getModalityLUT'
+import getModalityLut from './getModalityLut'
 import getVOILUT from './getVOILut'
 import { IImage, CPUFallbackLUT } from '../../../../types'
 
@@ -36,7 +36,7 @@ export default function (
 
   const lut = image.cachedLut.lutArray
 
-  const mlutfn = getModalityLUT(image.slope, image.intercept, modalityLUT)
+  const mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT)
   const vlutfn = getVOILUT(windowWidth, windowCenter, voiLUT)
 
   if (invert === true) {

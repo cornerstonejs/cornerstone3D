@@ -2,12 +2,12 @@ import { AnnotationTool } from '../base'
 
 import {
   getEnabledElement,
-  cache,
   Settings,
   StackViewport,
   VolumeViewport,
-  triggerEvent,
   eventTarget,
+  triggerEvent,
+  cache,
   utilities as csUtils,
 } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
@@ -18,91 +18,49 @@ import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement'
+} from '../../stateManagement/annotation/annotationState'
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
-
 import {
+  drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-  drawRect as drawRectSvg,
 } from '../../drawingSvg'
 import { state } from '../../store'
 import { Events } from '../../enums'
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
-import * as rectangle from '../../utilities/math/rectangle'
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
-import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners'
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints'
+import {
+  pointInEllipse,
+  getCanvasEllipseCorners,
+} from '../../utilities/math/ellipse'
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
-
 import {
   Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
-  ToolProps,
   PublicToolProps,
+  ToolProps,
   InteractionTypes,
 } from '../../types'
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
+import {
+  AnnotationModifiedEventDetail,
+  MouseDragEventType,
+  MouseMoveEventType,
+} from '../../types/EventTypes'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
+import { pointInShapeCallback } from '../../utilities/'
 
-interface RectangleRoiCachedStats {
-  [targetId: string]: {
-    Modality: string
-    area: number
-    max: number
-    mean: number
-    stdDev: number
-  }
-}
-
-/**
- * RectangleRoiAnnotation let you draw annotations that measures the statistics
- * such as area, max, mean and stdDev of a Rectangular region of interest.
- * You can use RectangleRoiAnnotation in all perpendicular views (axial, sagittal, coronal).
- * Note: annotation tools in cornerstone3DTools exists in the exact location
- * in the physical 3d space, as a result, by default, all annotations that are
- * drawing in the same frameOfReference will get shared between viewports that
- * are in the same frameOfReference. RectangleRoi tool's text box lines are dynamically
- * generated based on the viewport's underlying Modality. For instance, if
- * the viewport is displaying CT, the text box will shown the statistics in Hounsfield units,
- * and if the viewport is displaying PET, the text box will show the statistics in
- * SUV units.
- *
- * The resulting annotation's data (statistics) and metadata (the
- * state of the viewport while drawing was happening) will get added to the
- * ToolState manager and can be accessed from the ToolState by calling getAnnotations
- * or similar methods.
- *
- * ```js
- * cornerstoneTools.addTool(RectangleRoiAnnotation)
- *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
- *
- * toolGroup.addTool(RectangleRoiAnnotation.toolName)
- *
- * toolGroup.addViewport('viewportId', 'renderingEngineId')
- *
- * toolGroup.setToolActive(RectangleRoiAnnotation.toolName, {
- *   bindings: [
- *    {
- *       mouseButton: MouseBindings.Primary, // Left Click
- *     },
- *   ],
- * })
- * ```
- *
- * Read more in the Docs section of the website.
- */
-export interface RectangleRoiAnnotation extends Annotation {
+export interface EllipticalROIAnnotation extends Annotation {
   data: {
     handles: {
-      points: Types.Point3[]
+      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3] // [bottom, top, left, right]
       activeHandleIndex: number | null
-      textBox: {
+      textBox?: {
         hasMoved: boolean
         worldPosition: Types.Point3
         worldBoundingBox: {
@@ -114,29 +72,75 @@ export interface RectangleRoiAnnotation extends Annotation {
       }
     }
     label: string
-    cachedStats?:
-      | RectangleRoiCachedStats
-      | {
-          projectionPoints?: Types.Point3[]
-          projectionPointsImageIds?: string[]
-        }
+    cachedStats?: {
+      [targetId: string]: {
+        Modality: string
+        area: number
+        max: number
+        mean: number
+        stdDev: number
+      }
+    }
   }
 }
 
-export default class RectangleRoiTool extends AnnotationTool {
-  static toolName = 'RectangleRoi'
-
+/**
+ * EllipticalROITool let you draw annotations that measures the statistics
+ * such as area, max, mean and stdDev of an elliptical region of interest.
+ * You can use EllipticalROITool in all perpendicular views (axial, sagittal, coronal).
+ * Note: annotation tools in cornerstone3DTools exists in the exact location
+ * in the physical 3d space, as a result, by default, all annotations that are
+ * drawing in the same frameOfReference will get shared between viewports that
+ * are in the same frameOfReference. Elliptical tool's text box lines are dynamically
+ * generated based on the viewport's underlying Modality. For instance, if
+ * the viewport is displaying CT, the text box will shown the statistics in Hounsfield units,
+ * and if the viewport is displaying PET, the text box will show the statistics in
+ * SUV units.
+ *
+ * The resulting annotation's data (statistics) and metadata (the
+ * state of the viewport while drawing was happening) will get added to the
+ * ToolState manager and can be accessed from the ToolState by calling getAnnotations
+ * or similar methods.
+ *
+ * ```js
+ * cornerstoneTools.addTool(EllipticalROITool)
+ *
+ * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
+ *
+ * toolGroup.addTool(EllipticalROITool.toolName)
+ *
+ * toolGroup.addViewport('viewportId', 'renderingEngineId')
+ *
+ * toolGroup.setToolActive(EllipticalROITool.toolName, {
+ *   bindings: [
+ *    {
+ *       mouseButton: MouseBindings.Primary, // Left Click
+ *     },
+ *   ],
+ * })
+ * ```
+ *
+ * Read more in the Docs section of the website.
+ */
+export default class EllipticalROITool extends AnnotationTool {
+  static toolName = 'EllipticalROI'
+  touchDragCallback: any
+  mouseDragCallback: any
   _throttledCalculateCachedStats: any
   editData: {
     annotation: any
-    viewportIdsToRender: string[]
+    viewportIdsToRender: Array<string>
     handleIndex?: number
     movingTextBox?: boolean
+    centerCanvas?: Array<number>
+    canvasWidth?: number
+    canvasHeight?: number
+    originalHandleCanvas?: Array<number>
     newAnnotation?: boolean
     hasMoved?: boolean
   } | null
   isDrawing: boolean
-  isHandleOutsideImage: boolean
+  isHandleOutsideImage = false
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -159,7 +163,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a RectangleRoi Annotation and stores it in the annotationManager
+   * a EllipticalROI Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
    * @returns The annotation object.
@@ -167,10 +171,11 @@ export default class RectangleRoiTool extends AnnotationTool {
    */
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): RectangleRoiAnnotation => {
+  ): EllipticalROIAnnotation => {
     const eventDetail = evt.detail
     const { currentPoints, element } = eventDetail
     const worldPos = currentPoints.world
+    const canvasPos = currentPoints.canvas
 
     const enabledElement = getEnabledElement(element)
     const { viewport, renderingEngine } = enabledElement
@@ -200,25 +205,21 @@ export default class RectangleRoiTool extends AnnotationTool {
       referencedImageId = referencedImageId.substring(colonIndex + 1)
     }
 
+    this.isDrawing = true
+
     const annotation = {
-      invalidated: true,
       highlighted: true,
+      invalidated: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleRoiTool.toolName,
+        toolName: EllipticalROITool.toolName,
       },
       data: {
         label: '',
         handles: {
-          points: [
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-          ],
           textBox: {
             hasMoved: false,
             worldPosition: <Types.Point3>[0, 0, 0],
@@ -229,6 +230,12 @@ export default class RectangleRoiTool extends AnnotationTool {
               bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
+          points: [
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+          ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3],
           activeHandleIndex: null,
         },
         cachedStats: {},
@@ -236,20 +243,19 @@ export default class RectangleRoiTool extends AnnotationTool {
     }
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleRoiTool)
+    Settings.getObjectSettings(annotation, EllipticalROITool)
 
     addAnnotation(element, annotation)
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiTool.toolName
+      EllipticalROITool.toolName
     )
 
     this.editData = {
       annotation,
       viewportIdsToRender,
-      handleIndex: 3,
-      movingTextBox: false,
+      centerCanvas: canvasPos,
       newAnnotation: true,
       hasMoved: false,
     }
@@ -277,7 +283,7 @@ export default class RectangleRoiTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLElement,
-    annotation: RectangleRoiAnnotation,
+    annotation: EllipticalROIAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -287,23 +293,42 @@ export default class RectangleRoiTool extends AnnotationTool {
     const { data } = annotation
     const { points } = data.handles
 
-    const canvasPoint1 = viewport.worldToCanvas(points[0])
-    const canvasPoint2 = viewport.worldToCanvas(points[3])
+    // For some reason Typescript doesn't understand this, so we need to be
+    // more specific about the type
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p)) as [
+      Types.Point2,
+      Types.Point2,
+      Types.Point2,
+      Types.Point2
+    ]
+    const canvasCorners = getCanvasEllipseCorners(canvasCoordinates)
 
-    const rect = this._getRectangleImageCoordinates([
-      canvasPoint1,
-      canvasPoint2,
-    ])
+    const [canvasPoint1, canvasPoint2] = canvasCorners
 
-    const point = [canvasCoords[0], canvasCoords[1]]
-    const { left, top, width, height } = rect
+    const minorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) + proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) + proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) - proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) - proximity,
+    }
 
-    const distanceToPoint = rectangle.distanceToPoint(
-      [left, top, width, height],
-      point as Types.Point2
+    const majorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) - proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) - proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) + proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
+    }
+
+    const pointInMinorEllipse = this._pointInEllipseCanvas(
+      minorEllipse,
+      canvasCoords
+    )
+    const pointInMajorEllipse = this._pointInEllipseCanvas(
+      majorEllipse,
+      canvasCoords
     )
 
-    if (distanceToPoint <= proximity) {
+    if (pointInMajorEllipse && !pointInMinorEllipse) {
       return true
     }
 
@@ -312,7 +337,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: RectangleRoiAnnotation,
+    annotation: EllipticalROIAnnotation,
     interactionType: InteractionTypes
   ): void => {
     const eventDetail = evt.detail
@@ -322,7 +347,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiTool.toolName
+      EllipticalROITool.toolName
     )
 
     this.editData = {
@@ -331,9 +356,9 @@ export default class RectangleRoiTool extends AnnotationTool {
       movingTextBox: false,
     }
 
-    this._activateModify(element)
-
     hideElementCursor(element)
+
+    this._activateModify(element)
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
@@ -345,7 +370,7 @@ export default class RectangleRoiTool extends AnnotationTool {
 
   handleSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: RectangleRoiAnnotation,
+    annotation: EllipticalROIAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void => {
@@ -358,22 +383,47 @@ export default class RectangleRoiTool extends AnnotationTool {
     let movingTextBox = false
     let handleIndex
 
+    let centerCanvas
+    let canvasWidth
+    let canvasHeight
+    let originalHandleCanvas
+
     if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true
     } else {
-      handleIndex = data.handles.points.findIndex((p) => p === handle)
+      const { points } = data.handles
+      const enabledElement = getEnabledElement(element)
+      const { worldToCanvas } = enabledElement.viewport
+
+      handleIndex = points.findIndex((p) => p === handle)
+
+      const pointsCanvas = points.map(worldToCanvas)
+
+      originalHandleCanvas = pointsCanvas[handleIndex]
+
+      canvasWidth = Math.abs(pointsCanvas[2][0] - pointsCanvas[3][0])
+      canvasHeight = Math.abs(pointsCanvas[0][1] - pointsCanvas[1][1])
+
+      centerCanvas = [
+        (pointsCanvas[2][0] + pointsCanvas[3][0]) / 2,
+        (pointsCanvas[0][1] + pointsCanvas[1][1]) / 2,
+      ]
     }
 
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleRoiTool.toolName
+      EllipticalROITool.toolName
     )
 
     this.editData = {
       annotation,
       viewportIdsToRender,
       handleIndex,
+      canvasWidth,
+      canvasHeight,
+      centerCanvas,
+      originalHandleCanvas,
       movingTextBox,
     }
     this._activateModify(element)
@@ -426,11 +476,45 @@ export default class RectangleRoiTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
   }
 
-  _mouseDragCallback = (
-    evt: EventTypes.MouseMoveEventType | EventTypes.MouseDragEventType
-  ) => {
+  _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
     this.isDrawing = true
+    const eventDetail = evt.detail
+    const { element } = eventDetail
+    const { currentPoints } = eventDetail
+    const currentCanvasPoints = currentPoints.canvas
+    const enabledElement = getEnabledElement(element)
+    const { renderingEngine, viewport } = enabledElement
+    const { canvasToWorld } = viewport
 
+    //////
+    const { annotation, viewportIdsToRender, centerCanvas } = this.editData
+    const { data } = annotation
+
+    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
+    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
+
+    // Todo: why bottom is -dY, it should be +dY
+    const bottomCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] - dY]
+    const topCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] + dY]
+    const leftCanvas = <Types.Point2>[centerCanvas[0] - dX, centerCanvas[1]]
+    const rightCanvas = <Types.Point2>[centerCanvas[0] + dX, centerCanvas[1]]
+
+    data.handles.points = [
+      canvasToWorld(bottomCanvas),
+      canvasToWorld(topCanvas),
+      canvasToWorld(leftCanvas),
+      canvasToWorld(rightCanvas),
+    ]
+
+    annotation.invalidated = true
+
+    this.editData.hasMoved = true
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+  }
+
+  _mouseDragModifyCallback = (evt: MouseDragEventType) => {
+    this.isDrawing = true
     const eventDetail = evt.detail
     const { element } = eventDetail
 
@@ -439,8 +523,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const { data } = annotation
 
     if (movingTextBox) {
-      // Drag mode - Move the text boxes world position
-      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail
+      const { deltaPoints } = eventDetail
       const worldPosDelta = deltaPoints.world
 
       const { textBox } = data.handles
@@ -452,11 +535,11 @@ export default class RectangleRoiTool extends AnnotationTool {
 
       textBox.hasMoved = true
     } else if (handleIndex === undefined) {
-      // Drag mode - Moving tool, so move all points by the world points delta
-      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail
+      // Moving tool
+      const { deltaPoints } = eventDetail
       const worldPosDelta = deltaPoints.world
 
-      const { points } = data.handles
+      const points = data.handles.points
 
       points.forEach((point) => {
         point[0] += worldPosDelta[0]
@@ -465,77 +548,96 @@ export default class RectangleRoiTool extends AnnotationTool {
       })
       annotation.invalidated = true
     } else {
-      // Moving handle.
-      const { currentPoints } = eventDetail
-      const enabledElement = getEnabledElement(element)
-      const { worldToCanvas, canvasToWorld } = enabledElement.viewport
-      const worldPos = currentPoints.world
-
-      const { points } = data.handles
-
-      // Move this handle.
-      points[handleIndex] = [...worldPos]
-
-      let bottomLeftCanvas
-      let bottomRightCanvas
-      let topLeftCanvas
-      let topRightCanvas
-
-      let bottomLeftWorld
-      let bottomRightWorld
-      let topLeftWorld
-      let topRightWorld
-
-      switch (handleIndex) {
-        case 0:
-        case 3:
-          // Moving bottomLeft or topRight
-
-          bottomLeftCanvas = worldToCanvas(points[0])
-          topRightCanvas = worldToCanvas(points[3])
-
-          bottomRightCanvas = [topRightCanvas[0], bottomLeftCanvas[1]]
-          topLeftCanvas = [bottomLeftCanvas[0], topRightCanvas[1]]
-
-          bottomRightWorld = canvasToWorld(bottomRightCanvas)
-          topLeftWorld = canvasToWorld(topLeftCanvas)
-
-          points[1] = bottomRightWorld
-          points[2] = topLeftWorld
-
-          break
-        case 1:
-        case 2:
-          // Moving bottomRight or topLeft
-          bottomRightCanvas = worldToCanvas(points[1])
-          topLeftCanvas = worldToCanvas(points[2])
-
-          bottomLeftCanvas = <Types.Point2>[
-            topLeftCanvas[0],
-            bottomRightCanvas[1],
-          ]
-          topRightCanvas = <Types.Point2>[
-            bottomRightCanvas[0],
-            topLeftCanvas[1],
-          ]
-
-          bottomLeftWorld = canvasToWorld(bottomLeftCanvas)
-          topRightWorld = canvasToWorld(topRightCanvas)
-
-          points[0] = bottomLeftWorld
-          points[3] = topRightWorld
-
-          break
-      }
+      this._dragHandle(evt)
       annotation.invalidated = true
     }
-
-    this.editData.hasMoved = true
 
     const enabledElement = getEnabledElement(element)
     const { renderingEngine } = enabledElement
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+  }
+
+  _dragHandle = (evt) => {
+    const eventDetail = evt.detail
+    const { element } = eventDetail
+    const enabledElement = getEnabledElement(element)
+    const { canvasToWorld } = enabledElement.viewport
+
+    const {
+      annotation,
+      canvasWidth,
+      canvasHeight,
+      handleIndex,
+      centerCanvas,
+      originalHandleCanvas,
+    } = this.editData
+    const { data } = annotation
+    const { points } = data.handles
+
+    // Move current point in that direction.
+    // Move other points in opposite direction.
+
+    const { currentPoints } = eventDetail
+    const currentCanvasPoints = currentPoints.canvas
+
+    if (handleIndex === 0 || handleIndex === 1) {
+      // Dragging top or bottom point
+      const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
+      const canvasBottom = <Types.Point2>[
+        centerCanvas[0],
+        centerCanvas[1] - dYCanvas,
+      ]
+      const canvasTop = <Types.Point2>[
+        centerCanvas[0],
+        centerCanvas[1] + dYCanvas,
+      ]
+
+      points[0] = canvasToWorld(canvasBottom)
+      points[1] = canvasToWorld(canvasTop)
+
+      const dXCanvas = currentCanvasPoints[0] - originalHandleCanvas[0]
+      const newHalfCanvasWidth = canvasWidth / 2 + dXCanvas
+      const canvasLeft = <Types.Point2>[
+        centerCanvas[0] - newHalfCanvasWidth,
+        centerCanvas[1],
+      ]
+      const canvasRight = <Types.Point2>[
+        centerCanvas[0] + newHalfCanvasWidth,
+        centerCanvas[1],
+      ]
+
+      points[2] = canvasToWorld(canvasLeft)
+      points[3] = canvasToWorld(canvasRight)
+    } else {
+      // Dragging left or right point
+      const dXCanvas = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
+      const canvasLeft = <Types.Point2>[
+        centerCanvas[0] - dXCanvas,
+        centerCanvas[1],
+      ]
+      const canvasRight = <Types.Point2>[
+        centerCanvas[0] + dXCanvas,
+        centerCanvas[1],
+      ]
+
+      points[2] = canvasToWorld(canvasLeft)
+      points[3] = canvasToWorld(canvasRight)
+
+      const dYCanvas = currentCanvasPoints[1] - originalHandleCanvas[1]
+      const newHalfCanvasHeight = canvasHeight / 2 + dYCanvas
+      const canvasBottom = <Types.Point2>[
+        centerCanvas[0],
+        centerCanvas[1] - newHalfCanvasHeight,
+      ]
+      const canvasTop = <Types.Point2>[
+        centerCanvas[0],
+        centerCanvas[1] + newHalfCanvasHeight,
+      ]
+
+      points[0] = canvasToWorld(canvasBottom)
+      points[1] = canvasToWorld(canvasTop)
+    }
   }
 
   cancel = (element: HTMLElement) => {
@@ -547,7 +649,6 @@ export default class RectangleRoiTool extends AnnotationTool {
       resetElementCursor(element)
 
       const { annotation, viewportIdsToRender } = this.editData
-
       const { data } = annotation
 
       annotation.highlighted = false
@@ -565,66 +666,61 @@ export default class RectangleRoiTool extends AnnotationTool {
       return annotation.annotationUID
     }
   }
-  /**
-   * Add event handlers for the modify event loop, and prevent default event prapogation.
-   */
-  _activateDraw = (element) => {
-    state.isInteractingWithTool = true
 
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(Events.MOUSE_MOVE, this._mouseDragCallback)
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
-
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
-  }
-
-  /**
-   * Add event handlers for the modify event loop, and prevent default event prapogation.
-   */
-  _deactivateDraw = (element) => {
-    state.isInteractingWithTool = false
-
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragCallback)
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
-
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
-  }
-
-  /**
-   * Add event handlers for the modify event loop, and prevent default event prapogation.
-   */
   _activateModify = (element) => {
     state.isInteractingWithTool = true
 
     element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragModifyCallback)
     element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragModifyCallback)
   }
 
-  /**
-   * Remove event handlers for the modify event loop, and enable default event propagation.
-   */
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false
 
     element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this._mouseDragModifyCallback
+    )
     element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    // element.removeEventListener(
+    //   Events.TOUCH_DRAG,
+    //   this._mouseDragModifyCallback
+    // )
+  }
+
+  _activateDraw = (element) => {
+    state.isInteractingWithTool = true
+
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback)
+    element.addEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback)
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+
+    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
+  }
+
+  _deactivateDraw = (element) => {
+    state.isInteractingWithTool = false
+
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback)
+    element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback)
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+
+    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
+    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
   }
 
   /**
-   * it is used to draw the rectangleRoi annotation in each
+   * it is used to draw the ellipticalROI annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
@@ -638,7 +734,7 @@ export default class RectangleRoiTool extends AnnotationTool {
     const { viewport } = enabledElement
     const { element } = viewport
 
-    let annotations = getAnnotations(element, RectangleRoiTool.toolName)
+    let annotations = getAnnotations(element, EllipticalROITool.toolName)
 
     if (!annotations?.length) {
       return
@@ -654,22 +750,28 @@ export default class RectangleRoiTool extends AnnotationTool {
     }
 
     const targetId = this.getTargetId(viewport)
+
     const renderingEngine = viewport.getRenderingEngine()
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as RectangleRoiAnnotation
-      const settings = Settings.getObjectSettings(annotation, RectangleRoiTool)
+      const annotation = annotations[i] as EllipticalROIAnnotation
+      const settings = Settings.getObjectSettings(annotation, EllipticalROITool)
       const annotationUID = annotation.annotationUID
-
       const data = annotation.data
-      const { points, activeHandleIndex } = data.handles
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+
+      const { handles } = data
+      const { points, activeHandleIndex } = handles
+
       const lineWidth = this.getStyle(settings, 'lineWidth', annotation)
       const lineDash = this.getStyle(settings, 'lineDash', annotation)
       const color = this.getStyle(settings, 'color', annotation)
 
-      const { viewPlaneNormal, viewUp } = viewport.getCamera()
-
+      const canvasCoordinates = points.map((p) =>
+        viewport.worldToCanvas(p)
+      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2]
+      const canvasCorners = <Array<Types.Point2>>(
+        getCanvasEllipseCorners(canvasCoordinates)
+      )
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -681,23 +783,20 @@ export default class RectangleRoiTool extends AnnotationTool {
 
         this._calculateCachedStats(
           annotation,
-          viewPlaneNormal,
-          viewUp,
+          viewport,
           renderingEngine,
           enabledElement
         )
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
-          viewPlaneNormal,
-          viewUp,
+          viewport,
           renderingEngine,
           enabledElement
         )
 
         // If the invalidated data is as a result of volumeViewport manipulation
-        // of the tools, we need to invalidate the related stackViewports data if
-        // they are not at the referencedImageId, so that
+        // of the tools, we need to invalidate the related viewports data, so that
         // when scrolling to the related slice in which the tool were manipulated
         // we re-render the correct tool position. This is due to stackViewport
         // which doesn't have the full volume at each time, and we are only working
@@ -744,10 +843,9 @@ export default class RectangleRoiTool extends AnnotationTool {
 
       if (activeHandleCanvasCoords) {
         const handleGroupUID = '0'
-
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleRoiTool.toolName,
+          EllipticalROITool.toolName,
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -757,14 +855,14 @@ export default class RectangleRoiTool extends AnnotationTool {
         )
       }
 
-      const rectangleUID = '0'
-      drawRectSvg(
+      const ellipseUID = '0'
+      drawEllipseSvg(
         svgDrawingHelper,
-        RectangleRoiTool.toolName,
+        EllipticalROITool.toolName,
         annotationUID,
-        rectangleUID,
-        canvasCoordinates[0],
-        canvasCoordinates[3],
+        ellipseUID,
+        canvasCorners[0],
+        canvasCorners[1],
         {
           color,
           lineDash,
@@ -777,8 +875,11 @@ export default class RectangleRoiTool extends AnnotationTool {
         continue
       }
 
+      // Poor man's cached?
+      let canvasTextBoxCoords
+
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates)
+        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners)
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords)
@@ -791,7 +892,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       const textBoxUID = '1'
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        RectangleRoiTool.toolName,
+        EllipticalROITool.toolName,
         annotationUID,
         textBoxUID,
         textLines,
@@ -812,34 +913,9 @@ export default class RectangleRoiTool extends AnnotationTool {
     }
   }
 
-  _getRectangleImageCoordinates = (
-    points: Array<Types.Point2>
-  ): {
-    left: number
-    top: number
-    width: number
-    height: number
-  } => {
-    const [point0, point1] = points
-
-    return {
-      left: Math.min(point0[0], point1[0]),
-      top: Math.min(point0[1], point1[1]),
-      width: Math.abs(point0[0] - point1[0]),
-      height: Math.abs(point0[1] - point1[1]),
-    }
-  }
-
-  /**
-   * _getTextLines - Returns the Area, mean and std deviation of the area of the
-   * target volume enclosed by the rectangle.
-   *
-   * @param data - The annotation tool-specific data.
-   * @param targetId - The volumeId of the volume to display the stats for.
-   */
-  _getTextLines = (data, targetId: string) => {
+  _getTextLines = (data, targetId) => {
     const cachedVolumeStats = data.cachedStats[targetId]
-    const { area, mean, max, stdDev, Modality } = cachedVolumeStats
+    const { area, mean, stdDev, max, isEmptyArea, Modality } = cachedVolumeStats
 
     if (mean === undefined) {
       return
@@ -847,12 +923,13 @@ export default class RectangleRoiTool extends AnnotationTool {
 
     const textLines = []
 
-    const areaLine = `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
+    const areaLine = isEmptyArea
+      ? `Area: Oblique not supported`
+      : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
     let meanLine = `Mean: ${mean.toFixed(2)}`
     let maxLine = `Max: ${max.toFixed(2)}`
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`
 
-    // Give appropriate units for the modality.
     if (Modality === 'PT') {
       meanLine += ' SUV'
       maxLine += ' SUV'
@@ -875,32 +952,31 @@ export default class RectangleRoiTool extends AnnotationTool {
     return textLines
   }
 
-  /**
-   * _calculateCachedStats - For each volume in the frame of reference that a
-   * tool instance in particular viewport defines as its target volume, find the
-   * volume coordinates (i,j,k) being probed by the two corners. One of i,j or k
-   * will be constant across the two points. In the other two directions iterate
-   * over the voxels and calculate the first and second-order statistics.
-   *
-   * @param data - The annotation tool-specific data.
-   * @param viewPlaneNormal - The normal vector of the camera.
-   * @param viewUp - The viewUp vector of the camera.
-   */
   _calculateCachedStats = (
     annotation,
-    viewPlaneNormal,
-    viewUp,
+    viewport,
     renderingEngine,
     enabledElement
   ) => {
-    const { data } = annotation
+    const data = annotation.data
     const { viewportId, renderingEngineId } = enabledElement
 
-    const worldPos1 = data.handles.points[0]
-    const worldPos2 = data.handles.points[3]
+    const { points } = data.handles
+
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+    const { viewPlaneNormal, viewUp } = viewport.getCamera()
+
+    const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
+      getCanvasEllipseCorners(canvasCoordinates)
+    )
+
+    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas)
+    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
     const { cachedStats } = data
 
     const targetIds = Object.keys(cachedStats)
+    const worldPos1 = topLeftWorld
+    const worldPos2 = bottomRightWorld
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i]
@@ -910,7 +986,7 @@ export default class RectangleRoiTool extends AnnotationTool {
         renderingEngine
       )
 
-      const { dimensions, scalarData, imageData, metadata } = image
+      const { dimensions, imageData, metadata } = image
 
       const worldPos1Index = transformPhysicalToIndex(imageData, worldPos1)
 
@@ -928,10 +1004,6 @@ export default class RectangleRoiTool extends AnnotationTool {
       // Some area to do stats over.
 
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        this.isHandleOutsideImage = false
-
-        // Calculate index bounds to iterate over
-
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0])
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0])
 
@@ -941,54 +1013,69 @@ export default class RectangleRoiTool extends AnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2])
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2])
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2]
+
+        const center = [
+          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
+          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
+          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
+        ] as Types.Point3
+
+        const ellipseObj = {
+          center,
+          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+        }
+
+        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
           viewPlaneNormal,
           viewUp,
           worldPos1,
           worldPos2
         )
-
-        const area = worldWidth * worldHeight
+        const isEmptyArea = worldWidth === 0 && worldHeight === 0
+        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2)
 
         let count = 0
         let mean = 0
         let stdDev = 0
         let max = -Infinity
 
-        const yMultiple = dimensions[0]
-        const zMultiple = dimensions[0] * dimensions[1]
-
-        //Todo: this can be replaced by pointInShapeCallback....
-        // This is a triple loop, but one of these 3 values will be constant
-        // In the planar view.
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i]
-
-              if (value > max) {
-                max = value
-              }
-
-              count++
-              mean += value
-            }
+        const meanMaxCalculator = ({ value: newValue }) => {
+          if (newValue > max) {
+            max = newValue
           }
+
+          mean += newValue
+          count += 1
         }
+
+        pointInShapeCallback(
+          imageData,
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          meanMaxCalculator,
+          boundsIJK
+        )
 
         mean /= count
 
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i]
+        const stdCalculator = ({ value }) => {
+          const valueMinusMean = value - mean
 
-              const valueMinusMean = value - mean
-
-              stdDev += valueMinusMean * valueMinusMean
-            }
-          }
+          stdDev += valueMinusMean * valueMinusMean
         }
+
+        pointInShapeCallback(
+          imageData,
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          stdCalculator,
+          boundsIJK
+        )
 
         stdDev /= count
         stdDev = Math.sqrt(stdDev)
@@ -997,11 +1084,13 @@ export default class RectangleRoiTool extends AnnotationTool {
           Modality: metadata.Modality,
           area,
           mean,
-          stdDev,
           max,
+          stdDev,
+          isEmptyArea,
         }
       } else {
         this.isHandleOutsideImage = true
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
         }
@@ -1018,6 +1107,7 @@ export default class RectangleRoiTool extends AnnotationTool {
       viewportId,
       renderingEngineId,
     }
+
     triggerEvent(eventTarget, eventType, eventDetail)
 
     return cachedStats
@@ -1028,5 +1118,33 @@ export default class RectangleRoiTool extends AnnotationTool {
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
     )
+  }
+
+  /**
+   * This is a temporary function to use the old ellipse's canvas-based
+   * calculation for isPointNearTool, we should move the the world-based
+   * calculation to the tool's isPointNearTool function.
+   *
+   * @param ellipse - The ellipse object
+   * @param location - The location to check
+   * @returns True if the point is inside the ellipse
+   */
+  _pointInEllipseCanvas(ellipse, location: Types.Point2): boolean {
+    const xRadius = ellipse.width / 2
+    const yRadius = ellipse.height / 2
+
+    if (xRadius <= 0.0 || yRadius <= 0.0) {
+      return false
+    }
+
+    const center = [ellipse.left + xRadius, ellipse.top + yRadius]
+    const normalized = [location[0] - center[0], location[1] - center[1]]
+
+    const inEllipse =
+      (normalized[0] * normalized[0]) / (xRadius * xRadius) +
+        (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
+      1.0
+
+    return inEllipse
   }
 }
