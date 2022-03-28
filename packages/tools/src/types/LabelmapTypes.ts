@@ -31,7 +31,7 @@ export type LabelmapRenderingConfig = {
   ofun?: vtkPiecewiseFunction
 }
 
-export type LabelmapRepresentationData = {
+export type LabelmapSegmentationData = {
   volumeId: string
   referencedVolumeId?: string
 }

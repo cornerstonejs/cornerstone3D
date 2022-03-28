@@ -1,7 +1,7 @@
 import * as Enums from '../enums'
 import type {
   labelmapConfig,
-  LabelmapRepresentationData,
+  LabelmapSegmentationData,
   LabelmapRenderingConfig,
 } from './LabelmapTypes'
 
@@ -33,7 +33,7 @@ export type SegmentationRepresentationConfig = {
 }
 
 export type SegmentationRepresentationData = {
-  LABELMAP?: LabelmapRepresentationData
+  LABELMAP?: LabelmapSegmentationData
 }
 
 /**
@@ -67,7 +67,7 @@ export type Segmentation = {
    * is contours, and other representations can be derived from the contour (currently
    * only labelmap representation is supported)
    */
-  representations: SegmentationRepresentationData
+  representationData: SegmentationRepresentationData
 }
 
 /**
@@ -120,6 +120,9 @@ export type ToolGroupSpecificLabelmapRepresentation =
 export type ToolGroupSpecificRepresentation =
   ToolGroupSpecificLabelmapRepresentation // | other ones
 
+export type ToolGroupSpecificLabelmapRepresentations =
+  Array<ToolGroupSpecificLabelmapRepresentation>
+
 /**
  * Segmentation State stored inside the cornerstone3DTools
  *
@@ -143,7 +146,7 @@ export type ToolGroupSpecificRepresentation =
  *       segmentsLocked: new Set(),
  *       label: 'segmentation1',
  *       cachedStats: {},
- *       representations: {
+ *       representationData: {
  *         LABELMAP: {
  *           volumeId: 'segmentation1',
  *         },
@@ -211,7 +214,7 @@ export type SegmentationState = {
   toolGroups: {
     /** toolGroupId and their toolGroup specific segmentation state with config */
     [key: string]: {
-      segmentationRepresentations: ToolGroupSpecificRepresentation[]
+      segmentationRepresentations: ToolGroupSpecificLabelmapRepresentations
       config: SegmentationRepresentationConfig
     }
   }
@@ -221,7 +224,7 @@ export type SegmentationPublicInput = {
   segmentationId: string
   representation: {
     type: Enums.SegmentationRepresentations
-    data: LabelmapRepresentationData
+    data: LabelmapSegmentationData
   }
 }
 

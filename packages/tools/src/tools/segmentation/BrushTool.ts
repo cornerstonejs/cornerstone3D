@@ -103,11 +103,11 @@ export default class BrushTool extends BaseTool {
       segmentIndex
     )
 
-    const { representations } =
+    const { representationData } =
       segmentationState.getSegmentation(segmentationId)
 
     // Todo: are we going to support contour editing with this tool?
-    const { volumeId } = representations[type]
+    const { volumeId } = representationData[type]
     const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all

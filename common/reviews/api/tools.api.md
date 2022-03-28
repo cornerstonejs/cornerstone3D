@@ -2647,7 +2647,7 @@ type Segmentation = {
     cachedStats: {
         [key: string]: number;
     };
-    representations: SegmentationRepresentationData;
+    representationData: SegmentationRepresentationData;
 };
 
 declare namespace segmentation {
@@ -2746,7 +2746,7 @@ type SegmentationRepresentationConfig = {
 
 // @public (undocumented)
 type SegmentationRepresentationData = {
-    LABELMAP?: LabelmapRepresentationData;
+    LABELMAP?: LabelmapSegmentationData;
 };
 
 // @public (undocumented)
@@ -2780,7 +2780,7 @@ type SegmentationState = {
     globalConfig: SegmentationRepresentationConfig;
     toolGroups: {
         [key: string]: {
-            segmentationRepresentations: ToolGroupSpecificRepresentation[];
+            segmentationRepresentations: ToolGroupSpecificLabelmapRepresentations;
             config: SegmentationRepresentationConfig;
         };
     };

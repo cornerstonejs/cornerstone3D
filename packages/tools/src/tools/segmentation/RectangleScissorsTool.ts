@@ -118,10 +118,10 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentIndex
     )
 
-    const { representations } = getSegmentation(segmentationId)
+    const { representationData } = getSegmentation(segmentationId)
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representations[type]
+    const { volumeId } = representationData[type]
     const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all
