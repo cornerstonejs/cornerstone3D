@@ -11,6 +11,7 @@
     "yarn": ">=1.19.1"
   },
   "scripts": {
+    "api-check": "lerna run api-check --stream",
     "build": "lerna run build --stream",
     "build:update-api": "lerna run build:update-api --stream",
     "build:demo": "lerna run build:demo --stream",

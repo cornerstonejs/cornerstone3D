@@ -38,6 +38,19 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run: yarn run build
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+
+  API_CHECK:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run: yarn run api-check
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
 
   # https://circleci.com/docs/2.0/collect-test-data/#karma
   TEST:
@@ -147,11 +160,15 @@ workflows:
       - BUILD:
           requires:
             - CHECKOUT
+      - API_CHECK:
+          requires:
+            - BUILD
       - TEST:
           requires:
             - CHECKOUT # TODO: Also require build?
       - BUILD_DOCS:
           requires:
+            - BUILD
             - TEST
       - DEPLOY_DOCS:
           requires:
@@ -173,8 +190,10 @@ workflows:
       - NPM_PUBLISH:
           requires:
             - BUILD
+            - TEST
       - BUILD_DOCS:
           requires:
+            - BUILD
             - TEST
       - DEPLOY_DOCS_TO_PROD:
           requires:
