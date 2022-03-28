@@ -5,7 +5,7 @@ import { getSegmentationRepresentations } from '../../stateManagement/segmentati
 import { labelmapDisplay } from './Labelmap'
 import { segmentationConfig } from '../../stateManagement/segmentation'
 import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
-import { getToolGroupById } from '../../store/ToolGroupManager'
+import { getToolGroup } from '../../store/ToolGroupManager'
 
 import { PublicToolProps, ToolProps } from '../../types'
 
@@ -100,7 +100,7 @@ export default class SegmentationDisplayTool extends BaseTool {
    * @param toolGroupId - the toolGroupId
    */
   renderSegmentation = (toolGroupId: string): void => {
-    const toolGroup = getToolGroupById(toolGroupId)
+    const toolGroup = getToolGroup(toolGroupId)
 
     if (!toolGroup) {
       return

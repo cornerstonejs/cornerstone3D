@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 
-import { getToolGroupById } from '../../store/ToolGroupManager'
+import { getToolGroup } from '../../store/ToolGroupManager'
 
 /**
  * Create a new 3D segmentation volume from the default imageData presented in
@@ -33,7 +33,7 @@ async function createNewSegmentationForToolGroup(
     direction?: Float32Array
   }
 ): Promise<string> {
-  const toolGroup = getToolGroupById(toolGroupId)
+  const toolGroup = getToolGroup(toolGroupId)
 
   if (!toolGroup) {
     throw new Error(`ToolGroup with Id ${toolGroupId} not found`)

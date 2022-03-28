@@ -10,7 +10,7 @@ import {
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
 import Representations from '../../../enums/SegmentationRepresentations'
-import { getToolGroupById } from '../../../store/ToolGroupManager'
+import { getToolGroup } from '../../../store/ToolGroupManager'
 import type { labelmapConfig } from '../../../types/LabelmapTypes'
 import {
   RepresentationPublicInput,
@@ -292,7 +292,7 @@ function _removeLabelmapFromToolGroupViewports(
   toolGroupId: string,
   segmentationRepresentationUID: string
 ): void {
-  const toolGroup = getToolGroupById(toolGroupId)
+  const toolGroup = getToolGroup(toolGroupId)
 
   if (toolGroup === undefined) {
     throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`)
@@ -315,7 +315,7 @@ async function _addLabelmapToToolGroupViewports(
   volumeId: string,
   segmentationRepresentationUID: string
 ): Promise<void> {
-  const toolGroup = getToolGroupById(toolGroupId) as IToolGroup
+  const toolGroup = getToolGroup(toolGroupId) as IToolGroup
   const { viewportsInfo } = toolGroup
 
   for (const viewportInfo of viewportsInfo) {

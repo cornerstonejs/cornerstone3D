@@ -4,7 +4,7 @@ import {
   RepresentationPublicInput,
 } from '../../types/SegmentationStateTypes'
 import Representations from '../../enums/SegmentationRepresentations'
-import { getToolGroupById } from '../../store/ToolGroupManager'
+import { getToolGroup } from '../../store/ToolGroupManager'
 
 import { labelmapDisplay } from '../../tools/displayTools/Labelmap'
 
@@ -24,7 +24,7 @@ async function addSegmentationRepresentations(
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<void> {
   // Check if there exists a toolGroup with the toolGroupId
-  const toolGroup = getToolGroupById(toolGroupId)
+  const toolGroup = getToolGroup(toolGroupId)
 
   if (!toolGroup) {
     throw new Error(`No tool group found for toolGroupId: ${toolGroupId}`)

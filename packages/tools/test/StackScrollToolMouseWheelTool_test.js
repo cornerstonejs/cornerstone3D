@@ -89,7 +89,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.renderingEngine.destroy()
     metaData.removeProvider(fakeMetaDataProvider)
     imageLoader.unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroupById(StackScrollTool.toolName)
+    ToolGroupManager.destroyToolGroup(StackScrollTool.toolName)
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
