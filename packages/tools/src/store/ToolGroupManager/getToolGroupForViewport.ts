@@ -15,7 +15,7 @@ import { IToolGroup } from '../../types'
  * tool group is associated with.
  * @returns A tool group.
  */
-function getToolGroup(
+function getToolGroupForViewport(
   viewportId: string,
   renderingEngineId: string
 ): IToolGroup | undefined {
@@ -41,4 +41,4 @@ function getToolGroup(
   return toolGroupFilteredByIds[0]
 }
 
-export default getToolGroup
+export default getToolGroupForViewport

@@ -20,7 +20,10 @@ export default function getToolsWithModesForElement(
   const enabledElement = getEnabledElement(element)
   const { renderingEngineId, viewportId } = enabledElement
 
-  const toolGroup = ToolGroupManager.getToolGroup(viewportId, renderingEngineId)
+  const toolGroup = ToolGroupManager.getToolGroupForViewport(
+    viewportId,
+    renderingEngineId
+  )
 
   if (!toolGroup) {
     return []

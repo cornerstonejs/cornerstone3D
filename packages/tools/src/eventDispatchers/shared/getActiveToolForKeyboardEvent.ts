@@ -26,7 +26,10 @@ export default function getActiveToolForKeyboardEvent(
   // If any keyboard modifier key is also pressed
   const modifierKey = keyEventListener.getModifierKey()
 
-  const toolGroup = ToolGroupManager.getToolGroup(viewportId, renderingEngineId)
+  const toolGroup = ToolGroupManager.getToolGroupForViewport(
+    viewportId,
+    renderingEngineId
+  )
 
   if (!toolGroup) {
     return null

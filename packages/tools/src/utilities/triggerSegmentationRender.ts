@@ -6,7 +6,10 @@ import {
   Types,
 } from '@cornerstonejs/core'
 import { Events as csToolsEvents } from '../enums'
-import { getToolGroupById, getToolGroup } from '../store/ToolGroupManager'
+import {
+  getToolGroupById,
+  getToolGroupForViewport,
+} from '../store/ToolGroupManager'
 
 import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
 import { SegmentationRenderedEventDetail } from '../types/EventTypes'
@@ -127,7 +130,7 @@ class SegmentationRenderingEngine {
         onSegmentationRender
       )
 
-      const toolGroup = getToolGroup(viewportId, renderingEngineId)
+      const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId)
 
       const eventDetail: SegmentationRenderedEventDetail = {
         toolGroupId: toolGroup.id,

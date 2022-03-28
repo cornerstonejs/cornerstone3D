@@ -1308,7 +1308,7 @@ function getSynchronizers(renderingEngineId: string, viewportId: string): Array<
 function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): Types_2.Point2;
 
 // @public (undocumented)
-function getToolGroup(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
+function getToolGroupForViewport(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupById(toolGroupId: string): IToolGroup | undefined;
@@ -3113,7 +3113,7 @@ declare namespace ToolGroupManager {
         destroy_3 as destroy,
         destroyToolGroupById,
         getToolGroupById,
-        getToolGroup,
+        getToolGroupForViewport,
         getAllToolGroups
     }
 }

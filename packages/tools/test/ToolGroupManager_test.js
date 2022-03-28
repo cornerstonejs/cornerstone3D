@@ -191,7 +191,10 @@ describe('ToolGroup Manager: ', () => {
       const tg = ToolGroupManager.getToolGroupById('volume1')
       expect(tg).toBeDefined()
 
-      const tg2 = ToolGroupManager.getToolGroup(viewportId1, renderingEngineId)
+      const tg2 = ToolGroupManager.getToolGroupForViewport(
+        viewportId1,
+        renderingEngineId
+      )
       expect(tg2).toBeDefined()
       expect(tg).toBe(tg2)
 
