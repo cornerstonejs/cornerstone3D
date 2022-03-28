@@ -43,12 +43,11 @@ const {
 } = utilities.testUtils
 
 const renderingEngineId = utilities.uuidv4()
+const TOOL_GROUP_ID = utilities.uuidv4()
 
 const viewportId1 = 'AXIAL'
 
 const AXIAL = 'AXIAL'
-
-const TOOL_GROUP_ID = 'segToolGroup'
 
 function createViewport(
   renderingEngine,

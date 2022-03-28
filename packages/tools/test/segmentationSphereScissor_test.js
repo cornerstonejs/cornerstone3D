@@ -42,6 +42,7 @@ const {
 } = utilities.testUtils
 
 const renderingEngineId = utilities.uuidv4()
+const TOOL_GROUP_ID = utilities.uuidv4()
 
 const viewportId1 = 'AXIAL'
 const viewportId2 = 'SAGITTAL'
@@ -87,7 +88,7 @@ describe('Segmentation Tools --', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup('segToolGroup')
+      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(SphereScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
@@ -110,7 +111,7 @@ describe('Segmentation Tools --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroup('segToolGroup')
+      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
