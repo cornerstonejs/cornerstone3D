@@ -59,7 +59,7 @@ will use that, if not, it will take a look inside `RuntimeSettings` and finally 
 ## Global Tool Styles
 
 ```js
-import { Settings } from '@ohif/cornerstone-render'
+import { Settings } from '@cornerstone/core'
 
 // 1. Getting runtimeSettings for all tools
 const settings = Settings.getRuntimeSettings()
@@ -72,7 +72,7 @@ settings.set("tool.style.colorActive", "blue")
 ## Tool-specific style
 
 ```js
-import { Settings } from '@ohif/cornerstone-render'
+import { Settings } from '@cornerstone/core'
 
 1. Getting the annotation to be used to locate the tool settings
 

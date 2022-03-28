@@ -29,7 +29,7 @@ import {
   RenderingEngine, // class
   ORIENTATION, // constant
   ViewportType, // enum
-} from '@ohif/cornerstone-render'
+} from '@cornerstone/core'
 
 const sceneUID = 'SCENE_UID'
 const volumeId = 'VOLUME_ID'

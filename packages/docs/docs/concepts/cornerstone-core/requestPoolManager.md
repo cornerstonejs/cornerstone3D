@@ -46,7 +46,7 @@ You will need to define a *sendRequest* function to make an load image request.
 
 
 ```js
-import {imageLoadPoolManager, loadAndCacheImage, RequestType} from '@ohif/cornerstone-render'
+import {imageLoadPoolManager, loadAndCacheImage, RequestType} from '@cornerstone/core'
 
 function sendRequest(imageId, imageIdIndex, options) {
   return loadAndCacheImage(imageId, options).then(
