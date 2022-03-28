@@ -20,7 +20,7 @@ import getToolsWithModesForElement from '../utilities/getToolsWithModesForElemen
 import { ToolModes } from '../enums'
 import { removeAnnotation } from '../stateManagement'
 import getSynchronizers from './SynchronizerManager/getSynchronizers'
-import getToolGroup from './ToolGroupManager/getToolGroup'
+import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport'
 import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender'
 
 const VIEWPORT_ELEMENT = 'viewport-element'
@@ -84,7 +84,7 @@ const _removeViewportFromSynchronizers = (element: HTMLElement) => {
 const _removeViewportFromToolGroup = (element: HTMLElement) => {
   const { renderingEngineId, viewportId } = getEnabledElement(element)
 
-  const toolGroup = getToolGroup(viewportId, renderingEngineId)
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId)
 
   if (toolGroup) {
     toolGroup.removeViewports(renderingEngineId, viewportId)
