@@ -848,7 +848,7 @@ function destroy_2(): void;
 function destroy_3(): void;
 
 // @public (undocumented)
-function destroySynchronizerById(synchronizerId: string): void;
+function destroySynchronizer(synchronizerId: string): void;
 
 // @public (undocumented)
 function destroyToolGroup(toolGroupId: string): void;
@@ -1299,19 +1299,19 @@ function getState(annotation?: Annotation): AnnotationStyleStates;
 function getStyle(toolName?: string, annotation?: Record<string, unknown>): Settings;
 
 // @public (undocumented)
-function getSynchronizerById(synchronizerId: string): Synchronizer | void;
+function getSynchronizer(synchronizerId: string): Synchronizer | void;
 
 // @public (undocumented)
-function getSynchronizers(renderingEngineId: string, viewportId: string): Array<Synchronizer>;
+function getSynchronizersForViewport(viewportId: string, renderingEngineId: string): Array<Synchronizer>;
 
 // @public (undocumented)
 function getTextBoxCoordsCanvas(annotationCanvasPoints: Array<Types_2.Point2>): Types_2.Point2;
 
 // @public (undocumented)
-function getToolGroupForViewport(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
+function getToolGroup(toolGroupId: string): IToolGroup | undefined;
 
 // @public (undocumented)
-function getToolGroup(toolGroupId: string): IToolGroup | undefined;
+function getToolGroupForViewport(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupSpecificConfig(toolGroupId: string): SegmentationRepresentationConfig;
@@ -3070,10 +3070,10 @@ declare namespace SynchronizerManager {
     export {
         createSynchronizer,
         destroy_2 as destroy,
-        getSynchronizerById,
-        getSynchronizers,
+        getSynchronizer,
+        getSynchronizersForViewport,
         getAllSynchronizers,
-        destroySynchronizerById
+        destroySynchronizer
     }
 }
 export { SynchronizerManager }
