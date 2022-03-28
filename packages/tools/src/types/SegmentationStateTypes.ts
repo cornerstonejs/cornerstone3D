@@ -120,8 +120,8 @@ export type ToolGroupSpecificLabelmapRepresentation =
 export type ToolGroupSpecificRepresentation =
   ToolGroupSpecificLabelmapRepresentation // | other ones
 
-export type ToolGroupSpecificLabelmapRepresentations =
-  Array<ToolGroupSpecificLabelmapRepresentation>
+export type ToolGroupSpecificRepresentations =
+  Array<ToolGroupSpecificRepresentation>
 
 /**
  * Segmentation State stored inside the cornerstone3DTools
@@ -214,7 +214,7 @@ export type SegmentationState = {
   toolGroups: {
     /** toolGroupId and their toolGroup specific segmentation state with config */
     [key: string]: {
-      segmentationRepresentations: ToolGroupSpecificLabelmapRepresentations
+      segmentationRepresentations: ToolGroupSpecificRepresentations
       config: SegmentationRepresentationConfig
     }
   }

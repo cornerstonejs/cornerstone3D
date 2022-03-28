@@ -10,13 +10,10 @@ import type {
   SegmentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
+  ToolGroupSpecificRepresentations,
 } from '../../types/SegmentationStateTypes'
 
-import {
-  getDefaultRepresentationConfig,
-  isValidRepresentationConfig,
-} from '../../utilities/segmentation'
-import { deepMerge } from '../../utilities'
+import { getDefaultRepresentationConfig } from '../../utilities/segmentation'
 import normalizeSegmentationInput from './helpers/normalizeSegmentationInput'
 
 /**
@@ -82,7 +79,7 @@ function addSegmentation(
  */
 function getSegmentationRepresentations(
   toolGroupId: string
-): ToolGroupSpecificRepresentation[] | [] {
+): ToolGroupSpecificRepresentations | [] {
   const segmentationStateManager = getDefaultSegmentationStateManager()
   return segmentationStateManager.getSegmentationRepresentations(toolGroupId)
 }

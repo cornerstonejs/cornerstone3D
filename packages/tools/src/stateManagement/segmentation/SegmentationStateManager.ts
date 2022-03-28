@@ -9,6 +9,7 @@ import type {
   Segmentation,
   ToolGroupSpecificRepresentation,
   SegmentationRepresentationConfig,
+  ToolGroupSpecificRepresentations,
 } from '../../types/SegmentationStateTypes'
 
 /* A default initial state for the segmentation manager. */
@@ -107,7 +108,7 @@ export default class SegmentationStateManager {
    */
   getSegmentationRepresentations(
     toolGroupId: string
-  ): ToolGroupSpecificRepresentation[] | undefined {
+  ): ToolGroupSpecificRepresentations | undefined {
     const toolGroupSegRepresentationsWithConfig =
       this.state.toolGroups[toolGroupId]
 
@@ -206,7 +207,7 @@ export default class SegmentationStateManager {
     }
 
     const state =
-      toolGroupSegmentationRepresentations as ToolGroupSpecificRepresentation[]
+      toolGroupSegmentationRepresentations as ToolGroupSpecificRepresentations
     const index = state.findIndex(
       (segData) =>
         segData.segmentationRepresentationUID === segmentationRepresentationUID

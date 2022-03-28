@@ -13,7 +13,7 @@ function validateSegmentationInput(
   segmentationInputArray: SegmentationPublicInput[]
 ): void {
   if (!segmentationInputArray || !segmentationInputArray.length) {
-    throw new Error('The segmentationInputArray undefined or empty array')
+    throw new Error('The segmentationInputArray is undefined or empty array')
   }
 
   segmentationInputArray.forEach((segmentationInput) => {

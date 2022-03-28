@@ -1268,7 +1268,7 @@ function getSegmentation(segmentationId: string): Segmentation | undefined;
 function getSegmentationRepresentationByUID(toolGroupId: string, segmentationRepresentationUID: string): ToolGroupSpecificRepresentation | undefined;
 
 // @public (undocumented)
-function getSegmentationRepresentations(toolGroupId: string): ToolGroupSpecificRepresentation[] | [];
+function getSegmentationRepresentations(toolGroupId: string): ToolGroupSpecificRepresentations | [];
 
 // @public (undocumented)
 function getSegmentations(): Segmentation[] | [];
@@ -2780,7 +2780,7 @@ type SegmentationState = {
     globalConfig: SegmentationRepresentationConfig;
     toolGroups: {
         [key: string]: {
-            segmentationRepresentations: ToolGroupSpecificLabelmapRepresentations;
+            segmentationRepresentations: ToolGroupSpecificRepresentations;
             config: SegmentationRepresentationConfig;
         };
     };
