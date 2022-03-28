@@ -19,5 +19,5 @@ to run the tests and visually inspect the results, you can run the tests by chan
 ![renderingTests](../assets/tests.gif)
 
 ### Running Only One Test Locally
-You can use `karma` specifiers such as `fdescribe` instead of (`describe`) and `fit` instead
+You can use `karma` specifiers such as `describe` instead of (`describe`) and `fit` instead
 of (`it`) to run only one test.

@@ -34,8 +34,8 @@ const { SegmentationRepresentations } = csToolsEnums
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils
 
-const renderingEngineId = utilities.uuidv4()
-const TOOL_GROUP_ID = utilities.uuidv4()
+const renderingEngineId = 'renderingEngineId-segmentationState_test'
+const toolGroupId = 'toolGroupId-segmentationState_test'
 
 const viewportId = 'VIEWPORT'
 
@@ -76,8 +76,8 @@ describe('Segmentation State -- ', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
+      this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
+ ''      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
       this.renderingEngine = new RenderingEngine(renderingEngineId)
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
@@ -95,8 +95,8 @@ describe('Segmentation State -- ', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
-
+      ToolGroupManager.destroyToolGroup(toolGroupId)
+ ''
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
@@ -132,8 +132,8 @@ describe('Segmentation State -- ', () => {
 
           const state = stateManager.getState()
 
-          expect(evt.detail.toolGroupId).toBe(TOOL_GROUP_ID)
-          expect(state).toBeDefined()
+          expect(evt.detail.toolGroupId).toBe(toolGroupId)
+ ''          expect(state).toBeDefined()
           expect(state.toolGroups).toBeDefined()
 
           const toolGroupSegmentationState =
