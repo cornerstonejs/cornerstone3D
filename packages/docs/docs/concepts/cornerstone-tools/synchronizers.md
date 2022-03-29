@@ -30,7 +30,7 @@ synchronization.
 
 ```js
 import { Enums } from '@cornerstone/core'
-import { SynchronizerManager } from '@ohif/cornerstone-tools'
+import { SynchronizerManager } from '@cornerstone/tools'
 
 const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
   synchronizerName,

@@ -6,8 +6,6 @@ import {
 } from '@cornerstonejs/core'
 import { init as csTools3dInit } from '@cornerstonejs/tools'
 
-// import { registerWebImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
-
 const content = document.getElementById('content')
 
 const element = document.createElement('div')

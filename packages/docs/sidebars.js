@@ -37,7 +37,12 @@ module.exports = {
         title: 'Tutorials',
         description: 'In this section you will find a collection of tutorials',
       },
-      items: ['tutorials/core-usage', 'tutorials/tools-usage'],
+      items: [
+        'tutorials/intro',
+        'tutorials/basic-stack',
+        'tutorials/core-usage',
+        'tutorials/tools-usage',
+      ],
     },
     {
       type: 'category',
@@ -103,6 +108,7 @@ module.exports = {
           link: { type: 'doc', id: 'concepts/cornerstone-tools/index' },
           items: [
             'concepts/cornerstone-tools/tools',
+            'concepts/cornerstone-tools/toolGroups',
             'concepts/cornerstone-tools/synchronizers',
             'concepts/cornerstone-tools/state-management',
             'concepts/cornerstone-tools/tools-eventListeners',
@@ -129,5 +135,15 @@ module.exports = {
       href: '/coverage',
     },
     'faq',
+    {
+      type: 'link',
+      label: 'Test Coverage Report',
+      href: 'pathname:///test-coverage',
+    },
+    {
+      type: 'link',
+      label: 'Live Examples',
+      href: 'pathname:///examples',
+    },
   ],
 }
