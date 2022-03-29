@@ -1,72 +1,49 @@
-# Cornerstone-3d-alpha
+# [Cornerstone.js](https://cornerstonejs.org/) &middot; ![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-> VTK.js powered offscreen rendering engine and tool framework for 3D
-> visualisation of medical images.
+Cornerstone is a set of JavaScript libraries that can be used to build web-based medical imaging applications. It provides a framework to build radiology applications such as the [OHIF Viewer](https://ohif.org/).
 
-[![NPM](https://img.shields.io/npm/v/react-vtkjs-viewport.svg)](https://www.npmjs.com/package/react-vtkjs-viewport)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FOHIF%2Freact-vtkjs-viewport.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FOHIF%2Freact-vtkjs-viewport?ref=badge_shield)
+* **Fast:** Cornerstone leverages WebGL to provide high-performance image rendering and WebAssembly for fast image decompression.
+* **Flexible:** Cornerstone provides APIs for defining custom image, volume, and metadata loading schemes, allowing developers to easily connect with proprietary image archives.
+* **Community Driven:** Cornerstone is supported by the [Open Health Imaging Foundation](https://ohif.org/). We publish our roadmap and welcome contributions and collaboration.
+* **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box.
 
-## Install
+[Learn how to use Cornerstone in your project](https://cs3d-docs.netlify.app/docs/introduction/overview).
 
-This project requires `vtk.js` as an ES6 dependency.
-[If you're unsure of how to consume `vtk.js` as an ES6 dependency, please check out Kitware's guide.](https://kitware.github.io/vtk-js/docs/intro_vtk_as_es6_dependency.html#Webpack-config)
+## Documentation
 
-```bash
-# With NPM
-npm install --save react-vtkjs-viewport vtk.js
+You can find the Cornerstone documentation [on the website](https://cornerstonejs.org/).
 
-# With Yarn
-yarn add react-vtkjs-viewport vtk.js
-```
+The documentation is divided into several sections:
 
-## Development
+* [Tutorial](https://cs3d-docs.netlify.app/docs/category/tutorials)
+* [Main Concepts](https://cs3d-docs.netlify.app/docs/category/concepts)
+* [Live Examples](https://cs3d-docs.netlify.app/examples/)
+* [API Reference](https://cs3d-docs.netlify.app/api)
+* [How-to Guides](https://cs3d-docs.netlify.app/docs/category/how-to-guides)
+* [FAQ](https://cs3d-docs.netlify.app/docs/faq)
+* [How-to Contribute](https://cs3d-docs.netlify.app/docs/category/contributing)
 
-Local development uses `<root>/examples` as a test application. You can import
-the VTK Viewport and the app configuration configuration using a WebPack alias
-like so:
+## Support
 
-```js
-import VtkViewport from '@ohif/cornerstone-tools'
-```
+Users can post questions and issues on the [Open Health Imaging Foundation (OHIF) Community Forum](https://community.ohif.org/). Developer issues or bugs can be reported as [Github Issues](https://github.com/cornerstonejs/cornerstone3D/issues).
 
-Any updates to the example files or the VtkViewport's source will cause WebPack
-to rebuild.
+The [OHIF Resources page](https://v3-docs.ohif.org/resources) may be of interest to Cornerstone users, as it includes presentations and demonstrations of OHIF and Cornerstone.
 
-```bash
-# Restore Dependencies
-yarn install
 
-# Start Local Dev Server
-yarn run dev
+## Contributing
 
-# Or Start Local Dev Server with a non-default config:
-APP_CONFIG=config/myCustomConfig.js yarn run dev
-```
+### [Code of Conduct](./CODE_OF_CONDUCT.md)
 
-Development configuration looks like this:
+Cornerstone has adopted a [Code of Conduct](./CODE_OF_CONDUCT.md) that we expect project participants to adhere to.
 
-```js
-export default {
-  // The WADO-RS root of your DICOMWeb server
-  wadoRsRoot,
-  // The StudyInstanceUID of the target study.
-  StudyInstanceUID,
-  // The SeriesInstanceUID of the target CT dataset.
-  ctSeriesInstanceUID,
-  // The SeriesInstanceUID of the target PT dataset.
-  ptSeriesInstanceUID,
-  // Optional: limitFrames will limit the number of frames
-  // fetched from each series to speed up testing. e.g. limitFrames: 5.
-  limitFrames,
-}
-```
+### [Contributing Guide](https://cs3d-docs.netlify.app/docs/category/contributing)
 
-## License
+Read our guide on [How-to Contribute](https://cs3d-docs.netlify.app/docs/category/contributing) and about our [Issue Triage process](https://v3-docs.ohif.org/development/our-process).
 
-MIT © [OHIF](https://github.com/OHIF)
+### License
+
+Cornerstone is [MIT licensed](./LICENSE).
 
 <!--
     Links
 -->
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FOHIF%2Freact-vtkjs-viewport.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FOHIF%2Freact-vtkjs-viewport?ref=badge_large)
