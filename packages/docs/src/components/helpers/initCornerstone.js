@@ -1,5 +1,6 @@
 import dicomParser from 'dicom-parser'
 import * as cornerstone from '@cornerstonejs/core'
+import * as csTools3d from '@cornerstonejs/tools'
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js'
 import {
   cornerstoneStreamingImageVolumeLoader,

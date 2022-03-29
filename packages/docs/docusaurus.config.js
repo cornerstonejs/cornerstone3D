@@ -147,6 +147,36 @@ module.exports = {
     }),
   },
   plugins: [
+    () => ({
+      configureWebpack() {
+        return {
+          module: {
+            rules: [
+              {
+                test: /\.glsl$/i,
+                include: /vtk\.js[\/\\]Sources/,
+                loader: 'shader-loader',
+              },
+            ],
+          },
+          resolve: {
+            modules: [path.resolve(__dirname, './../node_modules')],
+            extensions: ['.ts', '.tsx', '.js', '.jsx'],
+            fallback: {
+              fs: false,
+              path: require.resolve('path-browserify'),
+            },
+            alias: {
+              '@cornerstonejs/core': path.resolve('../core/src/index'),
+              '@cornerstonejs/tools': path.resolve('../tools/src/index'),
+              '@cornerstonejs/streaming-image-volume-loader': path.resolve(
+                '../streaming-image-volume-loader/src/index'
+              ),
+            },
+          },
+        }
+      },
+    }),
     'plugin-image-zoom',
     require.resolve('./webpackConfigurationPlugin'),
     [
