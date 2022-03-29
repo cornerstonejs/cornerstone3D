@@ -53,6 +53,7 @@ module.exports = {
         'how-to-guides/configuration',
         'how-to-guides/custom-image-loader',
         'how-to-guides/custom-metadata-provider',
+        'how-to-guides/custom-volume-loading',
         'how-to-guides/custom-tools',
       ],
     },
@@ -90,7 +91,10 @@ module.exports = {
           label: 'Streaming Image Volume Loader',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/streaming-image-volume/index' },
-          items: ['concepts/streaming-image-volume/streaming'],
+          items: [
+            'concepts/streaming-image-volume/streaming',
+            'concepts/streaming-image-volume/re-order',
+          ],
         },
         {
           type: 'category',

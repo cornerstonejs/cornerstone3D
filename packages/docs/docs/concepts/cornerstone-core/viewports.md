@@ -16,6 +16,13 @@ pass the `element` for which the viewport should be created. For example, a CT s
 viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MPR, A 3D perspective volume render.
 
 
+<div style={{textAlign: 'center'}}>
+
+![](../../assets/viewports.png)
+
+
+</div>
+
 
 ## VolumeViewport
 

@@ -5,7 +5,7 @@ id: requestPoolManager
 
 # RequestPool Manager
 
-The RequestPool Manager has been extensively reworked to provide two new features: 1) `asynchronous image retrieval and decoding` 2) `requests re-ordering` which we discuss next.
+The RequestPool Manager has been extensively reworked to provide two new features: 1) `asynchronous image retrieval and decoding` 2) `requests re-ordering`.
 
 ## ImageLoad and ImageRetrieval Queues
 
@@ -15,16 +15,14 @@ for when decoding required time; thus, no new retrieval (fetch) requests would b
 even if additional requests were permitted based on the configured maximum number of requests.
 
 To overcome this limitation, two distinct queues have been created for this
-purpose: "imageRetrieval" and "imageLoad" pools, each with their own configurable maximum concurrent
+purpose: `imageRetrievalPoolManager` and `imageLoadPoolManager`, each with their own configurable maximum concurrent
 jobs. They are separated and executed asynchronously from one another, allowing
 each retrieval request to be initiated instantly upon the availability of a request firing slot.
 
-Splitting the image retrieval request and decoding is enabled by default in `Cornerstone` when using the `Cornerstone-wado-image-loader` version `v4.0.0-rc` or above.
+Splitting the image retrieval request and decoding is enabled by default `Cornerstone-wado-image-loader` version `v4.0.0-rc` or above.
 
 ```js
 // Loading = Retrieval + Decoding
-const imageLoadPoolManager = new RequestPoolManager()
-
 imageLoadPoolManager.maxNumRequests = {
   interaction: 1000,
   thumbnail: 1000,
@@ -32,8 +30,6 @@ imageLoadPoolManager.maxNumRequests = {
 }
 
 // Retrieval (usually) === XHR requests
-const imageRetrievalPoolManager = new RequestPoolManager()
-
 imageRetrievalPoolManager.maxNumRequests = {
   interaction: 20,
   thumbnail: 20,
@@ -42,7 +38,8 @@ imageRetrievalPoolManager.maxNumRequests = {
 ```
 
 ### Usage
-You will need to define a *sendRequest* function to make an load image request.
+In your custom `imageLoader` or `volumeLoader`, to properly use the
+poolManagers inside cornerstone, you need to define a `sendRequest` function to make an load image request.
 
 
 ```js
@@ -62,7 +59,6 @@ function sendRequest(imageId, imageIdIndex, options) {
 
 const imageId = "schema://image"
 const imageIdIndex = 10
-
 
 const requestType = RequestType.Interaction
 const priority = -5
@@ -87,7 +83,5 @@ imageLoadPoolManager.addRequest(
 
 You could have a certain sequence in mind for retrieving the images. For example,
 suppose you want to load a volume from the middle slice to the top and bottom.
-You may do this by [getting the image requests](/docs/cornerstone-image-loader-streaming-volume/classes/StreamingImageVolume#getimageloadrequests) from the constructed volume, re-ordering them,
-and manually adding them to the imageLoadPoolManager.
-
-You can take a look at the 'PriorityLoading' demo to see how to re-order the requests.
+We have implemented such option in the `cornerstoneStreamingImageVolumeLoader`.
+You can read more about it in the [re-ordering requests](../streaming-image-volume/re-order) section.
