@@ -81,6 +81,9 @@ export default async function createImageIdsAndCacheMetaData({
         instanceMetaData
       )
     }
+
+    console.debug(instanceMetaData)
+
     WADORSHeaderProvider.addInstance(imageId, instanceMetaData)
 
     // Add calibrated pixel spacing

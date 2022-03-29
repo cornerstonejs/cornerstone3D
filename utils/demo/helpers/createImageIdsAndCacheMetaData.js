@@ -66,35 +66,6 @@ export default async function createImageIdsAndCacheMetaData({
       instanceMetaData
     )
 
-    // let imageId
-    // if (type === VOLUME) {
-    //   imageId =
-    //     `csiv:` +
-    //     wadoRsRoot +
-    //     '/studies/' +
-    //     StudyInstanceUID +
-    //     '/series/' +
-    //     SeriesInstanceUID +
-    //     '/instances/' +
-    //     SOPInstanceUID +
-    //     '/frames/1'
-
-    //   cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, instanceMetaData)
-    // } else {
-    //   imageId =
-    //     `wadors:` +
-    //     wadoRsRoot +
-    //     '/studies/' +
-    //     StudyInstanceUID +
-    //     '/series/' +
-    //     SeriesInstanceUID +
-    //     '/instances/' +
-    //     SOPInstanceUID +
-    //     '/frames/1'
-
-    //   cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, instanceMetaData)
-    // }
-
     WADORSHeaderProvider.addInstance(imageId, instanceMetaData)
 
     // Add calibrated pixel spacing
