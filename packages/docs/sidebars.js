@@ -129,11 +129,6 @@ module.exports = {
       items: ['contribute/pull-request', 'contribute/tests'],
     },
     'migrationGuides',
-    {
-      type: 'link',
-      label: 'Test Coverage Report',
-      href: '/coverage',
-    },
     'faq',
     {
       type: 'link',
