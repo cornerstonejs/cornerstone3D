@@ -8,8 +8,7 @@ In this how-to guide we will show you how to load a volume in a custom order.
 
 ## Introduction
 
-
-One question you might ask is:
+`Volumes` can be made from a set of 2D images, one question you might ask is:
 
 :::note How
 
@@ -19,70 +18,74 @@ How can I re-order the image requests (top-down, bottom-up, etc.) in a volume lo
 
 ## Implementation
 
-In this example we will implement a custom metadata provider that stores the metadata
-for scaling factors of PT images.
+Let's re-order two volume loadings so that they load their slice together (instead of one volume after the other). To create a custom volume loading order, we need to get the `imageLoadRequests` from the volume objects and sort them in a custom order.
 
-### Step 1: Create an add method
+### Step 1: Create a Volume
 
-We need to store the metadata in a cache, and we need a method to add the metadata.
-
-```js
-const scalingPerImageId = {}
-
-function add(imageId, scalingMetaData) {
-  scalingPerImageId[imageId] = scalingMetaData
-}
-```
-
-### Step 2: Create a provider
-
-Next, a provider function is needed, to get the metadata for a specific imageId given
-the type of metadata. In this case, the provider only cares about the `scalingModule` type,
-and it will return the metadata for the imageId if it exists in the cache.
+We create a volume similar to previous tutorials out of set of `imageIds`
 
 ```js
-function get(type, imageId) {
-  if (type === 'scalingModule') {
-    return scalingPerImageId[imageId]
-  }
-}
+const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+  imageIds: ptImageIds,
+})
+const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+  imageIds: ctVolumeImageIds,
+})
 ```
 
-### Step 3: Register the provider
+### Step 2: Getting imageLoad requests
 
-Finally, we need to register the provider with cornerstone.
-
-```js title="/src/myCustomProvider.js"
-const scalingPerImageId = {}
-
-function add(imageId, scalingMetaData) {
-  scalingPerImageId[imageId] = scalingMetaData
-}
-
-function get(type, imageId) {
-  if (type === 'scalingModule') {
-    return scalingPerImageId[imageId]
-  }
-}
-
-export { add, get }
-```
-
-```js title="src/registerProvider.js"
-import myCustomProvider from './myCustomProvider'
-
-cornerstone.metaData.addProvider(myCustomProvider.get.bind(myCustomProvider))
-```
-
-
-## Usage Example
-
-Now that the provider is registered, we can use it to fetch the metadata for an image.
-But first, let's assume during the image loading we fetch the metadata for the imageId
-and store it in the cache of the provider. Later, we can use the provider to fetch the
-metadata for the imageId and use it (e.g., to properly show SUV values for tools).
+Next, we need to get the imageLoad requests
 
 ```js
-// Retrieve this metaData
-const imagePlaneModule = cornerstone.metaData.get('scalingModule', 'scheme://imageId')
+const ctRequests = ctVolume.getImageLoadRequests()
+const ptRequests = ptVolume.getImageLoadRequests()
 ```
+
+### Step 3: Custom ordering of requests
+
+We use lodash helpers to merge the requests together in one after the other fashion.
+
+```js
+import _ from 'lodash'
+
+const ctPtRequests = _.flatten(_.zip(ctRequests, ptRequests)).filter((el) => el)
+```
+
+### Step 4: Add requests back to imageLoadPoolManager
+
+We need to add back the requests to the `imageLoadPoolManager` (we need to take
+care of the values to be bound to the `callLoadImage` too).
+
+```js
+ctPtRequests.forEach((request) => {
+  const {
+    callLoadImage,
+    requestType,
+    additionalDetails,
+    priority,
+    imageId,
+    imageIdIndex,
+    options,
+  } = request
+
+  imageLoadPoolManager.addRequest(
+    callLoadImage.bind(null, imageId, imageIdIndex, options),
+    requestType,
+    additionalDetails,
+    priority
+  )
+})
+```
+
+:::note Tip
+
+There is no need to call `volume.load` since this method basically does the
+same process as our steps 3 and 4.
+
+:::
+
+
+## Results
+
+![customLoading](../assets/custom-loading.gif)

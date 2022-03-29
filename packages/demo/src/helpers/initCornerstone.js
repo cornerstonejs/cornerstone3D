@@ -23,7 +23,7 @@ cornerstone.volumeLoader.registerVolumeLoader(
 )
 
 cornerstone.imageLoader.registerImageLoader(
-  'csiv',
+  'streaming-wadors',
   sharedArrayBufferImageLoader
 )
 

@@ -10,14 +10,8 @@ In this how-to guide we will show you how to create a custom metadata provider.
 
 Cornerstone **DOES NOT** deal with fetching of the metadata. It uses the registered
 metadata providers (in the order of priority) to call each providers passing the `imageId` and
-`type` of the metadata to be fetched. It should be noted that each metadata provider
-often implements a caching mechanism to avoid unnecessary calls to the providers. In addition,
-usually, the metadata provider enables a method to add metadata to the cache.
+`type` of the metadata to be fetched. Usually, the metadata provider has a method to add parsed metadata to its cache.
 
-> Some imageLoaders such as `CornerstoneWADOImageLoader` automatically fetch the metadata
-> and adds it to the provider they register with Cornerstone (it should be noted that
-> only `wado-uri` scheme does this automatically, and for `wado-rs` you should separately
-> fetch the metadata).
 
 One question you might ask is:
 
@@ -29,7 +23,7 @@ How can I build a custom metadata provider?
 
 ## Implementation
 
-In this example we will implement a custom metadata provider that stores the metadata
+Through the following steps, we implement a custom metadata provider that stores the metadata
 for scaling factors of PT images.
 
 ### Step 1: Create an add method
@@ -40,20 +34,34 @@ We need to store the metadata in a cache, and we need a method to add the metada
 const scalingPerImageId = {}
 
 function add(imageId, scalingMetaData) {
-  scalingPerImageId[imageId] = scalingMetaData
+  const imageURI = csUtils.imageIdToImageURI(imageId)
+  scalingPerImageId[imageURI] = scalingMetaData
 }
 ```
+
+<details>
+
+<summary>imageId vs imageURI</summary>
+
+With the addition of `Volumes` in `Cornerstone3D`, and the caching optimizations
+that happen internally between `Volumes` and `Images` ([`streaming-wadors`](../concepts/streaming-image-volume/streaming.md#streaming-wadors-imageloader))
+we should store the imageURI (instead of the `imageId`) inside the provider's cache, since
+the imageURI is unique for each image but can be retrieved with different loading schemes.
+
+
+</details>
 
 ### Step 2: Create a provider
 
 Next, a provider function is needed, to get the metadata for a specific imageId given
 the type of metadata. In this case, the provider only cares about the `scalingModule` type,
-and it will return the metadata for the imageId if it exists in the cache.
+and it will return the metadata for the `imageId` if it exists in the cache.
 
 ```js
 function get(type, imageId) {
   if (type === 'scalingModule') {
-    return scalingPerImageId[imageId]
+    const imageURI = csUtils.imageIdToImageURI(imageId)
+    return scalingPerImageId[imageURI]
   }
 }
 ```
@@ -66,12 +74,14 @@ Finally, we need to register the provider with cornerstone.
 const scalingPerImageId = {}
 
 function add(imageId, scalingMetaData) {
-  scalingPerImageId[imageId] = scalingMetaData
+  const imageURI = csUtils.imageIdToImageURI(imageId)
+  scalingPerImageId[imageURI] = scalingMetaData
 }
 
 function get(type, imageId) {
   if (type === 'scalingModule') {
-    return scalingPerImageId[imageId]
+    const imageURI = csUtils.imageIdToImageURI(imageId)
+    return scalingPerImageId[imageURI]
   }
 }
 
@@ -81,9 +91,9 @@ export { add, get }
 ```js title="src/registerProvider.js"
 import myCustomProvider from './myCustomProvider'
 
-cornerstone.metaData.addProvider(myCustomProvider.get.bind(myCustomProvider))
+const priority = 100
+cornerstone.metaData.addProvider(myCustomProvider.get.bind(myCustomProvider), priority)
 ```
-
 
 ## Usage Example
 
@@ -94,5 +104,8 @@ metadata for the imageId and use it (e.g., to properly show SUV values for tools
 
 ```js
 // Retrieve this metaData
-const imagePlaneModule = cornerstone.metaData.get('scalingModule', 'scheme://imageId')
+const imagePlaneModule = cornerstone.metaData.get(
+  'scalingModule',
+  'scheme://imageId'
+)
 ```

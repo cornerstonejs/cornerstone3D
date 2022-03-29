@@ -48,7 +48,7 @@ export default async function createImageIdsAndCacheMetaData({
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0]
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0]
 
-    const prefix = type === VOLUME ? 'csiv:' : 'wadors:'
+    const prefix = type === VOLUME ? 'streaming-wadors:' : 'wadors:'
 
     const imageId =
       prefix +

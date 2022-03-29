@@ -13,5 +13,8 @@ export default function initVolumeLoader() {
     cornerstoneStreamingImageVolumeLoader
   )
 
-  imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
+  imageLoader.registerImageLoader(
+    'streaming-wadors',
+    sharedArrayBufferImageLoader
+  )
 }

@@ -39,9 +39,9 @@ const viewportUID3 = 'viewport_UID_3'
 
 // 0. ImageIds to use for this volume, see: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration how to add metadata
 const ctImageIds = [
-  'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
-  'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/2',
-  'csiv:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
+  'streaming-wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
+  'streaming-wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/2',
+  'streaming-wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
   ......
 ]
 

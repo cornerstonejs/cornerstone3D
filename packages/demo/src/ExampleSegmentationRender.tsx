@@ -66,7 +66,10 @@ volumeLoader.registerVolumeLoader(
   'cornerstoneStreamingImageVolume',
   cornerstoneStreamingImageVolumeLoader
 )
-imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
+imageLoader.registerImageLoader(
+  'streaming-wadors',
+  sharedArrayBufferImageLoader
+)
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers

@@ -50,7 +50,7 @@ export default async function createImageIdsAndCacheMetaData({
     let imageId
     if (type === VOLUME) {
       imageId =
-        `csiv:` +
+        `streaming-wadors:` +
         wadoRsRoot +
         '/studies/' +
         StudyInstanceUID +
