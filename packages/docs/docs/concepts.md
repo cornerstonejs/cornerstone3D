@@ -109,7 +109,7 @@ the `BaseTool` or `AnnotationTool`. Adding a tool makes it available to ToolGrou
 A high level `.removeTool` also exists.
 
 ```js
-import * as csTools3d from 'vtkjs-viewport-tools'
+import * as csTools3d from '@cornerstone/tools'
 
 // Add uninstantiated tool classes to the library
 // These will be used to initialize tool instances when we explicitly add each
@@ -130,7 +130,7 @@ by a Tool Group Manager. Tool Group Managers are used to create, search for, and
 destroy Tool Groups.
 
 ```js
-import { ToolGroupManager } from 'vtkjs-viewport-tools'
+import { ToolGroupManager } from '@cornerstone/tools'
 import { ctVolumeId } from './constants'
 
 const toolGroupId = 'TOOL_GROUP_ID'
@@ -227,7 +227,7 @@ synchronization.
 
 ```js
 import { Events as RENDERING_EVENTS } from 'vtkjs-viewport'
-import { SynchronizerManager } from 'vtkjs-viewport-tools'
+import { SynchronizerManager } from '@cornerstone/tools'
 
 const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
   synchronizerName,
