@@ -379,3 +379,117 @@ const {
 
 </TabItem>
 </Tabs>
+
+## events
+
+
+The following table demonstrates some expected schema changes for events. The key differences are that:
+
+- Several IDs will function as lookup keys for core API methods (renderingEngineId, viewportId, volumeId). This is similar to the `enabledElement` property currently provided in custom events, and can be used to obtain all of the imaging data that is being visualized.
+- Snapshots of state at time of interaction return camera properties and coordinates in world space within the viewports's frame of reference.
+
+
+<table style={{tableLayout:"fixed", display: "block", width: "100%"}}>
+<thead>
+  <tr>
+    <th>CornerstoneTools</th>
+    <th>CornerstoneTools3D</th>
+    <th>Explanation for schema change</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>N/A</td>
+    <td>renderingEngineId</td>
+    <td>The Id of the rendering engine instance driving the viewport.</td>
+  </tr>
+  <tr>
+    <td>N/A</td>
+    <td>viewportId</td>
+    <td>The Id of the viewport itself.</td>
+  </tr>
+  <tr>
+<td>
+<div style={{width: "300px"}}>
+
+<!-- Don't change indentation for code in table -->
+```js
+viewport: {
+  scale,
+  translation: { x, y },
+  voi: { windowWidth, windowCenter, windowWidth, windowCenter},
+  invert,
+  pixelReplication,
+  rotation,
+  hflip,
+  vflip,
+  modalityLUT,
+  voiLUT,
+  colormap,
+  labelmap,
+  displayedArea: {
+    tlhc: { x, y },
+    brhc: { x, y },
+    rowPixelSpacing,
+    columnPixelSpacing,
+    presentationSizeMode: 'NONE'
+  }
+}
+```
+
+</div>
+</td>
+<td>
+<div style={{width: "300px"}}>
+
+
+```js
+camera: {
+  viewUp,
+  viewPlaneNormal,
+  clippingRange,
+  projectionMatrix,
+  position,
+  focalPoint,
+  orthogonalOrPerspective,
+  viewAngle
+}
+```
+</div>
+</td>
+    <td>The viewport previously described the state in 2D, and we need additional information to uniquely define 3D views.
+    Horizontal and vertical flipping is no longer a change to the view, but rather a transform applied to the volume actor itself in the scene.</td>
+  </tr>
+  <tr>
+<td>
+<div style={{width: "300px"}}>
+
+
+```js
+// Location in 2D within the image
+
+startPoints / lastPoints / currentPoints / deltaPoints: {
+    Page,
+    Image,
+    Client,
+}
+```
+</div>
+</td>
+<td>
+<div style={{width: "300px"}}>
+
+
+```js
+// Location in 3D in world space
+{
+  CanvasCoord,
+  WorldCoord
+}
+```
+</div>
+</td>
+    <td>The canvas coordinates define where on the 2D canvas the event occurred. We also give the projected world coordinate (3D) at the plane defined by the focal point and the camera normal.</td>
+  </tr>
+</tbody>
+</table>

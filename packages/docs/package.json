@@ -7,7 +7,7 @@
     "copy-coverage-to-docs": "cp -R ../../coverage/*Chrome*/. ./static/test-coverage/",
     "copy-examples-to-docs": "cp -R ../../.static-examples/. ./static/examples/",
     "docusaurus": "docusaurus",
-    "docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 docusaurus start",
+    "docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 docusaurus start --port 3333",
     "start": "yarn run docs",
     "dev": "yarn run docs",
     "dev:watch": "cross-env NODE_OPTIONS=--max_old_space_size=16384 TYPEDOC_WATCH=true docusaurus start",
