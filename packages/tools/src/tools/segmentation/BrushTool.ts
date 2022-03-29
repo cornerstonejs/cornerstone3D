@@ -155,7 +155,6 @@ export default class BrushTool extends BaseTool {
   }
 
   mouseMoveCallback = (evt: EventTypes.MouseDragEventType): void => {
-    debugger
     const brushSize = this.configuration.brushSize
     const eventData = evt.detail
     const { element } = eventData
@@ -174,9 +173,10 @@ export default class BrushTool extends BaseTool {
     const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId)
     if (!activeSegmentationRepresentation) {
-      throw new Error(
+      console.warn(
         'No active segmentation detected, create one before using the brush tool'
       )
+      return
     }
 
     const { segmentationRepresentationUID, segmentationId, type } =

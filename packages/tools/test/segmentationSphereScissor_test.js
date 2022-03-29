@@ -27,6 +27,7 @@ const {
   SegmentationDisplayTool,
   segmentation,
   Enums: csToolsEnums,
+  utilities: csToolsUtils,
   SphereScissorsTool,
 } = csTools3d
 
@@ -282,8 +283,11 @@ describe('Segmentation Tools --', () => {
             vp2.render()
             vp3.render()
 
-            segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.id)
+            csToolsUtils.segmentation
+              .createLabelmapVolumeForViewport({
+                viewportId: vp1.id,
+                renderingEngineId: this.renderingEngine.id,
+              })
               .then((segmentationId) => {
                 addSegmentations([
                   {

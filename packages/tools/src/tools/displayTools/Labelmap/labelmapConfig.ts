@@ -24,7 +24,6 @@ function isValidLabelmapConfig(config): boolean {
   return (
     config &&
     typeof config.renderOutline === 'boolean' &&
-    typeof config.outlineWidth === 'number' &&
     typeof config.outlineWidthActive === 'number' &&
     typeof config.outlineWidthInactive === 'number' &&
     typeof config.renderFill === 'boolean' &&

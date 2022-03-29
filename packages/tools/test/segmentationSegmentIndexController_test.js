@@ -28,6 +28,7 @@ const {
   SegmentationDisplayTool,
   segmentation,
   Enums: csToolsEnums,
+  utilities: csToolsUtils,
   RectangleScissorsTool,
 } = csTools3d
 
@@ -224,8 +225,11 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.id)
+            csToolsUtils.segmentation
+              .createLabelmapVolumeForViewport({
+                viewportId: vp1.id,
+                renderingEngineId: this.renderingEngine.id,
+              })
               .then((segmentationId) => {
                 addSegmentations([
                   {
@@ -384,8 +388,11 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.id)
+            csToolsUtils.segmentation
+              .createLabelmapVolumeForViewport({
+                viewportId: vp1.id,
+                renderingEngineId: this.renderingEngine.id,
+              })
               .then((segmentationId) => {
                 addSegmentations([
                   {
@@ -572,8 +579,11 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.id)
+            csToolsUtils.segmentation
+              .createLabelmapVolumeForViewport({
+                viewportId: vp1.id,
+                renderingEngineId: this.renderingEngine.id,
+              })
               .then((segmentationId) => {
                 addSegmentations([
                   {

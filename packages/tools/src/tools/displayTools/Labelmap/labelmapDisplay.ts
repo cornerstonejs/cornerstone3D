@@ -33,12 +33,14 @@ const labelMapConfigCache = new Map()
  * @param toolGroup - the tool group that contains the viewports
  * @param representationInput - The segmentation representation input
  * @param toolGroupSpecificConfig - The configuration object for toolGroup
+ *
+ * @returns The UID of the new segementation representation
  */
 async function addSegmentationRepresentation(
   toolGroupId: string,
   representationInput: RepresentationPublicInput,
   toolGroupSpecificConfig?: SegmentationRepresentationConfig
-): Promise<void> {
+): Promise<string> {
   const { segmentationId } = representationInput
   const segmentation = SegmentationState.getSegmentation(segmentationId)
   const { volumeId } = segmentation.representationData[Representations.Labelmap]
@@ -104,6 +106,8 @@ async function addSegmentationRepresentation(
     toolGroupId,
     toolGroupSpecificRepresentation
   )
+
+  return segmentationRepresentationUID
 }
 
 /**

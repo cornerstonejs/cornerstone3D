@@ -451,10 +451,9 @@ class SegmentationExample extends Component {
 
     const { viewportsInfo } = toolGroup
     const { viewportId, renderingEngineId } = viewportsInfo[0]
-    const viewport = this.renderingEngine.getViewport(viewportId)
 
-    segmentation
-      .createNewSegmentationForToolGroup(this.state.selectedToolGroupName)
+    csToolsUtils.segmentation
+      .createLabelmapVolumeForViewport({ viewportId, renderingEngineId })
       .then((segmentationId) => {
         segmentation.addSegmentations([
           {
@@ -984,7 +983,6 @@ class SegmentationExample extends Component {
 
   deleteSegmentationRepresentation = () => {
     const segmentationRepresentationUID = this.state.selectedRepresentationUID
-    debugger
     segmentation.removeSegmentationsFromToolGroup(
       this.state.selectedToolGroupName,
       [segmentationRepresentationUID]
