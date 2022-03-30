@@ -1,4 +1,5 @@
 /* stylelint-disable docusaurus/copyright-header */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
 
 /**
  * CSS files with the .module.css suffix will be treated as CSS modules
@@ -22,4 +23,53 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.cs3DBanner {
+  background-color: #080a2d;
+  color: white;
+  display: flex;
+  padding-top: 45px;
+  padding-bottom: 45px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+[data-theme='dark'] .cs3DBanner {
+  background-color: #080a2d;
+  color: white;
+}
+
+.cs3DLogo {
+  width: 102px;
+  height: 102px;
+}
+
+.cornerstoneText {
+  color: #5acce6;
+  font-size: 68px;
+  font-family: 'Inter', sans-serif;
+}
+
+.threeDText {
+  color: #0a58ed;
+  font-size: 68px;
+  font-family: 'Inter', sans-serif;
+}
+
+.textDescription {
+  width: 600px;
+  text-align: center;
+}
+
+.learnMore {
+  margin-top: 20px;
+  background-color: #0944b3;
+  color: white;
+  font-size: 18px;
+  padding: 9px 20px;
+  box-shadow: none;
+  border: none;
+  border-radius: 4px;
 }

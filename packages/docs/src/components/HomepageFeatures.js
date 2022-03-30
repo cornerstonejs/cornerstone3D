@@ -1,11 +1,11 @@
 import React from 'react'
 import clsx from 'clsx'
 import styles from './HomepageFeatures.module.css'
+import { useColorMode } from '@docusaurus/theme-common'
 
 const FeatureList = [
   {
     title: 'Standards Compliant',
-    Svg: require('../../static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
         Robust DICOM Parsing. Supports all transfer syntaxes. Supports WADO-URI
@@ -15,7 +15,6 @@ const FeatureList = [
   },
   {
     title: 'Fast',
-    Svg: require('../../static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
         High performance image display. Multi-threaded image decoding in Web
@@ -25,7 +24,6 @@ const FeatureList = [
   },
   {
     title: 'Extensible',
-    Svg: require('../../static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
         Designed to be modular. Create your own tools and image loaders easily.
@@ -35,14 +33,16 @@ const FeatureList = [
 ]
 
 function Feature({ Svg, title, description }) {
+  const { isDarkTheme } = useColorMode()
+
   return (
     <div className={clsx('col col--4')}>
-      <div className="text--center">
+      {/* <div className="text--center">
         <Svg className={styles.featureSvg} alt={title} />
-      </div>
+      </div> */}
       <div className="text--center padding-horiz--md">
-        <h3>{title}</h3>
-        <p>{description}</p>
+        <h3 className={styles.title}>{title}</h3>
+        <p className={styles.paragraph}>{description}</p>
       </div>
     </div>
   )

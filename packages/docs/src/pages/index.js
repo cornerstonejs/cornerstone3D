@@ -4,25 +4,27 @@ import Layout from '@theme/Layout'
 import Link from '@docusaurus/Link'
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 import styles from './index.module.css'
+import { useColorMode } from '@docusaurus/theme-common'
 import HomepageFeatures from '../components/HomepageFeatures'
 
 function HomepageHeader() {
-  const { siteConfig } = useDocusaurusContext()
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
-      <div className="container">
-        <h1 className="hero__title">{siteConfig.title}</h1>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <div className={styles.buttons}>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/core-introduction"
-          >
-            Cornerstone JS Docs and APIs 📄
-          </Link>
-        </div>
+    <div className={styles.cs3DBanner}>
+      <img
+        className={styles.cs3DLogo}
+        src={'img/cs3DLogo.png'}
+        alt="Cornerstone JS 3D Logo"
+      />
+      <div>
+        <span className={styles.cornerstoneText}>Cornerstone</span>
+        <span className={styles.threeDText}>3D</span>
       </div>
-    </header>
+      <div className={styles.textDescription}>
+        A Medical Imageing Lorem ipsum dolor, sit amet consectetur adipisicing
+        elit. Quod magni nemo,
+      </div>
+      <button className={styles.learnMore}>Learn More</button>
+    </div>
   )
 }
 
@@ -34,7 +36,7 @@ export default function Home() {
       description="Description will go into a meta tag in <head />"
     >
       <HomepageHeader />
-      <main>
+      <main style={{ marginTop: '50px', marginBottom: '50px' }}>
         <HomepageFeatures />
       </main>
     </Layout>
