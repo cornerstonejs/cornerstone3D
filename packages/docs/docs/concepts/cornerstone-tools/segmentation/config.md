@@ -63,26 +63,26 @@ const toolGroupConfiguration = {
 The api for the segmentation representation configurations are
 
 ```js
-import {segmentations, Enums} from '@cornerstonejs/tools
+import {segmentation, Enums} from '@cornerstonejs/tools
 
 // Get the global configuration
-segmentations.config.getGlobalConfig()
+segmentation.config.getGlobalConfig()
 
 // Set the global configuration
-segmentations.config.setGlobalConfig(config)
+segmentation.config.setGlobalConfig(config)
 
 // Get toolGroup-specific configuration
-segmentations.config.getToolGroupSpecificConfig(toolGroupId)
+segmentation.config.getToolGroupSpecificConfig(toolGroupId)
 
 // Set toolGroup-specific configuration
-segmentations.config.setToolGroupSpecificConfig(toolGroupId, config)
+segmentation.config.setToolGroupSpecificConfig(toolGroupId, config)
 
 // Get global representation configuration for a specific representation (e.g., labelmap)
 const representationType = Enums.SegmentationRepresentations.Labelmap
-segmentations.config.getGlobalRepresentationConfig(representationType)
+segmentation.config.getGlobalRepresentationConfig(representationType)
 
 // Set global representation configuration for a specific representation (e.g., labelmap)
-segmentations.config.setGlobalRepresentationConfig(representationType, config)
+segmentation.config.setGlobalRepresentationConfig(representationType, config)
 ```
 
 :::note Tip

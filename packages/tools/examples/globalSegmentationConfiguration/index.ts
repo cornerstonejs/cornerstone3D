@@ -11,7 +11,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addButtonToToolbar,
   addToggleButtonToToolbar,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
