@@ -21,7 +21,7 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  RectangleRoiThresholdTool,
+  RectangleROIThresholdTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
@@ -99,7 +99,7 @@ let upperThreshold = 500
 
 addButtonToToolbar('Execute threshold', () => {
   const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
-    RectangleRoiThresholdTool.toolName
+    RectangleROIThresholdTool.toolName
   )
 
   if (!selectedAnnotations) {
@@ -214,7 +214,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool)
   cornerstoneTools.addTool(StackScrollMouseWheelTool)
   cornerstoneTools.addTool(SegmentationDisplayTool)
-  cornerstoneTools.addTool(RectangleRoiThresholdTool)
+  cornerstoneTools.addTool(RectangleROIThresholdTool)
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
@@ -226,10 +226,10 @@ async function run() {
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName)
-  toolGroup.addTool(RectangleRoiThresholdTool.toolName)
+  toolGroup.addTool(RectangleROIThresholdTool.toolName)
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
 
-  toolGroup.setToolActive(RectangleRoiThresholdTool.toolName, {
+  toolGroup.setToolActive(RectangleROIThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   })
 

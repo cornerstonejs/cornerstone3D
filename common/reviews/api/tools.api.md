@@ -40,7 +40,7 @@ function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEve
 function addSegmentationRepresentation(toolGroupId: string, segmentationRepresentation: ToolGroupSpecificRepresentation, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationRepresentations(toolGroupId: string, representationInputArray: RepresentationPublicInput[], toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig): Promise<void>;
+function addSegmentationRepresentations(toolGroupId: string, representationInputArray: RepresentationPublicInput[], toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig): Promise<string[]>;
 
 // @public (undocumented)
 function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): void;
@@ -307,7 +307,7 @@ export class BidirectionalTool extends AnnotationTool {
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
@@ -676,21 +676,26 @@ type CPUImageData = {
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
+function createLabelmapVolumeForViewport(input: {
+    viewportId: string;
+    renderingEngineId: string;
+    segmentationId?: string;
+    options?: {
+        volumeId?: string;
+        scalarData?: Float32Array | Uint8Array;
+        targetBuffer?: {
+            type: 'Float32Array' | 'Uint8Array';
+        };
+        metadata?: any;
+        dimensions?: Types_2.Point3;
+        spacing?: Types_2.Point3;
+        origin?: Types_2.Point3;
+        direction?: Float32Array;
+    };
+}): Promise<string>;
 
 // @public (undocumented)
-function createNewSegmentationForToolGroup(toolGroupId: string, options?: {
-    volumeId?: string;
-    scalarData?: Float32Array | Uint8Array;
-    targetBuffer?: {
-        type: 'Float32Array' | 'Uint8Array';
-    };
-    metadata?: any;
-    dimensions?: Types_2.Point3;
-    spacing?: Types_2.Point3;
-    origin?: Types_2.Point3;
-    direction?: Float32Array;
-}): Promise<string>;
+function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
@@ -1184,10 +1189,7 @@ type FrameOfReferenceSpecificAnnotations = {
 function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpecificRepresentation;
 
 // @public (undocumented)
-function getActiveSegmentIndex(toolGroupId: string): number | undefined;
-
-// @public (undocumented)
-function getActiveSegmentIndexForSegmentation(segmentationId: string): number | undefined;
+function getActiveSegmentIndex(segmentationId: string): number | undefined;
 
 // @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
@@ -1259,6 +1261,9 @@ function getGlobalConfig_2(): SegmentationRepresentationConfig;
 function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig['LABELMAP'];
 
 // @public (undocumented)
+function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
 
 // @public (undocumented)
@@ -1277,13 +1282,7 @@ function getSegmentations(): Segmentation[] | [];
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
 
 // @public (undocumented)
-function getSegmentIndexLocked(toolGroupId: string, segmentIndex: number): boolean;
-
-// @public (undocumented)
-function getSegmentIndexLockedForSegmentation(segmentationId: string, segmentIndex: number): boolean;
-
-// @public (undocumented)
-function getSegmentsLockedForSegmentation(segmentationId: string): number[] | [];
+function getSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
@@ -2657,7 +2656,6 @@ declare namespace segmentation {
         activeSegmentation,
         addSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
-        createNewSegmentationForToolGroup,
         segmentLocking,
         segmentationColor,
         segmentationConfig,
@@ -2675,7 +2673,8 @@ declare namespace segmentation_2 {
         thresholdVolumeByRange,
         createMergedLabelmapForIndex,
         isValidRepresentationConfig,
-        getDefaultRepresentationConfig
+        getDefaultRepresentationConfig,
+        createLabelmapVolumeForViewport
     }
 }
 
@@ -2796,9 +2795,7 @@ declare namespace segmentationVisibility {
 declare namespace segmentIndex {
     export {
         getActiveSegmentIndex,
-        setActiveSegmentIndex,
-        getActiveSegmentIndexForSegmentation,
-        setActiveSegmentIndexForSegmentation
+        setActiveSegmentIndex
     }
 }
 
@@ -2806,9 +2803,7 @@ declare namespace segmentLocking {
     export {
         getSegmentIndexLocked,
         setSegmentIndexLocked,
-        getSegmentIndexLockedForSegmentation,
-        setSegmentIndexLockedForSegmentation,
-        getSegmentsLockedForSegmentation
+        getLockedSegments
     }
 }
 
@@ -2827,10 +2822,7 @@ declare namespace selection {
 function setActiveSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
-function setActiveSegmentIndex(toolGroupId: string, segmentIndex: number): void;
-
-// @public (undocumented)
-function setActiveSegmentIndexForSegmentation(segmentationId: string, segmentIndex: number): void;
+function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): void;
 
 // @public (undocumented)
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
@@ -2863,10 +2855,7 @@ function setGlobalStyle(style: Record<string, unknown>): boolean;
 function setSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string, visibility: boolean): void;
 
 // @public (undocumented)
-function setSegmentIndexLocked(toolGroupId: string, segmentIndex: number, locked?: boolean): void;
-
-// @public (undocumented)
-function setSegmentIndexLockedForSegmentation(segmentationId: string, segmentIndex: number, locked?: boolean): void;
+function setSegmentIndexLocked(segmentationId: string, segmentIndex: number, locked?: boolean): void;
 
 // @public (undocumented)
 type SetToolBindingsType = {
