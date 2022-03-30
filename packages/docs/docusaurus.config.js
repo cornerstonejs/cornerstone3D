@@ -40,6 +40,11 @@ module.exports = {
           label: 'Community',
         },
         {
+          to: '/api',
+          position: 'left',
+          label: 'API',
+        },
+        {
           type: 'doc',
           docId: 'faq',
           label: 'FAQ',
@@ -75,12 +80,20 @@ module.exports = {
           title: 'Learn',
           items: [
             {
-              label: 'Introduction',
-              to: '/docs/core-introduction',
+              label: 'Getting Started',
+              to: '/docs/getting-started/overview',
             },
             {
-              label: 'Installation',
-              to: '/docs/core-installation',
+              label: 'Concepts',
+              to: '/docs/category/concepts',
+            },
+            {
+              label: 'Tutorials',
+              to: '/docs/category/tutorials',
+            },
+            {
+              label: 'How-to Guides',
+              to: '/docs/category/how-to-guides',
             },
           ],
         },
@@ -94,6 +107,10 @@ module.exports = {
             {
               label: 'Help',
               to: '/docs/help',
+            },
+            {
+              label: 'Contributing',
+              to: '/docs/category/contributing',
             },
           ],
         },
