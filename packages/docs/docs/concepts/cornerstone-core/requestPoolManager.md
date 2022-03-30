@@ -2,7 +2,6 @@
 id: requestPoolManager
 ---
 
-
 # RequestPool Manager
 
 The RequestPool Manager has been extensively reworked to provide two new features: 1) `asynchronous image retrieval and decoding` 2) `requests re-ordering`.
@@ -27,23 +26,27 @@ imageLoadPoolManager.maxNumRequests = {
   interaction: 1000,
   thumbnail: 1000,
   prefetch: 1000,
-}
+};
 
 // Retrieval (usually) === XHR requests
 imageRetrievalPoolManager.maxNumRequests = {
   interaction: 20,
   thumbnail: 20,
   prefetch: 20,
-}
+};
 ```
 
 ### Usage
+
 In your custom `imageLoader` or `volumeLoader`, to properly use the
 poolManagers inside cornerstone, you need to define a `sendRequest` function to make an load image request.
 
-
 ```js
-import {imageLoadPoolManager, loadAndCacheImage, RequestType} from '@cornerstone/core'
+import {
+  imageLoadPoolManager,
+  loadAndCacheImage,
+  RequestType,
+} from '@cornerstone/core';
 
 function sendRequest(imageId, imageIdIndex, options) {
   return loadAndCacheImage(imageId, options).then(
@@ -57,27 +60,25 @@ function sendRequest(imageId, imageIdIndex, options) {
   );
 }
 
-const imageId = "schema://image"
-const imageIdIndex = 10
+const imageId = 'schema://image';
+const imageIdIndex = 10;
 
-const requestType = RequestType.Interaction
-const priority = -5
-const additionalDetails = { imageId }
+const requestType = RequestType.Interaction;
+const priority = -5;
+const additionalDetails = { imageId };
 const options = {
   targetBuffer: {
     type: 'Float32Array',
   },
-}
-
+};
 
 imageLoadPoolManager.addRequest(
   sendRequest.bind(this, imageId, imageIdIndex, options),
   requestType,
   additionalDetails,
   priority
-)
+);
 ```
-
 
 ## Requests re-ordering
 

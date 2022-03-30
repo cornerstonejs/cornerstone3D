@@ -1,5 +1,5 @@
-import getRenderingEngine from './RenderingEngine/getRenderingEngine'
-import { IEnabledElement } from './types'
+import getRenderingEngine from './RenderingEngine/getRenderingEngine';
+import { IEnabledElement } from './types';
 
 /**
  * A convenience method to find an EnabledElement given a reference to its
@@ -33,12 +33,12 @@ export default function getEnabledElement(
   element: HTMLElement | undefined
 ): IEnabledElement | undefined {
   if (!element) {
-    return
+    return;
   }
 
-  const { viewportUid, renderingEngineUid } = element.dataset
+  const { viewportUid, renderingEngineUid } = element.dataset;
 
-  return getEnabledElementByIds(viewportUid, renderingEngineUid)
+  return getEnabledElementByIds(viewportUid, renderingEngineUid);
 }
 
 /**
@@ -56,22 +56,22 @@ export function getEnabledElementByIds(
   renderingEngineId: string
 ): IEnabledElement {
   if (!renderingEngineId || !viewportId) {
-    return
+    return;
   }
 
-  const renderingEngine = getRenderingEngine(renderingEngineId)
+  const renderingEngine = getRenderingEngine(renderingEngineId);
 
   if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-    return
+    return;
   }
 
-  const viewport = renderingEngine.getViewport(viewportId)
+  const viewport = renderingEngine.getViewport(viewportId);
 
   if (!viewport) {
-    return
+    return;
   }
 
-  const FrameOfReferenceUID = viewport.getFrameOfReferenceUID()
+  const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
   return {
     viewport,
@@ -79,5 +79,5 @@ export function getEnabledElementByIds(
     viewportId,
     renderingEngineId,
     FrameOfReferenceUID,
-  }
+  };
 }

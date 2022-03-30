@@ -17,9 +17,6 @@ provide adequate documentation for how to upgrade from legacy `cornerstone`
 to the new `Cornerstone3D`. In the meantime, we will continue to maintain
 the legacy `cornerstone` packages and take care of potential critical bugs.
 
-
-
-
 ## OHIF Viewer
 
 [Open Health Imaging Foundation (OHIF)](https://ohif.org/) image viewer is an open source image viewer
@@ -32,8 +29,6 @@ As `Cornerstone3D` and `cornerstone3DTools` will replace
 `cornerstone-core` and `cornerstone-tools` in the future, OHIF in its next stable release (v3)
 will move towards using `Cornerstone3D` and `cornerstone3DTools` instead of `cornerstone-core` and `cornerstone-tools`.
 You can see OHIF's roadmap for the next stable release [here](https://ohif.org/roadmap/).
-
-
 
 ## react-vtkjs-viewport
 

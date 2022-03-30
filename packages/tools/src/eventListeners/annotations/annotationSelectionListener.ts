@@ -1,5 +1,5 @@
-import { getRenderingEngines } from '@cornerstonejs/core'
-import { triggerAnnotationRenderForViewportIds } from '../../utilities'
+import { getRenderingEngines } from '@cornerstonejs/core';
+import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 
 /**
  * When an annotation is deselected, trigger an annotation render for all viewports.
@@ -11,19 +11,19 @@ import { triggerAnnotationRenderForViewportIds } from '../../utilities'
  * @param evt - The event object.
  */
 function annotationSelectionListener(evt): void {
-  const deselectedAnnotation = evt.detail.removed
+  const deselectedAnnotation = evt.detail.removed;
 
   if (!deselectedAnnotation.length) {
-    return
+    return;
   }
 
-  const renderingEngines = getRenderingEngines()
+  const renderingEngines = getRenderingEngines();
 
   renderingEngines.forEach((renderingEngine) => {
-    const viewports = renderingEngine.getViewports()
-    const viewportIds = viewports.map((vp) => vp.id)
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds)
-  })
+    const viewports = renderingEngine.getViewports();
+    const viewportIds = viewports.map((vp) => vp.id);
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+  });
 }
 
-export default annotationSelectionListener
+export default annotationSelectionListener;

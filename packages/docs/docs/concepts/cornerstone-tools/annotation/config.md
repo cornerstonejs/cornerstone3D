@@ -8,6 +8,7 @@ includes various properties such as `color` when `selected`, `highlighted`, or `
 textbox color, line dash style and thickness and more.
 
 ## Default Setting
+
 `Cornerstone3DTools` comes with a default settings for tools styles that can be found in `packages/tools/src/stateManagement/annotations/config/annotationStyle.ts`
 
 ```js
@@ -41,13 +42,14 @@ textbox color, line dash style and thickness and more.
 However, you can adjust each of the above parameters along with other styles that we will discuss next.
 
 ## Runtime settings vs Object settings
+
 There are two settings that can be applied to style tools.
 
 - **Runtime settings**: gets applied on ALL tools
 - **Object settings**: gets applied on the tool (object)
 
-
 ### Hierarchical settings
+
 It should be noted settings are hierarchical:
 
 `DefaultSettings <- RuntimeSettings <- ObjectSettings`
@@ -55,33 +57,31 @@ It should be noted settings are hierarchical:
 This means that if there is a object-specific settings, `cornerstone3DTools`
 will use that, if not, it will take a look inside `RuntimeSettings` and finally `DefaultSettings` will get applied.
 
-
 ## Global Tool Styles
 
 ```js
-import { Settings } from '@cornerstone/core'
+import { Settings } from '@cornerstone/core';
 
 // 1. Getting runtimeSettings for all tools
-const settings = Settings.getRuntimeSettings()
+const settings = Settings.getRuntimeSettings();
 
 // 2. Changing the active color of tools
-settings.set("tool.style.colorActive", "blue")
-settings.set("tool.style.colorActive", "rgb(0, 0, 255)")
+settings.set('tool.style.colorActive', 'blue');
+settings.set('tool.style.colorActive', 'rgb(0, 0, 255)');
 ```
 
 ## Tool-specific style
 
 ```js
-import { Settings } from '@cornerstone/core'
+import { Settings } from '@cornerstone/core';
 
 // 1. Getting objectSettings for the desired tools
-const settings = Settings.getObjectSettings(annotation)
+const settings = Settings.getObjectSettings(annotation);
 
 // 3. Changing the active color of the tool
-settings.set("tool.style.colorActive", "blue")
-settings.set("tool.style.colorActive", "rgb(0, 0, 255)")
+settings.set('tool.style.colorActive', 'blue');
+settings.set('tool.style.colorActive', 'rgb(0, 0, 255)');
 ```
-
 
 The list of all available tool styles with their default values are shown below:
 

@@ -1,44 +1,44 @@
-import React, { Component } from 'react'
-import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom'
-import VTKMPRExample from './ExampleVTKMPR'
-import MPRCodecExample from './ExampleVTKMPRCodec'
-import CanvasResizeExample from './ExampleCanvasResize'
-import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas'
-import ColorExample from './ExampleColor'
-import StackViewportExample from './ExampleStackViewport'
-import EnableDisableViewportExample from './ExampleEnableDisableAPI'
-import NineStackViewportExample from './ExampleNineStackViewport'
-import VTKSetVolumesExample from './ExampleSetVolumes'
-import CacheDecacheExample from './ExampleCacheDecache'
-import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration'
-import OneVolumeExample from './ExampleOneVolume'
-import PriorityLoadExample from './ExamplePriorityLoad'
-import OneStackExample from './ExampleOneStack'
-import OneStackExampleCPU from './ExampleOneStackCPU'
-import FlipViewportExample from './ExampleFlipViewport'
-import ModifierKeysExample from './ExampleModifierKeys'
-import TestUtils from './ExampleTestUtils'
-import TestUtilsVolume from './ExampleTestUtilsVolume'
-import CalibrationExample from './ExampleCalibration'
-import { resetUseCPURendering } from '@cornerstonejs/core'
-import RenderToCanvasExample from './ExampleRenderToCanvas'
-import CrosshairsExample from './ExampleCrosshairs'
-import ApplyPresetsExample from './ExampleApplyPreset'
-import CursorExample from './ExampleCursor'
+import React, { Component } from 'react';
+import { BrowserRouter as Router, Route, Link, Switch } from 'react-router-dom';
+import VTKMPRExample from './ExampleVTKMPR';
+import MPRCodecExample from './ExampleVTKMPRCodec';
+import CanvasResizeExample from './ExampleCanvasResize';
+import TwentyFiveCanvasExample from './ExampleTwentyFiveCanvas';
+import ColorExample from './ExampleColor';
+import StackViewportExample from './ExampleStackViewport';
+import EnableDisableViewportExample from './ExampleEnableDisableAPI';
+import NineStackViewportExample from './ExampleNineStackViewport';
+import VTKSetVolumesExample from './ExampleSetVolumes';
+import CacheDecacheExample from './ExampleCacheDecache';
+import ToolDisplayConfigurationExample from './ExampleToolDisplayConfiguration';
+import OneVolumeExample from './ExampleOneVolume';
+import PriorityLoadExample from './ExamplePriorityLoad';
+import OneStackExample from './ExampleOneStack';
+import OneStackExampleCPU from './ExampleOneStackCPU';
+import FlipViewportExample from './ExampleFlipViewport';
+import ModifierKeysExample from './ExampleModifierKeys';
+import TestUtils from './ExampleTestUtils';
+import TestUtilsVolume from './ExampleTestUtilsVolume';
+import CalibrationExample from './ExampleCalibration';
+import { resetUseCPURendering } from '@cornerstonejs/core';
+import RenderToCanvasExample from './ExampleRenderToCanvas';
+import CrosshairsExample from './ExampleCrosshairs';
+import ApplyPresetsExample from './ExampleApplyPreset';
+import CursorExample from './ExampleCursor';
 
 function LinkOut({ href, text }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer">
       {text}
     </a>
-  )
+  );
 }
 
 function ExampleEntry({ title, url, text, style, warningDiv }) {
-  let CustomTag = `h5` as keyof JSX.IntrinsicElements
+  let CustomTag = `h5` as keyof JSX.IntrinsicElements;
 
   if (style) {
-    CustomTag = `h${style}` as keyof JSX.IntrinsicElements
+    CustomTag = `h${style}` as keyof JSX.IntrinsicElements;
   }
 
   return (
@@ -49,17 +49,17 @@ function ExampleEntry({ title, url, text, style, warningDiv }) {
       <p>{text}</p>
       <hr />
     </div>
-  )
+  );
 }
 
 function Index() {
   const style = {
     height: '512px',
-  }
+  };
 
   // Reset the CPU rendering to whatever it should be (might've navigated from
   // A CPU demo).
-  resetUseCPURendering()
+  resetUseCPURendering();
 
   const examples = [
     {
@@ -187,11 +187,11 @@ function Index() {
       url: '/flip',
       text: 'Example for flipping viewport horizontally or vertically volume',
     },
-  ]
+  ];
 
   const exampleComponents = examples.map((e) => {
-    return <ExampleEntry key={e.title} {...e} />
-  })
+    return <ExampleEntry key={e.title} {...e} />;
+  });
 
   return (
     <div className="container">
@@ -228,7 +228,7 @@ function Index() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function Example(props) {
@@ -239,125 +239,125 @@ function Example(props) {
       </h6>
       {props.children}
     </div>
-  )
+  );
 }
 
 function AppRouter() {
   const mpr = () =>
     Example({
       children: <VTKMPRExample />,
-    })
+    });
   const mprCodec = () =>
     Example({
       children: <MPRCodecExample />,
-    })
+    });
   const canvasResize = () =>
     Example({
       children: <CanvasResizeExample />,
-    })
+    });
   const twentyFiveCanvas = () =>
     Example({
       children: <TwentyFiveCanvasExample />,
-    })
+    });
 
   const color = () =>
     Example({
       children: <ColorExample />,
-    })
+    });
 
   const calibratedImages = () =>
     Example({
       children: <CalibrationExample />,
-    })
+    });
 
   const stackViewport = () =>
     Example({
       children: <StackViewportExample />,
-    })
+    });
 
   const cursorExample = () =>
     Example({
       children: <CursorExample />,
-    })
+    });
 
   const enableDisableViewport = () =>
     Example({
       children: <EnableDisableViewportExample />,
-    })
+    });
 
   const manyStackViewport = () =>
     Example({
       children: <NineStackViewportExample />,
-    })
+    });
 
   const setVolumes = () =>
     Example({
       children: <VTKSetVolumesExample />,
-    })
+    });
 
   const crosshairs = () =>
     Example({
       children: <CrosshairsExample />,
-    })
+    });
 
   const applyPresets = () =>
     Example({
       children: <ApplyPresetsExample />,
-    })
+    });
 
   const cacheDecache = () =>
     Example({
       children: <CacheDecacheExample />,
-    })
+    });
 
   const toolDisplayConfiguration = () =>
     Example({
       children: <ToolDisplayConfigurationExample />,
-    })
+    });
 
   const OneVolume = () =>
     Example({
       children: <OneVolumeExample />,
-    })
+    });
 
   const PriorityLoad = () =>
     Example({
       children: <PriorityLoadExample />,
-    })
+    });
 
   const OneStack = () =>
     Example({
       children: <OneStackExample />,
-    })
+    });
 
   const OneStackCPU = () =>
     Example({
       children: <OneStackExampleCPU />,
-    })
+    });
 
   const Flip = () =>
     Example({
       children: <FlipViewportExample />,
-    })
+    });
 
   const ModifierKeys = () =>
     Example({
       children: <ModifierKeysExample />,
-    })
+    });
   const RenderToCanvas = () =>
     Example({
       children: <RenderToCanvasExample />,
-    })
+    });
 
   const Test = () =>
     Example({
       children: <TestUtils />,
-    })
+    });
 
   const TestVolume = () =>
     Example({
       children: <TestUtilsVolume />,
-    })
+    });
 
   return (
     <Router>
@@ -394,11 +394,11 @@ function AppRouter() {
         <Route exact component={Index} />
       </Switch>
     </Router>
-  )
+  );
 }
 
 export default class App extends Component {
   render() {
-    return <AppRouter />
+    return <AppRouter />;
   }
 }

@@ -1,4 +1,4 @@
-import { init, destroy } from './init'
+import { init, destroy } from './init';
 import {
   addTool,
   removeTool,
@@ -6,18 +6,18 @@ import {
   SynchronizerManager,
   Synchronizer,
   cancelActiveManipulations,
-} from './store'
+} from './store';
 
-import * as CONSTANTS from './constants'
+import * as CONSTANTS from './constants';
 
 // Name spaces
-import * as synchronizers from './synchronizers'
-import * as drawing from './drawingSvg'
-import * as utilities from './utilities'
-import * as cursors from './cursors'
-import * as Types from './types'
-import * as annotation from './stateManagement/annotation'
-import * as segmentation from './stateManagement/segmentation'
+import * as synchronizers from './synchronizers';
+import * as drawing from './drawingSvg';
+import * as utilities from './utilities';
+import * as cursors from './cursors';
+import * as Types from './types';
+import * as annotation from './stateManagement/annotation';
+import * as segmentation from './stateManagement/segmentation';
 
 import {
   BaseTool,
@@ -42,7 +42,7 @@ import {
   RectangleROIStartEndThresholdTool,
   SegmentationDisplayTool,
   BrushTool,
-} from './tools'
+} from './tools';
 
 import {
   MouseBindings,
@@ -50,7 +50,7 @@ import {
   ToolModes,
   Events,
   SegmentationRepresentations,
-} from './enums'
+} from './enums';
 
 const Enums = {
   MouseBindings,
@@ -58,7 +58,7 @@ const Enums = {
   ToolModes,
   Events,
   SegmentationRepresentations,
-}
+};
 
 export {
   //
@@ -114,4 +114,4 @@ export {
   // Utilities
   utilities,
   cursors,
-}
+};

@@ -1,8 +1,8 @@
-import { ToolGroupManager } from '../store'
-import { ToolModes } from '../enums'
-import { getEnabledElement } from '@cornerstonejs/core'
+import { ToolGroupManager } from '../store';
+import { ToolModes } from '../enums';
+import { getEnabledElement } from '@cornerstonejs/core';
 
-type ModesFilter = Array<ToolModes>
+type ModesFilter = Array<ToolModes>;
 
 /**
  * Finds the enabled element, and iterates over the tools inside its
@@ -17,36 +17,36 @@ export default function getToolsWithModesForElement(
   element: HTMLElement,
   modesFilter: ModesFilter
 ) {
-  const enabledElement = getEnabledElement(element)
-  const { renderingEngineId, viewportId } = enabledElement
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngineId, viewportId } = enabledElement;
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
     renderingEngineId
-  )
+  );
 
   if (!toolGroup) {
-    return []
+    return [];
   }
 
-  const enabledTools = []
+  const enabledTools = [];
 
-  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
-    const toolName = toolGroupToolNames[j]
-    const toolOptions = toolGroup.toolOptions[toolName]
+    const toolName = toolGroupToolNames[j];
+    const toolOptions = toolGroup.toolOptions[toolName];
 
     /* filter out tools that don't have options */
     if (!toolOptions) {
-      continue
+      continue;
     }
 
     if (modesFilter.includes(toolOptions.mode)) {
-      const toolInstance = toolGroup.getToolInstance(toolName)
-      enabledTools.push(toolInstance)
+      const toolInstance = toolGroup.getToolInstance(toolName);
+      enabledTools.push(toolInstance);
     }
   }
 
-  return enabledTools
+  return enabledTools;
 }

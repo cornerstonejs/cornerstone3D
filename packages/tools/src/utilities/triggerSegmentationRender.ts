@@ -4,15 +4,15 @@ import {
   getRenderingEngine,
   Enums,
   Types,
-} from '@cornerstonejs/core'
-import { Events as csToolsEvents } from '../enums'
+} from '@cornerstonejs/core';
+import { Events as csToolsEvents } from '../enums';
 import {
   getToolGroup,
   getToolGroupForViewport,
-} from '../store/ToolGroupManager'
+} from '../store/ToolGroupManager';
 
-import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
-import { SegmentationRenderedEventDetail } from '../types/EventTypes'
+import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool';
+import { SegmentationRenderedEventDetail } from '../types/EventTypes';
 
 /**
  * SegmentationRenderingEngine is a class that is responsible for rendering
@@ -26,13 +26,13 @@ import { SegmentationRenderedEventDetail } from '../types/EventTypes'
  * ```
  */
 class SegmentationRenderingEngine {
-  private _needsRender: Set<string> = new Set()
-  private _animationFrameSet = false
-  private _animationFrameHandle: number | null = null
-  public hasBeenDestroyed: boolean
+  private _needsRender: Set<string> = new Set();
+  private _animationFrameSet = false;
+  private _animationFrameHandle: number | null = null;
+  public hasBeenDestroyed: boolean;
 
   public renderToolGroupSegmentations(toolGroupId): void {
-    this._setToolGroupSegmentationToBeRenderedNextFrame([toolGroupId])
+    this._setToolGroupSegmentationToBeRenderedNextFrame([toolGroupId]);
   }
 
   /**
@@ -43,7 +43,7 @@ class SegmentationRenderingEngine {
     if (this.hasBeenDestroyed) {
       throw new Error(
         'this.destroy() has been manually called to free up memory, can not longer use this instance. Instead make a new one.'
-      )
+      );
     }
   }
 
@@ -52,11 +52,11 @@ class SegmentationRenderingEngine {
   ) {
     // Add the viewports to the set of flagged viewports
     toolGroupIds.forEach((toolGroupId) => {
-      this._needsRender.add(toolGroupId)
-    })
+      this._needsRender.add(toolGroupId);
+    });
 
     // Render any flagged viewports
-    this._render()
+    this._render();
   }
 
   /**
@@ -68,78 +68,78 @@ class SegmentationRenderingEngine {
     if (this._needsRender.size > 0 && this._animationFrameSet === false) {
       this._animationFrameHandle = window.requestAnimationFrame(
         this._renderFlaggedToolGroups
-      )
+      );
 
       // Set the flag that we have already set up the next RAF call.
-      this._animationFrameSet = true
+      this._animationFrameSet = true;
     }
   }
 
   private _renderFlaggedToolGroups = () => {
-    this._throwIfDestroyed()
+    this._throwIfDestroyed();
 
     // for each toolGroupId insides the _needsRender set, render the segmentation
-    const toolGroupIds = Array.from(this._needsRender.values())
+    const toolGroupIds = Array.from(this._needsRender.values());
 
     for (const toolGroupId of toolGroupIds) {
-      this._triggerRender(toolGroupId)
+      this._triggerRender(toolGroupId);
 
       // This viewport has been rendered, we can remove it from the set
-      this._needsRender.delete(toolGroupId)
+      this._needsRender.delete(toolGroupId);
 
       // If there is nothing left that is flagged for rendering, stop here
       // and allow RAF to be called again
       if (this._needsRender.size === 0) {
-        this._animationFrameSet = false
-        this._animationFrameHandle = null
-        return
+        this._animationFrameSet = false;
+        this._animationFrameHandle = null;
+        return;
       }
     }
-  }
+  };
   _triggerRender(toolGroupId) {
-    const toolGroup = getToolGroup(toolGroupId)
+    const toolGroup = getToolGroup(toolGroupId);
 
     if (!toolGroup) {
-      console.warn(`No tool group found with toolGroupId: ${toolGroupId}`)
-      return
+      console.warn(`No tool group found with toolGroupId: ${toolGroupId}`);
+      return;
     }
 
-    const { viewportsInfo } = toolGroup
-    const viewports = []
+    const { viewportsInfo } = toolGroup;
+    const viewports = [];
 
     viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineId)
+      const renderingEngine = getRenderingEngine(renderingEngineId);
 
       if (!renderingEngine) {
-        console.warn('rendering Engine has been destroyed')
-        return
+        console.warn('rendering Engine has been destroyed');
+        return;
       }
 
-      viewports.push(renderingEngine.getViewport(viewportId))
-    })
+      viewports.push(renderingEngine.getViewport(viewportId));
+    });
 
     const segmentationDisplayToolInstance = toolGroup.getToolInstance(
       SegmentationDisplayTool.toolName
-    ) as SegmentationDisplayTool
+    ) as SegmentationDisplayTool;
 
     function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
-      const { element, viewportId, renderingEngineId } = evt.detail
+      const { element, viewportId, renderingEngineId } = evt.detail;
 
       element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         onSegmentationRender
-      )
+      );
 
-      const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId)
+      const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
       const eventDetail: SegmentationRenderedEventDetail = {
         toolGroupId: toolGroup.id,
         viewportId,
-      }
+      };
 
       triggerEvent(eventTarget, csToolsEvents.SEGMENTATION_RENDERED, {
         ...eventDetail,
-      })
+      });
     }
 
     // Todo: for other representations we probably need the drawSVG, but right now we are not using it
@@ -157,33 +157,33 @@ class SegmentationRenderingEngine {
       element.addEventListener(
         Enums.Events.IMAGE_RENDERED,
         onSegmentationRender
-      )
-    })
+      );
+    });
 
-    segmentationDisplayToolInstance.renderSegmentation(toolGroupId)
+    segmentationDisplayToolInstance.renderSegmentation(toolGroupId);
   }
 
   /**
    *  _reset Resets the `RenderingEngine`
    */
   private _reset() {
-    window.cancelAnimationFrame(this._animationFrameHandle)
+    window.cancelAnimationFrame(this._animationFrameHandle);
 
-    this._needsRender.clear()
-    this._animationFrameSet = false
-    this._animationFrameHandle = null
+    this._needsRender.clear();
+    this._animationFrameSet = false;
+    this._animationFrameHandle = null;
   }
 }
 
-const segmentationRenderingEngine = new SegmentationRenderingEngine()
+const segmentationRenderingEngine = new SegmentationRenderingEngine();
 
 /**
  * It triggers a render for all the segmentations of the tool group with the given Id.
  * @param toolGroupId - The Id of the tool group to render.
  */
 function triggerSegmentationRender(toolGroupId: string): void {
-  segmentationRenderingEngine.renderToolGroupSegmentations(toolGroupId)
+  segmentationRenderingEngine.renderToolGroupSegmentations(toolGroupId);
 }
 
-export { segmentationRenderingEngine, triggerSegmentationRender }
-export default triggerSegmentationRender
+export { segmentationRenderingEngine, triggerSegmentationRender };
+export default triggerSegmentationRender;

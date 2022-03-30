@@ -8,4 +8,4 @@ enum SegmentationRepresentations {
   // Todo: add more representations
 }
 
-export default SegmentationRepresentations
+export default SegmentationRepresentations;

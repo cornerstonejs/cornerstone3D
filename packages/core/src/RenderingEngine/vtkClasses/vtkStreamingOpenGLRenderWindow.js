@@ -1,6 +1,6 @@
-import macro from '@kitware/vtk.js/macros'
-import vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow'
-import vtkStreamingOpenGLViewNodeFactory from './vtkStreamingOpenGLViewNodeFactory'
+import macro from '@kitware/vtk.js/macros';
+import vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow';
+import vtkStreamingOpenGLViewNodeFactory from './vtkStreamingOpenGLViewNodeFactory';
 
 /**
  * vtkStreamingOpenGLRenderWindow - A dervied class of the core vtkOpenGLRenderWindow class.
@@ -12,7 +12,7 @@ import vtkStreamingOpenGLViewNodeFactory from './vtkStreamingOpenGLViewNodeFacto
  * @param {*} model The private model to extend.
  */
 function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
-  model.classHierarchy.push('vtkStreamingOpenGLRenderWindow')
+  model.classHierarchy.push('vtkStreamingOpenGLRenderWindow');
 }
 
 // ----------------------------------------------------------------------------
@@ -22,17 +22,17 @@ function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
 // ----------------------------------------------------------------------------
 
 export function extend(publicAPI, model, initialValues = {}) {
-  Object.assign(model, initialValues)
+  Object.assign(model, initialValues);
 
-  vtkOpenGLRenderWindow.extend(publicAPI, model, initialValues)
+  vtkOpenGLRenderWindow.extend(publicAPI, model, initialValues);
 
-  model.myFactory = vtkStreamingOpenGLViewNodeFactory.newInstance()
+  model.myFactory = vtkStreamingOpenGLViewNodeFactory.newInstance();
   /* eslint-disable no-use-before-define */
-  model.myFactory.registerOverride('vtkRenderWindow', newInstance)
+  model.myFactory.registerOverride('vtkRenderWindow', newInstance);
   /* eslint-enable no-use-before-define */
 
   // Object methods
-  vtkStreamingOpenGLRenderWindow(publicAPI, model)
+  vtkStreamingOpenGLRenderWindow(publicAPI, model);
 }
 
 // ----------------------------------------------------------------------------
@@ -40,8 +40,8 @@ export function extend(publicAPI, model, initialValues = {}) {
 export const newInstance = macro.newInstance(
   extend,
   'vtkStreamingOpenGLRenderWindow'
-)
+);
 
 // ----------------------------------------------------------------------------
 
-export default { newInstance, extend }
+export default { newInstance, extend };

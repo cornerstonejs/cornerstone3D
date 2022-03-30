@@ -1,7 +1,7 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 /** Handle position in the world coordinates */
-type AnnotationHandle = Types.Point3
+type AnnotationHandle = Types.Point3;
 
 /** TextBox handle type specifying its location
  * in the world including bottomLeft and topRight
@@ -9,18 +9,18 @@ type AnnotationHandle = Types.Point3
  * center world coordinates.
  */
 type TextBoxHandle = {
-  hasMoved: boolean
+  hasMoved: boolean;
   worldBoundingBox: {
-    bottomLeft: Types.Point3
-    bottomRight: Types.Point3
-    topLeft: Types.Point3
-    topRight: Types.Point3
-  }
-  worldPosition: Types.Point3
-}
+    bottomLeft: Types.Point3;
+    bottomRight: Types.Point3;
+    topLeft: Types.Point3;
+    topRight: Types.Point3;
+  };
+  worldPosition: Types.Point3;
+};
 
 /** Tool Handle type can be either AnnotationHandle or TextBoxHandle */
-type ToolHandle = AnnotationHandle | TextBoxHandle
+type ToolHandle = AnnotationHandle | TextBoxHandle;
 
-export default ToolHandle
-export type { AnnotationHandle, TextBoxHandle }
+export default ToolHandle;
+export type { AnnotationHandle, TextBoxHandle };

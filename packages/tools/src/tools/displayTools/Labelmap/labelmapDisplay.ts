@@ -1,32 +1,32 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction'
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import {
   cache,
   getEnabledElementByIds,
   Types,
   utilities,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
-import * as SegmentationConfig from '../../../stateManagement/segmentation/segmentationConfig'
-import Representations from '../../../enums/SegmentationRepresentations'
-import { getToolGroup } from '../../../store/ToolGroupManager'
-import type { labelmapConfig } from '../../../types/LabelmapTypes'
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/segmentationConfig';
+import Representations from '../../../enums/SegmentationRepresentations';
+import { getToolGroup } from '../../../store/ToolGroupManager';
+import type { labelmapConfig } from '../../../types/LabelmapTypes';
 import {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes'
+} from '../../../types/SegmentationStateTypes';
 
-import addLabelmapToElement from './addLabelmapToElement'
+import addLabelmapToElement from './addLabelmapToElement';
 
-import { deepMerge } from '../../../utilities'
-import { IToolGroup } from '../../../types'
-import removeLabelmapFromElement from './removeLabelmapFromElement'
+import { deepMerge } from '../../../utilities';
+import { IToolGroup } from '../../../types';
+import removeLabelmapFromElement from './removeLabelmapFromElement';
 
-const MAX_NUMBER_COLORS = 255
-const labelMapConfigCache = new Map()
+const MAX_NUMBER_COLORS = 255;
+const labelMapConfigCache = new Map();
 
 /**
  * For each viewport, in the toolGroup it adds the segmentation labelmap
@@ -42,25 +42,26 @@ async function addSegmentationRepresentation(
   representationInput: RepresentationPublicInput,
   toolGroupSpecificConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
-  const { segmentationId } = representationInput
-  const segmentation = SegmentationState.getSegmentation(segmentationId)
-  const { volumeId } = segmentation.representationData[Representations.Labelmap]
-  const segmentationRepresentationUID = utilities.uuidv4()
+  const { segmentationId } = representationInput;
+  const segmentation = SegmentationState.getSegmentation(segmentationId);
+  const { volumeId } =
+    segmentation.representationData[Representations.Labelmap];
+  const segmentationRepresentationUID = utilities.uuidv4();
 
   // only add the labelmap to ToolGroup viewports if it is not already added
   await _addLabelmapToToolGroupViewports(
     toolGroupId,
     volumeId,
     segmentationRepresentationUID
-  )
+  );
 
   // Todo: make these configurable during representation input by user
-  const segmentsHidden = new Set() as Set<number>
-  const visibility = true
-  const colorLUTIndex = 0
-  const active = true
-  const cfun = vtkColorTransferFunction.newInstance()
-  const ofun = vtkPiecewiseFunction.newInstance()
+  const segmentsHidden = new Set() as Set<number>;
+  const visibility = true;
+  const colorLUTIndex = 0;
+  const active = true;
+  const cfun = vtkColorTransferFunction.newInstance();
+  const ofun = vtkPiecewiseFunction.newInstance();
 
   const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
     segmentationId,
@@ -74,21 +75,21 @@ async function addSegmentationRepresentation(
       cfun,
       ofun,
     },
-  }
+  };
 
   // Update the toolGroup specific configuration
   if (toolGroupSpecificConfig) {
     // Since setting configuration on toolGroup will trigger a segmentationRepresentation
     // update event, we don't want to trigger the event twice, so we suppress
     // the first one
-    const suppressEvents = true
+    const suppressEvents = true;
     const currentToolGroupConfig =
-      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId)
+      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
 
     const mergedConfig = deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
-    )
+    );
 
     SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
       renderInactiveSegmentations:
@@ -96,15 +97,15 @@ async function addSegmentationRepresentation(
       representations: {
         ...mergedConfig.representations,
       },
-    })
+    });
   }
 
   SegmentationState.addSegmentationRepresentation(
     toolGroupId,
     toolGroupSpecificRepresentation
-  )
+  );
 
-  return segmentationRepresentationUID
+  return segmentationRepresentationUID;
 }
 
 /**
@@ -121,11 +122,11 @@ function removeSegmentationRepresentation(
   _removeLabelmapFromToolGroupViewports(
     toolGroupId,
     segmentationRepresentationUID
-  )
+  );
   SegmentationState.removeSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
-  )
+  );
 }
 
 /**
@@ -147,29 +148,33 @@ function render(
     segmentationRepresentationUID,
     visibility,
     config: renderingConfig,
-  } = representation
+  } = representation;
 
-  const segmentation = SegmentationState.getSegmentation(segmentationId)
-  const labelmapData = segmentation.representationData[Representations.Labelmap]
-  const { volumeId: labelmapUID } = labelmapData
+  const segmentation = SegmentationState.getSegmentation(segmentationId);
+  const labelmapData =
+    segmentation.representationData[Representations.Labelmap];
+  const { volumeId: labelmapUID } = labelmapData;
 
-  const labelmap = cache.getVolume(labelmapUID)
+  const labelmap = cache.getVolume(labelmapUID);
 
   if (!labelmap) {
-    throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`)
+    throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
-  const actor = viewport.getActor(segmentationRepresentationUID)
+  const actor = viewport.getActor(segmentationRepresentationUID);
   if (!actor) {
-    console.warn('No actor found for actorUID: ', segmentationRepresentationUID)
-    return
+    console.warn(
+      'No actor found for actorUID: ',
+      segmentationRepresentationUID
+    );
+    return;
   }
 
-  const { cfun, ofun } = renderingConfig
+  const { cfun, ofun } = renderingConfig;
   const labelmapConfig =
-    toolGroupConfig.representations[Representations.Labelmap]
+    toolGroupConfig.representations[Representations.Labelmap];
   const renderInactiveSegmentations =
-    toolGroupConfig.renderInactiveSegmentations
+    toolGroupConfig.renderInactiveSegmentations;
 
   _setLabelmapColorAndOpacity(
     viewport.id,
@@ -181,7 +186,7 @@ function render(
     active,
     renderInactiveSegmentations,
     visibility
-  )
+  );
 }
 
 function _setLabelmapColorAndOpacity(
@@ -195,65 +200,65 @@ function _setLabelmapColorAndOpacity(
   renderInactiveSegmentations: boolean,
   visibility = true
 ): void {
-  ofun.addPoint(0, 0)
+  ofun.addPoint(0, 0);
 
   const fillAlpha = isActiveLabelmap
     ? labelmapConfig.fillAlpha
-    : labelmapConfig.fillAlphaInactive
+    : labelmapConfig.fillAlphaInactive;
   const outlineWidth = isActiveLabelmap
     ? labelmapConfig.outlineWidthActive
-    : labelmapConfig.outlineWidthInactive
+    : labelmapConfig.outlineWidthInactive;
 
   // Note: MAX_NUMBER_COLORS = 256 is needed because the current method to generate
   // the default color table uses RGB.
 
-  const colorLUT = SegmentationState.getColorLut(colorLUTIndex)
-  const numColors = Math.min(256, colorLUT.length)
-  const { volumeActor, uid } = actor
+  const colorLUT = SegmentationState.getColorLut(colorLUTIndex);
+  const numColors = Math.min(256, colorLUT.length);
+  const { volumeActor, uid } = actor;
 
   const { needColorUpdate, needOpacityUpdate } = _needsTransferFunctionUpdate(
     viewportId,
     uid,
     fillAlpha,
     colorLUTIndex
-  )
+  );
 
   if (needColorUpdate) {
     for (let i = 0; i < numColors; i++) {
-      const color = colorLUT[i]
+      const color = colorLUT[i];
       cfun.addRGBPoint(
         i,
         color[0] / MAX_NUMBER_COLORS,
         color[1] / MAX_NUMBER_COLORS,
         color[2] / MAX_NUMBER_COLORS
-      )
+      );
     }
-    volumeActor.getProperty().setRGBTransferFunction(0, cfun)
+    volumeActor.getProperty().setRGBTransferFunction(0, cfun);
   }
 
   if (needOpacityUpdate) {
     for (let i = 0; i < numColors; i++) {
-      const color = colorLUT[i]
+      const color = colorLUT[i];
 
       // Set the opacity per label.
-      const segmentOpacity = (color[3] / 255) * fillAlpha
-      ofun.addPoint(i, segmentOpacity)
+      const segmentOpacity = (color[3] / 255) * fillAlpha;
+      ofun.addPoint(i, segmentOpacity);
     }
-    ofun.setClamping(false)
-    volumeActor.getProperty().setScalarOpacity(0, ofun)
+    ofun.setClamping(false);
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
   }
 
-  volumeActor.getProperty().setInterpolationTypeToNearest()
+  volumeActor.getProperty().setInterpolationTypeToNearest();
 
-  volumeActor.getProperty().setUseLabelOutline(labelmapConfig.renderOutline)
-  volumeActor.getProperty().setLabelOutlineThickness(outlineWidth)
+  volumeActor.getProperty().setUseLabelOutline(labelmapConfig.renderOutline);
+  volumeActor.getProperty().setLabelOutlineThickness(outlineWidth);
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
   // we are rendering inactive labelmap
   const visible =
-    visibility && (isActiveLabelmap || renderInactiveSegmentations)
-  volumeActor.setVisibility(visible)
+    visibility && (isActiveLabelmap || renderInactiveSegmentations);
+  volumeActor.setVisibility(visible);
 }
 
 function _needsTransferFunctionUpdate(
@@ -262,52 +267,55 @@ function _needsTransferFunctionUpdate(
   fillAlpha: number,
   colorLUTIndex: number
 ) {
-  const cacheUID = `${viewportId}-${actorUID}`
-  const config = labelMapConfigCache.get(cacheUID)
+  const cacheUID = `${viewportId}-${actorUID}`;
+  const config = labelMapConfigCache.get(cacheUID);
 
-  let needColorUpdate = false
-  let needOpacityUpdate = false
+  let needColorUpdate = false;
+  let needOpacityUpdate = false;
 
   labelMapConfigCache.set(cacheUID, {
     fillAlpha,
     colorLUTIndex,
-  })
+  });
 
   if (!config) {
-    needColorUpdate = true
-    needOpacityUpdate = true
+    needColorUpdate = true;
+    needOpacityUpdate = true;
   }
 
   if (config && config.fillAlpha !== fillAlpha) {
-    needOpacityUpdate = true
+    needOpacityUpdate = true;
   }
 
   if (config && config.colorLUTIndex !== colorLUTIndex) {
-    needColorUpdate = true
+    needColorUpdate = true;
   }
 
-  return { needColorUpdate, needOpacityUpdate }
+  return { needColorUpdate, needOpacityUpdate };
 }
 
 function _removeLabelmapFromToolGroupViewports(
   toolGroupId: string,
   segmentationRepresentationUID: string
 ): void {
-  const toolGroup = getToolGroup(toolGroupId)
+  const toolGroup = getToolGroup(toolGroupId);
 
   if (toolGroup === undefined) {
-    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`)
+    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`);
   }
 
-  const { viewportsInfo } = toolGroup
+  const { viewportsInfo } = toolGroup;
 
   for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineId } = viewportInfo
-    const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
+    const { viewportId, renderingEngineId } = viewportInfo;
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      renderingEngineId
+    );
     removeLabelmapFromElement(
       enabledElement.viewport.element,
       segmentationRepresentationUID
-    )
+    );
   }
 }
 
@@ -316,25 +324,28 @@ async function _addLabelmapToToolGroupViewports(
   volumeId: string,
   segmentationRepresentationUID: string
 ): Promise<void> {
-  const toolGroup = getToolGroup(toolGroupId) as IToolGroup
-  const { viewportsInfo } = toolGroup
+  const toolGroup = getToolGroup(toolGroupId) as IToolGroup;
+  const { viewportsInfo } = toolGroup;
 
   for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineId } = viewportInfo
-    const enabledElement = getEnabledElementByIds(viewportId, renderingEngineId)
+    const { viewportId, renderingEngineId } = viewportInfo;
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      renderingEngineId
+    );
 
     if (!enabledElement) {
       throw new Error(
         `No enabled element found for rendering engine: ${renderingEngineId} and viewport: ${viewportId}`
-      )
+      );
     }
 
-    const { viewport } = enabledElement
+    const { viewport } = enabledElement;
     addLabelmapToElement(
       viewport.element,
       volumeId,
       segmentationRepresentationUID
-    )
+    );
   }
 }
 
@@ -342,4 +353,4 @@ export default {
   render,
   addSegmentationRepresentation,
   removeSegmentationRepresentation,
-}
+};

@@ -3,16 +3,16 @@ import {
   cache,
   setVolumesForViewports,
   CONSTANTS,
-} from '@cornerstonejs/core'
-import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
+} from '@cornerstonejs/core';
+import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
 import {
   setCTWWWC,
   setPetTransferFunction,
   getSetPetColorMapTransferFunction,
-} from '../helpers/transferFunctionHelpers'
+} from '../helpers/transferFunctionHelpers';
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 function setLayout(
   renderingEngine,
@@ -125,102 +125,102 @@ function setLayout(
         background: [1, 1, 1],
       },
     },
-  ]
+  ];
 
-  renderingEngine.setViewports(viewportInput)
+  renderingEngine.setViewports(viewportInput);
 
   // Add tools
-  const renderingEngineId = renderingEngine.id
+  const renderingEngineId = renderingEngine.id;
 
   // CT tool groups
   viewportInput.slice(0, 3).forEach(({ viewportId }, index) => {
-    ctSceneToolGroup.addViewport(viewportId, renderingEngineId)
-  })
+    ctSceneToolGroup.addViewport(viewportId, renderingEngineId);
+  });
 
   // PT tool groups
   viewportInput.slice(3, 6).forEach(({ viewportId }, index) => {
-    ptSceneToolGroup.addViewport(viewportId, renderingEngineId)
-  })
+    ptSceneToolGroup.addViewport(viewportId, renderingEngineId);
+  });
 
   // Fusion tool groups
   viewportInput.slice(6, 9).forEach(({ viewportId }, index) => {
-    fusionSceneToolGroup.addViewport(viewportId, renderingEngineId)
-  })
+    fusionSceneToolGroup.addViewport(viewportId, renderingEngineId);
+  });
 
   // PET MIP tool groups
   viewportInput.slice(9, 10).forEach(({ viewportId }, index) => {
-    ptMipSceneToolGroup.addViewport(viewportId, renderingEngineId)
-  })
+    ptMipSceneToolGroup.addViewport(viewportId, renderingEngineId);
+  });
 
-  const axialViewports = [0, 3, 6]
+  const axialViewports = [0, 3, 6];
   axialSynchronizers.forEach((sync) => {
     axialViewports.forEach((axialIndex) => {
-      const { viewportId } = viewportInput[axialIndex]
-      sync.add({ renderingEngineId, viewportId })
-    })
-  })
+      const { viewportId } = viewportInput[axialIndex];
+      sync.add({ renderingEngineId, viewportId });
+    });
+  });
 
-  const sagittalViewports = [1, 4, 7]
+  const sagittalViewports = [1, 4, 7];
   sagittalSynchronizers.forEach((sync) => {
     sagittalViewports.forEach((sagittalIndex) => {
-      const { viewportId } = viewportInput[sagittalIndex]
-      sync.add({ renderingEngineId, viewportId })
-    })
-  })
+      const { viewportId } = viewportInput[sagittalIndex];
+      sync.add({ renderingEngineId, viewportId });
+    });
+  });
 
-  const coronalViewports = [2, 5, 8]
+  const coronalViewports = [2, 5, 8];
   coronalSynchronizers.forEach((sync) => {
     coronalViewports.forEach((coronalIndex) => {
-      const { viewportId } = viewportInput[coronalIndex]
-      sync.add({ renderingEngineId, viewportId })
-    })
-  })
+      const { viewportId } = viewportInput[coronalIndex];
+      sync.add({ renderingEngineId, viewportId });
+    });
+  });
 
-  const ctViewports = [0, 1, 2]
-  const petViewports = [3, 4, 5]
-  const fusionViewports = [6, 7, 8]
-  const petMipViewports = [9]
+  const ctViewports = [0, 1, 2];
+  const petViewports = [3, 4, 5];
+  const fusionViewports = [6, 7, 8];
+  const petMipViewports = [9];
 
   // CT WL Synchronization
   ctViewports.forEach((ctIndex) => {
-    const { viewportId } = viewportInput[ctIndex]
-    ctWLSynchronizer.add({ renderingEngineId, viewportId })
-  })
+    const { viewportId } = viewportInput[ctIndex];
+    ctWLSynchronizer.add({ renderingEngineId, viewportId });
+  });
 
   fusionViewports.forEach((fusionIndex) => {
-    const { viewportId } = viewportInput[fusionIndex]
-    ctWLSynchronizer.addTarget({ renderingEngineId, viewportId })
-  })
+    const { viewportId } = viewportInput[fusionIndex];
+    ctWLSynchronizer.addTarget({ renderingEngineId, viewportId });
+  });
 
   // PT Threshold Synchronization
   petViewports.forEach((ptIndex) => {
-    const { viewportId } = viewportInput[ptIndex]
+    const { viewportId } = viewportInput[ptIndex];
     // add as both source and target
     ptThresholdSynchronizer.add({
       renderingEngineId,
       viewportId,
-    })
-  })
+    });
+  });
 
   fusionViewports.forEach((fusionIndex) => {
-    const { viewportId } = viewportInput[fusionIndex]
+    const { viewportId } = viewportInput[fusionIndex];
     // add as both source and target
     ptThresholdSynchronizer.add({
       renderingEngineId,
       viewportId,
-    })
-  })
+    });
+  });
 
   petMipViewports.forEach((ptMipIndex) => {
-    const { viewportId } = viewportInput[ptMipIndex]
+    const { viewportId } = viewportInput[ptMipIndex];
     ptThresholdSynchronizer.add({
       renderingEngineId,
       viewportId,
-    })
-  })
+    });
+  });
 
   // Render backgrounds
-  renderingEngine.render()
+  renderingEngine.render();
 }
 
 async function setVolumes(
@@ -239,7 +239,7 @@ async function setVolumes(
       },
     ],
     [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
-  )
+  );
 
   await setVolumesForViewports(
     renderingEngine,
@@ -251,7 +251,7 @@ async function setVolumes(
       },
     ],
     [VIEWPORT_IDS.PT.AXIAL, VIEWPORT_IDS.PT.SAGITTAL, VIEWPORT_IDS.PT.CORONAL]
-  )
+  );
 
   await setVolumesForViewports(
     renderingEngine,
@@ -272,7 +272,7 @@ async function setVolumes(
       VIEWPORT_IDS.FUSION.SAGITTAL,
       VIEWPORT_IDS.FUSION.CORONAL,
     ]
-  )
+  );
 
   /*
    * set the blendMode in the mapper of a volume. The blend mode is a property of
@@ -288,15 +288,15 @@ async function setVolumes(
    *        ignore the slab thickness. Check the vtkSlabCamera for more info.
    */
 
-  const ptVolume = cache.getVolume(ptVolumeId)
-  const ptVolumeDimensions = ptVolume.dimensions
+  const ptVolume = cache.getVolume(ptVolumeId);
+  const ptVolumeDimensions = ptVolume.dimensions;
 
   // Only make the MIP as large as it needs to be.
   const slabThickness = Math.sqrt(
     ptVolumeDimensions[0] * ptVolumeDimensions[0] +
       ptVolumeDimensions[1] * ptVolumeDimensions[1] +
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
-  )
+  );
 
   await setVolumesForViewports(
     renderingEngine,
@@ -309,9 +309,9 @@ async function setVolumes(
       },
     ],
     [VIEWPORT_IDS.PTMIP.CORONAL]
-  )
+  );
 
-  initializeCameraSync(renderingEngine)
+  initializeCameraSync(renderingEngine);
 }
 
 function initializeCameraSync(ctScene, ptScene, fusionScene) {
@@ -319,47 +319,51 @@ function initializeCameraSync(ctScene, ptScene, fusionScene) {
   // TODO -> We should have a more generic way to do this,
   // So that when all data is added we can synchronize zoom/position before interaction.
 
-  const axialCtViewport = renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL)
+  const axialCtViewport = renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL);
   const sagittalCtViewport = renderingEngine.getViewport(
     VIEWPORT_IDS.CT.SAGITTAL
-  )
-  const coronalCtViewport = renderingEngine.getViewport(VIEWPORT_IDS.CT.CORONAL)
+  );
+  const coronalCtViewport = renderingEngine.getViewport(
+    VIEWPORT_IDS.CT.CORONAL
+  );
 
-  const axialPtViewport = renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL)
+  const axialPtViewport = renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL);
   const sagittalPtViewport = renderingEngine.getViewport(
     VIEWPORT_IDS.PT.SAGITTAL
-  )
-  const coronalPtViewport = renderingEngine.getViewport(VIEWPORT_IDS.PT.CORONAL)
+  );
+  const coronalPtViewport = renderingEngine.getViewport(
+    VIEWPORT_IDS.PT.CORONAL
+  );
 
   const axialFusionViewport = renderingEngine.getViewport(
     VIEWPORT_IDS.FUSION.AXIAL
-  )
+  );
   const sagittalFusionViewport = renderingEngine.getViewport(
     VIEWPORT_IDS.FUSION.SAGITTAL
-  )
+  );
   const coronalFusionViewport = renderingEngine.getViewport(
     VIEWPORT_IDS.FUSION.CORONAL
-  )
+  );
 
-  initCameraSynchronization(axialFusionViewport, axialCtViewport)
-  initCameraSynchronization(axialFusionViewport, axialPtViewport)
+  initCameraSynchronization(axialFusionViewport, axialCtViewport);
+  initCameraSynchronization(axialFusionViewport, axialPtViewport);
 
-  initCameraSynchronization(sagittalFusionViewport, sagittalCtViewport)
-  initCameraSynchronization(sagittalFusionViewport, sagittalPtViewport)
+  initCameraSynchronization(sagittalFusionViewport, sagittalCtViewport);
+  initCameraSynchronization(sagittalFusionViewport, sagittalPtViewport);
 
-  initCameraSynchronization(coronalFusionViewport, coronalCtViewport)
-  initCameraSynchronization(coronalFusionViewport, coronalPtViewport)
+  initCameraSynchronization(coronalFusionViewport, coronalCtViewport);
+  initCameraSynchronization(coronalFusionViewport, coronalPtViewport);
 
-  renderingEngine.render()
+  renderingEngine.render();
 }
 
 function initCameraSynchronization(sViewport, tViewport) {
   // Initialise the sync as they viewports will have
   // Different inital zoom levels for viewports of different sizes.
 
-  const camera = sViewport.getCamera()
+  const camera = sViewport.getCamera();
 
-  tViewport.setCamera(camera)
+  tViewport.setCamera(camera);
 }
 
-export default { setLayout, setVolumes }
+export default { setLayout, setVolumes };

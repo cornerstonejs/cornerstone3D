@@ -1,6 +1,6 @@
-import { getActiveSegmentationRepresentation } from './activeSegmentation'
-import { getSegmentation } from './segmentationState'
-import { triggerSegmentationModified } from './triggerSegmentationEvents'
+import { getActiveSegmentationRepresentation } from './activeSegmentation';
+import { getSegmentation } from './segmentationState';
+import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
 /**
  * Set the active segment index for a segmentation Id. It fires a global state
@@ -14,12 +14,12 @@ function setActiveSegmentIndex(
   segmentationId: string,
   segmentIndex: number
 ): void {
-  const segmentation = getSegmentation(segmentationId)
+  const segmentation = getSegmentation(segmentationId);
 
   if (segmentation?.activeSegmentIndex !== segmentIndex) {
-    segmentation.activeSegmentIndex = segmentIndex
+    segmentation.activeSegmentIndex = segmentIndex;
 
-    triggerSegmentationModified(segmentationId)
+    triggerSegmentationModified(segmentationId);
   }
 }
 
@@ -29,11 +29,11 @@ function setActiveSegmentIndex(
  * @returns The active segment index for the given segmentation.
  */
 function getActiveSegmentIndex(segmentationId: string): number | undefined {
-  const segmentation = getSegmentation(segmentationId)
+  const segmentation = getSegmentation(segmentationId);
 
   if (segmentation) {
-    return segmentation.activeSegmentIndex
+    return segmentation.activeSegmentIndex;
   }
 }
 
-export { getActiveSegmentIndex, setActiveSegmentIndex }
+export { getActiveSegmentIndex, setActiveSegmentIndex };

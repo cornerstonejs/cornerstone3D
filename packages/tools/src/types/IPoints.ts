@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core'
+import { Types } from '@cornerstonejs/core';
 
 /**
  * Points in page, client, canvas and world
@@ -6,13 +6,13 @@ import { Types } from '@cornerstonejs/core'
  */
 type IPoints = {
   /** page coordinates of the point */
-  page: Types.Point2
+  page: Types.Point2;
   /** client coordinates of the point */
-  client: Types.Point2
+  client: Types.Point2;
   /** canvas coordinates of the point */
-  canvas: Types.Point2
+  canvas: Types.Point2;
   /** world coordinates of the point */
-  world: Types.Point3
-}
+  world: Types.Point3;
+};
 
-export default IPoints
+export default IPoints;

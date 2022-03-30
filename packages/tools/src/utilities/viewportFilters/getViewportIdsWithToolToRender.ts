@@ -1,7 +1,7 @@
-import { getEnabledElement } from '@cornerstonejs/core'
-import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID'
-import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled'
-import filterViewportsWithSameOrientation from './filterViewportsWithSameOrientation'
+import { getEnabledElement } from '@cornerstonejs/core';
+import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID';
+import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled';
+import filterViewportsWithSameOrientation from './filterViewportsWithSameOrientation';
 
 /**
  * Given a cornerstone3D enabled `element`, and a `toolName`, find all viewportIds
@@ -19,27 +19,27 @@ export default function getViewportIdsWithToolToRender(
   toolName: string,
   requireSameOrientation = true
 ): string[] {
-  const enabledElement = getEnabledElement(element)
-  const { renderingEngine, FrameOfReferenceUID } = enabledElement
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngine, FrameOfReferenceUID } = enabledElement;
 
-  let viewports = renderingEngine.getViewports()
+  let viewports = renderingEngine.getViewports();
 
   viewports = filterViewportsWithFrameOfReferenceUID(
     viewports,
     FrameOfReferenceUID
-  )
-  viewports = filterViewportsWithToolEnabled(viewports, toolName)
+  );
+  viewports = filterViewportsWithToolEnabled(viewports, toolName);
 
-  const viewport = renderingEngine.getViewport(enabledElement.viewportId)
+  const viewport = renderingEngine.getViewport(enabledElement.viewportId);
 
   if (requireSameOrientation) {
     viewports = filterViewportsWithSameOrientation(
       viewports,
       viewport.getCamera()
-    )
+    );
   }
 
-  const viewportIds = viewports.map((vp) => vp.id)
+  const viewportIds = viewports.map((vp) => vp.id);
 
-  return viewportIds
+  return viewportIds;
 }

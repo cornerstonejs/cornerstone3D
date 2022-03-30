@@ -1,18 +1,18 @@
-import { api } from 'dicomweb-client'
-import dcmjs from 'dcmjs'
-import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv'
-import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata'
-import { utilities } from '@cornerstonejs/core'
+import { api } from 'dicomweb-client';
+import dcmjs from 'dcmjs';
+import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
+import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
+import { utilities } from '@cornerstonejs/core';
 
-import WADORSHeaderProvider from './WADORSHeaderProvider'
-import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
-import getPixelSpacingInformation from './getPixelSpacingInformation'
+import WADORSHeaderProvider from './WADORSHeaderProvider';
+import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
+import getPixelSpacingInformation from './getPixelSpacingInformation';
 
-const { DicomMetaDictionary } = dcmjs.data
-const { calibratedPixelSpacingMetadataProvider } = utilities
+const { DicomMetaDictionary } = dcmjs.data;
+const { calibratedPixelSpacingMetadataProvider } = utilities;
 
-const VOLUME = 'volume'
-const STACK = 'stack'
+const VOLUME = 'volume';
+const STACK = 'stack';
 
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
@@ -30,24 +30,24 @@ export default async function createImageIdsAndCacheMetaData({
   wadoRsRoot,
   type,
 }) {
-  const SOP_INSTANCE_UID = '00080018'
-  const SERIES_INSTANCE_UID = '0020000E'
-  const MODALITY = '00080060'
+  const SOP_INSTANCE_UID = '00080018';
+  const SERIES_INSTANCE_UID = '0020000E';
+  const MODALITY = '00080060';
 
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
     seriesInstanceUID: SeriesInstanceUID,
-  }
+  };
 
-  const client = new api.DICOMwebClient({ url: wadoRsRoot })
-  const instances = await client.retrieveSeriesMetadata(studySearchOptions)
-  const modality = instances[0][MODALITY].Value[0]
+  const client = new api.DICOMwebClient({ url: wadoRsRoot });
+  const instances = await client.retrieveSeriesMetadata(studySearchOptions);
+  const modality = instances[0][MODALITY].Value[0];
 
   const imageIds = instances.map((instanceMetaData) => {
-    const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0]
-    const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0]
+    const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
+    const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
-    let imageId
+    let imageId;
     if (type === VOLUME) {
       imageId =
         `streaming-wadors:` +
@@ -58,12 +58,12 @@ export default async function createImageIdsAndCacheMetaData({
         SeriesInstanceUID +
         '/instances/' +
         SOPInstanceUID +
-        '/frames/1'
+        '/frames/1';
 
       cornerstoneWADOImageLoader.wadors.metaDataManager.add(
         imageId,
         instanceMetaData
-      )
+      );
     } else {
       imageId =
         `wadors:` +
@@ -74,53 +74,53 @@ export default async function createImageIdsAndCacheMetaData({
         SeriesInstanceUID +
         '/instances/' +
         SOPInstanceUID +
-        '/frames/1'
+        '/frames/1';
 
       cornerstoneWADOImageLoader.wadors.metaDataManager.add(
         imageId,
         instanceMetaData
-      )
+      );
     }
 
-    console.debug(instanceMetaData)
+    console.debug(instanceMetaData);
 
-    WADORSHeaderProvider.addInstance(imageId, instanceMetaData)
+    WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
 
     // Add calibrated pixel spacing
-    const m = JSON.parse(JSON.stringify(instanceMetaData))
-    const instance = DicomMetaDictionary.naturalizeDataset(m)
-    const pixelSpacing = getPixelSpacingInformation(instance)
+    const m = JSON.parse(JSON.stringify(instanceMetaData));
+    const instance = DicomMetaDictionary.naturalizeDataset(m);
+    const pixelSpacing = getPixelSpacingInformation(instance);
 
     calibratedPixelSpacingMetadataProvider.add(
       imageId,
       pixelSpacing.map((s) => parseFloat(s))
-    )
+    );
 
-    return imageId
-  })
+    return imageId;
+  });
 
   // we don't want to add non-pet
   // Note: for 99% of scanners SUV calculation is consistent bw slices
   if (modality === 'PT') {
-    const InstanceMetadataArray = []
+    const InstanceMetadataArray = [];
     imageIds.forEach((imageId) => {
-      const instanceMetadata = getPTImageIdInstanceMetadata(imageId)
+      const instanceMetadata = getPTImageIdInstanceMetadata(imageId);
       if (instanceMetadata) {
-        InstanceMetadataArray.push(instanceMetadata)
+        InstanceMetadataArray.push(instanceMetadata);
       }
-    })
+    });
     if (InstanceMetadataArray.length) {
       const suvScalingFactors = calculateSUVScalingFactors(
         InstanceMetadataArray
-      )
+      );
       InstanceMetadataArray.forEach((instanceMetadata, index) => {
         ptScalingMetaDataProvider.addInstance(
           imageIds[index],
           suvScalingFactors[index]
-        )
-      })
+        );
+      });
     }
   }
 
-  return imageIds
+  return imageIds;
 }

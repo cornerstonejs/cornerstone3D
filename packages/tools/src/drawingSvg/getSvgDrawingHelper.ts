@@ -1,5 +1,5 @@
-import { state } from '../store'
-import { getEnabledElement } from '@cornerstonejs/core'
+import { state } from '../store';
+import { getEnabledElement } from '@cornerstonejs/core';
 
 /**
  * Returns the SVG drawing helper for the given HTML element.
@@ -7,15 +7,15 @@ import { getEnabledElement } from '@cornerstonejs/core'
  * @private
  */
 function getSvgDrawingHelper(element: HTMLElement) {
-  const enabledElement = getEnabledElement(element)
-  const { viewportId, renderingEngineId } = enabledElement
-  const canvasHash = `${viewportId}:${renderingEngineId}`
-  const svgLayerElement = _getSvgLayer(element)
+  const enabledElement = getEnabledElement(element);
+  const { viewportId, renderingEngineId } = enabledElement;
+  const canvasHash = `${viewportId}:${renderingEngineId}`;
+  const svgLayerElement = _getSvgLayer(element);
 
   // Reset touched
   Object.keys(state.svgNodeCache[canvasHash]).forEach((cacheKey) => {
-    state.svgNodeCache[canvasHash][cacheKey].touched = false
-  })
+    state.svgNodeCache[canvasHash][cacheKey].touched = false;
+  });
 
   return {
     // Todo: not sure if we need enabledElement and _element anymore here
@@ -28,7 +28,7 @@ function getSvgDrawingHelper(element: HTMLElement) {
     _setNodeTouched: setNodeTouched.bind(this, canvasHash),
     _clearUntouched: clearUntouched.bind(this, svgLayerElement, canvasHash),
     // _drawnAnnotations: drawnAnnotations,
-  }
+  };
 }
 
 /**
@@ -37,62 +37,62 @@ function getSvgDrawingHelper(element: HTMLElement) {
  * @private
  */
 function _getSvgLayer(element) {
-  const internalDivElement = element.firstChild
-  const svgLayer = internalDivElement.querySelector('.svg-layer')
+  const internalDivElement = element.firstChild;
+  const svgLayer = internalDivElement.querySelector('.svg-layer');
 
-  return svgLayer
+  return svgLayer;
 }
 
 function getSvgNode(canvasHash, cacheKey) {
   // If state has been reset
   if (!state.svgNodeCache[canvasHash]) {
-    return
+    return;
   }
 
   if (state.svgNodeCache[canvasHash][cacheKey]) {
-    return state.svgNodeCache[canvasHash][cacheKey].domRef
+    return state.svgNodeCache[canvasHash][cacheKey].domRef;
   }
 }
 
 function appendNode(svgLayerElement, canvasHash, svgNode, cacheKey) {
   // If state has been reset
   if (!state.svgNodeCache[canvasHash]) {
-    return null
+    return null;
   }
 
   state.svgNodeCache[canvasHash][cacheKey] = {
     touched: true,
     domRef: svgNode,
-  }
+  };
 
-  svgLayerElement.appendChild(svgNode)
+  svgLayerElement.appendChild(svgNode);
 }
 
 function setNodeTouched(canvasHash, cacheKey) {
   // If state has been reset
   if (!state.svgNodeCache[canvasHash]) {
-    return
+    return;
   }
 
   if (state.svgNodeCache[canvasHash][cacheKey]) {
-    state.svgNodeCache[canvasHash][cacheKey].touched = true
+    state.svgNodeCache[canvasHash][cacheKey].touched = true;
   }
 }
 
 function clearUntouched(svgLayerElement, canvasHash) {
   // If state has been reset
   if (!state.svgNodeCache[canvasHash]) {
-    return
+    return;
   }
 
   Object.keys(state.svgNodeCache[canvasHash]).forEach((cacheKey) => {
-    const cacheEntry = state.svgNodeCache[canvasHash][cacheKey]
+    const cacheEntry = state.svgNodeCache[canvasHash][cacheKey];
 
     if (!cacheEntry.touched && cacheEntry.domRef) {
-      svgLayerElement.removeChild(cacheEntry.domRef)
-      delete state.svgNodeCache[canvasHash][cacheKey]
+      svgLayerElement.removeChild(cacheEntry.domRef);
+      delete state.svgNodeCache[canvasHash][cacheKey];
     }
-  })
+  });
 }
 
-export default getSvgDrawingHelper
+export default getSvgDrawingHelper;

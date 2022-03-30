@@ -1,19 +1,19 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
   renderToCanvas,
   init as cs3dInit,
-} from '@cornerstonejs/core'
-import * as csTools3d from '@cornerstonejs/tools'
-import { WindowLevelTool } from '@cornerstonejs/tools'
-import getImageIds from './helpers/getImageIds'
-import { renderingEngineId } from './constants'
+} from '@cornerstonejs/core';
+import * as csTools3d from '@cornerstonejs/tools';
+import { WindowLevelTool } from '@cornerstonejs/tools';
+import getImageIds from './helpers/getImageIds';
+import { renderingEngineId } from './constants';
 
-const STACK = 'stack'
+const STACK = 'stack';
 
 const imageId =
-  'wadors:https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs/studies/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1/series/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.2/instances/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.3/frames/1'
+  'wadors:https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs/studies/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1/series/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.2/instances/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.3/frames/1';
 
 class RenderToCanvasExample extends Component {
   state = {
@@ -32,41 +32,41 @@ class RenderToCanvasExample extends Component {
     ptThresholdDisplay: 5,
     imageId: imageId,
     thumbnailLoaded: false,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
-    this._canvasNodes = new Map()
-    this._offScreenRef = React.createRef()
+    csTools3d.init();
+    this._canvasNodes = new Map();
+    this._offScreenRef = React.createRef();
 
-    this._viewportGridRef = React.createRef()
+    this._viewportGridRef = React.createRef();
 
-    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
-    this.dxStackImageIdsPromise = getImageIds('dx', STACK)
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK);
+    this.dxStackImageIdsPromise = getImageIds('dx', STACK);
 
-    Promise.all([this.ctStackImageIdsPromise, this.dxStackImageIdsPromise])
+    Promise.all([this.ctStackImageIdsPromise, this.dxStackImageIdsPromise]);
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await cs3dInit()
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    await cs3dInit();
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
   }
 
   componentDidUpdate(prevProps, prevState) {}
 
   componentWillUnmount() {
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   renderToCanvas = (imageId) => {
@@ -74,10 +74,10 @@ class RenderToCanvasExample extends Component {
       () => {
         this.setState({
           thumbnailLoaded: true,
-        })
+        });
       }
-    )
-  }
+    );
+  };
 
   render() {
     return (
@@ -113,7 +113,7 @@ class RenderToCanvasExample extends Component {
               name="imageIdInput"
               value={this.state.imageId}
               onChange={(evt) => {
-                this.setState({ imageId: evt.target.value })
+                this.setState({ imageId: evt.target.value });
               }}
             />
           </div>
@@ -138,8 +138,8 @@ class RenderToCanvasExample extends Component {
           ))}
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default RenderToCanvasExample
+export default RenderToCanvasExample;

@@ -1,27 +1,27 @@
 type ScalingParameters = {
   /** m in m*p+b which specifies the linear transformation from stored pixels to memory value  */
-  rescaleSlope: number
+  rescaleSlope: number;
   /** b in m*p+b which specifies the offset of the transformation */
-  rescaleIntercept: number
+  rescaleIntercept: number;
   /** modality */
-  modality: string
+  modality: string;
   /** SUV body weight */
-  suvbw?: number
+  suvbw?: number;
   /** SUV lean body mass */
-  suvlbm?: number
+  suvlbm?: number;
   /** SUV body surface area */
-  suvbsa?: number
-}
+  suvbsa?: number;
+};
 
 type PTScaling = {
   /** suv body weight to suv lean body mass */
-  suvbwToSuvlbm?: number
+  suvbwToSuvlbm?: number;
   /** suv body weight to suv body surface area */
-  suvbwToSuvbsa?: number
-}
+  suvbwToSuvbsa?: number;
+};
 
 type Scaling = {
-  PET?: PTScaling
-}
+  PET?: PTScaling;
+};
 
-export { PTScaling, Scaling, ScalingParameters }
+export { PTScaling, Scaling, ScalingParameters };

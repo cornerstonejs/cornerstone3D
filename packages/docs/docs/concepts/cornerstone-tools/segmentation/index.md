@@ -29,8 +29,6 @@ This had its own limitations, such as: repetitive creation of `Segmentations` fo
 (ct-axial, ct-sagittal, and ct-coronal). We have changed this to apply a `Segmentation Representation`
 to a `ToolGroup` which accordingly applies to all viewports.
 
-
-
 ## Segmentation Display
 
 `Cornerstone3DTools` treats segmentations the same way as any other Tool. For instance,
@@ -38,26 +36,24 @@ the `SegmentationDisplayTool` should be added via `addTools` and also be added t
 whose viewports you want to display the segmentation on. We will read more
 about this in the next section.
 
-
-
 ## API
 
 `Segmentation` related functions and classes are available in the `segmentation` module.
 
 ```js
-import { segmentations } from '@cornerstone/tools'
+import { segmentations } from '@cornerstone/tools';
 
 // segmentation state holding all segmentations and their toolGroup specific representations
-segmentations.state.XYZ
+segmentations.state.XYZ;
 
 // active segmentation methods (set/get)
-segmentations.activeSegmentation.XYZ
+segmentations.activeSegmentation.XYZ;
 
 // locking for a segment index (set/get)
-segmentations.locking.XYZ
+segmentations.locking.XYZ;
 
 // segment index manipulations (set/get)
-segmentations.segmentIndex.XYZ
+segmentations.segmentIndex.XYZ;
 ```
 
 Let's start by looking deeper into each of these methods.

@@ -6,7 +6,6 @@ title: Cornerstone Core
 import DocCardList from '@theme/DocCardList';
 import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 
-
 # Core Introduction
 
 This section describes the core concepts in the `Cornerstone3D` (`@cornerstonejs/core`).
@@ -18,8 +17,5 @@ This section describes the core concepts in the `Cornerstone3D` (`@cornerstonejs
 - providing metadata API support.
 
 The purpose of this section is to give an overview of the core concepts in `Cornerstone3D`.
-
-
-
 
 <DocCardList items={useCurrentSidebarCategory().items}/>

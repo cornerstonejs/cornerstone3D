@@ -3,32 +3,32 @@ import {
   getEnabledElement,
   Settings,
   StackViewport,
-} from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base'
-import { PublicToolProps, ToolProps, EventTypes } from '../../types'
-import { fillInsideRectangle } from './strategies/fillRectangle'
-import { eraseInsideRectangle } from './strategies/eraseRectangle'
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
+import { BaseTool } from '../base';
+import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import { fillInsideRectangle } from './strategies/fillRectangle';
+import { eraseInsideRectangle } from './strategies/eraseRectangle';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 
-import { Events } from '../../enums'
-import RectangleROITool from '../annotation/RectangleROITool'
-import { drawRect as drawRectSvg } from '../../drawingSvg'
+import { Events } from '../../enums';
+import RectangleROITool from '../annotation/RectangleROITool';
+import { drawRect as drawRectSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor'
+} from '../../cursors/elementCursor';
 
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   segmentationColor,
   segmentLocking,
   segmentIndex as segmentIndexController,
   activeSegmentation,
-} from '../../stateManagement/segmentation'
+} from '../../stateManagement/segmentation';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState'
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -38,23 +38,23 @@ import { getSegmentation } from '../../stateManagement/segmentation/segmentation
  * segmentation and segmentIndex.
  */
 export default class RectangleScissorsTool extends BaseTool {
-  static toolName = 'RectangleScissor'
-  _throttledCalculateCachedStats: any
+  static toolName = 'RectangleScissor';
+  _throttledCalculateCachedStats: any;
   editData: {
-    annotation: any
-    segmentationId: string
-    segmentation: any
-    segmentIndex: number
-    segmentsLocked: number[]
-    segmentColor: [number, number, number, number]
-    viewportIdsToRender: string[]
-    handleIndex?: number
-    movingTextBox: boolean
-    newAnnotation?: boolean
-    hasMoved?: boolean
-  } | null
-  isDrawing: boolean
-  isHandleOutsideImage: boolean
+    annotation: any;
+    segmentationId: string;
+    segmentation: any;
+    segmentIndex: number;
+    segmentsLocked: number[];
+    segmentColor: [number, number, number, number];
+    viewportIdsToRender: string[];
+    handleIndex?: number;
+    movingTextBox: boolean;
+    newAnnotation?: boolean;
+    hasMoved?: boolean;
+  } | null;
+  isDrawing: boolean;
+  isHandleOutsideImage: boolean;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -70,7 +70,7 @@ export default class RectangleScissorsTool extends BaseTool {
       },
     }
   ) {
-    super(toolProps, defaultToolProps)
+    super(toolProps, defaultToolProps);
   }
 
   /**
@@ -84,44 +84,44 @@ export default class RectangleScissorsTool extends BaseTool {
   preMouseDownCallback = (
     evt: EventTypes.MouseDownActivateEventType
   ): boolean => {
-    const eventDetail = evt.detail
-    const { currentPoints, element } = eventDetail
-    const worldPos = currentPoints.world
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
 
-    this.isDrawing = true
+    this.isDrawing = true;
 
-    const camera = viewport.getCamera()
-    const { viewPlaneNormal, viewUp } = camera
-    const toolGroupId = this.toolGroupId
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
+    const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId)
+      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
-      )
+      );
     }
 
     const { segmentationRepresentationUID, segmentationId, type } =
-      activeSegmentationRepresentation
+      activeSegmentationRepresentation;
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId)
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId)
+      segmentIndexController.getActiveSegmentIndex(segmentationId);
+    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex
-    )
+    );
 
-    const { representationData } = getSegmentation(segmentationId)
+    const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type]
-    const segmentation = cache.getVolume(volumeId)
+    const { volumeId } = representationData[type];
+    const segmentation = cache.getVolume(volumeId);
 
     // Todo: Used for drawing the svg only, we might not need it at all
     const annotation = {
@@ -146,15 +146,15 @@ export default class RectangleScissorsTool extends BaseTool {
           activeHandleIndex: null,
         },
       },
-    }
+    };
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleROITool)
+    Settings.getObjectSettings(annotation, RectangleROITool);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleScissorsTool.toolName
-    )
+    );
 
     this.editData = {
       annotation,
@@ -168,101 +168,101 @@ export default class RectangleScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-    }
+    };
 
-    this._activateDraw(element)
+    this._activateDraw(element);
 
-    hideElementCursor(element)
+    hideElementCursor(element);
 
-    evt.preventDefault()
+    evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    return true
-  }
+    return true;
+  };
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
-    this.isDrawing = true
+    this.isDrawing = true;
 
-    const eventDetail = evt.detail
-    const { element } = eventDetail
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex } = this.editData
-    const { data } = annotation
+    const { annotation, viewportIdsToRender, handleIndex } = this.editData;
+    const { data } = annotation;
 
     // Moving handle.
-    const { currentPoints } = eventDetail
-    const enabledElement = getEnabledElement(element)
-    const { worldToCanvas, canvasToWorld } = enabledElement.viewport
-    const worldPos = currentPoints.world
+    const { currentPoints } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { worldToCanvas, canvasToWorld } = enabledElement.viewport;
+    const worldPos = currentPoints.world;
 
-    const { points } = data.handles
+    const { points } = data.handles;
 
     // Move this handle.
-    points[handleIndex] = [...worldPos]
+    points[handleIndex] = [...worldPos];
 
-    let bottomLeftCanvas
-    let bottomRightCanvas
-    let topLeftCanvas
-    let topRightCanvas
+    let bottomLeftCanvas;
+    let bottomRightCanvas;
+    let topLeftCanvas;
+    let topRightCanvas;
 
-    let bottomLeftWorld
-    let bottomRightWorld
-    let topLeftWorld
-    let topRightWorld
+    let bottomLeftWorld;
+    let bottomRightWorld;
+    let topLeftWorld;
+    let topRightWorld;
 
     switch (handleIndex) {
       case 0:
       case 3:
         // Moving bottomLeft or topRight
 
-        bottomLeftCanvas = worldToCanvas(points[0])
-        topRightCanvas = worldToCanvas(points[3])
+        bottomLeftCanvas = worldToCanvas(points[0]);
+        topRightCanvas = worldToCanvas(points[3]);
 
-        bottomRightCanvas = [topRightCanvas[0], bottomLeftCanvas[1]]
-        topLeftCanvas = [bottomLeftCanvas[0], topRightCanvas[1]]
+        bottomRightCanvas = [topRightCanvas[0], bottomLeftCanvas[1]];
+        topLeftCanvas = [bottomLeftCanvas[0], topRightCanvas[1]];
 
-        bottomRightWorld = canvasToWorld(bottomRightCanvas)
-        topLeftWorld = canvasToWorld(topLeftCanvas)
+        bottomRightWorld = canvasToWorld(bottomRightCanvas);
+        topLeftWorld = canvasToWorld(topLeftCanvas);
 
-        points[1] = bottomRightWorld
-        points[2] = topLeftWorld
+        points[1] = bottomRightWorld;
+        points[2] = topLeftWorld;
 
-        break
+        break;
       case 1:
       case 2:
         // Moving bottomRight or topLeft
-        bottomRightCanvas = worldToCanvas(points[1])
-        topLeftCanvas = worldToCanvas(points[2])
+        bottomRightCanvas = worldToCanvas(points[1]);
+        topLeftCanvas = worldToCanvas(points[2]);
 
         bottomLeftCanvas = <Types.Point2>[
           topLeftCanvas[0],
           bottomRightCanvas[1],
-        ]
-        topRightCanvas = <Types.Point2>[bottomRightCanvas[0], topLeftCanvas[1]]
+        ];
+        topRightCanvas = <Types.Point2>[bottomRightCanvas[0], topLeftCanvas[1]];
 
-        bottomLeftWorld = canvasToWorld(bottomLeftCanvas)
-        topRightWorld = canvasToWorld(topRightCanvas)
+        bottomLeftWorld = canvasToWorld(bottomLeftCanvas);
+        topRightWorld = canvasToWorld(topRightCanvas);
 
-        points[0] = bottomLeftWorld
-        points[3] = topRightWorld
+        points[0] = bottomLeftWorld;
+        points[3] = topRightWorld;
 
-        break
+        break;
     }
-    annotation.invalidated = true
+    annotation.invalidated = true;
 
-    this.editData.hasMoved = true
+    this.editData.hasMoved = true;
 
-    const { renderingEngine } = enabledElement
+    const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
-  }
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
 
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    const eventDetail = evt.detail
-    const { element } = eventDetail
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
 
     const {
       annotation,
@@ -272,28 +272,28 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentationId,
       segmentIndex,
       segmentsLocked,
-    } = this.editData
-    const { data } = annotation
+    } = this.editData;
+    const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
-      return
+      return;
     }
 
-    annotation.highlighted = false
-    data.handles.activeHandleIndex = null
+    annotation.highlighted = false;
+    data.handles.activeHandleIndex = null;
 
-    this._deactivateDraw(element)
+    this._deactivateDraw(element);
 
-    resetElementCursor(element)
+    resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
-    this.editData = null
-    this.isDrawing = false
+    this.editData = null;
+    this.isDrawing = false;
 
     if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet')
+      throw new Error('Not implemented yet');
     }
 
     const operationData = {
@@ -302,34 +302,34 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentationId,
       segmentIndex,
       segmentsLocked,
-    }
+    };
 
-    this.applyActiveStrategy(enabledElement, operationData)
-  }
+    this.applyActiveStrategy(enabledElement, operationData);
+  };
 
   /**
    * Add event handlers for the modify event loop, and prevent default event propagation.
    */
   _activateDraw = (element) => {
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
-  }
+  };
 
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.
    */
   _deactivateDraw = (element) => {
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
-  }
+  };
 
   /**
    * it is used to draw the rectangleScissor annotation in each
@@ -344,29 +344,29 @@ export default class RectangleScissorsTool extends BaseTool {
     svgDrawingHelper: any
   ): void => {
     if (!this.editData) {
-      return
+      return;
     }
 
-    const { viewport } = enabledElement
-    const { annotation } = this.editData
+    const { viewport } = enabledElement;
+    const { annotation } = this.editData;
 
     // Todo: rectangle color based on segment index
-    const settings = Settings.getObjectSettings(annotation, RectangleROITool)
-    const toolMetadata = annotation.metadata
-    const annotationUID = annotation.annotationUID
+    const settings = Settings.getObjectSettings(annotation, RectangleROITool);
+    const toolMetadata = annotation.metadata;
+    const annotationUID = annotation.annotationUID;
 
-    const data = annotation.data
-    const { points } = data.handles
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`
+    const data = annotation.data;
+    const { points } = data.handles;
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed')
-      return
+      console.warn('Rendering Engine has been destroyed');
+      return;
     }
 
-    const rectangleUID = '0'
+    const rectangleUID = '0';
     drawRectSvg(
       svgDrawingHelper,
       RectangleScissorsTool.toolName,
@@ -377,6 +377,6 @@ export default class RectangleScissorsTool extends BaseTool {
       {
         color,
       }
-    )
-  }
+    );
+  };
 }

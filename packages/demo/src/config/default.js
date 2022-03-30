@@ -89,4 +89,4 @@ export default {
       'web:http://localhost:3000/examples/head/avf1243a.png',
     ],
   },
-}
+};

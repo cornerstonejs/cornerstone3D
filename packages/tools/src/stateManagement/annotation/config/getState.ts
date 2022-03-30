@@ -1,7 +1,7 @@
-import { Annotation } from '../../../types'
-import { isAnnotationLocked } from '../annotationLocking'
-import { isAnnotationSelected } from '../annotationSelection'
-import { AnnotationStyleStates } from '../../../enums'
+import { Annotation } from '../../../types';
+import { isAnnotationLocked } from '../annotationLocking';
+import { isAnnotationSelected } from '../annotationSelection';
+import { AnnotationStyleStates } from '../../../enums';
 
 /**
  * Given a Annotation object, return the annotationStyle State that it
@@ -12,12 +12,12 @@ import { AnnotationStyleStates } from '../../../enums'
 function getState(annotation?: Annotation): AnnotationStyleStates {
   if (annotation) {
     if (annotation.data && annotation.highlighted)
-      return AnnotationStyleStates.Highlighted
-    if (isAnnotationSelected(annotation)) return AnnotationStyleStates.Selected
-    if (isAnnotationLocked(annotation)) return AnnotationStyleStates.Locked
+      return AnnotationStyleStates.Highlighted;
+    if (isAnnotationSelected(annotation)) return AnnotationStyleStates.Selected;
+    if (isAnnotationLocked(annotation)) return AnnotationStyleStates.Locked;
   }
 
-  return AnnotationStyleStates.Default
+  return AnnotationStyleStates.Default;
 }
 
-export default getState
+export default getState;

@@ -1,9 +1,9 @@
-import * as cornerstone3D from '@cornerstonejs/core'
-import * as csTools3d from '../src/index'
+import * as cornerstone3D from '@cornerstonejs/core';
+import * as csTools3d from '../src/index';
 
-import * as volumeURI_100_100_10_1_1_1_0_SEG_activeInactive from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_activeInactive.png'
-import * as volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT.png'
-import * as volumeURI_100_100_10_1_1_1_0_SEG_visiblity from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_visiblity.png'
+import * as volumeURI_100_100_10_1_1_1_0_SEG_activeInactive from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_activeInactive.png';
+import * as volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_customColorLUT.png';
+import * as volumeURI_100_100_10_1_1_1_0_SEG_visiblity from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_visiblity.png';
 
 const {
   cache,
@@ -16,12 +16,12 @@ const {
   eventTarget,
   imageLoader,
   CONSTANTS,
-} = cornerstone3D
+} = cornerstone3D;
 
-const { unregisterAllImageLoaders } = imageLoader
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { unregisterAllImageLoaders } = imageLoader;
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -29,32 +29,32 @@ const {
   SegmentationDisplayTool,
   segmentation,
   RectangleScissorsTool,
-} = csTools3d
+} = csTools3d;
 
-const { Events } = csToolsEnums
+const { Events } = csToolsEnums;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation
+const { addSegmentationRepresentations, addSegmentations } = segmentation;
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
-  utilities.testUtils
+  utilities.testUtils;
 
-const renderingEngineId = 'renderingEngineId-segmentationSphereScissor_test'
-const toolGroupId = 'toolGroupId-segmentationSphereScissor_test'
+const renderingEngineId = 'renderingEngineId-segmentationSphereScissor_test';
+const toolGroupId = 'toolGroupId-segmentationSphereScissor_test';
 
-const viewportId1 = 'AXIAL'
+const viewportId1 = 'AXIAL';
 
-const AXIAL = 'AXIAL'
+const AXIAL = 'AXIAL';
 
 function createViewport(
   renderingEngine,
   orientation,
   viewportId = viewportId1
 ) {
-  const element = document.createElement('div')
+  const element = document.createElement('div');
 
-  element.style.width = '250px'
-  element.style.height = '250px'
-  document.body.appendChild(element)
+  element.style.width = '250px';
+  element.style.height = '250px';
+  document.body.appendChild(element);
 
   renderingEngine.enableElement({
     viewportId: viewportId,
@@ -64,84 +64,84 @@ function createViewport(
       orientation: ORIENTATION[orientation],
       background: [1, 0, 1], // pinkish background
     },
-  })
-  return element
+  });
+  return element;
 }
 
 describe('Segmentation Controller --', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false)
-  })
+    cornerstone3D.setUseCPURendering(false);
+  });
 
   describe('Visibility/Color Controller', function () {
     beforeEach(function () {
-      csTools3d.init()
-      csTools3d.addTool(SegmentationDisplayTool)
-      csTools3d.addTool(RectangleScissorsTool)
-      cache.purgeCache()
-      this.DOMElements = []
+      csTools3d.init();
+      csTools3d.addTool(SegmentationDisplayTool);
+      csTools3d.addTool(RectangleScissorsTool);
+      cache.purgeCache();
+      this.DOMElements = [];
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
-      this.segToolGroup.addTool(RectangleScissorsTool.toolName)
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
+      this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
+      this.segToolGroup.addTool(RectangleScissorsTool.toolName);
+      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
-      })
-      this.renderingEngine = new RenderingEngine(renderingEngineId)
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-      metaData.addProvider(fakeMetaDataProvider, 10000)
-    })
+      });
+      this.renderingEngine = new RenderingEngine(renderingEngineId);
+      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
+      metaData.addProvider(fakeMetaDataProvider, 10000);
+    });
 
     afterEach(function () {
       // Note: since on toolGroup destroy, all segmentations are removed
       // from the toolGroups, and that triggers a state_updated event, we
       // need to make sure we remove the listeners before we destroy the
       // toolGroup
-      eventTarget.reset()
-      csTools3d.destroy()
-      cache.purgeCache()
-      this.renderingEngine.destroy()
-      metaData.removeProvider(fakeMetaDataProvider)
-      unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroup(toolGroupId)
+      eventTarget.reset();
+      csTools3d.destroy();
+      cache.purgeCache();
+      this.renderingEngine.destroy();
+      metaData.removeProvider(fakeMetaDataProvider);
+      unregisterAllImageLoaders();
+      ToolGroupManager.destroyToolGroup(toolGroupId);
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
-          el.parentNode.removeChild(el)
+          el.parentNode.removeChild(el);
         }
-      })
-    })
+      });
+    });
 
     it('should be able to load two segmentations on the toolGroup', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL)
-      this.DOMElements.push(element)
+      const element = createViewport(this.renderingEngine, AXIAL);
+      this.DOMElements.push(element);
 
       // fake volume generator follows the pattern of
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
+      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const seg1VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
+        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
       const seg2VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
-      const vp1 = this.renderingEngine.getViewport(viewportId1)
+        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2';
+      const vp1 = this.renderingEngine.getViewport(viewportId1);
 
       const compareImageCallback = () => {
-        const canvas1 = vp1.getCanvas()
-        const image1 = canvas1.toDataURL('image/png')
+        const canvas1 = vp1.getCanvas();
+        const image1 = canvas1.toDataURL('image/png');
 
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_SEG_activeInactive,
           'volumeURI_100_100_10_1_1_1_0_SEG_activeInactive'
-        ).then(done, done.fail)
-      }
+        ).then(done, done.fail);
+      };
 
       eventTarget.addEventListener(
         Events.SEGMENTATION_RENDERED,
         compareImageCallback
-      )
+      );
 
-      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
       try {
         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
@@ -152,7 +152,7 @@ describe('Segmentation Controller --', () => {
                 [{ volumeId: volumeId }],
                 [viewportId1]
               ).then(() => {
-                vp1.render()
+                vp1.render();
 
                 // add two volumes on the segmentation
                 addSegmentations([
@@ -174,7 +174,7 @@ describe('Segmentation Controller --', () => {
                       },
                     },
                   },
-                ])
+                ]);
 
                 addSegmentationRepresentations(this.segToolGroup.id, [
                   {
@@ -185,15 +185,15 @@ describe('Segmentation Controller --', () => {
                     segmentationId: seg2VolumeID,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
                   },
-                ])
-              })
-            })
-          })
-        })
+                ]);
+              });
+            });
+          });
+        });
       } catch (e) {
-        done.fail(e)
+        done.fail(e);
       }
-    })
+    });
 
     // Todo: we don't have the ability to initially change the colorLut of the segmentation representation yet
 
@@ -343,5 +343,5 @@ describe('Segmentation Controller --', () => {
     //     done.fail(e)
     //   }
     // }, )
-  })
-})
+  });
+});

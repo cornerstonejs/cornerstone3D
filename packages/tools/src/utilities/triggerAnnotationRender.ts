@@ -2,14 +2,14 @@ import {
   getEnabledElement,
   triggerEvent,
   getRenderingEngine,
-} from '@cornerstonejs/core'
-import { Events, ToolModes } from '../enums'
-import { draw as drawSvg } from '../drawingSvg'
-import getToolsWithModesForElement from './getToolsWithModesForElement'
-import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool'
-import { AnnotationRenderedEventDetail } from '../types/EventTypes'
+} from '@cornerstonejs/core';
+import { Events, ToolModes } from '../enums';
+import { draw as drawSvg } from '../drawingSvg';
+import getToolsWithModesForElement from './getToolsWithModesForElement';
+import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool';
+import { AnnotationRenderedEventDetail } from '../types/EventTypes';
 
-const { Active, Passive, Enabled } = ToolModes
+const { Active, Passive, Enabled } = ToolModes;
 
 /**
  * AnnotationRenderingEngine is a class that is responsible for rendering
@@ -24,14 +24,14 @@ const { Active, Passive, Enabled } = ToolModes
  * ```
  */
 class AnnotationRenderingEngine {
-  public hasBeenDestroyed: boolean
-  private _needsRender: Set<HTMLElement> = new Set()
-  private _animationFrameSet = false
-  private _animationFrameHandle: number | null = null
-  private _viewportElements: Map<string, HTMLElement>
+  public hasBeenDestroyed: boolean;
+  private _needsRender: Set<HTMLElement> = new Set();
+  private _animationFrameSet = false;
+  private _animationFrameHandle: number | null = null;
+  private _viewportElements: Map<string, HTMLElement>;
 
   constructor() {
-    this._viewportElements = new Map()
+    this._viewportElements = new Map();
   }
 
   /**
@@ -42,7 +42,7 @@ class AnnotationRenderingEngine {
    * @param element - HTMLElement
    */
   public addViewportElement(viewportId: string, element: HTMLElement) {
-    this._viewportElements.set(viewportId, element)
+    this._viewportElements.set(viewportId, element);
   }
 
   /**
@@ -50,11 +50,11 @@ class AnnotationRenderingEngine {
    * @param viewportId - Viewport Unique identifier
    */
   public removeViewportElement(viewportId: string) {
-    this._viewportElements.delete(viewportId)
+    this._viewportElements.delete(viewportId);
 
     // Reset the request animation frame if no enabled elements
     if (this._viewportElements.size === 0) {
-      this._reset()
+      this._reset();
     }
   }
 
@@ -65,7 +65,7 @@ class AnnotationRenderingEngine {
    * @param element - The element to render.
    */
   public renderViewport(element: HTMLElement): void {
-    this._setViewportsToBeRenderedNextFrame([element])
+    this._setViewportsToBeRenderedNextFrame([element]);
   }
 
   /**
@@ -76,42 +76,42 @@ class AnnotationRenderingEngine {
     if (this.hasBeenDestroyed) {
       throw new Error(
         'this.destroy() has been manually called to free up memory, can not longer use this instance. Instead make a new one.'
-      )
+      );
     }
   }
 
   private _renderFlaggedViewports = () => {
-    this._throwIfDestroyed()
+    this._throwIfDestroyed();
 
-    const elements = Array.from(this._viewportElements.values())
+    const elements = Array.from(this._viewportElements.values());
 
     for (let i = 0; i < elements.length; i++) {
-      const element = elements[i]
+      const element = elements[i];
       if (this._needsRender.has(element)) {
-        this._triggerRender(element)
+        this._triggerRender(element);
 
         // This viewport has been rendered, we can remove it from the set
-        this._needsRender.delete(element)
+        this._needsRender.delete(element);
 
         // If there is nothing left that is flagged for rendering, stop here
         // and allow RAF to be called again
         if (this._needsRender.size === 0) {
-          this._animationFrameSet = false
-          this._animationFrameHandle = null
-          return
+          this._animationFrameSet = false;
+          this._animationFrameHandle = null;
+          return;
         }
       }
     }
-  }
+  };
 
   private _setViewportsToBeRenderedNextFrame(elements: HTMLElement[]) {
     // Add the viewports to the set of flagged viewports
     elements.forEach((element) => {
-      this._needsRender.add(element)
-    })
+      this._needsRender.add(element);
+    });
 
     // Render any flagged viewports
-    this._render()
+    this._render();
   }
 
   /**
@@ -123,39 +123,41 @@ class AnnotationRenderingEngine {
     if (this._needsRender.size > 0 && this._animationFrameSet === false) {
       this._animationFrameHandle = window.requestAnimationFrame(
         this._renderFlaggedViewports
-      )
+      );
 
       // Set the flag that we have already set up the next RAF call.
-      this._animationFrameSet = true
+      this._animationFrameSet = true;
     }
   }
 
   _triggerRender(element) {
-    const enabledElement = getEnabledElement(element)
+    const enabledElement = getEnabledElement(element);
 
     if (!enabledElement) {
-      console.warn('Element has been disabled')
-      return
+      console.warn('Element has been disabled');
+      return;
     }
 
-    const renderingEngine = getRenderingEngine(enabledElement.renderingEngineId)
+    const renderingEngine = getRenderingEngine(
+      enabledElement.renderingEngineId
+    );
     if (!renderingEngine) {
-      console.warn('rendering Engine has been destroyed')
-      return
+      console.warn('rendering Engine has been destroyed');
+      return;
     }
 
     const enabledTools = getToolsWithModesForElement(element, [
       Active,
       Passive,
       Enabled,
-    ])
+    ]);
 
-    const { renderingEngineId, viewportId } = enabledElement
+    const { renderingEngineId, viewportId } = enabledElement;
     const eventDetail: AnnotationRenderedEventDetail = {
       element,
       renderingEngineId,
       viewportId,
-    }
+    };
 
     // const enabledToolsWithAnnotations = enabledTools.filter((tool) => {
     //   const annotations = getAnnotations(element, (tool.constructor as typeof BaseTool).toolName)
@@ -172,28 +174,28 @@ class AnnotationRenderingEngine {
           !(tool instanceof SegmentationDisplayTool) &&
           tool.renderAnnotation
         ) {
-          tool.renderAnnotation(enabledElement, svgDrawingHelper)
-          triggerEvent(element, Events.ANNOTATION_RENDERED, { ...eventDetail })
+          tool.renderAnnotation(enabledElement, svgDrawingHelper);
+          triggerEvent(element, Events.ANNOTATION_RENDERED, { ...eventDetail });
         }
-      }
+      };
 
-      enabledTools.forEach(handleDrawSvg)
-    })
+      enabledTools.forEach(handleDrawSvg);
+    });
   }
 
   /**
    * _reset Resets the `RenderingEngine`
    */
   private _reset() {
-    window.cancelAnimationFrame(this._animationFrameHandle)
+    window.cancelAnimationFrame(this._animationFrameHandle);
 
-    this._needsRender.clear()
-    this._animationFrameSet = false
-    this._animationFrameHandle = null
+    this._needsRender.clear();
+    this._animationFrameSet = false;
+    this._animationFrameHandle = null;
   }
 }
 
-const annotationRenderingEngine = new AnnotationRenderingEngine()
+const annotationRenderingEngine = new AnnotationRenderingEngine();
 
 /**
  * It triggers the rendering of the annotations for the given HTML element using
@@ -201,9 +203,9 @@ const annotationRenderingEngine = new AnnotationRenderingEngine()
  * @param element - The element to render the annotation on.
  */
 function triggerAnnotationRender(element: HTMLElement): void {
-  annotationRenderingEngine.renderViewport(element)
+  annotationRenderingEngine.renderViewport(element);
 }
 
-export { annotationRenderingEngine, triggerAnnotationRender }
+export { annotationRenderingEngine, triggerAnnotationRender };
 
-export default triggerAnnotationRender
+export default triggerAnnotationRender;

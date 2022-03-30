@@ -1,13 +1,13 @@
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData'
-import { getOrCreateCanvas } from '../RenderingEngine'
-import type { IVolumeViewport, IStackViewport } from '../types'
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { getOrCreateCanvas } from '../RenderingEngine';
+import type { IVolumeViewport, IStackViewport } from '../types';
 
 function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
-  const rect = DomCanvasElement.getBoundingClientRect()
+  const rect = DomCanvasElement.getBoundingClientRect();
   return [
     canvasPoint[0] + rect.left + window.pageXOffset,
     canvasPoint[1] + rect.top + window.pageYOffset,
-  ]
+  ];
 }
 
 /**
@@ -29,12 +29,12 @@ function createNormalizedMouseEvent(
   element,
   viewport
 ) {
-  const canvas = getOrCreateCanvas(element)
-  const tempWorld1 = imageData.indexToWorld(index)
-  const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1)
-  const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p))
-  const [pageX, pageY] = canvasPointsToPagePoints(canvas, canvasPoint1)
-  const worldCoord = viewport.canvasToWorld(canvasPoint1)
+  const canvas = getOrCreateCanvas(element);
+  const tempWorld1 = imageData.indexToWorld(index);
+  const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1);
+  const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p));
+  const [pageX, pageY] = canvasPointsToPagePoints(canvas, canvasPoint1);
+  const worldCoord = viewport.canvasToWorld(canvasPoint1);
 
   return {
     pageX,
@@ -42,7 +42,7 @@ function createNormalizedMouseEvent(
     clientX: pageX,
     clientY: pageY,
     worldCoord,
-  }
+  };
 }
 
-export { createNormalizedMouseEvent }
+export { createNormalizedMouseEvent };

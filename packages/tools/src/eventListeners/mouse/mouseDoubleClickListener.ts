@@ -1,7 +1,7 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
-import Events from '../../enums/Events'
-import getMouseEventPoints from './getMouseEventPoints'
-import { EventTypes, IPoints } from '../../types'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import Events from '../../enums/Events';
+import getMouseEventPoints from './getMouseEventPoints';
+import { EventTypes, IPoints } from '../../types';
 
 /**
  * Captures and normalizes the double click event. Emits as a cornerstoneTools3D
@@ -10,17 +10,17 @@ import { EventTypes, IPoints } from '../../types'
  * @param evt - The mouse event.
  */
 function mouseDoubleClickListener(evt: MouseEvent): void {
-  const element = <HTMLElement>evt.currentTarget
+  const element = <HTMLElement>evt.currentTarget;
 
-  const { viewportId, renderingEngineId } = getEnabledElement(element)
+  const { viewportId, renderingEngineId } = getEnabledElement(element);
 
-  const startPoints = getMouseEventPoints(evt, element)
+  const startPoints = getMouseEventPoints(evt, element);
   const deltaPoints: IPoints = {
     page: [0, 0],
     client: [0, 0],
     canvas: [0, 0],
     world: [0, 0, 0],
-  }
+  };
 
   const eventDetail: EventTypes.MouseDoubleClickEventDetail = {
     event: evt,
@@ -33,9 +33,9 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
     lastPoints: startPoints,
     currentPoints: startPoints,
     deltaPoints,
-  }
+  };
 
-  triggerEvent(element, Events.MOUSE_DOUBLE_CLICK, eventDetail)
+  triggerEvent(element, Events.MOUSE_DOUBLE_CLICK, eventDetail);
 }
 
-export default mouseDoubleClickListener
+export default mouseDoubleClickListener;

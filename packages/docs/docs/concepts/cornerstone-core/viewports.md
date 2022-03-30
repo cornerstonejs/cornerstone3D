@@ -3,7 +3,6 @@ id: viewports
 title: Viewports
 ---
 
-
 # Viewports
 
 A viewport can be thought of as:
@@ -15,13 +14,11 @@ In `Cornerstone3D` viewports are created from HTML elements, and the consumer sh
 pass the `element` for which the viewport should be created. For example, a CT series can be
 viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MPR, A 3D perspective volume render.
 
-
 <div style={{textAlign: 'center'}}>
 
 ![](../../assets/viewports.png)
 
 </div>
-
 
 ## VolumeViewport
 
@@ -32,6 +29,5 @@ viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MP
 
 - Suitable for rendering a stack of images, that might or might not belong to the same image.
 - Stack can include 2D images of various shapes, size and direction
-
 
 Both `StackViewport` and `VolumeViewport` are created via the `RenderingEngine` API.

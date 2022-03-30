@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 import {
   ToolAnnotationsPair,
   ToolsWithMoveableHandles,
-} from '../types/InternalToolTypes'
+} from '../types/InternalToolTypes';
 
 /**
  * Filters an array of tools, returning only tools with moveable handles at the mouse location that are not locked
@@ -20,13 +20,13 @@ export default function filterToolsWithMoveableHandles(
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
 ): ToolsWithMoveableHandles[] {
-  const proximity = 6
-  const toolsWithMoveableHandles = []
+  const proximity = 6;
+  const toolsWithMoveableHandles = [];
 
   ToolAndAnnotations.forEach(({ tool, annotations }) => {
     for (const annotation of annotations) {
       if (annotation.isLocked) {
-        continue
+        continue;
       }
 
       const handle = tool.getHandleNearImagePoint(
@@ -34,18 +34,18 @@ export default function filterToolsWithMoveableHandles(
         annotation,
         canvasCoords,
         proximity
-      )
+      );
 
       if (handle) {
         toolsWithMoveableHandles.push({
           tool,
           annotation,
           handle,
-        })
-        break
+        });
+        break;
       }
     }
-  })
+  });
 
-  return toolsWithMoveableHandles
+  return toolsWithMoveableHandles;
 }

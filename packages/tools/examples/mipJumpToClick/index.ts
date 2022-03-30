@@ -6,77 +6,77 @@ import {
   Types,
   utilities,
   CONSTANTS,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@cornerstonejs/tools'
+} from '../../../../utils/demo/helpers';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
-const { ViewportType, BlendModes } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType, BlendModes } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   Enums: csToolsEnums,
-} = cornerstoneTools
+} = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums
+const { MouseBindings } = csToolsEnums;
 // Define a unique id for each volume
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const ctVolumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
-const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}` // VolumeId with loader id + volume id
-const ptVolumeName = 'PT_VOLUME_ID'
-const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`
+const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}`; // VolumeId with loader id + volume id
+const ptVolumeName = 'PT_VOLUME_ID';
+const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`;
 
 function setPetTransferFunction({ volumeActor }) {
   const rgbTransferFunction = volumeActor
     .getProperty()
-    .getRGBTransferFunction(0)
+    .getRGBTransferFunction(0);
 
-  rgbTransferFunction.setRange(0, 5)
+  rgbTransferFunction.setRange(0, 5);
 
-  utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction);
 }
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'MIP Jump To Click',
   'Here we demonstrate the MIPJumpToClickTool.'
-)
+);
 
-const size = '500px'
-const content = document.getElementById('content')
-const viewportGrid = document.createElement('div')
+const size = '500px';
+const content = document.getElementById('content');
+const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex'
-viewportGrid.style.display = 'flex'
-viewportGrid.style.flexDirection = 'row'
+viewportGrid.style.display = 'flex';
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
 
-const element1 = document.createElement('div')
-const element2 = document.createElement('div')
-const element3 = document.createElement('div')
-element1.style.width = size
-element1.style.height = size
-element2.style.width = size
-element2.style.height = size
-element3.style.width = size
-element3.style.height = size
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+const element3 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
+element3.style.width = size;
+element3.style.height = size;
 
-viewportGrid.appendChild(element1)
-viewportGrid.appendChild(element2)
-viewportGrid.appendChild(element3)
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
 
-content.appendChild(viewportGrid)
+content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p')
+const instructions = document.createElement('p');
 instructions.innerText =
-  'Left Click on the MIP to jump the other viewports.\n Use the mouse wheel to rotate the MIP.'
+  'Left Click on the MIP to jump the other viewports.\n Use the mouse wheel to rotate the MIP.';
 
-content.append(instructions)
+content.append(instructions);
 // ============================= //
 
 /**
@@ -84,18 +84,18 @@ content.append(instructions)
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo()
+  await initDemo();
 
-  const mipToolGroupUID = 'MIP_TOOL_GROUP_UID'
+  const mipToolGroupUID = 'MIP_TOOL_GROUP_UID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool)
-  cornerstoneTools.addTool(MIPJumpToClickTool)
+  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
+  cornerstoneTools.addTool(MIPJumpToClickTool);
 
-  const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID)
+  const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
 
-  mipToolGroup.addTool('VolumeRotateMouseWheel')
-  mipToolGroup.addTool('MIPJumpToClickTool')
+  mipToolGroup.addTool('VolumeRotateMouseWheel');
+  mipToolGroup.addTool('MIPJumpToClickTool');
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -105,14 +105,14 @@ async function run() {
         mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
-  })
+  });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  mipToolGroup.setToolActive('VolumeRotateMouseWheel')
+  mipToolGroup.setToolActive('VolumeRotateMouseWheel');
 
-  const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs'
+  const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs';
   const StudyInstanceUID =
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463'
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const ctImageIds = await createImageIdsAndCacheMetaData({
@@ -121,7 +121,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot,
     type: 'VOLUME',
-  })
+  });
 
   const ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
@@ -129,18 +129,18 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
     wadoRsRoot,
     type: 'VOLUME',
-  })
+  });
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineId)
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
   const viewportIds = [
     'CT_AXIAL_STACK',
     'CT_SAGITTAL_STACK',
     'CT_OBLIQUE_STACK',
-  ]
+  ];
 
   const viewportInputArray = [
     {
@@ -170,45 +170,45 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
-  ]
+  ];
 
-  renderingEngine.setViewports(viewportInputArray)
+  renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewports
-  mipToolGroup.addViewport(viewportIds[2], renderingEngineId)
+  mipToolGroup.addViewport(viewportIds[2], renderingEngineId);
 
   // Define volumes in memory
   const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
-  })
+  });
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
-  })
+  });
 
   // Set the volume to load
-  ctVolume.load()
-  ptVolume.load()
+  ctVolume.load();
+  ptVolume.load();
 
   // Calculate size of fullBody pet mip
-  const ptVolumeDimensions = ptVolume.dimensions
+  const ptVolumeDimensions = ptVolume.dimensions;
 
   // Only make the MIP as large as it needs to be.
   const slabThickness = Math.sqrt(
     ptVolumeDimensions[0] * ptVolumeDimensions[0] +
       ptVolumeDimensions[1] * ptVolumeDimensions[1] +
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
-  )
+  );
 
   setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ctVolumeId }],
     [viewportIds[0]]
-  )
+  );
   setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ptVolumeId, callback: setPetTransferFunction }],
     [viewportIds[1]]
-  )
+  );
 
   setVolumesForViewports(
     renderingEngine,
@@ -221,10 +221,10 @@ async function run() {
       },
     ],
     [viewportIds[2]]
-  )
+  );
 
   // Render the image
-  renderingEngine.renderViewports(viewportIds)
+  renderingEngine.renderViewports(viewportIds);
 }
 
-run()
+run();

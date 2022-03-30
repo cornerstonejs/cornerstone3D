@@ -1,5 +1,5 @@
-import { Types } from '@cornerstonejs/core'
-import { volumeLoader, utilities as csUtils } from '@cornerstonejs/core'
+import { Types } from '@cornerstonejs/core';
+import { volumeLoader, utilities as csUtils } from '@cornerstonejs/core';
 
 /**
  * Given a list of labelmaps (with the possibility of overlapping regions), and
@@ -24,23 +24,23 @@ function createMergedLabelmapForIndex(
       !csUtils.isEqual(spacing, labelmaps[0].spacing) ||
       !csUtils.isEqual(origin, labelmaps[0].origin)
     ) {
-      throw new Error('labelmaps must have the same size and shape')
+      throw new Error('labelmaps must have the same size and shape');
     }
-  })
+  });
 
-  const labelmap = labelmaps[0]
+  const labelmap = labelmaps[0];
 
-  const arrayType = labelmap.scalarData.constructor
-  const outputData = new arrayType(labelmap.scalarData.length)
+  const arrayType = labelmap.scalarData.constructor;
+  const outputData = new arrayType(labelmap.scalarData.length);
 
   labelmaps.forEach((labelmap) => {
-    const { scalarData } = labelmap
+    const { scalarData } = labelmap;
     for (let i = 0; i < scalarData.length; i++) {
       if (scalarData[i] === segmentIndex) {
-        outputData[i] = segmentIndex
+        outputData[i] = segmentIndex;
       }
     }
-  })
+  });
 
   const options = {
     scalarData: outputData,
@@ -49,17 +49,17 @@ function createMergedLabelmapForIndex(
     origin: labelmap.origin,
     direction: labelmap.direction,
     dimensions: labelmap.dimensions,
-  }
+  };
 
-  const preventCache = true
+  const preventCache = true;
   // Todo: following should be async
   const mergedVolume = volumeLoader.createLocalVolume(
     options,
     volumeId,
     preventCache
-  )
+  );
 
-  return mergedVolume
+  return mergedVolume;
 }
 
-export default createMergedLabelmapForIndex
+export default createMergedLabelmapForIndex;

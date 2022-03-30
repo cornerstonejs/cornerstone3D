@@ -1,7 +1,7 @@
-import { createSynchronizer } from '../../store/SynchronizerManager'
-import { Enums } from '@cornerstonejs/core'
-import voiSyncCallback from '../callbacks/voiSyncCallback'
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
+import { createSynchronizer } from '../../store/SynchronizerManager';
+import { Enums } from '@cornerstonejs/core';
+import voiSyncCallback from '../callbacks/voiSyncCallback';
+import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
 /**
  * A helper that creates a new `Synchronizer`
@@ -18,7 +18,7 @@ export default function createVOISynchronizer(
     synchronizerName,
     Enums.Events.VOI_MODIFIED,
     voiSyncCallback
-  )
+  );
 
-  return VOISynchronizer
+  return VOISynchronizer;
 }

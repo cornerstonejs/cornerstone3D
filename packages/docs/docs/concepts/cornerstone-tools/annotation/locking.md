@@ -8,23 +8,21 @@ title: Locking
 Annotations can be locked to avoid accidental changes. You can use
 the locking API to lock/unlock annotations.
 
-
-
 ## API
 
 There are various APIs for locking and unlocking annotations along with get/set methods
 
 ```js
-import { annotations } from '@cornerstone/tools'
+import { annotations } from '@cornerstone/tools';
 
 // locking of an annotation
-annotations.locking.setAnnotationLocked(annotation)
+annotations.locking.setAnnotationLocked(annotation);
 
 // get all the locked annotations
-annotations.locking.getAnnotationsLocked()
+annotations.locking.getAnnotationsLocked();
 
 // unlock all annotations
-annotations.locking.unlockAllAnnotations()
+annotations.locking.unlockAllAnnotations();
 ```
 
 ## Read more

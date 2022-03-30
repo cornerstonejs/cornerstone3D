@@ -1,6 +1,6 @@
-import { Settings } from '@cornerstonejs/core'
-import { ToolModes, AnnotationStyleStates } from '../../../enums'
-import { getStyleProperty } from './annotationStyle'
+import { Settings } from '@cornerstonejs/core';
+import { ToolModes, AnnotationStyleStates } from '../../../enums';
+import { getStyleProperty } from './annotationStyle';
 
 /**
  * getFont - Returns a font string of the form "{fontSize}px fontName" used by `canvas`.
@@ -14,10 +14,10 @@ function getFont(
   state?: AnnotationStyleStates,
   mode?: ToolModes
 ): string {
-  const sty = Settings.assert(settings)
-  const fontSize = getStyleProperty(sty, 'textBox.fontSize', state, mode)
-  const fontFamily = getStyleProperty(sty, 'textBox.fontFamily', state, mode)
-  return `${fontSize}px ${fontFamily}`
+  const sty = Settings.assert(settings);
+  const fontSize = getStyleProperty(sty, 'textBox.fontSize', state, mode);
+  const fontFamily = getStyleProperty(sty, 'textBox.fontFamily', state, mode);
+  return `${fontSize}px ${fontFamily}`;
 }
 
-export default getFont
+export default getFont;

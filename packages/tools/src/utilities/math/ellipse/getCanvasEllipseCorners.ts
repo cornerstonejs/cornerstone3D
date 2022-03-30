@@ -1,11 +1,11 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 type canvasCoordinates = [
   Types.Point2, // bottom
   Types.Point2, // top
   Types.Point2, // left
   Types.Point2 // right
-]
+];
 
 /**
  * It takes the canvas coordinates of the ellipse corners and returns the top left and bottom right
@@ -17,10 +17,10 @@ type canvasCoordinates = [
 export default function getCanvasEllipseCorners(
   ellipseCanvasPoints: canvasCoordinates
 ): Array<Types.Point2> {
-  const [bottom, top, left, right] = ellipseCanvasPoints
+  const [bottom, top, left, right] = ellipseCanvasPoints;
 
-  const topLeft = <Types.Point2>[left[0], top[1]]
-  const bottomRight = <Types.Point2>[right[0], bottom[1]]
+  const topLeft = <Types.Point2>[left[0], top[1]];
+  const bottomRight = <Types.Point2>[right[0], bottom[1]];
 
-  return [topLeft, bottomRight]
+  return [topLeft, bottomRight];
 }

@@ -1,6 +1,6 @@
-import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants'
+import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
-const { BlendMode } = vtkConstants
+const { BlendMode } = vtkConstants;
 
 /**
  * Enums for blendModes for viewport images based on vtk.js
@@ -20,4 +20,4 @@ enum BlendModes {
   AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
 }
 
-export default BlendModes
+export default BlendModes;

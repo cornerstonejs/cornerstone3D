@@ -284,11 +284,9 @@ html[data-theme='light'] .tsd-flag-optional {
   max-width: 60ch;
 }
 
-
 a.card > h2 {
-  font-size: 1.5rem
+  font-size: 1.5rem;
 }
-
 
 /* html[data-theme='light'] .tsd-signature {
   font-weight: 500;

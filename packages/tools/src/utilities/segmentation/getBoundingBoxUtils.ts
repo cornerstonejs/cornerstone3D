@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * With a given vertices coordinates in IJK, it calculates the minimum and maximum
@@ -13,44 +13,44 @@ function getBoundingBoxAroundShape(
   vertices: Types.Point3[],
   dimensions?: Types.Point3
 ): [Types.Point2, Types.Point2, Types.Point2] {
-  let xMin = Infinity
-  let xMax = 0
-  let yMin = Infinity
-  let yMax = 0
-  let zMin = Infinity
-  let zMax = 0
+  let xMin = Infinity;
+  let xMax = 0;
+  let yMin = Infinity;
+  let yMax = 0;
+  let zMin = Infinity;
+  let zMax = 0;
 
   vertices.forEach((v) => {
-    xMin = Math.min(v[0], xMin)
-    xMax = Math.max(v[0], xMax)
-    yMin = Math.min(v[1], yMin)
-    yMax = Math.max(v[1], yMax)
-    zMin = Math.min(v[2], zMin)
-    zMax = Math.max(v[2], zMax)
-  })
+    xMin = Math.min(v[0], xMin);
+    xMax = Math.max(v[0], xMax);
+    yMin = Math.min(v[1], yMin);
+    yMax = Math.max(v[1], yMax);
+    zMin = Math.min(v[2], zMin);
+    zMax = Math.max(v[2], zMax);
+  });
 
-  xMin = Math.floor(xMin)
-  xMax = Math.floor(xMax)
-  yMin = Math.floor(yMin)
-  yMax = Math.floor(yMax)
-  zMin = Math.floor(zMin)
-  zMax = Math.floor(zMax)
+  xMin = Math.floor(xMin);
+  xMax = Math.floor(xMax);
+  yMin = Math.floor(yMin);
+  yMax = Math.floor(yMax);
+  zMin = Math.floor(zMin);
+  zMax = Math.floor(zMax);
 
   if (dimensions) {
-    const [width, height, depth] = dimensions
-    xMin = Math.max(0, xMin)
-    xMax = Math.min(width - 1, xMax)
-    yMin = Math.max(0, yMin)
-    yMax = Math.min(height - 1, yMax)
-    zMin = Math.max(0, zMin)
-    zMax = Math.min(depth - 1, zMax)
+    const [width, height, depth] = dimensions;
+    xMin = Math.max(0, xMin);
+    xMax = Math.min(width - 1, xMax);
+    yMin = Math.max(0, yMin);
+    yMax = Math.min(height - 1, yMax);
+    zMin = Math.max(0, zMin);
+    zMax = Math.min(depth - 1, zMax);
   }
 
   return [
     [xMin, xMax],
     [yMin, yMax],
     [zMin, zMax],
-  ]
+  ];
 }
 
 /**
@@ -67,10 +67,10 @@ function extend2DBoundingBoxInViewAxis(
   numSlicesToProject: number
 ): [Types.Point2, Types.Point2, Types.Point2] {
   // find which index in boundsIJK has the same first and last value
-  const sliceNormalIndex = boundsIJK.findIndex(([min, max]) => min === max)
+  const sliceNormalIndex = boundsIJK.findIndex(([min, max]) => min === max);
 
   if (sliceNormalIndex === -1) {
-    throw new Error('3D bounding boxes not supported in an oblique plane')
+    throw new Error('3D bounding boxes not supported in an oblique plane');
   }
 
   // if (slices instanceof Array) {
@@ -80,12 +80,12 @@ function extend2DBoundingBoxInViewAxis(
   // }
 
   // get the index and subtract slices from the min and add to the max
-  boundsIJK[sliceNormalIndex][0] -= numSlicesToProject
-  boundsIJK[sliceNormalIndex][1] += numSlicesToProject
-  return boundsIJK
+  boundsIJK[sliceNormalIndex][0] -= numSlicesToProject;
+  boundsIJK[sliceNormalIndex][1] += numSlicesToProject;
+  return boundsIJK;
 }
 
-export { getBoundingBoxAroundShape, extend2DBoundingBoxInViewAxis }
+export { getBoundingBoxAroundShape, extend2DBoundingBoxInViewAxis };
 
 /**
  * This method takes a bounding box in IJK, and uses the camera, to find the

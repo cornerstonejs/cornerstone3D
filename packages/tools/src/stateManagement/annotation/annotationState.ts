@@ -3,23 +3,23 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
-} from '@cornerstonejs/core'
-import { Events } from '../../enums'
-import { Types } from '@cornerstonejs/core'
-import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager'
-import { Annotations, Annotation } from '../../types/AnnotationTypes'
+} from '@cornerstonejs/core';
+import { Events } from '../../enums';
+import { Types } from '@cornerstonejs/core';
+import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
+import { Annotations, Annotation } from '../../types/AnnotationTypes';
 
 import {
   AnnotationAddedEventDetail,
   AnnotationRemovedEventDetail,
-} from '../../types/EventTypes'
+} from '../../types/EventTypes';
 
 /**
  * It returns the default annotations manager.
  * @returns the singleton default annotations manager.
  */
 function getDefaultAnnotationManager() {
-  return defaultFrameOfReferenceSpecificAnnotationManager
+  return defaultFrameOfReferenceSpecificAnnotationManager;
 }
 
 /**
@@ -37,7 +37,7 @@ function getViewportSpecificAnnotationManager(
 
   // Just return the default for now.
 
-  return defaultFrameOfReferenceSpecificAnnotationManager
+  return defaultFrameOfReferenceSpecificAnnotationManager;
 }
 
 /**
@@ -49,11 +49,12 @@ function getViewportSpecificAnnotationManager(
  * @returns The annotations corresponding to the Frame of Reference and the toolName.
  */
 function getAnnotations(element: HTMLElement, toolName: string): Annotations {
-  const enabledElement = getEnabledElement(element)
-  const annotationManager = getViewportSpecificAnnotationManager(enabledElement)
-  const { FrameOfReferenceUID } = enabledElement
+  const enabledElement = getEnabledElement(element);
+  const annotationManager =
+    getViewportSpecificAnnotationManager(enabledElement);
+  const { FrameOfReferenceUID } = enabledElement;
 
-  return annotationManager.get(FrameOfReferenceUID, toolName)
+  return annotationManager.get(FrameOfReferenceUID, toolName);
 }
 
 /**
@@ -64,27 +65,27 @@ function getAnnotations(element: HTMLElement, toolName: string): Annotations {
  * @param annotation - The annotation that is being added to the annotations manager.
  */
 function addAnnotation(element: HTMLElement, annotation: Annotation): void {
-  const annotationManager = getViewportSpecificAnnotationManager(element)
+  const annotationManager = getViewportSpecificAnnotationManager(element);
 
   if (annotation.annotationUID === undefined) {
-    annotation.annotationUID = csUtils.uuidv4() as string
+    annotation.annotationUID = csUtils.uuidv4() as string;
   }
 
-  annotationManager.addAnnotation(annotation)
+  annotationManager.addAnnotation(annotation);
 
-  const enabledElement = getEnabledElement(element)
-  const { renderingEngine } = enabledElement
-  const { viewportId } = enabledElement
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngine } = enabledElement;
+  const { viewportId } = enabledElement;
 
-  const eventType = Events.ANNOTATION_ADDED
+  const eventType = Events.ANNOTATION_ADDED;
 
   const eventDetail: AnnotationAddedEventDetail = {
     annotation,
     viewportId,
     renderingEngineId: renderingEngine.id,
-  }
+  };
 
-  triggerEvent(eventTarget, eventType, eventDetail)
+  triggerEvent(eventTarget, eventType, eventDetail);
 }
 
 /**
@@ -93,25 +94,25 @@ function addAnnotation(element: HTMLElement, annotation: Annotation): void {
  * @param annotationUID - The unique identifier for the annotation.
  */
 function removeAnnotation(element: HTMLElement, annotationUID: string): void {
-  const annotationManager = getViewportSpecificAnnotationManager(element)
+  const annotationManager = getViewportSpecificAnnotationManager(element);
 
-  const annotation = annotationManager.getAnnotation(annotationUID)
-  annotationManager.removeAnnotation(annotationUID)
+  const annotation = annotationManager.getAnnotation(annotationUID);
+  annotationManager.removeAnnotation(annotationUID);
 
   // trigger annotation removed
-  const enabledElement = getEnabledElement(element)
-  const { renderingEngine } = enabledElement
-  const { viewportId } = enabledElement
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngine } = enabledElement;
+  const { viewportId } = enabledElement;
 
-  const eventType = Events.ANNOTATION_REMOVED
+  const eventType = Events.ANNOTATION_REMOVED;
 
   const eventDetail: AnnotationRemovedEventDetail = {
     annotation,
     viewportId,
     renderingEngineId: renderingEngine.id,
-  }
+  };
 
-  triggerEvent(eventTarget, eventType, eventDetail)
+  triggerEvent(eventTarget, eventType, eventDetail);
 }
 
 /**
@@ -124,10 +125,10 @@ function getAnnotation(
   annotationUID: string,
   element?: HTMLElement
 ): Annotation {
-  const annotationManager = getViewportSpecificAnnotationManager(element)
-  const annotation = annotationManager.getAnnotation(annotationUID)
+  const annotationManager = getViewportSpecificAnnotationManager(element);
+  const annotation = annotationManager.getAnnotation(annotationUID);
 
-  return annotation
+  return annotation;
 }
 
 export {
@@ -137,4 +138,4 @@ export {
   removeAnnotation,
   getViewportSpecificAnnotationManager,
   getDefaultAnnotationManager,
-}
+};

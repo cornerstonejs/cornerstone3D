@@ -30,7 +30,7 @@ module.exports = (env, argv) => {
         chunks: 'all',
       },
     },
-    plugins:[
+    plugins: [
       new CopyPlugin({
         patterns: [
           {
@@ -39,6 +39,6 @@ module.exports = (env, argv) => {
           },
         ],
       }),
-    ]
+    ],
   });
 };

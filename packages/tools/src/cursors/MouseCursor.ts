@@ -1,4 +1,4 @@
-const DEFINED_CURSORS = Symbol('DefinedCursors')
+const DEFINED_CURSORS = Symbol('DefinedCursors');
 const STANDARD_CURSORS = new Set([
   'alias',
   'all-scroll',
@@ -36,31 +36,31 @@ const STANDARD_CURSORS = new Set([
   'w-resize',
   'zoom-in',
   'zoom-out',
-])
+]);
 
 export default class MouseCursor {
-  private name: string
-  private fallback: MouseCursor | undefined
+  private name: string;
+  private fallback: MouseCursor | undefined;
 
   constructor(name: string, fallback?: MouseCursor | undefined) {
-    this.name = name + ''
-    this.fallback = fallback
+    this.name = name + '';
+    this.fallback = fallback;
   }
 
   getName(): string {
-    return this.name + ''
+    return this.name + '';
   }
 
   addFallbackStyleProperty(style: string): string {
-    const { fallback } = this
+    const { fallback } = this;
     if (fallback instanceof MouseCursor) {
-      return `${style}, ${fallback.getStyleProperty()}`
+      return `${style}, ${fallback.getStyleProperty()}`;
     }
-    return style + ''
+    return style + '';
   }
 
   getStyleProperty(): string {
-    return this.addFallbackStyleProperty(this.name) + ''
+    return this.addFallbackStyleProperty(this.name) + '';
   }
 
   static getDefinedCursor(name: string): MouseCursor | undefined {
@@ -68,15 +68,15 @@ export default class MouseCursor {
       // @ts-ignore
       MouseCursor as Record<symbol, Map<string, MouseCursor>>,
       DEFINED_CURSORS
-    )
-    let mouseCursor = definedCursors.get(name)
+    );
+    let mouseCursor = definedCursors.get(name);
     if (mouseCursor instanceof MouseCursor) {
-      return mouseCursor
+      return mouseCursor;
     }
     if (STANDARD_CURSORS.has(name)) {
-      mouseCursor = new MouseCursor(name)
-      definedCursors.set(name, mouseCursor)
-      return mouseCursor
+      mouseCursor = new MouseCursor(name);
+      definedCursors.set(name, mouseCursor);
+      return mouseCursor;
     }
   }
 
@@ -86,11 +86,11 @@ export default class MouseCursor {
         // @ts-ignore
         MouseCursor as Record<symbol, Map<string, MouseCursor>>,
         DEFINED_CURSORS
-      )
-      definedCursors.set(name, cursor)
-      return true
+      );
+      definedCursors.set(name, cursor);
+      return true;
     }
-    return false
+    return false;
   }
 }
 
@@ -102,13 +102,13 @@ function getDefinedCursors(
   context: Record<symbol, Map<string, MouseCursor>>,
   symbol: symbol
 ): Map<string, MouseCursor> {
-  let definedCursors = context[symbol]
+  let definedCursors = context[symbol];
   if (!(definedCursors instanceof Map)) {
-    definedCursors = new Map()
-    Object.defineProperty(context, symbol, { value: definedCursors })
+    definedCursors = new Map();
+    Object.defineProperty(context, symbol, { value: definedCursors });
   }
-  return definedCursors
+  return definedCursors;
 }
 
-const standardCursorNames = STANDARD_CURSORS.values()
-export { standardCursorNames }
+const standardCursorNames = STANDARD_CURSORS.values();
+export { standardCursorNames };

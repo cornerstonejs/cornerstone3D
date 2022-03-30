@@ -1,4 +1,4 @@
-import customCallbackHandler from '../shared/customCallbackHandler'
+import customCallbackHandler from '../shared/customCallbackHandler';
 
 /**
  * mouseClick - Event handler for mouse click events. Uses `customCallbackHandler` to fire
@@ -8,6 +8,6 @@ const mouseClick = customCallbackHandler.bind(
   null,
   'Mouse',
   'mouseClickCallback'
-)
+);
 
-export default mouseClick
+export default mouseClick;

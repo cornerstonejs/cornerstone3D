@@ -1,3 +1,3 @@
-import distanceToPoint from './distanceToPoint'
+import distanceToPoint from './distanceToPoint';
 
-export { distanceToPoint }
+export { distanceToPoint };

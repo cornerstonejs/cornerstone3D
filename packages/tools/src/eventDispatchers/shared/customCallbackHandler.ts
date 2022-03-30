@@ -1,7 +1,7 @@
-import { state, ToolGroupManager } from '../../store'
-import ToolModes from '../../enums/ToolModes'
+import { state, ToolGroupManager } from '../../store';
+import ToolModes from '../../enums/ToolModes';
 
-const { Active } = ToolModes
+const { Active } = ToolModes;
 
 /**
  * @function customCallbackHandler This is used as a generic event handler for tool events
@@ -24,17 +24,17 @@ export default function customCallbackHandler(
   evt
 ) {
   if (state.isInteractingWithTool) {
-    return false
+    return false;
   }
 
-  const { renderingEngineId, viewportId } = evt.detail
+  const { renderingEngineId, viewportId } = evt.detail;
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
     renderingEngineId
-  )
+  );
 
   if (!toolGroup) {
-    return false
+    return false;
   }
 
   // TODO: Filter tools by interaction type?
@@ -44,14 +44,14 @@ export default function customCallbackHandler(
    * - has the custom callback function
    *
    */
-  let activeTool
-  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  let activeTool;
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
-    const toolName = toolGroupToolNames[j]
-    const tool = toolGroup.toolOptions[toolName]
+    const toolName = toolGroupToolNames[j];
+    const tool = toolGroup.toolOptions[toolName];
     // TODO: Should be getter
-    const toolInstance = toolGroup.getToolInstance(toolName)
+    const toolInstance = toolGroup.getToolInstance(toolName);
 
     if (
       // TODO: Should be enum?
@@ -60,14 +60,14 @@ export default function customCallbackHandler(
       // Weird that we need concrete instance. Other options to filter / get callback?
       typeof toolInstance[customFunction] === 'function'
     ) {
-      activeTool = toolGroup.getToolInstance(toolName)
-      break
+      activeTool = toolGroup.getToolInstance(toolName);
+      break;
     }
   }
 
   if (!activeTool) {
-    return
+    return;
   }
 
-  activeTool[customFunction](evt)
+  activeTool[customFunction](evt);
 }

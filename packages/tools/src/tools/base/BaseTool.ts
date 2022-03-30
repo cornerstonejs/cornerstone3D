@@ -1,24 +1,24 @@
-import { StackViewport, VolumeViewport, cache } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
-import deepMerge from '../../utilities/deepMerge'
-import { ToolModes } from '../../enums'
-import { InteractionTypes, ToolProps, PublicToolProps } from '../../types'
+import { StackViewport, VolumeViewport, cache } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import deepMerge from '../../utilities/deepMerge';
+import { ToolModes } from '../../enums';
+import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
 interface IBaseTool {
   /** ToolGroup ID the tool instance belongs to */
-  toolGroupId: string
+  toolGroupId: string;
   /** Tool supported interaction types */
-  supportedInteractionTypes: InteractionTypes[]
+  supportedInteractionTypes: InteractionTypes[];
   /** Tool Mode : Active, Passive, Enabled, Disabled */
-  mode: ToolModes
+  mode: ToolModes;
   /** Tool Configuration */
   configuration: {
-    preventHandleOutsideImage?: boolean
-    strategies?: Record<string, any>
-    defaultStrategy?: string
-    activeStrategy?: string
-    strategyOptions?: Record<string, unknown>
-  }
+    preventHandleOutsideImage?: boolean;
+    strategies?: Record<string, any>;
+    defaultStrategy?: string;
+    activeStrategy?: string;
+    strategyOptions?: Record<string, unknown>;
+  };
 }
 
 /**
@@ -27,36 +27,36 @@ interface IBaseTool {
  * application.
  */
 abstract class BaseTool implements IBaseTool {
-  static toolName = 'BaseTool'
+  static toolName = 'BaseTool';
   /** Supported Interaction Types - currently only Mouse */
-  public supportedInteractionTypes: InteractionTypes[]
-  public configuration: Record<string, any>
+  public supportedInteractionTypes: InteractionTypes[];
+  public configuration: Record<string, any>;
   /** ToolGroup ID the tool instance belongs to */
-  public toolGroupId: string
+  public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
-  public mode: ToolModes
+  public mode: ToolModes;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    const initialProps = deepMerge(defaultToolProps, toolProps)
+    const initialProps = deepMerge(defaultToolProps, toolProps);
 
     const {
       configuration = {},
       supportedInteractionTypes,
       toolGroupId,
-    } = initialProps
+    } = initialProps;
 
     // If strategies are not initialized in the tool config
     if (!configuration.strategies) {
-      configuration.strategies = {}
-      configuration.defaultStrategy = undefined
-      configuration.activeStrategy = undefined
-      configuration.strategyOptions = {}
+      configuration.strategies = {};
+      configuration.defaultStrategy = undefined;
+      configuration.activeStrategy = undefined;
+      configuration.strategyOptions = {};
     }
 
-    this.toolGroupId = toolGroupId
-    this.supportedInteractionTypes = supportedInteractionTypes || []
-    this.configuration = Object.assign({}, configuration)
-    this.mode = ToolModes.Disabled
+    this.toolGroupId = toolGroupId;
+    this.supportedInteractionTypes = supportedInteractionTypes || [];
+    this.configuration = Object.assign({}, configuration);
+    this.mode = ToolModes.Disabled;
   }
 
   /**
@@ -65,7 +65,7 @@ abstract class BaseTool implements IBaseTool {
    */
   public getToolName(): string {
     // Since toolName is static we get it from the class constructor
-    return (<typeof BaseTool>this.constructor).toolName
+    return (<typeof BaseTool>this.constructor).toolName;
   }
 
   /**
@@ -78,8 +78,8 @@ abstract class BaseTool implements IBaseTool {
     enabledElement: Types.IEnabledElement,
     operationData: unknown
   ): any {
-    const { strategies, activeStrategy } = this.configuration
-    return strategies[activeStrategy].call(this, enabledElement, operationData)
+    const { strategies, activeStrategy } = this.configuration;
+    return strategies[activeStrategy].call(this, enabledElement, operationData);
   }
 
   /**
@@ -87,7 +87,7 @@ abstract class BaseTool implements IBaseTool {
    * @param configuration - toolConfiguration
    */
   public setConfiguration(newConfiguration: Record<string, any>): void {
-    this.configuration = deepMerge(this.configuration, newConfiguration)
+    this.configuration = deepMerge(this.configuration, newConfiguration);
   }
 
   /**
@@ -98,7 +98,7 @@ abstract class BaseTool implements IBaseTool {
    * @param strategyName - name of the strategy to be set as active
    */
   public setActiveStrategy(strategyName: string): void {
-    this.setConfiguration({ activeStrategy: strategyName })
+    this.setConfiguration({ activeStrategy: strategyName });
   }
 
   /**
@@ -115,22 +115,22 @@ abstract class BaseTool implements IBaseTool {
    */
   private getTargetVolumeId(viewport: Types.IViewport): string | undefined {
     if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('getTargetVolumeId: viewport must be a VolumeViewport')
+      throw new Error('getTargetVolumeId: viewport must be a VolumeViewport');
     }
 
     if (this.configuration.volumeId) {
-      return this.configuration.volumeId
+      return this.configuration.volumeId;
     }
 
     // If volume not specified, then return the actorUID for the
     // default actor - first actor
-    const actors = viewport.getActors()
+    const actors = viewport.getActors();
 
     if (!actors && !actors.length) {
-      return
+      return;
     }
 
-    return actors[0].uid
+    return actors[0].uid;
   }
 
   /**
@@ -147,20 +147,20 @@ abstract class BaseTool implements IBaseTool {
     targetId: string,
     renderingEngine: Types.IRenderingEngine
   ): {
-    viewport: Types.IViewport
-    image: Types.IImageData
+    viewport: Types.IViewport;
+    image: Types.IImageData;
   } {
-    let image, viewport
+    let image, viewport;
     if (targetId.startsWith('stackTarget')) {
-      const coloneIndex = targetId.indexOf(':')
-      const viewportId = targetId.substring(coloneIndex + 1)
-      viewport = renderingEngine.getViewport(viewportId)
-      image = viewport.getImageData()
+      const coloneIndex = targetId.indexOf(':');
+      const viewportId = targetId.substring(coloneIndex + 1);
+      viewport = renderingEngine.getViewport(viewportId);
+      image = viewport.getImageData();
     } else {
-      image = cache.getVolume(targetId)
+      image = cache.getVolume(targetId);
     }
 
-    return { image, viewport }
+    return { image, viewport };
   }
 
   /**
@@ -175,15 +175,15 @@ abstract class BaseTool implements IBaseTool {
    */
   protected getTargetId(viewport: Types.IViewport): string | undefined {
     if (viewport instanceof StackViewport) {
-      return `stackTarget:${viewport.id}`
+      return `stackTarget:${viewport.id}`;
     } else if (viewport instanceof VolumeViewport) {
-      return this.getTargetVolumeId(viewport)
+      return this.getTargetVolumeId(viewport);
     } else {
       throw new Error(
         'getTargetId: viewport must be a StackViewport or VolumeViewport'
-      )
+      );
     }
   }
 }
 
-export default BaseTool
+export default BaseTool;

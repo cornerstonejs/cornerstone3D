@@ -4,8 +4,6 @@ id: pull-request
 
 # How to Contribute
 
-
-
 ## Reporting Bugs
 
 If you find a bug, we strongly encourage you to report it to the project maintainers. You can do this by creating a new issue on the project's issue tracker, or by sending a pull request with a fix for the bug.

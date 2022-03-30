@@ -1,5 +1,5 @@
-import distanceToPointSquared from './distanceToPointSquared'
-import type { Types } from '@cornerstonejs/core'
+import distanceToPointSquared from './distanceToPointSquared';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Calculates the distance of a point to a line
@@ -17,8 +17,8 @@ export default function distanceToPoint(
   if (lineStart.length !== 2 || lineEnd.length !== 2 || point.length !== 2) {
     throw Error(
       'lineStart, lineEnd, and point should have 2 elements of [x, y]'
-    )
+    );
   }
 
-  return Math.sqrt(distanceToPointSquared(lineStart, lineEnd, point))
+  return Math.sqrt(distanceToPointSquared(lineStart, lineEnd, point));
 }

@@ -1,12 +1,12 @@
-import type { Types } from '@cornerstonejs/core'
-import * as lineSegment from '../line'
+import type { Types } from '@cornerstonejs/core';
+import * as lineSegment from '../line';
 
 type rectLineSegments = {
-  top: Types.Point2[]
-  right: Types.Point2[]
-  bottom: Types.Point2[]
-  left: Types.Point2[]
-}
+  top: Types.Point2[];
+  right: Types.Point2[];
+  bottom: Types.Point2[];
+  left: Types.Point2[];
+};
 
 /**
  * Given a rectangle left, top, width and height, return an object containing the
@@ -24,26 +24,26 @@ function rectToLineSegments(
   width: number,
   height: number
 ): rectLineSegments {
-  const topLineStart: Types.Point2 = [left, top]
-  const topLineEnd: Types.Point2 = [left + width, top]
+  const topLineStart: Types.Point2 = [left, top];
+  const topLineEnd: Types.Point2 = [left + width, top];
 
-  const rightLineStart: Types.Point2 = [left + width, top]
-  const rightLineEnd: Types.Point2 = [left + width, top + height]
+  const rightLineStart: Types.Point2 = [left + width, top];
+  const rightLineEnd: Types.Point2 = [left + width, top + height];
 
-  const bottomLineStart: Types.Point2 = [left + width, top + height]
-  const bottomLineEnd: Types.Point2 = [left, top + height]
+  const bottomLineStart: Types.Point2 = [left + width, top + height];
+  const bottomLineEnd: Types.Point2 = [left, top + height];
 
-  const leftLineStart: Types.Point2 = [left, top + height]
-  const leftLineEnd: Types.Point2 = [left, top]
+  const leftLineStart: Types.Point2 = [left, top + height];
+  const leftLineEnd: Types.Point2 = [left, top];
 
   const lineSegments = {
     top: [topLineStart, topLineEnd],
     right: [rightLineStart, rightLineEnd],
     bottom: [bottomLineStart, bottomLineEnd],
     left: [leftLineStart, leftLineEnd],
-  }
+  };
 
-  return lineSegments
+  return lineSegments;
 }
 
 /**
@@ -61,22 +61,22 @@ export default function distanceToPoint(
   if (rect.length !== 4 || point.length !== 2) {
     throw Error(
       'rectangle:[left, top, width, height] or point: [x,y] not defined correctly'
-    )
+    );
   }
 
-  const [left, top, width, height] = rect
+  const [left, top, width, height] = rect;
 
-  let minDistance = 655535
-  const lineSegments = rectToLineSegments(left, top, width, height)
+  let minDistance = 655535;
+  const lineSegments = rectToLineSegments(left, top, width, height);
 
   Object.keys(lineSegments).forEach((segment) => {
-    const [lineStart, lineEnd] = lineSegments[segment]
-    const distance = lineSegment.distanceToPoint(lineStart, lineEnd, point)
+    const [lineStart, lineEnd] = lineSegments[segment];
+    const distance = lineSegment.distanceToPoint(lineStart, lineEnd, point);
 
     if (distance < minDistance) {
-      minDistance = distance
+      minDistance = distance;
     }
-  })
+  });
 
-  return minDistance
+  return minDistance;
 }

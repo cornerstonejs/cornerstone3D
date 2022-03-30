@@ -1,7 +1,7 @@
-import { utilities } from '@cornerstonejs/core'
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
-import { Color } from '../../types/SegmentationStateTypes'
-import { ColorLut } from '../../types/SegmentationStateTypes'
+import { utilities } from '@cornerstonejs/core';
+import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
+import { Color } from '../../types/SegmentationStateTypes';
+import { ColorLut } from '../../types/SegmentationStateTypes';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -13,18 +13,18 @@ import { ColorLut } from '../../types/SegmentationStateTypes'
  */
 function addColorLUT(colorLUT: ColorLut, colorLUTIndex: number): void {
   if (!colorLUT) {
-    throw new Error('addColorLUT: colorLUT is required')
+    throw new Error('addColorLUT: colorLUT is required');
   }
 
   // Append the "zero" (no label) color to the front of the LUT, if necessary.
   if (!utilities.isEqual(colorLUT[0], [0, 0, 0, 0])) {
     console.warn(
       'addColorLUT: [0, 0, 0, 0] color is not provided for the background color (segmentIndex =0), automatically adding it'
-    )
-    colorLUT.unshift([0, 0, 0, 0])
+    );
+    colorLUT.unshift([0, 0, 0, 0]);
   }
 
-  SegmentationState.addColorLUT(colorLUT, colorLUTIndex)
+  SegmentationState.addColorLUT(colorLUT, colorLUTIndex);
 }
 
 /**
@@ -46,19 +46,19 @@ function getColorForSegmentIndex(
     SegmentationState.getSegmentationRepresentationByUID(
       toolGroupId,
       segmentationRepresentationUID
-    )
+    );
 
   if (!segmentationRepresentation) {
     throw new Error(
       `segmentation representation with UID ${segmentationRepresentationUID} does not exist for tool group ${toolGroupId}`
-    )
+    );
   }
 
-  const { colorLUTIndex } = segmentationRepresentation
+  const { colorLUTIndex } = segmentationRepresentation;
 
   // get colorLUT
-  const colorLut = SegmentationState.getColorLut(colorLUTIndex)
-  return colorLut[segmentIndex]
+  const colorLut = SegmentationState.getColorLut(colorLUTIndex);
+  return colorLut[segmentIndex];
 }
 
-export { getColorForSegmentIndex, addColorLUT }
+export { getColorForSegmentIndex, addColorLUT };

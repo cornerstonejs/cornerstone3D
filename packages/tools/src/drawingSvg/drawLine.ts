@@ -1,8 +1,8 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
-import _getHash from './_getHash'
-import _setNewAttributesIfValid from './_setNewAttributesIfValid'
-import _setAttributesIfNecessary from './_setAttributesIfNecessary'
+import _getHash from './_getHash';
+import _setNewAttributesIfValid from './_setNewAttributesIfValid';
+import _setAttributesIfNecessary from './_setAttributesIfNecessary';
 
 export default function drawLine(
   svgDrawingHelper: any,
@@ -15,7 +15,7 @@ export default function drawLine(
 ): void {
   // if length is NaN return
   if (isNaN(start[0]) || isNaN(start[1]) || isNaN(end[0]) || isNaN(end[1])) {
-    return
+    return;
   }
 
   const { color, width, lineWidth, lineDash } = Object.assign(
@@ -26,14 +26,14 @@ export default function drawLine(
       lineDash: undefined,
     },
     options
-  )
+  );
 
   // for supporting both lineWidth and width options
-  const strokeWidth = lineWidth || width
+  const strokeWidth = lineWidth || width;
 
-  const svgns = 'http://www.w3.org/2000/svg'
-  const svgNodeHash = _getHash(toolName, annotationUID, 'line', lineUID)
-  const existingLine = svgDrawingHelper._getSvgNode(svgNodeHash)
+  const svgns = 'http://www.w3.org/2000/svg';
+  const svgNodeHash = _getHash(toolName, annotationUID, 'line', lineUID);
+  const existingLine = svgDrawingHelper._getSvgNode(svgNodeHash);
 
   const attributes = {
     x1: `${start[0]}`,
@@ -43,18 +43,18 @@ export default function drawLine(
     stroke: color,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
-  }
+  };
 
   if (existingLine) {
     // This is run to avoid re-rendering annotations that actually haven't changed
-    _setAttributesIfNecessary(attributes, existingLine)
+    _setAttributesIfNecessary(attributes, existingLine);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash)
+    svgDrawingHelper._setNodeTouched(svgNodeHash);
   } else {
-    const newLine = document.createElementNS(svgns, 'line')
+    const newLine = document.createElementNS(svgns, 'line');
 
-    _setNewAttributesIfValid(attributes, newLine)
+    _setNewAttributesIfValid(attributes, newLine);
 
-    svgDrawingHelper._appendNode(newLine, svgNodeHash)
+    svgDrawingHelper._appendNode(newLine, svgNodeHash);
   }
 }

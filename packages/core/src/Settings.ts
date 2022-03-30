@@ -2,10 +2,10 @@
  * Constants
  */
 
-const DEFAULT_SETTINGS = Symbol('DefaultSettings')
-const RUNTIME_SETTINGS = Symbol('RuntimeSettings')
-const OBJECT_SETTINGS_MAP = Symbol('ObjectSettingsMap')
-const DICTIONARY = Symbol('Dictionary')
+const DEFAULT_SETTINGS = Symbol('DefaultSettings');
+const RUNTIME_SETTINGS = Symbol('RuntimeSettings');
+const OBJECT_SETTINGS_MAP = Symbol('ObjectSettingsMap');
+const DICTIONARY = Symbol('Dictionary');
 
 /**
  * Settings
@@ -14,20 +14,20 @@ export default class Settings {
   constructor(base?: Settings) {
     const dictionary = Object.create(
       base instanceof Settings && DICTIONARY in base ? base[DICTIONARY] : null
-    )
+    );
     Object.seal(
       Object.defineProperty(this, DICTIONARY, {
         value: dictionary,
       })
-    )
+    );
   }
 
   set(key: string, value: unknown): boolean {
-    return set(this[DICTIONARY], key, value, null)
+    return set(this[DICTIONARY], key, value, null);
   }
 
   get(key: string): unknown {
-    return get(this[DICTIONARY], key)
+    return get(this[DICTIONARY], key);
   }
 
   /**
@@ -37,15 +37,15 @@ export default class Settings {
    * @returns boolean
    */
   unset(key: string): boolean {
-    return unset(this[DICTIONARY], key + '')
+    return unset(this[DICTIONARY], key + '');
   }
 
   forEach(callback: (key: string, value: unknown) => void): void {
-    iterate(this[DICTIONARY], callback)
+    iterate(this[DICTIONARY], callback);
   }
 
   extend(): Settings {
-    return new Settings(this)
+    return new Settings(this);
   }
 
   /**
@@ -57,8 +57,8 @@ export default class Settings {
   import(root: Record<string, unknown>): void {
     if (isPlainObject(root)) {
       Object.keys(root).forEach((key) => {
-        set(this[DICTIONARY], key, root[key], null)
-      })
+        set(this[DICTIONARY], key, root[key], null);
+      });
     }
   }
 
@@ -70,74 +70,76 @@ export default class Settings {
    * state of this settings instance
    */
   dump(): Record<string, unknown> {
-    const context = {}
+    const context = {};
     iterate(this[DICTIONARY], (key, value) => {
       if (typeof value !== 'undefined') {
-        deepSet(context, key, value)
+        deepSet(context, key, value);
       }
-    })
-    return context
+    });
+    return context;
   }
 
   static assert(subject: Settings): Settings {
-    return subject instanceof Settings ? subject : Settings.getRuntimeSettings()
+    return subject instanceof Settings
+      ? subject
+      : Settings.getRuntimeSettings();
   }
 
   static getDefaultSettings(subfield = null): Settings | any {
-    let defaultSettings = Settings[DEFAULT_SETTINGS]
+    let defaultSettings = Settings[DEFAULT_SETTINGS];
     if (!(defaultSettings instanceof Settings)) {
-      defaultSettings = new Settings()
-      Settings[DEFAULT_SETTINGS] = defaultSettings
+      defaultSettings = new Settings();
+      Settings[DEFAULT_SETTINGS] = defaultSettings;
     }
 
     // Given subfield of 'segmentation' it will return all settings
     // that starts with segmentation.*
     if (subfield) {
-      const settingObj = {}
+      const settingObj = {};
       defaultSettings.forEach((name: string) => {
         if (name.startsWith(subfield)) {
-          const setting = name.split(`${subfield}.`)[1]
-          settingObj[setting] = defaultSettings.get(name)
+          const setting = name.split(`${subfield}.`)[1];
+          settingObj[setting] = defaultSettings.get(name);
         }
-      })
-      return settingObj
+      });
+      return settingObj;
     }
 
-    return defaultSettings
+    return defaultSettings;
   }
 
   static getRuntimeSettings(): Settings {
-    let runtimeSettings = Settings[RUNTIME_SETTINGS]
+    let runtimeSettings = Settings[RUNTIME_SETTINGS];
     if (!(runtimeSettings instanceof Settings)) {
-      runtimeSettings = new Settings(Settings.getDefaultSettings())
-      Settings[RUNTIME_SETTINGS] = runtimeSettings
+      runtimeSettings = new Settings(Settings.getDefaultSettings());
+      Settings[RUNTIME_SETTINGS] = runtimeSettings;
     }
-    return runtimeSettings
+    return runtimeSettings;
   }
 
   static getObjectSettings(subject: unknown, from?: unknown): Settings {
-    let settings = null
+    let settings = null;
     if (subject instanceof Settings) {
-      settings = subject
+      settings = subject;
     } else if (typeof subject === 'object' && subject !== null) {
-      let objectSettingsMap = Settings[OBJECT_SETTINGS_MAP]
+      let objectSettingsMap = Settings[OBJECT_SETTINGS_MAP];
       if (!(objectSettingsMap instanceof WeakMap)) {
-        objectSettingsMap = new WeakMap()
-        Settings[OBJECT_SETTINGS_MAP] = objectSettingsMap
+        objectSettingsMap = new WeakMap();
+        Settings[OBJECT_SETTINGS_MAP] = objectSettingsMap;
       }
-      settings = objectSettingsMap.get(subject)
+      settings = objectSettingsMap.get(subject);
       if (!(settings instanceof Settings)) {
         settings = new Settings(
           Settings.assert(Settings.getObjectSettings(from))
-        )
-        objectSettingsMap.set(subject, settings)
+        );
+        objectSettingsMap.set(subject, settings);
       }
     }
-    return settings
+    return settings;
   }
 
   static extendRuntimeSettings(): Settings {
-    return Settings.getRuntimeSettings().extend()
+    return Settings.getRuntimeSettings().extend();
   }
 }
 
@@ -147,22 +149,22 @@ export default class Settings {
 
 function unset(dictionary: Record<string, unknown>, name: string): boolean {
   if (name.endsWith('.')) {
-    let deleteCount = 0
-    const namespace = name
-    const base = namespace.slice(0, -1)
-    const deleteAll = base.length === 0
+    let deleteCount = 0;
+    const namespace = name;
+    const base = namespace.slice(0, -1);
+    const deleteAll = base.length === 0;
     for (const key in dictionary) {
       if (
         Object.prototype.hasOwnProperty.call(dictionary, key) &&
         (deleteAll || key.startsWith(namespace) || key === base)
       ) {
-        delete dictionary[key]
-        ++deleteCount
+        delete dictionary[key];
+        ++deleteCount;
       }
     }
-    return deleteCount > 0
+    return deleteCount > 0;
   }
-  return delete dictionary[name]
+  return delete dictionary[name];
 }
 
 function iterate(
@@ -170,7 +172,7 @@ function iterate(
   callback: (key: string, value: unknown) => void
 ): void {
   for (const key in dictionary) {
-    callback(key, dictionary[key])
+    callback(key, dictionary[key]);
   }
 }
 
@@ -180,22 +182,22 @@ function setAll(
   record: Record<string, unknown>,
   references: WeakSet<Record<string, unknown>>
 ): boolean {
-  let failCount: number
+  let failCount: number;
   if (references.has(record)) {
-    return set(dictionary, prefix, null, references)
+    return set(dictionary, prefix, null, references);
   }
-  references.add(record)
-  failCount = 0
+  references.add(record);
+  failCount = 0;
   for (const field in record) {
     if (Object.prototype.hasOwnProperty.call(record, field)) {
-      const key = field.length === 0 ? prefix : `${prefix}.${field}`
+      const key = field.length === 0 ? prefix : `${prefix}.${field}`;
       if (!set(dictionary, key, record[field], references)) {
-        ++failCount
+        ++failCount;
       }
     }
   }
-  references.delete(record)
-  return failCount === 0
+  references.delete(record);
+  return failCount === 0;
 }
 
 /**
@@ -223,16 +225,16 @@ function set(
         key,
         value as Record<string, unknown>,
         references instanceof WeakSet ? references : new WeakSet()
-      )
+      );
     }
-    dictionary[key] = value
-    return true
+    dictionary[key] = value;
+    return true;
   }
-  return false
+  return false;
 }
 
 function get(dictionary: Record<string, unknown>, key: string): unknown {
-  return dictionary[key]
+  return dictionary[key];
 }
 
 /**
@@ -247,41 +249,41 @@ function get(dictionary: Record<string, unknown>, key: string): unknown {
  * @returns {boolean} True on success, false otherwise
  */
 function isValidKey(key: string): boolean {
-  let last: number, current: number, previous: number
-  if (typeof key !== 'string' || (last = key.length - 1) < 0) return false
-  previous = -1
+  let last: number, current: number, previous: number;
+  if (typeof key !== 'string' || (last = key.length - 1) < 0) return false;
+  previous = -1;
   while ((current = key.indexOf('.', previous + 1)) >= 0) {
-    if (current - previous < 2 || current === last) return false
-    previous = current
+    if (current - previous < 2 || current === last) return false;
+    previous = current;
   }
-  return true
+  return true;
 }
 
 function isPlainObject(subject: unknown) {
   if (typeof subject === 'object' && subject !== null) {
-    const prototype = Object.getPrototypeOf(subject)
+    const prototype = Object.getPrototypeOf(subject);
     if (prototype === Object.prototype || prototype === null) {
-      return true
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 function deepSet(context, key, value) {
-  const separator = key.indexOf('.')
+  const separator = key.indexOf('.');
   if (separator >= 0) {
-    const subKey = key.slice(0, separator)
-    let subContext = context[subKey]
+    const subKey = key.slice(0, separator);
+    let subContext = context[subKey];
     if (typeof subContext !== 'object' || subContext === null) {
-      const subContextValue = subContext
-      subContext = {}
+      const subContextValue = subContext;
+      subContext = {};
       if (typeof subContextValue !== 'undefined') {
-        subContext[''] = subContextValue
+        subContext[''] = subContextValue;
       }
-      context[subKey] = subContext
+      context[subKey] = subContext;
     }
-    deepSet(subContext, key.slice(separator + 1, key.length), value)
+    deepSet(subContext, key.slice(separator + 1, key.length), value);
   } else {
-    context[key] = value
+    context[key] = value;
   }
 }

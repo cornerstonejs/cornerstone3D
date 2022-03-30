@@ -1,11 +1,11 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
   eventTarget,
   Enums,
   init as csRenderInit,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   Enums as csToolsEnums,
   cancelActiveManipulations,
@@ -15,34 +15,34 @@ import {
   CrosshairsTool,
   ZoomTool,
   LengthTool,
-} from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
 import {
   setCTWWWC,
   setPetTransferFunction,
-} from './helpers/transferFunctionHelpers'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
-import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+} from './helpers/transferFunctionHelpers';
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
+import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants';
 
-const VOLUME = 'volume'
-const STACK = 'stack'
+const VOLUME = 'volume';
+const STACK = 'stack';
 
-window.cache = cache
-const { ViewportType } = Enums
+window.cache = cache;
+const { ViewportType } = Enums;
 
-let stackCTViewportToolGroup
+let stackCTViewportToolGroup;
 
 const toolsToUse = [
   WindowLevelTool.toolName,
   PanTool.toolName,
   ZoomTool.toolName,
   ...ANNOTATION_TOOLS,
-].filter((tool) => tool !== CrosshairsTool.toolName)
+].filter((tool) => tool !== CrosshairsTool.toolName);
 
 class ModifierKeysExample extends Component {
   state = {
@@ -60,50 +60,50 @@ class ModifierKeysExample extends Component {
     ptCtLeftClickTool: WindowLevelTool.toolName,
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
-    this._elementNodes = new Map()
-    this._offScreenRef = React.createRef()
+    csTools3d.init();
+    this._elementNodes = new Map();
+    this._offScreenRef = React.createRef();
 
-    this._viewportGridRef = React.createRef()
+    this._viewportGridRef = React.createRef();
 
-    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
-    this.dxStackImageIdsPromise = getImageIds('dx', STACK)
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK);
+    this.dxStackImageIdsPromise = getImageIds('dx', STACK);
 
     Promise.all([
       this.ctStackImageIdsPromise,
       this.dxStackImageIdsPromise,
-    ]).then(() => this.setState({ progressText: 'Loading data...' }))
+    ]).then(() => this.setState({ progressText: 'Loading data...' }));
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    ;({ stackCTViewportToolGroup } = initToolGroups())
+    await csRenderInit();
+    csTools3d.init();
+    ({ stackCTViewportToolGroup } = initToolGroups());
 
-    const ctStackImageIds = await this.ctStackImageIdsPromise
-    const dxStackImageIds = await this.dxStackImageIdsPromise
+    const ctStackImageIds = await this.ctStackImageIdsPromise;
+    const dxStackImageIds = await this.dxStackImageIdsPromise;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     const viewportInput = [
       {
@@ -114,16 +114,16 @@ class ModifierKeysExample extends Component {
           background: [0.2, 0, 0.2],
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(viewportInput)
+    renderingEngine.setViewports(viewportInput);
 
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
       renderingEngineId
-    )
+    );
 
-    addToolsToToolGroups({ stackCTViewportToolGroup })
+    addToolsToToolGroups({ stackCTViewportToolGroup });
 
     // Overriding the lenght tool bindings
     stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
@@ -133,103 +133,103 @@ class ModifierKeysExample extends Component {
           modifierKey: csToolsEnums.KeyboardBindings.Shift,
         },
       ],
-    })
+    });
 
     // To enable the modifier keys cursor on viewport before first interaction
-    const internalDiv = document.querySelectorAll('div.viewport-element')[0]
-    internalDiv.parentNode.focus()
+    const internalDiv = document.querySelectorAll('div.viewport-element')[0];
+    internalDiv.parentNode.focus();
 
     // This will initialise volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
 
-    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    this.ctStackViewport = ctStackViewport
+    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    this.ctStackViewport = ctStackViewport;
 
-    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
+    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2);
 
-    this.dxStackImageIds = dxStackImageIds
-    this.ctStackImageIds = ctStackImageIds
+    this.dxStackImageIds = dxStackImageIds;
+    this.ctStackImageIds = ctStackImageIds;
 
     let fakeStack = [
       ctStackImageIds[ctMiddleSlice],
       ctStackImageIds[ctMiddleSlice + 1],
       ctStackImageIds[ctMiddleSlice + 2],
-    ]
+    ];
 
-    ctStackViewport.setStack(fakeStack, 0)
-    ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
+    ctStackViewport.setStack(fakeStack, 0);
+    ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } });
 
     eventTarget.addEventListener(
       csToolsEnums.Events.KEY_DOWN,
       this.cancelToolDrawing
-    )
+    );
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state
-    const { renderingEngine } = this
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const { layoutIndex } = this.state;
+    const { renderingEngine } = this;
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
   }
 
   cancelToolDrawing = (evt) => {
-    const element = evt.currentTarget
+    const element = evt.currentTarget;
     if (evt.code === 'Escape') {
-      const annotationUID = cancelActiveManipulations(element)
+      const annotationUID = cancelActiveManipulations(element);
       if (!!annotationUID) {
-        this.setState({ cancelledAnnotations: annotationUID })
+        this.setState({ cancelledAnnotations: annotationUID });
 
         if (this.state.deleteOnToolCancel) {
-          removeAnnotation(element, annotationUID)
-          this.renderingEngine.render()
+          removeAnnotation(element, annotationUID);
+          this.renderingEngine.render();
         }
       }
     }
-  }
+  };
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   destroyAndDecacheAllVolumes = () => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
+      return;
     }
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
 
-    cache.purgeCache()
-  }
+    cache.purgeCache();
+  };
 
   resetToolModes = (toolGroup) => {
     ANNOTATION_TOOLS.forEach((toolName) => {
-      toolGroup.setToolPassive(toolName)
-    })
+      toolGroup.setToolPassive(toolName);
+    });
     toolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    })
+    });
     toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
-    })
+    });
     toolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
-    })
-  }
+    });
+  };
 
   swapTools = (evt) => {
-    const toolName = evt.target.value
+    const toolName = evt.target.value;
 
-    this.resetToolModes(stackCTViewportToolGroup)
+    this.resetToolModes(stackCTViewportToolGroup);
 
-    const tools = Object.entries(stackCTViewportToolGroup.toolOptions)
+    const tools = Object.entries(stackCTViewportToolGroup.toolOptions);
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -240,8 +240,8 @@ class ModifierKeysExample extends Component {
             binding.mouseButton === csToolsEnums.MouseBindings.Primary &&
             binding.modifierKey === undefined
         )
-    )
-    stackCTViewportToolGroup.setToolPassive(activeTool)
+    );
+    stackCTViewportToolGroup.setToolPassive(activeTool);
 
     // Since disabling/passive tools makes the bindings to be []
     stackCTViewportToolGroup.setToolActive(LengthTool.toolName, {
@@ -251,11 +251,11 @@ class ModifierKeysExample extends Component {
           modifierKey: csToolsEnums.KeyboardBindings.Shift,
         },
       ],
-    })
+    });
 
     // Using mouse primary for the selected tool
     const currentBindings =
-      stackCTViewportToolGroup.toolOptions[toolName].bindings
+      stackCTViewportToolGroup.toolOptions[toolName].bindings;
 
     stackCTViewportToolGroup.setToolActive(toolName, {
       bindings: [
@@ -264,56 +264,56 @@ class ModifierKeysExample extends Component {
           mouseButton: csToolsEnums.MouseBindings.Primary,
         },
       ],
-    })
+    });
 
-    this.renderingEngine.render()
+    this.renderingEngine.render();
 
     // To enable modifier key cursor before tool interaction
     // Should be changed after canvas is wrapped in a div and keyboard event
     // listener is added to the div instead of canvas
-    const internalDiv = document.querySelectorAll('div.viewport-element')[0]
-    internalDiv.parentNode.focus()
+    const internalDiv = document.querySelectorAll('div.viewport-element')[0];
+    internalDiv.parentNode.focus();
 
-    this.setState({ ptCtLeftClickTool: toolName })
-  }
+    this.setState({ ptCtLeftClickTool: toolName });
+  };
 
   showOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-    const uri = this.renderingEngine._debugRender()
-    const image = document.createElement('img')
-    image.src = uri
-    image.setAttribute('width', '100%')
+    this._offScreenRef.current.innerHTML = '';
+    const uri = this.renderingEngine._debugRender();
+    const image = document.createElement('img');
+    image.src = uri;
+    image.setAttribute('width', '100%');
 
-    this._offScreenRef.current.appendChild(image)
-  }
+    this._offScreenRef.current.appendChild(image);
+  };
 
   hideOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-  }
+    this._offScreenRef.current.innerHTML = '';
+  };
 
   rotateViewport = (rotateDeg) => {
     // remove all children
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.setProperties({ rotation: rotateDeg })
-    vp.render()
-  }
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    vp.setProperties({ rotation: rotateDeg });
+    vp.render();
+  };
 
   invertColors = () => {
     // remove all children
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    const invert = vp.invert
-    vp.setProperties({ invert: !invert })
-    vp.render()
-  }
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    const invert = vp.invert;
+    vp.setProperties({ invert: !invert });
+    vp.render();
+  };
 
   applyPreset = () => {
     // remove all children
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.setProperties({ voiRange: { lower: 100, upper: 500 } })
-    vp.render()
-  }
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    vp.setProperties({ voiRange: { lower: 100, upper: 500 } });
+    vp.render();
+  };
 
   switchStack = () => {
     // switch to a random new stack
@@ -321,20 +321,20 @@ class ModifierKeysExample extends Component {
       .map((a) => ({ sort: Math.random(), value: a }))
       .sort((a, b) => a.sort - b.sort)
       .map((a) => a.value)
-      .slice(0, 8)
+      .slice(0, 8);
 
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
 
-    vp.setStack(fakeStack, 0)
-    vp.resetProperties()
-  }
+    vp.setStack(fakeStack, 0);
+    vp.resetProperties();
+  };
 
   resetViewportProperties = () => {
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.resetProperties()
-    vp.resetCamera()
-    vp.render()
-  }
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    vp.resetProperties();
+    vp.resetCamera();
+    vp.render();
+  };
 
   render() {
     return (
@@ -464,8 +464,8 @@ class ModifierKeysExample extends Component {
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default ModifierKeysExample
+export default ModifierKeysExample;

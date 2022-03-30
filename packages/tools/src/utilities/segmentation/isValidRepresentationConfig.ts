@@ -1,6 +1,6 @@
-import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/labelmapConfig'
-import SegmentationRepresentation from '../../enums/SegmentationRepresentations'
-import { RepresentationConfig } from '../../types/SegmentationStateTypes'
+import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/labelmapConfig';
+import SegmentationRepresentation from '../../enums/SegmentationRepresentations';
+import { RepresentationConfig } from '../../types/SegmentationStateTypes';
 
 /**
  * Given a representation type and a configuration, return true if the
@@ -15,8 +15,8 @@ export default function isValidRepresentationConfig(
 ): boolean {
   switch (representationType) {
     case SegmentationRepresentation.Labelmap:
-      return isValidLabelmapConfig(config)
+      return isValidLabelmapConfig(config);
     default:
-      throw new Error(`Unknown representation type: ${representationType}`)
+      throw new Error(`Unknown representation type: ${representationType}`);
   }
 }

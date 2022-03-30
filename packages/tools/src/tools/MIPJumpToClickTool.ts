@@ -1,9 +1,9 @@
-import { BaseTool } from './base'
-import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
-import { getPointInLineOfSightWithCriteria } from '../utilities/planar'
-import jumpToWorld from '../utilities/viewport/jumpToWorld'
-import { PublicToolProps, ToolProps } from '../types'
+import { BaseTool } from './base';
+import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
+import jumpToWorld from '../utilities/viewport/jumpToWorld';
+import { PublicToolProps, ToolProps } from '../types';
 
 /**
  * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the
@@ -12,9 +12,9 @@ import { PublicToolProps, ToolProps } from '../types'
  * the highest intensity value in the MIP.
  */
 export default class MIPJumpToClickTool extends BaseTool {
-  static toolName = 'MIPJumpToClickTool'
+  static toolName = 'MIPJumpToClickTool';
 
-  _bounds: any
+  _bounds: any;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -25,7 +25,7 @@ export default class MIPJumpToClickTool extends BaseTool {
       },
     }
   ) {
-    super(toolProps, defaultToolProps)
+    super(toolProps, defaultToolProps);
   }
 
   /**
@@ -38,23 +38,23 @@ export default class MIPJumpToClickTool extends BaseTool {
    * @param evt - click event
    */
   mouseClickCallback(evt): void {
-    const { element, currentPoints } = evt.detail
+    const { element, currentPoints } = evt.detail;
 
     // 1. Getting the enabled element
-    const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
 
     // 2. Getting the target volume that is clicked on
-    const targetVolumeId = this.getTargetId(viewport as Types.IVolumeViewport)
+    const targetVolumeId = this.getTargetId(viewport as Types.IVolumeViewport);
 
     // 3. Criteria function to search for the point (maximum intensity)
-    let maxIntensity = -Infinity
+    let maxIntensity = -Infinity;
     const maxFn = (intensity, point) => {
       if (intensity > maxIntensity) {
-        maxIntensity = intensity
-        return point
+        maxIntensity = intensity;
+        return point;
       }
-    }
+    };
 
     // 4. Search for the brightest point location in the line of sight
     const brightestPoint = getPointInLineOfSightWithCriteria(
@@ -62,27 +62,27 @@ export default class MIPJumpToClickTool extends BaseTool {
       currentPoints.world,
       targetVolumeId,
       maxFn
-    )
+    );
 
     if (!brightestPoint || !brightestPoint.length) {
-      return
+      return;
     }
 
-    const { targetViewportIds } = this.configuration
+    const { targetViewportIds } = this.configuration;
 
     // 6. Update all the targetedViewports to jump
     targetViewportIds.forEach((viewportId) => {
       // Todo: current limitation is that we cannot jump in viewports
       // that don't belong to the renderingEngine of the source clicked viewport
-      const viewport = renderingEngine.getViewport(viewportId)
+      const viewport = renderingEngine.getViewport(viewportId);
 
       if (viewport instanceof VolumeViewport) {
-        jumpToWorld(viewport, brightestPoint)
+        jumpToWorld(viewport, brightestPoint);
       } else {
         console.warn(
           'Cannot jump to specified world coordinates for a viewport that is not a VolumeViewport'
-        )
+        );
       }
-    })
+    });
   }
 }

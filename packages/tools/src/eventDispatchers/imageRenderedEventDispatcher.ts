@@ -1,5 +1,5 @@
-import { Enums, Types } from '@cornerstonejs/core'
-import triggerAnnotationRender from '../utilities/triggerAnnotationRender'
+import { Enums, Types } from '@cornerstonejs/core';
+import triggerAnnotationRender from '../utilities/triggerAnnotationRender';
 
 /**
  *  When the image is rendered, check what tools can be rendered for this element.
@@ -14,18 +14,18 @@ import triggerAnnotationRender from '../utilities/triggerAnnotationRender'
 const onImageRendered = function (evt: Types.EventTypes.ImageRenderedEvent) {
   // TODO: should we do this on camera modified instead of image rendered?
   // e.g. no need to re-render annotations if only the VOI has changed
-  triggerAnnotationRender(evt.detail.element)
-}
+  triggerAnnotationRender(evt.detail.element);
+};
 
 const enable = function (element: HTMLElement): void {
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered)
-}
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered);
+};
 
 const disable = function (element: HTMLElement): void {
-  element.removeEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered)
-}
+  element.removeEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered);
+};
 
 export default {
   enable,
   disable,
-}
+};

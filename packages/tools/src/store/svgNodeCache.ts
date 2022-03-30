@@ -1,7 +1,7 @@
-let svgNodeCache = {}
+let svgNodeCache = {};
 
 export function resetSvgNodeCache(): void {
-  svgNodeCache = {}
+  svgNodeCache = {};
 }
 
-export default svgNodeCache
+export default svgNodeCache;

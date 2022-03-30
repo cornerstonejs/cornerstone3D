@@ -43,7 +43,11 @@
    * This would direct API Extractor to embed those types directly in the .d.ts rollup, as if they had been
    * local files for library1.
    */
-  "bundledPackages": ["@cornerstonejs/core", "@cornerstonejs/tools", "@cornerstonejs/streaming-image-volume-loader"],
+  "bundledPackages": [
+    "@cornerstonejs/core",
+    "@cornerstonejs/tools",
+    "@cornerstonejs/streaming-image-volume-loader"
+  ],
 
   /**
    * Determines how the TypeScript compiler engine will be invoked by API Extractor.
@@ -225,7 +229,7 @@
      *
      * DEFAULT VALUE: true
      */
-    "enabled": true,
+    "enabled": true
     /**
      * Specifies where the TSDoc metadata file should be written.
      *
@@ -314,7 +318,6 @@
         "logLevel": "none"
         // "addToApiReportFile": false
       },
-
 
       "ae-forgotten-export": {
         "logLevel": "none",

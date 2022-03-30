@@ -1,5 +1,5 @@
-import { VolumeActor } from './IActor'
-import BlendModes from '../enums/BlendModes'
+import { VolumeActor } from './IActor';
+import BlendModes from '../enums/BlendModes';
 
 /**
  * Volume input callback type, used to perform operations on the volume data
@@ -7,10 +7,10 @@ import BlendModes from '../enums/BlendModes'
  */
 type VolumeInputCallback = (params: {
   /** vtk volume actor */
-  volumeActor: VolumeActor
+  volumeActor: VolumeActor;
   /** unique volume Id in the cache */
-  volumeId: string
-}) => unknown
+  volumeId: string;
+}) => unknown;
 
 /**
  * VolumeInput that can be used to add a volume to a viewport. It includes
@@ -19,18 +19,18 @@ type VolumeInputCallback = (params: {
  */
 interface IVolumeInput {
   /** Volume ID of the volume in the cache */
-  volumeId: string
+  volumeId: string;
   // actorUID for segmentations, since two segmentations with the same volumeId
   // can have different representations
-  actorUID?: string
+  actorUID?: string;
   /** Visibility of the volume - by default it is true */
-  visibility?: boolean
+  visibility?: boolean;
   /** Callback to be called when the volume is added to the viewport */
-  callback?: VolumeInputCallback
+  callback?: VolumeInputCallback;
   /** Blend mode of the volume - by default it is `additive` */
-  blendMode?: BlendModes
+  blendMode?: BlendModes;
   /** Slab thickness of the volume - by default it is calculated by the image size*/
-  slabThickness?: number
+  slabThickness?: number;
 }
 
-export type { IVolumeInput, VolumeInputCallback }
+export type { IVolumeInput, VolumeInputCallback };

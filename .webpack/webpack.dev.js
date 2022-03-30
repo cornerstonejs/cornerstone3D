@@ -1,28 +1,28 @@
-const path = require('path')
-const webpack = require('webpack')
-const autoprefixer = require('autoprefixer')
+const path = require('path');
+const webpack = require('webpack');
+const autoprefixer = require('autoprefixer');
 // Plugins
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-const CopyPlugin = require('copy-webpack-plugin')
-const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js')
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
+const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js');
 
-const NODE_ENV = process.NODE_ENV
+const NODE_ENV = process.NODE_ENV;
 
 // PATHS
-const PROJECT_ROOT = path.join(__dirname, '..', 'packages/demo')
-const ENTRY_DEMO = path.join(PROJECT_ROOT, 'src/index.tsx')
-const OUT_PATH = path.join(__dirname, '..', 'packages', 'demo', 'dist')
+const PROJECT_ROOT = path.join(__dirname, '..', 'packages/demo');
+const ENTRY_DEMO = path.join(PROJECT_ROOT, 'src/index.tsx');
+const OUT_PATH = path.join(__dirname, '..', 'packages', 'demo', 'dist');
 
-const csRenderBasePath = path.resolve('../core/src/index')
-const csToolsBasePath = path.resolve('../tools/src/index')
+const csRenderBasePath = path.resolve('../core/src/index');
+const csToolsBasePath = path.resolve('../tools/src/index');
 const csStreamingBasePath = path.resolve(
   '../streaming-image-volume-loader/src/index'
-)
+);
 
-const exclude = excludeNodeModulesExcept([])
+const exclude = excludeNodeModulesExcept([]);
 
 module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
-  const mode = NODE_ENV === 'production' ? 'production' : 'development'
+  const mode = NODE_ENV === 'production' ? 'production' : 'development';
   // const baseConfig = webpackBase(env, argv, { SRC_DIR, DIST_DIR });
 
   // return merge(baseConfig, {
@@ -86,7 +86,7 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
             },
           ],
         },
-      ]
+      ],
     },
     resolve: {
       modules: [path.resolve(__dirname, './../node_modules')],
@@ -99,7 +99,7 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
         '@cornerstonejs/core': csRenderBasePath,
         '@cornerstonejs/tools': csToolsBasePath,
         '@cornerstonejs/streaming-image-volume-loader': csStreamingBasePath,
-      }
+      },
     },
     plugins: [
       // Show build progress
@@ -133,5 +133,5 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
         'Cross-Origin-Opener-Policy': 'same-origin',
       },
     },
-  }
-}
+  };
+};

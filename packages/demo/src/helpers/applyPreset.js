@@ -53,10 +53,7 @@ export default function applyPreset(actor, preset) {
     gradientMinOpacity,
     gradientMaxValue,
     gradientMaxOpacity,
-  ] = preset.gradientOpacity
-    .split(' ')
-    .splice(1)
-    .map(parseFloat);
+  ] = preset.gradientOpacity.split(' ').splice(1).map(parseFloat);
 
   actor.getProperty().setUseGradientOpacity(0, true);
   actor.getProperty().setGradientOpacityMinimumValue(0, gradientMinValue);

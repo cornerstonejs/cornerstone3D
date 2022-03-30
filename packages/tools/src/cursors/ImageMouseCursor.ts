@@ -1,12 +1,12 @@
-import { utilities } from '@cornerstonejs/core'
-import MouseCursor from './MouseCursor'
+import { utilities } from '@cornerstonejs/core';
+import MouseCursor from './MouseCursor';
 
-const DEFAULT_NAME = 'image-cursor'
+const DEFAULT_NAME = 'image-cursor';
 
 export default class ImageMouseCursor extends MouseCursor {
-  private url: string
-  private x: number
-  private y: number
+  private url: string;
+  private x: number;
+  private y: number;
 
   constructor(
     url: string,
@@ -18,22 +18,22 @@ export default class ImageMouseCursor extends MouseCursor {
     super(
       name || ImageMouseCursor.getUniqueInstanceName(DEFAULT_NAME),
       fallback
-    )
-    this.url = url
-    this.x = Number(x) || 0
-    this.y = Number(y) || 0
+    );
+    this.url = url;
+    this.x = Number(x) || 0;
+    this.y = Number(y) || 0;
   }
 
   getStyleProperty(): string {
-    const { url, x, y } = this
-    let style = `url('${url}')`
+    const { url, x, y } = this;
+    let style = `url('${url}')`;
     if (x >= 0 && y >= 0 && (x > 0 || y > 0)) {
-      style += ` ${x} ${y}`
+      style += ` ${x} ${y}`;
     }
-    return this.addFallbackStyleProperty(style)
+    return this.addFallbackStyleProperty(style);
   }
 
   static getUniqueInstanceName(prefix: string): string {
-    return `${prefix}-${utilities.getRuntimeId(ImageMouseCursor)}`
+    return `${prefix}-${utilities.getRuntimeId(ImageMouseCursor)}`;
   }
 }

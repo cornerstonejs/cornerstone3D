@@ -4,5 +4,5 @@
     "module": "esnext",
     "outDir": "dist/esm",
     "target": "esnext"
-  },
+  }
 }

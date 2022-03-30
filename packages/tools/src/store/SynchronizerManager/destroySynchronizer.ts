@@ -1,4 +1,4 @@
-import { state } from '../index'
+import { state } from '../index';
 
 // Synchronizers are a bit more tenacious. We need to make sure we remove
 // any attached events
@@ -12,14 +12,14 @@ import { state } from '../index'
 function destroySynchronizer(synchronizerId: string): void {
   const synchronizerIndex = state.synchronizers.findIndex(
     (sync) => sync.id === synchronizerId
-  )
+  );
 
   if (synchronizerIndex > -1) {
-    const synchronizer = state.synchronizers[synchronizerIndex]
+    const synchronizer = state.synchronizers[synchronizerIndex];
 
-    synchronizer.destroy()
-    state.synchronizers.splice(synchronizerIndex, 1)
+    synchronizer.destroy();
+    state.synchronizers.splice(synchronizerIndex, 1);
   }
 }
 
-export default destroySynchronizer
+export default destroySynchronizer;

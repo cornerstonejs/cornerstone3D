@@ -1,6 +1,6 @@
-import type { IRenderingEngine } from './RenderingEngine'
+import type { IRenderingEngine } from './RenderingEngine';
 
-const cache = {}
+const cache = {};
 
 const renderingEngineCache = {
   /**
@@ -10,7 +10,7 @@ const renderingEngineCache = {
    * @returns The `RenderingEngine` instance.
    */
   get: (id: string): IRenderingEngine => {
-    return cache[id]
+    return cache[id];
   },
   /**
    * Adds the `RenderingEngine` instance to the cache.
@@ -18,9 +18,9 @@ const renderingEngineCache = {
    * @param re - The `RenderingEngine` to add.
    */
   set: (re: IRenderingEngine): void => {
-    const renderingEngineId = re.id
+    const renderingEngineId = re.id;
 
-    cache[renderingEngineId] = re
+    cache[renderingEngineId] = re;
   },
   /**
    * Deletes the `RenderingEngine` instance from the cache.
@@ -29,15 +29,15 @@ const renderingEngineCache = {
    * @returns True if the delete was successful.
    */
   delete: (id: string) => {
-    return delete cache[id]
+    return delete cache[id];
   },
 
   getAll: (): Array<IRenderingEngine> => {
-    const renderingEngineIds = Object.keys(cache)
-    const renderingEngines = renderingEngineIds.map((id) => cache[id])
+    const renderingEngineIds = Object.keys(cache);
+    const renderingEngines = renderingEngineIds.map((id) => cache[id]);
 
-    return renderingEngines
+    return renderingEngines;
   },
-}
+};
 
-export default renderingEngineCache
+export default renderingEngineCache;

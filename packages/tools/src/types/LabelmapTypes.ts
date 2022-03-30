@@ -1,35 +1,35 @@
-import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction'
-import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction'
+import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 /**
  * Label map config for the label map representation
  */
 export type labelmapConfig = {
   /** whether to render segmentation outline  */
-  renderOutline?: boolean
+  renderOutline?: boolean;
   /** thickness of the outline when segmentation is active */
-  outlineWidthActive?: number
+  outlineWidthActive?: number;
   /** thickness of the outline when segmentation is inactive */
-  outlineWidthInactive?: number
+  outlineWidthInactive?: number;
   /** whether to render segmentation filling */
-  renderFill?: boolean
+  renderFill?: boolean;
   /** alpha of the fill */
-  fillAlpha?: number
+  fillAlpha?: number;
   /** alpha of the fill when inactive */
-  fillAlphaInactive?: number
-}
+  fillAlphaInactive?: number;
+};
 
 /**
  * Labelmap representation type
  */
 export type LabelmapRenderingConfig = {
   /** color transfer function */
-  cfun?: vtkColorTransferFunction
+  cfun?: vtkColorTransferFunction;
   /** opacity transfer function */
-  ofun?: vtkPiecewiseFunction
-}
+  ofun?: vtkPiecewiseFunction;
+};
 
 export type LabelmapSegmentationData = {
-  volumeId: string
-  referencedVolumeId?: string
-}
+  volumeId: string;
+  referencedVolumeId?: string;
+};

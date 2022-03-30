@@ -5,11 +5,11 @@ function excludeNodeModulesExcept(modules) {
   if (pathSep == '\\')
     // must be quoted for use in a regexp:
     pathSep = '\\\\';
-  var moduleRegExps = modules.map(function(modName) {
+  var moduleRegExps = modules.map(function (modName) {
     return new RegExp('node_modules' + pathSep + modName);
   });
 
-  return function(modulePath) {
+  return function (modulePath) {
     if (/cornerstoneWADOImageLoader/.test(modulePath)) {
       return true;
     }

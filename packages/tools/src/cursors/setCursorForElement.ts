@@ -1,6 +1,6 @@
-import { setElementCursor } from './elementCursor'
-import MouseCursor from './MouseCursor'
-import SVGMouseCursor from './SVGMouseCursor'
+import { setElementCursor } from './elementCursor';
+import MouseCursor from './MouseCursor';
+import SVGMouseCursor from './SVGMouseCursor';
 
 /**
  * Set the cursor for an HTML element. cursorNames can be either
@@ -12,19 +12,19 @@ import SVGMouseCursor from './SVGMouseCursor'
  * CSS cursor names.
  */
 function setCursorForElement(element: HTMLElement, cursorName: string): void {
-  let cursor = SVGMouseCursor.getDefinedCursor(cursorName, true)
+  let cursor = SVGMouseCursor.getDefinedCursor(cursorName, true);
   if (!cursor) {
-    cursor = MouseCursor.getDefinedCursor(cursorName)
+    cursor = MouseCursor.getDefinedCursor(cursorName);
   }
 
   if (!cursor) {
     console.log(
       `Cursor ${cursorName} is not defined either as SVG or as a standard cursor.`
-    )
-    cursor = MouseCursor.getDefinedCursor(cursorName)
+    );
+    cursor = MouseCursor.getDefinedCursor(cursorName);
   }
 
-  setElementCursor(element, cursor)
+  setElementCursor(element, cursor);
 }
 
-export default setCursorForElement
+export default setCursorForElement;

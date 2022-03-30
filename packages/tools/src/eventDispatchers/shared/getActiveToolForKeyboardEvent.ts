@@ -1,10 +1,10 @@
-import { ToolGroupManager } from '../../store'
-import { ToolModes, MouseBindings } from '../../enums'
-import { keyEventListener } from '../../eventListeners'
-import { EventTypes } from '../../types'
-import { getMouseButton } from '../../eventListeners/mouse/mouseDownListener'
+import { ToolGroupManager } from '../../store';
+import { ToolModes, MouseBindings } from '../../enums';
+import { keyEventListener } from '../../eventListeners';
+import { EventTypes } from '../../types';
+import { getMouseButton } from '../../eventListeners/mouse/mouseDownListener';
 
-const { Active } = ToolModes
+const { Active } = ToolModes;
 
 /**
  * Iterate tool group tools until we find a tool that has a "ToolBinding"
@@ -18,28 +18,28 @@ const { Active } = ToolModes
 export default function getActiveToolForKeyboardEvent(
   evt: EventTypes.KeyDownEventType
 ) {
-  const { renderingEngineId, viewportId } = evt.detail
+  const { renderingEngineId, viewportId } = evt.detail;
 
   // Get the current mouse button clicked
-  const mouseButton = getMouseButton()
+  const mouseButton = getMouseButton();
 
   // If any keyboard modifier key is also pressed
-  const modifierKey = keyEventListener.getModifierKey()
+  const modifierKey = keyEventListener.getModifierKey();
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
     renderingEngineId
-  )
+  );
 
   if (!toolGroup) {
-    return null
+    return null;
   }
 
-  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
-    const toolName = toolGroupToolNames[j]
-    const toolOptions = toolGroup.toolOptions[toolName]
+    const toolName = toolGroupToolNames[j];
+    const toolOptions = toolGroup.toolOptions[toolName];
 
     // tool has binding that matches the mouse button, if mouseEvent is undefined
     // it uses the primary button
@@ -49,10 +49,10 @@ export default function getActiveToolForKeyboardEvent(
         (binding) =>
           binding.mouseButton === (mouseButton ?? MouseBindings.Primary) &&
           binding.modifierKey === modifierKey
-      )
+      );
 
     if (toolOptions.mode === Active && correctBinding) {
-      return toolGroup.getToolInstance(toolName)
+      return toolGroup.getToolInstance(toolName);
     }
   }
 }

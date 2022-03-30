@@ -3,7 +3,7 @@ import {
   getEnabledElement,
   Enums,
   Types,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 
 export interface ISynchronizerEventHandler {
   (
@@ -11,7 +11,7 @@ export interface ISynchronizerEventHandler {
     sourceViewport: Types.IViewportId,
     targetViewport: Types.IViewportId,
     sourceEvent: any
-  ): void
+  ): void;
 }
 
 /**
@@ -22,29 +22,29 @@ export interface ISynchronizerEventHandler {
  */
 class Synchronizer {
   //
-  private _enabled: boolean
-  private _eventName: string
-  private _eventHandler: ISynchronizerEventHandler
-  private _ignoreFiredEvents: boolean
-  private _sourceViewports: Array<Types.IViewportId>
-  private _targetViewports: Array<Types.IViewportId>
+  private _enabled: boolean;
+  private _eventName: string;
+  private _eventHandler: ISynchronizerEventHandler;
+  private _ignoreFiredEvents: boolean;
+  private _sourceViewports: Array<Types.IViewportId>;
+  private _targetViewports: Array<Types.IViewportId>;
   //
-  public id: string
+  public id: string;
 
   constructor(
     synchronizerId: string,
     eventName: string,
     eventHandler: ISynchronizerEventHandler
   ) {
-    this._enabled = true
-    this._eventName = eventName
-    this._eventHandler = eventHandler
-    this._ignoreFiredEvents = false
-    this._sourceViewports = []
-    this._targetViewports = []
+    this._enabled = true;
+    this._eventName = eventName;
+    this._eventHandler = eventHandler;
+    this._ignoreFiredEvents = false;
+    this._sourceViewports = [];
+    this._targetViewports = [];
 
     //
-    this.id = synchronizerId
+    this.id = synchronizerId;
   }
 
   /**
@@ -52,7 +52,7 @@ class Synchronizer {
    * @returns A boolean value.
    */
   public isDisabled(): boolean {
-    return !this._enabled || !this._hasSourceElements()
+    return !this._enabled || !this._hasSourceElements();
   }
 
   /**
@@ -60,8 +60,8 @@ class Synchronizer {
    * @param viewportInfo - The viewportId and its renderingEngineId to add to the list of targets and sources.
    */
   public add(viewportInfo: Types.IViewportId): void {
-    this.addTarget(viewportInfo)
-    this.addSource(viewportInfo)
+    this.addTarget(viewportInfo);
+    this.addSource(viewportInfo);
   }
 
   /**
@@ -70,19 +70,19 @@ class Synchronizer {
    */
   public addSource(viewportInfo: Types.IViewportId): void {
     if (_containsViewport(this._sourceViewports, viewportInfo)) {
-      return
+      return;
     }
 
-    const { renderingEngineId, viewportId } = viewportInfo
+    const { renderingEngineId, viewportId } = viewportInfo;
 
     const { element } =
-      getRenderingEngine(renderingEngineId).getViewport(viewportId)
+      getRenderingEngine(renderingEngineId).getViewport(viewportId);
 
     // @ts-ignore
-    element.addEventListener(this._eventName, this._onEvent.bind(this))
-    this._updateDisableHandlers()
+    element.addEventListener(this._eventName, this._onEvent.bind(this));
+    this._updateDisableHandlers();
 
-    this._sourceViewports.push(viewportInfo)
+    this._sourceViewports.push(viewportInfo);
   }
 
   /**
@@ -92,11 +92,11 @@ class Synchronizer {
    */
   public addTarget(viewportInfo: Types.IViewportId): void {
     if (_containsViewport(this._targetViewports, viewportInfo)) {
-      return
+      return;
     }
 
-    this._targetViewports.push(viewportInfo)
-    this._updateDisableHandlers()
+    this._targetViewports.push(viewportInfo);
+    this._updateDisableHandlers();
   }
 
   /**
@@ -104,7 +104,7 @@ class Synchronizer {
    * @returns An array of {viewportId, renderingEngineId} objects.
    */
   public getSourceViewports(): Array<Types.IViewportId> {
-    return this._sourceViewports
+    return this._sourceViewports;
   }
 
   /**
@@ -112,12 +112,12 @@ class Synchronizer {
    * @returns An array of {viewportId, renderingEngineId} objects.
    */
   public getTargetViewports(): Array<Types.IViewportId> {
-    return this._targetViewports
+    return this._targetViewports;
   }
 
   public destroy(): void {
-    this._sourceViewports.forEach((s) => this.removeSource(s))
-    this._targetViewports.forEach((t) => this.removeTarget(t))
+    this._sourceViewports.forEach((s) => this.removeSource(s));
+    this._targetViewports.forEach((t) => this.removeTarget(t));
   }
 
   /**
@@ -125,8 +125,8 @@ class Synchronizer {
    * @param viewportInfo - The viewport info including viewportId and renderingEngineId.
    */
   public remove(viewportInfo: Types.IViewportId): void {
-    this.removeTarget(viewportInfo)
-    this.removeSource(viewportInfo)
+    this.removeTarget(viewportInfo);
+    this.removeSource(viewportInfo);
   }
 
   /**
@@ -134,18 +134,18 @@ class Synchronizer {
    * @param viewportInfo - The viewport info including viewportId and renderingEngineId.
    */
   public removeSource(viewportInfo: Types.IViewportId): void {
-    const index = _getViewportIndex(this._sourceViewports, viewportInfo)
+    const index = _getViewportIndex(this._sourceViewports, viewportInfo);
 
     if (index === -1) {
-      return
+      return;
     }
 
-    const element = _getViewportElement(viewportInfo)
+    const element = _getViewportElement(viewportInfo);
 
-    this._sourceViewports.splice(index, 1)
+    this._sourceViewports.splice(index, 1);
     // @ts-ignore
-    element.removeEventListener(this._eventName, this._eventHandler)
-    this._updateDisableHandlers()
+    element.removeEventListener(this._eventName, this._eventHandler);
+    this._updateDisableHandlers();
   }
 
   /**
@@ -155,14 +155,14 @@ class Synchronizer {
    *
    */
   public removeTarget(viewportInfo: Types.IViewportId): void {
-    const index = _getViewportIndex(this._targetViewports, viewportInfo)
+    const index = _getViewportIndex(this._targetViewports, viewportInfo);
 
     if (index === -1) {
-      return
+      return;
     }
 
-    this._targetViewports.splice(index, 1)
-    this._updateDisableHandlers()
+    this._targetViewports.splice(index, 1);
+    this._updateDisableHandlers();
   }
 
   public hasSourceViewport(
@@ -172,37 +172,37 @@ class Synchronizer {
     return _containsViewport(this._sourceViewports, {
       renderingEngineId,
       viewportId,
-    })
+    });
   }
 
   private fireEvent(sourceViewport: Types.IViewportId, sourceEvent: any): void {
     if (this.isDisabled() || this._ignoreFiredEvents) {
-      return
+      return;
     }
 
-    this._ignoreFiredEvents = true
+    this._ignoreFiredEvents = true;
     try {
       for (let i = 0; i < this._targetViewports.length; i++) {
-        const targetViewport = this._targetViewports[i]
+        const targetViewport = this._targetViewports[i];
         const targetIsSource =
-          sourceViewport.viewportId === targetViewport.viewportId
+          sourceViewport.viewportId === targetViewport.viewportId;
 
         if (targetIsSource) {
-          continue
+          continue;
         }
 
-        this._eventHandler(this, sourceViewport, targetViewport, sourceEvent)
+        this._eventHandler(this, sourceViewport, targetViewport, sourceEvent);
       }
     } catch (ex) {
-      console.warn(`Synchronizer, for: ${this._eventName}`, ex)
+      console.warn(`Synchronizer, for: ${this._eventName}`, ex);
     } finally {
-      this._ignoreFiredEvents = false
+      this._ignoreFiredEvents = false;
     }
   }
 
   private _onEvent = (evt: any): void => {
     if (this._ignoreFiredEvents === true) {
-      return
+      return;
     }
 
     // If no target viewports, then return immediately, this is useful
@@ -211,16 +211,16 @@ class Synchronizer {
     // Right now we don't "delete" the synchronizer if all source and targets
     // are removed, but we may want to do that in the future.
     if (!this._targetViewports.length) {
-      return
+      return;
     }
 
-    const enabledElement = getEnabledElement(evt.currentTarget)
+    const enabledElement = getEnabledElement(evt.currentTarget);
 
     if (!enabledElement) {
-      return
+      return;
     }
 
-    const { renderingEngineId, viewportId } = enabledElement
+    const { renderingEngineId, viewportId } = enabledElement;
 
     this.fireEvent(
       {
@@ -228,31 +228,34 @@ class Synchronizer {
         viewportId,
       },
       evt
-    )
-  }
+    );
+  };
 
   private _hasSourceElements(): boolean {
-    return this._sourceViewports.length !== 0
+    return this._sourceViewports.length !== 0;
   }
 
   private _updateDisableHandlers(): void {
     const viewports = _getUniqueViewports(
       this._sourceViewports,
       this._targetViewports
-    )
-    const _remove = this.remove
+    );
+    const _remove = this.remove;
     const disableHandler = (elementDisabledEvent) => {
-      _remove(elementDisabledEvent.detail.element)
-    }
+      _remove(elementDisabledEvent.detail.element);
+    };
 
     viewports.forEach(function (vUid) {
       const { element } = getRenderingEngine(
         vUid.renderingEngineId
-      ).getViewport(vUid.viewportId)
+      ).getViewport(vUid.viewportId);
 
-      element.removeEventListener(Enums.Events.ELEMENT_DISABLED, disableHandler)
-      element.addEventListener(Enums.Events.ELEMENT_DISABLED, disableHandler)
-    })
+      element.removeEventListener(
+        Enums.Events.ELEMENT_DISABLED,
+        disableHandler
+      );
+      element.addEventListener(Enums.Events.ELEMENT_DISABLED, disableHandler);
+    });
   }
 }
 
@@ -260,12 +263,12 @@ function _getUniqueViewports(
   vp1: Array<Types.IViewportId>,
   vp2: Array<Types.IViewportId>
 ): Array<Types.IViewportId> {
-  const unique = []
+  const unique = [];
 
-  const vps = vp1.concat(vp2)
+  const vps = vp1.concat(vp2);
 
   for (let i = 0; i < vps.length; i++) {
-    const vp = vps[i]
+    const vp = vps[i];
     if (
       !unique.some(
         (u) =>
@@ -273,11 +276,11 @@ function _getUniqueViewports(
           vp.viewportId === u.viewportId
       )
     ) {
-      unique.push(vp)
+      unique.push(vp);
     }
   }
 
-  return unique
+  return unique;
 }
 
 function _getViewportIndex(
@@ -288,7 +291,7 @@ function _getViewportIndex(
     (ar) =>
       vp.renderingEngineId === ar.renderingEngineId &&
       vp.viewportId === ar.viewportId
-  )
+  );
 }
 
 function _containsViewport(
@@ -299,16 +302,16 @@ function _containsViewport(
     (ar) =>
       ar.renderingEngineId === vp.renderingEngineId &&
       ar.viewportId === vp.viewportId
-  )
+  );
 }
 
 function _getViewportElement(vp: Types.IViewportId): HTMLElement {
-  const renderingEngine = getRenderingEngine(vp.renderingEngineId)
+  const renderingEngine = getRenderingEngine(vp.renderingEngineId);
   if (!renderingEngine) {
-    throw new Error(`No RenderingEngine for Id: ${vp.renderingEngineId}`)
+    throw new Error(`No RenderingEngine for Id: ${vp.renderingEngineId}`);
   }
 
-  return renderingEngine.getViewport(vp.viewportId).element
+  return renderingEngine.getViewport(vp.viewportId).element;
 }
 
-export default Synchronizer
+export default Synchronizer;

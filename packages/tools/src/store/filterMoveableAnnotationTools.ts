@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 import {
   ToolAnnotationPair,
   ToolAnnotationsPair,
-} from '../types/InternalToolTypes'
+} from '../types/InternalToolTypes';
 
 /**
  * Filters an array of tools with annotations, returning the first annotation
@@ -23,7 +23,7 @@ export default function filterMoveableAnnotationTools(
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
 ): ToolAnnotationPair[] {
-  const proximity = 6
+  const proximity = 6;
 
   // TODO - This could get pretty expensive pretty quickly. We don't want to fetch the camera
   // And do world to canvas on each coord.
@@ -31,12 +31,12 @@ export default function filterMoveableAnnotationTools(
   // We want to produce a matrix from canvas to world for the viewport and just do a matrix operation on each handle.
   // This could still be expensive for ROIs, but we probably shouldn't have "handles" for them anyway.
 
-  const moveableAnnotationTools = []
+  const moveableAnnotationTools = [];
 
   ToolAndAnnotations.forEach(({ tool, annotations }) => {
     for (const annotation of annotations) {
       if (annotation.isLocked) {
-        continue
+        continue;
       }
 
       const near = tool.isPointNearTool(
@@ -45,17 +45,17 @@ export default function filterMoveableAnnotationTools(
         canvasCoords,
         proximity,
         interactionType
-      )
+      );
 
       if (near) {
         moveableAnnotationTools.push({
           tool,
           annotation,
-        })
-        break
+        });
+        break;
       }
     }
-  })
+  });
 
-  return moveableAnnotationTools
+  return moveableAnnotationTools;
 }

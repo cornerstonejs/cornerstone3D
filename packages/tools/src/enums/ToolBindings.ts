@@ -22,4 +22,4 @@ enum KeyboardBindings {
   Alt = 17,
 }
 
-export { MouseBindings, KeyboardBindings }
+export { MouseBindings, KeyboardBindings };

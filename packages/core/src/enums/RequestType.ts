@@ -10,4 +10,4 @@ enum RequestType {
   Prefetch = 'prefetch',
 }
 
-export default RequestType
+export default RequestType;

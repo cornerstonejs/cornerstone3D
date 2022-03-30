@@ -16,8 +16,7 @@
       "description": "Advanced usage of Tools library"
     }
   },
-  "examplesByCategory":
-  {
+  "examplesByCategory": {
     "core-basic": {
       "stackBasic": {
         "name": "Basic Stack Viewport Usage",

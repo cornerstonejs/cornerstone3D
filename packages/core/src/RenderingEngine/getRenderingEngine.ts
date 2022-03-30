@@ -1,5 +1,5 @@
-import renderingEngineCache from './renderingEngineCache'
-import type { IRenderingEngine } from './RenderingEngine'
+import renderingEngineCache from './renderingEngineCache';
+import type { IRenderingEngine } from './RenderingEngine';
 
 /**
  * Method to retrieve a RenderingEngine by its unique identifier.
@@ -20,7 +20,7 @@ import type { IRenderingEngine } from './RenderingEngine'
  * @public
  */
 export function getRenderingEngine(id: string): IRenderingEngine | undefined {
-  return renderingEngineCache.get(id)
+  return renderingEngineCache.get(id);
 }
 
 /**
@@ -28,7 +28,7 @@ export function getRenderingEngine(id: string): IRenderingEngine | undefined {
  * @returns An array of rendering engines.
  */
 export function getRenderingEngines(): IRenderingEngine[] | undefined {
-  return renderingEngineCache.getAll()
+  return renderingEngineCache.getAll();
 }
 
-export default getRenderingEngine
+export default getRenderingEngine;

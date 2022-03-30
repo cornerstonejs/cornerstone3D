@@ -1,6 +1,6 @@
-import { ToolModes } from '../enums'
-import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement'
-import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement'
+import { ToolModes } from '../enums';
+import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement';
+import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement';
 
 /**
  * Cancel the current active manipulation that is being performed on the provided
@@ -18,13 +18,13 @@ export default function cancelActiveManipulations(
   const tools = getToolsWithModesForElement(element, [
     ToolModes.Active,
     ToolModes.Passive,
-  ])
+  ]);
 
-  const toolsWithData = filterToolsWithAnnotationsForElement(element, tools)
+  const toolsWithData = filterToolsWithAnnotationsForElement(element, tools);
   for (const { tool } of toolsWithData) {
-    const annotationUID = tool.cancel(element)
+    const annotationUID = tool.cancel(element);
     if (annotationUID) {
-      return annotationUID
+      return annotationUID;
     }
   }
 }

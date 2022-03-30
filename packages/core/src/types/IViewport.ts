@@ -1,79 +1,79 @@
-import ICamera from './ICamera'
-import Point2 from './Point2'
-import Point3 from './Point3'
-import ViewportInputOptions from './ViewportInputOptions'
-import { ActorEntry } from './IActor'
-import ViewportType from '../enums/ViewportType'
+import ICamera from './ICamera';
+import Point2 from './Point2';
+import Point3 from './Point3';
+import ViewportInputOptions from './ViewportInputOptions';
+import { ActorEntry } from './IActor';
+import ViewportType from '../enums/ViewportType';
 
 /**
  * Viewport interface for cornerstone viewports
  */
 interface IViewport {
   /** unique identifier of the viewport */
-  id: string
+  id: string;
   /** renderingEngineId the viewport belongs to */
-  renderingEngineId: string
+  renderingEngineId: string;
   /** viewport type, can be ORTHOGRAPHIC or STACK for now */
-  type: ViewportType
+  type: ViewportType;
   /** canvas associated to the viewport */
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement;
   /** public DOM element associated to the viewport */
-  element: HTMLElement
+  element: HTMLElement;
   /** sx of the viewport on the offscreen canvas (if rendering using GPU) */
-  sx: number
+  sx: number;
   /** sy of the viewport on the offscreen canvas (if rendering using GPU) */
-  sy: number
+  sy: number;
   /** width of the viewport on the offscreen canvas (if rendering using GPU) */
-  sWidth: number
+  sWidth: number;
   /** height of the viewport on the offscreen canvas (if rendering using GPU) */
-  sHeight: number
+  sHeight: number;
   /** actors rendered in the viewport (volumeActors as of now) */
-  _actors: Map<string, any>
+  _actors: Map<string, any>;
   /** viewport default options including the axis, and background color  */
-  defaultOptions: any
+  defaultOptions: any;
   /** viewport options */
-  options: ViewportInputOptions
+  options: ViewportInputOptions;
   /** Suppress events */
-  suppressEvents: boolean
+  suppressEvents: boolean;
   /** frameOfReferenceUID the viewport's default actor is rendering */
-  getFrameOfReferenceUID: () => string
+  getFrameOfReferenceUID: () => string;
   /** method to convert canvas to world coordinates */
-  canvasToWorld: (canvasPos: Point2) => Point3
+  canvasToWorld: (canvasPos: Point2) => Point3;
   /** method to convert world to canvas coordinates */
-  worldToCanvas: (worldPos: Point3) => Point2
+  worldToCanvas: (worldPos: Point3) => Point2;
   /** get the first actor */
-  getDefaultActor(): ActorEntry
+  getDefaultActor(): ActorEntry;
   /** returns all the actors on the viewport which includes both volumeActor object and its uid */
-  getActors(): Array<ActorEntry>
+  getActors(): Array<ActorEntry>;
   /** returns specific actor by its uid */
-  getActor(actorUID: string): ActorEntry
+  getActor(actorUID: string): ActorEntry;
   /** set and overwrite actors in a viewport */
-  setActors(actors: Array<ActorEntry>): void
+  setActors(actors: Array<ActorEntry>): void;
   /** add actors to the list of actors */
-  addActors(actors: Array<ActorEntry>): void
+  addActors(actors: Array<ActorEntry>): void;
   /** add one actor */
-  addActor(actorEntry: ActorEntry): void
+  addActor(actorEntry: ActorEntry): void;
   /** remove all actors from the viewport */
-  removeAllActors(): void
+  removeAllActors(): void;
   /** returns the renderingEngine instance the viewport belongs to */
-  getRenderingEngine(): any
+  getRenderingEngine(): any;
   /** returns the vtkRenderer (for GPU rendering) of the viewport */
-  getRenderer(): void
+  getRenderer(): void;
   /** triggers render for all actors in the viewport */
-  render(): void
+  render(): void;
   /** set options for the viewport */
-  setOptions(options: ViewportInputOptions, immediate: boolean): void
+  setOptions(options: ViewportInputOptions, immediate: boolean): void;
   /** reset camera and options*/
-  reset(immediate: boolean): void
+  reset(immediate: boolean): void;
   /** returns the canvas */
-  getCanvas(): HTMLCanvasElement
+  getCanvas(): HTMLCanvasElement;
   /** returns camera object */
-  getCamera(): ICamera
+  getCamera(): ICamera;
   /** sets the camera */
-  setCamera(cameraInterface: ICamera): void
+  setCamera(cameraInterface: ICamera): void;
   /** whether the viewport has custom rendering */
-  customRenderViewportToCanvas: () => unknown
-  _getCorners(bounds: Array<number>): Array<number>[]
+  customRenderViewportToCanvas: () => unknown;
+  _getCorners(bounds: Array<number>): Array<number>[];
 }
 
 /**
@@ -81,46 +81,46 @@ interface IViewport {
  */
 type PublicViewportInput = {
   /** HTML element in the DOM */
-  element: HTMLElement
+  element: HTMLElement;
   /** unique id for the viewport in the renderingEngine */
-  viewportId: string
+  viewportId: string;
   /** type of the viewport */
-  type: ViewportType
+  type: ViewportType;
   /** options for the viewport */
-  defaultOptions?: ViewportInputOptions
-}
+  defaultOptions?: ViewportInputOptions;
+};
 
 type NormalizedViewportInput = {
   /** HTML element in the DOM */
-  element: HTMLElement
+  element: HTMLElement;
   /** unique id for the viewport in the renderingEngine */
-  viewportId: string
+  viewportId: string;
   /** type of the viewport */
-  type: ViewportType
+  type: ViewportType;
   /** options for the viewport */
-  defaultOptions: ViewportInputOptions
-}
+  defaultOptions: ViewportInputOptions;
+};
 
 type InternalViewportInput = {
-  element: HTMLElement
-  canvas: HTMLCanvasElement
-  viewportId: string
-  type: ViewportType
-  defaultOptions: ViewportInputOptions
-}
+  element: HTMLElement;
+  canvas: HTMLCanvasElement;
+  viewportId: string;
+  type: ViewportType;
+  defaultOptions: ViewportInputOptions;
+};
 
 type ViewportInput = {
-  id: string
-  element: HTMLElement
-  canvas: HTMLCanvasElement
-  renderingEngineId: string
-  type: ViewportType
-  sx: number
-  sy: number
-  sWidth: number
-  sHeight: number
-  defaultOptions: ViewportInputOptions
-}
+  id: string;
+  element: HTMLElement;
+  canvas: HTMLCanvasElement;
+  renderingEngineId: string;
+  type: ViewportType;
+  sx: number;
+  sy: number;
+  sWidth: number;
+  sHeight: number;
+  defaultOptions: ViewportInputOptions;
+};
 
 export type {
   IViewport,
@@ -128,4 +128,4 @@ export type {
   PublicViewportInput,
   InternalViewportInput,
   NormalizedViewportInput,
-}
+};

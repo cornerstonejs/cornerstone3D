@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
@@ -9,42 +9,42 @@ import {
   utilities,
   init as csRenderInit,
   setVolumesForViewports,
-} from '@cornerstonejs/core'
-import { Enums as csToolsEnums, synchronizers } from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/core';
+import { Enums as csToolsEnums, synchronizers } from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
 import {
   setCTWWWC,
   setPetTransferFunction,
-} from './helpers/transferFunctionHelpers'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
+} from './helpers/transferFunctionHelpers';
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
 import {
   renderingEngineId,
   ctVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
-} from './constants'
+} from './constants';
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
-  synchronizers
+  synchronizers;
 
-const VOLUME = 'volume'
-const STACK = 'stack'
+const VOLUME = 'volume';
+const STACK = 'stack';
 
-window.cache = cache
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+window.cache = cache;
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } =
-  utilities.testUtils
+  utilities.testUtils;
 
-let ctTestSceneToolGroup, ptTestSceneToolGroup
+let ctTestSceneToolGroup, ptTestSceneToolGroup;
 
-const toolsToUse = ANNOTATION_TOOLS
-const ctLayoutTools = ['Levels'].concat(toolsToUse)
+const toolsToUse = ANNOTATION_TOOLS;
+const ctLayoutTools = ['Levels'].concat(toolsToUse);
 
 class testUtilVolume extends Component {
   state = {
@@ -62,44 +62,44 @@ class testUtilVolume extends Component {
     ptCtLeftClickTool: 'Levels',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
-    this._elementNodes = new Map()
-    this._offScreenRef = React.createRef()
-    this._viewportGridRef = React.createRef()
+    csTools3d.init();
+    this._elementNodes = new Map();
+    this._offScreenRef = React.createRef();
+    this._viewportGridRef = React.createRef();
 
-    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-    metaData.addProvider(fakeMetaDataProvider, 10000)
+    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
+    metaData.addProvider(fakeMetaDataProvider, 10000);
 
-    this.ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
-    this.ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_15_1_1_1_0`
+    this.ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
+    this.ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_15_1_1_1_0`;
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    ;({ ctTestSceneToolGroup, ptTestSceneToolGroup } = initToolGroups())
+    await csRenderInit();
+    csTools3d.init();
+    ({ ctTestSceneToolGroup, ptTestSceneToolGroup } = initToolGroups());
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     const viewportInput = [
       {
@@ -129,37 +129,40 @@ class testUtilVolume extends Component {
           background: [1, 1, 0],
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(viewportInput)
+    renderingEngine.setViewports(viewportInput);
 
-    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
+    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId);
     // ctTestSceneToolGroup.addViewport(
     //   VIEWPORT_IDS.CT.AXIAL,
     //   renderingEngineId,
     // )
-    ctTestSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
+    ctTestSceneToolGroup.addViewport(
+      VIEWPORT_IDS.CT.CORONAL,
+      renderingEngineId
+    );
 
-    ptTestSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId)
+    ptTestSceneToolGroup.addViewport(VIEWPORT_IDS.PT.AXIAL, renderingEngineId);
 
-    addToolsToToolGroups({ ctTestSceneToolGroup })
-    addToolsToToolGroups({ ptTestSceneToolGroup })
+    addToolsToToolGroups({ ctTestSceneToolGroup });
+    addToolsToToolGroups({ ptTestSceneToolGroup });
 
-    const axialSync = createVOISynchronizer('axialSync')
+    const axialSync = createVOISynchronizer('axialSync');
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
-    await volumeLoader.createAndCacheVolume(this.ctVolumeId, { imageIds: [] })
-    await volumeLoader.createAndCacheVolume(this.ptVolumeId, { imageIds: [] })
+    await volumeLoader.createAndCacheVolume(this.ctVolumeId, { imageIds: [] });
+    await volumeLoader.createAndCacheVolume(this.ptVolumeId, { imageIds: [] });
 
     axialSync.addSource({
       renderingEngineId: renderingEngineId,
       viewportId: renderingEngine.getViewport(VIEWPORT_IDS.CT.AXIAL).id,
-    })
+    });
     axialSync.addTarget({
       renderingEngineId: renderingEngineId,
       viewportId: renderingEngine.getViewport(VIEWPORT_IDS.PT.AXIAL).id,
-    })
+    });
 
     await setVolumesForViewports(
       renderingEngine,
@@ -169,7 +172,7 @@ class testUtilVolume extends Component {
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.CORONAL]
-    )
+    );
 
     await setVolumesForViewports(
       renderingEngine,
@@ -179,87 +182,87 @@ class testUtilVolume extends Component {
         },
       ],
       [VIEWPORT_IDS.PT.AXIAL]
-    )
+    );
 
-    renderingEngine.render()
+    renderingEngine.render();
 
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   destroyAndDecacheAllVolumes = () => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
+      return;
     }
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
 
-    cache.purgeCache()
-  }
+    cache.purgeCache();
+  };
 
   swapTools = (evt) => {
-    const toolName = evt.target.value
+    const toolName = evt.target.value;
 
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false;
     const options = {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    }
+    };
     if (isAnnotationToolOn) {
       // Set tool active
 
-      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName)
-      ctTestSceneToolGroup.setToolActive(toolName, options)
+      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName);
+      ctTestSceneToolGroup.setToolActive(toolName, options);
       toolsToSetPassive.forEach((toolName) => {
-        ctTestSceneToolGroup.setToolPassive(toolName)
-      })
+        ctTestSceneToolGroup.setToolPassive(toolName);
+      });
 
-      ctTestSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      ctTestSceneToolGroup.setToolDisabled(WindowLevelTool.toolName);
     } else {
       // Set window level + threshold
-      ctTestSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      ctTestSceneToolGroup.setToolActive(WindowLevelTool.toolName, options);
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {
-        ctTestSceneToolGroup.setToolPassive(toolName)
-      })
+        ctTestSceneToolGroup.setToolPassive(toolName);
+      });
     }
 
-    this.renderingEngine.render()
-    this.setState({ ptCtLeftClickTool: toolName })
-  }
+    this.renderingEngine.render();
+    this.setState({ ptCtLeftClickTool: toolName });
+  };
 
   showOffScreenCanvas = () => {
     // remove all childs
-    this._offScreenRef.current.innerHTML = ''
-    const uri = this.renderingEngine._debugRender()
-    const image = document.createElement('img')
-    image.src = uri
-    image.setAttribute('width', '100%')
+    this._offScreenRef.current.innerHTML = '';
+    const uri = this.renderingEngine._debugRender();
+    const image = document.createElement('img');
+    image.src = uri;
+    image.setAttribute('width', '100%');
 
-    this._offScreenRef.current.appendChild(image)
-  }
+    this._offScreenRef.current.appendChild(image);
+  };
 
   hideOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-  }
+    this._offScreenRef.current.innerHTML = '';
+  };
 
   rotateViewport = (rotateDeg) => {
     // remove all childs
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    vp.setRotation(rotateDeg)
-  }
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    vp.setRotation(rotateDeg);
+  };
 
   render() {
     return (
@@ -328,8 +331,8 @@ class testUtilVolume extends Component {
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default testUtilVolume
+export default testUtilVolume;

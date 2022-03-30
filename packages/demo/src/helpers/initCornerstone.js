@@ -1,62 +1,62 @@
-import dicomParser from 'dicom-parser'
-import * as cornerstone from '@cornerstonejs/core'
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js'
+import dicomParser from 'dicom-parser';
+import * as cornerstone from '@cornerstonejs/core';
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js';
 import {
   cornerstoneStreamingImageVolumeLoader,
   sharedArrayBufferImageLoader,
-} from '@cornerstonejs/streaming-image-volume-loader'
+} from '@cornerstonejs/streaming-image-volume-loader';
 
-import WADORSHeaderProvider from './WADORSHeaderProvider'
-import ptScalingMetaDataProvider from './ptScalingMetaDataProvider'
+import WADORSHeaderProvider from './WADORSHeaderProvider';
+import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 
-const { calibratedPixelSpacingMetadataProvider } = cornerstone.utilities
+const { calibratedPixelSpacingMetadataProvider } = cornerstone.utilities;
 
-window.cornerstone = cornerstone
-window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader
+window.cornerstone = cornerstone;
+window.cornerstoneWADOImageLoader = cornerstoneWADOImageLoader;
 
 cornerstone.volumeLoader.registerUnknownVolumeLoader(
   cornerstoneStreamingImageVolumeLoader
-)
+);
 cornerstone.volumeLoader.registerVolumeLoader(
   'cornerstoneStreamingImageVolume',
   cornerstoneStreamingImageVolumeLoader
-)
+);
 
 cornerstone.imageLoader.registerImageLoader(
   'streaming-wadors',
   sharedArrayBufferImageLoader
-)
+);
 
 cornerstone.metaData.addProvider(
   WADORSHeaderProvider.get.bind(WADORSHeaderProvider),
   9999
-)
+);
 
 cornerstone.metaData.addProvider(
   ptScalingMetaDataProvider.get.bind(ptScalingMetaDataProvider),
   10000
-)
+);
 
 cornerstone.metaData.addProvider(
   calibratedPixelSpacingMetadataProvider.get.bind(
     calibratedPixelSpacingMetadataProvider
   ),
   11000
-)
+);
 
 const beforeSend = (xhr, imageId, defaultHeaders, params) => {
-  return { accept: undefined }
-}
+  return { accept: undefined };
+};
 
-cornerstoneWADOImageLoader.external.cornerstone = cornerstone
-cornerstoneWADOImageLoader.external.dicomParser = dicomParser
+cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
 cornerstoneWADOImageLoader.configure({
   useWebWorkers: true,
   decodeConfig: {
     convertFloatPixelDataToInt: false,
   },
   // beforeSend
-})
+});
 
 var config = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
@@ -67,16 +67,16 @@ var config = {
       strict: false,
     },
   },
-}
+};
 
-cornerstoneWADOImageLoader.webWorkerManager.initialize(config)
+cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
 
 // Add hardcoded meta data provider for color images
 
 export function hardcodedMetaDataProvider(type, imageId, imageIds) {
-  const colonIndex = imageId.indexOf(':')
-  const scheme = imageId.substring(0, colonIndex)
-  if (scheme !== 'web') return
+  const colonIndex = imageId.indexOf(':');
+  const scheme = imageId.substring(0, colonIndex);
+  if (scheme !== 'web') return;
 
   if (type === 'imagePixelModule') {
     const imagePixelModule = {
@@ -86,17 +86,17 @@ export function hardcodedMetaDataProvider(type, imageId, imageIds) {
       highBit: 24,
       photometricInterpretation: 'RGB',
       samplesPerPixel: 3,
-    }
+    };
 
-    return imagePixelModule
+    return imagePixelModule;
   } else if (type === 'generalSeriesModule') {
     const generalSeriesModule = {
       modality: 'SC',
-    }
+    };
 
-    return generalSeriesModule
+    return generalSeriesModule;
   } else if (type === 'imagePlaneModule') {
-    const index = imageIds.indexOf(imageId)
+    const index = imageIds.indexOf(imageId);
     // console.warn(index);
     const imagePlaneModule = {
       imageOrientationPatient: [1, 0, 0, 0, 1, 0],
@@ -109,21 +109,21 @@ export function hardcodedMetaDataProvider(type, imageId, imageIds) {
       rows: 1216,
       rowCosines: [1, 0, 0],
       columnCosines: [0, 1, 0],
-    }
+    };
 
-    return imagePlaneModule
+    return imagePlaneModule;
   } else if (type === 'voiLutModule') {
     return {
       windowWidth: [255],
       windowCenter: [127],
-    }
+    };
   } else if (type === 'modalityLutModule') {
     return {
       rescaleSlope: 1,
       rescaleIntercept: 0,
-    }
+    };
   } else {
-    return undefined
+    return undefined;
   }
 
   // console.warn(type);

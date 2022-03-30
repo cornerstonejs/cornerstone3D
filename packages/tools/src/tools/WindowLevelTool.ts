@@ -1,4 +1,4 @@
-import { BaseTool } from './base'
+import { BaseTool } from './base';
 import {
   getEnabledElement,
   Enums,
@@ -7,14 +7,14 @@ import {
   StackViewport,
   utilities,
   cache,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 // Todo: should move to configuration
-const DEFAULT_MULTIPLIER = 4
-const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024
-const PT = 'PT'
+const DEFAULT_MULTIPLIER = 4;
+const DEFAULT_IMAGE_DYNAMIC_RANGE = 1024;
+const PT = 'PT';
 
 /**
  * WindowLevel tool manipulates the windowLevel applied to a viewport. It
@@ -23,9 +23,9 @@ const PT = 'PT'
  *
  */
 export default class WindowLevelTool extends BaseTool {
-  static toolName = 'WindowLevel'
-  touchDragCallback: () => void
-  mouseDragCallback: () => void
+  static toolName = 'WindowLevel';
+  touchDragCallback: () => void;
+  mouseDragCallback: () => void;
 
   constructor(
     toolProps = {},
@@ -33,16 +33,16 @@ export default class WindowLevelTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
     }
   ) {
-    super(toolProps, defaultToolProps)
+    super(toolProps, defaultToolProps);
 
-    this.touchDragCallback = this._dragCallback.bind(this)
-    this.mouseDragCallback = this._dragCallback.bind(this)
+    this.touchDragCallback = this._dragCallback.bind(this);
+    this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
   _dragCallback(evt) {
-    const { element, deltaPoints } = evt.detail
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine, viewportId, viewport } = enabledElement
+    const { element, deltaPoints } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine, viewportId, viewport } = enabledElement;
 
     let volumeId,
       volumeActor,
@@ -51,25 +51,25 @@ export default class WindowLevelTool extends BaseTool {
       rgbTransferFunction,
       modality,
       newRange,
-      viewportsContainingVolumeUID
-    let useDynamicRange = false
+      viewportsContainingVolumeUID;
+    let useDynamicRange = false;
 
     if (viewport instanceof VolumeViewport) {
-      volumeId = this.getTargetId(viewport as Types.IVolumeViewport)
-      ;({ volumeActor } = viewport.getActor(volumeId))
-      rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0)
+      volumeId = this.getTargetId(viewport as Types.IVolumeViewport);
+      ({ volumeActor } = viewport.getActor(volumeId));
+      rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
       viewportsContainingVolumeUID =
         utilities.getVolumeViewportsContainingVolumeId(
           volumeId,
           renderingEngine.id
-        )
-      ;[lower, upper] = rgbTransferFunction.getRange()
-      modality = cache.getVolume(volumeId).metadata.Modality
-      useDynamicRange = true
+        );
+      [lower, upper] = rgbTransferFunction.getRange();
+      modality = cache.getVolume(volumeId).metadata.Modality;
+      useDynamicRange = true;
     } else {
-      const properties = viewport.getProperties()
-      modality = (viewport as Types.IStackViewport).modality
-      ;({ lower, upper } = properties.voiRange)
+      const properties = viewport.getProperties();
+      modality = (viewport as Types.IStackViewport).modality;
+      ({ lower, upper } = properties.voiRange);
     }
 
     // If modality is PT, treat it special to not include the canvas delta in
@@ -82,7 +82,7 @@ export default class WindowLevelTool extends BaseTool {
         lower,
         upper,
         clientHeight: element.clientHeight,
-      })
+      });
     } else {
       newRange = this.getNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
@@ -90,41 +90,41 @@ export default class WindowLevelTool extends BaseTool {
         volumeId,
         lower,
         upper,
-      })
+      });
     }
 
     const eventDetail: Types.EventTypes.VoiModifiedEventDetail = {
       volumeId,
       viewportId,
       range: newRange,
-    }
+    };
 
-    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail)
+    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail);
 
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
         voiRange: newRange,
-      })
+      });
 
-      viewport.render()
-      return
+      viewport.render();
+      return;
     }
 
-    rgbTransferFunction.setRange(newRange.lower, newRange.upper)
+    rgbTransferFunction.setRange(newRange.lower, newRange.upper);
     viewportsContainingVolumeUID.forEach((vp) => {
-      vp.render()
-    })
+      vp.render();
+    });
   }
 
   getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }) {
-    const deltaY = deltaPointsCanvas[1]
-    const multiplier = 5 / clientHeight
-    const wcDelta = deltaY * multiplier
+    const deltaY = deltaPointsCanvas[1];
+    const multiplier = 5 / clientHeight;
+    const wcDelta = deltaY * multiplier;
 
-    upper -= wcDelta
-    upper = Math.max(upper, 0.1)
+    upper -= wcDelta;
+    upper = Math.max(upper, 0.1);
 
-    return { lower, upper }
+    return { lower, upper };
   }
 
   getNewRange({ deltaPointsCanvas, useDynamicRange, volumeId, lower, upper }) {
@@ -132,46 +132,46 @@ export default class WindowLevelTool extends BaseTool {
     // 1 was too little
     const multiplier = useDynamicRange
       ? this._getMultiplyerFromDynamicRange(volumeId)
-      : DEFAULT_MULTIPLIER
+      : DEFAULT_MULTIPLIER;
 
-    const wwDelta = deltaPointsCanvas[0] * multiplier
-    const wcDelta = deltaPointsCanvas[1] * multiplier
+    const wwDelta = deltaPointsCanvas[0] * multiplier;
+    const wcDelta = deltaPointsCanvas[1] * multiplier;
 
     let { windowWidth, windowCenter } = utilities.windowLevel.toWindowLevel(
       lower,
       upper
-    )
+    );
 
-    windowWidth += wwDelta
-    windowCenter += wcDelta
+    windowWidth += wwDelta;
+    windowCenter += wcDelta;
 
-    windowWidth = Math.max(windowWidth, 1)
+    windowWidth = Math.max(windowWidth, 1);
 
     // Convert back to range
-    return utilities.windowLevel.toLowHighRange(windowWidth, windowCenter)
+    return utilities.windowLevel.toLowHighRange(windowWidth, windowCenter);
   }
 
   _getMultiplyerFromDynamicRange(volumeId) {
     if (!volumeId) {
-      throw new Error('No volumeId provided for the volume Viewport')
+      throw new Error('No volumeId provided for the volume Viewport');
     }
 
-    let multiplier = DEFAULT_MULTIPLIER
-    const imageDynamicRange = this._getImageDynamicRange(volumeId)
+    let multiplier = DEFAULT_MULTIPLIER;
+    const imageDynamicRange = this._getImageDynamicRange(volumeId);
 
-    const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE
+    const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
 
     if (ratio > 1) {
-      multiplier = Math.round(ratio)
+      multiplier = Math.round(ratio);
     }
 
-    return multiplier
+    return multiplier;
   }
 
   _getImageDynamicRange = (volumeId: string) => {
-    const imageVolume = cache.getVolume(volumeId)
-    const { dimensions, scalarData } = imageVolume
-    const middleSliceIndex = Math.floor(dimensions[2] / 2)
+    const imageVolume = cache.getVolume(volumeId);
+    const { dimensions, scalarData } = imageVolume;
+    const middleSliceIndex = Math.floor(dimensions[2] / 2);
 
     // Todo: volume shouldn't only be streaming image volume, it can be imageVolume
     // if (!(imageVolume instanceof StreamingImageVolume)) {
@@ -184,37 +184,37 @@ export default class WindowLevelTool extends BaseTool {
     //   return DEFAULT_IMAGE_DYNAMIC_RANGE
     // }
 
-    const frameLength = dimensions[0] * dimensions[1]
-    let bytesPerVoxel
-    let TypedArrayConstructor
+    const frameLength = dimensions[0] * dimensions[1];
+    let bytesPerVoxel;
+    let TypedArrayConstructor;
 
     if (scalarData instanceof Float32Array) {
-      bytesPerVoxel = 4
-      TypedArrayConstructor = Float32Array
+      bytesPerVoxel = 4;
+      TypedArrayConstructor = Float32Array;
     } else if (scalarData instanceof Uint8Array) {
-      bytesPerVoxel = 1
-      TypedArrayConstructor = Uint8Array
+      bytesPerVoxel = 1;
+      TypedArrayConstructor = Uint8Array;
     }
 
-    const buffer = scalarData.buffer
-    const byteOffset = middleSliceIndex * frameLength * bytesPerVoxel
-    const frame = new TypedArrayConstructor(buffer, byteOffset, frameLength)
+    const buffer = scalarData.buffer;
+    const byteOffset = middleSliceIndex * frameLength * bytesPerVoxel;
+    const frame = new TypedArrayConstructor(buffer, byteOffset, frameLength);
 
-    let min = Infinity
-    let max = -Infinity
+    let min = Infinity;
+    let max = -Infinity;
 
     for (let i = 0; i < frameLength; i++) {
-      const voxel = frame[i]
+      const voxel = frame[i];
 
       if (voxel < min) {
-        min = voxel
+        min = voxel;
       }
 
       if (voxel > max) {
-        max = voxel
+        max = voxel;
       }
     }
 
-    return max - min
-  }
+    return max - min;
+  };
 }

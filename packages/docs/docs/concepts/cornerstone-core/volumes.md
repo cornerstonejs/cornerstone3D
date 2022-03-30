@@ -7,11 +7,10 @@ title: Volumes
 
 A volume is a 3D data array that has a physical size and orientation in space. It can be built by composing pixel data and metadata of a 3D imaging series, or can be defined from scratch by the application. A volume has a `FrameOfReferenceUID`, `voxelSpacing (x,y,z), `voxel dimensions (x,y,z)`, `origin`, and `orientation` vectors which uniquely define its coordinate system with respect to the patient coordinate system.
 
-
 ## ImageVolume
+
 In `Cornerstone3D` we use the `ImageVolume` base class to represent a 3D image volume. All volumes are derived from this class. For instance
 the `StreamingImageVolume` which is used to represent a volume that is being streamed image by image. We will discuss the `StreamingImageVolume` class in more detail later.
-
 
 ```js
 interface IImageVolume {

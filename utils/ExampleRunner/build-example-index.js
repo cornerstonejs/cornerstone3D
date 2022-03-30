@@ -1,15 +1,15 @@
-const path = require('path')
+const path = require('path');
 
 module.exports = function buildExampleIndex(names, exampleBasePaths) {
-  let exampleLinks = ''
+  let exampleLinks = '';
 
   names.forEach((name, index) => {
-    const examplePath = exampleBasePaths[index]
+    const examplePath = exampleBasePaths[index];
 
     exampleLinks += `
       <a href=${name}.html>${name}</a>\n
-    `
-  })
+    `;
+  });
 
   return `
   <!DOCTYPE html>
@@ -29,5 +29,5 @@ module.exports = function buildExampleIndex(names, exampleBasePaths) {
       </div>
     </body>
   </html>
-  `
-}
+  `;
+};

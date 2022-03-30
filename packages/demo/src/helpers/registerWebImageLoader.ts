@@ -1,7 +1,7 @@
-import * as cornerstone from '@cornerstonejs/core'
+import * as cornerstone from '@cornerstonejs/core';
 
-const canvas = document.createElement('canvas')
-let lastImageIdDrawn
+const canvas = document.createElement('canvas');
+let lastImageIdDrawn;
 
 // TODO: Not sure why, but this seems to have broken?
 // It resolves as undefined when running Karma tests?
@@ -16,44 +16,44 @@ let lastImageIdDrawn
  */
 function createImage(image, imageId) {
   // extract the attributes we need
-  const rows = image.naturalHeight
-  const columns = image.naturalWidth
+  const rows = image.naturalHeight;
+  const columns = image.naturalWidth;
 
   function getPixelData() {
-    const imageData = getImageData()
+    const imageData = getImageData();
 
-    return imageData.data
+    return imageData.data;
   }
 
   function getImageData() {
-    let context
+    let context;
 
     if (lastImageIdDrawn === imageId) {
-      context = canvas.getContext('2d')
+      context = canvas.getContext('2d');
     } else {
-      canvas.height = image.naturalHeight
-      canvas.width = image.naturalWidth
-      context = canvas.getContext('2d')
-      context.drawImage(image, 0, 0)
-      lastImageIdDrawn = imageId
+      canvas.height = image.naturalHeight;
+      canvas.width = image.naturalWidth;
+      context = canvas.getContext('2d');
+      context.drawImage(image, 0, 0);
+      lastImageIdDrawn = imageId;
     }
 
-    return context.getImageData(0, 0, image.naturalWidth, image.naturalHeight)
+    return context.getImageData(0, 0, image.naturalWidth, image.naturalHeight);
   }
 
   function getCanvas() {
     if (lastImageIdDrawn === imageId) {
-      return canvas
+      return canvas;
     }
 
-    canvas.height = image.naturalHeight
-    canvas.width = image.naturalWidth
-    const context = canvas.getContext('2d')
+    canvas.height = image.naturalHeight;
+    canvas.width = image.naturalWidth;
+    const context = canvas.getContext('2d');
 
-    context.drawImage(image, 0, 0)
-    lastImageIdDrawn = imageId
+    context.drawImage(image, 0, 0);
+    lastImageIdDrawn = imageId;
 
-    return canvas
+    return canvas;
   }
 
   // Extract the various attributes we need
@@ -78,28 +78,28 @@ function createImage(image, imageId) {
     rowPixelSpacing: 1, // for web it's always 1
     invert: false,
     sizeInBytes: rows * columns * 4,
-  }
+  };
 }
 
 function arrayBufferToImage(arrayBuffer) {
   return new Promise((resolve, reject) => {
-    const image = new Image()
-    const arrayBufferView = new Uint8Array(arrayBuffer)
-    const blob = new Blob([arrayBufferView])
-    const urlCreator = window.URL || window.webkitURL
-    const imageUrl = urlCreator.createObjectURL(blob)
+    const image = new Image();
+    const arrayBufferView = new Uint8Array(arrayBuffer);
+    const blob = new Blob([arrayBufferView]);
+    const urlCreator = window.URL || window.webkitURL;
+    const imageUrl = urlCreator.createObjectURL(blob);
 
-    image.src = imageUrl
+    image.src = imageUrl;
     image.onload = () => {
-      resolve(image)
-      urlCreator.revokeObjectURL(imageUrl)
-    }
+      resolve(image);
+      urlCreator.revokeObjectURL(imageUrl);
+    };
 
     image.onerror = (error) => {
-      urlCreator.revokeObjectURL(imageUrl)
-      reject(error)
-    }
-  })
+      urlCreator.revokeObjectURL(imageUrl);
+      reject(error);
+    };
+  });
 }
 
 //
@@ -110,68 +110,68 @@ const options = {
   beforeSend: (xhr) => {
     // xhr
   },
-}
+};
 
 // Loads an image given a url to an image
 function loadImage(uri, imageId) {
-  const xhr = new XMLHttpRequest()
+  const xhr = new XMLHttpRequest();
 
-  xhr.open('GET', uri, true)
-  xhr.responseType = 'arraybuffer'
-  options.beforeSend(xhr)
+  xhr.open('GET', uri, true);
+  xhr.responseType = 'arraybuffer';
+  options.beforeSend(xhr);
 
   xhr.onprogress = function (oProgress) {
     if (oProgress.lengthComputable) {
       // evt.loaded the bytes browser receive
       // evt.total the total bytes set by the header
-      const loaded = oProgress.loaded
-      const total = oProgress.total
-      const percentComplete = Math.round((loaded / total) * 100)
+      const loaded = oProgress.loaded;
+      const total = oProgress.total;
+      const percentComplete = Math.round((loaded / total) * 100);
 
       const eventDetail = {
         imageId,
         loaded,
         total,
         percentComplete,
-      }
+      };
 
       cornerstone.triggerEvent(
         cornerstone.eventTarget,
         'cornerstoneimageloadprogress',
         eventDetail
-      )
+      );
     }
-  }
+  };
 
   const promise = new Promise((resolve, reject) => {
     xhr.onload = function () {
-      const imagePromise = arrayBufferToImage(this.response)
+      const imagePromise = arrayBufferToImage(this.response);
 
       imagePromise
         .then((image) => {
-          const imageObject = createImage(image, imageId)
+          const imageObject = createImage(image, imageId);
 
-          resolve(imageObject)
+          resolve(imageObject);
         }, reject)
         .catch((error) => {
-          console.error(error)
-        })
-    }
+          console.error(error);
+        });
+    };
     xhr.onerror = function (error) {
-      reject(error)
-    }
+      reject(error);
+    };
 
-    xhr.send()
-  })
+    xhr.send();
+  });
 
   const cancelFn = () => {
-    xhr.abort()
-  }
+    xhr.abort();
+  };
 
   return {
     promise,
     cancelFn,
-  }
+  };
 }
 
 /**
@@ -199,7 +199,7 @@ function loadImage(uri, imageId) {
  * ```
  */
 function registerWebImageLoader(cs): void {
-  cs.registerImageLoader('web', _loadImageIntoBuffer)
+  cs.registerImageLoader('web', _loadImageIntoBuffer);
 }
 
 /**
@@ -212,7 +212,7 @@ function _loadImageIntoBuffer(
   imageId: string,
   options?: Record<string, any>
 ): { promise: Promise<Record<string, any>>; cancelFn: () => void } {
-  const uri = imageId.replace('web:', '')
+  const uri = imageId.replace('web:', '');
 
   const promise = new Promise((resolve, reject) => {
     // get the pixel data from the server
@@ -225,46 +225,46 @@ function _loadImageIntoBuffer(
             !options.targetBuffer.length ||
             !options.targetBuffer.offset
           ) {
-            resolve(image)
-            return
+            resolve(image);
+            return;
           }
           // If we have a target buffer, write to that instead. This helps reduce memory duplication.
-          const { arrayBuffer, offset, length, type } = options.targetBuffer
+          const { arrayBuffer, offset, length, type } = options.targetBuffer;
 
-          const pixelDataRGBA = image.getPixelData()
+          const pixelDataRGBA = image.getPixelData();
           const pixelDataRGB = new Uint8ClampedArray(
             (pixelDataRGBA.length * 3) / 4
-          )
+          );
 
-          let j = 0
+          let j = 0;
           for (let i = 0; i < pixelDataRGBA.length; i += 4) {
-            pixelDataRGB[j] = pixelDataRGBA[i]
-            pixelDataRGB[j + 1] = pixelDataRGBA[i + 1]
-            pixelDataRGB[j + 2] = pixelDataRGBA[i + 2]
-            j += 3
+            pixelDataRGB[j] = pixelDataRGBA[i];
+            pixelDataRGB[j + 1] = pixelDataRGBA[i + 1];
+            pixelDataRGB[j + 2] = pixelDataRGBA[i + 2];
+            j += 3;
           }
 
-          const targetArray = new Uint8Array(arrayBuffer, offset, length)
+          const targetArray = new Uint8Array(arrayBuffer, offset, length);
 
           // TypedArray.Set is api level and ~50x faster than copying elements even for
           // Arrays of different types, which aren't simply memcpy ops.
-          targetArray.set(pixelDataRGB, 0)
+          targetArray.set(pixelDataRGB, 0);
 
-          resolve(true)
+          resolve(true);
         },
         (error) => {
-          reject(error)
+          reject(error);
         }
       )
       .catch((error) => {
-        reject(error)
-      })
-  })
+        reject(error);
+      });
+  });
 
   return {
     promise,
     cancelFn: undefined,
-  }
+  };
 }
 
-export { registerWebImageLoader }
+export { registerWebImageLoader };

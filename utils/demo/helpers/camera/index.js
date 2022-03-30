@@ -1,5 +1,5 @@
-import getRandomlyTranslatedAndZoomedCameraProperties from './getRandomlyTranslatedAndZoomedCameraProperties'
+import getRandomlyTranslatedAndZoomedCameraProperties from './getRandomlyTranslatedAndZoomedCameraProperties';
 
-const camera = { getRandomlyTranslatedAndZoomedCameraProperties }
+const camera = { getRandomlyTranslatedAndZoomedCameraProperties };
 
-export default camera
+export default camera;

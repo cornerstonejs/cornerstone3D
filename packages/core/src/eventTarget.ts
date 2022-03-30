@@ -2,37 +2,37 @@
  * EventTarget - Provides the [EventTarget](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) interface
  */
 class CornerstoneEventTarget implements EventTarget {
-  private listeners
+  private listeners;
 
   constructor() {
-    this.listeners = {}
+    this.listeners = {};
   }
 
   public reset() {
-    this.listeners = {}
+    this.listeners = {};
   }
 
   public addEventListener(type, callback) {
     if (!this.listeners[type]) {
-      this.listeners[type] = []
+      this.listeners[type] = [];
     }
 
-    this.listeners[type].push(callback)
+    this.listeners[type].push(callback);
   }
 
   public removeEventListener(type, callback) {
     if (!this.listeners[type]) {
-      return
+      return;
     }
 
-    const stack = this.listeners[type]
-    const stackLength = stack.length
+    const stack = this.listeners[type];
+    const stackLength = stack.length;
 
     for (let i = 0; i < stackLength; i++) {
       if (stack[i] === callback) {
-        stack.splice(i, 1)
+        stack.splice(i, 1);
 
-        return
+        return;
       }
     }
   }
@@ -40,19 +40,19 @@ class CornerstoneEventTarget implements EventTarget {
   dispatchEvent(event) {
     if (!this.listeners[event.type]) {
       //console.warn(`Skipping dispatch since there are no listeners for ${event.type}`);
-      return
+      return;
     }
 
-    const stack = this.listeners[event.type].slice()
-    const stackLength = stack.length
+    const stack = this.listeners[event.type].slice();
+    const stackLength = stack.length;
 
     for (let i = 0; i < stackLength; i++) {
-      stack[i].call(this, event)
+      stack[i].call(this, event);
     }
 
-    return !event.defaultPrevented
+    return !event.defaultPrevented;
   }
 }
-const eventTarget = new CornerstoneEventTarget()
+const eventTarget = new CornerstoneEventTarget();
 
-export default eventTarget
+export default eventTarget;

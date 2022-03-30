@@ -1,14 +1,14 @@
-import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera'
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder'
-import vtkMath from '@kitware/vtk.js/Common/Core/Math'
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
-import { vec3, mat4 } from 'gl-matrix'
-import _cloneDeep from 'lodash.clonedeep'
+import { vec3, mat4 } from 'gl-matrix';
+import _cloneDeep from 'lodash.clonedeep';
 
-import Events from '../enums/Events'
-import ViewportType from '../enums/ViewportType'
-import renderingEngineCache from './renderingEngineCache'
-import { triggerEvent, planar } from '../utilities'
+import Events from '../enums/Events';
+import ViewportType from '../enums/ViewportType';
+import renderingEngineCache from './renderingEngineCache';
+import { triggerEvent, planar } from '../utilities';
 import type {
   ICamera,
   ActorEntry,
@@ -17,9 +17,9 @@ import type {
   Point2,
   Point3,
   FlipDirection,
-} from '../types'
-import type { ViewportInput, IViewport } from '../types/IViewport'
-import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera'
+} from '../types';
+import type { ViewportInput, IViewport } from '../types/IViewport';
+import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -32,70 +32,70 @@ import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera'
  */
 class Viewport implements IViewport {
   /** unique identifier for the viewport */
-  readonly id: string
+  readonly id: string;
   /** HTML element in DOM that is used for rendering the viewport */
-  readonly element: HTMLElement
+  readonly element: HTMLElement;
   /** an internal canvas that is created on the provided HTML element */
-  readonly canvas: HTMLCanvasElement
+  readonly canvas: HTMLCanvasElement;
   /** RenderingEngine id that the viewport belongs to */
-  readonly renderingEngineId: string
+  readonly renderingEngineId: string;
   /** Type of viewport */
-  readonly type: ViewportType
-  protected flipHorizontal = false
-  protected flipVertical = false
+  readonly type: ViewportType;
+  protected flipHorizontal = false;
+  protected flipVertical = false;
 
   /** sx of viewport on the offscreen canvas */
-  sx: number
+  sx: number;
   /** sy of viewport on the offscreen canvas */
-  sy: number
+  sy: number;
   /** sWidth of viewport on the offscreen canvas */
-  sWidth: number
+  sWidth: number;
   /** sHeight of viewport on the offscreen canvas */
-  sHeight: number
+  sHeight: number;
   /** a Map containing the actor uid and actors */
-  _actors: Map<string, any>
+  _actors: Map<string, any>;
   /** Default options for the viewport which includes orientation, sliceNormal and backgroundColor */
-  readonly defaultOptions: any
+  readonly defaultOptions: any;
   /** options for the viewport which includes orientation, sliceNormal and backgroundColor */
-  options: ViewportInputOptions
-  private _suppressCameraModifiedEvents = false
+  options: ViewportInputOptions;
+  private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
-  readonly suppressEvents: boolean
+  readonly suppressEvents: boolean;
 
   constructor(props: ViewportInput) {
-    this.id = props.id
-    this.renderingEngineId = props.renderingEngineId
-    this.type = props.type
-    this.element = props.element
-    this.canvas = props.canvas
-    this.sx = props.sx
-    this.sy = props.sy
-    this.sWidth = props.sWidth
-    this.sHeight = props.sHeight
-    this._actors = new Map()
+    this.id = props.id;
+    this.renderingEngineId = props.renderingEngineId;
+    this.type = props.type;
+    this.element = props.element;
+    this.canvas = props.canvas;
+    this.sx = props.sx;
+    this.sy = props.sy;
+    this.sWidth = props.sWidth;
+    this.sHeight = props.sHeight;
+    this._actors = new Map();
     // Set data attributes for render events
-    this.element.setAttribute('data-viewport-uid', this.id)
+    this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
       'data-rendering-engine-uid',
       this.renderingEngineId
-    )
+    );
 
-    this.defaultOptions = _cloneDeep(props.defaultOptions)
+    this.defaultOptions = _cloneDeep(props.defaultOptions);
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
-      : false
-    this.options = _cloneDeep(props.defaultOptions)
+      : false;
+    this.options = _cloneDeep(props.defaultOptions);
   }
 
-  getFrameOfReferenceUID: () => string
-  canvasToWorld: (canvasPos: Point2) => Point3
-  worldToCanvas: (worldPos: Point3) => Point2
-  customRenderViewportToCanvas: () => unknown
-  resize: () => void
-  getProperties: () => void
+  getFrameOfReferenceUID: () => string;
+  canvasToWorld: (canvasPos: Point2) => Point3;
+  worldToCanvas: (worldPos: Point3) => Point2;
+  customRenderViewportToCanvas: () => unknown;
+  resize: () => void;
+  getProperties: () => void;
 
   static get useCustomRenderingPipeline(): boolean {
-    return false
+    return false;
   }
 
   /**
@@ -104,7 +104,7 @@ class Viewport implements IViewport {
    * @returns The RenderingEngine instance.
    */
   public getRenderingEngine(): IRenderingEngine {
-    return renderingEngineCache.get(this.renderingEngineId)
+    return renderingEngineCache.get(this.renderingEngineId);
   }
 
   /**
@@ -113,22 +113,22 @@ class Viewport implements IViewport {
    * @returns The `vtkRenderer` for the `Viewport`.
    */
   public getRenderer() {
-    const renderingEngine = this.getRenderingEngine()
+    const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      throw new Error('Rendering engine has been destroyed')
+      throw new Error('Rendering engine has been destroyed');
     }
 
-    return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.id)
+    return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.id);
   }
 
   /**
    * Renders the `Viewport` using the `RenderingEngine`.
    */
   public render(): void {
-    const renderingEngine = this.getRenderingEngine()
+    const renderingEngine = this.getRenderingEngine();
 
-    renderingEngine.renderViewport(this.id)
+    renderingEngine.renderViewport(this.id);
   }
 
   /**
@@ -138,13 +138,13 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = <ViewportInputOptions>_cloneDeep(options)
+    this.options = <ViewportInputOptions>_cloneDeep(options);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
 
     if (immediate) {
-      this.render()
+      this.render();
     }
   }
 
@@ -154,33 +154,33 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
-    this.options = _cloneDeep(this.defaultOptions)
+    this.options = _cloneDeep(this.defaultOptions);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
 
     if (immediate) {
-      this.render()
+      this.render();
     }
   }
 
   protected applyFlipTx = (worldPos: Point3): Point3 => {
-    const actor = this.getDefaultActor()
+    const actor = this.getDefaultActor();
 
     if (!actor) {
-      return worldPos
+      return worldPos;
     }
 
-    const volumeActor = actor.volumeActor
-    const mat = volumeActor.getMatrix()
+    const volumeActor = actor.volumeActor;
+    const mat = volumeActor.getMatrix();
 
-    const newPos = vec3.create()
-    const matT = mat4.create()
-    mat4.transpose(matT, mat)
-    vec3.transformMat4(newPos, worldPos, matT)
+    const newPos = vec3.create();
+    const matT = mat4.create();
+    mat4.transpose(matT, mat);
+    vec3.transformMat4(newPos, worldPos, matT);
 
-    return [newPos[0], newPos[1], newPos[2]]
-  }
+    return [newPos[0], newPos[1], newPos[2]];
+  };
 
   /**
    * Flip the viewport on horizontal or vertical axis, this method
@@ -191,21 +191,21 @@ class Viewport implements IViewport {
    * @param flipOptions.flipVertical - Flip the viewport on vertical axis
    */
   protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
-    const imageData = this.getDefaultImageData()
+    const imageData = this.getDefaultImageData();
 
     if (!imageData) {
-      return
+      return;
     }
 
-    let flipH = false
-    let flipV = false
+    let flipH = false;
+    let flipV = false;
 
     if (
       typeof flipHorizontal !== 'undefined' &&
       ((flipHorizontal && !this.flipHorizontal) ||
         (!flipHorizontal && this.flipHorizontal))
     ) {
-      flipH = true
+      flipH = true;
     }
 
     if (
@@ -213,11 +213,11 @@ class Viewport implements IViewport {
       ((flipVertical && !this.flipVertical) ||
         (!flipVertical && this.flipVertical))
     ) {
-      flipV = true
+      flipV = true;
     }
 
     if (!flipH && !flipV) {
-      return
+      return;
     }
 
     // In Cornerstone gpu rendering pipeline, the images are positioned
@@ -228,83 +228,83 @@ class Viewport implements IViewport {
     // proper scaling (flipping), they should be transformed to the origin and
     // then flipped. The following code does this transformation.
 
-    const origin = imageData.getOrigin()
-    const direction = imageData.getDirection()
-    const spacing = imageData.getSpacing()
-    const size = imageData.getDimensions()
+    const origin = imageData.getOrigin();
+    const direction = imageData.getDirection();
+    const spacing = imageData.getSpacing();
+    const size = imageData.getDimensions();
 
-    const iVector = direction.slice(0, 3)
-    const jVector = direction.slice(3, 6)
-    const kVector = direction.slice(6, 9)
+    const iVector = direction.slice(0, 3);
+    const jVector = direction.slice(3, 6);
+    const kVector = direction.slice(6, 9);
 
     // finding the center of the image
-    const center = vec3.create()
-    vec3.scaleAndAdd(center, origin, iVector, (size[0] / 2.0) * spacing[0])
-    vec3.scaleAndAdd(center, center, jVector, (size[1] / 2.0) * spacing[1])
-    vec3.scaleAndAdd(center, center, kVector, (size[2] / 2.0) * spacing[2])
+    const center = vec3.create();
+    vec3.scaleAndAdd(center, origin, iVector, (size[0] / 2.0) * spacing[0]);
+    vec3.scaleAndAdd(center, center, jVector, (size[1] / 2.0) * spacing[1]);
+    vec3.scaleAndAdd(center, center, kVector, (size[2] / 2.0) * spacing[2]);
 
-    let flipHTx, flipVTx
+    let flipHTx, flipVTx;
 
     const transformToOriginTx = vtkMatrixBuilder
       .buildFromRadian()
       .identity()
       .translate(center[0], center[1], center[2])
       .rotateFromDirections(jVector, [0, 1, 0])
-      .rotateFromDirections(iVector, [1, 0, 0])
+      .rotateFromDirections(iVector, [1, 0, 0]);
 
     const transformBackFromOriginTx = vtkMatrixBuilder
       .buildFromRadian()
       .identity()
       .rotateFromDirections([1, 0, 0], iVector)
       .rotateFromDirections([0, 1, 0], jVector)
-      .translate(-center[0], -center[1], -center[2])
+      .translate(-center[0], -center[1], -center[2]);
 
     if (flipH) {
-      this.flipHorizontal = flipHorizontal
+      this.flipHorizontal = flipHorizontal;
       flipHTx = vtkMatrixBuilder
         .buildFromRadian()
         .multiply(transformToOriginTx.getMatrix())
         .scale(-1, 1, 1)
-        .multiply(transformBackFromOriginTx.getMatrix())
+        .multiply(transformBackFromOriginTx.getMatrix());
     }
 
     if (flipV) {
-      this.flipVertical = flipVertical
+      this.flipVertical = flipVertical;
       flipVTx = vtkMatrixBuilder
         .buildFromRadian()
         .multiply(transformToOriginTx.getMatrix())
         .scale(1, -1, 1)
-        .multiply(transformBackFromOriginTx.getMatrix())
+        .multiply(transformBackFromOriginTx.getMatrix());
     }
 
-    const actors = this.getActors()
+    const actors = this.getActors();
 
     actors.forEach((actor) => {
-      const volumeActor = actor.volumeActor
+      const volumeActor = actor.volumeActor;
 
-      const mat = volumeActor.getUserMatrix()
+      const mat = volumeActor.getUserMatrix();
 
       if (flipHTx) {
-        mat4.multiply(mat, mat, flipHTx.getMatrix())
+        mat4.multiply(mat, mat, flipHTx.getMatrix());
       }
 
       if (flipVTx) {
-        mat4.multiply(mat, mat, flipVTx.getMatrix())
+        mat4.multiply(mat, mat, flipVTx.getMatrix());
       }
 
-      volumeActor.setUserMatrix(mat)
+      volumeActor.setUserMatrix(mat);
 
-      this.getRenderingEngine().render()
-    })
+      this.getRenderingEngine().render();
+    });
 
-    this.getRenderingEngine().render()
+    this.getRenderingEngine().render();
   }
 
   private getDefaultImageData(): any {
-    const actor = this.getDefaultActor()
+    const actor = this.getDefaultActor();
 
     if (actor) {
-      return actor.volumeActor.getMapper().getInputData()
+      return actor.volumeActor.getMapper().getInputData();
     }
   }
 
@@ -313,7 +313,7 @@ class Viewport implements IViewport {
    * @returns An actor entry.
    */
   public getDefaultActor(): ActorEntry {
-    return this.getActors()[0]
+    return this.getActors()[0];
   }
 
   /**
@@ -321,7 +321,7 @@ class Viewport implements IViewport {
    * @returns An array of ActorEntry objects.
    */
   public getActors(): Array<ActorEntry> {
-    return Array.from(this._actors.values())
+    return Array.from(this._actors.values());
   }
 
   /**
@@ -330,7 +330,7 @@ class Viewport implements IViewport {
    * @returns An ActorEntry object.
    */
   public getActor(actorUID: string): ActorEntry {
-    return this._actors.get(actorUID)
+    return this._actors.get(actorUID);
   }
 
   /**
@@ -338,8 +338,8 @@ class Viewport implements IViewport {
    * @param actors - An array of ActorEntry objects.
    */
   public setActors(actors: Array<ActorEntry>): void {
-    this.removeAllActors()
-    this.addActors(actors)
+    this.removeAllActors();
+    this.addActors(actors);
   }
 
   /**
@@ -347,14 +347,14 @@ class Viewport implements IViewport {
    * @param actorUID - The unique identifier for the actor.
    */
   public removeActor(actorUID: string): void {
-    const actor = this.getActor(actorUID)
+    const actor = this.getActor(actorUID);
     if (!actor) {
-      console.warn(`Actor ${actorUID} does not exist for this viewport`)
-      return
+      console.warn(`Actor ${actorUID} does not exist for this viewport`);
+      return;
     }
-    const renderer = this.getRenderer()
-    renderer.removeViewProp(actor.volumeActor) // removeActor not implemented in vtk?
-    this._actors.delete(actorUID)
+    const renderer = this.getRenderer();
+    renderer.removeViewProp(actor.volumeActor); // removeActor not implemented in vtk?
+    this._actors.delete(actorUID);
   }
 
   /**
@@ -363,8 +363,8 @@ class Viewport implements IViewport {
    */
   public removeActors(actorUIDs: Array<string>): void {
     actorUIDs.forEach((actorUID) => {
-      this.removeActor(actorUID)
-    })
+      this.removeActor(actorUID);
+    });
   }
 
   /**
@@ -372,7 +372,7 @@ class Viewport implements IViewport {
    * @param actors - An array of ActorEntry objects.
    */
   public addActors(actors: Array<ActorEntry>): void {
-    actors.forEach((actor) => this.addActor(actor))
+    actors.forEach((actor) => this.addActor(actor));
   }
 
   /**
@@ -384,47 +384,47 @@ class Viewport implements IViewport {
    * @param actorEntry.slabThickness - The slab thickness.
    */
   public addActor(actorEntry: ActorEntry): void {
-    const { uid: actorUID, volumeActor } = actorEntry
-    const renderingEngine = this.getRenderingEngine()
+    const { uid: actorUID, volumeActor } = actorEntry;
+    const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       console.warn(
         `Cannot add actor UID of ${actorUID} Rendering Engine has been destroyed`
-      )
-      return
+      );
+      return;
     }
 
     if (!actorUID || !volumeActor) {
-      throw new Error('Actors should have uid and vtk volumeActor properties')
+      throw new Error('Actors should have uid and vtk volumeActor properties');
     }
 
-    const actor = this.getActor(actorUID)
+    const actor = this.getActor(actorUID);
     if (actor) {
-      console.warn(`Actor ${actorUID} already exists for this viewport`)
-      return
+      console.warn(`Actor ${actorUID} already exists for this viewport`);
+      return;
     }
 
-    const renderer = this.getRenderer()
-    renderer.addActor(volumeActor)
-    this._actors.set(actorUID, Object.assign({}, actorEntry))
+    const renderer = this.getRenderer();
+    renderer.addActor(volumeActor);
+    this._actors.set(actorUID, Object.assign({}, actorEntry));
   }
 
   /**
    * Remove all actors from the renderer
    */
   public removeAllActors(): void {
-    this.getRenderer().removeAllViewProps()
-    this._actors = new Map()
-    return
+    this.getRenderer().removeAllViewProps();
+    this._actors = new Map();
+    return;
   }
 
   /**
    * Reset the camera to the default viewport camera without firing events
    */
   protected resetCameraNoEvent(): void {
-    this._suppressCameraModifiedEvents = true
-    this.resetCamera()
-    this._suppressCameraModifiedEvents = false
+    this._suppressCameraModifiedEvents = true;
+    this.resetCamera();
+    this._suppressCameraModifiedEvents = false;
   }
 
   /**
@@ -432,9 +432,9 @@ class Viewport implements IViewport {
    * @param camera - The camera to use for the viewport.
    */
   protected setCameraNoEvent(camera: ICamera): void {
-    this._suppressCameraModifiedEvents = true
-    this.setCamera(camera)
-    this._suppressCameraModifiedEvents = false
+    this._suppressCameraModifiedEvents = true;
+    this.setCamera(camera);
+    this._suppressCameraModifiedEvents = false;
   }
 
   /**
@@ -453,36 +453,36 @@ class Viewport implements IViewport {
    */
   private _getViewImageDataIntersections(imageData, focalPoint, normal) {
     // Viewplane equation: Ax+By+Cz=D
-    const A = normal[0]
-    const B = normal[1]
-    const C = normal[2]
-    const D = A * focalPoint[0] + B * focalPoint[1] + C * focalPoint[2]
+    const A = normal[0];
+    const B = normal[1];
+    const C = normal[2];
+    const D = A * focalPoint[0] + B * focalPoint[1] + C * focalPoint[2];
 
     // Computing the edges of the 3D cube
-    const bounds = imageData.getBounds()
-    const edges = this._getEdges(bounds)
+    const bounds = imageData.getBounds();
+    const edges = this._getEdges(bounds);
 
-    const intersections = []
+    const intersections = [];
 
     for (const edge of edges) {
       // start point: [x0, y0, z0], end point: [x1, y1, z1]
-      const [[x0, y0, z0], [x1, y1, z1]] = edge
+      const [[x0, y0, z0], [x1, y1, z1]] = edge;
       // Check if the edge is parallel to plane
       if (A * (x1 - x0) + B * (y1 - y0) + C * (z1 - z0) === 0) {
-        continue
+        continue;
       }
       const intersectionPoint = planar.linePlaneIntersection(
         [x0, y0, z0],
         [x1, y1, z1],
         [A, B, C, D]
-      )
+      );
 
       if (this._isInBounds(intersectionPoint, bounds)) {
-        intersections.push(intersectionPoint)
+        intersections.push(intersectionPoint);
       }
     }
 
-    return intersections
+    return intersections;
   }
 
   /**
@@ -494,132 +494,132 @@ class Viewport implements IViewport {
    * @returns boolean
    */
   protected resetCamera(resetPanZoomForViewPlane = false): boolean {
-    const renderer = this.getRenderer()
-    const previousCamera = _cloneDeep(this.getCamera())
+    const renderer = this.getRenderer();
+    const previousCamera = _cloneDeep(this.getCamera());
 
-    const bounds = renderer.computeVisiblePropBounds()
-    const focalPoint = [0, 0, 0]
-    const imageData = this.getDefaultImageData()
+    const bounds = renderer.computeVisiblePropBounds();
+    const focalPoint = [0, 0, 0];
+    const imageData = this.getDefaultImageData();
 
     // Todo: remove this, this is just for tests passing
     if (imageData) {
-      const spc = imageData.getSpacing()
+      const spc = imageData.getSpacing();
 
-      bounds[0] = bounds[0] + spc[0] / 2
-      bounds[1] = bounds[1] - spc[0] / 2
-      bounds[2] = bounds[2] + spc[1] / 2
-      bounds[3] = bounds[3] - spc[1] / 2
-      bounds[4] = bounds[4] + spc[2] / 2
-      bounds[5] = bounds[5] - spc[2] / 2
+      bounds[0] = bounds[0] + spc[0] / 2;
+      bounds[1] = bounds[1] - spc[0] / 2;
+      bounds[2] = bounds[2] + spc[1] / 2;
+      bounds[3] = bounds[3] - spc[1] / 2;
+      bounds[4] = bounds[4] + spc[2] / 2;
+      bounds[5] = bounds[5] - spc[2] / 2;
     }
 
-    const activeCamera = this.getVtkActiveCamera()
-    const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal()
-    const viewUp = <Point3>activeCamera.getViewUp()
+    const activeCamera = this.getVtkActiveCamera();
+    const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
+    const viewUp = <Point3>activeCamera.getViewUp();
 
     // Reset the perspective zoom factors, otherwise subsequent zooms will cause
     // the view angle to become very small and cause bad depth sorting.
     // todo: parallel projection only
-    activeCamera.setViewAngle(90.0)
+    activeCamera.setViewAngle(90.0);
 
-    focalPoint[0] = (bounds[0] + bounds[1]) / 2.0
-    focalPoint[1] = (bounds[2] + bounds[3]) / 2.0
-    focalPoint[2] = (bounds[4] + bounds[5]) / 2.0
+    focalPoint[0] = (bounds[0] + bounds[1]) / 2.0;
+    focalPoint[1] = (bounds[2] + bounds[3]) / 2.0;
+    focalPoint[2] = (bounds[4] + bounds[5]) / 2.0;
 
     if (imageData) {
-      const dimensions = imageData.getDimensions()
-      const middleIJK = dimensions.map((d) => Math.floor(d / 2))
+      const dimensions = imageData.getDimensions();
+      const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
-      const idx = [middleIJK[0], middleIJK[1], middleIJK[2]]
-      imageData.indexToWorld(idx, focalPoint)
+      const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
+      imageData.indexToWorld(idx, focalPoint);
     }
 
     const { widthWorld, heightWorld } =
-      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal)
+      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal);
 
-    const canvasSize = [this.sWidth, this.sHeight]
+    const canvasSize = [this.sWidth, this.sHeight];
 
-    const boundsAspectRatio = widthWorld / heightWorld
-    const canvasAspectRatio = canvasSize[0] / canvasSize[1]
+    const boundsAspectRatio = widthWorld / heightWorld;
+    const canvasAspectRatio = canvasSize[0] / canvasSize[1];
 
-    let radius
+    let radius;
 
     if (boundsAspectRatio < canvasAspectRatio) {
       // can fit full height, so use it.
-      radius = heightWorld / 2
+      radius = heightWorld / 2;
     } else {
-      const scaleFactor = boundsAspectRatio / canvasAspectRatio
+      const scaleFactor = boundsAspectRatio / canvasAspectRatio;
 
-      radius = (heightWorld * scaleFactor) / 2
+      radius = (heightWorld * scaleFactor) / 2;
     }
 
     //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = 1.1 * radius
+    const parallelScale = 1.1 * radius;
 
-    let w1 = bounds[1] - bounds[0]
-    let w2 = bounds[3] - bounds[2]
-    let w3 = bounds[5] - bounds[4]
-    w1 *= w1
-    w2 *= w2
-    w3 *= w3
-    radius = w1 + w2 + w3
+    let w1 = bounds[1] - bounds[0];
+    let w2 = bounds[3] - bounds[2];
+    let w3 = bounds[5] - bounds[4];
+    w1 *= w1;
+    w2 *= w2;
+    w3 *= w3;
+    radius = w1 + w2 + w3;
 
     // If we have just a single point, pick a radius of 1.0
-    radius = radius === 0 ? 1.0 : radius
+    radius = radius === 0 ? 1.0 : radius;
 
     // compute the radius of the enclosing sphere
-    radius = Math.sqrt(radius) * 0.5
+    radius = Math.sqrt(radius) * 0.5;
 
-    const distance = 1.1 * radius
+    const distance = 1.1 * radius;
     // const distance = radius / Math.sin(angle * 0.5)
 
     // check view-up vector against view plane normal
     if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
-      activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1])
+      activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1]);
     }
 
-    let focalPointToSet = focalPoint
+    let focalPointToSet = focalPoint;
 
     if (resetPanZoomForViewPlane && imageData) {
-      focalPointToSet = this._getFocalPointForViewPlaneReset(imageData)
+      focalPointToSet = this._getFocalPointForViewPlaneReset(imageData);
     }
 
     activeCamera.setFocalPoint(
       focalPointToSet[0],
       focalPointToSet[1],
       focalPointToSet[2]
-    )
+    );
     activeCamera.setPosition(
       focalPointToSet[0] + distance * viewPlaneNormal[0],
       focalPointToSet[1] + distance * viewPlaneNormal[1],
       focalPointToSet[2] + distance * viewPlaneNormal[2]
-    )
+    );
 
-    renderer.resetCameraClippingRange(bounds)
+    renderer.resetCameraClippingRange(bounds);
 
-    activeCamera.setParallelScale(parallelScale)
+    activeCamera.setParallelScale(parallelScale);
 
     // update reasonable world to physical values
-    activeCamera.setPhysicalScale(radius)
+    activeCamera.setPhysicalScale(radius);
 
     // TODO: The PhysicalXXX stuff are used for VR only, do we need this?
     activeCamera.setPhysicalTranslation(
       -focalPointToSet[0],
       -focalPointToSet[1],
       -focalPointToSet[2]
-    )
+    );
 
     // instead of setThicknessFromFocalPoint we should do it here
-    activeCamera.setClippingRange(distance, distance + 0.1)
+    activeCamera.setClippingRange(distance, distance + 0.1);
 
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
       renderer,
-    }
+    };
 
     // Here to let parallel/distributed compositing intercept
     // and do the right thing.
-    renderer.invokeEvent(RESET_CAMERA_EVENT)
+    renderer.invokeEvent(RESET_CAMERA_EVENT);
 
     if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
       const eventDetail = {
@@ -629,13 +629,13 @@ class Viewport implements IViewport {
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
-      }
+      };
 
       // For crosshairs to adapt to new viewport size
-      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
+      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     }
 
-    return true
+    return true;
   }
 
   /**
@@ -650,29 +650,29 @@ class Viewport implements IViewport {
    */
   private _getFocalPointForViewPlaneReset(imageData) {
     // Todo: move some where else
-    const { focalPoint, viewPlaneNormal: normal } = this.getCamera()
+    const { focalPoint, viewPlaneNormal: normal } = this.getCamera();
     const intersections = this._getViewImageDataIntersections(
       imageData,
       focalPoint,
       normal
-    )
+    );
 
-    let x = 0
-    let y = 0
-    let z = 0
+    let x = 0;
+    let y = 0;
+    let z = 0;
 
     intersections.forEach(([point_x, point_y, point_z]) => {
-      x += point_x
-      y += point_y
-      z += point_z
-    })
+      x += point_x;
+      y += point_y;
+      z += point_z;
+    });
 
     // Set the focal point on the average of the intersection points
     return [
       x / intersections.length,
       y / intersections.length,
       z / intersections.length,
-    ]
+    ];
   }
 
   /**
@@ -681,7 +681,7 @@ class Viewport implements IViewport {
    * @returns an HTMLCanvasElement.
    */
   public getCanvas(): HTMLCanvasElement {
-    return <HTMLCanvasElement>this.canvas
+    return <HTMLCanvasElement>this.canvas;
   }
   /**
    * Gets the active vtkCamera for the viewport.
@@ -689,9 +689,9 @@ class Viewport implements IViewport {
    * @returns vtk driven camera
    */
   protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera {
-    const renderer = this.getRenderer()
+    const renderer = this.getRenderer();
 
-    return renderer.getActiveCamera()
+    return renderer.getActiveCamera();
   }
 
   /**
@@ -699,13 +699,13 @@ class Viewport implements IViewport {
    * @returns The camera object.
    */
   public getCamera(): ICamera {
-    const vtkCamera = this.getVtkActiveCamera()
+    const vtkCamera = this.getVtkActiveCamera();
 
     // TODO: Make sure these are deep copies.
-    let slabThickness
+    let slabThickness;
     // Narrowing down the type for typescript
     if ('getSlabThickness' in vtkCamera) {
-      slabThickness = vtkCamera.getSlabThickness()
+      slabThickness = vtkCamera.getSlabThickness();
     }
 
     return {
@@ -730,7 +730,7 @@ class Viewport implements IViewport {
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
       slabThickness,
-    }
+    };
   }
 
   /**
@@ -738,9 +738,9 @@ class Viewport implements IViewport {
    * @param cameraInterface - ICamera
    */
   public setCamera(cameraInterface: ICamera): void {
-    const vtkCamera = this.getVtkActiveCamera()
-    const previousCamera = _cloneDeep(this.getCamera())
-    const updatedCamera = Object.assign({}, previousCamera, cameraInterface)
+    const vtkCamera = this.getVtkActiveCamera();
+    const previousCamera = _cloneDeep(this.getCamera());
+    const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
       viewUp,
       viewPlaneNormal,
@@ -750,10 +750,10 @@ class Viewport implements IViewport {
       parallelScale,
       viewAngle,
       slabThickness,
-    } = cameraInterface
+    } = cameraInterface;
 
     if (viewUp !== undefined) {
-      vtkCamera.setViewUp(viewUp)
+      vtkCamera.setViewUp(viewUp);
     }
 
     if (viewPlaneNormal !== undefined) {
@@ -761,31 +761,31 @@ class Viewport implements IViewport {
         -viewPlaneNormal[0],
         -viewPlaneNormal[1],
         -viewPlaneNormal[2]
-      )
+      );
     }
 
     if (clippingRange !== undefined) {
-      vtkCamera.setClippingRange(clippingRange)
+      vtkCamera.setClippingRange(clippingRange);
     }
 
     if (position !== undefined) {
-      vtkCamera.setPosition(...this.applyFlipTx(position))
+      vtkCamera.setPosition(...this.applyFlipTx(position));
     }
 
     if (focalPoint !== undefined) {
-      vtkCamera.setFocalPoint(...this.applyFlipTx(focalPoint))
+      vtkCamera.setFocalPoint(...this.applyFlipTx(focalPoint));
     }
 
     if (parallelScale !== undefined) {
-      vtkCamera.setParallelScale(parallelScale)
+      vtkCamera.setParallelScale(parallelScale);
     }
 
     if (viewAngle !== undefined) {
-      vtkCamera.setViewAngle(viewAngle)
+      vtkCamera.setViewAngle(viewAngle);
     }
 
     if (slabThickness !== undefined && 'setSlabThickness' in vtkCamera) {
-      vtkCamera.setSlabThickness(slabThickness)
+      vtkCamera.setSlabThickness(slabThickness);
     }
 
     if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
@@ -796,69 +796,69 @@ class Viewport implements IViewport {
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
-      }
+      };
 
-      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail)
+      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     }
 
     if (this.type == ViewportType.PERSPECTIVE) {
-      const renderer = this.getRenderer()
+      const renderer = this.getRenderer();
 
-      renderer.resetCameraClippingRange()
+      renderer.resetCameraClippingRange();
     }
   }
 
   private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {
-    const viewUpCorners = this._getCorners(bounds)
-    const viewRightCorners = this._getCorners(bounds)
+    const viewUpCorners = this._getCorners(bounds);
+    const viewRightCorners = this._getCorners(bounds);
 
-    let viewRight = vec3.create()
+    let viewRight = vec3.create();
 
-    vec3.cross(viewRight, viewUp, viewPlaneNormal)
+    vec3.cross(viewRight, viewUp, viewPlaneNormal);
 
-    viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]]
+    viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
 
     let transform = vtkMatrixBuilder
       .buildFromDegree()
       .identity()
-      .rotateFromDirections(viewUp, [1, 0, 0])
+      .rotateFromDirections(viewUp, [1, 0, 0]);
 
-    viewUpCorners.forEach((pt) => transform.apply(pt))
+    viewUpCorners.forEach((pt) => transform.apply(pt));
 
     // range is now maximum X distance
-    let minY = Infinity
-    let maxY = -Infinity
+    let minY = Infinity;
+    let maxY = -Infinity;
     for (let i = 0; i < 8; i++) {
-      const y = viewUpCorners[i][0]
+      const y = viewUpCorners[i][0];
       if (y > maxY) {
-        maxY = y
+        maxY = y;
       }
       if (y < minY) {
-        minY = y
+        minY = y;
       }
     }
 
     transform = vtkMatrixBuilder
       .buildFromDegree()
       .identity()
-      .rotateFromDirections(viewRight, [1, 0, 0])
+      .rotateFromDirections(viewRight, [1, 0, 0]);
 
-    viewRightCorners.forEach((pt) => transform.apply(pt))
+    viewRightCorners.forEach((pt) => transform.apply(pt));
 
     // range is now maximum Y distance
-    let minX = Infinity
-    let maxX = -Infinity
+    let minX = Infinity;
+    let maxX = -Infinity;
     for (let i = 0; i < 8; i++) {
-      const x = viewRightCorners[i][0]
+      const x = viewRightCorners[i][0];
       if (x > maxX) {
-        maxX = x
+        maxX = x;
       }
       if (x < minX) {
-        minX = x
+        minX = x;
       }
     }
 
-    return { widthWorld: maxX - minX, heightWorld: maxY - minY }
+    return { widthWorld: maxX - minX, heightWorld: maxY - minY };
   }
 
   _getCorners(bounds: Array<number>): Array<number>[] {
@@ -871,7 +871,7 @@ class Viewport implements IViewport {
       [bounds[1], bounds[2], bounds[5]],
       [bounds[1], bounds[3], bounds[4]],
       [bounds[1], bounds[3], bounds[5]],
-    ]
+    ];
   }
 
   /**
@@ -881,12 +881,12 @@ class Viewport implements IViewport {
    * @returns boolean
    */
   _isInBounds(point: Point3, bounds: number[]): boolean {
-    const [xMin, xMax, yMin, yMax, zMin, zMax] = bounds
-    const [x, y, z] = point
+    const [xMin, xMax, yMin, yMax, zMin, zMax] = bounds;
+    const [x, y, z] = point;
     if (x < xMin || x > xMax || y < yMin || y > yMax || z < zMin || z > zMax) {
-      return false
+      return false;
     }
-    return true
+    return true;
   }
 
   /**
@@ -904,7 +904,7 @@ class Viewport implements IViewport {
    * @returns Edges of the containing bounds
    */
   _getEdges(bounds: Array<number>): Array<[number[], number[]]> {
-    const [p1, p2, p3, p4, p5, p6, p7, p8] = this._getCorners(bounds)
+    const [p1, p2, p3, p4, p5, p6, p7, p8] = this._getCorners(bounds);
     return [
       [p1, p2],
       [p1, p5],
@@ -918,8 +918,8 @@ class Viewport implements IViewport {
       [p5, p6],
       [p6, p8],
       [p7, p8],
-    ]
+    ];
   }
 }
 
-export default Viewport
+export default Viewport;

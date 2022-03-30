@@ -1,19 +1,19 @@
-import { BaseTool } from '../base'
-import { getEnabledElementByIds } from '@cornerstonejs/core'
-import Representations from '../../enums/SegmentationRepresentations'
-import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState'
-import { labelmapDisplay } from './Labelmap'
-import { segmentationConfig } from '../../stateManagement/segmentation'
-import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents'
-import { getToolGroup } from '../../store/ToolGroupManager'
+import { BaseTool } from '../base';
+import { getEnabledElementByIds } from '@cornerstonejs/core';
+import Representations from '../../enums/SegmentationRepresentations';
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
+import { labelmapDisplay } from './Labelmap';
+import { segmentationConfig } from '../../stateManagement/segmentation';
+import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { getToolGroup } from '../../store/ToolGroupManager';
 
-import { PublicToolProps, ToolProps } from '../../types'
+import { PublicToolProps, ToolProps } from '../../types';
 
-import { deepMerge } from '../../utilities'
+import { deepMerge } from '../../utilities';
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../types/SegmentationStateTypes'
+} from '../../types/SegmentationStateTypes';
 
 /**
  * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
@@ -38,57 +38,57 @@ import {
  *
  */
 export default class SegmentationDisplayTool extends BaseTool {
-  static toolName = 'SegmentationDisplay'
+  static toolName = 'SegmentationDisplay';
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       configuration: {},
     }
   ) {
-    super(toolProps, defaultToolProps)
+    super(toolProps, defaultToolProps);
   }
 
   enableCallback(): void {
-    const toolGroupId = this.toolGroupId
+    const toolGroupId = this.toolGroupId;
     const toolGroupSegmentationRepresentations =
-      getSegmentationRepresentations(toolGroupId)
+      getSegmentationRepresentations(toolGroupId);
 
     if (
       !toolGroupSegmentationRepresentations ||
       toolGroupSegmentationRepresentations.length === 0
     ) {
-      return
+      return;
     }
 
     // for each segmentationData, make the visibility false
     for (const segmentationRepresentation of toolGroupSegmentationRepresentations) {
-      segmentationRepresentation.visibility = true
+      segmentationRepresentation.visibility = true;
       triggerSegmentationRepresentationModified(
         toolGroupId,
         segmentationRepresentation.segmentationRepresentationUID
-      )
+      );
     }
   }
 
   disableCallback(): void {
-    const toolGroupId = this.toolGroupId
+    const toolGroupId = this.toolGroupId;
     const toolGroupSegmentationRepresentations =
-      getSegmentationRepresentations(toolGroupId)
+      getSegmentationRepresentations(toolGroupId);
 
     if (
       !toolGroupSegmentationRepresentations ||
       toolGroupSegmentationRepresentations.length === 0
     ) {
-      return
+      return;
     }
 
     // for each segmentationData, make the visibility false
     for (const segmentationRepresentation of toolGroupSegmentationRepresentations) {
-      segmentationRepresentation.visibility = false
+      segmentationRepresentation.visibility = false;
       triggerSegmentationRepresentationModified(
         toolGroupId,
         segmentationRepresentation.segmentationRepresentationUID
-      )
+      );
     }
   }
 
@@ -100,14 +100,14 @@ export default class SegmentationDisplayTool extends BaseTool {
    * @param toolGroupId - the toolGroupId
    */
   renderSegmentation = (toolGroupId: string): void => {
-    const toolGroup = getToolGroup(toolGroupId)
+    const toolGroup = getToolGroup(toolGroupId);
 
     if (!toolGroup) {
-      return
+      return;
     }
 
     const toolGroupSegmentationRepresentations =
-      getSegmentationRepresentations(toolGroupId)
+      getSegmentationRepresentations(toolGroupId);
 
     // toolGroup Viewports
     const toolGroupViewports = toolGroup.viewportsInfo.map(
@@ -115,36 +115,36 @@ export default class SegmentationDisplayTool extends BaseTool {
         const enabledElement = getEnabledElementByIds(
           viewportId,
           renderingEngineId
-        )
+        );
 
         if (enabledElement) {
-          return enabledElement.viewport
+          return enabledElement.viewport;
         }
       }
-    )
+    );
 
     // Render each segmentationData, in each viewport in the toolGroup
     toolGroupSegmentationRepresentations.forEach(
       (representation: ToolGroupSpecificRepresentation) => {
-        const config = this._getMergedRepresentationsConfig(toolGroupId)
+        const config = this._getMergedRepresentationsConfig(toolGroupId);
 
         toolGroupViewports.forEach((viewport) => {
           if (representation.type == Representations.Labelmap) {
-            labelmapDisplay.render(viewport, representation, config)
+            labelmapDisplay.render(viewport, representation, config);
           } else {
             throw new Error(
               `Render for ${representation.type} is not supported yet`
-            )
+            );
           }
-        })
+        });
       }
-    )
+    );
 
     // for all viewports in the toolGroup trigger a re-render
     toolGroupViewports.forEach((viewport) => {
-      viewport.render()
-    })
-  }
+      viewport.render();
+    });
+  };
 
   /**
    * Merge the toolGroup specific configuration with the default global configuration
@@ -155,12 +155,12 @@ export default class SegmentationDisplayTool extends BaseTool {
     toolGroupId: string
   ): SegmentationRepresentationConfig {
     const toolGroupConfig =
-      segmentationConfig.getToolGroupSpecificConfig(toolGroupId)
-    const globalConfig = segmentationConfig.getGlobalConfig()
+      segmentationConfig.getToolGroupSpecificConfig(toolGroupId);
+    const globalConfig = segmentationConfig.getGlobalConfig();
 
     // merge two configurations and override the global config
-    const mergedConfig = deepMerge(globalConfig, toolGroupConfig)
+    const mergedConfig = deepMerge(globalConfig, toolGroupConfig);
 
-    return mergedConfig
+    return mergedConfig;
   }
 }

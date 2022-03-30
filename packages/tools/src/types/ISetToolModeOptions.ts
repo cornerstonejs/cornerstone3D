@@ -1,27 +1,27 @@
-import { ToolModes, MouseBindings, KeyboardBindings } from '../enums'
+import { ToolModes, MouseBindings, KeyboardBindings } from '../enums';
 
-type ToolBindingMouseType = typeof MouseBindings[keyof typeof MouseBindings]
+type ToolBindingMouseType = typeof MouseBindings[keyof typeof MouseBindings];
 
 type ToolBindingKeyboardType =
-  typeof KeyboardBindings[keyof typeof KeyboardBindings]
+  typeof KeyboardBindings[keyof typeof KeyboardBindings];
 
 type IToolBinding = {
   /** Mouse button bindings e.g., MouseBindings.Primary/Secondary etc. */
-  mouseButton: ToolBindingMouseType
+  mouseButton: ToolBindingMouseType;
   /** Keyboard bindings e.g., KeyboardBindings.Shift/Ctrl etc. */
-  modifierKey?: ToolBindingKeyboardType
-}
+  modifierKey?: ToolBindingKeyboardType;
+};
 
 type SetToolBindingsType = {
   /** bindings for the toolGroup's tool when it is set to be active */
-  bindings: IToolBinding[]
-}
+  bindings: IToolBinding[];
+};
 
 type ToolOptionsType = {
   /** bindings for the toolGroup's tool when it is set to be active */
-  bindings: IToolBinding[]
+  bindings: IToolBinding[];
   /** mode of the tool */
-  mode: ToolModes
-}
+  mode: ToolModes;
+};
 
-export { IToolBinding, SetToolBindingsType, ToolOptionsType }
+export { IToolBinding, SetToolBindingsType, ToolOptionsType };

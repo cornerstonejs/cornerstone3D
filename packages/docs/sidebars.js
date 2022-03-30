@@ -8,13 +8,14 @@ module.exports = {
       link: {
         type: 'generated-index',
         title: 'Getting Started',
-        description: 'In this section you will find the basics of using Cornerstone',
+        description:
+          'In this section you will find the basics of using Cornerstone',
       },
       items: [
         'getting-started/overview',
         'getting-started/scope',
         'getting-started/related-libraries',
-        'getting-started/installation'
+        'getting-started/installation',
       ],
     },
     {
@@ -152,13 +153,13 @@ module.exports = {
     {
       type: 'link',
       label: 'API',
-      href: '/api'
+      href: '/api',
     },
     {
       type: 'link',
       label: 'Test Coverage Report',
       href: 'pathname:///test-coverage',
     },
-    'examples'
+    'examples',
   ],
-}
+};

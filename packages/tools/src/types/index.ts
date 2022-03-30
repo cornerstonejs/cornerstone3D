@@ -3,22 +3,22 @@ import type {
   Annotations,
   FrameOfReferenceSpecificAnnotations,
   AnnotationState,
-} from './AnnotationTypes'
-import type * as EventTypes from './EventTypes'
-import type IPoints from './IPoints'
-import type PlanarBoundingBox from './PlanarBoundingBox'
+} from './AnnotationTypes';
+import type * as EventTypes from './EventTypes';
+import type IPoints from './IPoints';
+import type PlanarBoundingBox from './PlanarBoundingBox';
 import type {
   SetToolBindingsType,
   IToolBinding,
   ToolOptionsType,
-} from './ISetToolModeOptions'
-import type IToolGroup from './IToolGroup'
-import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes'
-import type ToolHandle from './ToolHandle'
-import type { AnnotationHandle, TextBoxHandle } from './ToolHandle'
-import type InteractionTypes from './InteractionTypes'
-import type { ToolProps, PublicToolProps } from './ToolProps'
-import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes'
+} from './ISetToolModeOptions';
+import type IToolGroup from './IToolGroup';
+import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes';
+import type ToolHandle from './ToolHandle';
+import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
+import type InteractionTypes from './InteractionTypes';
+import type { ToolProps, PublicToolProps } from './ToolProps';
+import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type {
   Color,
   ColorLut,
@@ -30,7 +30,7 @@ import type {
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   SegmentationState,
-} from './SegmentationStateTypes'
+} from './SegmentationStateTypes';
 
 export type {
   // AnnotationState
@@ -70,4 +70,4 @@ export type {
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,
-}
+};

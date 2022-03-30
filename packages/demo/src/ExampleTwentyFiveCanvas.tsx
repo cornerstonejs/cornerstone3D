@@ -1,49 +1,49 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   RenderingEngine,
   Enums,
   CONSTANTS,
   init as csRenderInit,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 
-const NUM_VIEWPORTS = 25
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const NUM_VIEWPORTS = 25;
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 class TwentyFiveCanvasExample extends Component {
   state = {
     renderAllTime: null,
     renderSingleViewportTime: null,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    this.containers = []
+    this.containers = [];
 
     for (let i = 0; i < NUM_VIEWPORTS; i++) {
-      this.containers.push(React.createRef())
+      this.containers.push(React.createRef());
     }
   }
 
   componentWillUnmount() {
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   async componentDidMount() {
-    await csRenderInit()
-    const renderingEngineId = 'ExampleRenderingEngineID'
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    await csRenderInit();
+    const renderingEngineId = 'ExampleRenderingEngineID';
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
 
-    const viewportUIDS = []
-    const viewports = []
+    const viewportUIDS = [];
+    const viewports = [];
 
     for (let i = 0; i < NUM_VIEWPORTS; i++) {
-      const viewportId = `viewportUID_${0}`
+      const viewportId = `viewportUID_${0}`;
 
-      viewportUIDS.push(viewportId)
+      viewportUIDS.push(viewportId);
 
       viewports.push({
         sceneUID,
@@ -54,48 +54,48 @@ class TwentyFiveCanvasExample extends Component {
           orientation: ORIENTATION.AXIAL,
           background: [Math.random(), Math.random(), Math.random()],
         },
-      })
+      });
     }
 
-    renderingEngine.setViewports(viewports)
+    renderingEngine.setViewports(viewports);
 
     const times = {
       all: [],
       singleViewport: [],
-    }
+    };
 
     // Some viewport that isn't the first one so there is an offset.
-    const viewport = renderingEngine.getViewport(viewportUIDS[4])
+    const viewport = renderingEngine.getViewport(viewportUIDS[4]);
 
     for (let i = 0; i < 100; i++) {
-      const t0 = performance.now()
+      const t0 = performance.now();
 
-      renderingEngine.render()
+      renderingEngine.render();
 
-      const t1 = performance.now()
+      const t1 = performance.now();
 
-      viewport.render()
+      viewport.render();
 
-      const t2 = performance.now()
+      const t2 = performance.now();
 
-      times.all.push(t1 - t0)
-      times.singleViewport.push(t2 - t1)
+      times.all.push(t1 - t0);
+      times.singleViewport.push(t2 - t1);
     }
 
-    const numTimes = times.all.length
+    const numTimes = times.all.length;
 
     const averageTimes = {
       all: 0,
       singleViewport: 0,
-    }
+    };
 
     for (let i = 0; i < numTimes; i++) {
-      averageTimes.all += times.all[i]
-      averageTimes.singleViewport += times.singleViewport[i]
+      averageTimes.all += times.all[i];
+      averageTimes.singleViewport += times.singleViewport[i];
     }
 
-    averageTimes.all /= numTimes
-    averageTimes.singleViewport /= numTimes
+    averageTimes.all /= numTimes;
+    averageTimes.singleViewport /= numTimes;
 
     this.setState({
       renderAllTime: { time: averageTimes.all, fps: 1000 / averageTimes.all },
@@ -103,14 +103,14 @@ class TwentyFiveCanvasExample extends Component {
         time: averageTimes.singleViewport,
         fps: 1000 / averageTimes.singleViewport,
       },
-    })
+    });
   }
 
   render() {
     const style = {
       width: '512px',
       height: '512px',
-    }
+    };
 
     const elements = this.containers.map((reference, index) => (
       <div
@@ -125,7 +125,7 @@ class TwentyFiveCanvasExample extends Component {
         onContextMenu={(e) => e.preventDefault()}
         key={index}
       />
-    ))
+    ));
 
     const performanceText = this.state.renderAllTime ? (
       <React.Fragment>
@@ -134,7 +134,7 @@ class TwentyFiveCanvasExample extends Component {
       </React.Fragment>
     ) : (
       <p>Performing Tests...</p>
-    )
+    );
 
     return (
       <div>
@@ -157,8 +157,8 @@ class TwentyFiveCanvasExample extends Component {
           <div>{elements}</div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default TwentyFiveCanvasExample
+export default TwentyFiveCanvasExample;

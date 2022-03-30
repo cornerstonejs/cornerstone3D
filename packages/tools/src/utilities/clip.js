@@ -9,7 +9,7 @@
  * @returns {number}      The clipped value.
  */
 export function clip(val, low, high) {
-  return Math.min(Math.max(low, val), high)
+  return Math.min(Math.max(low, val), high);
 }
 
 /**
@@ -23,8 +23,8 @@ export function clip(val, low, high) {
  */
 export function clipToBox(point, box) {
   // Clip an {x, y} point to a box of size {width, height}
-  point.x = clip(point.x, 0, box.width)
-  point.y = clip(point.y, 0, box.height)
+  point.x = clip(point.x, 0, box.width);
+  point.y = clip(point.y, 0, box.height);
 }
 
-export default clip
+export default clip;

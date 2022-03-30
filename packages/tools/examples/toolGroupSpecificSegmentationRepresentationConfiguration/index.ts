@@ -6,7 +6,7 @@ import {
   volumeLoader,
   CONSTANTS,
   getRenderingEngine,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -14,72 +14,72 @@ import {
   addButtonToToolbar,
   addToggleButtonToToolbar,
   addSliderToToolbar,
-} from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@cornerstonejs/tools'
+} from '../../../../utils/demo/helpers';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-} = cornerstoneTools
+} = cornerstoneTools;
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
-const segmentationId1 = 'SEGMENTATION_ID_1'
-const segmentationId2 = 'SEGMENTATION_ID_2'
-const toolGroupId1 = 'MY_TOOL_GROUP_ID_1'
-const toolGroupId2 = 'MY_TOOL_GROUP_ID_2'
-const renderingEngineId = 'myRenderingEngine'
-const viewportId1 = 'CT_AXIAL_STACK'
-const viewportId2 = 'CT_AXIAL_STACK_2'
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}`; // VolumeId with loader id + volume id
+const segmentationId1 = 'SEGMENTATION_ID_1';
+const segmentationId2 = 'SEGMENTATION_ID_2';
+const toolGroupId1 = 'MY_TOOL_GROUP_ID_1';
+const toolGroupId2 = 'MY_TOOL_GROUP_ID_2';
+const renderingEngineId = 'myRenderingEngine';
+const viewportId1 = 'CT_AXIAL_STACK';
+const viewportId2 = 'CT_AXIAL_STACK_2';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Toolgroup Segmentation Configuration',
   'Here we demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations'
-)
+);
 
-const size = '500px'
-const content = document.getElementById('content')
-const viewportGrid = document.createElement('div')
+const size = '500px';
+const content = document.getElementById('content');
+const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex'
-viewportGrid.style.display = 'flex'
-viewportGrid.style.flexDirection = 'row'
+viewportGrid.style.display = 'flex';
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
 
-const element1 = document.createElement('div')
-const element2 = document.createElement('div')
-element1.style.width = size
-element1.style.height = size
-element2.style.width = size
-element2.style.height = size
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
 
-viewportGrid.appendChild(element1)
-viewportGrid.appendChild(element2)
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
 
-content.appendChild(viewportGrid)
+content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p')
+const instructions = document.createElement('p');
 instructions.innerText = `
   The left viewport uses a toolgroup using only global configuration for
   segmentation representation. The right viewport uses a differnet toolgroup
   with its own scoped segmentation representation. Toggling the outline rendering
   for this toolgroup, the viewport will display the tool group scoped representation
   over the global one.
-`
+`;
 // ============================= //
 
 addToggleButtonToToolbar(
   'toggle outline rendering',
   (evt, toggle) => {
     let config =
-      segmentation.segmentationConfig.getToolGroupSpecificConfig(toolGroupId2)
+      segmentation.segmentationConfig.getToolGroupSpecificConfig(toolGroupId2);
 
     if (config.representations === undefined) {
       config = {
@@ -89,22 +89,22 @@ addToggleButtonToToolbar(
             renderOutline: toggle,
           },
         },
-      }
+      };
     } else {
-      config.representations.LABELMAP.renderOutline = toggle
+      config.representations.LABELMAP.renderOutline = toggle;
     }
 
     segmentation.segmentationConfig.setToolGroupSpecificConfig(
       toolGroupId2,
       config
-    )
+    );
 
-    const renderingEngine = getRenderingEngine(renderingEngineId)
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    renderingEngine.renderViewports([viewportId1, viewportId2])
+    renderingEngine.renderViewports([viewportId1, viewportId2]);
   },
   true
-)
+);
 
 // ============================= //
 
@@ -112,33 +112,33 @@ addToggleButtonToToolbar(
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
 function fillSegmentationWithCircles(segmentationVolume, centerOffset) {
-  const scalarData = segmentationVolume.scalarData
+  const scalarData = segmentationVolume.scalarData;
 
-  let voxelIndex = 0
+  let voxelIndex = 0;
 
-  const { dimensions } = segmentationVolume
+  const { dimensions } = segmentationVolume;
 
-  const innerRadius = dimensions[0] / 8
-  const outerRadius = dimensions[0] / 4
+  const innerRadius = dimensions[0] / 8;
+  const outerRadius = dimensions[0] / 4;
 
   const center = [
     dimensions[0] / 2 + centerOffset[0],
     dimensions[1] / 2 + centerOffset[1],
-  ]
+  ];
 
   for (let z = 0; z < dimensions[2]; z++) {
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
         const distanceFromCenter = Math.sqrt(
           (x - center[0]) * (x - center[0]) + (y - center[1]) * (y - center[1])
-        )
+        );
         if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1
+          scalarData[voxelIndex] = 1;
         } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2
+          scalarData[voxelIndex] = 2;
         }
 
-        voxelIndex++
+        voxelIndex++;
       }
     }
   }
@@ -152,13 +152,13 @@ async function addSegmentationsToState() {
     {
       volumeId: segmentationId1,
     }
-  )
+  );
   const segmentationVolume2 = await volumeLoader.createAndCacheDerivedVolume(
     volumeId,
     {
       volumeId: segmentationId2,
     }
-  )
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -183,11 +183,11 @@ async function addSegmentationsToState() {
         },
       },
     },
-  ])
+  ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(segmentationVolume1, [50, 50])
-  fillSegmentationWithCircles(segmentationVolume2, [-50, -50])
+  fillSegmentationWithCircles(segmentationVolume1, [50, 50]);
+  fillSegmentationWithCircles(segmentationVolume2, [-50, -50]);
 }
 
 /**
@@ -195,20 +195,20 @@ async function addSegmentationsToState() {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo()
+  await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool)
+  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
-  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1)
-  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2)
+  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
+  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
 
-  toolGroup1.addTool(SegmentationDisplayTool.toolName)
-  toolGroup2.addTool(SegmentationDisplayTool.toolName)
+  toolGroup1.addTool(SegmentationDisplayTool.toolName);
+  toolGroup2.addTool(SegmentationDisplayTool.toolName);
 
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName)
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName)
+  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -218,20 +218,20 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'VOLUME',
-  })
+  });
 
-  const smallVolumeImageIds = [imageIds[0], imageIds[1]]
+  const smallVolumeImageIds = [imageIds[0], imageIds[1]];
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds: smallVolumeImageIds,
-  })
+  });
 
   // Add some segmentations based on the source data volume
-  await addSegmentationsToState()
+  await addSegmentationsToState();
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId)
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
   const viewportInputArray = [
@@ -253,22 +253,22 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
-  ]
+  ];
 
-  toolGroup1.addViewport(viewportId1, renderingEngineId)
-  toolGroup2.addViewport(viewportId2, renderingEngineId)
+  toolGroup1.addViewport(viewportId1, renderingEngineId);
+  toolGroup2.addViewport(viewportId2, renderingEngineId);
 
-  renderingEngine.setViewports(viewportInputArray)
+  renderingEngine.setViewports(viewportInputArray);
 
   // Set the volume to load
-  volume.load()
+  volume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
     [viewportId1, viewportId2]
-  )
+  );
 
   // // Add the segmentation representations to toolgroup1
   await segmentation.addSegmentationRepresentations(toolGroupId1, [
@@ -280,7 +280,7 @@ async function run() {
       segmentationId: segmentationId2,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
-  ])
+  ]);
 
   // // Add the segmentation representations to toolgroup2
   await segmentation.addSegmentationRepresentations(toolGroupId2, [
@@ -292,10 +292,10 @@ async function run() {
       segmentationId: segmentationId2,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
-  ])
+  ]);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2])
+  renderingEngine.renderViewports([viewportId1, viewportId2]);
 }
 
-run()
+run();

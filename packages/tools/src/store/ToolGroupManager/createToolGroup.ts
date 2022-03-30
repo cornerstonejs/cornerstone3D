@@ -1,6 +1,6 @@
-import { state } from '../index'
-import ToolGroup from './ToolGroup'
-import { IToolGroup } from '../../types'
+import { state } from '../index';
+import ToolGroup from './ToolGroup';
+import { IToolGroup } from '../../types';
 
 /**
  * Create a new tool group with the given name. ToolGroups are the new way
@@ -14,20 +14,20 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined {
   // Exit early if ID conflict
   const toolGroupWithIdExists = state.toolGroups.some(
     (tg) => tg.id === toolGroupId
-  )
+  );
 
   if (toolGroupWithIdExists) {
-    console.warn(`'${toolGroupId}' already exists.`)
-    return
+    console.warn(`'${toolGroupId}' already exists.`);
+    return;
   }
 
-  const toolGroup = new ToolGroup(toolGroupId)
+  const toolGroup = new ToolGroup(toolGroupId);
 
   // Update state
-  state.toolGroups.push(toolGroup)
+  state.toolGroups.push(toolGroup);
 
   // Return reference
-  return toolGroup
+  return toolGroup;
 }
 
-export default createToolGroup
+export default createToolGroup;

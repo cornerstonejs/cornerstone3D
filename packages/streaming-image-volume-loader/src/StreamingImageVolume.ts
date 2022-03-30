@@ -8,66 +8,66 @@ import {
   cache,
   imageLoader,
   utilities as cornerstoneUtils,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 
-import type { Types } from '@cornerstonejs/core'
-import { scaleArray, autoLoad } from './helpers'
+import type { Types } from '@cornerstonejs/core';
+import { scaleArray, autoLoad } from './helpers';
 
-const requestType = Enums.RequestType.Prefetch
-const { getMinMax } = cornerstoneUtils
+const requestType = Enums.RequestType.Prefetch;
+const { getMinMax } = cornerstoneUtils;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
  * It implements load method to load the imageIds and insert them into the volume.
  */
 export default class StreamingImageVolume extends ImageVolume {
-  private _cornerstoneImageMetaData
+  private _cornerstoneImageMetaData;
 
   loadStatus: {
-    loaded: boolean
-    loading: boolean
-    cachedFrames: Array<boolean>
-    callbacks: Array<(...args: unknown[]) => void>
-  }
+    loaded: boolean;
+    loading: boolean;
+    cachedFrames: Array<boolean>;
+    callbacks: Array<(...args: unknown[]) => void>;
+  };
 
   constructor(
     imageVolumeProperties: Types.IVolume,
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
-    super(imageVolumeProperties)
+    super(imageVolumeProperties);
 
-    this.imageIds = streamingProperties.imageIds
-    this.loadStatus = streamingProperties.loadStatus
+    this.imageIds = streamingProperties.imageIds;
+    this.loadStatus = streamingProperties.loadStatus;
 
-    this._createCornerstoneImageMetaData()
+    this._createCornerstoneImageMetaData();
   }
 
   /**
    * Creates the metadata required for converting the volume to an cornerstoneImage
    */
   private _createCornerstoneImageMetaData() {
-    const numImages = this.imageIds.length
-    const bytesPerImage = this.sizeInBytes / numImages
-    const numComponents = this.scalarData.length / this.numVoxels
+    const numImages = this.imageIds.length;
+    const bytesPerImage = this.sizeInBytes / numImages;
+    const numComponents = this.scalarData.length / this.numVoxels;
     const pixelsPerImage =
-      this.dimensions[0] * this.dimensions[1] * numComponents
+      this.dimensions[0] * this.dimensions[1] * numComponents;
 
-    const { PhotometricInterpretation, voiLut } = this.metadata
+    const { PhotometricInterpretation, voiLut } = this.metadata;
 
-    let windowCenter = []
-    let windowWidth = []
+    let windowCenter = [];
+    let windowWidth = [];
 
     if (voiLut && voiLut.length) {
       windowCenter = voiLut.map((voi) => {
-        return voi.windowCenter
-      })
+        return voi.windowCenter;
+      });
 
       windowWidth = voiLut.map((voi) => {
-        return voi.windowWidth
-      })
+        return voi.windowWidth;
+      });
     }
 
-    const color = numComponents > 1 ? true : false //todo: fix this
+    const color = numComponents > 1 ? true : false; //todo: fix this
 
     this._cornerstoneImageMetaData = {
       bytesPerImage,
@@ -80,21 +80,21 @@ export default class StreamingImageVolume extends ImageVolume {
       dimensions: this.dimensions,
       PhotometricInterpretation,
       invert: PhotometricInterpretation === 'MONOCHROME1',
-    }
+    };
   }
 
   private _hasLoaded = (): boolean => {
-    const { loadStatus, imageIds } = this
-    const numFrames = imageIds.length
+    const { loadStatus, imageIds } = this;
+    const numFrames = imageIds.length;
 
     for (let i = 0; i < numFrames; i++) {
       if (!loadStatus.cachedFrames[i]) {
-        return false
+        return false;
       }
     }
 
-    return true
-  }
+    return true;
+  };
 
   /**
    * It cancels loading the images of the volume. It sets the loading status to false
@@ -102,35 +102,35 @@ export default class StreamingImageVolume extends ImageVolume {
    * volumeId
    */
   public cancelLoading(): void {
-    const { loadStatus } = this
+    const { loadStatus } = this;
 
     if (!loadStatus || !loadStatus.loading) {
-      return
+      return;
     }
 
     // Set to not loading.
-    loadStatus.loading = false
+    loadStatus.loading = false;
 
     // Remove all the callback listeners
-    this.clearLoadCallbacks()
+    this.clearLoadCallbacks();
 
     // Create a filter function which only keeps requests
     // which do not match this volume's Id
     const filterFunction = ({ additionalDetails }) => {
-      return additionalDetails.volumeId !== this.volumeId
-    }
+      return additionalDetails.volumeId !== this.volumeId;
+    };
 
     // Instruct the request pool manager to filter queued
     // requests to ensure requests we no longer need are
     // no longer sent.
-    imageLoadPoolManager.filterRequests(filterFunction)
+    imageLoadPoolManager.filterRequests(filterFunction);
   }
 
   /**
    * Clear the load callbacks
    */
   public clearLoadCallbacks(): void {
-    this.loadStatus.callbacks = []
+    this.loadStatus.callbacks = [];
   }
 
   /**
@@ -143,17 +143,17 @@ export default class StreamingImageVolume extends ImageVolume {
     callback: (...args: unknown[]) => void,
     priority = 5
   ): void => {
-    const { imageIds, loadStatus } = this
+    const { imageIds, loadStatus } = this;
 
     if (loadStatus.loading === true) {
       console.log(
         `loadVolume: Loading is already in progress for ${this.volumeId}`
-      )
-      return // Already loading, will get callbacks from main load.
+      );
+      return; // Already loading, will get callbacks from main load.
     }
 
-    const { loaded } = this.loadStatus
-    const numFrames = imageIds.length
+    const { loaded } = this.loadStatus;
+    const numFrames = imageIds.length;
 
     if (loaded) {
       if (callback) {
@@ -162,17 +162,17 @@ export default class StreamingImageVolume extends ImageVolume {
           framesLoaded: numFrames,
           numFrames,
           framesProcessed: numFrames,
-        })
+        });
       }
-      return
+      return;
     }
 
     if (callback) {
-      this.loadStatus.callbacks.push(callback)
+      this.loadStatus.callbacks.push(callback);
     }
 
-    this._prefetchImageIds(priority)
-  }
+    this._prefetchImageIds(priority);
+  };
 
   /**
    * It returns the imageLoad requests for the streaming image volume instance.
@@ -187,45 +187,45 @@ export default class StreamingImageVolume extends ImageVolume {
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
   public getImageLoadRequests = (priority: number) => {
-    const { scalarData, loadStatus } = this
-    const { cachedFrames } = loadStatus
+    const { scalarData, loadStatus } = this;
+    const { cachedFrames } = loadStatus;
 
-    const { imageIds, vtkOpenGLTexture, imageData, metadata, volumeId } = this
+    const { imageIds, vtkOpenGLTexture, imageData, metadata, volumeId } = this;
 
-    const { FrameOfReferenceUID } = metadata
-    loadStatus.loading = true
+    const { FrameOfReferenceUID } = metadata;
+    loadStatus.loading = true;
 
     // SharedArrayBuffer
-    const arrayBuffer = scalarData.buffer
-    const numFrames = imageIds.length
+    const arrayBuffer = scalarData.buffer;
+    const numFrames = imageIds.length;
 
     // Length of one frame in voxels
-    const length = scalarData.length / numFrames
+    const length = scalarData.length / numFrames;
     // Length of one frame in bytes
-    const lengthInBytes = arrayBuffer.byteLength / numFrames
+    const lengthInBytes = arrayBuffer.byteLength / numFrames;
 
-    let type
+    let type;
 
     if (scalarData instanceof Uint8Array) {
-      type = 'Uint8Array'
+      type = 'Uint8Array';
     } else if (scalarData instanceof Float32Array) {
-      type = 'Float32Array'
+      type = 'Float32Array';
     } else {
-      throw new Error('Unsupported array type')
+      throw new Error('Unsupported array type');
     }
 
-    let framesLoaded = 0
-    let framesProcessed = 0
+    let framesLoaded = 0;
+    let framesProcessed = 0;
 
-    const autoRenderOnLoad = true
-    const autoRenderPercentage = 2
+    const autoRenderOnLoad = true;
+    const autoRenderPercentage = 2;
 
-    let reRenderFraction
-    let reRenderTarget
+    let reRenderFraction;
+    let reRenderTarget;
 
     if (autoRenderOnLoad) {
-      reRenderFraction = numFrames * (autoRenderPercentage / 100)
-      reRenderTarget = reRenderFraction
+      reRenderFraction = numFrames * (autoRenderPercentage / 100);
+      reRenderTarget = reRenderFraction;
     }
 
     function callLoadStatusCallback(evt) {
@@ -235,14 +235,14 @@ export default class StreamingImageVolume extends ImageVolume {
           evt.framesProcessed > reRenderTarget ||
           evt.framesProcessed === evt.numFrames
         ) {
-          reRenderTarget += reRenderFraction
+          reRenderTarget += reRenderFraction;
 
-          autoLoad(volumeId)
+          autoLoad(volumeId);
         }
       }
 
       if (evt.framesProcessed === evt.numFrames) {
-        loadStatus.callbacks.forEach((callback) => callback(evt))
+        loadStatus.callbacks.forEach((callback) => callback(evt));
       }
     }
 
@@ -253,25 +253,25 @@ export default class StreamingImageVolume extends ImageVolume {
     ) => {
       // Check if there is a cached image for the same imageURI (different
       // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId)
+      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
 
       if (!cachedImage || !cachedImage.image) {
-        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId)
+        return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
       }
       const imageScalarData = this._scaleIfNecessary(
         cachedImage.image,
         scalingParameters
-      )
+      );
       // todo add scaling and slope
-      const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData
-      const TypedArray = this.scalarData.constructor
-      let byteOffset = bytesPerImage * imageIdIndex
+      const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData;
+      const TypedArray = this.scalarData.constructor;
+      let byteOffset = bytesPerImage * imageIdIndex;
 
       //    create a view on the volume arraybuffer
-      const bytePerPixel = bytesPerImage / pixelsPerImage
+      const bytePerPixel = bytesPerImage / pixelsPerImage;
 
       if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-        byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel
+        byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel;
       }
 
       // @ts-ignore
@@ -279,40 +279,44 @@ export default class StreamingImageVolume extends ImageVolume {
         arrayBuffer,
         byteOffset,
         pixelsPerImage
-      )
+      );
       cachedImage.imageLoadObject.promise
         .then((image) => {
-          volumeBufferView.set(imageScalarData)
-          updateTextureAndTriggerEvents(this, imageIdIndex, imageId)
+          volumeBufferView.set(imageScalarData);
+          updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
         })
         .catch((err) => {
-          errorCallback(err, imageIdIndex, imageId)
-        })
-      return
-    }
+          errorCallback(err, imageIdIndex, imageId);
+        });
+      return;
+    };
 
     function updateTextureAndTriggerEvents(
       volume: StreamingImageVolume,
       imageIdIndex,
       imageId
     ) {
-      cachedFrames[imageIdIndex] = true
-      framesLoaded++
-      framesProcessed++
+      cachedFrames[imageIdIndex] = true;
+      framesLoaded++;
+      framesProcessed++;
 
-      vtkOpenGLTexture.setUpdatedFrame(imageIdIndex)
-      imageData.modified()
+      vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
+      imageData.modified();
 
       const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
         FrameOfReferenceUID,
         imageVolume: volume,
-      }
+      };
 
-      triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail)
+      triggerEvent(
+        eventTarget,
+        Enums.Events.IMAGE_VOLUME_MODIFIED,
+        eventDetail
+      );
 
       if (framesProcessed === numFrames) {
-        loadStatus.loaded = true
-        loadStatus.loading = false
+        loadStatus.loaded = true;
+        loadStatus.loading = false;
 
         // TODO: Should we remove the callbacks in favour of just using events?
         callLoadStatusCallback({
@@ -322,8 +326,8 @@ export default class StreamingImageVolume extends ImageVolume {
           framesLoaded,
           framesProcessed,
           numFrames,
-        })
-        loadStatus.callbacks = []
+        });
+        loadStatus.callbacks = [];
       } else {
         callLoadStatusCallback({
           success: true,
@@ -332,16 +336,16 @@ export default class StreamingImageVolume extends ImageVolume {
           framesLoaded,
           framesProcessed,
           numFrames,
-        })
+        });
       }
     }
 
     function errorCallback(error, imageIdIndex, imageId) {
-      framesProcessed++
+      framesProcessed++;
 
       if (framesProcessed === numFrames) {
-        loadStatus.loaded = true
-        loadStatus.loading = false
+        loadStatus.loaded = true;
+        loadStatus.loading = false;
 
         callLoadStatusCallback({
           success: false,
@@ -351,9 +355,9 @@ export default class StreamingImageVolume extends ImageVolume {
           framesLoaded,
           framesProcessed,
           numFrames,
-        })
+        });
 
-        loadStatus.callbacks = []
+        loadStatus.callbacks = [];
       } else {
         callLoadStatusCallback({
           success: false,
@@ -363,42 +367,43 @@ export default class StreamingImageVolume extends ImageVolume {
           framesLoaded,
           framesProcessed,
           numFrames,
-        })
+        });
       }
 
       const eventDetail = {
         error,
         imageIdIndex,
         imageId,
-      }
+      };
 
-      triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail)
+      triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
     }
 
     const requests = imageIds.map((imageId, imageIdIndex) => {
       if (cachedFrames[imageIdIndex]) {
-        framesLoaded++
-        framesProcessed++
-        return
+        framesLoaded++;
+        framesProcessed++;
+        return;
       }
 
-      const modalityLutModule = metaData.get('modalityLutModule', imageId) || {}
+      const modalityLutModule =
+        metaData.get('modalityLutModule', imageId) || {};
 
       const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {}
+        metaData.get('generalSeriesModule', imageId) || {};
 
       const scalingParameters: Types.ScalingParameters = {
         rescaleSlope: modalityLutModule.rescaleSlope,
         rescaleIntercept: modalityLutModule.rescaleIntercept,
         modality: generalSeriesModule.modality,
-      }
+      };
 
       if (scalingParameters.modality === 'PT') {
-        const suvFactor = metaData.get('scalingModule', imageId)
+        const suvFactor = metaData.get('scalingModule', imageId);
 
         if (suvFactor) {
-          this._addScalingToVolume(suvFactor)
-          scalingParameters.suvbw = suvFactor.suvbw
+          this._addScalingToVolume(suvFactor);
+          scalingParameters.suvbw = suvFactor.suvbw;
         }
       }
 
@@ -413,19 +418,19 @@ export default class StreamingImageVolume extends ImageVolume {
         preScale: {
           scalingParameters,
         },
-      }
+      };
 
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
       function callLoadImage(imageId, imageIdIndex, options) {
         return imageLoader.loadImage(imageId, options).then(
           () => {
-            successCallback(imageIdIndex, imageId, scalingParameters)
+            successCallback(imageIdIndex, imageId, scalingParameters);
           },
           (error) => {
-            errorCallback(error, imageIdIndex, imageId)
+            errorCallback(error, imageIdIndex, imageId);
           }
-        )
+        );
       }
 
       return {
@@ -438,19 +443,19 @@ export default class StreamingImageVolume extends ImageVolume {
         additionalDetails: {
           volumeId: this.volumeId,
         },
-      }
-    })
+      };
+    });
 
-    return requests
-  }
+    return requests;
+  };
 
   private _prefetchImageIds(priority: number) {
-    const requests = this.getImageLoadRequests(priority)
+    const requests = this.getImageLoadRequests(priority);
 
     requests.reverse().forEach((request) => {
       if (!request) {
         // there is a cached image for the imageId and no requests will fire
-        return
+        return;
       }
 
       const {
@@ -461,20 +466,20 @@ export default class StreamingImageVolume extends ImageVolume {
         priority,
         requestType,
         additionalDetails,
-      } = request
+      } = request;
 
       imageLoadPoolManager.addRequest(
         callLoadImage.bind(this, imageId, imageIdIndex, options),
         requestType,
         additionalDetails,
         priority
-      )
-    })
+      );
+    });
   }
 
   private _scaleIfNecessary(image, scalingParametersToUse) {
     // check if keys inside scalingParameters are defined
-    const { rescaleSlope, rescaleIntercept, modality } = scalingParametersToUse
+    const { rescaleSlope, rescaleIntercept, modality } = scalingParametersToUse;
     if (
       typeof rescaleSlope === 'undefined' ||
       typeof rescaleIntercept === 'undefined' ||
@@ -483,15 +488,15 @@ export default class StreamingImageVolume extends ImageVolume {
       rescaleIntercept === null ||
       modality === null
     ) {
-      return image.getPixelData()
+      return image.getPixelData();
     }
 
-    let scalingParameters = scalingParametersToUse
+    let scalingParameters = scalingParametersToUse;
 
     // if the image is already scaled, we should take that into account
     if (image.preScale && image.preScale.scalingParameters) {
-      const { suvbw } = image.preScale.scalingParameters
-      const { suvbw: suvbwToUse } = scalingParametersToUse
+      const { suvbw } = image.preScale.scalingParameters;
+      const { suvbw: suvbwToUse } = scalingParametersToUse;
 
       // Todo: handle if the intercept or slope are different
       // check if suvbw is undefined OR null
@@ -503,7 +508,7 @@ export default class StreamingImageVolume extends ImageVolume {
         suvbw === suvbwToUse
       ) {
         // don't modify the pixel data, just return it as is
-        return image.getPixelData()
+        return image.getPixelData();
       }
 
       // scale accordingly if they exist and are different
@@ -512,40 +517,40 @@ export default class StreamingImageVolume extends ImageVolume {
         rescaleSlope: 1,
         rescaleIntercept: 0,
         suvbw: suvbwToUse / suvbw,
-      }
+      };
     }
 
     // copy so that it doesn't get modified
-    const pixelDataCopy = image.getPixelData().slice(0)
-    const scaledArray = scaleArray(pixelDataCopy, scalingParameters)
-    return scaledArray
+    const pixelDataCopy = image.getPixelData().slice(0);
+    const scaledArray = scaleArray(pixelDataCopy, scalingParameters);
+    return scaledArray;
   }
 
   private _addScalingToVolume(suvFactor) {
     // Todo: handle case where suvFactors are not the same for all frames
     if (this.scaling) {
-      return
+      return;
     }
 
-    const { suvbw, suvlbm, suvbsa } = suvFactor
+    const { suvbw, suvlbm, suvbsa } = suvFactor;
 
-    const petScaling = <Types.PTScaling>{}
+    const petScaling = <Types.PTScaling>{};
 
     if (suvlbm) {
-      petScaling.suvbwToSuvlbm = suvlbm / suvbw
+      petScaling.suvbwToSuvlbm = suvlbm / suvbw;
     }
 
     if (suvbsa) {
-      petScaling.suvbwToSuvbsa = suvbsa / suvbw
+      petScaling.suvbwToSuvbsa = suvbsa / suvbw;
     }
 
-    this.scaling = { PET: petScaling }
+    this.scaling = { PET: petScaling };
   }
 
   private _removeFromCache() {
     // TODO: not 100% sure this is the same Id as the volume loader's volumeId?
     // so I have no idea if this will work
-    cache.removeVolumeLoadObject(this.volumeId)
+    cache.removeVolumeLoadObject(this.volumeId);
   }
 
   /**
@@ -562,7 +567,7 @@ export default class StreamingImageVolume extends ImageVolume {
     imageId: string,
     imageIdIndex: number
   ): Types.IImageLoadObject {
-    const { imageIds } = this
+    const { imageIds } = this;
 
     const {
       bytesPerImage,
@@ -574,18 +579,18 @@ export default class StreamingImageVolume extends ImageVolume {
       dimensions,
       spacing,
       invert,
-    } = this._cornerstoneImageMetaData
+    } = this._cornerstoneImageMetaData;
 
     // 1. Grab the buffer and it's type
-    const volumeBuffer = this.scalarData.buffer
+    const volumeBuffer = this.scalarData.buffer;
     // (not sure if this actually works, TypeScript keeps complaining)
-    const TypedArray = this.scalarData.constructor
+    const TypedArray = this.scalarData.constructor;
 
     // 2. Given the index of the image and frame length in bytes,
     //    create a view on the volume arraybuffer
-    const bytePerPixel = bytesPerImage / pixelsPerImage
+    const bytePerPixel = bytesPerImage / pixelsPerImage;
 
-    let byteOffset = bytesPerImage * imageIdIndex
+    let byteOffset = bytesPerImage * imageIdIndex;
 
     // If there is a discrepancy between the volume typed array
     // and the bitsAllocated for the image. The reason is that VTK uses Float32
@@ -593,32 +598,32 @@ export default class StreamingImageVolume extends ImageVolume {
     // having a performance issue, we convert all types initially to Float32 even
     // if they are not Float32.
     if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-      byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel
+      byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel;
     }
 
     // 3. Create a new TypedArray of the same type for the new
     //    Image that will be created
     // @ts-ignore
-    const imageScalarData = new TypedArray(pixelsPerImage)
+    const imageScalarData = new TypedArray(pixelsPerImage);
     // @ts-ignore
     const volumeBufferView = new TypedArray(
       volumeBuffer,
       byteOffset,
       pixelsPerImage
-    )
+    );
 
     // 4. Use e.g. TypedArray.set() to copy the data from the larger
     //    buffer's view into the smaller one
-    imageScalarData.set(volumeBufferView)
+    imageScalarData.set(volumeBufferView);
 
     // 5. Create an Image Object from imageScalarData and put it into the Image cache
-    const volumeImageId = imageIds[imageIdIndex]
+    const volumeImageId = imageIds[imageIdIndex];
     const modalityLutModule =
-      metaData.get('modalityLutModule', volumeImageId) || {}
-    const minMax = getMinMax(imageScalarData)
+      metaData.get('modalityLutModule', volumeImageId) || {};
+    const minMax = getMinMax(imageScalarData);
     const intercept = modalityLutModule.rescaleIntercept
       ? modalityLutModule.rescaleIntercept
-      : 0
+      : 0;
 
     const image: Types.IImage = {
       imageId,
@@ -643,14 +648,14 @@ export default class StreamingImageVolume extends ImageVolume {
       columnPixelSpacing: spacing[0],
       rowPixelSpacing: spacing[1],
       invert,
-    }
+    };
 
     // 5. Create the imageLoadObject
     const imageLoadObject = {
       promise: Promise.resolve(image),
-    }
+    };
 
-    return imageLoadObject
+    return imageLoadObject;
   }
 
   /**
@@ -664,41 +669,41 @@ export default class StreamingImageVolume extends ImageVolume {
     //    enough space to store another entire copy of the volume (as Images).
     //    If we do not have enough, we will store as many images in the cache
     //    as possible, and the rest of the volume will be decached.
-    const byteLength = this.sizeInBytes
-    const numImages = this.imageIds.length
-    const { bytesPerImage } = this._cornerstoneImageMetaData
+    const byteLength = this.sizeInBytes;
+    const numImages = this.imageIds.length;
+    const { bytesPerImage } = this._cornerstoneImageMetaData;
 
     let bytesRemaining = cache.decacheIfNecessaryUntilBytesAvailable(
       byteLength,
       this.imageIds
-    )
+    );
 
     for (let imageIdIndex = 0; imageIdIndex < numImages; imageIdIndex++) {
-      const imageId = this.imageIds[imageIdIndex]
+      const imageId = this.imageIds[imageIdIndex];
 
-      bytesRemaining = bytesRemaining - bytesPerImage
+      bytesRemaining = bytesRemaining - bytesPerImage;
 
       // 2. Convert each imageId to a cornerstone Image object which is
       // resolved inside the promise of imageLoadObject
       const imageLodObject = this.convertToCornerstoneImage(
         imageId,
         imageIdIndex
-      )
+      );
 
       // 3. Caching the image
       cache.putImageLoadObject(imageId, imageLodObject).catch((err) => {
-        console.error(err)
-      })
+        console.error(err);
+      });
 
       // 4. If we know we won't be able to add another Image to the cache
       //    without breaching the limit, stop here.
       if (bytesRemaining <= bytesPerImage) {
-        break
+        break;
       }
     }
     // 5. When as much of the Volume is processed into Images as possible
     //    without breaching the cache limit, remove the Volume
-    this._removeFromCache()
+    this._removeFromCache();
   }
 
   /**
@@ -709,9 +714,9 @@ export default class StreamingImageVolume extends ImageVolume {
    */
   public decache(completelyRemove = false): void {
     if (completelyRemove) {
-      this._removeFromCache()
+      this._removeFromCache();
     } else {
-      this._convertToImages()
+      this._convertToImages();
     }
   }
 }

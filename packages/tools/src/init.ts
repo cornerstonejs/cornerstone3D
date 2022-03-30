@@ -1,9 +1,9 @@
-import { eventTarget, Enums } from '@cornerstonejs/core'
-import { getDefaultAnnotationManager } from './stateManagement/annotation/annotationState'
-import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState'
-import { Events as TOOLS_EVENTS } from './enums'
-import { addEnabledElement, removeEnabledElement } from './store'
-import { resetCornerstoneToolsState } from './store/state'
+import { eventTarget, Enums } from '@cornerstonejs/core';
+import { getDefaultAnnotationManager } from './stateManagement/annotation/annotationState';
+import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState';
+import { Events as TOOLS_EVENTS } from './enums';
+import { addEnabledElement, removeEnabledElement } from './store';
+import { resetCornerstoneToolsState } from './store/state';
 import {
   annotationSelectionListener,
   segmentationDataModifiedEventListener,
@@ -11,11 +11,11 @@ import {
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
   annotationModifiedListener,
-} from './eventListeners'
+} from './eventListeners';
 
-import * as ToolGroupManager from './store/ToolGroupManager'
+import * as ToolGroupManager from './store/ToolGroupManager';
 
-let csToolsInitialized = false
+let csToolsInitialized = false;
 
 /**
  * Initialize the cornerstoneTools package. It will add event listeners for mouse
@@ -25,13 +25,13 @@ let csToolsInitialized = false
  */
 export function init(defaultConfiguration = {}): void {
   if (csToolsInitialized) {
-    return
+    return;
   }
 
-  _addCornerstoneEventListeners()
-  _addCornerstoneToolsEventListeners()
+  _addCornerstoneEventListeners();
+  _addCornerstoneToolsEventListeners();
 
-  csToolsInitialized = true
+  csToolsInitialized = true;
 }
 
 /**
@@ -40,23 +40,23 @@ export function init(defaultConfiguration = {}): void {
  * event listeners.
  */
 export function destroy(): void {
-  _removeCornerstoneEventListeners()
-  _removeCornerstoneToolsEventListeners()
+  _removeCornerstoneEventListeners();
+  _removeCornerstoneToolsEventListeners();
 
   // Important: destroy ToolGroups first, in order for cleanup to work correctly for the
   // added tools.
-  ToolGroupManager.destroy()
+  ToolGroupManager.destroy();
 
   // Remove all tools
-  resetCornerstoneToolsState()
+  resetCornerstoneToolsState();
 
   // remove all annotation.
-  const annotationManager = getDefaultAnnotationManager()
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const annotationManager = getDefaultAnnotationManager();
+  const segmentationStateManager = getDefaultSegmentationStateManager();
 
-  annotationManager.restoreAnnotations({})
-  segmentationStateManager.resetState()
-  csToolsInitialized = false
+  annotationManager.restoreAnnotations({});
+  segmentationStateManager.resetState();
+  csToolsInitialized = false;
 }
 
 /**
@@ -67,13 +67,13 @@ export function destroy(): void {
  */
 function _addCornerstoneEventListeners(): void {
   // Clear any listeners that may already be set
-  _removeCornerstoneEventListeners()
+  _removeCornerstoneEventListeners();
 
-  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED
-  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED
+  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED;
+  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED;
 
-  eventTarget.addEventListener(elementEnabledEvent, addEnabledElement)
-  eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement)
+  eventTarget.addEventListener(elementEnabledEvent, addEnabledElement);
+  eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement);
 }
 
 /**
@@ -82,11 +82,11 @@ function _addCornerstoneEventListeners(): void {
  *
  */
 function _removeCornerstoneEventListeners(): void {
-  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED
-  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED
+  const elementEnabledEvent = Enums.Events.ELEMENT_ENABLED;
+  const elementDisabledEvent = Enums.Events.ELEMENT_DISABLED;
 
-  eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement)
-  eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement)
+  eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement);
+  eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement);
 }
 
 /**
@@ -95,7 +95,7 @@ function _removeCornerstoneEventListeners(): void {
  */
 function _addCornerstoneToolsEventListeners() {
   // Clear any listeners that may already be set
-  _removeCornerstoneToolsEventListeners()
+  _removeCornerstoneToolsEventListeners();
 
   /**
    * Annotation
@@ -103,17 +103,17 @@ function _addCornerstoneToolsEventListeners() {
   eventTarget.addEventListener(
     TOOLS_EVENTS.ANNOTATION_MODIFIED,
     annotationModifiedListener
-  )
+  );
 
   eventTarget.addEventListener(
     TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
     annotationSelectionListener
-  )
+  );
 
   eventTarget.addEventListener(
     TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
     annotationSelectionListener
-  )
+  );
 
   /**
    * Segmentation
@@ -121,21 +121,21 @@ function _addCornerstoneToolsEventListeners() {
   eventTarget.addEventListener(
     TOOLS_EVENTS.SEGMENTATION_MODIFIED,
     segmentationModifiedListener
-  )
+  );
 
   eventTarget.addEventListener(
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
-  )
+  );
   eventTarget.addEventListener(
     TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
     segmentationRepresentationModifiedEventListener
-  )
+  );
 
   eventTarget.addEventListener(
     TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
     segmentationRepresentationRemovedEventListener
-  )
+  );
 }
 
 /**
@@ -148,17 +148,17 @@ function _removeCornerstoneToolsEventListeners() {
   eventTarget.removeEventListener(
     TOOLS_EVENTS.ANNOTATION_MODIFIED,
     annotationModifiedListener
-  )
+  );
 
   eventTarget.removeEventListener(
     TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
     annotationSelectionListener
-  )
+  );
 
   eventTarget.removeEventListener(
     TOOLS_EVENTS.ANNOTATION_SELECTION_CHANGE,
     annotationSelectionListener
-  )
+  );
 
   /**
    * Segmentation
@@ -167,21 +167,21 @@ function _removeCornerstoneToolsEventListeners() {
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_MODIFIED,
     segmentationModifiedListener
-  )
+  );
 
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
-  )
+  );
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
     segmentationRepresentationModifiedEventListener
-  )
+  );
 
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
     segmentationRepresentationRemovedEventListener
-  )
+  );
 }
 
-export default init
+export default init;

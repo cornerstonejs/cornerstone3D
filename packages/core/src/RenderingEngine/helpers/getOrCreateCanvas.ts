@@ -1,5 +1,5 @@
-const VIEWPORT_ELEMENT = 'viewport-element'
-const CANVAS_CSS_CLASS = 'cornerstone-canvas'
+const VIEWPORT_ELEMENT = 'viewport-element';
+const CANVAS_CSS_CLASS = 'cornerstone-canvas';
 
 /**
  * Create a canvas and append it to the element
@@ -8,15 +8,15 @@ const CANVAS_CSS_CLASS = 'cornerstone-canvas'
  * @returns canvas - A Canvas DOM element
  */
 function createCanvas(element: Element | HTMLElement): HTMLCanvasElement {
-  const canvas = document.createElement('canvas')
+  const canvas = document.createElement('canvas');
 
-  canvas.style.position = 'absolute'
-  canvas.style.width = '100%'
-  canvas.style.height = '100%'
-  canvas.classList.add(CANVAS_CSS_CLASS)
-  element.appendChild(canvas)
+  canvas.style.position = 'absolute';
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.classList.add(CANVAS_CSS_CLASS);
+  element.appendChild(canvas);
 
-  return canvas
+  return canvas;
 }
 
 /**
@@ -26,14 +26,14 @@ function createCanvas(element: Element | HTMLElement): HTMLCanvasElement {
  * as its children
  */
 export function createViewportElement(element: HTMLElement): HTMLElement {
-  const div = document.createElement('div')
-  div.style.position = 'relative'
-  div.style.width = '100%'
-  div.style.height = '100%'
-  div.classList.add(VIEWPORT_ELEMENT)
-  element.appendChild(div)
+  const div = document.createElement('div');
+  div.style.position = 'relative';
+  div.style.width = '100%';
+  div.style.height = '100%';
+  div.classList.add(VIEWPORT_ELEMENT);
+  element.appendChild(div);
 
-  return div
+  return div;
 }
 
 /**
@@ -46,13 +46,13 @@ export function createViewportElement(element: HTMLElement): HTMLElement {
 export default function getOrCreateCanvas(
   element: HTMLElement
 ): HTMLCanvasElement {
-  const canvasSelector = `canvas.${CANVAS_CSS_CLASS}`
-  const viewportElement = `div.${VIEWPORT_ELEMENT}`
+  const canvasSelector = `canvas.${CANVAS_CSS_CLASS}`;
+  const viewportElement = `div.${VIEWPORT_ELEMENT}`;
 
   // Internal div with `relative` positioning to enable absolute positioning
   // of the canvas and svg layer.
   const internalDiv =
-    element.querySelector(viewportElement) || createViewportElement(element)
+    element.querySelector(viewportElement) || createViewportElement(element);
 
-  return internalDiv.querySelector(canvasSelector) || createCanvas(internalDiv)
+  return internalDiv.querySelector(canvasSelector) || createCanvas(internalDiv);
 }

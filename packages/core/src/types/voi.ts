@@ -1,15 +1,15 @@
 type VOI = {
   /** Window Width for display */
-  windowWidth: number
+  windowWidth: number;
   /** Window Center for display */
-  windowCenter: number
-}
+  windowCenter: number;
+};
 
 type VOIRange = {
   /** upper value for display */
-  upper: number
+  upper: number;
   /** lower value for display */
-  lower: number
-}
+  lower: number;
+};
 
-export type { VOI, VOIRange }
+export type { VOI, VOIRange };

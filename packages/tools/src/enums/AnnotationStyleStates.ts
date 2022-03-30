@@ -19,4 +19,4 @@ enum AnnotationStyleStates {
   Locked = 'Locked',
 }
 
-export default AnnotationStyleStates
+export default AnnotationStyleStates;

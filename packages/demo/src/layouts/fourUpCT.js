@@ -1,12 +1,12 @@
-import { VIEWPORT_IDS } from '../constants'
-import { Enums, CONSTANTS } from '@cornerstonejs/core'
+import { VIEWPORT_IDS } from '../constants';
+import { Enums, CONSTANTS } from '@cornerstonejs/core';
 import {
   setCTWWWC,
   setCTVRTransferFunction,
-} from '../helpers/transferFunctionHelpers'
+} from '../helpers/transferFunctionHelpers';
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 function setLayout(
   renderingEngine,
@@ -51,33 +51,33 @@ function setLayout(
         },
       },
     },
-  ]
+  ];
 
-  renderingEngine.setViewports(viewportInput)
+  renderingEngine.setViewports(viewportInput);
 
-  const renderingEngineId = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid;
 
   viewportInput.forEach((viewportInputEntry) => {
-    const { sceneUID, viewportId } = viewportInputEntry
+    const { sceneUID, viewportId } = viewportInputEntry;
 
     if (sceneUID === SCENE_IDS.CT) {
-      console.log(`adding ${viewportId} to CT toolgroup`)
-      ctSceneToolGroup.addViewport(viewportId, renderingEngineId)
+      console.log(`adding ${viewportId} to CT toolgroup`);
+      ctSceneToolGroup.addViewport(viewportId, renderingEngineId);
     } else if (sceneUID === SCENE_IDS.CTVR) {
-      console.log(`adding ${viewportId} to CTVR toolgroup`)
-      ctVRSceneToolGroup.addViewport(viewportId, renderingEngineId)
+      console.log(`adding ${viewportId} to CTVR toolgroup`);
+      ctVRSceneToolGroup.addViewport(viewportId, renderingEngineId);
     }
-  })
+  });
 }
 
 function setVolumes(renderingEngine, ctVolumeId) {
-  const ctScene = renderingEngine.getScene(SCENE_IDS.CT)
-  const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR)
+  const ctScene = renderingEngine.getScene(SCENE_IDS.CT);
+  const ctVRScene = renderingEngine.getScene(SCENE_IDS.CTVR);
 
-  ctScene.setVolumes([{ volumeId: ctVolumeId, callback: setCTWWWC }])
+  ctScene.setVolumes([{ volumeId: ctVolumeId, callback: setCTWWWC }]);
   ctVRScene.setVolumes([
     { volumeId: ctVolumeId, callback: setCTVRTransferFunction },
-  ])
+  ]);
 }
 
-export default { setLayout, setVolumes }
+export default { setLayout, setVolumes };

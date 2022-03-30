@@ -1,8 +1,8 @@
-import { MouseBindings, KeyboardBindings } from './ToolBindings'
-import ToolModes from './ToolModes'
-import AnnotationStyleStates from './AnnotationStyleStates'
-import Events from './Events'
-import SegmentationRepresentations from './SegmentationRepresentations'
+import { MouseBindings, KeyboardBindings } from './ToolBindings';
+import ToolModes from './ToolModes';
+import AnnotationStyleStates from './AnnotationStyleStates';
+import Events from './Events';
+import SegmentationRepresentations from './SegmentationRepresentations';
 
 export {
   MouseBindings,
@@ -11,4 +11,4 @@ export {
   AnnotationStyleStates,
   Events,
   SegmentationRepresentations,
-}
+};

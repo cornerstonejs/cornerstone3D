@@ -1,8 +1,8 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
-import _getHash from './_getHash'
-import _setAttributesIfNecessary from './_setAttributesIfNecessary'
-import _setNewAttributesIfValid from './_setNewAttributesIfValid'
+import _getHash from './_getHash';
+import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 
 function drawEllipse(
   svgDrawingHelper: any,
@@ -21,23 +21,23 @@ function drawEllipse(
       lineDash: undefined,
     },
     options
-  )
+  );
 
   // for supporting both lineWidth and width options
-  const strokeWidth = lineWidth || width
+  const strokeWidth = lineWidth || width;
 
-  const svgns = 'http://www.w3.org/2000/svg'
-  const svgNodeHash = _getHash(toolName, annotationUID, 'ellipse', ellipseUID)
-  const existingEllipse = svgDrawingHelper._getSvgNode(svgNodeHash)
+  const svgns = 'http://www.w3.org/2000/svg';
+  const svgNodeHash = _getHash(toolName, annotationUID, 'ellipse', ellipseUID);
+  const existingEllipse = svgDrawingHelper._getSvgNode(svgNodeHash);
 
-  const w = Math.abs(corner1[0] - corner2[0])
-  const h = Math.abs(corner1[1] - corner2[1])
-  const xMin = Math.min(corner1[0], corner2[0])
-  const yMin = Math.min(corner1[1], corner2[1])
+  const w = Math.abs(corner1[0] - corner2[0]);
+  const h = Math.abs(corner1[1] - corner2[1]);
+  const xMin = Math.min(corner1[0], corner2[0]);
+  const yMin = Math.min(corner1[1], corner2[1]);
 
-  const center = [xMin + w / 2, yMin + h / 2]
-  const radiusX = w / 2
-  const radiusY = h / 2
+  const center = [xMin + w / 2, yMin + h / 2];
+  const radiusX = w / 2;
+  const radiusY = h / 2;
 
   const attributes = {
     cx: `${center[0]}`,
@@ -48,19 +48,19 @@ function drawEllipse(
     fill: 'transparent',
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
-  }
+  };
 
   if (existingEllipse) {
-    _setAttributesIfNecessary(attributes, existingEllipse)
+    _setAttributesIfNecessary(attributes, existingEllipse);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash)
+    svgDrawingHelper._setNodeTouched(svgNodeHash);
   } else {
-    const svgEllipseElement = document.createElementNS(svgns, 'ellipse')
+    const svgEllipseElement = document.createElementNS(svgns, 'ellipse');
 
-    _setNewAttributesIfValid(attributes, svgEllipseElement)
+    _setNewAttributesIfValid(attributes, svgEllipseElement);
 
-    svgDrawingHelper._appendNode(svgEllipseElement, svgNodeHash)
+    svgDrawingHelper._appendNode(svgEllipseElement, svgNodeHash);
   }
 }
 
-export default drawEllipse
+export default drawEllipse;

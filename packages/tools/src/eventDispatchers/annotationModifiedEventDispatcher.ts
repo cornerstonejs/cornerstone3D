@@ -1,7 +1,7 @@
-import { eventTarget, getRenderingEngine } from '@cornerstonejs/core'
-import Events from '../enums/Events'
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds'
-import { AnnotationModifiedEventType } from '../types/EventTypes'
+import { eventTarget, getRenderingEngine } from '@cornerstonejs/core';
+import Events from '../enums/Events';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import { AnnotationModifiedEventType } from '../types/EventTypes';
 
 /**
  * This is a callback function that is called when an annotation is modified.
@@ -16,23 +16,26 @@ import { AnnotationModifiedEventType } from '../types/EventTypes'
  * no svg update happens since the attributes for handles are the same)
  */
 const onAnnotationModified = function (evt: AnnotationModifiedEventType) {
-  const { viewportId, renderingEngineId } = evt.detail
-  const renderingEngine = getRenderingEngine(renderingEngineId)
-  triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId])
-}
+  const { viewportId, renderingEngineId } = evt.detail;
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId]);
+};
 
 const enable = function () {
-  eventTarget.addEventListener(Events.ANNOTATION_MODIFIED, onAnnotationModified)
-}
+  eventTarget.addEventListener(
+    Events.ANNOTATION_MODIFIED,
+    onAnnotationModified
+  );
+};
 
 const disable = function () {
   eventTarget.removeEventListener(
     Events.ANNOTATION_MODIFIED,
     onAnnotationModified
-  )
-}
+  );
+};
 
 export default {
   enable,
   disable,
-}
+};

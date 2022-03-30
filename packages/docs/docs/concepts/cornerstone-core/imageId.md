@@ -3,7 +3,6 @@ id: imageId
 title: ImageId
 ---
 
-
 # ImageId
 
 A `Cornerstone3D` `ImageId` is a URL which identifies a single image for cornerstone to display.
@@ -11,7 +10,6 @@ A `Cornerstone3D` `ImageId` is a URL which identifies a single image for corners
 The URL scheme in the `ImageId` is used by Cornerstone to determine which [Image Loader](./imageLoader.md) plugin to call to actually load the image.
 It should be noted that `Cornerstone3D` delegates loading of the images to the registered image loaders.
 This strategy allows Cornerstone to simultaneously display multiple images obtained with different protocols from different servers. For example, Cornerstone could display a DICOM CT image obtained via WADO alongside a JPEG dermatology image captured by a digital camera and stored on a file system.
-
 
 The ImageId format
 
@@ -22,6 +20,7 @@ WADO allows for retrieval (and storage) of images from a WADO-compliant server. 
 imageId would look like for different ImageLoader plugins:
 
 [**WADO-URI**](https://dicom.nema.org/dicom/2013/output/chtml/part18/sect_6.2.html)
+
 ```
 http://www.medical-webservice.st/RetrieveDocument?
 requestType=WADO&studyUID=1.2.250.1.59.40211.12345678.678910

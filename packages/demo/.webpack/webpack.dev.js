@@ -10,7 +10,7 @@ module.exports = (env, argv) => {
   const commonConfig = webpackDevBase(env, argv, { SRC_DIR, DIST_DIR });
 
   return merge(commonConfig, {
-    plugins:[
+    plugins: [
       new CopyPlugin({
         patterns: [
           {
@@ -19,6 +19,6 @@ module.exports = (env, argv) => {
           },
         ],
       }),
-    ]
+    ],
   });
 };

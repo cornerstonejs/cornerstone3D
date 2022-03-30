@@ -1,16 +1,16 @@
-import mouseEventListeners from './mouse'
-import wheelEventListener from './wheel'
-import keyEventListener from './keyboard'
+import mouseEventListeners from './mouse';
+import wheelEventListener from './wheel';
+import keyEventListener from './keyboard';
 import {
   segmentationDataModifiedEventListener,
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
-} from './segmentation'
+} from './segmentation';
 import {
   annotationSelectionListener,
   annotationModifiedListener,
-} from './annotations'
+} from './annotations';
 //import touchEventListeners from './touchEventListeners';
 
 export {
@@ -23,4 +23,4 @@ export {
   segmentationDataModifiedEventListener,
   annotationSelectionListener,
   annotationModifiedListener,
-}
+};

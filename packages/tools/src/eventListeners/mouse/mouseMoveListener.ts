@@ -1,9 +1,9 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
-import Events from '../../enums/Events'
-import getMouseEventPoints from './getMouseEventPoints'
-import { MouseMoveEventDetail } from '../../types/EventTypes'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import Events from '../../enums/Events';
+import getMouseEventPoints from './getMouseEventPoints';
+import { MouseMoveEventDetail } from '../../types/EventTypes';
 
-const eventName = Events.MOUSE_MOVE
+const eventName = Events.MOUSE_MOVE;
 
 /**
  * Captures and normalizes the mouse move event. Emits as a cornerstoneTools3D
@@ -12,11 +12,11 @@ const eventName = Events.MOUSE_MOVE
  * @param evt - The mouse event.
  */
 function mouseMoveListener(evt: MouseEvent) {
-  const element = <HTMLElement>evt.currentTarget
-  const enabledElement = getEnabledElement(element)
-  const { renderingEngineId, viewportId } = enabledElement
+  const element = <HTMLElement>evt.currentTarget;
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngineId, viewportId } = enabledElement;
 
-  const currentPoints = getMouseEventPoints(evt)
+  const currentPoints = getMouseEventPoints(evt);
   const eventDetail: MouseMoveEventDetail = {
     renderingEngineId,
     viewportId,
@@ -25,9 +25,9 @@ function mouseMoveListener(evt: MouseEvent) {
     currentPoints,
     eventName,
     event: evt,
-  }
+  };
 
-  triggerEvent(element, eventName, eventDetail)
+  triggerEvent(element, eventName, eventDetail);
 }
 
-export default mouseMoveListener
+export default mouseMoveListener;

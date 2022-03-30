@@ -1,25 +1,25 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
   Enums,
   CONSTANTS,
   init as csRenderInit,
-} from '@cornerstonejs/core'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
+} from '@cornerstonejs/core';
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
 
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
-import { ctStackUID, VIEWPORT_IDS } from './constants'
-import * as csTools3d from '@cornerstonejs/tools'
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
+import { ctStackUID, VIEWPORT_IDS } from './constants';
+import * as csTools3d from '@cornerstonejs/tools';
 
-const renderingEngineId = 'renderingEngineId'
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const renderingEngineId = 'renderingEngineId';
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-window.cache = cache
+window.cache = cache;
 
 class NineStackViewportExample extends Component {
   state = {
@@ -35,17 +35,17 @@ class NineStackViewportExample extends Component {
       viewports: [{}, {}, {}, {}, {}, {}, {}, {}, {}],
     },
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
+    csTools3d.init();
 
-    this._elementNodes = new Map()
-    this._viewportGridRef = React.createRef()
-    this._offScreenRef = React.createRef()
-    this.ctImageIdsPromise = getImageIds('ctStack', 'STACK')
+    this._elementNodes = new Map();
+    this._viewportGridRef = React.createRef();
+    this._offScreenRef = React.createRef();
+    this.ctImageIdsPromise = getImageIds('ctStack', 'STACK');
     // this.dxImageIdsPromise = createDXImageIds();
     // Promise.all([this.ctImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
@@ -66,31 +66,31 @@ class NineStackViewportExample extends Component {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    const { stackCTViewportToolGroup } = initToolGroups()
+    await csRenderInit();
+    csTools3d.init();
+    const { stackCTViewportToolGroup } = initToolGroups();
 
-    this.ctStackUID = ctStackUID
+    this.ctStackUID = ctStackUID;
 
     // Create volumes
-    const imageIds = await this.ctImageIdsPromise
+    const imageIds = await this.ctImageIdsPromise;
     // const dxImageIds = await this.dxImageIdsPromise
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
     // const renderingEngine = new RenderingEngine(renderingEngineId)
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     const viewportInput = [
       {
@@ -165,11 +165,11 @@ class NineStackViewportExample extends Component {
           orientation: ORIENTATION.AXIAL,
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(viewportInput)
+    renderingEngine.setViewports(viewportInput);
 
-    addToolsToToolGroups({ stackCTViewportToolGroup })
+    addToolsToToolGroups({ stackCTViewportToolGroup });
     // volume ct
 
     // stack ct
@@ -177,56 +177,56 @@ class NineStackViewportExample extends Component {
       stackCTViewportToolGroup.addViewport(
         vpEntry.viewportId,
         renderingEngineId
-      )
-    })
+      );
+    });
 
-    renderingEngine.render()
+    renderingEngine.render();
 
     const promises = viewportInput.map((vpEntry) => {
-      const stackViewport = renderingEngine.getViewport(vpEntry.viewportId)
-      return stackViewport.setStack(sortImageIdsByIPP(imageIds))
-    })
+      const stackViewport = renderingEngine.getViewport(vpEntry.viewportId);
+      return stackViewport.setStack(sortImageIdsByIPP(imageIds));
+    });
 
     Promise.all(promises).then(() => {
       this.setState({
         metadataLoaded: true,
-      })
+      });
 
       // This will initialise volumes in GPU memory
-      renderingEngine.render()
-    })
+      renderingEngine.render();
+    });
 
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   showOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-    const uri = this.renderingEngine._debugRender()
-    const image = document.createElement('img')
-    image.src = uri
-    image.setAttribute('width', '100%')
+    this._offScreenRef.current.innerHTML = '';
+    const uri = this.renderingEngine._debugRender();
+    const image = document.createElement('img');
+    image.src = uri;
+    image.setAttribute('width', '100%');
 
-    this._offScreenRef.current.appendChild(image)
-  }
+    this._offScreenRef.current.appendChild(image);
+  };
 
   hideOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-  }
+    this._offScreenRef.current.innerHTML = '';
+  };
 
   render() {
     return (
@@ -281,8 +281,8 @@ class NineStackViewportExample extends Component {
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default NineStackViewportExample
+export default NineStackViewportExample;

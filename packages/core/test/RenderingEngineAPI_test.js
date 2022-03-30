@@ -1,40 +1,40 @@
-import * as cornerstone3D from '../src/index'
+import * as cornerstone3D from '../src/index';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
-const { RenderingEngine, cache, utilities, Enums, CONSTANTS } = cornerstone3D
+const { RenderingEngine, cache, utilities, Enums, CONSTANTS } = cornerstone3D;
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-const renderingEngineId = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4();
 
-const axialViewportId = 'AXIAL_VIEWPORT'
-const sagittalViewportId = 'SAGITTAL_VIEWPORT'
-const customOrientationViewportId = 'OFF_AXIS_VIEWPORT'
+const axialViewportId = 'AXIAL_VIEWPORT';
+const sagittalViewportId = 'SAGITTAL_VIEWPORT';
+const customOrientationViewportId = 'OFF_AXIS_VIEWPORT';
 
 describe('RenderingEngineAPI -- ', () => {
   beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false)
-  })
+    cornerstone3D.setUseCPURendering(false);
+  });
 
   describe('RenderingEngine API:', function () {
     beforeEach(function () {
-      this.renderingEngine = new RenderingEngine(renderingEngineId)
+      this.renderingEngine = new RenderingEngine(renderingEngineId);
 
-      this.elementAxial = document.createElement('div')
+      this.elementAxial = document.createElement('div');
 
-      this.elementAxial.width = 256
-      this.elementAxial.height = 512
+      this.elementAxial.width = 256;
+      this.elementAxial.height = 512;
 
-      this.elementSagittal = document.createElement('div')
+      this.elementSagittal = document.createElement('div');
 
-      this.elementSagittal.width = 1024
-      this.elementSagittal.height = 1024
+      this.elementSagittal.width = 1024;
+      this.elementSagittal.height = 1024;
 
-      this.elementCustom = document.createElement('div')
+      this.elementCustom = document.createElement('div');
 
-      this.elementCustom.width = 63
-      this.elementCustom.height = 87
+      this.elementCustom.width = 63;
+      this.elementCustom.height = 87;
 
       this.renderingEngine.setViewports([
         {
@@ -61,94 +61,94 @@ describe('RenderingEngineAPI -- ', () => {
             orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
           },
         },
-      ])
-    })
+      ]);
+    });
 
     afterEach(function () {
-      this.renderingEngine.destroy()
-      ;[this.elementAxial, this.elementSagittal, this.elementCustom].forEach(
+      this.renderingEngine.destroy();
+      [this.elementAxial, this.elementSagittal, this.elementCustom].forEach(
         (el) => {
           if (el.parentNode) {
-            el.parentNode.removeChild(el)
+            el.parentNode.removeChild(el);
           }
         }
-      )
-      cache.purgeCache()
-    })
+      );
+      cache.purgeCache();
+    });
 
     it('should be able to access the viewports from renderingEngine', function () {
-      const AxialViewport = this.renderingEngine.getViewport(axialViewportId)
-      const Viewports = this.renderingEngine.getViewports()
+      const AxialViewport = this.renderingEngine.getViewport(axialViewportId);
+      const Viewports = this.renderingEngine.getViewports();
 
-      expect(AxialViewport).toBeTruthy()
-      expect(Viewports).toBeTruthy()
-      expect(Viewports.length).toEqual(3)
-    })
+      expect(AxialViewport).toBeTruthy();
+      expect(Viewports).toBeTruthy();
+      expect(Viewports.length).toEqual(3);
+    });
 
     it('should be able to destroy the rendering engine', function () {
-      this.renderingEngine.destroy()
+      this.renderingEngine.destroy();
 
       expect(function () {
-        this.renderingEngine.getViewports()
-      }).toThrow()
-    })
+        this.renderingEngine.getViewports();
+      }).toThrow();
+    });
 
     it('should be able to handle destroy of an engine that has been destroyed', function () {
-      this.renderingEngine.destroy()
-      const response = this.renderingEngine.destroy()
-      expect(response).toBeUndefined()
-    })
+      this.renderingEngine.destroy();
+      const response = this.renderingEngine.destroy();
+      expect(response).toBeUndefined();
+    });
 
     it('Take an orientation given by AXIAL as well as set manually by sliceNormal and viewUp', function () {
-      const AxialViewport = this.renderingEngine.getViewport(axialViewportId)
+      const AxialViewport = this.renderingEngine.getViewport(axialViewportId);
       const CustomOrientationViewport = this.renderingEngine.getViewport(
         customOrientationViewportId
-      )
+      );
 
-      const DefaultOptions1 = AxialViewport.defaultOptions
-      const Orientation1 = DefaultOptions1.orientation
-      const DefaultOptions2 = CustomOrientationViewport.defaultOptions
-      const Orientation2 = DefaultOptions2.orientation
+      const DefaultOptions1 = AxialViewport.defaultOptions;
+      const Orientation1 = DefaultOptions1.orientation;
+      const DefaultOptions2 = CustomOrientationViewport.defaultOptions;
+      const Orientation2 = DefaultOptions2.orientation;
 
-      expect(Orientation1.viewUp.length).toEqual(3)
-      expect(Orientation1.sliceNormal.length).toEqual(3)
-      expect(Orientation2.viewUp.length).toEqual(3)
-      expect(Orientation2.sliceNormal.length).toEqual(3)
-    })
-  })
+      expect(Orientation1.viewUp.length).toEqual(3);
+      expect(Orientation1.sliceNormal.length).toEqual(3);
+      expect(Orientation2.viewUp.length).toEqual(3);
+      expect(Orientation2.sliceNormal.length).toEqual(3);
+    });
+  });
 
   describe('RenderingEngine Enable/Disable API:', function () {
     beforeEach(function () {
-      this.renderingEngine = new RenderingEngine(renderingEngineId)
+      this.renderingEngine = new RenderingEngine(renderingEngineId);
 
-      this.elementAxial = document.createElement('div')
+      this.elementAxial = document.createElement('div');
 
-      this.elementAxial.width = 256
-      this.elementAxial.height = 512
+      this.elementAxial.width = 256;
+      this.elementAxial.height = 512;
 
-      this.elementSagittal = document.createElement('div')
+      this.elementSagittal = document.createElement('div');
 
-      this.elementSagittal.width = 1024
-      this.elementSagittal.height = 1024
+      this.elementSagittal.width = 1024;
+      this.elementSagittal.height = 1024;
 
-      this.elementCustomOrientation = document.createElement('div')
+      this.elementCustomOrientation = document.createElement('div');
 
-      this.elementCustomOrientation.width = 63
-      this.elementCustomOrientation.height = 87
-    })
+      this.elementCustomOrientation.width = 63;
+      this.elementCustomOrientation.height = 87;
+    });
 
     afterEach(function () {
-      this.renderingEngine.destroy()
-      ;[
+      this.renderingEngine.destroy();
+      [
         this.elementAxial,
         this.elementSagittal,
         this.elementCustomOrientation,
       ].forEach((el) => {
         if (el.parentNode) {
-          el.parentNode.removeChild(el)
+          el.parentNode.removeChild(el);
         }
-      })
-    })
+      });
+    });
 
     it('should be able to successfully use enable api', function () {
       const viewportInputEntries = [
@@ -176,17 +176,17 @@ describe('RenderingEngineAPI -- ', () => {
             orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
           },
         },
-      ]
+      ];
 
-      this.renderingEngine.enableElement(viewportInputEntries[0])
+      this.renderingEngine.enableElement(viewportInputEntries[0]);
 
-      let viewport1 = this.renderingEngine.getViewport(axialViewportId)
-      let viewport2 = this.renderingEngine.getViewport(sagittalViewportId)
+      let viewport1 = this.renderingEngine.getViewport(axialViewportId);
+      let viewport2 = this.renderingEngine.getViewport(sagittalViewportId);
 
-      expect(viewport1).toBeTruthy()
-      expect(viewport1.id).toBe(axialViewportId)
-      expect(viewport2).toBeUndefined()
-    })
+      expect(viewport1).toBeTruthy();
+      expect(viewport1.id).toBe(axialViewportId);
+      expect(viewport2).toBeUndefined();
+    });
 
     it('should not enable element without an element', function () {
       const entry = {
@@ -195,13 +195,13 @@ describe('RenderingEngineAPI -- ', () => {
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
-      }
+      };
 
       const enable = function () {
-        this.renderingEngine.enableElement(entry)
-      }
-      expect(enable).toThrow()
-    })
+        this.renderingEngine.enableElement(entry);
+      };
+      expect(enable).toThrow();
+    });
 
     it('should successfully use disable element API', function () {
       const entry = {
@@ -211,16 +211,16 @@ describe('RenderingEngineAPI -- ', () => {
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
-      }
+      };
 
-      this.renderingEngine.enableElement(entry)
-      let viewport1 = this.renderingEngine.getViewport(axialViewportId)
-      expect(viewport1).toBeTruthy()
+      this.renderingEngine.enableElement(entry);
+      let viewport1 = this.renderingEngine.getViewport(axialViewportId);
+      expect(viewport1).toBeTruthy();
 
-      this.renderingEngine.disableElement(axialViewportId)
-      viewport1 = this.renderingEngine.getViewport(axialViewportId)
-      expect(viewport1).toBeUndefined()
-    })
+      this.renderingEngine.disableElement(axialViewportId);
+      viewport1 = this.renderingEngine.getViewport(axialViewportId);
+      expect(viewport1).toBeUndefined();
+    });
 
     it('should successfully get StackViewports', function () {
       const entry = {
@@ -230,11 +230,11 @@ describe('RenderingEngineAPI -- ', () => {
         defaultOptions: {
           orientation: ORIENTATION.AXIAL,
         },
-      }
+      };
 
-      this.renderingEngine.enableElement(entry)
-      const stackViewports = this.renderingEngine.getStackViewports()
-      expect(stackViewports.length).toBe(1)
-    })
-  })
-})
+      this.renderingEngine.enableElement(entry);
+      const stackViewports = this.renderingEngine.getStackViewports();
+      expect(stackViewports.length).toBe(1);
+    });
+  });
+});

@@ -17,6 +17,7 @@ inside `Cornerstone3DTools`.
 ## Tools
 
 ### Manipulation Tools
+
 `Cornerstone3DTools` provides a set of tools that can be used to manipulate the
 images in the viewports. These include:
 
@@ -44,11 +45,9 @@ Below, you can see a screenshot of the annotation tools that are available in `C
 
 </div>
 
-
 ### Dynamic tool statistics
+
 `Cornerstone3DTools` is capable of calculating dynamic statistics based on the modality of the volume being rendered. For instance, for CT volumes a `ProbeTool` will give Hounsfield Units and for PET it will calculate SUV stats.
-
-
 
 <div style={{textAlign: 'center', width:'85%'}}>
 
@@ -56,14 +55,11 @@ Below, you can see a screenshot of the annotation tools that are available in `C
 
 </div>
 
-
 ### Annotation sharing in Frame of Reference
 
 Since, annotations are stored in the patient physical space, if there are
 two viewports that are displaying the same frame of reference, they will share
 the same annotations.
-
-
 
 ### Segmentation Tools
 
@@ -96,16 +92,15 @@ The `Cornerstone3DTools` library comes packaged with several common tools. All i
 the `BaseTool` or `AnnotationTool`. In order to be able to use the tools, you must
 first add them to the `Cornerstone3DTools`. You can do this by using the `addTool` function.
 
-
 ```js
-import * as csTools3d from '@cornerstone/tools'
+import * as csTools3d from '@cornerstone/tools';
 
-const { PanTool, ProbeTool, ZoomTool, LengthTool } = csTools3d
+const { PanTool, ProbeTool, ZoomTool, LengthTool } = csTools3d;
 
-csTools3d.addTool(PanTool)
-csTools3d.addTool(ZoomTool)
-csTools3d.addTool(LengthTool)
-csTools3d.addTool(ProbeTool)
+csTools3d.addTool(PanTool);
+csTools3d.addTool(ZoomTool);
+csTools3d.addTool(LengthTool);
+csTools3d.addTool(ProbeTool);
 ```
 
 :::note warning
@@ -115,15 +110,12 @@ instantiate the tool for usage.
 
 :::
 
-
-
 ## Tool Modes
 
 Tools (in their toolGroup) can be in one of four modes. Each mode impacts how the tool responds to
 interactions.
 
 > There should never be two active tools with the same binding
-
 
 <table>
   <tr>

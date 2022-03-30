@@ -5,64 +5,64 @@ import {
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@cornerstonejs/tools'
+} from '../../../../utils/demo/helpers';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-} = cornerstoneTools
+} = cornerstoneTools;
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
-const segmentationId1 = 'SEGMENTATION_ID_1'
-const segmentationId2 = 'SEGMENTATION_ID_2'
-const toolGroupId = 'MY_ TOOL_GROUP_ID'
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}`; // VolumeId with loader id + volume id
+const segmentationId1 = 'SEGMENTATION_ID_1';
+const segmentationId2 = 'SEGMENTATION_ID_2';
+const toolGroupId = 'MY_ TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Swapping segmentations on a viewport',
   'Here we demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed'
-)
+);
 
-const size = '500px'
-const content = document.getElementById('content')
-const element = document.createElement('div')
+const size = '500px';
+const content = document.getElementById('content');
+const element = document.createElement('div');
 
-element.style.width = size
-element.style.height = size
+element.style.width = size;
+element.style.height = size;
 
-content.appendChild(element)
+content.appendChild(element);
 
-const instructions = document.createElement('p')
+const instructions = document.createElement('p');
 instructions.innerText = `
   Click the Swap Segmentation button to swap the segmentation being displayed
-`
+`;
 
-content.append(instructions)
+content.append(instructions);
 // ============================= //
 
-let segmentationDisplayed = segmentationId1
-let activeSegmentationRepresentationUID
+let segmentationDisplayed = segmentationId1;
+let activeSegmentationRepresentationUID;
 
 addButtonToToolbar('Swap Segmentation', async () => {
   // Remove the currently displayed segmentation representation
   segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
     activeSegmentationRepresentationUID,
-  ])
+  ]);
 
   if (segmentationDisplayed === segmentationId1) {
     // Add segmentation 2
@@ -72,10 +72,10 @@ addButtonToToolbar('Swap Segmentation', async () => {
           segmentationId: segmentationId2,
           type: csToolsEnums.SegmentationRepresentations.Labelmap,
         },
-      ])
+      ]);
 
-    activeSegmentationRepresentationUID = segmentationRepresentationUID
-    segmentationDisplayed = segmentationId2
+    activeSegmentationRepresentationUID = segmentationRepresentationUID;
+    segmentationDisplayed = segmentationId2;
   } else {
     // Add segmentation 1
     const [segmentationRepresentationUID] =
@@ -84,12 +84,12 @@ addButtonToToolbar('Swap Segmentation', async () => {
           segmentationId: segmentationId1,
           type: csToolsEnums.SegmentationRepresentations.Labelmap,
         },
-      ])
+      ]);
 
-    activeSegmentationRepresentationUID = segmentationRepresentationUID
-    segmentationDisplayed = segmentationId1
+    activeSegmentationRepresentationUID = segmentationRepresentationUID;
+    segmentationDisplayed = segmentationId1;
   }
-})
+});
 
 // ============================= //
 
@@ -97,33 +97,33 @@ addButtonToToolbar('Swap Segmentation', async () => {
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
 function fillSegmentationWithCircles(segmentationVolume, centerOffset) {
-  const scalarData = segmentationVolume.scalarData
+  const scalarData = segmentationVolume.scalarData;
 
-  let voxelIndex = 0
+  let voxelIndex = 0;
 
-  const { dimensions } = segmentationVolume
+  const { dimensions } = segmentationVolume;
 
-  const innerRadius = dimensions[0] / 8
-  const outerRadius = dimensions[0] / 4
+  const innerRadius = dimensions[0] / 8;
+  const outerRadius = dimensions[0] / 4;
 
   const center = [
     dimensions[0] / 2 + centerOffset[0],
     dimensions[1] / 2 + centerOffset[1],
-  ]
+  ];
 
   for (let z = 0; z < dimensions[2]; z++) {
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
         const distanceFromCenter = Math.sqrt(
           (x - center[0]) * (x - center[0]) + (y - center[1]) * (y - center[1])
-        )
+        );
         if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1
+          scalarData[voxelIndex] = 1;
         } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2
+          scalarData[voxelIndex] = 2;
         }
 
-        voxelIndex++
+        voxelIndex++;
       }
     }
   }
@@ -137,13 +137,13 @@ async function addSegmentationsToState() {
     {
       volumeId: segmentationId1,
     }
-  )
+  );
   const segmentationVolume2 = await volumeLoader.createAndCacheDerivedVolume(
     volumeId,
     {
       volumeId: segmentationId2,
     }
-  )
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -168,11 +168,11 @@ async function addSegmentationsToState() {
         },
       },
     },
-  ])
+  ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(segmentationVolume1, [50, 50])
-  fillSegmentationWithCircles(segmentationVolume2, [-50, -50])
+  fillSegmentationWithCircles(segmentationVolume1, [50, 50]);
+  fillSegmentationWithCircles(segmentationVolume2, [-50, -50]);
 }
 
 /**
@@ -180,16 +180,16 @@ async function addSegmentationsToState() {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo()
+  await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool)
+  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName)
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
+  toolGroup.addTool(SegmentationDisplayTool.toolName);
+  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -199,24 +199,24 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'VOLUME',
-  })
+  });
 
-  const smallVolumeImageIds = [imageIds[0], imageIds[1]]
+  const smallVolumeImageIds = [imageIds[0], imageIds[1]];
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds: smallVolumeImageIds,
-  })
+  });
 
   // Add some segmentations based on the source data volume
-  await addSegmentationsToState()
+  await addSegmentationsToState();
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineId)
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId = 'CT_AXIAL_STACK'
+  const viewportId = 'CT_AXIAL_STACK';
 
   const viewportInput = {
     viewportId,
@@ -226,17 +226,17 @@ async function run() {
       orientation: ORIENTATION.AXIAL,
       background: <Types.Point3>[0.2, 0, 0.2],
     },
-  }
+  };
 
-  toolGroup.addViewport(viewportId, renderingEngineId)
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
-  renderingEngine.enableElement(viewportInput)
+  renderingEngine.enableElement(viewportInput);
 
   // Set the volume to load
-  volume.load()
+  volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId])
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the first segmentation representation to the toolgroup
   const [segmentationRepresentationUID] =
@@ -245,12 +245,12 @@ async function run() {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
-    ])
+    ]);
 
-  activeSegmentationRepresentationUID = segmentationRepresentationUID
+  activeSegmentationRepresentationUID = segmentationRepresentationUID;
 
   // Render the image
-  renderingEngine.renderViewports([viewportId])
+  renderingEngine.renderViewports([viewportId]);
 }
 
-run()
+run();

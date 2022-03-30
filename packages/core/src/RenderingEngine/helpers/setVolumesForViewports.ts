@@ -1,9 +1,9 @@
-import { VolumeViewport } from '../'
+import { VolumeViewport } from '../';
 import type {
   IVolumeInput,
   IRenderingEngine,
   IVolumeViewport,
-} from '../../types'
+} from '../../types';
 
 /**
  * Similar to {@link addVolumesToViewports} it adds volumes to viewports; however,
@@ -25,27 +25,27 @@ async function setVolumesForViewports(
 ): Promise<void> {
   // Check if all viewports are volumeViewports
   viewportIds.forEach((viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId)
+    const viewport = renderingEngine.getViewport(viewportId);
 
     if (!viewport) {
-      throw new Error(`Viewport with Id ${viewportId} does not exist`)
+      throw new Error(`Viewport with Id ${viewportId} does not exist`);
     }
 
     // if not instance of VolumeViewport, throw
     if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('setVolumesForViewports only supports VolumeViewport')
+      throw new Error('setVolumesForViewports only supports VolumeViewport');
     }
-  })
+  });
 
   const setVolumePromises = viewportIds.map(async (viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId) as IVolumeViewport
+    const viewport = renderingEngine.getViewport(viewportId) as IVolumeViewport;
 
-    await viewport.setVolumes(volumeInputs, immediateRender)
-  })
+    await viewport.setVolumes(volumeInputs, immediateRender);
+  });
 
-  await Promise.all(setVolumePromises)
+  await Promise.all(setVolumePromises);
 
-  return
+  return;
 }
 
-export default setVolumesForViewports
+export default setVolumesForViewports;

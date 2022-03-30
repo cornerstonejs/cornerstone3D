@@ -1,26 +1,26 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base'
-import { PublicToolProps, ToolProps, EventTypes } from '../../types'
+import { BaseTool } from '../base';
+import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 
-import { fillInsideSphere } from './strategies/fillSphere'
-import { Events } from '../../enums'
-import { drawCircle as drawCircleSvg } from '../../drawingSvg'
+import { fillInsideSphere } from './strategies/fillSphere';
+import { Events } from '../../enums';
+import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor'
+} from '../../cursors/elementCursor';
 
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   segmentationColor,
   segmentLocking,
   segmentIndex as segmentIndexController,
   activeSegmentation,
-} from '../../stateManagement/segmentation'
+} from '../../stateManagement/segmentation';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState'
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
@@ -31,24 +31,24 @@ import { getSegmentation } from '../../stateManagement/segmentation/segmentation
  * lead to ui blocking behavior that needs to be fixed.
  */
 export default class SphereScissorsTool extends BaseTool {
-  static toolName = 'SphereScissor'
+  static toolName = 'SphereScissor';
   editData: {
-    annotation: any
-    segmentation: any
-    segmentIndex: number
-    segmentsLocked: number[]
-    segmentationId: string
-    toolGroupId: string
-    segmentColor: [number, number, number, number]
-    viewportIdsToRender: string[]
-    handleIndex?: number
-    movingTextBox: boolean
-    newAnnotation?: boolean
-    hasMoved?: boolean
-    centerCanvas?: Array<number>
-  } | null
-  isDrawing: boolean
-  isHandleOutsideImage: boolean
+    annotation: any;
+    segmentation: any;
+    segmentIndex: number;
+    segmentsLocked: number[];
+    segmentationId: string;
+    toolGroupId: string;
+    segmentColor: [number, number, number, number];
+    viewportIdsToRender: string[];
+    handleIndex?: number;
+    movingTextBox: boolean;
+    newAnnotation?: boolean;
+    hasMoved?: boolean;
+    centerCanvas?: Array<number>;
+  } | null;
+  isDrawing: boolean;
+  isHandleOutsideImage: boolean;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -63,7 +63,7 @@ export default class SphereScissorsTool extends BaseTool {
       },
     }
   ) {
-    super(toolProps, defaultToolProps)
+    super(toolProps, defaultToolProps);
   }
 
   /**
@@ -75,47 +75,47 @@ export default class SphereScissorsTool extends BaseTool {
    *
    */
   preMouseDownCallback = (evt: EventTypes.MouseDownActivateEventType): true => {
-    const eventDetail = evt.detail
-    const { currentPoints, element } = eventDetail
-    const worldPos = currentPoints.world
-    const canvasPos = currentPoints.canvas
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
+    const canvasPos = currentPoints.canvas;
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
 
-    this.isDrawing = true
+    this.isDrawing = true;
 
-    const camera = viewport.getCamera()
-    const { viewPlaneNormal, viewUp } = camera
-    const toolGroupId = this.toolGroupId
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
+    const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId)
+      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
-      )
+      );
     }
 
     const { segmentationRepresentationUID, segmentationId, type } =
-      activeSegmentationRepresentation
+      activeSegmentationRepresentation;
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId)
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId)
+      segmentIndexController.getActiveSegmentIndex(segmentationId);
+    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex
-    )
+    );
 
-    const { representationData } = getSegmentation(segmentationId)
+    const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type]
-    const segmentation = cache.getVolume(volumeId)
+    const { volumeId } = representationData[type];
+    const segmentation = cache.getVolume(volumeId);
 
-    this.isDrawing = true
+    this.isDrawing = true;
 
     // Used for drawing the svg only, we might not need it at all
     const annotation = {
@@ -136,9 +136,9 @@ export default class SphereScissorsTool extends BaseTool {
         cachedStats: {},
         highlighted: true,
       },
-    }
+    };
 
-    const viewportIdsToRender = [viewport.id]
+    const viewportIdsToRender = [viewport.id];
 
     this.editData = {
       annotation,
@@ -154,67 +154,70 @@ export default class SphereScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-    }
+    };
 
-    this._activateDraw(element)
+    this._activateDraw(element);
 
-    hideElementCursor(element)
+    hideElementCursor(element);
 
-    evt.preventDefault()
+    evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    return true
-  }
+    return true;
+  };
 
   _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
-    this.isDrawing = true
-    const eventDetail = evt.detail
-    const { element } = eventDetail
-    const { currentPoints } = eventDetail
-    const currentCanvasPoints = currentPoints.canvas
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine, viewport } = enabledElement
-    const { canvasToWorld } = viewport
+    this.isDrawing = true;
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const { currentPoints } = eventDetail;
+    const currentCanvasPoints = currentPoints.canvas;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine, viewport } = enabledElement;
+    const { canvasToWorld } = viewport;
 
     //////
-    const { annotation, viewportIdsToRender, centerCanvas } = this.editData
-    const { data } = annotation
+    const { annotation, viewportIdsToRender, centerCanvas } = this.editData;
+    const { data } = annotation;
 
-    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
-    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
-    const radius = Math.sqrt(dX * dX + dY * dY)
+    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
+    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
+    const radius = Math.sqrt(dX * dX + dY * dY);
 
     const bottomCanvas: Types.Point2 = [
       centerCanvas[0],
       centerCanvas[1] + radius,
-    ]
-    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius]
-    const leftCanvas: Types.Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
+    ];
+    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius];
+    const leftCanvas: Types.Point2 = [
+      centerCanvas[0] - radius,
+      centerCanvas[1],
+    ];
     const rightCanvas: Types.Point2 = [
       centerCanvas[0] + radius,
       centerCanvas[1],
-    ]
+    ];
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
       canvasToWorld(topCanvas),
       canvasToWorld(leftCanvas),
       canvasToWorld(rightCanvas),
-    ]
+    ];
 
-    annotation.invalidated = true
+    annotation.invalidated = true;
 
-    this.editData.hasMoved = true
+    this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
-  }
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
 
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    const eventDetail = evt.detail
-    const { element } = eventDetail
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
 
     const {
       annotation,
@@ -224,29 +227,29 @@ export default class SphereScissorsTool extends BaseTool {
       segmentIndex,
       segmentsLocked,
       segmentationId,
-    } = this.editData
-    const { data } = annotation
-    const { viewPlaneNormal, viewUp } = annotation.metadata
+    } = this.editData;
+    const { data } = annotation;
+    const { viewPlaneNormal, viewUp } = annotation.metadata;
 
     if (newAnnotation && !hasMoved) {
-      return
+      return;
     }
 
-    annotation.highlighted = false
-    data.handles.activeHandleIndex = null
+    annotation.highlighted = false;
+    data.handles.activeHandleIndex = null;
 
-    this._deactivateDraw(element)
+    this._deactivateDraw(element);
 
-    resetElementCursor(element)
+    resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
-    this.editData = null
-    this.isDrawing = false
+    this.editData = null;
+    this.isDrawing = false;
 
     if (viewport instanceof StackViewport) {
-      throw new Error('Not implemented yet')
+      throw new Error('Not implemented yet');
     }
 
     const operationData = {
@@ -257,34 +260,34 @@ export default class SphereScissorsTool extends BaseTool {
       segmentationId,
       viewPlaneNormal,
       viewUp,
-    }
+    };
 
-    this.applyActiveStrategy(enabledElement, operationData)
-  }
+    this.applyActiveStrategy(enabledElement, operationData);
+  };
 
   /**
    * Add event handlers for the modify event loop, and prevent default event propagation.
    */
   _activateDraw = (element) => {
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
-  }
+  };
 
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.
    */
   _deactivateDraw = (element) => {
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback)
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
-  }
+  };
 
   /**
    * it is used to draw the sphereScissor annotation in each
@@ -299,45 +302,45 @@ export default class SphereScissorsTool extends BaseTool {
     svgDrawingHelper: any
   ): void => {
     if (!this.editData) {
-      return
+      return;
     }
 
-    const { viewport } = enabledElement
-    const { viewportIdsToRender } = this.editData
+    const { viewport } = enabledElement;
+    const { viewportIdsToRender } = this.editData;
 
     if (!viewportIdsToRender.includes(viewport.id)) {
-      return
+      return;
     }
 
-    const { annotation } = this.editData
+    const { annotation } = this.editData;
 
     // Todo: rectangle color based on segment index
-    const toolMetadata = annotation.metadata
-    const annotationUID = annotation.annotationUID
+    const toolMetadata = annotation.metadata;
+    const annotationUID = annotation.annotationUID;
 
-    const data = annotation.data
-    const { points } = data.handles
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
+    const data = annotation.data;
+    const { points } = data.handles;
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-    const bottom = canvasCoordinates[0]
-    const top = canvasCoordinates[1]
+    const bottom = canvasCoordinates[0];
+    const top = canvasCoordinates[1];
 
     const center = [
       Math.floor((bottom[0] + top[0]) / 2),
       Math.floor((bottom[1] + top[1]) / 2),
-    ]
+    ];
 
-    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2))
+    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
-    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`
+    const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed')
-      return
+      console.warn('Rendering Engine has been destroyed');
+      return;
     }
 
-    const circleUID = '0'
+    const circleUID = '0';
     drawCircleSvg(
       svgDrawingHelper,
       SphereScissorsTool.toolName,
@@ -348,6 +351,6 @@ export default class SphereScissorsTool extends BaseTool {
       {
         color,
       }
-    )
-  }
+    );
+  };
 }

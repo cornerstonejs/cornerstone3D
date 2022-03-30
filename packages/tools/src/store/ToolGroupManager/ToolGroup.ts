@@ -1,12 +1,12 @@
-import { MouseBindings, ToolModes } from '../../enums'
-import { getRenderingEngine, getRenderingEngines } from '@cornerstonejs/core'
-import { state } from '../index'
-import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types'
+import { MouseBindings, ToolModes } from '../../enums';
+import { getRenderingEngine, getRenderingEngines } from '@cornerstonejs/core';
+import { state } from '../index';
+import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types';
 
-import { MouseCursor, SVGMouseCursor } from '../../cursors'
-import { initElementCursor } from '../../cursors/elementCursor'
+import { MouseCursor, SVGMouseCursor } from '../../cursors';
+import { initElementCursor } from '../../cursors/elementCursor';
 
-const { Active, Passive, Enabled, Disabled } = ToolModes
+const { Active, Passive, Enabled, Disabled } = ToolModes;
 
 /**
  * ToolGroup class which is a container for tools and their modes and states.
@@ -21,13 +21,13 @@ const { Active, Passive, Enabled, Disabled } = ToolModes
  * ```
  */
 export default class ToolGroup implements IToolGroup {
-  id: string
-  viewportsInfo = []
-  toolOptions = {}
-  _toolInstances = {}
+  id: string;
+  viewportsInfo = [];
+  toolOptions = {};
+  _toolInstances = {};
 
   constructor(id: string) {
-    this.id = id
+    this.id = id;
   }
 
   /**
@@ -35,7 +35,7 @@ export default class ToolGroup implements IToolGroup {
    * @returns An array of viewport IDs.
    */
   getViewportIds(): string[] {
-    return this.viewportsInfo.map(({ viewportId }) => viewportId)
+    return this.viewportsInfo.map(({ viewportId }) => viewportId);
   }
 
   /**
@@ -44,12 +44,12 @@ export default class ToolGroup implements IToolGroup {
    * @returns A tool instance.
    */
   getToolInstance(toolName: string) {
-    const toolInstance = this._toolInstances[toolName]
+    const toolInstance = this._toolInstances[toolName];
     if (!toolInstance) {
-      console.warn(`'${toolName}' is not registered with this toolGroup.`)
-      return
+      console.warn(`'${toolName}' is not registered with this toolGroup.`);
+      return;
     }
-    return toolInstance
+    return toolInstance;
   }
 
   /**
@@ -62,45 +62,45 @@ export default class ToolGroup implements IToolGroup {
    * @param configuration - Tool configuration objects
    */
   addTool(toolName: string, configuration = {}): void {
-    const toolDefinition = state.tools[toolName]
-    const hasToolName = typeof toolName !== 'undefined' && toolName !== ''
-    const localToolInstance = this.toolOptions[toolName]
+    const toolDefinition = state.tools[toolName];
+    const hasToolName = typeof toolName !== 'undefined' && toolName !== '';
+    const localToolInstance = this.toolOptions[toolName];
 
     if (!hasToolName) {
       console.warn(
         'Tool with configuration did not produce a toolName: ',
         configuration
-      )
-      return
+      );
+      return;
     }
 
     if (!toolDefinition) {
-      console.warn(`'${toolName}' is not registered with the library.`)
-      return
+      console.warn(`'${toolName}' is not registered with the library.`);
+      return;
     }
 
     if (localToolInstance) {
       console.warn(
         `'${toolName}' is already registered for ToolGroup ${this.id}.`
-      )
-      return
+      );
+      return;
     }
 
     // Should these be renamed higher up, so we don't have to alias?
     // Wrap in try-catch so 3rd party tools don't explode?
-    const { toolClass: ToolClass } = toolDefinition
+    const { toolClass: ToolClass } = toolDefinition;
 
     const toolProps = {
       name: toolName,
       toolGroupId: this.id,
       configuration,
-    }
+    };
 
-    const instantiatedTool = new ToolClass(toolProps)
+    const instantiatedTool = new ToolClass(toolProps);
 
     // API instead of directly exposing schema?
     // Maybe not here, but feels like a "must" for any method outside of the ToolGroup itself
-    this._toolInstances[toolName] = instantiatedTool
+    this._toolInstances[toolName] = instantiatedTool;
   }
 
   /**
@@ -114,20 +114,20 @@ export default class ToolGroup implements IToolGroup {
    * @param renderingEngineId - The rendering engine to use.
    */
   addViewport(viewportId: string, renderingEngineId?: string): void {
-    const renderingEngines = getRenderingEngines()
+    const renderingEngines = getRenderingEngines();
 
     if (!renderingEngineId && renderingEngines.length > 1) {
       throw new Error(
         'You must specify a renderingEngineId when there are multiple rendering engines.'
-      )
+      );
     }
 
-    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id
+    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id;
 
     this.viewportsInfo.push({
       viewportId,
       renderingEngineId: renderingEngineUIDToUse,
-    })
+    });
   }
 
   /**
@@ -139,26 +139,26 @@ export default class ToolGroup implements IToolGroup {
    * @param viewportId - viewport id
    */
   removeViewports(renderingEngineId: string, viewportId?: string): void {
-    const indices = []
+    const indices = [];
 
     this.viewportsInfo.forEach((vpInfo, index) => {
-      let match = false
+      let match = false;
       if (vpInfo.renderingEngineId === renderingEngineId) {
-        match = true
+        match = true;
 
         if (viewportId && vpInfo.viewportId !== viewportId) {
-          match = false
+          match = false;
         }
       }
       if (match) {
-        indices.push(index)
+        indices.push(index);
       }
-    })
+    });
 
     if (indices.length) {
       // going in reverse to not wrongly choose the indexes to be removed
       for (let i = indices.length - 1; i >= 0; i--) {
-        this.viewportsInfo.splice(indices[i], 1)
+        this.viewportsInfo.splice(indices[i], 1);
       }
     }
   }
@@ -182,37 +182,37 @@ export default class ToolGroup implements IToolGroup {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
-      )
+      );
 
-      return
+      return;
     }
 
     const prevBindings = this.toolOptions[toolName]
       ? this.toolOptions[toolName].bindings
-      : []
+      : [];
 
     const newBindings = toolBindingsOptions.bindings
       ? toolBindingsOptions.bindings
-      : []
+      : [];
 
     // We should not override the bindings if they are already set
     const toolOptions: ToolOptionsType = {
       bindings: [...prevBindings, ...newBindings],
       mode: Active,
-    }
+    };
 
-    this.toolOptions[toolName] = toolOptions
-    this._toolInstances[toolName].mode = Active
+    this.toolOptions[toolName] = toolOptions;
+    this._toolInstances[toolName].mode = Active;
 
     // reset the mouse cursor if tool has left click binding
     if (this._hasMousePrimaryButtonBinding(toolBindingsOptions)) {
-      this.setViewportsCursorByToolName(toolName)
+      this.setViewportsCursorByToolName(toolName);
     }
 
     if (typeof this._toolInstances[toolName].init === 'function') {
-      this._toolInstances[toolName].init(this.viewportsInfo)
+      this._toolInstances[toolName].init(this.viewportsInfo);
     }
-    this._renderViewports()
+    this._renderViewports();
   }
 
   /**
@@ -227,14 +227,14 @@ export default class ToolGroup implements IToolGroup {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
-      )
+      );
 
-      return
+      return;
     }
 
     // Wwe should only remove the primary button bindings and keep
     // the other ones (Zoom on right click)
-    const prevToolOptions = this.getToolOptions(toolName)
+    const prevToolOptions = this.getToolOptions(toolName);
     const toolOptions = Object.assign(
       {
         bindings: prevToolOptions ? prevToolOptions.bindings : [],
@@ -243,23 +243,23 @@ export default class ToolGroup implements IToolGroup {
       {
         mode: Passive,
       }
-    )
+    );
 
     // Remove the primary button bindings if they exist
     toolOptions.bindings = toolOptions.bindings.filter(
       (binding) => binding.mouseButton !== MouseBindings.Primary
-    )
+    );
 
     // If there are other bindings, set the tool to be active
-    let mode = Passive
+    let mode = Passive;
     if (toolOptions.bindings.length !== 0) {
-      mode = Active
-      toolOptions.mode = mode
+      mode = Active;
+      toolOptions.mode = mode;
     }
 
-    this.toolOptions[toolName] = toolOptions
-    this._toolInstances[toolName].mode = mode
-    this._renderViewports()
+    this.toolOptions[toolName] = toolOptions;
+    this._toolInstances[toolName].mode = mode;
+    this._renderViewports();
   }
 
   /**
@@ -273,24 +273,24 @@ export default class ToolGroup implements IToolGroup {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
-      )
+      );
 
-      return
+      return;
     }
 
     const toolOptions = {
       bindings: [],
       mode: Enabled,
-    }
+    };
 
-    this.toolOptions[toolName] = toolOptions
-    this._toolInstances[toolName].mode = Enabled
+    this.toolOptions[toolName] = toolOptions;
+    this._toolInstances[toolName].mode = Enabled;
 
     if (this._toolInstances[toolName].enableCallback) {
-      this._toolInstances[toolName].enableCallback(this.id)
+      this._toolInstances[toolName].enableCallback(this.id);
     }
 
-    this._renderViewports()
+    this._renderViewports();
   }
 
   /**
@@ -304,8 +304,8 @@ export default class ToolGroup implements IToolGroup {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
-      )
-      return
+      );
+      return;
     }
 
     // Would only need this for sanity check if not instantiating/hydrating
@@ -313,15 +313,15 @@ export default class ToolGroup implements IToolGroup {
     const toolOptions = {
       bindings: [],
       mode: Disabled,
-    }
+    };
 
-    this.toolOptions[toolName] = toolOptions
-    this._toolInstances[toolName].mode = Disabled
+    this.toolOptions[toolName] = toolOptions;
+    this._toolInstances[toolName].mode = Disabled;
 
     if (this._toolInstances[toolName].disableCallback) {
-      this._toolInstances[toolName].disableCallback(this.id)
+      this._toolInstances[toolName].disableCallback(this.id);
     }
-    this._renderViewports()
+    this._renderViewports();
   }
 
   /**
@@ -330,7 +330,7 @@ export default class ToolGroup implements IToolGroup {
    * @returns the tool options
    */
   getToolOptions(toolName: string): ToolOptionsType {
-    return this.toolOptions[toolName]
+    return this.toolOptions[toolName];
   }
 
   /**
@@ -341,12 +341,12 @@ export default class ToolGroup implements IToolGroup {
    */
   getActivePrimaryMouseButtonTool(): string {
     return Object.keys(this.toolOptions).find((toolName) => {
-      const toolOptions = this.toolOptions[toolName]
+      const toolOptions = this.toolOptions[toolName];
       return (
         toolOptions.mode === Active &&
         this._hasMousePrimaryButtonBinding(toolOptions)
-      )
-    })
+      );
+    });
   }
 
   /**
@@ -357,18 +357,18 @@ export default class ToolGroup implements IToolGroup {
    * for example the strategy can be FILL_INSIDE or FILL_OUTSIDE
    */
   setViewportsCursorByToolName(toolName: string, strategyName?: string): void {
-    const cursorName = strategyName ? `${toolName}.${strategyName}` : toolName
-    let cursor = SVGMouseCursor.getDefinedCursor(cursorName, true)
+    const cursorName = strategyName ? `${toolName}.${strategyName}` : toolName;
+    let cursor = SVGMouseCursor.getDefinedCursor(cursorName, true);
     if (!cursor) {
-      cursor = MouseCursor.getDefinedCursor('default')
+      cursor = MouseCursor.getDefinedCursor('default');
     }
     this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
       const viewport =
-        getRenderingEngine(renderingEngineId).getViewport(viewportId)
+        getRenderingEngine(renderingEngineId).getViewport(viewportId);
       if (viewport && viewport.element) {
-        initElementCursor(viewport.element, cursor)
+        initElementCursor(viewport.element, cursor);
       }
-    })
+    });
   }
 
   /**
@@ -381,7 +381,7 @@ export default class ToolGroup implements IToolGroup {
       (binding) =>
         binding.mouseButton === MouseBindings.Primary &&
         binding.modifierKey === undefined
-    )
+    );
   }
 
   /**
@@ -389,7 +389,7 @@ export default class ToolGroup implements IToolGroup {
    */
   private _renderViewports(): void {
     this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
-      getRenderingEngine(renderingEngineId).renderViewport(viewportId)
-    })
+      getRenderingEngine(renderingEngineId).renderViewport(viewportId);
+    });
   }
 }

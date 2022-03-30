@@ -1,10 +1,10 @@
-import type { Types } from '@cornerstonejs/core'
-import { vec3 } from 'gl-matrix'
+import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 type Sphere = {
-  center: Types.Point3 | vec3
-  radius: number
-}
+  center: Types.Point3 | vec3;
+  radius: number;
+};
 
 /**
  * Checks if a point is inside a sphere. Note: this is similar to the
@@ -20,9 +20,9 @@ export default function pointInSphere(
   sphere: Sphere,
   pointLPS: Types.Point3
 ): boolean {
-  const { center, radius } = sphere
-  const [x, y, z] = pointLPS
-  const [x0, y0, z0] = center
+  const { center, radius } = sphere;
+  const [x, y, z] = pointLPS;
+  const [x0, y0, z0] = center;
 
-  return (x - x0) ** 2 + (y - y0) ** 2 + (z - z0) ** 2 <= radius ** 2
+  return (x - x0) ** 2 + (y - y0) ** 2 + (z - z0) ** 2 <= radius ** 2;
 }

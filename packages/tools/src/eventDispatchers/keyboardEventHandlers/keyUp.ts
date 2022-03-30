@@ -1,7 +1,7 @@
-import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener'
-import { ToolGroupManager } from '../../store'
-import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent'
-import { KeyDownEventType } from '../../types/EventTypes'
+import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener';
+import { ToolGroupManager } from '../../store';
+import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
+import { KeyDownEventType } from '../../types/EventTypes';
 
 /**
  * KeyDown event listener to handle viewport cursor icon changes
@@ -10,24 +10,24 @@ import { KeyDownEventType } from '../../types/EventTypes'
  */
 export default function keyUp(evt: KeyDownEventType): void {
   // get the active tool for the primary mouse button
-  const activeTool = getActiveToolForKeyboardEvent(evt)
+  const activeTool = getActiveToolForKeyboardEvent(evt);
 
   if (!activeTool) {
-    return
+    return;
   }
 
-  const { renderingEngineId, viewportId } = evt.detail
+  const { renderingEngineId, viewportId } = evt.detail;
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
     renderingEngineId
-  )
+  );
 
   // Reset the modifier key
-  resetModifierKey()
+  resetModifierKey();
 
-  const toolName = activeTool.getToolName()
+  const toolName = activeTool.getToolName();
   if (Object.keys(toolGroup.toolOptions).includes(toolName)) {
-    toolGroup.setViewportsCursorByToolName(toolName)
+    toolGroup.setViewportsCursorByToolName(toolName);
   }
 }

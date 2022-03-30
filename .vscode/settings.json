@@ -20,7 +20,7 @@
   "eslint.autoFixOnSave": true,
   "eslint.alwaysShowStatus": true,
   "eslint.options": {
-    "extensions": [ ".html", ".js", ".vue", ".jsx" ]
+    "extensions": [".html", ".js", ".vue", ".jsx"]
   },
   "eslint.validate": [
     { "language": "html", "autoFix": true },
@@ -30,5 +30,5 @@
   "workbench.colorCustomizations": {},
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true
-  },
+  }
 }
