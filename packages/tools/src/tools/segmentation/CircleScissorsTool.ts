@@ -17,7 +17,7 @@ import {
   segmentLocking,
   activeSegmentation,
   segmentIndex as segmentIndexController,
-  segmentationColor,
+  config as segmentationConfig,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 /**
@@ -102,7 +102,7 @@ export default class CircleScissorsTool extends BaseTool {
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
-    const segmentColor = segmentationColor.getColorForSegmentIndex(
+    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex

@@ -22,7 +22,7 @@ import {
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
-  segmentationColor,
+  config as segmentationConfig,
   segmentLocking,
   segmentIndex as segmentIndexController,
   activeSegmentation,
@@ -111,7 +111,7 @@ export default class RectangleScissorsTool extends BaseTool {
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
-    const segmentColor = segmentationColor.getColorForSegmentIndex(
+    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex

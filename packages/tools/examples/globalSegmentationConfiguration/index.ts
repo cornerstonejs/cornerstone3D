@@ -54,10 +54,10 @@ content.appendChild(element);
 // ============================= //
 
 function setConfigValue(property, value) {
-  const config = segmentation.state.getGlobalConfig();
+  const config = segmentation.config.getGlobalConfig();
 
   config.representations.LABELMAP[property] = value;
-  segmentation.state.setGlobalConfig(config);
+  segmentation.config.setGlobalConfig(config);
 
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -67,10 +67,10 @@ function setConfigValue(property, value) {
 addToggleButtonToToolbar(
   'toggle render inactive segmentations',
   (evt, toggle) => {
-    const config = segmentation.state.getGlobalConfig();
+    const config = segmentation.config.getGlobalConfig();
 
     config.renderInactiveSegmentations = toggle;
-    segmentation.state.setGlobalConfig(config);
+    segmentation.config.setGlobalConfig(config);
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
 

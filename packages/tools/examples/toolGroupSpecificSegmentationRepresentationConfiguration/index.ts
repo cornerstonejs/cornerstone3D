@@ -78,8 +78,7 @@ instructions.innerText = `
 addToggleButtonToToolbar(
   'toggle outline rendering',
   (evt, toggle) => {
-    let config =
-      segmentation.segmentationConfig.getToolGroupSpecificConfig(toolGroupId2);
+    let config = segmentation.config.getToolGroupSpecificConfig(toolGroupId2);
 
     if (config.representations === undefined) {
       config = {
@@ -94,10 +93,7 @@ addToggleButtonToToolbar(
       config.representations.LABELMAP.renderOutline = toggle;
     }
 
-    segmentation.segmentationConfig.setToolGroupSpecificConfig(
-      toolGroupId2,
-      config
-    );
+    segmentation.config.setToolGroupSpecificConfig(toolGroupId2, config);
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
 

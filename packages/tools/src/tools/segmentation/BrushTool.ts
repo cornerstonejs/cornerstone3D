@@ -14,7 +14,7 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
-  segmentationColor,
+  config as segmentationConfig,
   segmentLocking,
   segmentIndex as segmentIndexController,
   state as segmentationState,
@@ -90,7 +90,7 @@ export default class BrushTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
-    const segmentColor = segmentationColor.getColorForSegmentIndex(
+    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex
@@ -207,7 +207,7 @@ export default class BrushTool extends BaseTool {
       segmentIndexController.getActiveSegmentIndex(segmentationId);
 
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
-    const segmentColor = segmentationColor.getColorForSegmentIndex(
+    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex

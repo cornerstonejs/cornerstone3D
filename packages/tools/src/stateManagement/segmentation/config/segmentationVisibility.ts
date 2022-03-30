@@ -1,6 +1,6 @@
-import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
-import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
-import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
+import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
+import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
 
 /**
  * Set the visibility of a segmentation representation for a given tool group. It fires

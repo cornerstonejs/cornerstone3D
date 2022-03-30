@@ -409,6 +409,13 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 // @public (undocumented)
 type Color = [number, number, number, number];
 
+declare namespace color {
+    export {
+        getColorForSegmentIndex,
+        addColorLUT_2 as addColorLUT
+    }
+}
+
 // @public (undocumented)
 type ColorLut = Array<Color>;
 
@@ -420,6 +427,19 @@ declare namespace config {
         setAnnotationStyle,
         setGlobalStyle,
         setToolStyle
+    }
+}
+
+declare namespace config_2 {
+    export {
+        color,
+        visibility,
+        getGlobalConfig_2 as getGlobalConfig,
+        getGlobalRepresentationConfig,
+        getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
+        setGlobalConfig_2 as setGlobalConfig,
+        setGlobalRepresentationConfig,
+        setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig
     }
 }
 
@@ -1294,7 +1314,7 @@ function getColorLut(index: number): ColorLut | undefined;
 function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
-function getDefaultRepresentationConfig(segmentation: Segmentation): labelmapConfig;
+function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapConfig;
 
 // @public (undocumented)
 function getDefaultSegmentationStateManager(): SegmentationStateManager;
@@ -2037,6 +2057,36 @@ type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
+
+// @public (undocumented)
+type LabelmapConfig = {
+    renderOutline?: boolean;
+    outlineWidthActive?: number;
+    outlineWidthInactive?: number;
+    renderFill?: boolean;
+    fillAlpha?: number;
+    fillAlphaInactive?: number;
+};
+
+// @public (undocumented)
+type LabelmapRenderingConfig = {
+    cfun?: vtkColorTransferFunction;
+    ofun?: vtkPiecewiseFunction;
+};
+
+// @public (undocumented)
+type LabelmapSegmentationData = {
+    volumeId: string;
+    referencedVolumeId?: string;
+};
+
+declare namespace LabelmapTypes {
+    export {
+        LabelmapConfig,
+        LabelmapRenderingConfig,
+        LabelmapSegmentationData
+    }
+}
 
 // @public (undocumented)
 interface LengthAnnotation extends Annotation {
@@ -2792,7 +2842,7 @@ export function removeTool(ToolClass: any): void;
 
 // @public (undocumented)
 type RepresentationConfig = {
-    LABELMAP?: labelmapConfig;
+    LABELMAP?: LabelmapConfig;
 };
 
 // @public (undocumented)
@@ -2837,9 +2887,7 @@ declare namespace segmentation {
         addSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
         segmentLocking,
-        segmentationColor,
-        segmentationConfig,
-        segmentationVisibility,
+        config_2 as config,
         segmentIndex,
         triggerSegmentationEvents
     }
@@ -2855,24 +2903,6 @@ declare namespace segmentation_2 {
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport
-    }
-}
-
-declare namespace segmentationColor {
-    export {
-        getColorForSegmentIndex,
-        addColorLUT_2 as addColorLUT
-    }
-}
-
-declare namespace segmentationConfig {
-    export {
-        getGlobalConfig_2 as getGlobalConfig,
-        setGlobalConfig_2 as setGlobalConfig,
-        getGlobalRepresentationConfig,
-        setGlobalRepresentationConfig,
-        getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
-        setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig
     }
 }
 
@@ -2964,13 +2994,6 @@ type SegmentationState = {
         };
     };
 };
-
-declare namespace segmentationVisibility {
-    export {
-        setSegmentationVisibility,
-        getSegmentationVisibility
-    }
-}
 
 declare namespace segmentIndex {
     export {
@@ -3422,6 +3445,7 @@ declare namespace Types {
         ToolGroupSpecificRepresentation,
         Color,
         ColorLut,
+        LabelmapTypes,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint
     }
@@ -3476,6 +3500,13 @@ type ViewportInputOptions = {
     orientation?: Orientation;
     suppressEvents?: boolean;
 };
+
+declare namespace visibility {
+    export {
+        setSegmentationVisibility,
+        getSegmentationVisibility
+    }
+}
 
 // @public (undocumented)
 type VOI = {

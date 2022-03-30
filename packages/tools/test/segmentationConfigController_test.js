@@ -146,9 +146,7 @@ describe('Segmentation Controller --', () => {
         );
 
         const toolGroupSegRepresentationsConfig =
-          segmentation.segmentationConfig.getToolGroupSpecificConfig(
-            toolGroupId
-          );
+          segmentation.config.getToolGroupSpecificConfig(toolGroupId);
 
         const toolGroupLabelmapConfig =
           toolGroupSegRepresentationsConfig.representations[

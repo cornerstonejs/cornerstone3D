@@ -9,7 +9,7 @@ import {
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/segmentationConfig';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import Representations from '../../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import type { LabelmapConfig } from '../../../types/LabelmapTypes';
