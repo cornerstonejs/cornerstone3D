@@ -4,6 +4,6 @@
  * and a viewportId is required to uniquely define a viewport.
  */
 export default interface IViewportId {
-  renderingEngineId: string
-  viewportId: string
+  renderingEngineId: string;
+  viewportId: string;
 }

@@ -1,11 +1,11 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 type ellipsoid = {
-  center: [number, number, number]
-  width: number
-  height: number
-  depth: number
-}
+  center: [number, number, number];
+  width: number;
+  height: number;
+  depth: number;
+};
 
 /**
  * Checks whether the point is inside the provided ellipse with constraint of a plane (viewPlane).

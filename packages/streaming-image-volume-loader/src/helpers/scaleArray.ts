@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Given a pixel array, rescale the pixel values using the rescale slope and
@@ -11,22 +11,22 @@ export default function scaleArray(
   array: Float32Array | Uint8Array,
   scalingParameters: Types.ScalingParameters
 ): Float32Array | Uint8Array {
-  const arrayLength = array.length
-  const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters
+  const arrayLength = array.length;
+  const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
 
   if (scalingParameters.modality === 'PT') {
     if (typeof suvbw !== 'number') {
-      return
+      return;
     }
 
     for (let i = 0; i < arrayLength; i++) {
-      array[i] = suvbw * (array[i] * rescaleSlope + rescaleIntercept)
+      array[i] = suvbw * (array[i] * rescaleSlope + rescaleIntercept);
     }
   } else {
     for (let i = 0; i < arrayLength; i++) {
-      array[i] = array[i] * rescaleSlope + rescaleIntercept
+      array[i] = array[i] * rescaleSlope + rescaleIntercept;
     }
   }
 
-  return array
+  return array;
 }

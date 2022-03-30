@@ -12,7 +12,6 @@ Cornerstone **DOES NOT** deal with fetching of the metadata. It uses the registe
 metadata providers (in the order of priority) to call each providers passing the `imageId` and
 `type` of the metadata to be fetched. Usually, the metadata provider has a method to add parsed metadata to its cache.
 
-
 One question you might ask is:
 
 :::note How
@@ -31,11 +30,11 @@ for scaling factors of PT images.
 We need to store the metadata in a cache, and we need a method to add the metadata.
 
 ```js
-const scalingPerImageId = {}
+const scalingPerImageId = {};
 
 function add(imageId, scalingMetaData) {
-  const imageURI = csUtils.imageIdToImageURI(imageId)
-  scalingPerImageId[imageURI] = scalingMetaData
+  const imageURI = csUtils.imageIdToImageURI(imageId);
+  scalingPerImageId[imageURI] = scalingMetaData;
 }
 ```
 
@@ -48,7 +47,6 @@ that happen internally between `Volumes` and `Images` ([`streaming-wadors`](../c
 we should store the imageURI (instead of the `imageId`) inside the provider's cache, since
 the imageURI is unique for each image but can be retrieved with different loading schemes.
 
-
 </details>
 
 ### Step 2: Create a provider
@@ -60,8 +58,8 @@ and it will return the metadata for the `imageId` if it exists in the cache.
 ```js
 function get(type, imageId) {
   if (type === 'scalingModule') {
-    const imageURI = csUtils.imageIdToImageURI(imageId)
-    return scalingPerImageId[imageURI]
+    const imageURI = csUtils.imageIdToImageURI(imageId);
+    return scalingPerImageId[imageURI];
   }
 }
 ```
@@ -71,28 +69,31 @@ function get(type, imageId) {
 Finally, we need to register the provider with cornerstone.
 
 ```js title="/src/myCustomProvider.js"
-const scalingPerImageId = {}
+const scalingPerImageId = {};
 
 function add(imageId, scalingMetaData) {
-  const imageURI = csUtils.imageIdToImageURI(imageId)
-  scalingPerImageId[imageURI] = scalingMetaData
+  const imageURI = csUtils.imageIdToImageURI(imageId);
+  scalingPerImageId[imageURI] = scalingMetaData;
 }
 
 function get(type, imageId) {
   if (type === 'scalingModule') {
-    const imageURI = csUtils.imageIdToImageURI(imageId)
-    return scalingPerImageId[imageURI]
+    const imageURI = csUtils.imageIdToImageURI(imageId);
+    return scalingPerImageId[imageURI];
   }
 }
 
-export { add, get }
+export { add, get };
 ```
 
 ```js title="src/registerProvider.js"
-import myCustomProvider from './myCustomProvider'
+import myCustomProvider from './myCustomProvider';
 
-const priority = 100
-cornerstone.metaData.addProvider(myCustomProvider.get.bind(myCustomProvider), priority)
+const priority = 100;
+cornerstone.metaData.addProvider(
+  myCustomProvider.get.bind(myCustomProvider),
+  priority
+);
 ```
 
 ## Usage Example
@@ -107,5 +108,5 @@ metadata for the imageId and use it (e.g., to properly show SUV values for tools
 const imagePlaneModule = cornerstone.metaData.get(
   'scalingModule',
   'scheme://imageId'
-)
+);
 ```

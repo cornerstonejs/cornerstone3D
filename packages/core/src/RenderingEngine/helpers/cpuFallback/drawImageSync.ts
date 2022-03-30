@@ -1,8 +1,8 @@
-import now from './rendering/now'
-import { renderColorImage } from './rendering/renderColorImage'
-import { renderGrayscaleImage } from './rendering/renderGrayscaleImage'
-import { renderPseudoColorImage } from './rendering/renderPseudoColorImage'
-import { CPUFallbackEnabledElement } from '../../../types'
+import now from './rendering/now';
+import { renderColorImage } from './rendering/renderColorImage';
+import { renderGrayscaleImage } from './rendering/renderGrayscaleImage';
+import { renderPseudoColorImage } from './rendering/renderPseudoColorImage';
+import { CPUFallbackEnabledElement } from '../../../types';
 
 /**
  * Draw an image to a given enabled element synchronously
@@ -14,16 +14,16 @@ export default function (
   enabledElement: CPUFallbackEnabledElement,
   invalidated: boolean
 ): void {
-  const image = enabledElement.image
-  const canvas = enabledElement.canvas
+  const image = enabledElement.image;
+  const canvas = enabledElement.canvas;
 
   // Check if enabledElement can be redrawn
   if (!enabledElement.canvas || !enabledElement.image) {
-    return
+    return;
   }
 
   // Start measuring the time needed to draw the image.
-  const start = now()
+  const start = now();
 
   image.stats = {
     lastGetPixelDataTime: -1.0,
@@ -31,29 +31,29 @@ export default function (
     lastPutImageDataTime: -1.0,
     lastRenderTime: -1.0,
     lastLutGenerateTime: -1.0,
-  }
+  };
 
   if (image) {
-    let render = image.render
+    let render = image.render;
 
     if (!render) {
       if (enabledElement.viewport.colormap) {
-        render = renderPseudoColorImage
+        render = renderPseudoColorImage;
       } else if (image.color) {
-        render = renderColorImage
+        render = renderColorImage;
       } else {
-        render = renderGrayscaleImage
+        render = renderGrayscaleImage;
       }
     }
 
-    render(enabledElement, invalidated)
+    render(enabledElement, invalidated);
   }
 
   // Calculate how long it took to draw the image/layers
-  const renderTimeInMs = now() - start
+  const renderTimeInMs = now() - start;
 
-  image.stats.lastRenderTime = renderTimeInMs
+  image.stats.lastRenderTime = renderTimeInMs;
 
-  enabledElement.invalid = false
-  enabledElement.needsRedraw = false
+  enabledElement.invalid = false;
+  enabledElement.needsRedraw = false;
 }

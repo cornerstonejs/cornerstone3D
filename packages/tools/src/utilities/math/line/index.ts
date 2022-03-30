@@ -1,5 +1,5 @@
-import distanceToPoint from './distanceToPoint'
-import distanceToPointSquared from './distanceToPointSquared'
-import intersectLine from './intersectLine'
+import distanceToPoint from './distanceToPoint';
+import distanceToPointSquared from './distanceToPointSquared';
+import intersectLine from './intersectLine';
 
-export { distanceToPoint, distanceToPointSquared, intersectLine }
+export { distanceToPoint, distanceToPointSquared, intersectLine };

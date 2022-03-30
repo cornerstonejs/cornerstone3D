@@ -1,9 +1,9 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
-import normalizeWheel from './normalizeWheel'
-import Events from '../../enums/Events'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import normalizeWheel from './normalizeWheel';
+import Events from '../../enums/Events';
 // ~~ VIEWPORT LIBRARY
-import getMouseEventPoints from '../mouse/getMouseEventPoints'
-import { MouseWheelEventDetail } from '../../types/EventTypes'
+import getMouseEventPoints from '../mouse/getMouseEventPoints';
+import { MouseWheelEventDetail } from '../../types/EventTypes';
 
 /**
  * wheelListener - Captures and normalizes mouse wheel events. Emits as a
@@ -11,21 +11,21 @@ import { MouseWheelEventDetail } from '../../types/EventTypes'
  * @param evt - The mouse wheel event.
  */
 function wheelListener(evt: WheelEvent) {
-  const element = <HTMLElement>evt.currentTarget
-  const enabledElement = getEnabledElement(element)
-  const { renderingEngineId, viewportId } = enabledElement
+  const element = <HTMLElement>evt.currentTarget;
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngineId, viewportId } = enabledElement;
 
   // Prevent triggering MouseWheel events that are not real scroll events:
   // E.g. when clicking the MiddleMouseWheelButton, a deltaY of 0 is emitted.
   // See https://github.com/cornerstonejs/cornerstoneTools/issues/935
   if (evt.deltaY > -1 && evt.deltaY < 1) {
-    return
+    return;
   }
 
-  evt.preventDefault()
+  evt.preventDefault();
 
-  const { spinX, spinY, pixelX, pixelY } = normalizeWheel(evt)
-  const direction = spinY < 0 ? -1 : 1
+  const { spinX, spinY, pixelX, pixelY } = normalizeWheel(evt);
+  const direction = spinY < 0 ? -1 : 1;
 
   const eventDetail: MouseWheelEventDetail = {
     event: evt,
@@ -43,9 +43,9 @@ function wheelListener(evt: WheelEvent) {
       direction,
     },
     points: getMouseEventPoints(evt),
-  }
+  };
 
-  triggerEvent(element, Events.MOUSE_WHEEL, eventDetail)
+  triggerEvent(element, Events.MOUSE_WHEEL, eventDetail);
 }
 
-export default wheelListener
+export default wheelListener;

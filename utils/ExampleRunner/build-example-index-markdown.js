@@ -1,39 +1,39 @@
-const path = require('path')
-const info = require('./example-info.json')
+const path = require('path');
+const info = require('./example-info.json');
 
 module.exports = function buildExampleMarkdown(names, exampleBasePaths) {
-  let markdownResult = ''
+  let markdownResult = '';
 
-  const { examplesByCategory, categories, exampleDescriptions } = info
+  const { examplesByCategory, categories, exampleDescriptions } = info;
 
   Object.keys(categories).forEach((categoryId) => {
-    const category = categories[categoryId]
-    const examples = examplesByCategory[categoryId]
+    const category = categories[categoryId];
+    const examples = examplesByCategory[categoryId];
 
     if (!examples) {
-      return
+      return;
     }
 
     markdownResult += `
 ### ${category.description}
 
-    `
+    `;
 
     markdownResult += `
 | Example    | Description |
 | -------    | ----------- |
-    `
+    `;
 
     Object.keys(examples).forEach((exampleId, index) => {
-      const example = examplesByCategory[categoryId][exampleId]
-      const { name, description } = example
+      const example = examplesByCategory[categoryId][exampleId];
+      const { name, description } = example;
       // const examplePath = exampleBasePaths[index]
 
-      const exampleLink = `[${name}](pathname:///live-examples/${exampleId}.html)`
+      const exampleLink = `[${name}](pathname:///live-examples/${exampleId}.html)`;
 
-      markdownResult += `| ${exampleLink} | ${description} |\n`
-    })
-  })
+      markdownResult += `| ${exampleLink} | ${description} |\n`;
+    });
+  });
 
   return `---
 id: examples
@@ -45,5 +45,5 @@ title: Examples
 -->
 
 ${markdownResult}
-  `
-}
+  `;
+};

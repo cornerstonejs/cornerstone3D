@@ -15,7 +15,7 @@ const ViewportGrid = React.forwardRef(
     return (
       <div
         className="cs-viewport-grid"
-        onContextMenu={e => e.preventDefault()}
+        onContextMenu={(e) => e.preventDefault()}
         data-cy="viewport-grid"
         style={{
           display: 'grid',

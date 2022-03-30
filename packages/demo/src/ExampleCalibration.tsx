@@ -1,10 +1,10 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
   Enums,
   init as csRenderInit,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   Enums as csToolsEnums,
   utilities,
@@ -12,30 +12,30 @@ import {
   PanTool,
   CrosshairsTool,
   ZoomTool,
-} from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
-import { setCTWWWC } from './helpers/transferFunctionHelpers'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
-import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+import { setCTWWWC } from './helpers/transferFunctionHelpers';
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
+import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants';
 
-const STACK = 'stack'
+const STACK = 'stack';
 
-window.cache = cache
-const { ViewportType } = Enums
+window.cache = cache;
+const { ViewportType } = Enums;
 
-let stackDXViewportToolGroup
+let stackDXViewportToolGroup;
 
-const { calibrateImageSpacing } = utilities
+const { calibrateImageSpacing } = utilities;
 
 const toolsToUse = ANNOTATION_TOOLS.filter(
   (tool) => tool !== CrosshairsTool.toolName
-)
-const ctLayoutTools = ['Levels'].concat(toolsToUse)
+);
+const ctLayoutTools = ['Levels'].concat(toolsToUse);
 
 class CalibrationExample extends Component {
   state = {
@@ -55,47 +55,47 @@ class CalibrationExample extends Component {
     ptCtLeftClickTool: 'Levels',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
-    this._elementNodes = new Map()
-    this._offScreenRef = React.createRef()
+    csTools3d.init();
+    this._elementNodes = new Map();
+    this._offScreenRef = React.createRef();
 
-    this._viewportGridRef = React.createRef()
+    this._viewportGridRef = React.createRef();
 
-    this.DXStackImageIdsPromise = getImageIds('dx', STACK)
+    this.DXStackImageIdsPromise = getImageIds('dx', STACK);
 
     Promise.all([this.DXStackImageIdsPromise]).then(() =>
       this.setState({ progressText: 'Loading data...' })
-    )
+    );
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    ;({ stackDXViewportToolGroup } = initToolGroups())
+    await csRenderInit();
+    csTools3d.init();
+    ({ stackDXViewportToolGroup } = initToolGroups());
 
-    const DXStackImageIds = await this.DXStackImageIdsPromise
+    const DXStackImageIds = await this.DXStackImageIdsPromise;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     const viewportInput = [
       {
@@ -106,80 +106,80 @@ class CalibrationExample extends Component {
           background: [0, 0, 0],
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(viewportInput)
+    renderingEngine.setViewports(viewportInput);
 
     stackDXViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.DX,
       renderingEngineId
-    )
+    );
 
-    addToolsToToolGroups({ stackDXViewportToolGroup })
+    addToolsToToolGroups({ stackDXViewportToolGroup });
     // This will initialise volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
 
-    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
+    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX);
 
-    const ctMiddleSlice = Math.floor(DXStackImageIds.length / 2)
+    const ctMiddleSlice = Math.floor(DXStackImageIds.length / 2);
     await ctStackViewport.setStack(
       sortImageIdsByIPP(DXStackImageIds),
       ctMiddleSlice,
       [setCTWWWC]
-    )
+    );
 
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state
-    const { renderingEngine } = this
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const { layoutIndex } = this.state;
+    const { renderingEngine } = this;
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   destroyAndDecacheAllVolumes = () => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
+      return;
     }
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
 
-    cache.purgeCache()
-  }
+    cache.purgeCache();
+  };
 
   resetToolModes = (toolGroup) => {
     ANNOTATION_TOOLS.forEach((toolName) => {
-      toolGroup.setToolPassive(toolName)
-    })
+      toolGroup.setToolPassive(toolName);
+    });
     toolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    })
+    });
     toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
-    })
+    });
     toolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
-    })
-  }
+    });
+  };
 
   swapTools = (evt) => {
-    const toolName = evt.target.value
+    const toolName = evt.target.value;
 
-    this.resetToolModes(stackDXViewportToolGroup)
+    this.resetToolModes(stackDXViewportToolGroup);
 
-    const tools = Object.entries(stackDXViewportToolGroup.toolOptions)
+    const tools = Object.entries(stackDXViewportToolGroup.toolOptions);
 
     // Disabling any tool that is active on mouse primary
     const [activeTool] = tools.find(
@@ -190,12 +190,12 @@ class CalibrationExample extends Component {
             binding.mouseButton === csToolsEnums.MouseBindings.Primary &&
             binding.modifierKey === undefined
         )
-    )
-    stackDXViewportToolGroup.setToolPassive(activeTool)
+    );
+    stackDXViewportToolGroup.setToolPassive(activeTool);
 
     // Using mouse primary for the selected tool
     const currentBindings =
-      stackDXViewportToolGroup.toolOptions[toolName].bindings
+      stackDXViewportToolGroup.toolOptions[toolName].bindings;
 
     stackDXViewportToolGroup.setToolActive(toolName, {
       bindings: [
@@ -204,29 +204,29 @@ class CalibrationExample extends Component {
           mouseButton: csToolsEnums.MouseBindings.Primary,
         },
       ],
-    })
+    });
 
-    this.renderingEngine.render()
+    this.renderingEngine.render();
 
     // To enable modifier key cursor before tool interaction
     // Should be changed after canvas is wrapped in a div and keyboard event
     // listener is added to the div instead of canvas
 
-    this.setState({ ptCtLeftClickTool: toolName })
-  }
+    this.setState({ ptCtLeftClickTool: toolName });
+  };
 
   calibrateImage = () => {
     const imageId = this.renderingEngine
       .getViewport('dxStack')
-      .getCurrentImageId()
+      .getCurrentImageId();
 
     calibrateImageSpacing(
       imageId,
       this.renderingEngine,
       this.state.calibrationX,
       this.state.calibrationY
-    )
-  }
+    );
+  };
 
   render() {
     return (
@@ -260,8 +260,8 @@ class CalibrationExample extends Component {
           id="calibrationY"
           name="calibrationY"
           onClick={(ev) => {
-            ev.target.focus()
-            ev.target.select()
+            ev.target.focus();
+            ev.target.select();
           }}
           style={{ margin: '2px 4px', float: 'right' }}
           autoComplete="off"
@@ -276,8 +276,8 @@ class CalibrationExample extends Component {
           id="calibrationX"
           name="calibrationX"
           onClick={(ev) => {
-            ev.target.focus()
-            ev.target.select()
+            ev.target.focus();
+            ev.target.select();
           }}
           style={{ margin: '2px 4px', float: 'right' }}
           autoComplete="off"
@@ -318,8 +318,8 @@ class CalibrationExample extends Component {
           ))}
         </ViewportGrid>
       </div>
-    )
+    );
   }
 }
 
-export default CalibrationExample
+export default CalibrationExample;

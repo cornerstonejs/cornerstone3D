@@ -3,7 +3,7 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 
 /**
  * Synchronizer callback to synchronize the voi of volumeActors of identical volumes
@@ -20,34 +20,34 @@ export default function voiSyncCallback(
   targetViewport: Types.IViewportId,
   voiModifiedEvent: Types.EventTypes.VoiModifiedEvent
 ): void {
-  const eventDetail = voiModifiedEvent.detail
-  const { volumeId, range } = eventDetail
+  const eventDetail = voiModifiedEvent.detail;
+  const { volumeId, range } = eventDetail;
 
-  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId)
+  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
     throw new Error(
       `Rendering Engine does not exist: ${targetViewport.renderingEngineId}`
-    )
+    );
   }
 
-  const tViewport = renderingEngine.getViewport(targetViewport.viewportId)
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
   if (tViewport instanceof VolumeViewport) {
-    const actor = tViewport.getActor(volumeId)
+    const actor = tViewport.getActor(volumeId);
 
     if (actor) {
       actor.volumeActor
         .getProperty()
         .getRGBTransferFunction(0)
-        .setRange(range.lower, range.upper)
+        .setRange(range.lower, range.upper);
     }
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties({
       voiRange: range,
-    })
+    });
   } else {
-    throw new Error('Viewport type not supported.')
+    throw new Error('Viewport type not supported.');
   }
 
-  tViewport.render()
+  tViewport.render();
 }

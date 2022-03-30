@@ -1,7 +1,7 @@
 import {
   SegmentationPublicInput,
   Segmentation,
-} from '../../../types/SegmentationStateTypes'
+} from '../../../types/SegmentationStateTypes';
 
 /**
  * It takes in a segmentation input and returns a segmentation with default values
@@ -12,7 +12,7 @@ import {
 function normalizeSegmentationInput(
   segmentationInput: SegmentationPublicInput
 ): Segmentation {
-  const { segmentationId, representation } = segmentationInput
+  const { segmentationId, representation } = segmentationInput;
 
   // Todo: we should be able to let the user pass in non-default values for
   // cachedStats, label, activeSegmentIndex, etc.
@@ -28,7 +28,7 @@ function normalizeSegmentationInput(
         ...representation.data,
       },
     },
-  }
+  };
 }
 
-export default normalizeSegmentationInput
+export default normalizeSegmentationInput;

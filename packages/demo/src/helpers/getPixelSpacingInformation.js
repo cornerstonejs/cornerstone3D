@@ -20,7 +20,7 @@ export default function getPixelSpacingInformation(instance) {
     '1.2.840.10008.5.1.4.1.1.12.2', //	X-Ray Radiofluoroscopic Image Storage
     '1.2.840.10008.5.1.4.1.1.12.2.1', //	Enhanced XRF Image Storage
     '1.2.840.10008.5.1.4.1.1.12.3', // X-Ray Angiographic Bi-plane Image Storage	Retired
-  ]
+  ];
 
   const {
     PixelSpacing,
@@ -30,19 +30,19 @@ export default function getPixelSpacingInformation(instance) {
     PixelSpacingCalibrationDescription,
     EstimatedRadiographicMagnificationFactor,
     SequenceOfUltrasoundRegions,
-  } = instance
+  } = instance;
 
-  const isProjection = projectionRadiographSOPClassUIDs.includes(SOPClassUID)
+  const isProjection = projectionRadiographSOPClassUIDs.includes(SOPClassUID);
 
   const TYPES = {
     NOT_APPLICABLE: 'NOT_APPLICABLE',
     UNKNOWN: 'UNKNOWN',
     CALIBRATED: 'CALIBRATED',
     DETECTOR: 'DETECTOR',
-  }
+  };
 
   if (!isProjection) {
-    return PixelSpacing
+    return PixelSpacing;
   }
 
   if (isProjection && !ImagerPixelSpacing) {
@@ -53,7 +53,7 @@ export default function getPixelSpacingInformation(instance) {
       PixelSpacing,
       type: TYPES.UNKNOWN,
       isProjection,
-    }
+    };
   } else if (
     PixelSpacing &&
     ImagerPixelSpacing &&
@@ -65,7 +65,7 @@ export default function getPixelSpacingInformation(instance) {
       PixelSpacing,
       type: TYPES.DETECTOR,
       isProjection,
-    }
+    };
   } else if (
     PixelSpacing &&
     ImagerPixelSpacing &&
@@ -81,9 +81,9 @@ export default function getPixelSpacingInformation(instance) {
       isProjection,
       PixelSpacingCalibrationType,
       PixelSpacingCalibrationDescription,
-    }
+    };
   } else if (!PixelSpacing && ImagerPixelSpacing) {
-    let CorrectedImagerPixelSpacing = ImagerPixelSpacing
+    let CorrectedImagerPixelSpacing = ImagerPixelSpacing;
     if (EstimatedRadiographicMagnificationFactor) {
       // Note that in IHE Mammo profile compliant displays, the value of Imager Pixel Spacing is required to be corrected by
       // Estimated Radiographic Magnification Factor and the user informed of that.
@@ -91,27 +91,27 @@ export default function getPixelSpacingInformation(instance) {
       CorrectedImagerPixelSpacing = ImagerPixelSpacing.map(
         (pixelSpacing) =>
           pixelSpacing / EstimatedRadiographicMagnificationFactor
-      )
+      );
     } else {
       console.warn(
         'EstimatedRadiographicMagnificationFactor was not present. Unable to correct ImagerPixelSpacing.'
-      )
+      );
     }
 
     return {
       PixelSpacing: CorrectedImagerPixelSpacing,
       isProjection,
-    }
+    };
   } else if (
     SequenceOfUltrasoundRegions &&
     typeof SequenceOfUltrasoundRegions === 'object'
   ) {
-    const { PhysicalDeltaX, PhysicalDeltaY } = SequenceOfUltrasoundRegions
-    const USPixelSpacing = [PhysicalDeltaX * 10, PhysicalDeltaY * 10]
+    const { PhysicalDeltaX, PhysicalDeltaY } = SequenceOfUltrasoundRegions;
+    const USPixelSpacing = [PhysicalDeltaX * 10, PhysicalDeltaY * 10];
 
     return {
       PixelSpacing: USPixelSpacing,
-    }
+    };
   } else if (
     SequenceOfUltrasoundRegions &&
     Array.isArray(SequenceOfUltrasoundRegions) &&
@@ -119,7 +119,7 @@ export default function getPixelSpacingInformation(instance) {
   ) {
     console.warn(
       'Sequence of Ultrasound Regions > one entry. This is not yet implemented, all annotations will be shown in pixels.'
-    )
+    );
   } else if (isProjection === false && !ImagerPixelSpacing) {
     // If only Pixel Spacing is present, and this is not a projection radiograph,
     // we can stop here
@@ -127,10 +127,10 @@ export default function getPixelSpacingInformation(instance) {
       PixelSpacing,
       type: TYPES.NOT_APPLICABLE,
       isProjection,
-    }
+    };
   }
 
   console.warn(
     'Unknown combination of PixelSpacing and ImagerPixelSpacing identified. Unable to determine spacing.'
-  )
+  );
 }

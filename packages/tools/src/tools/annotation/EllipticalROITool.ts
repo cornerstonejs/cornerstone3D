@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base'
+import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
@@ -9,35 +9,35 @@ import {
   triggerEvent,
   cache,
   utilities as csUtils,
-} from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import throttle from '../../utilities/throttle'
-import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex'
+import throttle from '../../utilities/throttle';
+import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState'
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
+} from '../../stateManagement/annotation/annotationState';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import {
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg'
-import { state } from '../../store'
-import { Events } from '../../enums'
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing'
-import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints'
+} from '../../drawingSvg';
+import { state } from '../../store';
+import { Events } from '../../enums';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import {
   pointInEllipse,
   getCanvasEllipseCorners,
-} from '../../utilities/math/ellipse'
+} from '../../utilities/math/ellipse';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor'
+} from '../../cursors/elementCursor';
 import {
   EventTypes,
   ToolHandle,
@@ -45,16 +45,16 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
-} from '../../types'
-import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes'
+} from '../../types';
+import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
   AnnotationModifiedEventDetail,
   MouseDragEventType,
   MouseMoveEventType,
-} from '../../types/EventTypes'
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
-import { pointInShapeCallback } from '../../utilities/'
+} from '../../types/EventTypes';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { pointInShapeCallback } from '../../utilities/';
 
 /**
  * EllipticalROITool let you draw annotations that measures the statistics
@@ -95,24 +95,24 @@ import { pointInShapeCallback } from '../../utilities/'
  * Read more in the Docs section of the website.
  */
 export default class EllipticalROITool extends AnnotationTool {
-  static toolName = 'EllipticalROI'
-  touchDragCallback: any
-  mouseDragCallback: any
-  _throttledCalculateCachedStats: any
+  static toolName = 'EllipticalROI';
+  touchDragCallback: any;
+  mouseDragCallback: any;
+  _throttledCalculateCachedStats: any;
   editData: {
-    annotation: any
-    viewportIdsToRender: Array<string>
-    handleIndex?: number
-    movingTextBox?: boolean
-    centerCanvas?: Array<number>
-    canvasWidth?: number
-    canvasHeight?: number
-    originalHandleCanvas?: Array<number>
-    newAnnotation?: boolean
-    hasMoved?: boolean
-  } | null
-  isDrawing: boolean
-  isHandleOutsideImage = false
+    annotation: any;
+    viewportIdsToRender: Array<string>;
+    handleIndex?: number;
+    movingTextBox?: boolean;
+    centerCanvas?: Array<number>;
+    canvasWidth?: number;
+    canvasHeight?: number;
+    originalHandleCanvas?: Array<number>;
+    newAnnotation?: boolean;
+    hasMoved?: boolean;
+  } | null;
+  isDrawing: boolean;
+  isHandleOutsideImage = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -124,13 +124,13 @@ export default class EllipticalROITool extends AnnotationTool {
       },
     }
   ) {
-    super(toolProps, defaultToolProps)
+    super(toolProps, defaultToolProps);
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStats,
       100,
       { trailing: true }
-    )
+    );
   }
 
   /**
@@ -144,40 +144,40 @@ export default class EllipticalROITool extends AnnotationTool {
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
   ): EllipticalROIAnnotation => {
-    const eventDetail = evt.detail
-    const { currentPoints, element } = eventDetail
-    const worldPos = currentPoints.world
-    const canvasPos = currentPoints.canvas
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
+    const canvasPos = currentPoints.canvas;
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
 
-    this.isDrawing = true
+    this.isDrawing = true;
 
-    const camera = viewport.getCamera()
-    const { viewPlaneNormal, viewUp } = camera
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId
+    let referencedImageId;
     if (viewport instanceof StackViewport) {
       referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId()
+        viewport.getCurrentImageId && viewport.getCurrentImageId();
     } else {
-      const volumeId = this.getTargetId(viewport)
-      const imageVolume = cache.getVolume(volumeId)
+      const volumeId = this.getTargetId(viewport);
+      const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
         viewPlaneNormal,
         viewUp
-      )
+      );
     }
 
     if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':')
-      referencedImageId = referencedImageId.substring(colonIndex + 1)
+      const colonIndex = referencedImageId.indexOf(':');
+      referencedImageId = referencedImageId.substring(colonIndex + 1);
     }
 
-    this.isDrawing = true
+    this.isDrawing = true;
 
     const annotation = {
       highlighted: true,
@@ -212,17 +212,17 @@ export default class EllipticalROITool extends AnnotationTool {
         },
         cachedStats: {},
       },
-    }
+    };
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, EllipticalROITool)
+    Settings.getObjectSettings(annotation, EllipticalROITool);
 
-    addAnnotation(element, annotation)
+    addAnnotation(element, annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalROITool.toolName
-    )
+    );
 
     this.editData = {
       annotation,
@@ -230,17 +230,17 @@ export default class EllipticalROITool extends AnnotationTool {
       centerCanvas: canvasPos,
       newAnnotation: true,
       hasMoved: false,
-    }
-    this._activateDraw(element)
+    };
+    this._activateDraw(element);
 
-    hideElementCursor(element)
+    hideElementCursor(element);
 
-    evt.preventDefault()
+    evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    return annotation
-  }
+    return annotation;
+  };
 
   /**
    * It returns if the canvas point is near the provided annotation in the provided
@@ -259,11 +259,11 @@ export default class EllipticalROITool extends AnnotationTool {
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
-    const { data } = annotation
-    const { points } = data.handles
+    const { data } = annotation;
+    const { points } = data.handles;
 
     // For some reason Typescript doesn't understand this, so we need to be
     // more specific about the type
@@ -272,73 +272,73 @@ export default class EllipticalROITool extends AnnotationTool {
       Types.Point2,
       Types.Point2,
       Types.Point2
-    ]
-    const canvasCorners = getCanvasEllipseCorners(canvasCoordinates)
+    ];
+    const canvasCorners = getCanvasEllipseCorners(canvasCoordinates);
 
-    const [canvasPoint1, canvasPoint2] = canvasCorners
+    const [canvasPoint1, canvasPoint2] = canvasCorners;
 
     const minorEllipse = {
       left: Math.min(canvasPoint1[0], canvasPoint2[0]) + proximity / 2,
       top: Math.min(canvasPoint1[1], canvasPoint2[1]) + proximity / 2,
       width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) - proximity,
       height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) - proximity,
-    }
+    };
 
     const majorEllipse = {
       left: Math.min(canvasPoint1[0], canvasPoint2[0]) - proximity / 2,
       top: Math.min(canvasPoint1[1], canvasPoint2[1]) - proximity / 2,
       width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) + proximity,
       height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
-    }
+    };
 
     const pointInMinorEllipse = this._pointInEllipseCanvas(
       minorEllipse,
       canvasCoords
-    )
+    );
     const pointInMajorEllipse = this._pointInEllipseCanvas(
       majorEllipse,
       canvasCoords
-    )
+    );
 
     if (pointInMajorEllipse && !pointInMinorEllipse) {
-      return true
+      return true;
     }
 
-    return false
-  }
+    return false;
+  };
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
     annotation: EllipticalROIAnnotation,
     interactionType: InteractionTypes
   ): void => {
-    const eventDetail = evt.detail
-    const { element } = eventDetail
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
 
-    annotation.highlighted = true
+    annotation.highlighted = true;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalROITool.toolName
-    )
+    );
 
     this.editData = {
       annotation,
       viewportIdsToRender,
       movingTextBox: false,
-    }
+    };
 
-    hideElementCursor(element)
+    hideElementCursor(element);
 
-    this._activateModify(element)
+    this._activateModify(element);
 
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    evt.preventDefault()
-  }
+    evt.preventDefault();
+  };
 
   handleSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
@@ -346,47 +346,47 @@ export default class EllipticalROITool extends AnnotationTool {
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void => {
-    const eventDetail = evt.detail
-    const { element } = eventDetail
-    const { data } = annotation
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const { data } = annotation;
 
-    annotation.highlighted = true
+    annotation.highlighted = true;
 
-    let movingTextBox = false
-    let handleIndex
+    let movingTextBox = false;
+    let handleIndex;
 
-    let centerCanvas
-    let canvasWidth
-    let canvasHeight
-    let originalHandleCanvas
+    let centerCanvas;
+    let canvasWidth;
+    let canvasHeight;
+    let originalHandleCanvas;
 
     if ((handle as TextBoxHandle).worldPosition) {
-      movingTextBox = true
+      movingTextBox = true;
     } else {
-      const { points } = data.handles
-      const enabledElement = getEnabledElement(element)
-      const { worldToCanvas } = enabledElement.viewport
+      const { points } = data.handles;
+      const enabledElement = getEnabledElement(element);
+      const { worldToCanvas } = enabledElement.viewport;
 
-      handleIndex = points.findIndex((p) => p === handle)
+      handleIndex = points.findIndex((p) => p === handle);
 
-      const pointsCanvas = points.map(worldToCanvas)
+      const pointsCanvas = points.map(worldToCanvas);
 
-      originalHandleCanvas = pointsCanvas[handleIndex]
+      originalHandleCanvas = pointsCanvas[handleIndex];
 
-      canvasWidth = Math.abs(pointsCanvas[2][0] - pointsCanvas[3][0])
-      canvasHeight = Math.abs(pointsCanvas[0][1] - pointsCanvas[1][1])
+      canvasWidth = Math.abs(pointsCanvas[2][0] - pointsCanvas[3][0]);
+      canvasHeight = Math.abs(pointsCanvas[0][1] - pointsCanvas[1][1]);
 
       centerCanvas = [
         (pointsCanvas[2][0] + pointsCanvas[3][0]) / 2,
         (pointsCanvas[0][1] + pointsCanvas[1][1]) / 2,
-      ]
+      ];
     }
 
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       EllipticalROITool.toolName
-    )
+    );
 
     this.editData = {
       annotation,
@@ -397,144 +397,144 @@ export default class EllipticalROITool extends AnnotationTool {
       centerCanvas,
       originalHandleCanvas,
       movingTextBox,
-    }
-    this._activateModify(element)
+    };
+    this._activateModify(element);
 
-    hideElementCursor(element)
+    hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    evt.preventDefault()
-  }
+    evt.preventDefault();
+  };
 
   _mouseUpCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    const eventDetail = evt.detail
-    const { element } = eventDetail
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
 
     const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData
-    const { data } = annotation
+      this.editData;
+    const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
-      return
+      return;
     }
 
-    annotation.highlighted = false
-    data.handles.activeHandleIndex = null
+    annotation.highlighted = false;
+    data.handles.activeHandleIndex = null;
 
-    this._deactivateModify(element)
-    this._deactivateDraw(element)
+    this._deactivateModify(element);
+    this._deactivateDraw(element);
 
-    resetElementCursor(element)
+    resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
 
-    this.editData = null
-    this.isDrawing = false
+    this.editData = null;
+    this.isDrawing = false;
 
     if (
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(element, annotation.annotationUID)
+      removeAnnotation(element, annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
-  }
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
 
   _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
-    this.isDrawing = true
-    const eventDetail = evt.detail
-    const { element } = eventDetail
-    const { currentPoints } = eventDetail
-    const currentCanvasPoints = currentPoints.canvas
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine, viewport } = enabledElement
-    const { canvasToWorld } = viewport
+    this.isDrawing = true;
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const { currentPoints } = eventDetail;
+    const currentCanvasPoints = currentPoints.canvas;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine, viewport } = enabledElement;
+    const { canvasToWorld } = viewport;
 
     //////
-    const { annotation, viewportIdsToRender, centerCanvas } = this.editData
-    const { data } = annotation
+    const { annotation, viewportIdsToRender, centerCanvas } = this.editData;
+    const { data } = annotation;
 
-    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
-    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
+    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
+    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
 
     // Todo: why bottom is -dY, it should be +dY
-    const bottomCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] - dY]
-    const topCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] + dY]
-    const leftCanvas = <Types.Point2>[centerCanvas[0] - dX, centerCanvas[1]]
-    const rightCanvas = <Types.Point2>[centerCanvas[0] + dX, centerCanvas[1]]
+    const bottomCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] - dY];
+    const topCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] + dY];
+    const leftCanvas = <Types.Point2>[centerCanvas[0] - dX, centerCanvas[1]];
+    const rightCanvas = <Types.Point2>[centerCanvas[0] + dX, centerCanvas[1]];
 
     data.handles.points = [
       canvasToWorld(bottomCanvas),
       canvasToWorld(topCanvas),
       canvasToWorld(leftCanvas),
       canvasToWorld(rightCanvas),
-    ]
+    ];
 
-    annotation.invalidated = true
+    annotation.invalidated = true;
 
-    this.editData.hasMoved = true
+    this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
-  }
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
 
   _mouseDragModifyCallback = (evt: MouseDragEventType) => {
-    this.isDrawing = true
-    const eventDetail = evt.detail
-    const { element } = eventDetail
+    this.isDrawing = true;
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
 
     const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData
-    const { data } = annotation
+      this.editData;
+    const { data } = annotation;
 
     if (movingTextBox) {
-      const { deltaPoints } = eventDetail
-      const worldPosDelta = deltaPoints.world
+      const { deltaPoints } = eventDetail;
+      const worldPosDelta = deltaPoints.world;
 
-      const { textBox } = data.handles
-      const { worldPosition } = textBox
+      const { textBox } = data.handles;
+      const { worldPosition } = textBox;
 
-      worldPosition[0] += worldPosDelta[0]
-      worldPosition[1] += worldPosDelta[1]
-      worldPosition[2] += worldPosDelta[2]
+      worldPosition[0] += worldPosDelta[0];
+      worldPosition[1] += worldPosDelta[1];
+      worldPosition[2] += worldPosDelta[2];
 
-      textBox.hasMoved = true
+      textBox.hasMoved = true;
     } else if (handleIndex === undefined) {
       // Moving tool
-      const { deltaPoints } = eventDetail
-      const worldPosDelta = deltaPoints.world
+      const { deltaPoints } = eventDetail;
+      const worldPosDelta = deltaPoints.world;
 
-      const points = data.handles.points
+      const points = data.handles.points;
 
       points.forEach((point) => {
-        point[0] += worldPosDelta[0]
-        point[1] += worldPosDelta[1]
-        point[2] += worldPosDelta[2]
-      })
-      annotation.invalidated = true
+        point[0] += worldPosDelta[0];
+        point[1] += worldPosDelta[1];
+        point[2] += worldPosDelta[2];
+      });
+      annotation.invalidated = true;
     } else {
-      this._dragHandle(evt)
-      annotation.invalidated = true
+      this._dragHandle(evt);
+      annotation.invalidated = true;
     }
 
-    const enabledElement = getEnabledElement(element)
-    const { renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
-  }
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
 
   _dragHandle = (evt) => {
-    const eventDetail = evt.detail
-    const { element } = eventDetail
-    const enabledElement = getEnabledElement(element)
-    const { canvasToWorld } = enabledElement.viewport
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { canvasToWorld } = enabledElement.viewport;
 
     const {
       annotation,
@@ -543,153 +543,153 @@ export default class EllipticalROITool extends AnnotationTool {
       handleIndex,
       centerCanvas,
       originalHandleCanvas,
-    } = this.editData
-    const { data } = annotation
-    const { points } = data.handles
+    } = this.editData;
+    const { data } = annotation;
+    const { points } = data.handles;
 
     // Move current point in that direction.
     // Move other points in opposite direction.
 
-    const { currentPoints } = eventDetail
-    const currentCanvasPoints = currentPoints.canvas
+    const { currentPoints } = eventDetail;
+    const currentCanvasPoints = currentPoints.canvas;
 
     if (handleIndex === 0 || handleIndex === 1) {
       // Dragging top or bottom point
-      const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1])
+      const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
       const canvasBottom = <Types.Point2>[
         centerCanvas[0],
         centerCanvas[1] - dYCanvas,
-      ]
+      ];
       const canvasTop = <Types.Point2>[
         centerCanvas[0],
         centerCanvas[1] + dYCanvas,
-      ]
+      ];
 
-      points[0] = canvasToWorld(canvasBottom)
-      points[1] = canvasToWorld(canvasTop)
+      points[0] = canvasToWorld(canvasBottom);
+      points[1] = canvasToWorld(canvasTop);
 
-      const dXCanvas = currentCanvasPoints[0] - originalHandleCanvas[0]
-      const newHalfCanvasWidth = canvasWidth / 2 + dXCanvas
+      const dXCanvas = currentCanvasPoints[0] - originalHandleCanvas[0];
+      const newHalfCanvasWidth = canvasWidth / 2 + dXCanvas;
       const canvasLeft = <Types.Point2>[
         centerCanvas[0] - newHalfCanvasWidth,
         centerCanvas[1],
-      ]
+      ];
       const canvasRight = <Types.Point2>[
         centerCanvas[0] + newHalfCanvasWidth,
         centerCanvas[1],
-      ]
+      ];
 
-      points[2] = canvasToWorld(canvasLeft)
-      points[3] = canvasToWorld(canvasRight)
+      points[2] = canvasToWorld(canvasLeft);
+      points[3] = canvasToWorld(canvasRight);
     } else {
       // Dragging left or right point
-      const dXCanvas = Math.abs(currentCanvasPoints[0] - centerCanvas[0])
+      const dXCanvas = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
       const canvasLeft = <Types.Point2>[
         centerCanvas[0] - dXCanvas,
         centerCanvas[1],
-      ]
+      ];
       const canvasRight = <Types.Point2>[
         centerCanvas[0] + dXCanvas,
         centerCanvas[1],
-      ]
+      ];
 
-      points[2] = canvasToWorld(canvasLeft)
-      points[3] = canvasToWorld(canvasRight)
+      points[2] = canvasToWorld(canvasLeft);
+      points[3] = canvasToWorld(canvasRight);
 
-      const dYCanvas = currentCanvasPoints[1] - originalHandleCanvas[1]
-      const newHalfCanvasHeight = canvasHeight / 2 + dYCanvas
+      const dYCanvas = currentCanvasPoints[1] - originalHandleCanvas[1];
+      const newHalfCanvasHeight = canvasHeight / 2 + dYCanvas;
       const canvasBottom = <Types.Point2>[
         centerCanvas[0],
         centerCanvas[1] - newHalfCanvasHeight,
-      ]
+      ];
       const canvasTop = <Types.Point2>[
         centerCanvas[0],
         centerCanvas[1] + newHalfCanvasHeight,
-      ]
+      ];
 
-      points[0] = canvasToWorld(canvasBottom)
-      points[1] = canvasToWorld(canvasTop)
+      points[0] = canvasToWorld(canvasBottom);
+      points[1] = canvasToWorld(canvasTop);
     }
-  }
+  };
 
   cancel = (element: HTMLElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
-      this.isDrawing = false
-      this._deactivateDraw(element)
-      this._deactivateModify(element)
-      resetElementCursor(element)
+      this.isDrawing = false;
+      this._deactivateDraw(element);
+      this._deactivateModify(element);
+      resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData
-      const { data } = annotation
+      const { annotation, viewportIdsToRender } = this.editData;
+      const { data } = annotation;
 
-      annotation.highlighted = false
-      data.handles.activeHandleIndex = null
+      annotation.highlighted = false;
+      data.handles.activeHandleIndex = null;
 
-      const enabledElement = getEnabledElement(element)
-      const { renderingEngine } = enabledElement
+      const enabledElement = getEnabledElement(element);
+      const { renderingEngine } = enabledElement;
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
         viewportIdsToRender
-      )
+      );
 
-      this.editData = null
-      return annotation.annotationUID
+      this.editData = null;
+      return annotation.annotationUID;
     }
-  }
+  };
 
   _activateModify = (element) => {
-    state.isInteractingWithTool = true
+    state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragModifyCallback)
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragModifyCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragModifyCallback)
-  }
+  };
 
   _deactivateModify = (element) => {
-    state.isInteractingWithTool = false
+    state.isInteractingWithTool = false;
 
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
     element.removeEventListener(
       Events.MOUSE_DRAG,
       this._mouseDragModifyCallback
-    )
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    );
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.removeEventListener(
     //   Events.TOUCH_DRAG,
     //   this._mouseDragModifyCallback
     // )
-  }
+  };
 
   _activateDraw = (element) => {
-    state.isInteractingWithTool = true
+    state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback)
-    element.addEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback)
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback);
+    element.addEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
-  }
+  };
 
   _deactivateDraw = (element) => {
-    state.isInteractingWithTool = false
+    state.isInteractingWithTool = false;
 
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback)
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback)
-    element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback)
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback)
+    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback);
+    element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
     // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
     // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
-  }
+  };
 
   /**
    * it is used to draw the ellipticalROI annotation in each
@@ -703,47 +703,50 @@ export default class EllipticalROITool extends AnnotationTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void => {
-    const { viewport } = enabledElement
-    const { element } = viewport
+    const { viewport } = enabledElement;
+    const { element } = viewport;
 
-    let annotations = getAnnotations(element, EllipticalROITool.toolName)
+    let annotations = getAnnotations(element, EllipticalROITool.toolName);
 
     if (!annotations?.length) {
-      return
+      return;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
-    )
+    );
 
     if (!annotations?.length) {
-      return
+      return;
     }
 
-    const targetId = this.getTargetId(viewport)
+    const targetId = this.getTargetId(viewport);
 
-    const renderingEngine = viewport.getRenderingEngine()
+    const renderingEngine = viewport.getRenderingEngine();
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as EllipticalROIAnnotation
-      const settings = Settings.getObjectSettings(annotation, EllipticalROITool)
-      const annotationUID = annotation.annotationUID
-      const data = annotation.data
+      const annotation = annotations[i] as EllipticalROIAnnotation;
+      const settings = Settings.getObjectSettings(
+        annotation,
+        EllipticalROITool
+      );
+      const annotationUID = annotation.annotationUID;
+      const data = annotation.data;
 
-      const { handles } = data
-      const { points, activeHandleIndex } = handles
+      const { handles } = data;
+      const { points, activeHandleIndex } = handles;
 
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation)
-      const lineDash = this.getStyle(settings, 'lineDash', annotation)
-      const color = this.getStyle(settings, 'color', annotation)
+      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
+      const lineDash = this.getStyle(settings, 'lineDash', annotation);
+      const color = this.getStyle(settings, 'color', annotation);
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2]
+      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates)
-      )
+      );
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -751,21 +754,21 @@ export default class EllipticalROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
-        }
+        };
 
         this._calculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
           enabledElement
-        )
+        );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
           enabledElement
-        )
+        );
 
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
@@ -774,14 +777,14 @@ export default class EllipticalROITool extends AnnotationTool {
         // which doesn't have the full volume at each time, and we are only working
         // on one slice at a time.
         if (viewport instanceof VolumeViewport) {
-          const { referencedImageId } = annotation.metadata
+          const { referencedImageId } = annotation.metadata;
 
           // todo: this is not efficient, but necessary
           // invalidate all the relevant stackViewports if they are not
           // at the referencedImageId
-          const viewports = renderingEngine.getViewports()
+          const viewports = renderingEngine.getViewports();
           viewports.forEach((vp) => {
-            const stackTargetId = this.getTargetId(vp)
+            const stackTargetId = this.getTargetId(vp);
             // only delete the cachedStats for the stackedViewports if the tool
             // is dragged inside the volume and the stackViewports are not at the
             // referencedImageId for the tool
@@ -790,19 +793,19 @@ export default class EllipticalROITool extends AnnotationTool {
               !vp.getCurrentImageId().includes(referencedImageId) &&
               data.cachedStats[stackTargetId]
             ) {
-              delete data.cachedStats[stackTargetId]
+              delete data.cachedStats[stackTargetId];
             }
-          })
+          });
         }
       }
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed')
-        return
+        console.warn('Rendering Engine has been destroyed');
+        return;
       }
 
-      let activeHandleCanvasCoords
+      let activeHandleCanvasCoords;
 
       if (
         !isAnnotationLocked(annotation) &&
@@ -810,11 +813,11 @@ export default class EllipticalROITool extends AnnotationTool {
         activeHandleIndex !== null
       ) {
         // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
+        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
       if (activeHandleCanvasCoords) {
-        const handleGroupUID = '0'
+        const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
           EllipticalROITool.toolName,
@@ -824,10 +827,10 @@ export default class EllipticalROITool extends AnnotationTool {
           {
             color,
           }
-        )
+        );
       }
 
-      const ellipseUID = '0'
+      const ellipseUID = '0';
       drawEllipseSvg(
         svgDrawingHelper,
         EllipticalROITool.toolName,
@@ -840,28 +843,28 @@ export default class EllipticalROITool extends AnnotationTool {
           lineDash,
           lineWidth,
         }
-      )
+      );
 
-      const textLines = this._getTextLines(data, targetId)
+      const textLines = this._getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
-        continue
+        continue;
       }
 
       // Poor man's cached?
-      let canvasTextBoxCoords
+      let canvasTextBoxCoords;
 
       if (!data.handles.textBox.hasMoved) {
-        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners)
+        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
 
         data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords)
+          viewport.canvasToWorld(canvasTextBoxCoords);
       }
 
       const textBoxPosition = viewport.worldToCanvas(
         data.handles.textBox.worldPosition
-      )
+      );
 
-      const textBoxUID = '1'
+      const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
         EllipticalROITool.toolName,
@@ -872,57 +875,58 @@ export default class EllipticalROITool extends AnnotationTool {
         canvasCoordinates,
         {},
         this.getLinkedTextBoxStyle(settings, annotation)
-      )
+      );
 
-      const { x: left, y: top, width, height } = boundingBox
+      const { x: left, y: top, width, height } = boundingBox;
 
       data.handles.textBox.worldBoundingBox = {
         topLeft: viewport.canvasToWorld([left, top]),
         topRight: viewport.canvasToWorld([left + width, top]),
         bottomLeft: viewport.canvasToWorld([left, top + height]),
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      }
+      };
     }
-  }
+  };
 
   _getTextLines = (data, targetId) => {
-    const cachedVolumeStats = data.cachedStats[targetId]
-    const { area, mean, stdDev, max, isEmptyArea, Modality } = cachedVolumeStats
+    const cachedVolumeStats = data.cachedStats[targetId];
+    const { area, mean, stdDev, max, isEmptyArea, Modality } =
+      cachedVolumeStats;
 
     if (mean === undefined) {
-      return
+      return;
     }
 
-    const textLines = []
+    const textLines = [];
 
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`
-    let meanLine = `Mean: ${mean.toFixed(2)}`
-    let maxLine = `Max: ${max.toFixed(2)}`
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`
+      : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
+    let meanLine = `Mean: ${mean.toFixed(2)}`;
+    let maxLine = `Max: ${max.toFixed(2)}`;
+    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
 
     if (Modality === 'PT') {
-      meanLine += ' SUV'
-      maxLine += ' SUV'
-      stdDevLine += ' SUV'
+      meanLine += ' SUV';
+      maxLine += ' SUV';
+      stdDevLine += ' SUV';
     } else if (Modality === 'CT') {
-      meanLine += ' HU'
-      maxLine += ' HU'
-      stdDevLine += ' HU'
+      meanLine += ' HU';
+      maxLine += ' HU';
+      stdDevLine += ' HU';
     } else {
-      meanLine += ' MO'
-      maxLine += ' MO'
-      stdDevLine += ' MO'
+      meanLine += ' MO';
+      maxLine += ' MO';
+      stdDevLine += ' MO';
     }
 
-    textLines.push(areaLine)
-    textLines.push(maxLine)
-    textLines.push(meanLine)
-    textLines.push(stdDevLine)
+    textLines.push(areaLine);
+    textLines.push(maxLine);
+    textLines.push(meanLine);
+    textLines.push(stdDevLine);
 
-    return textLines
-  }
+    return textLines;
+  };
 
   _calculateCachedStats = (
     annotation,
@@ -930,127 +934,127 @@ export default class EllipticalROITool extends AnnotationTool {
     renderingEngine,
     enabledElement
   ) => {
-    const data = annotation.data
-    const { viewportId, renderingEngineId } = enabledElement
+    const data = annotation.data;
+    const { viewportId, renderingEngineId } = enabledElement;
 
-    const { points } = data.handles
+    const { points } = data.handles;
 
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-    const { viewPlaneNormal, viewUp } = viewport.getCamera()
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
     const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
       getCanvasEllipseCorners(canvasCoordinates)
-    )
+    );
 
-    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas)
-    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas)
-    const { cachedStats } = data
+    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
+    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
+    const { cachedStats } = data;
 
-    const targetIds = Object.keys(cachedStats)
-    const worldPos1 = topLeftWorld
-    const worldPos2 = bottomRightWorld
+    const targetIds = Object.keys(cachedStats);
+    const worldPos1 = topLeftWorld;
+    const worldPos2 = bottomRightWorld;
 
     for (let i = 0; i < targetIds.length; i++) {
-      const targetId = targetIds[i]
+      const targetId = targetIds[i];
 
       const { image } = this.getTargetIdViewportAndImage(
         targetId,
         renderingEngine
-      )
+      );
 
-      const { dimensions, imageData, metadata } = image
+      const { dimensions, imageData, metadata } = image;
 
-      const worldPos1Index = transformPhysicalToIndex(imageData, worldPos1)
+      const worldPos1Index = transformPhysicalToIndex(imageData, worldPos1);
 
-      worldPos1Index[0] = Math.floor(worldPos1Index[0])
-      worldPos1Index[1] = Math.floor(worldPos1Index[1])
-      worldPos1Index[2] = Math.floor(worldPos1Index[2])
+      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
+      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
+      worldPos1Index[2] = Math.floor(worldPos1Index[2]);
 
-      const worldPos2Index = transformPhysicalToIndex(imageData, worldPos2)
+      const worldPos2Index = transformPhysicalToIndex(imageData, worldPos2);
 
-      worldPos2Index[0] = Math.floor(worldPos2Index[0])
-      worldPos2Index[1] = Math.floor(worldPos2Index[1])
-      worldPos2Index[2] = Math.floor(worldPos2Index[2])
+      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
+      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
+      worldPos2Index[2] = Math.floor(worldPos2Index[2]);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0])
-        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0])
+        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
+        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
 
-        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1])
-        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1])
+        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
+        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
 
-        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2])
-        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2])
+        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
+        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
 
         const boundsIJK = [
           [iMin, iMax],
           [jMin, jMax],
           [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2]
+        ] as [Types.Point2, Types.Point2, Types.Point2];
 
         const center = [
           (topLeftWorld[0] + bottomRightWorld[0]) / 2,
           (topLeftWorld[1] + bottomRightWorld[1]) / 2,
           (topLeftWorld[2] + bottomRightWorld[2]) / 2,
-        ] as Types.Point3
+        ] as Types.Point3;
 
         const ellipseObj = {
           center,
           xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
           yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
           zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-        }
+        };
 
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
           viewPlaneNormal,
           viewUp,
           worldPos1,
           worldPos2
-        )
-        const isEmptyArea = worldWidth === 0 && worldHeight === 0
-        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2)
+        );
+        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
+        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2);
 
-        let count = 0
-        let mean = 0
-        let stdDev = 0
-        let max = -Infinity
+        let count = 0;
+        let mean = 0;
+        let stdDev = 0;
+        let max = -Infinity;
 
         const meanMaxCalculator = ({ value: newValue }) => {
           if (newValue > max) {
-            max = newValue
+            max = newValue;
           }
 
-          mean += newValue
-          count += 1
-        }
+          mean += newValue;
+          count += 1;
+        };
 
         pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
           meanMaxCalculator,
           boundsIJK
-        )
+        );
 
-        mean /= count
+        mean /= count;
 
         const stdCalculator = ({ value }) => {
-          const valueMinusMean = value - mean
+          const valueMinusMean = value - mean;
 
-          stdDev += valueMinusMean * valueMinusMean
-        }
+          stdDev += valueMinusMean * valueMinusMean;
+        };
 
         pointInShapeCallback(
           imageData,
           (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
           stdCalculator,
           boundsIJK
-        )
+        );
 
-        stdDev /= count
-        stdDev = Math.sqrt(stdDev)
+        stdDev /= count;
+        stdDev = Math.sqrt(stdDev);
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
@@ -1059,38 +1063,38 @@ export default class EllipticalROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
-        }
+        };
       } else {
-        this.isHandleOutsideImage = true
+        this.isHandleOutsideImage = true;
 
         cachedStats[targetId] = {
           Modality: metadata.Modality,
-        }
+        };
       }
     }
 
-    annotation.invalidated = false
+    annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED
+    const eventType = Events.ANNOTATION_MODIFIED;
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
       renderingEngineId,
-    }
+    };
 
-    triggerEvent(eventTarget, eventType, eventDetail)
+    triggerEvent(eventTarget, eventType, eventDetail);
 
-    return cachedStats
-  }
+    return cachedStats;
+  };
 
   _isInsideVolume = (index1, index2, dimensions) => {
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
-    )
-  }
+    );
+  };
 
   /**
    * This is a temporary function to use the old ellipse's canvas-based
@@ -1102,21 +1106,21 @@ export default class EllipticalROITool extends AnnotationTool {
    * @returns True if the point is inside the ellipse
    */
   _pointInEllipseCanvas(ellipse, location: Types.Point2): boolean {
-    const xRadius = ellipse.width / 2
-    const yRadius = ellipse.height / 2
+    const xRadius = ellipse.width / 2;
+    const yRadius = ellipse.height / 2;
 
     if (xRadius <= 0.0 || yRadius <= 0.0) {
-      return false
+      return false;
     }
 
-    const center = [ellipse.left + xRadius, ellipse.top + yRadius]
-    const normalized = [location[0] - center[0], location[1] - center[1]]
+    const center = [ellipse.left + xRadius, ellipse.top + yRadius];
+    const normalized = [location[0] - center[0], location[1] - center[1]];
 
     const inEllipse =
       (normalized[0] * normalized[0]) / (xRadius * xRadius) +
         (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
-      1.0
+      1.0;
 
-    return inEllipse
+    return inEllipse;
   }
 }

@@ -1,15 +1,17 @@
 ---
 id: core-usage
 ---
+
 # Core Usage
 
 This page attempts to outline basic usage guidance. A more detailed, real-world
 example exists in the `./packages/demo` directory of this repository. All guidance
 here builds on the steps outlined on the "Setup" page.
 
-
 ## Example
+
 In this example we render three viewports side by side:
+
 - Viewport-1 (Volume): rendering axial view of CT volume
 - Viewport-2 (Volume): rendering sagittal view of CT volume
 - Viewport-3 (Stack): rendering x-ray
@@ -135,7 +137,7 @@ If you're using client-side routing and/or need to clean up resources more
 aggressively, most constructs have a `.destroy` method. For example:
 
 ```js
-renderingEngine.destroy()
+renderingEngine.destroy();
 ```
 
 ## Loading a Stack

@@ -1,4 +1,4 @@
-import { RequestPoolManager } from './requestPoolManager'
+import { RequestPoolManager } from './requestPoolManager';
 
 /**
  * ImageRetrieval Pool Manager
@@ -6,13 +6,13 @@ import { RequestPoolManager } from './requestPoolManager'
  * @category RequestPoolManager
  *
  */
-const imageRetrievalPoolManager = new RequestPoolManager()
+const imageRetrievalPoolManager = new RequestPoolManager();
 
 imageRetrievalPoolManager.maxNumRequests = {
   interaction: 200,
   thumbnail: 200,
   prefetch: 200,
-}
-imageRetrievalPoolManager.grabDelay = 0
+};
+imageRetrievalPoolManager.grabDelay = 0;
 
-export default imageRetrievalPoolManager
+export default imageRetrievalPoolManager;

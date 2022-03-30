@@ -24,6 +24,6 @@ const colors = [
     color: [0, 0, 255, 255],
   },
   // ....
-]
+];
 
-export default colors
+export default colors;

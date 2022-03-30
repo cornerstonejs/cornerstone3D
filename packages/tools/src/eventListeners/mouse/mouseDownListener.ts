@@ -1,24 +1,24 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import Events from '../../enums/Events'
-import mouseMoveListener from './mouseMoveListener'
-import { EventTypes, IPoints } from '../../types'
-import getMouseEventPoints from './getMouseEventPoints'
+import Events from '../../enums/Events';
+import mouseMoveListener from './mouseMoveListener';
+import { EventTypes, IPoints } from '../../types';
+import getMouseEventPoints from './getMouseEventPoints';
 
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
-  Events
+  Events;
 
 interface IMouseDownListenerState {
-  mouseButton: number
-  element: HTMLElement
-  renderingEngineId: string
-  viewportId: string
-  isClickEvent: boolean
-  clickDelay: number
-  preventClickTimeout: ReturnType<typeof setTimeout>
-  startPoints: IPoints
-  lastPoints: IPoints
+  mouseButton: number;
+  element: HTMLElement;
+  renderingEngineId: string;
+  viewportId: string;
+  isClickEvent: boolean;
+  clickDelay: number;
+  preventClickTimeout: ReturnType<typeof setTimeout>;
+  startPoints: IPoints;
+  lastPoints: IPoints;
 }
 
 // STATE
@@ -44,7 +44,7 @@ const defaultState: IMouseDownListenerState = {
     canvas: [0, 0],
     world: [0, 0, 0],
   },
-}
+};
 
 let state: IMouseDownListenerState = {
   mouseButton: undefined,
@@ -68,7 +68,7 @@ let state: IMouseDownListenerState = {
     canvas: [0, 0],
     world: [0, 0, 0],
   },
-}
+};
 
 /**
  * Listens to mouse down events from the DOM and depending on interaction and further
@@ -84,23 +84,26 @@ let state: IMouseDownListenerState = {
  * @private
  */
 function mouseDownListener(evt: MouseEvent) {
-  state.element = <HTMLElement>evt.currentTarget
+  state.element = <HTMLElement>evt.currentTarget;
 
-  state.mouseButton = evt.button
+  state.mouseButton = evt.button;
 
-  const enabledElement = getEnabledElement(state.element)
-  const { renderingEngineId, viewportId } = enabledElement
+  const enabledElement = getEnabledElement(state.element);
+  const { renderingEngineId, viewportId } = enabledElement;
 
-  state.renderingEngineId = renderingEngineId
-  state.viewportId = viewportId
+  state.renderingEngineId = renderingEngineId;
+  state.viewportId = viewportId;
 
-  state.preventClickTimeout = setTimeout(_preventClickHandler, state.clickDelay)
+  state.preventClickTimeout = setTimeout(
+    _preventClickHandler,
+    state.clickDelay
+  );
 
   // Prevent CornerstoneToolsMouseMove while mouse is down
-  state.element.removeEventListener('mousemove', mouseMoveListener)
+  state.element.removeEventListener('mousemove', mouseMoveListener);
 
-  const startPoints = getMouseEventPoints(evt, state.element)
-  const deltaPoints = _getDeltaPoints(startPoints, startPoints)
+  const startPoints = getMouseEventPoints(evt, state.element);
+  const deltaPoints = _getDeltaPoints(startPoints, startPoints);
 
   const eventDetail: EventTypes.MouseDownEventDetail = {
     event: evt,
@@ -114,10 +117,10 @@ function mouseDownListener(evt: MouseEvent) {
     lastPoints: startPoints,
     currentPoints: startPoints,
     deltaPoints,
-  }
+  };
 
-  state.startPoints = _copyPoints(eventDetail.startPoints)
-  state.lastPoints = _copyPoints(eventDetail.lastPoints)
+  state.startPoints = _copyPoints(eventDetail.startPoints);
+  state.lastPoints = _copyPoints(eventDetail.lastPoints);
 
   // by triggering MOUSE_DOWN it checks if this is toolSelection, handle modification etc.
   // of already existing tools
@@ -125,16 +128,16 @@ function mouseDownListener(evt: MouseEvent) {
     eventDetail.element,
     MOUSE_DOWN,
     eventDetail
-  )
+  );
 
   // if no tools responded to this event and prevented its default propagation behavior,
   // create a new tool
   if (eventDidPropagate) {
-    triggerEvent(eventDetail.element, MOUSE_DOWN_ACTIVATE, eventDetail)
+    triggerEvent(eventDetail.element, MOUSE_DOWN_ACTIVATE, eventDetail);
   }
 
-  document.addEventListener('mousemove', _onMouseDrag)
-  document.addEventListener('mouseup', _onMouseUp)
+  document.addEventListener('mousemove', _onMouseDrag);
+  document.addEventListener('mouseup', _onMouseUp);
 }
 
 /**
@@ -144,13 +147,13 @@ function mouseDownListener(evt: MouseEvent) {
  * @param evt - The mouse event.
  */
 function _onMouseDrag(evt: MouseEvent) {
-  const currentPoints = getMouseEventPoints(evt, state.element)
+  const currentPoints = getMouseEventPoints(evt, state.element);
   const lastPoints = _updateMouseEventsLastPoints(
     state.element,
     state.lastPoints
-  )
+  );
 
-  const deltaPoints = _getDeltaPoints(currentPoints, lastPoints)
+  const deltaPoints = _getDeltaPoints(currentPoints, lastPoints);
 
   const eventDetail: EventTypes.MouseDragEventDetail = {
     event: evt,
@@ -164,12 +167,12 @@ function _onMouseDrag(evt: MouseEvent) {
     lastPoints: _copyPoints(lastPoints),
     currentPoints,
     deltaPoints,
-  }
+  };
 
-  triggerEvent(state.element, MOUSE_DRAG, eventDetail)
+  triggerEvent(state.element, MOUSE_DRAG, eventDetail);
 
   // Update the last points
-  state.lastPoints = _copyPoints(currentPoints)
+  state.lastPoints = _copyPoints(currentPoints);
 }
 
 /**
@@ -180,12 +183,12 @@ function _onMouseDrag(evt: MouseEvent) {
  */
 function _onMouseUp(evt: MouseEvent): void {
   // Cancel the timeout preventing the click event from triggering
-  clearTimeout(state.preventClickTimeout)
+  clearTimeout(state.preventClickTimeout);
 
-  const eventName = state.isClickEvent ? MOUSE_CLICK : MOUSE_UP
+  const eventName = state.isClickEvent ? MOUSE_CLICK : MOUSE_UP;
 
-  const currentPoints = getMouseEventPoints(evt, state.element)
-  const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints)
+  const currentPoints = getMouseEventPoints(evt, state.element);
+  const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints);
   const eventDetail:
     | EventTypes.MouseUpEventDetail
     | EventTypes.MouseClickEventType = {
@@ -200,23 +203,23 @@ function _onMouseUp(evt: MouseEvent): void {
     lastPoints: _copyPoints(state.lastPoints),
     currentPoints,
     deltaPoints,
-  }
+  };
 
-  triggerEvent(eventDetail.element, eventName, eventDetail)
+  triggerEvent(eventDetail.element, eventName, eventDetail);
 
   // Remove our temporary handlers
-  document.removeEventListener('mousemove', _onMouseDrag)
-  document.removeEventListener('mouseup', _onMouseUp)
+  document.removeEventListener('mousemove', _onMouseDrag);
+  document.removeEventListener('mouseup', _onMouseUp);
 
   // Restore our global mousemove listener
-  state.element.addEventListener('mousemove', mouseMoveListener)
+  state.element.addEventListener('mousemove', mouseMoveListener);
 
   // Restore `state` to `defaultState`
-  state = JSON.parse(JSON.stringify(defaultState))
+  state = JSON.parse(JSON.stringify(defaultState));
 }
 
 function _preventClickHandler() {
-  state.isClickEvent = false
+  state.isClickEvent = false;
 }
 
 /**
@@ -226,7 +229,7 @@ function _preventClickHandler() {
  * @returns A copy of the points.
  */
 function _copyPoints(points: IPoints): IPoints {
-  return JSON.parse(JSON.stringify(points))
+  return JSON.parse(JSON.stringify(points));
 }
 
 /**
@@ -239,17 +242,17 @@ function _updateMouseEventsLastPoints(
   element: HTMLElement,
   lastPoints: IPoints
 ): IPoints {
-  const { viewport } = getEnabledElement(element)
+  const { viewport } = getEnabledElement(element);
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
-  const world = viewport.canvasToWorld(lastPoints.canvas)
+  const world = viewport.canvasToWorld(lastPoints.canvas);
 
   return {
     page: lastPoints.page,
     client: lastPoints.client,
     canvas: lastPoints.canvas,
     world,
-  }
+  };
 }
 
 /**
@@ -265,7 +268,7 @@ function _getDeltaPoints(currentPoints: IPoints, lastPoints: IPoints): IPoints {
     client: _subtractPoints2D(currentPoints.client, lastPoints.client),
     canvas: _subtractPoints2D(currentPoints.canvas, lastPoints.canvas),
     world: _subtractPoints3D(currentPoints.world, lastPoints.world),
-  }
+  };
 }
 
 /**
@@ -279,18 +282,18 @@ function _subtractPoints2D(
   point0: Types.Point2,
   point1: Types.Point2
 ): Types.Point2 {
-  return [point0[0] - point1[0], point0[1] - point1[1]]
+  return [point0[0] - point1[0], point0[1] - point1[1]];
 }
 
 function _subtractPoints3D(
   point0: Types.Point3,
   point1: Types.Point3
 ): Types.Point3 {
-  return [point0[0] - point1[0], point0[1] - point1[1], point0[2] - point1[2]]
+  return [point0[0] - point1[0], point0[1] - point1[1], point0[2] - point1[2]];
 }
 
 export function getMouseButton(): number {
-  return state.mouseButton
+  return state.mouseButton;
 }
 
-export default mouseDownListener
+export default mouseDownListener;

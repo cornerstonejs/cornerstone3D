@@ -1,7 +1,7 @@
 import {
   getVerticalBarImage,
   getVerticalBarRGBImage,
-} from './testUtilsPixelData'
+} from './testUtilsPixelData';
 
 /**
  * It creates an image based on the imageId name for testing purposes. It splits the imageId
@@ -23,16 +23,16 @@ import {
  * @returns Promise that resolves to the image
  */
 const fakeImageLoader = (imageId) => {
-  const imageURI = imageId.split(':')[1]
+  const imageURI = imageId.split(':')[1];
   const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
-    imageURI.split('_').map((v) => parseFloat(v))
+    imageURI.split('_').map((v) => parseFloat(v));
 
-  let pixelData
+  let pixelData;
 
   if (rgb) {
-    pixelData = getVerticalBarRGBImage(rows, columns, barStart, barWidth)
+    pixelData = getVerticalBarRGBImage(rows, columns, barStart, barWidth);
   } else {
-    pixelData = getVerticalBarImage(rows, columns, barStart, barWidth)
+    pixelData = getVerticalBarImage(rows, columns, barStart, barWidth);
   }
 
   // Todo: separated fakeImageLoader for cpu and gpu
@@ -54,12 +54,12 @@ const fakeImageLoader = (imageId) => {
     getPixelData: () => pixelData,
     sizeInBytes: rows * columns * 1, // 1 byte for now
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
-  }
+  };
 
   return {
     promise: Promise.resolve(image),
-  }
-}
+  };
+};
 
 /**
  * Returns the requested metadata for the imageId
@@ -77,12 +77,12 @@ const fakeImageLoader = (imageId) => {
  * @returns metadata based on the imageId and type
  */
 function fakeMetaDataProvider(type, imageId) {
-  const imageURI = imageId.split(':')[1]
+  const imageURI = imageId.split(':')[1];
   const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
-    imageURI.split('_').map((v) => parseFloat(v))
+    imageURI.split('_').map((v) => parseFloat(v));
 
-  const modality = PT ? 'PT' : 'MR'
-  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2'
+  const modality = PT ? 'PT' : 'MR';
+  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
   if (type === 'imagePixelModule') {
     const imagePixelModule = {
       photometricInterpretation,
@@ -93,21 +93,21 @@ function fakeMetaDataProvider(type, imageId) {
       bitsStored: rgb ? 24 : 8,
       highBit: rgb ? 24 : 8,
       pixelRepresentation: 0,
-    }
+    };
 
-    return imagePixelModule
+    return imagePixelModule;
   } else if (type === 'generalSeriesModule') {
     const generalSeriesModule = {
       modality: modality,
-    }
-    return generalSeriesModule
+    };
+    return generalSeriesModule;
   } else if (type === 'scalingModule') {
     const scalingModule = {
       suvbw: 100,
       suvlbm: 100,
       suvbsa: 100,
-    }
-    return scalingModule
+    };
+    return scalingModule;
   } else if (type === 'imagePlaneModule') {
     const imagePlaneModule = {
       rows,
@@ -121,20 +121,20 @@ function fakeMetaDataProvider(type, imageId) {
       pixelSpacing: [x_spacing, y_spacing],
       rowPixelSpacing: x_spacing,
       columnPixelSpacing: y_spacing,
-    }
+    };
 
-    return imagePlaneModule
+    return imagePlaneModule;
   } else if (type === 'voiLutModule') {
     return {
       windowWidth: undefined,
       windowCenter: undefined,
-    }
+    };
   } else if (type === 'modalityLutModule') {
     return {
       rescaleSlope: undefined,
       rescaleIntercept: undefined,
-    }
+    };
   }
 }
 
-export { fakeImageLoader, fakeMetaDataProvider }
+export { fakeImageLoader, fakeMetaDataProvider };

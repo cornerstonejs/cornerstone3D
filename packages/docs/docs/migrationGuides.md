@@ -18,7 +18,6 @@ Please note that this is a work in progress and we are still working on completi
 `Cornerstone` (legacy) didn't need to be initialized, but `CornerstoneTools` (legacy) should have been initialized.
 In `Cornerstone3D` both core and tools should be initialized before using the libraries.
 
-
 <Tabs>
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
 
@@ -33,12 +32,11 @@ cornerstoneTools.init();
 ```js
 // detects gpu and decides whether to use gpu rendering or cpu fallback
 cornerstone3D.init();
-cornerstone3DTools.init()
+cornerstone3DTools.init();
 ```
 
 </TabItem>
 </Tabs>
-
 
 ### enabledElement
 
@@ -53,8 +51,8 @@ In `Cornerstone3D` we have two APIs for this:
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
 
 ```js
-const element = document.getElementById('div-element')
-cornerstone.enable(element)
+const element = document.getElementById('div-element');
+cornerstone.enable(element);
 
 // Triggers ELEMENT_ENABLED event
 ```
@@ -106,15 +104,13 @@ renderingEngine.enableElement({
 In Cornerstone (legacy), you would load an image and cache it using the `loadAndCacheImage` API.
 However, in `Cornerstone3D` you should use the viewports API to load and cache images.
 
-
 <Tabs>
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
-
 
 ```js
 cornerstone.loadAndCacheImage(imageId).then((image) => {
   // Do things, e.g. display an image
-})
+});
 ```
 
 </TabItem>
@@ -122,36 +118,31 @@ cornerstone.loadAndCacheImage(imageId).then((image) => {
 <TabItem value="cornerstone3D" label="Cornerstone3D">
 
 ```js
-
-const viewport = renderingEngine.getViewport('CTViewport')
+const viewport = renderingEngine.getViewport('CTViewport');
 
 // one image in the stack
-await viewport.setStack([imageId])
+await viewport.setStack([imageId]);
 
 // multiple imageIds
 await viewport.setStack(
   [imageId1, imageId2],
   1 // frame 1
-)
+);
 ```
 
 </TabItem>
 </Tabs>
-
-
 
 ### displayImage
 
 This is a bit different in that you now set the data per viewport rather than per element, as in Cornerstone.
 When a viewport is later rendered, you are returned the viewport instance, which has helpers to access the HTML element, the renderer, etc.
 
-
 <Tabs>
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
 
-
 ```js
-cornerstone.displayImage(image, element)
+cornerstone.displayImage(image, element);
 
 // Triggers cornerstone.events.IMAGE_RENDERED
 // with eventDetail as follows
@@ -162,13 +153,12 @@ const eventDetail = {
   enabledElement,
   canvasContext: enabledElement.canvas.getContext('2d'),
   renderTimeInMs,
-}
+};
 ```
 
 </TabItem>
 
 <TabItem value="cornerstone3D" label="Cornerstone3D">
-
 
 ```js
 
@@ -208,12 +198,8 @@ ctVolume.load(callback)
 }
 ```
 
-
 </TabItem>
 </Tabs>
-
-
-
 
 ### updateImage
 
@@ -224,19 +210,16 @@ We have effectively the same approach right now, but we have three different hel
 
 These are useful convenience helpers when using tools that may affect multiple viewports that all need to update (e.g. jump to a crosshair position on all three orthogonal MPR views).
 
-
 <Tabs>
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
 
-
 ```js
-cornerstone.updateImage(element, invalidated)
+cornerstone.updateImage(element, invalidated);
 ```
 
 </TabItem>
 
 <TabItem value="cornerstone3D" label="Cornerstone3D">
-
 
 ```js
 // Updates every viewport in the rendering engine.
@@ -255,20 +238,15 @@ eventDetail: {
 </TabItem>
 </Tabs>
 
-
-
-
 ### disable
 
 The rendering engine controls when viewports are enabled/disabled, and will fire appropriate events as needed.
 
-
 <Tabs>
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
 
-
 ```js
-cornerstone.disable(element)
+cornerstone.disable(element);
 // Triggers ELEMENT_DISABLED event
 ```
 
@@ -276,33 +254,25 @@ cornerstone.disable(element)
 
 <TabItem value="cornerstone3D" label="Cornerstone3D">
 
-
-
 ```js
-renderingEngine.disableElement(element)
+renderingEngine.disableElement(element);
 
 // element disabled event will be fired for each canvas not retained.
 
 // OR
 
 //this will destroy all elements.
-renderingEngine.destroy()
-
+renderingEngine.destroy();
 
 // The ELEMENT_DISABLED event contains just a reference to the canvas element which is now disabled, and related IDs.
 
 eventDetail: {
-  viewportId, renderingEngineId, canvas
+  viewportId, renderingEngineId, canvas;
 }
 ```
 
 </TabItem>
 </Tabs>
-
-
-
-
-
 
 ### pageToPixel and pixelToCanvas
 
@@ -310,15 +280,13 @@ We are no longer rendering a single image at a time. In `Cornerstone3D`, the vie
 It should be noted that, in order to share tools between Stack and Volume viewports, we also render StackViewports in 3D space. So basically,
 they are 2D images positioned and oriented based on their metadata in space.
 
-
 <Tabs>
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
 
-
 ```js
 // Coordinate mapping functions
-cornerstone.pageToPixel(element, pageX, pageY)
-cornerstone.pixelToCanvas(element, { x, y })
+cornerstone.pageToPixel(element, pageX, pageY);
+cornerstone.pixelToCanvas(element, { x, y });
 ```
 
 </TabItem>
@@ -326,31 +294,27 @@ cornerstone.pixelToCanvas(element, { x, y })
 <TabItem value="cornerstone3D" label="Cornerstone3D">
 
 ```js
-const canvasCoord = viewport.canvasToWorld([xCanvas, yCanvas])
-const worldCoord = viewport.worldToCanvas([xWorld, yWorld, zWorld])
+const canvasCoord = viewport.canvasToWorld([xCanvas, yCanvas]);
+const worldCoord = viewport.worldToCanvas([xWorld, yWorld, zWorld]);
 ```
 
 </TabItem>
 </Tabs>
 
-
 ### getPixels
 
 The `getPixels` approach is no longer valid in 3D, as you may be viewing the data at any (oblique) plane. Additionally, the viewport may be rendering a fusion with more than one volume (e.g., PET/CT) in it. The developer must now fetch the data array itself and use this data as necessary for their specific use case.
 
-
 <Tabs>
 <TabItem value="cornerstone" label="Cornerstone (legacy)">
 
-
 ```js
-cornerstone.getPixels(element, x, y, width, height)
+cornerstone.getPixels(element, x, y, width, height);
 ```
 
 </TabItem>
 
 <TabItem value="cornerstone3D" label="Cornerstone3D">
-
 
 ```js
 const {
@@ -361,7 +325,7 @@ const {
   scalarData,
   imageData,
   metadata,
-} = viewport.getImageData()
+} = viewport.getImageData();
 
 /**
  *
@@ -374,7 +338,7 @@ const {
  * - `imageData` - The underlying vtkImageData object (The tenderable object used in the underlying vtk.js rendering library).
  * - `scalarData` - This a single TypedArray (e.g. Float32Array) which contains all of the voxel values for the volume. Through the VTK AP this could also be accessed using getScalars() from the vtkDataArray underlying the vtkImageData object.
  *
-*/
+ */
 ```
 
 </TabItem>
@@ -382,12 +346,10 @@ const {
 
 ## events
 
-
 The following table demonstrates some expected schema changes for events. The key differences are that:
 
 - Several IDs will function as lookup keys for core API methods (renderingEngineId, viewportId, volumeId). This is similar to the `enabledElement` property currently provided in custom events, and can be used to obtain all of the imaging data that is being visualized.
 - Snapshots of state at time of interaction return camera properties and coordinates in world space within the viewports's frame of reference.
-
 
 <table style={{tableLayout:"fixed", display: "block", width: "100%"}}>
 <thead>
@@ -413,6 +375,7 @@ The following table demonstrates some expected schema changes for events. The ke
 <div style={{width: "300px"}}>
 
 <!-- Don't change indentation for code in table -->
+
 ```js
 viewport: {
   scale,
@@ -442,19 +405,19 @@ viewport: {
 <td>
 <div style={{width: "300px"}}>
 
-
 ```js
 camera: {
   viewUp,
-  viewPlaneNormal,
-  clippingRange,
-  projectionMatrix,
-  position,
-  focalPoint,
-  orthogonalOrPerspective,
-  viewAngle
+    viewPlaneNormal,
+    clippingRange,
+    projectionMatrix,
+    position,
+    focalPoint,
+    orthogonalOrPerspective,
+    viewAngle;
 }
 ```
+
 </div>
 </td>
     <td>The viewport previously described the state in 2D, and we need additional information to uniquely define 3D views.
@@ -463,7 +426,6 @@ camera: {
   <tr>
 <td>
 <div style={{width: "300px"}}>
-
 
 ```js
 // Location in 2D within the image
@@ -474,19 +436,19 @@ startPoints / lastPoints / currentPoints / deltaPoints: {
     Client,
 }
 ```
+
 </div>
 </td>
 <td>
 <div style={{width: "300px"}}>
 
-
 ```js
 // Location in 3D in world space
 {
-  CanvasCoord,
-  WorldCoord
+  CanvasCoord, WorldCoord;
 }
 ```
+
 </div>
 </td>
     <td>The canvas coordinates define where on the 2D canvas the event occurred. We also give the projected world coordinate (3D) at the plane defined by the focal point and the camera normal.</td>

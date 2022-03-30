@@ -1,5 +1,5 @@
-import { Settings } from '@cornerstonejs/core'
-import state from '../../../store/state'
+import { Settings } from '@cornerstonejs/core';
+import state from '../../../store/state';
 
 /**
  * Get the style for a tool based on provided information.
@@ -22,14 +22,14 @@ export default function getStyle(
   annotation?: Record<string, unknown>
 ): Settings {
   if (toolName) {
-    const descriptor = state.tools[toolName]
+    const descriptor = state.tools[toolName];
     if (descriptor) {
-      const { toolClass } = descriptor
+      const { toolClass } = descriptor;
       if (annotation) {
-        return Settings.getObjectSettings(annotation, toolClass)
+        return Settings.getObjectSettings(annotation, toolClass);
       }
-      return Settings.getObjectSettings(toolClass)
+      return Settings.getObjectSettings(toolClass);
     }
   }
-  return Settings.getRuntimeSettings()
+  return Settings.getRuntimeSettings();
 }

@@ -1,26 +1,26 @@
-import { state } from '../../store'
-import { ToolModes } from '../../enums'
-import { Annotation, EventTypes } from '../../types'
+import { state } from '../../store';
+import { ToolModes } from '../../enums';
+import { Annotation, EventTypes } from '../../types';
 import {
   ToolAnnotationPair,
   ToolsWithMoveableHandles,
-} from '../../types/InternalToolTypes'
+} from '../../types/InternalToolTypes';
 
 import {
   setAnnotationSelected,
   isAnnotationSelected,
-} from '../../stateManagement/annotation/annotationSelection'
+} from '../../stateManagement/annotation/annotationSelection';
 
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 
 // Util
-import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableHandles'
-import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement'
-import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools'
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
-import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent'
+import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableHandles';
+import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
+import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools';
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
+import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
 
-const { Active, Passive } = ToolModes
+const { Active, Passive } = ToolModes;
 
 /**
  * When the mouse is depressed we check which entities can process these events in the following manner:
@@ -48,46 +48,46 @@ const { Active, Passive } = ToolModes
 export default function mouseDown(evt: EventTypes.MouseDownEventType) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventLoop.
   if (state.isInteractingWithTool) {
-    return
+    return;
   }
 
-  const activeTool = getActiveToolForMouseEvent(evt)
+  const activeTool = getActiveToolForMouseEvent(evt);
 
   // Check for preMouseDownCallbacks,
   // If the tool claims it consumed the event, prevent further checks.
   if (activeTool && typeof activeTool.preMouseDownCallback === 'function') {
-    const consumedEvent = activeTool.preMouseDownCallback(evt)
+    const consumedEvent = activeTool.preMouseDownCallback(evt);
 
     if (consumedEvent) {
-      return
+      return;
     }
   }
 
   // Find all tools that might respond to this mouse down
-  const isPrimaryClick = evt.detail.event.buttons === 1
+  const isPrimaryClick = evt.detail.event.buttons === 1;
   const activeToolsWithEventBinding = getToolsWithModesForMouseEvent(
     evt,
     [Active],
     evt.detail.event.buttons
-  )
+  );
   const passiveToolsIfEventWasPrimaryMouseButton = isPrimaryClick
     ? getToolsWithModesForMouseEvent(evt, [Passive])
-    : undefined
+    : undefined;
   const applicableTools = [
     ...(activeToolsWithEventBinding || []),
     ...(passiveToolsIfEventWasPrimaryMouseButton || []),
-  ]
+  ];
 
-  const eventDetail = evt.detail
-  const { element } = eventDetail
+  const eventDetail = evt.detail;
+  const { element } = eventDetail;
 
   // Filter tools with annotations for this element
   const annotationToolsWithAnnotations = filterToolsWithAnnotationsForElement(
     element,
     applicableTools
-  )
+  );
 
-  const canvasCoords = eventDetail.currentPoints.canvas
+  const canvasCoords = eventDetail.currentPoints.canvas;
 
   // For the canvas coordinates, find all tools that might respond to this mouse down
   // on their handles. This filter will call getHandleNearImagePoint for each tool
@@ -97,22 +97,22 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     annotationToolsWithAnnotations,
     canvasCoords,
     'mouse'
-  )
+  );
 
   // Preserve existing selections when shift key is pressed
-  const isMultiSelect = !!evt.detail.event.shiftKey
+  const isMultiSelect = !!evt.detail.event.shiftKey;
 
   // If there are annotation tools whose handle is near the mouse, select the first one
   // that isn't locked. If there's only one annotation tool, select it.
   if (annotationToolsWithMoveableHandles.length > 0) {
     const { tool, annotation, handle } = getAnnotationForSelection(
       annotationToolsWithMoveableHandles
-    ) as ToolsWithMoveableHandles
+    ) as ToolsWithMoveableHandles;
 
-    toggleAnnotationSelection(annotation, isMultiSelect)
-    tool.handleSelectedCallback(evt, annotation, handle, 'Mouse')
+    toggleAnnotationSelection(annotation, isMultiSelect);
+    tool.handleSelectedCallback(evt, annotation, handle, 'Mouse');
 
-    return
+    return;
   }
 
   // If there were no annotation tools whose handle was near the mouse, try to check
@@ -122,28 +122,28 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     annotationToolsWithAnnotations,
     canvasCoords,
     'mouse'
-  )
+  );
 
   // If there are annotation tools that are interactable, select the first one
   // that isn't locked. If there's only one annotation tool, select it.
   if (moveableAnnotationTools.length > 0) {
     const { tool, annotation } = getAnnotationForSelection(
       moveableAnnotationTools
-    )
+    );
 
-    toggleAnnotationSelection(annotation, isMultiSelect)
-    tool.toolSelectedCallback(evt, annotation, 'Mouse')
+    toggleAnnotationSelection(annotation, isMultiSelect);
+    tool.toolSelectedCallback(evt, annotation, 'Mouse');
 
-    return
+    return;
   }
 
   // Run the postMouseDownCallback for the active tool if it exists
   if (activeTool && typeof activeTool.postMouseDownCallback === 'function') {
-    const consumedEvent = activeTool.postMouseDownCallback(evt)
+    const consumedEvent = activeTool.postMouseDownCallback(evt);
 
     if (consumedEvent) {
       // If the tool claims it consumed the event, prevent further checks.
-      return
+      return;
     }
   }
 
@@ -165,7 +165,7 @@ function getAnnotationForSelection(
         (item) => !isAnnotationLocked(item.annotation)
       )) ||
     toolsWithMovableHandles[0]
-  )
+  );
 }
 
 /**
@@ -181,13 +181,13 @@ function toggleAnnotationSelection(
 ): void {
   if (isMultiSelect) {
     if (isAnnotationSelected(annotation)) {
-      setAnnotationSelected(annotation, false)
+      setAnnotationSelected(annotation, false);
     } else {
-      const preserveSelected = true
-      setAnnotationSelected(annotation, true, preserveSelected)
+      const preserveSelected = true;
+      setAnnotationSelected(annotation, true, preserveSelected);
     }
   } else {
-    const preserveSelected = false
-    setAnnotationSelected(annotation, true, preserveSelected)
+    const preserveSelected = false;
+    setAnnotationSelected(annotation, true, preserveSelected);
   }
 }

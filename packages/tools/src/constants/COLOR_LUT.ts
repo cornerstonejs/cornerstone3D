@@ -254,6 +254,6 @@ const CORNERSTONE_COLOR_LUT = [
   [210, 95, 186, 255],
   [153, 217, 88, 255],
   [81, 111, 224, 255],
-]
+];
 
-export default CORNERSTONE_COLOR_LUT
+export default CORNERSTONE_COLOR_LUT;

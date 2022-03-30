@@ -1,6 +1,6 @@
-import { vec3 } from 'gl-matrix'
-import type { Types } from '@cornerstonejs/core'
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData'
+import { vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 export type PointInShapeCallback = ({
   value,
@@ -8,18 +8,18 @@ export type PointInShapeCallback = ({
   pointIJK,
   pointLPS,
 }: {
-  value: number
-  index: number
-  pointIJK: Types.Point3
-  pointLPS: Types.Point3
-}) => void
+  value: number;
+  index: number;
+  pointIJK: Types.Point3;
+  pointLPS: Types.Point3;
+}) => void;
 
 export type ShapeFnCriteria = (
   pointIJK: Types.Point3,
   pointLPS: Types.Point3
-) => boolean
+) => boolean;
 
-type BoundsIJK = [Types.Point2, Types.Point2, Types.Point2]
+type BoundsIJK = [Types.Point2, Types.Point2, Types.Point2];
 
 /**
  * For each point in the image (If boundsIJK is not provided, otherwise, for each
@@ -41,76 +41,76 @@ export default function pointInShapeCallback(
   callback: PointInShapeCallback,
   boundsIJK?: BoundsIJK
 ): void {
-  let iMin, iMax, jMin, jMax, kMin, kMax
+  let iMin, iMax, jMin, jMax, kMin, kMax;
 
-  let scalarData
+  let scalarData;
 
   // if getScalarData is a method on imageData
   if ((imageData as Types.CPUImageData).getScalarData) {
-    scalarData = (imageData as Types.CPUImageData).getScalarData()
+    scalarData = (imageData as Types.CPUImageData).getScalarData();
   } else {
     scalarData = (imageData as vtkImageData)
       .getPointData()
       .getScalars()
-      .getData()
+      .getData();
   }
 
-  const dimensions = imageData.getDimensions()
+  const dimensions = imageData.getDimensions();
 
   if (!boundsIJK) {
-    iMin = 0
-    iMax = dimensions[0]
-    jMin = 0
-    jMax = dimensions[1]
-    kMin = 0
-    kMax = dimensions[2]
+    iMin = 0;
+    iMax = dimensions[0];
+    jMin = 0;
+    jMax = dimensions[1];
+    kMin = 0;
+    kMax = dimensions[2];
   } else {
-    ;[[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK
+    [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK;
   }
 
-  const start = vec3.fromValues(iMin, jMin, kMin)
+  const start = vec3.fromValues(iMin, jMin, kMin);
 
-  const direction = imageData.getDirection()
-  const rowCosines = direction.slice(0, 3)
-  const columnCosines = direction.slice(3, 6)
-  const scanAxisNormal = direction.slice(6, 9)
+  const direction = imageData.getDirection();
+  const rowCosines = direction.slice(0, 3);
+  const columnCosines = direction.slice(3, 6);
+  const scanAxisNormal = direction.slice(6, 9);
 
-  const spacing = imageData.getSpacing()
-  const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing
+  const spacing = imageData.getSpacing();
+  const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing;
 
   // @ts-ignore will be fixed in vtk-master
-  const worldPosStart = imageData.indexToWorld(start)
+  const worldPosStart = imageData.indexToWorld(start);
 
   const rowStep = vec3.fromValues(
     rowCosines[0] * rowSpacing,
     rowCosines[1] * rowSpacing,
     rowCosines[2] * rowSpacing
-  )
+  );
 
   const columnStep = vec3.fromValues(
     columnCosines[0] * columnSpacing,
     columnCosines[1] * columnSpacing,
     columnCosines[2] * columnSpacing
-  )
+  );
 
   const scanAxisStep = vec3.fromValues(
     scanAxisNormal[0] * scanAxisSpacing,
     scanAxisNormal[1] * scanAxisSpacing,
     scanAxisNormal[2] * scanAxisSpacing
-  )
+  );
 
-  const yMultiple = dimensions[0]
-  const zMultiple = dimensions[0] * dimensions[1]
+  const yMultiple = dimensions[0];
+  const zMultiple = dimensions[0] * dimensions[1];
 
   for (let k = kMin; k <= kMax; k++) {
     for (let j = jMin; j <= jMax; j++) {
       for (let i = iMin; i <= iMax; i++) {
-        const pointIJK: Types.Point3 = [i, j, k]
-        const dI = i - iMin
-        const dJ = j - jMin
-        const dK = k - kMin
+        const pointIJK: Types.Point3 = [i, j, k];
+        const dI = i - iMin;
+        const dJ = j - jMin;
+        const dK = k - kMin;
 
-        const startWorld = worldPosStart
+        const startWorld = worldPosStart;
 
         const pointLPS: Types.Point3 = [
           startWorld[0] +
@@ -125,13 +125,13 @@ export default function pointInShapeCallback(
             dI * rowStep[2] +
             dJ * columnStep[2] +
             dK * scanAxisStep[2],
-        ]
+        ];
 
         if (pointInShapeFn(pointLPS, pointIJK)) {
-          const index = k * zMultiple + j * yMultiple + i
-          const value = scalarData[index]
+          const index = k * zMultiple + j * yMultiple + i;
+          const value = scalarData[index];
 
-          callback({ value, index, pointIJK, pointLPS })
+          callback({ value, index, pointIJK, pointLPS });
         }
       }
     }

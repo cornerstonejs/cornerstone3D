@@ -1,50 +1,50 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
-import { pointInSurroundingSphereCallback } from '../../../utilities'
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { pointInSurroundingSphereCallback } from '../../../utilities';
 
 type OperationData = {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
-  volume: Types.IImageVolume
-  segmentIndex: number
-  segmentationId: string
-  segmentsLocked: number[]
-  viewPlaneNormal: Types.Point3
-  viewUp: Types.Point3
-  constraintFn: () => boolean
-}
+  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
+  volume: Types.IImageVolume;
+  segmentIndex: number;
+  segmentationId: string;
+  segmentsLocked: number[];
+  viewPlaneNormal: Types.Point3;
+  viewUp: Types.Point3;
+  constraintFn: () => boolean;
+};
 
 function fillSphere(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
   _inside = true
 ): void {
-  const { viewport } = enabledElement
+  const { viewport } = enabledElement;
   const {
     volume: segmentation,
     segmentsLocked,
     segmentIndex,
     segmentationId,
     points,
-  } = operationData
+  } = operationData;
 
-  const { scalarData, imageData } = segmentation
+  const { scalarData, imageData } = segmentation;
 
   const callback = ({ index, value }) => {
     if (segmentsLocked.includes(value)) {
-      return
+      return;
     }
-    scalarData[index] = segmentIndex
-  }
+    scalarData[index] = segmentIndex;
+  };
 
   pointInSurroundingSphereCallback(
     viewport as Types.IVolumeViewport,
     imageData,
     [points[0], points[1]],
     callback
-  )
+  );
 
-  triggerSegmentationDataModified(segmentationId)
+  triggerSegmentationDataModified(segmentationId);
 }
 
 /**
@@ -57,7 +57,7 @@ export function fillInsideSphere(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillSphere(enabledElement, operationData, true)
+  fillSphere(enabledElement, operationData, true);
 }
 
 /**
@@ -70,5 +70,5 @@ export function fillOutsideSphere(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillSphere(enabledElement, operationData, false)
+  fillSphere(enabledElement, operationData, false);
 }

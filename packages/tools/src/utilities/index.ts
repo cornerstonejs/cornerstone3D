@@ -1,30 +1,30 @@
 import {
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
-} from './getAnnotationNearPoint'
+} from './getAnnotationNearPoint';
 
 // Lodash/common JS functionality
-import debounce from './debounce'
-import deepMerge from './deepMerge'
-import throttle from './throttle'
-import isObject from './isObject'
-import calibrateImageSpacing from './calibrateImageSpacing'
-import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds'
-import transformPhysicalToIndex from './transformPhysicalToIndex'
+import debounce from './debounce';
+import deepMerge from './deepMerge';
+import throttle from './throttle';
+import isObject from './isObject';
+import calibrateImageSpacing from './calibrateImageSpacing';
+import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
+import transformPhysicalToIndex from './transformPhysicalToIndex';
 
-import pointInShapeCallback from './pointInShapeCallback'
-import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback'
+import pointInShapeCallback from './pointInShapeCallback';
+import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 
 // name spaces
-import * as segmentation from './segmentation'
-import * as drawing from './drawing'
-import * as math from './math'
-import * as planar from './planar'
-import * as stackScrollTool from './stackScrollTool'
-import * as viewportFilters from './viewportFilters'
+import * as segmentation from './segmentation';
+import * as drawing from './drawing';
+import * as math from './math';
+import * as planar from './planar';
+import * as stackScrollTool from './stackScrollTool';
+import * as viewportFilters from './viewportFilters';
 
 // Events
-import { triggerEvent } from '@cornerstonejs/core'
+import { triggerEvent } from '@cornerstonejs/core';
 
 export {
   math,
@@ -45,4 +45,4 @@ export {
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
   transformPhysicalToIndex,
-}
+};

@@ -1,5 +1,5 @@
-import { getEnabledElement } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { getEnabledElement } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Remove the labelmap segmentation representation from the viewport's HTML Element.
@@ -16,12 +16,12 @@ function removeLabelmapFromElement(
   segmentationRepresentationUID: string,
   removeFromCache = false // Todo
 ): void {
-  const enabledElement = getEnabledElement(element)
-  const { viewport } = enabledElement
+  const enabledElement = getEnabledElement(element);
+  const { viewport } = enabledElement;
 
-  ;(viewport as Types.IVolumeViewport).removeVolumeActors([
+  (viewport as Types.IVolumeViewport).removeVolumeActors([
     segmentationRepresentationUID,
-  ])
+  ]);
 }
 
-export default removeLabelmapFromElement
+export default removeLabelmapFromElement;

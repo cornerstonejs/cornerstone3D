@@ -2,10 +2,10 @@
 
 Cornerstone is a set of JavaScript libraries that can be used to build web-based medical imaging applications. It provides a framework to build radiology applications such as the [OHIF Viewer](https://ohif.org/).
 
-* **Fast:** Cornerstone leverages WebGL to provide high-performance image rendering and WebAssembly for fast image decompression.
-* **Flexible:** Cornerstone provides APIs for defining custom image, volume, and metadata loading schemes, allowing developers to easily connect with proprietary image archives.
-* **Community Driven:** Cornerstone is supported by the [Open Health Imaging Foundation](https://ohif.org/). We publish our roadmap and welcome contributions and collaboration.
-* **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box.
+- **Fast:** Cornerstone leverages WebGL to provide high-performance image rendering and WebAssembly for fast image decompression.
+- **Flexible:** Cornerstone provides APIs for defining custom image, volume, and metadata loading schemes, allowing developers to easily connect with proprietary image archives.
+- **Community Driven:** Cornerstone is supported by the [Open Health Imaging Foundation](https://ohif.org/). We publish our roadmap and welcome contributions and collaboration.
+- **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box.
 
 [Learn how to use Cornerstone in your project](https://cs3d-docs.netlify.app/docs/introduction/overview).
 
@@ -15,20 +15,19 @@ You can find the Cornerstone documentation [on the website](https://cornerstonej
 
 The documentation is divided into several sections:
 
-* [Tutorial](https://cs3d-docs.netlify.app/docs/category/tutorials)
-* [Main Concepts](https://cs3d-docs.netlify.app/docs/category/concepts)
-* [Live Examples](https://cs3d-docs.netlify.app/examples/)
-* [API Reference](https://cs3d-docs.netlify.app/api)
-* [How-to Guides](https://cs3d-docs.netlify.app/docs/category/how-to-guides)
-* [FAQ](https://cs3d-docs.netlify.app/docs/faq)
-* [How-to Contribute](https://cs3d-docs.netlify.app/docs/category/contributing)
+- [Tutorial](https://cs3d-docs.netlify.app/docs/category/tutorials)
+- [Main Concepts](https://cs3d-docs.netlify.app/docs/category/concepts)
+- [Live Examples](https://cs3d-docs.netlify.app/examples/)
+- [API Reference](https://cs3d-docs.netlify.app/api)
+- [How-to Guides](https://cs3d-docs.netlify.app/docs/category/how-to-guides)
+- [FAQ](https://cs3d-docs.netlify.app/docs/faq)
+- [How-to Contribute](https://cs3d-docs.netlify.app/docs/category/contributing)
 
 ## Support
 
 Users can post questions and issues on the [Open Health Imaging Foundation (OHIF) Community Forum](https://community.ohif.org/). Developer issues or bugs can be reported as [Github Issues](https://github.com/cornerstonejs/cornerstone3D/issues).
 
 The [OHIF Resources page](https://v3-docs.ohif.org/resources) may be of interest to Cornerstone users, as it includes presentations and demonstrations of OHIF and Cornerstone.
-
 
 ## Contributing
 

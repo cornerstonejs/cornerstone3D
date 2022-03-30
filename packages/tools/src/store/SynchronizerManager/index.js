@@ -1,9 +1,9 @@
-import createSynchronizer from './createSynchronizer'
-import destroy from './destroy'
-import getSynchronizersForViewport from './getSynchronizersForViewport'
-import getSynchronizer from './getSynchronizer'
-import getAllSynchronizers from './getAllSynchronizers'
-import destroySynchronizer from './destroySynchronizer'
+import createSynchronizer from './createSynchronizer';
+import destroy from './destroy';
+import getSynchronizersForViewport from './getSynchronizersForViewport';
+import getSynchronizer from './getSynchronizer';
+import getAllSynchronizers from './getAllSynchronizers';
+import destroySynchronizer from './destroySynchronizer';
 
 export {
   createSynchronizer,
@@ -12,4 +12,4 @@ export {
   getSynchronizersForViewport,
   getAllSynchronizers,
   destroySynchronizer,
-}
+};

@@ -1,4 +1,4 @@
-import global from '../global'
+import global from '../global';
 /**
  * A helper function that creates a new Float32Array that utilized a shared
  * array buffer. This allows the array to be updated  simultaneously in
@@ -27,17 +27,17 @@ function createUint8SharedArray(length: number): Uint8Array {
   if (!window.crossOriginIsolated) {
     throw new Error(
       'Your page is NOT cross-origin isolated, see https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated'
-    )
+    );
   }
   if (window.SharedArrayBuffer === undefined) {
     throw new Error(
       'SharedArrayBuffer is NOT supported in your browser see https://developer.chrome.com/blog/enabling-shared-array-buffer/'
-    )
+    );
   }
 
-  const sharedArrayBuffer = new SharedArrayBuffer(length)
+  const sharedArrayBuffer = new SharedArrayBuffer(length);
 
-  return new Uint8Array(sharedArrayBuffer)
+  return new Uint8Array(sharedArrayBuffer);
 }
 
-export default createUint8SharedArray
+export default createUint8SharedArray;

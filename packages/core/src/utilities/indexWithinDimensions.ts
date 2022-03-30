@@ -1,4 +1,4 @@
-import { Point3 } from '../types'
+import { Point3 } from '../types';
 
 /**
  * Returns true if the specified index is within the given dimensions.
@@ -20,8 +20,8 @@ export default function indexWithinDimensions(
     index[2] < 0 ||
     index[2] >= dimensions[2]
   ) {
-    return false
+    return false;
   }
 
-  return true
+  return true;
 }

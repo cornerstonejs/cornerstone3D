@@ -1,13 +1,13 @@
-const path = require('path')
-const webpack = require('webpack')
+const path = require('path');
+const webpack = require('webpack');
 // Plugins
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-  .BundleAnalyzerPlugin
-const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const BundleAnalyzerPlugin =
+  require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 //
-const PROJECT_ROOT = path.join(__dirname, '../')
-const SRC_PATH = path.join(PROJECT_ROOT, './src')
+const PROJECT_ROOT = path.join(__dirname, '../');
+const SRC_PATH = path.join(PROJECT_ROOT, './src');
 const NODE_ENV = process.env.NODE_ENV;
 const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js');
 
@@ -20,8 +20,8 @@ const exclude = excludeNodeModulesExcept([]);
  */
 module.exports = (env, argv, { DIST_DIR }) => {
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
-  const isProdBuild = argv.mode !== 'development'
-  const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js'
+  const isProdBuild = argv.mode !== 'development';
+  const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js';
 
   const config = {
     devtool: 'eval-source-map',
@@ -81,4 +81,4 @@ module.exports = (env, argv, { DIST_DIR }) => {
   };
 
   return config;
-}
+};

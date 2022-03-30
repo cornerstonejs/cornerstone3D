@@ -1,5 +1,5 @@
-import { Settings } from '@cornerstonejs/core'
-import state from '../../../store/state'
+import { Settings } from '@cornerstonejs/core';
+import state from '../../../store/state';
 
 /**
  * Set the style of a specific tool with the provided toolName
@@ -11,10 +11,10 @@ export default function setToolStyle(
   toolName: string,
   style: Record<string, unknown>
 ): boolean {
-  const descriptor = state.tools[toolName]
+  const descriptor = state.tools[toolName];
   if (descriptor) {
-    const { toolClass } = descriptor
-    return Settings.getObjectSettings(toolClass).set('tool.style', style)
+    const { toolClass } = descriptor;
+    return Settings.getObjectSettings(toolClass).set('tool.style', style);
   }
-  return false
+  return false;
 }

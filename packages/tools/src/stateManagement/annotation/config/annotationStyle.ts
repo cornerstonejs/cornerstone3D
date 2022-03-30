@@ -1,5 +1,5 @@
-import { Settings } from '@cornerstonejs/core'
-import { ToolModes, AnnotationStyleStates } from '../../../enums'
+import { Settings } from '@cornerstonejs/core';
+import { ToolModes, AnnotationStyleStates } from '../../../enums';
 
 Settings.getDefaultSettings().set('tool.style', {
   color: 'rgb(255, 255, 0)',
@@ -21,9 +21,9 @@ Settings.getDefaultSettings().set('tool.style', {
       lineDash: '2,3',
     },
   },
-})
+});
 
-initializeDefaultStyleAlternatives()
+initializeDefaultStyleAlternatives();
 
 /**
  * For each tool style states (Default, Highlighted, Selected, Locked),
@@ -32,31 +32,31 @@ initializeDefaultStyleAlternatives()
  */
 function initializeDefaultStyleAlternatives(): void {
   // Todo: why there is an empty string here?
-  const modes = ['', ToolModes.Active, ToolModes.Passive]
+  const modes = ['', ToolModes.Active, ToolModes.Passive];
   const states = [
     AnnotationStyleStates.Default,
     AnnotationStyleStates.Highlighted,
     AnnotationStyleStates.Selected,
     AnnotationStyleStates.Locked,
-  ]
-  const defaultSettings = Settings.getDefaultSettings()
+  ];
+  const defaultSettings = Settings.getDefaultSettings();
   defaultSettings.forEach((name: string) => {
-    const nameEndsWith = (string) => string.length > 0 && name.endsWith(string)
+    const nameEndsWith = (string) => string.length > 0 && name.endsWith(string);
     if (
       !name.startsWith('tool.style.') ||
       states.some(nameEndsWith) ||
       modes.some(nameEndsWith)
     ) {
-      return
+      return;
     }
     states.forEach((state) => {
       modes.forEach((mode) => {
-        const key = `${name}${state}${mode}`
+        const key = `${name}${state}${mode}`;
         // Todo: Is the following because of not setting object with undefined or null?
-        defaultSettings.set(key, defaultSettings.get(key))
-      })
-    })
-  })
+        defaultSettings.set(key, defaultSettings.get(key));
+      });
+    });
+  });
 }
 
 /**
@@ -71,10 +71,10 @@ function getStyleAlternatives(
   state?: AnnotationStyleStates,
   mode?: ToolModes
 ): string[] {
-  const list = [`tool.style.${property}`]
-  if (state) list.push(`${list[0]}${state}`)
-  if (mode) list.push(`${list[list.length - 1]}${mode}`)
-  return list
+  const list = [`tool.style.${property}`];
+  if (state) list.push(`${list[0]}${state}`);
+  if (mode) list.push(`${list[list.length - 1]}${mode}`);
+  return list;
 }
 
 /**
@@ -94,11 +94,11 @@ function getStyleProperty(
   // `alternatives` is a list of property names with priority in ascending
   // order like: ['color', 'colorSelected', 'colorSelectedActive']
   // Thus, we attempt resolving property names in reverse order
-  const alternatives = getStyleAlternatives(property, state, mode)
+  const alternatives = getStyleAlternatives(property, state, mode);
   for (let i = alternatives.length - 1; i >= 0; --i) {
-    const style = settings.get(alternatives[i])
+    const style = settings.get(alternatives[i]);
     if (style !== undefined) {
-      return style
+      return style;
     }
   }
 }
@@ -115,7 +115,7 @@ function getDefaultStyleProperty(
   state?: AnnotationStyleStates,
   mode?: ToolModes
 ): unknown {
-  return getStyleProperty(Settings.getRuntimeSettings(), property, state, mode)
+  return getStyleProperty(Settings.getRuntimeSettings(), property, state, mode);
 }
 
-export { getStyleProperty, getDefaultStyleProperty }
+export { getStyleProperty, getDefaultStyleProperty };

@@ -1,24 +1,24 @@
-import { getGPUTier } from 'detect-gpu'
+import { getGPUTier } from 'detect-gpu';
 
-let csRenderInitialized = false
-let useCPURendering = false
+let csRenderInitialized = false;
+let useCPURendering = false;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
 function hasActiveWebGLContext() {
   // Create canvas element. The canvas is not added to the
   // document itself, so it is never displayed in the
   // browser window.
-  const canvas = document.createElement('canvas')
+  const canvas = document.createElement('canvas');
   // Get WebGLRenderingContext from canvas element.
   const gl =
-    canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 
   // Report the result.
   if (gl && gl instanceof WebGLRenderingContext) {
-    return true
+    return true;
   }
 
-  return false
+  return false;
 }
 
 /**
@@ -32,31 +32,31 @@ function hasActiveWebGLContext() {
  */
 async function init(defaultConfiguration = {}): Promise<boolean> {
   if (csRenderInitialized) {
-    return csRenderInitialized
+    return csRenderInitialized;
   }
 
   // detectGPU
-  const hasWebGLContext = hasActiveWebGLContext()
+  const hasWebGLContext = hasActiveWebGLContext();
   if (!hasWebGLContext) {
-    useCPURendering = true
-    console.log('CornerstoneRender: GPU not detected, using CPU rendering')
+    useCPURendering = true;
+    console.log('CornerstoneRender: GPU not detected, using CPU rendering');
   } else {
-    const gpuTier = await getGPUTier()
+    const gpuTier = await getGPUTier();
     console.log(
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
       gpuTier
-    )
+    );
     if (gpuTier.tier < 1) {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
-      )
-      useCPURendering = true
+      );
+      useCPURendering = true;
     } else {
-      console.log('CornerstoneRender: using GPU rendering')
+      console.log('CornerstoneRender: using GPU rendering');
     }
   }
-  csRenderInitialized = true
-  return csRenderInitialized
+  csRenderInitialized = true;
+  return csRenderInitialized;
 }
 
 /**
@@ -68,8 +68,8 @@ async function init(defaultConfiguration = {}): Promise<boolean> {
  *
  */
 function setUseCPURendering(status: boolean): void {
-  useCPURendering = status
-  csRenderInitialized = true
+  useCPURendering = status;
+  csRenderInitialized = true;
 }
 
 /**
@@ -79,7 +79,7 @@ function setUseCPURendering(status: boolean): void {
  *
  */
 function resetUseCPURendering() {
-  useCPURendering = !hasActiveWebGLContext()
+  useCPURendering = !hasActiveWebGLContext();
 }
 
 /**
@@ -89,7 +89,7 @@ function resetUseCPURendering() {
  *
  */
 function getShouldUseCPURendering(): boolean {
-  return useCPURendering
+  return useCPURendering;
 }
 
 /**
@@ -100,7 +100,7 @@ function getShouldUseCPURendering(): boolean {
  *
  */
 function isCornerstoneInitialized(): boolean {
-  return csRenderInitialized
+  return csRenderInitialized;
 }
 
 export {
@@ -109,4 +109,4 @@ export {
   isCornerstoneInitialized,
   setUseCPURendering,
   resetUseCPURendering,
-}
+};

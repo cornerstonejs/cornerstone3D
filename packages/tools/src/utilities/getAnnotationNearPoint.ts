@@ -1,10 +1,10 @@
-import { getEnabledElement } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { getEnabledElement } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool, BaseTool } from '../tools'
-import { Annotation } from '../types'
-import { getAnnotations } from '../stateManagement/annotation/annotationState'
-import * as ToolGroupManager from '../store/ToolGroupManager'
+import { AnnotationTool, BaseTool } from '../tools';
+import { Annotation } from '../types';
+import { getAnnotations } from '../stateManagement/annotation/annotationState';
+import * as ToolGroupManager from '../store/ToolGroupManager';
 
 /**
  * Get the annotation that is close to the provided canvas point, it will return
@@ -22,16 +22,16 @@ function getAnnotationNearPoint(
 ): Annotation | null {
   // Todo: this function should return closest annotation, BUT, we are not using
   // the function anywhere.
-  const enabledElement = getEnabledElement(element)
+  const enabledElement = getEnabledElement(element);
   if (!enabledElement) {
-    throw new Error('getAnnotationNearPoint: enabledElement not found')
+    throw new Error('getAnnotationNearPoint: enabledElement not found');
   }
 
   return getAnnotationNearPointOnEnabledElement(
     enabledElement,
     canvasPoint,
     proximity
-  )
+  );
 }
 
 /**
@@ -51,30 +51,30 @@ function getAnnotationNearPointOnEnabledElement(
 ): Annotation | null {
   // Todo: this function should return closest annotation, BUT, we are not using
   // the function anywhere.
-  const { renderingEngineId, viewportId } = enabledElement
+  const { renderingEngineId, viewportId } = enabledElement;
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
     renderingEngineId
-  )
+  );
 
   if (!toolGroup) {
-    return null
+    return null;
   }
 
-  const { _toolInstances: tools } = toolGroup
+  const { _toolInstances: tools } = toolGroup;
   for (const name in tools) {
     const found = findAnnotationNearPointByTool(
       tools[name],
       enabledElement,
       point,
       proximity
-    )
+    );
     if (found) {
-      return found
+      return found;
     }
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -101,19 +101,19 @@ function findAnnotationNearPointByTool(
   const annotations = getAnnotations(
     enabledElement.viewport.element,
     (tool.constructor as typeof BaseTool).toolName
-  )
+  );
   if (annotations?.length) {
-    const { element } = enabledElement.viewport
+    const { element } = enabledElement.viewport;
     for (const annotation of annotations) {
       if (
         tool.isPointNearTool(element, annotation, point, proximity, '') ||
         tool.getHandleNearImagePoint(element, annotation, point, proximity)
       ) {
-        return annotation
+        return annotation;
       }
     }
   }
-  return null
+  return null;
 }
 
-export { getAnnotationNearPoint, getAnnotationNearPointOnEnabledElement }
+export { getAnnotationNearPoint, getAnnotationNearPointOnEnabledElement };

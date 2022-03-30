@@ -1,4 +1,4 @@
-import { getRenderingEngine, Types } from '@cornerstonejs/core'
+import { getRenderingEngine, Types } from '@cornerstonejs/core';
 
 /**
  * Synchronizer callback to synchronize the camera. Synchronization
@@ -19,24 +19,24 @@ export default function cameraSyncCallback(
     sourceViewport.renderingEngineId === targetViewport.renderingEngineId &&
     sourceViewport.viewportId === targetViewport.viewportId
   ) {
-    return
+    return;
   }
 
-  const { camera } = cameraModifiedEvent.detail
+  const { camera } = cameraModifiedEvent.detail;
 
-  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId)
+  const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
     throw new Error(
       `No RenderingEngine for Id: ${targetViewport.renderingEngineId}`
-    )
+    );
   }
 
-  const tViewport = renderingEngine.getViewport(targetViewport.viewportId)
+  const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
   // TODO: only sync in-plane movements if one viewport is a stack viewport
 
   // Todo: we shouldn't set camera, we should set the focalPoint
   // to the nearest slice center world position
-  tViewport.setCamera(camera)
-  tViewport.render()
+  tViewport.setCamera(camera);
+  tViewport.render();
 }

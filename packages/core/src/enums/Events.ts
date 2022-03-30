@@ -144,4 +144,4 @@ enum Events {
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
 }
 
-export default Events
+export default Events;

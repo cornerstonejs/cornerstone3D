@@ -1,8 +1,8 @@
-import { Enums, Types } from '@cornerstonejs/core'
-import { ToolModes } from '../enums'
-import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent'
+import { Enums, Types } from '@cornerstonejs/core';
+import { ToolModes } from '../enums';
+import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent';
 
-const { Active, Passive, Enabled } = ToolModes
+const { Active, Passive, Enabled } = ToolModes;
 
 /**
  * When image spacing is calibrated modify the annotations for all of its tools
@@ -21,30 +21,30 @@ const onImageSpacingCalibrated = function (
     Active,
     Passive,
     Enabled,
-  ])
+  ]);
 
   enabledTools.forEach((tool) => {
     if (tool.onImageSpacingCalibrated) {
-      tool.onImageSpacingCalibrated(evt)
+      tool.onImageSpacingCalibrated(evt);
     }
-  })
-}
+  });
+};
 
 const enable = function (element: HTMLElement) {
   element.addEventListener(
     Enums.Events.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated
-  )
-}
+  );
+};
 
 const disable = function (element: HTMLElement) {
   element.removeEventListener(
     Enums.Events.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated
-  )
-}
+  );
+};
 
 export default {
   enable,
   disable,
-}
+};

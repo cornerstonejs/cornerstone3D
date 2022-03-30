@@ -1,6 +1,6 @@
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
-import { state } from '../../store'
-import { MouseDragEventType } from '../../types/EventTypes'
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
+import { state } from '../../store';
+import { MouseDragEventType } from '../../types/EventTypes';
 
 /**
  * mouseDrag - Event handler for mouse drag events. Fires the `mouseDragCallback`
@@ -10,16 +10,16 @@ import { MouseDragEventType } from '../../types/EventTypes'
  */
 export default function mouseDrag(evt: MouseDragEventType) {
   if (state.isInteractingWithTool) {
-    return
+    return;
   }
 
-  const activeTool = getActiveToolForMouseEvent(evt)
+  const activeTool = getActiveToolForMouseEvent(evt);
 
   const noFoundToolOrDoesNotHaveMouseDragCallback =
-    !activeTool || typeof activeTool.mouseDragCallback !== 'function'
+    !activeTool || typeof activeTool.mouseDragCallback !== 'function';
   if (noFoundToolOrDoesNotHaveMouseDragCallback) {
-    return
+    return;
   }
 
-  activeTool.mouseDragCallback(evt)
+  activeTool.mouseDragCallback(evt);
 }

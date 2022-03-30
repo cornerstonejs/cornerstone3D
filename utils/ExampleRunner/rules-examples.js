@@ -1,7 +1,7 @@
-const autoprefixer = require('autoprefixer')
-const excludeNodeModulesExcept = require('../../.webpack/excludeNodeModulesExcept.js')
+const autoprefixer = require('autoprefixer');
+const excludeNodeModulesExcept = require('../../.webpack/excludeNodeModulesExcept.js');
 
-const exclude = excludeNodeModulesExcept([])
+const exclude = excludeNodeModulesExcept([]);
 
 module.exports = [
   {
@@ -39,4 +39,4 @@ module.exports = [
       },
     ],
   },
-]
+];

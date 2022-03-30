@@ -1,12 +1,12 @@
-import { state } from '../index'
-import Synchronizer from './Synchronizer'
+import { state } from '../index';
+import Synchronizer from './Synchronizer';
 
 /**
  * Return the array of synchronizers
  * @returns An array of synchronizers.
  */
 function getAllSynchronizers(): Array<Synchronizer> {
-  return state.synchronizers
+  return state.synchronizers;
 }
 
-export default getAllSynchronizers
+export default getAllSynchronizers;

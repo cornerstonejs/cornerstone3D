@@ -8,9 +8,9 @@ type ImageLoaderFn = (
   options?: Record<string, any>
 ) => {
   /** Promise that resolves to the image object */
-  promise: Promise<Record<string, any>>
-  cancelFn?: () => void | undefined
-  decache?: () => void | undefined
-}
+  promise: Promise<Record<string, any>>;
+  cancelFn?: () => void | undefined;
+  decache?: () => void | undefined;
+};
 
-export default ImageLoaderFn
+export default ImageLoaderFn;

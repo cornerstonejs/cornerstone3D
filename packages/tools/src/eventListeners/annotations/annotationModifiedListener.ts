@@ -1,5 +1,5 @@
-import { getRenderingEngine } from '@cornerstonejs/core'
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
+import { getRenderingEngine } from '@cornerstonejs/core';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
 /**
  * This is a callback function that is called when an annotation is modified.
@@ -14,9 +14,9 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
  * no svg update happens since the attributes for handles are the same)
  */
 function annotationModifiedListener(evt): void {
-  const { viewportId, renderingEngineId } = evt.detail
-  const renderingEngine = getRenderingEngine(renderingEngineId)
-  triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId])
+  const { viewportId, renderingEngineId } = evt.detail;
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId]);
 }
 
-export default annotationModifiedListener
+export default annotationModifiedListener;

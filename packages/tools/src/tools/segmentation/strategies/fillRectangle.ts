@@ -1,19 +1,19 @@
-import { ImageVolume } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { ImageVolume } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
-import { pointInShapeCallback } from '../../../utilities'
-import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex'
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
+import { getBoundingBoxAroundShape } from '../../../utilities/segmentation';
+import { pointInShapeCallback } from '../../../utilities';
+import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 
 type OperationData = {
-  segmentationId: string
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
-  volume: ImageVolume
-  constraintFn: (x: [number, number, number]) => boolean
-  segmentIndex: number
-  segmentsLocked: number[]
-}
+  segmentationId: string;
+  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
+  volume: ImageVolume;
+  constraintFn: (x: [number, number, number]) => boolean;
+  segmentIndex: number;
+  segmentsLocked: number[];
+};
 
 /**
  * For each point in the bounding box around the rectangle, if the point is inside
@@ -36,47 +36,47 @@ function fillRectangle(
     segmentIndex,
     segmentationId,
     constraintFn,
-  } = operationData
-  const { imageData, dimensions, scalarData } = segmentation
+  } = operationData;
+  const { imageData, dimensions, scalarData } = segmentation;
 
   let rectangleCornersIJK = points.map((world) => {
-    return transformPhysicalToIndex(imageData, world)
-  })
+    return transformPhysicalToIndex(imageData, world);
+  });
 
   // math round
   rectangleCornersIJK = rectangleCornersIJK.map((point) => {
     return point.map((coord) => {
-      return Math.round(coord)
-    })
-  })
+      return Math.round(coord);
+    });
+  });
 
-  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
+  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
 
   if (boundsIJK.every(([min, max]) => min !== max)) {
-    throw new Error('Oblique segmentation tools are not supported yet')
+    throw new Error('Oblique segmentation tools are not supported yet');
   }
 
   // Since always all points inside the boundsIJK is inside the rectangle...
-  const pointInRectangle = () => true
+  const pointInRectangle = () => true;
 
   const callback = ({ value, index, pointIJK }) => {
     if (segmentsLocked.includes(value)) {
-      return
+      return;
     }
 
     if (!constraintFn) {
-      scalarData[index] = segmentIndex
-      return
+      scalarData[index] = segmentIndex;
+      return;
     }
 
     if (constraintFn(pointIJK)) {
-      scalarData[index] = segmentIndex
+      scalarData[index] = segmentIndex;
     }
-  }
+  };
 
-  pointInShapeCallback(imageData, pointInRectangle, callback, boundsIJK)
+  pointInShapeCallback(imageData, pointInRectangle, callback, boundsIJK);
 
-  triggerSegmentationDataModified(segmentationId)
+  triggerSegmentationDataModified(segmentationId);
 }
 
 /**
@@ -90,7 +90,7 @@ export function fillInsideRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillRectangle(enabledElement, operationData, true)
+  fillRectangle(enabledElement, operationData, true);
 }
 
 /**
@@ -104,5 +104,5 @@ export function fillOutsideRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillRectangle(enabledElement, operationData, false)
+  fillRectangle(enabledElement, operationData, false);
 }

@@ -7,26 +7,26 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
-} from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { vec3 } from 'gl-matrix'
-import { Events } from '../../enums'
-import { addAnnotation, getAnnotations } from '../../stateManagement'
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
+import { vec3 } from 'gl-matrix';
+import { Events } from '../../enums';
+import { addAnnotation, getAnnotations } from '../../stateManagement';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
-} from '../../drawingSvg'
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
-import throttle from '../../utilities/throttle'
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
-import { hideElementCursor } from '../../cursors/elementCursor'
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
+} from '../../drawingSvg';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import throttle from '../../utilities/throttle';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import { hideElementCursor } from '../../cursors/elementCursor';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import { PublicToolProps, ToolProps, EventTypes } from '../../types'
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes'
-import RectangleROITool from '../annotation/RectangleROITool'
+import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import RectangleROITool from '../annotation/RectangleROITool';
 
 /**
  * This tool is similar to the RectangleROIThresholdTool which
@@ -41,17 +41,17 @@ import RectangleROITool from '../annotation/RectangleROITool'
  * // it so that the handles are grabbable on all slices.
  */
 export default class RectangleROIStartEndThresholdTool extends RectangleROITool {
-  static toolName = 'RectangleROIStartEndThreshold'
-  _throttledCalculateCachedStats: any
+  static toolName = 'RectangleROIStartEndThreshold';
+  _throttledCalculateCachedStats: any;
   editData: {
-    annotation: any
-    viewportIdsToRender: string[]
-    handleIndex?: number
-    newAnnotation?: boolean
-    hasMoved?: boolean
-  } | null
-  isDrawing: boolean
-  isHandleOutsideImage: boolean
+    annotation: any;
+    viewportIdsToRender: string[];
+    handleIndex?: number;
+    newAnnotation?: boolean;
+    hasMoved?: boolean;
+  } | null;
+  isDrawing: boolean;
+  isHandleOutsideImage: boolean;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -61,13 +61,13 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       },
     }
   ) {
-    super(toolProps, defaultToolProps)
+    super(toolProps, defaultToolProps);
 
     this._throttledCalculateCachedStats = throttle(
       this._calculateCachedStatsTool,
       100,
       { trailing: true }
-    )
+    );
   }
 
   /**
@@ -79,44 +79,44 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
    *
    */
   addNewAnnotation = (evt: EventTypes.MouseDownActivateEventType) => {
-    const eventDetail = evt.detail
-    const { currentPoints, element } = eventDetail
-    const worldPos = currentPoints.world
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport, renderingEngine } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
 
-    this.isDrawing = true
+    this.isDrawing = true;
 
-    const camera = viewport.getCamera()
-    const { viewPlaneNormal, viewUp } = camera
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId, imageVolume, volumeId
+    let referencedImageId, imageVolume, volumeId;
     if (viewport instanceof StackViewport) {
-      throw new Error('Stack Viewport Not implemented')
+      throw new Error('Stack Viewport Not implemented');
     } else {
-      volumeId = this.getTargetId(viewport)
-      imageVolume = cache.getVolume(volumeId)
+      volumeId = this.getTargetId(viewport);
+      imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
         viewPlaneNormal,
         viewUp
-      )
+      );
     }
 
     if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':')
-      referencedImageId = referencedImageId.substring(colonIndex + 1)
+      const colonIndex = referencedImageId.indexOf(':');
+      referencedImageId = referencedImageId.substring(colonIndex + 1);
     } else {
-      throw new Error('This tool does not work on non-acquisition planes')
+      throw new Error('This tool does not work on non-acquisition planes');
     }
 
-    const startIndex = viewport.getCurrentImageIdIndex()
+    const startIndex = viewport.getCurrentImageIdIndex();
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
-    )
+    );
 
     // We cannot simply add numSlicesToPropagate to startIndex because
     // the order of imageIds can be from top to bottom or bottom to top and
@@ -127,7 +127,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       worldPos,
       spacingInNormal,
       viewPlaneNormal
-    )
+    );
 
     const annotation = {
       highlighted: true,
@@ -167,22 +167,22 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
         },
         labelmapUID: null,
       },
-    }
+    };
 
     // update the projection points in 3D space, since we are projecting
     // the points to the slice plane, we need to make sure the points are
     // computed for later export
-    this._computeProjectionPoints(annotation, imageVolume)
+    this._computeProjectionPoints(annotation, imageVolume);
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleROIStartEndThresholdTool)
+    Settings.getObjectSettings(annotation, RectangleROIStartEndThresholdTool);
 
-    addAnnotation(element, annotation)
+    addAnnotation(element, annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       RectangleROIStartEndThresholdTool.toolName
-    )
+    );
 
     this.editData = {
       annotation,
@@ -190,105 +190,105 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       handleIndex: 3,
       newAnnotation: true,
       hasMoved: false,
-    }
-    this._activateDraw(element)
+    };
+    this._activateDraw(element);
 
-    hideElementCursor(element)
+    hideElementCursor(element);
 
-    evt.preventDefault()
+    evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender)
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    return annotation
-  }
+    return annotation;
+  };
 
   // Todo: make it work for other acquisition planes
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
   ): void {
-    const { data, metadata } = annotation
-    const { viewPlaneNormal, spacingInNormal } = metadata
-    const { imageData } = imageVolume
-    const { startSlice, endSlice } = data
-    const { projectionPoints } = data.cachedStats
-    const { points } = data.handles
+    const { data, metadata } = annotation;
+    const { viewPlaneNormal, spacingInNormal } = metadata;
+    const { imageData } = imageVolume;
+    const { startSlice, endSlice } = data;
+    const { projectionPoints } = data.cachedStats;
+    const { points } = data.handles;
 
-    const startIJK = vec3.create()
-    imageData.worldToIndexVec3(points[0], startIJK)
+    const startIJK = vec3.create();
+    imageData.worldToIndexVec3(points[0], startIJK);
 
     if (startIJK[2] !== startSlice) {
-      throw new Error('Start slice does not match')
+      throw new Error('Start slice does not match');
     }
 
     // subtitute the end slice index 2 with startIJK index 2
-    const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice)
+    const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
 
-    const startWorld = vec3.create()
-    imageData.indexToWorldVec3(startIJK, startWorld)
+    const startWorld = vec3.create();
+    imageData.indexToWorldVec3(startIJK, startWorld);
 
-    const endWorld = vec3.create()
-    imageData.indexToWorldVec3(endIJK, endWorld)
+    const endWorld = vec3.create();
+    imageData.indexToWorldVec3(endIJK, endWorld);
 
     // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld)
+    const distance = vec3.distance(startWorld, endWorld);
 
     // for each point inside points, navigate in the direction of the viewPlaneNormal
     // with amount of spacingInNormal, and calculate the next slice until we reach the distance
-    const newProjectionPoints = []
+    const newProjectionPoints = [];
     for (let dist = 0; dist < distance; dist += spacingInNormal) {
       newProjectionPoints.push(
         points.map((point) => {
-          const newPoint = vec3.create()
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist)
-          return Array.from(newPoint)
+          const newPoint = vec3.create();
+          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+          return Array.from(newPoint);
         })
-      )
+      );
     }
 
-    data.cachedStats.projectionPoints = newProjectionPoints
+    data.cachedStats.projectionPoints = newProjectionPoints;
 
     // Find the imageIds for the projection points
-    const projectionPointsImageIds = []
+    const projectionPointsImageIds = [];
     for (const RectanglePoints of newProjectionPoints) {
       const imageId = csUtils.getClosestImageId(
         imageVolume,
         RectanglePoints[0],
         viewPlaneNormal,
         metadata.viewUp
-      )
-      projectionPointsImageIds.push(imageId)
+      );
+      projectionPointsImageIds.push(imageId);
     }
 
-    data.cachedStats.projectionPointsImageIds = projectionPointsImageIds
+    data.cachedStats.projectionPointsImageIds = projectionPointsImageIds;
   }
 
   _calculateCachedStatsTool(annotation, enabledElement) {
-    const data = annotation.data
-    const { viewportId, renderingEngineId, viewport } = enabledElement
+    const data = annotation.data;
+    const { viewportId, renderingEngineId, viewport } = enabledElement;
 
-    const { cachedStats } = data
-    const volumeId = this.getTargetId(viewport)
-    const imageVolume = cache.getVolume(volumeId)
+    const { cachedStats } = data;
+    const volumeId = this.getTargetId(viewport);
+    const imageVolume = cache.getVolume(volumeId);
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
-    this._computeProjectionPoints(annotation, imageVolume)
+    this._computeProjectionPoints(annotation, imageVolume);
 
-    annotation.invalidated = false
+    annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED
+    const eventType = Events.ANNOTATION_MODIFIED;
 
     const eventDetail: AnnotationModifiedEventDetail = {
       annotation,
       viewportId,
       renderingEngineId,
-    }
-    triggerEvent(eventTarget, eventType, eventDetail)
+    };
+    triggerEvent(eventTarget, eventType, eventDetail);
 
-    return cachedStats
+    return cachedStats;
   }
 
   /**
@@ -305,10 +305,10 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     const annotations = getAnnotations(
       enabledElement.viewport.element,
       RectangleROIStartEndThresholdTool.toolName
-    )
+    );
 
     if (!annotations?.length) {
-      return
+      return;
     }
 
     // annotations = this.filterInteractableAnnotationsForElement(element, annotations)
@@ -317,27 +317,27 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     //   return
     // }
 
-    const { viewport } = enabledElement
-    const sliceIndex = viewport.getCurrentImageIdIndex()
+    const { viewport } = enabledElement;
+    const sliceIndex = viewport.getCurrentImageIdIndex();
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[
         i
-      ] as RectangleROIStartEndThresholdAnnotation
+      ] as RectangleROIStartEndThresholdAnnotation;
       const settings = Settings.getObjectSettings(
         annotation,
         RectangleROIStartEndThresholdTool
-      )
-      const annotationUID = annotation.annotationUID
+      );
+      const annotationUID = annotation.annotationUID;
 
-      const data = annotation.data
-      const { startSlice, endSlice } = data
-      const { points, activeHandleIndex } = data.handles
+      const data = annotation.data;
+      const { startSlice, endSlice } = data;
+      const { points, activeHandleIndex } = data.handles;
 
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p))
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation)
-      const lineDash = this.getStyle(settings, 'lineDash', annotation)
-      const color = this.getStyle(settings, 'color', annotation)
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
+      const lineDash = this.getStyle(settings, 'lineDash', annotation);
+      const color = this.getStyle(settings, 'color', annotation);
 
       // range of slices to render based on the start and end slice, like
       // np.arange
@@ -347,29 +347,29 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
         sliceIndex < Math.min(startSlice, endSlice) ||
         sliceIndex > Math.max(startSlice, endSlice)
       ) {
-        continue
+        continue;
       }
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
 
       if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, enabledElement)
+        this._throttledCalculateCachedStats(annotation, enabledElement);
       }
 
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
-      let firstOrLastSlice = false
+      let firstOrLastSlice = false;
       if (sliceIndex === startSlice || sliceIndex === endSlice) {
-        firstOrLastSlice = true
+        firstOrLastSlice = true;
       }
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed')
-        return
+        console.warn('Rendering Engine has been destroyed');
+        return;
       }
 
-      let activeHandleCanvasCoords
+      let activeHandleCanvasCoords;
 
       if (
         !isAnnotationLocked(annotation) &&
@@ -378,11 +378,11 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
         firstOrLastSlice
       ) {
         // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]]
+        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
       if (activeHandleCanvasCoords) {
-        const handleGroupUID = '0'
+        const handleGroupUID = '0';
 
         drawHandlesSvg(
           svgDrawingHelper,
@@ -393,16 +393,16 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
           {
             color,
           }
-        )
+        );
       }
 
-      let lineDashToUse = lineDash
+      let lineDashToUse = lineDash;
 
       if (!firstOrLastSlice) {
-        lineDashToUse = 2
+        lineDashToUse = 2;
       }
 
-      const rectangleUID = '0'
+      const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
         RectangleROIStartEndThresholdTool.toolName,
@@ -415,9 +415,9 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
           lineDash: lineDashToUse,
           lineWidth,
         }
-      )
+      );
     }
-  }
+  };
 
   _getEndSliceIndex(
     imageVolume: Types.IImageVolume,
@@ -425,37 +425,40 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     spacingInNormal: number,
     viewPlaneNormal: Types.Point3
   ): number | undefined {
-    const numSlicesToPropagate = this.configuration.numSlicesToPropagate
+    const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
 
     // get end position by moving from worldPos in the direction of viewplaneNormal
     // with amount of numSlicesToPropagate * spacingInNormal
-    const endPos = vec3.create()
+    const endPos = vec3.create();
     vec3.scaleAndAdd(
       endPos,
       worldPos,
       viewPlaneNormal,
       numSlicesToPropagate * spacingInNormal
-    )
+    );
 
-    const halfSpacingInNormalDirection = spacingInNormal / 2
+    const halfSpacingInNormalDirection = spacingInNormal / 2;
     // Loop through imageIds of the imageVolume and find the one that is closest to endPos
-    const { imageIds } = imageVolume
-    let imageIdIndex
+    const { imageIds } = imageVolume;
+    let imageIdIndex;
     for (let i = 0; i < imageIds.length; i++) {
-      const imageId = imageIds[i]
+      const imageId = imageIds[i];
 
-      const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId)
+      const { imagePositionPatient } = metaData.get(
+        'imagePlaneModule',
+        imageId
+      );
 
-      const dir = vec3.create()
-      vec3.sub(dir, endPos, imagePositionPatient)
+      const dir = vec3.create();
+      vec3.sub(dir, endPos, imagePositionPatient);
 
-      const dot = vec3.dot(dir, viewPlaneNormal)
+      const dot = vec3.dot(dir, viewPlaneNormal);
 
       if (Math.abs(dot) < halfSpacingInNormalDirection) {
-        imageIdIndex = i
+        imageIdIndex = i;
       }
     }
 
-    return imageIdIndex
+    return imageIdIndex;
   }
 }

@@ -1,9 +1,9 @@
-import { defaultSegmentationStateManager } from './SegmentationStateManager'
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import {
   triggerSegmentationRepresentationModified,
   triggerSegmentationModified,
   triggerSegmentationRepresentationRemoved,
-} from './triggerSegmentationEvents'
+} from './triggerSegmentationEvents';
 import type {
   ColorLut,
   Segmentation,
@@ -11,16 +11,16 @@ import type {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
   ToolGroupSpecificRepresentations,
-} from '../../types/SegmentationStateTypes'
+} from '../../types/SegmentationStateTypes';
 
-import { getDefaultRepresentationConfig } from '../../utilities/segmentation'
-import normalizeSegmentationInput from './helpers/normalizeSegmentationInput'
+import { getDefaultRepresentationConfig } from '../../utilities/segmentation';
+import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
 
 /**
  * It returns the defaultSegmentationStateManager.
  */
 function getDefaultSegmentationStateManager() {
-  return defaultSegmentationStateManager
+  return defaultSegmentationStateManager;
 }
 
 /*************************
@@ -35,8 +35,8 @@ function getDefaultSegmentationStateManager() {
  * @returns A GlobalSegmentationData object
  */
 function getSegmentation(segmentationId: string): Segmentation | undefined {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getSegmentation(segmentationId)
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getSegmentation(segmentationId);
 }
 
 /**
@@ -44,10 +44,10 @@ function getSegmentation(segmentationId: string): Segmentation | undefined {
  * @returns Segmentation array
  */
 function getSegmentations(): Segmentation[] | [] {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  const state = segmentationStateManager.getState()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  const state = segmentationStateManager.getState();
 
-  return state.segmentations
+  return state.segmentations;
 }
 
 /**
@@ -59,15 +59,15 @@ function addSegmentation(
   segmentationInput: SegmentationPublicInput,
   suppressEvents?: boolean
 ): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
 
-  const segmentation = normalizeSegmentationInput(segmentationInput)
-  _initializeDefaultConfig(segmentation)
+  const segmentation = normalizeSegmentationInput(segmentationInput);
+  _initializeDefaultConfig(segmentation);
 
-  segmentationStateManager.addSegmentation(segmentation)
+  segmentationStateManager.addSegmentation(segmentation);
 
   if (!suppressEvents) {
-    triggerSegmentationModified(segmentation.segmentationId)
+    triggerSegmentationModified(segmentation.segmentationId);
   }
 }
 
@@ -80,8 +80,8 @@ function addSegmentation(
 function getSegmentationRepresentations(
   toolGroupId: string
 ): ToolGroupSpecificRepresentations | [] {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getSegmentationRepresentations(toolGroupId)
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getSegmentationRepresentations(toolGroupId);
 }
 
 /**
@@ -91,23 +91,23 @@ function getSegmentationRepresentations(
  * @returns An array of tool group IDs.
  */
 function getToolGroupsWithSegmentation(segmentationId: string): string[] {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  const state = segmentationStateManager.getState()
-  const toolGroupIds = Object.keys(state.toolGroups)
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  const state = segmentationStateManager.getState();
+  const toolGroupIds = Object.keys(state.toolGroups);
 
-  const foundToolGroupIds = []
+  const foundToolGroupIds = [];
   toolGroupIds.forEach((toolGroupId) => {
     const toolGroupSegmentationRepresentations =
-      segmentationStateManager.getSegmentationRepresentations(toolGroupId)
+      segmentationStateManager.getSegmentationRepresentations(toolGroupId);
 
     toolGroupSegmentationRepresentations.forEach((representation) => {
       if (representation.segmentationId === segmentationId) {
-        foundToolGroupIds.push(toolGroupId)
+        foundToolGroupIds.push(toolGroupId);
       }
-    })
-  })
+    });
+  });
 
-  return foundToolGroupIds
+  return foundToolGroupIds;
 }
 
 /**
@@ -119,8 +119,8 @@ function getToolGroupsWithSegmentation(segmentationId: string): string[] {
 function getToolGroupSpecificConfig(
   toolGroupId: string
 ): SegmentationRepresentationConfig {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getToolGroupSpecificConfig(toolGroupId)
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getToolGroupSpecificConfig(toolGroupId);
 }
 
 /**
@@ -139,14 +139,14 @@ function setToolGroupSpecificConfig(
   config: SegmentationRepresentationConfig,
   suppressEvents?: boolean
 ): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.setSegmentationRepresentationConfig(
     toolGroupId,
     config
-  )
+  );
 
   if (!suppressEvents) {
-    triggerSegmentationRepresentationModified(toolGroupId)
+    triggerSegmentationRepresentationModified(toolGroupId);
   }
 }
 
@@ -165,17 +165,17 @@ function addSegmentationRepresentation(
   segmentationRepresentation: ToolGroupSpecificRepresentation,
   suppressEvents?: boolean
 ): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.addSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentation
-  )
+  );
 
   if (!suppressEvents) {
     triggerSegmentationRepresentationModified(
       toolGroupId,
       segmentationRepresentation.segmentationRepresentationUID
-    )
+    );
   }
 }
 
@@ -186,8 +186,8 @@ function addSegmentationRepresentation(
  * @returns The global segmentation configuration for all segmentations.
  */
 function getGlobalConfig(): SegmentationRepresentationConfig {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getGlobalConfig()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getGlobalConfig();
 }
 
 /**
@@ -202,11 +202,11 @@ function setGlobalConfig(
   config: SegmentationRepresentationConfig,
   suppressEvents?: boolean
 ): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  segmentationStateManager.setGlobalConfig(config)
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.setGlobalConfig(config);
 
   if (!suppressEvents) {
-    triggerSegmentationModified()
+    triggerSegmentationModified();
   }
 }
 
@@ -223,11 +223,11 @@ function getSegmentationRepresentationByUID(
   toolGroupId: string,
   segmentationRepresentationUID: string
 ): ToolGroupSpecificRepresentation | undefined {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
   return segmentationStateManager.getSegmentationRepresentationByUID(
     toolGroupId,
     segmentationRepresentationUID
-  )
+  );
 }
 
 /**
@@ -245,16 +245,16 @@ function removeSegmentationRepresentation(
   toolGroupId: string,
   segmentationRepresentationUID: string
 ): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.removeSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
-  )
+  );
 
   triggerSegmentationRepresentationRemoved(
     toolGroupId,
     segmentationRepresentationUID
-  )
+  );
 }
 
 /**
@@ -263,8 +263,8 @@ function removeSegmentationRepresentation(
  * @returns A ColorLut array.
  */
 function getColorLut(index: number): ColorLut | undefined {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  return segmentationStateManager.getColorLut(index)
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getColorLut(index);
 }
 
 /**
@@ -273,22 +273,22 @@ function getColorLut(index: number): ColorLut | undefined {
  * @param index - The index of the color LUT to add.
  */
 function addColorLUT(colorLut: ColorLut, index: number): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-  segmentationStateManager.addColorLUT(colorLut, index)
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.addColorLUT(colorLut, index);
   // Todo: trigger event color LUT added
 }
 
 function _initializeDefaultConfig(segmentation: Segmentation) {
-  const suppressEvents = true
-  const defaultConfig = getDefaultRepresentationConfig(segmentation)
+  const suppressEvents = true;
+  const defaultConfig = getDefaultRepresentationConfig(segmentation);
 
   const newGlobalConfig: SegmentationRepresentationConfig = {
     renderInactiveSegmentations: true,
     representations: {
       [segmentation.type]: defaultConfig,
     },
-  }
-  setGlobalConfig(newGlobalConfig, suppressEvents)
+  };
+  setGlobalConfig(newGlobalConfig, suppressEvents);
 }
 
 export {
@@ -313,4 +313,4 @@ export {
   // color
   addColorLUT,
   getColorLut,
-}
+};

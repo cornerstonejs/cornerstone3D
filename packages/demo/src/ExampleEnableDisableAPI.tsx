@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
@@ -8,43 +8,43 @@ import {
   CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
-} from '@cornerstonejs/core'
-import { Enums as csToolsEnums } from '@cornerstonejs/tools'
-import * as cs from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
+import { Enums as csToolsEnums } from '@cornerstonejs/tools';
+import * as cs from '@cornerstonejs/core';
 
-import * as csTools3d from '@cornerstonejs/tools'
+import * as csTools3d from '@cornerstonejs/tools';
 
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import config from './config/default'
-import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import config from './config/default';
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone';
+import '@cornerstonejs/streaming-image-volume-loader'; // for loader to get registered
 
-import './ExampleVTKMPR.css'
+import './ExampleVTKMPR.css';
 import {
   renderingEngineId,
   ctVolumeId,
   ptVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
-} from './constants'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
+} from './constants';
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
 
-const VOLUME = 'volume'
+const VOLUME = 'volume';
 
-window.cache = cache
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+window.cache = cache;
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 let ctSceneToolGroup,
   stackCTViewportToolGroup,
   stackPTViewportToolGroup,
   stackDXViewportToolGroup,
-  ptSceneToolGroup
+  ptSceneToolGroup;
 
-const toolsToUse = ANNOTATION_TOOLS
-const ctLayoutTools = ['Levels'].concat(toolsToUse)
+const toolsToUse = ANNOTATION_TOOLS;
+const ctLayoutTools = ['Levels'].concat(toolsToUse);
 
 class EnableDisableViewportExample extends Component {
   state = {
@@ -65,33 +65,33 @@ class EnableDisableViewportExample extends Component {
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     selectedViewportIndex: 0, // for disabling and enabling viewports
     viewportInputEntries: [],
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
-    this._elementNodes = new Map()
-    this._viewportGridRef = React.createRef()
-    this._offScreenRef = React.createRef()
+    csTools3d.init();
+    this._elementNodes = new Map();
+    this._viewportGridRef = React.createRef();
+    this._offScreenRef = React.createRef();
 
-    this.petVolumeImageIdsPromise = getImageIds('pt1', VOLUME)
-    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME)
-    this.ctVolumeImageIdsPromise2 = getImageIds('ct2', VOLUME)
+    this.petVolumeImageIdsPromise = getImageIds('pt1', VOLUME);
+    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME);
+    this.ctVolumeImageIdsPromise2 = getImageIds('ct2', VOLUME);
 
-    this.dxImageIdsPromise = getImageIds('dx')
-    this.ctStackImageIdsPromise = getImageIds('ctStack')
+    this.dxImageIdsPromise = getImageIds('dx');
+    this.ctStackImageIdsPromise = getImageIds('ctStack');
 
-    this.colorImageIds = config.colorImages.imageIds
+    this.colorImageIds = config.colorImages.imageIds;
 
     metaData.addProvider(
       (type, imageId) =>
         hardcodedMetaDataProvider(type, imageId, this.colorImageIds),
       10000
-    )
+    );
 
     this.numberOfViewports =
-      this.state.viewportGrid.numCols * this.state.viewportGrid.numRows
+      this.state.viewportGrid.numCols * this.state.viewportGrid.numRows;
 
     // Promise.all([this.petCTImageIdsPromise, this.dxImageIdsPromise]).then(() =>
     //   this.setState({ progressText: 'Loading data...' })
@@ -112,26 +112,26 @@ class EnableDisableViewportExample extends Component {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    ;({
+    await csRenderInit();
+    csTools3d.init();
+    ({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
       stackDXViewportToolGroup,
       ptSceneToolGroup,
     } = initToolGroups({
       configuration: { preventHandleOutsideImage: true },
-    }))
+    }));
 
     this.setState({
       viewportInputEntries: [
@@ -185,54 +185,56 @@ class EnableDisableViewportExample extends Component {
           },
         },
       ],
-    })
+    });
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    const renderingEngine = new RenderingEngine(renderingEngineId);
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     // Create volumes
-    const dxImageIds = await this.dxImageIdsPromise
-    const ctStackImageIds = await this.ctStackImageIdsPromise
-    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
-    const ctVolumeImageIds2 = await this.ctVolumeImageIdsPromise2
-    const petVolumeImageIds = await this.petVolumeImageIdsPromise
-    const colorImageIds = this.colorImageIds
+    const dxImageIds = await this.dxImageIdsPromise;
+    const ctStackImageIds = await this.ctStackImageIdsPromise;
+    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise;
+    const ctVolumeImageIds2 = await this.ctVolumeImageIdsPromise2;
+    const petVolumeImageIds = await this.petVolumeImageIdsPromise;
+    const colorImageIds = this.colorImageIds;
 
-    renderingEngine.enableElement(this.state.viewportInputEntries[0]) // ct volume
-    renderingEngine.enableElement(this.state.viewportInputEntries[1]) // stack
+    renderingEngine.enableElement(this.state.viewportInputEntries[0]); // ct volume
+    renderingEngine.enableElement(this.state.viewportInputEntries[1]); // stack
 
     // Tools added for the first two viewports
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId);
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
       renderingEngineId
-    )
+    );
 
     addToolsToToolGroups({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
       stackDXViewportToolGroup,
       ptSceneToolGroup,
-    })
+    });
 
-    renderingEngine.render()
+    renderingEngine.render();
 
     const ctStackLoad = async () => {
-      const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-      await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds))
-    }
+      const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+      await stackViewport.setStack(sortImageIdsByIPP(ctStackImageIds));
+    };
 
-    this.ctStackLoad = ctStackLoad
+    this.ctStackLoad = ctStackLoad;
 
     const dxColorLoad = async () => {
-      const dxColorViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.DX)
+      const dxColorViewport = renderingEngine.getViewport(
+        VIEWPORT_IDS.STACK.DX
+      );
 
       const fakeStack = [
         dxImageIds[0],
@@ -242,38 +244,38 @@ class EnableDisableViewportExample extends Component {
         colorImageIds[1],
         colorImageIds[2],
         ctStackImageIds[41],
-      ]
-      await dxColorViewport.setStack(fakeStack)
+      ];
+      await dxColorViewport.setStack(fakeStack);
 
       stackDXViewportToolGroup.addViewport(
         VIEWPORT_IDS.STACK.DX,
         renderingEngineId
-      )
-    }
+      );
+    };
 
-    this.dxColorLoad = dxColorLoad
+    this.dxColorLoad = dxColorLoad;
 
     const CTVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
       const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
         imageIds: ctVolumeImageIds,
-      })
+      });
 
-      const { scalarData } = ctVolume
-      const ctLength = scalarData.length
+      const { scalarData } = ctVolume;
+      const ctLength = scalarData.length;
 
       // if this is the first time we are loading the volume
       if (scalarData[0] === 0) {
         // Initialize all CT values to -1024 so we don't get a grey box?
         for (let i = 0; i < ctLength; i++) {
-          scalarData[i] = -1024
+          scalarData[i] = -1024;
         }
       }
 
-      const onLoad = () => this.setState({ progressText: 'Loaded.' })
+      const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-      ctVolume.load(onLoad)
+      ctVolume.load(onLoad);
 
       await setVolumesForViewports(
         renderingEngine,
@@ -283,24 +285,24 @@ class EnableDisableViewportExample extends Component {
           VIEWPORT_IDS.CT.CORONAL,
           VIEWPORT_IDS.CT.SAGITTAL,
         ]
-      )
+      );
 
       // Set initial CT levels in UI
-      const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
+      const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
       this.setState({
         ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-      })
-    }
+      });
+    };
 
     const PETVolumeLoad = async () => {
       // This only creates the volumes, it does not actually load all
       // of the pixel data (yet)
       const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
         imageIds: ctVolumeImageIds2,
-      })
+      });
 
-      ptVolume.load()
+      ptVolume.load();
 
       await setVolumesForViewports(
         renderingEngine,
@@ -310,75 +312,75 @@ class EnableDisableViewportExample extends Component {
           VIEWPORT_IDS.CT.CORONAL,
           VIEWPORT_IDS.CT.SAGITTAL,
         ]
-      )
+      );
 
-      renderingEngine.render()
-    }
+      renderingEngine.render();
+    };
 
-    ctStackLoad()
-    CTVolumeLoad()
-    this.CTVolumeLoad = CTVolumeLoad
-    this.PETVolumeLoad = PETVolumeLoad
+    ctStackLoad();
+    CTVolumeLoad();
+    this.CTVolumeLoad = CTVolumeLoad;
+    this.PETVolumeLoad = PETVolumeLoad;
 
     this.setState({
       enabledViewports: [0, 1],
       metadataLoaded: true,
-    })
+    });
 
     // This will initialize volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   setSelectedViewportIndex = (evt) => {
-    const index = evt.target.value
-    this.setState({ selectedViewportIndex: parseInt(index) })
-  }
+    const index = evt.target.value;
+    this.setState({ selectedViewportIndex: parseInt(index) });
+  };
 
   disableSelectedViewport = () => {
-    const viewportIndex = this.state.selectedViewportIndex
+    const viewportIndex = this.state.selectedViewportIndex;
 
-    const viewportInput = this.state.viewportInputEntries[viewportIndex]
+    const viewportInput = this.state.viewportInputEntries[viewportIndex];
 
-    this.renderingEngine.disableElement(viewportInput.viewportId)
+    this.renderingEngine.disableElement(viewportInput.viewportId);
 
     this.setState((state) => ({
       ...state,
       enabledViewports: state.enabledViewports.filter(
         (item) => item !== viewportIndex
       ),
-    }))
-  }
+    }));
+  };
 
   enableSelectedViewport = () => {
-    const viewportIndex = this.state.selectedViewportIndex
+    const viewportIndex = this.state.selectedViewportIndex;
 
-    const viewportInput = this.state.viewportInputEntries[viewportIndex]
+    const viewportInput = this.state.viewportInputEntries[viewportIndex];
 
-    this.renderingEngine.enableElement(viewportInput)
+    this.renderingEngine.enableElement(viewportInput);
 
-    const { toolGroup, viewportId, type, canvas } = viewportInput
+    const { toolGroup, viewportId, type, canvas } = viewportInput;
 
-    toolGroup.addViewport(viewportId, renderingEngineId)
+    toolGroup.addViewport(viewportId, renderingEngineId);
 
     // load
     if (viewportId === VIEWPORT_IDS.STACK.CT) {
-      this.ctStackLoad()
+      this.ctStackLoad();
     } else if (viewportId === VIEWPORT_IDS.STACK.DX) {
-      this.dxColorLoad()
+      this.dxColorLoad();
     } else {
       // if we have removed the scene when disabling all the related viewports
       // set the volume again
@@ -391,72 +393,72 @@ class EnableDisableViewportExample extends Component {
     this.setState((state) => ({
       ...state,
       enabledViewports: [...state.enabledViewports, viewportIndex],
-    }))
-  }
+    }));
+  };
 
   swapTools = (evt) => {
-    const toolName = evt.target.value
+    const toolName = evt.target.value;
 
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false;
     const options = {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    }
+    };
     if (isAnnotationToolOn) {
       // Set tool active
 
-      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName)
+      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName);
 
-      ctSceneToolGroup.setToolActive(toolName, options)
-      ptSceneToolGroup.setToolActive(toolName, options)
-      stackCTViewportToolGroup.setToolActive(toolName, options)
-      stackDXViewportToolGroup.setToolActive(toolName, options)
+      ctSceneToolGroup.setToolActive(toolName, options);
+      ptSceneToolGroup.setToolActive(toolName, options);
+      stackCTViewportToolGroup.setToolActive(toolName, options);
+      stackDXViewportToolGroup.setToolActive(toolName, options);
 
       toolsToSetPassive.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-        ptSceneToolGroup.setToolPassive(toolName)
-        stackCTViewportToolGroup.setToolPassive(toolName)
-        stackDXViewportToolGroup.setToolPassive(toolName)
-      })
+        ctSceneToolGroup.setToolPassive(toolName);
+        ptSceneToolGroup.setToolPassive(toolName);
+        stackCTViewportToolGroup.setToolPassive(toolName);
+        stackDXViewportToolGroup.setToolPassive(toolName);
+      });
 
-      ctSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
-      ptSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
-      stackCTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
-      stackDXViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      ctSceneToolGroup.setToolDisabled(WindowLevelTool.toolName);
+      ptSceneToolGroup.setToolDisabled(WindowLevelTool.toolName);
+      stackCTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName);
+      stackDXViewportToolGroup.setToolDisabled(WindowLevelTool.toolName);
     } else {
       // Set window level + threshold
-      ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
-      ptSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
-      stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
-      stackDXViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, options);
+      ptSceneToolGroup.setToolActive(WindowLevelTool.toolName, options);
+      stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options);
+      stackDXViewportToolGroup.setToolActive(WindowLevelTool.toolName, options);
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-        ptSceneToolGroup.setToolPassive(toolName)
-        stackCTViewportToolGroup.setToolPassive(toolName)
-        stackDXViewportToolGroup.setToolPassive(toolName)
-      })
+        ctSceneToolGroup.setToolPassive(toolName);
+        ptSceneToolGroup.setToolPassive(toolName);
+        stackCTViewportToolGroup.setToolPassive(toolName);
+        stackDXViewportToolGroup.setToolPassive(toolName);
+      });
     }
 
-    this.renderingEngine.render()
-    this.setState({ leftClickTool: toolName })
-  }
+    this.renderingEngine.render();
+    this.setState({ leftClickTool: toolName });
+  };
 
   showOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-    const uri = this.renderingEngine._debugRender()
-    const image = document.createElement('img')
-    image.src = uri
-    image.setAttribute('width', '100%')
+    this._offScreenRef.current.innerHTML = '';
+    const uri = this.renderingEngine._debugRender();
+    const image = document.createElement('img');
+    image.src = uri;
+    image.setAttribute('width', '100%');
 
-    this._offScreenRef.current.appendChild(image)
-  }
+    this._offScreenRef.current.appendChild(image);
+  };
 
   hideOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-  }
+    this._offScreenRef.current.innerHTML = '';
+  };
   render() {
     return (
       <div>
@@ -569,8 +571,8 @@ class EnableDisableViewportExample extends Component {
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default EnableDisableViewportExample
+export default EnableDisableViewportExample;

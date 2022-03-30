@@ -1,13 +1,13 @@
-import getSvgDrawingHelper from './getSvgDrawingHelper'
+import getSvgDrawingHelper from './getSvgDrawingHelper';
 
 function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void {
-  const svgDrawingHelper = getSvgDrawingHelper(element)
+  const svgDrawingHelper = getSvgDrawingHelper(element);
 
   // Save...
-  fn(svgDrawingHelper)
+  fn(svgDrawingHelper);
   // Restore...
 
-  svgDrawingHelper._clearUntouched()
+  svgDrawingHelper._clearUntouched();
 }
 
-export default draw
+export default draw;

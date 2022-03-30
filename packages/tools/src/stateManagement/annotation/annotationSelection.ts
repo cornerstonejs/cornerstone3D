@@ -1,13 +1,13 @@
-import { eventTarget, triggerEvent } from '@cornerstonejs/core'
-import { Events } from '../../enums'
-import { Annotation } from '../../types'
-import { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes'
+import { eventTarget, triggerEvent } from '@cornerstonejs/core';
+import { Events } from '../../enums';
+import { Annotation } from '../../types';
+import { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes';
 
 /*
  * Constants
  */
 
-const selectedAnnotations: Set<Annotation> = new Set()
+const selectedAnnotations: Set<Annotation> = new Set();
 
 /*
  * Interface (Public API)
@@ -30,9 +30,9 @@ function setAnnotationSelected(
   preserveSelected = false
 ): void {
   if (selected) {
-    selectAnnotation(annotation, preserveSelected)
+    selectAnnotation(annotation, preserveSelected);
   } else {
-    deselectAnnotation(annotation)
+    deselectAnnotation(annotation);
   }
 }
 
@@ -49,15 +49,15 @@ function selectAnnotation(
   annotation: Annotation,
   preserveSelected = false
 ): void {
-  const detail = makeEventDetail()
+  const detail = makeEventDetail();
   if (!preserveSelected) {
-    clearSelectionSet(selectedAnnotations, detail)
+    clearSelectionSet(selectedAnnotations, detail);
   }
   if (annotation && !selectedAnnotations.has(annotation)) {
-    selectedAnnotations.add(annotation)
-    detail.added.push(annotation)
+    selectedAnnotations.add(annotation);
+    detail.added.push(annotation);
   }
-  publish(detail, selectedAnnotations)
+  publish(detail, selectedAnnotations);
 }
 
 /**
@@ -67,15 +67,15 @@ function selectAnnotation(
  * the internal selection set. If none is given, ALL selections will be cleared.
  */
 function deselectAnnotation(annotation?: Annotation): void {
-  const detail = makeEventDetail()
+  const detail = makeEventDetail();
   if (annotation) {
     if (selectedAnnotations.delete(annotation)) {
-      detail.removed.push(annotation)
+      detail.removed.push(annotation);
     }
   } else {
-    clearSelectionSet(selectedAnnotations, detail)
+    clearSelectionSet(selectedAnnotations, detail);
   }
-  publish(detail, selectedAnnotations)
+  publish(detail, selectedAnnotations);
 }
 
 /**
@@ -83,7 +83,7 @@ function deselectAnnotation(annotation?: Annotation): void {
  * @returns An array of Annotation objects.
  */
 function getAnnotationsSelected(): Array<Annotation> {
-  return Array.from(selectedAnnotations)
+  return Array.from(selectedAnnotations);
 }
 
 /**
@@ -94,8 +94,8 @@ function getAnnotationsSelected(): Array<Annotation> {
  */
 function getAnnotationSelected(annotationUID: string): Annotation {
   return getAnnotationsSelected().find((annotation) => {
-    return annotation.annotationUID === annotationUID
-  })
+    return annotation.annotationUID === annotationUID;
+  });
 }
 
 /**
@@ -105,8 +105,8 @@ function getAnnotationSelected(annotationUID: string): Annotation {
  */
 function getAnnotationsSelectedByToolName(toolName: string): Array<Annotation> {
   return getAnnotationsSelected().filter((annotation) => {
-    return annotation.metadata.toolName === toolName
-  })
+    return annotation.metadata.toolName === toolName;
+  });
 }
 
 /**
@@ -116,7 +116,7 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<Annotation> {
  * @returns A boolean value.
  */
 function isAnnotationSelected(annotation: Annotation): boolean {
-  return selectedAnnotations.has(annotation)
+  return selectedAnnotations.has(annotation);
 }
 
 /**
@@ -124,7 +124,7 @@ function isAnnotationSelected(annotation: Annotation): boolean {
  * @returns The size of the selected annotation set
  */
 function getAnnotationsSelectedCount(): number {
-  return selectedAnnotations.size
+  return selectedAnnotations.size;
 }
 
 /*
@@ -136,7 +136,7 @@ function makeEventDetail(): AnnotationSelectionChangeEventDetail {
     added: [],
     removed: [],
     selection: [],
-  })
+  });
 }
 
 function clearSelectionSet(
@@ -145,9 +145,9 @@ function clearSelectionSet(
 ): void {
   selectionSet.forEach((value) => {
     if (selectionSet.delete(value)) {
-      detail.removed.push(value)
+      detail.removed.push(value);
     }
-  })
+  });
 }
 
 function publish(
@@ -155,8 +155,8 @@ function publish(
   selectionSet: Set<Annotation>
 ) {
   if (detail.added.length > 0 || detail.removed.length > 0) {
-    selectionSet.forEach((item) => void detail.selection.push(item))
-    triggerEvent(eventTarget, Events.ANNOTATION_SELECTION_CHANGE, detail)
+    selectionSet.forEach((item) => void detail.selection.push(item));
+    triggerEvent(eventTarget, Events.ANNOTATION_SELECTION_CHANGE, detail);
   }
 }
 
@@ -171,4 +171,4 @@ export {
   getAnnotationsSelectedByToolName,
   getAnnotationsSelectedCount,
   isAnnotationSelected,
-}
+};

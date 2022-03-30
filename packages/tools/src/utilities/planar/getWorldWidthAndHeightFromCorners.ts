@@ -1,5 +1,5 @@
-import { vec3 } from 'gl-matrix'
-import type { Types } from '@cornerstonejs/core'
+import { vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Given two world positions and an orthogonal view to an `imageVolume` defined
@@ -21,33 +21,33 @@ export default function getWorldWidthAndHeightFromCorners(
   topLeftWorld: Types.Point3,
   bottomRightWorld: Types.Point3
 ): { worldWidth: number; worldHeight: number } {
-  let viewRight = vec3.create()
+  let viewRight = vec3.create();
 
-  vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal)
+  vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
 
-  viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]]
+  viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
 
-  const pos1 = vec3.fromValues(...topLeftWorld)
-  const pos2 = vec3.fromValues(...bottomRightWorld)
+  const pos1 = vec3.fromValues(...topLeftWorld);
+  const pos2 = vec3.fromValues(...bottomRightWorld);
 
-  const diagonal = vec3.create()
-  vec3.subtract(diagonal, pos1, pos2)
+  const diagonal = vec3.create();
+  vec3.subtract(diagonal, pos1, pos2);
 
-  const diagonalLength = vec3.length(diagonal)
+  const diagonalLength = vec3.length(diagonal);
 
   // When the two points are very close to each other return width as 0
   // to avoid NaN the cosTheta formula calculation
   if (diagonalLength < 0.0001) {
-    return { worldWidth: 0, worldHeight: 0 }
+    return { worldWidth: 0, worldHeight: 0 };
   }
 
   const cosTheta =
-    vec3.dot(diagonal, viewRight) / (diagonalLength * vec3.length(viewRight))
+    vec3.dot(diagonal, viewRight) / (diagonalLength * vec3.length(viewRight));
 
-  const sinTheta = Math.sqrt(1 - cosTheta * cosTheta)
+  const sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
 
-  const worldWidth = sinTheta * diagonalLength
-  const worldHeight = cosTheta * diagonalLength
+  const worldWidth = sinTheta * diagonalLength;
+  const worldHeight = cosTheta * diagonalLength;
 
-  return { worldWidth, worldHeight }
+  return { worldWidth, worldHeight };
 }

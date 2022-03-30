@@ -1,5 +1,5 @@
-import Events from '../enums/Events'
-import { keyDown, keyUp } from './keyboardEventHandlers'
+import Events from '../enums/Events';
+import { keyDown, keyUp } from './keyboardEventHandlers';
 
 /**
  * Enable Key down and key up listeners
@@ -7,22 +7,22 @@ import { keyDown, keyUp } from './keyboardEventHandlers'
  * @param element - The HTML element to attach the event listeners to.
  */
 const enable = function (element: HTMLElement) {
-  element.addEventListener(Events.KEY_DOWN, keyDown)
-  element.addEventListener(Events.KEY_UP, keyUp)
-}
+  element.addEventListener(Events.KEY_DOWN, keyDown);
+  element.addEventListener(Events.KEY_UP, keyUp);
+};
 
 /**
  * Disable Key down and key up listeners
  * @param element - The HTML element to attach the event listeners to.
  */
 const disable = function (element: HTMLElement) {
-  element.removeEventListener(Events.KEY_DOWN, keyDown)
-  element.removeEventListener(Events.KEY_UP, keyUp)
-}
+  element.removeEventListener(Events.KEY_DOWN, keyDown);
+  element.removeEventListener(Events.KEY_UP, keyUp);
+};
 
 const keyboardToolEventDispatcher = {
   enable,
   disable,
-}
+};
 
-export default keyboardToolEventDispatcher
+export default keyboardToolEventDispatcher;

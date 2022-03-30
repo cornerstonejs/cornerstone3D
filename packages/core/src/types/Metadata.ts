@@ -1,4 +1,4 @@
-import type { VOI } from './voi'
+import type { VOI } from './voi';
 
 /**
  * Metadata for images, More information can be found in the
@@ -6,30 +6,30 @@ import type { VOI } from './voi'
  */
 type Metadata = {
   /** Number of bits allocated for each pixel sample. Each sample shall have the same number of bits allocated */
-  BitsAllocated: number
+  BitsAllocated: number;
   /** Number of bits stored for each pixel sample */
-  BitsStored: number
-  SamplesPerPixel: number
+  BitsStored: number;
+  SamplesPerPixel: number;
   /** Most significant bit for pixel sample data */
-  HighBit: number
+  HighBit: number;
   /** Specifies the intended interpretation of the pixel data */
-  PhotometricInterpretation: string
+  PhotometricInterpretation: string;
   /** Data representation of the pixel samples. */
-  PixelRepresentation: number
+  PixelRepresentation: number;
   /** Image Modality */
-  Modality: string
+  Modality: string;
   /** The direction cosines of the first row and the first column with respect to the patient */
-  ImageOrientationPatient: Array<number>
+  ImageOrientationPatient: Array<number>;
   /** Physical distance in the patient between the center of each pixel */
-  PixelSpacing: Array<number>
+  PixelSpacing: Array<number>;
   /** Uniquely identifies the Frame of Reference for a Series */
-  FrameOfReferenceUID: string
+  FrameOfReferenceUID: string;
   /** Number of columns in the image. */
-  Columns: number
+  Columns: number;
   /** Number of rows in the image. */
-  Rows: number
+  Rows: number;
   /** Window Level/Center for the image */
-  voiLut: Array<VOI>
-}
+  voiLut: Array<VOI>;
+};
 
-export default Metadata
+export default Metadata;

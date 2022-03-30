@@ -14,14 +14,14 @@ export default function isEqual(
   tolerance = 1e-5
 ): boolean {
   if (v1.length !== v2.length) {
-    return false
+    return false;
   }
 
   for (let i = 0; i < v1.length; i++) {
     if (Math.abs(v1[i] - v2[i]) > tolerance) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }

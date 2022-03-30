@@ -1,4 +1,4 @@
-import annotationSelectionListener from './annotationSelectionListener'
-import annotationModifiedListener from './annotationModifiedListener'
+import annotationSelectionListener from './annotationSelectionListener';
+import annotationModifiedListener from './annotationModifiedListener';
 
-export { annotationSelectionListener, annotationModifiedListener }
+export { annotationSelectionListener, annotationModifiedListener };

@@ -1,4 +1,4 @@
-import { CPUFallbackEnabledElement, IImage } from '../../../../types'
+import { CPUFallbackEnabledElement, IImage } from '../../../../types';
 
 /**
  * Determine whether or not an Enabled Element needs to be re-rendered.
@@ -14,9 +14,9 @@ export default function doesImageNeedToBeRendered(
   enabledElement: CPUFallbackEnabledElement,
   image: IImage
 ): boolean {
-  const lastRenderedImageId = enabledElement.renderingTools.lastRenderedImageId
+  const lastRenderedImageId = enabledElement.renderingTools.lastRenderedImageId;
   const lastRenderedViewport =
-    enabledElement.renderingTools.lastRenderedViewport
+    enabledElement.renderingTools.lastRenderedViewport;
 
   return (
     image.imageId !== lastRenderedImageId ||
@@ -32,5 +32,5 @@ export default function doesImageNeedToBeRendered(
     lastRenderedViewport.modalityLUT !== enabledElement.viewport.modalityLUT ||
     lastRenderedViewport.voiLUT !== enabledElement.viewport.voiLUT ||
     lastRenderedViewport.colormap !== enabledElement.viewport.colormap
-  )
+  );
 }

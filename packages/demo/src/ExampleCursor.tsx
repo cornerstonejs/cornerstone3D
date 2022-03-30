@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
@@ -7,42 +7,42 @@ import {
   init as csRenderInit,
   getShouldUseCPURendering,
   metaData,
-} from '@cornerstonejs/core'
-import * as cs from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
+import * as cs from '@cornerstonejs/core';
 import {
   cursors,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
   ZoomTool,
-} from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
-import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
+} from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone';
+import '@cornerstonejs/streaming-image-volume-loader'; // for loader to get registered
 
-import config from './config/default'
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
-import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants'
+import config from './config/default';
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
+import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants';
 
-const STACK = 'stack'
+const STACK = 'stack';
 
-window.cache = cache
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+window.cache = cache;
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-let stackCTViewportToolGroup
+let stackCTViewportToolGroup;
 
 const toolsToUse = [
   WindowLevelTool.toolName,
   PanTool.toolName,
   ZoomTool.toolName,
   ...ANNOTATION_TOOLS,
-].filter((tool) => tool !== CrosshairsTool.toolName)
+].filter((tool) => tool !== CrosshairsTool.toolName);
 
-const availableStacks = ['ct', 'dx', 'color']
+const availableStacks = ['ct', 'dx', 'color'];
 
 class CursorExample extends Component {
   state = {
@@ -63,51 +63,51 @@ class CursorExample extends Component {
     currentStack: 'ct',
     cpuFallback: false,
     cursorNames: [],
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
-    this._elementNodes = new Map()
-    this._offScreenRef = React.createRef()
+    csTools3d.init();
+    this._elementNodes = new Map();
+    this._offScreenRef = React.createRef();
 
-    this._viewportGridRef = React.createRef()
+    this._viewportGridRef = React.createRef();
 
-    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
-    this.dxStackImageIdsPromise = getImageIds('dx', STACK)
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK);
+    this.dxStackImageIdsPromise = getImageIds('dx', STACK);
 
     Promise.all([
       this.ctStackImageIdsPromise,
       this.dxStackImageIdsPromise,
-    ]).then(() => this.setState({ progressText: 'Loading data...' }))
+    ]).then(() => this.setState({ progressText: 'Loading data...' }));
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
+    await csRenderInit();
+    csTools3d.init();
 
-    this.setState({ cursorNames: cursors.CursorNames })
-    ;({ stackCTViewportToolGroup } = initToolGroups())
+    this.setState({ cursorNames: cursors.CursorNames });
+    ({ stackCTViewportToolGroup } = initToolGroups());
 
-    const ctStackImageIds = await this.ctStackImageIdsPromise
-    const dxStackImageIds = await this.dxStackImageIdsPromise
+    const ctStackImageIds = await this.ctStackImageIdsPromise;
+    const dxStackImageIds = await this.dxStackImageIdsPromise;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    const colorImageIds = config.colorImages.imageIds
+    const colorImageIds = config.colorImages.imageIds;
 
     metaData.addProvider(
       (type, imageId) =>
         hardcodedMetaDataProvider(type, imageId, colorImageIds),
       10000
-    )
+    );
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     const viewportInput = [
       {
@@ -118,28 +118,28 @@ class CursorExample extends Component {
           background: [0.2, 0, 0.2],
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(viewportInput)
+    renderingEngine.setViewports(viewportInput);
 
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
       renderingEngineId
-    )
+    );
 
-    addToolsToToolGroups({ stackCTViewportToolGroup })
+    addToolsToToolGroups({ stackCTViewportToolGroup });
 
     // This will initialise volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
 
-    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    this.ctStackViewport = ctStackViewport
+    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    this.ctStackViewport = ctStackViewport;
 
-    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
-    const colorMiddleSlice = Math.floor(colorImageIds.length / 2)
+    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2);
+    const colorMiddleSlice = Math.floor(colorImageIds.length / 2);
 
-    this.dxStackImageIds = dxStackImageIds
-    this.ctStackImageIds = ctStackImageIds
+    this.dxStackImageIds = dxStackImageIds;
+    this.ctStackImageIds = ctStackImageIds;
 
     const stacks = {
       ct: [
@@ -152,42 +152,42 @@ class CursorExample extends Component {
         colorImageIds[colorMiddleSlice],
         colorImageIds[colorMiddleSlice + 1],
       ],
-    }
+    };
 
-    this.stacks = stacks
+    this.stacks = stacks;
 
-    await ctStackViewport.setStack(stacks.ct, 0)
+    await ctStackViewport.setStack(stacks.ct, 0);
     ctStackViewport.setProperties({
       voiRange: { lower: -1000, upper: 240 },
-    })
+    });
 
-    this.setState({ cpuFallback: getShouldUseCPURendering() })
+    this.setState({ cpuFallback: getShouldUseCPURendering() });
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state
-    const { renderingEngine } = this
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const { layoutIndex } = this.state;
+    const { renderingEngine } = this;
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
   }
 
   componentWillUnmount() {
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   switchStack = (evt) => {
-    const stackName = evt.target.value
+    const stackName = evt.target.value;
 
-    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const vp = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
 
     vp.setStack(this.stacks[stackName], 0).then(() => {
-      vp.resetProperties()
-    })
+      vp.resetProperties();
+    });
 
-    this.setState({ currentStack: stackName })
-  }
+    this.setState({ currentStack: stackName });
+  };
 
   render() {
     return (
@@ -213,10 +213,10 @@ class CursorExample extends Component {
         <select
           value={this.state.cursorName}
           onChange={(evt) => {
-            const element = this._elementNodes.get(0)
-            const cursorName = evt.target.value
-            this.setState({ cursorName })
-            cursors.setCursorForElement(element, cursorName)
+            const element = this._elementNodes.get(0);
+            const cursorName = evt.target.value;
+            this.setState({ cursorName });
+            cursors.setCursorForElement(element, cursorName);
           }}
         >
           {this.state.cursorNames.map((cursorName) => (
@@ -256,8 +256,8 @@ class CursorExample extends Component {
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default CursorExample
+export default CursorExample;

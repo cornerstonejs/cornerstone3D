@@ -1,12 +1,12 @@
-import RenderingEngine from './RenderingEngine'
-import getRenderingEngine from './getRenderingEngine'
-import VolumeViewport from './VolumeViewport'
+import RenderingEngine from './RenderingEngine';
+import getRenderingEngine from './getRenderingEngine';
+import VolumeViewport from './VolumeViewport';
 import {
   createVolumeActor,
   createVolumeMapper,
   getOrCreateCanvas,
   renderToCanvas,
-} from './helpers'
+} from './helpers';
 
 export {
   getRenderingEngine,
@@ -16,6 +16,6 @@ export {
   createVolumeMapper,
   getOrCreateCanvas,
   renderToCanvas,
-}
+};
 
-export default RenderingEngine
+export default RenderingEngine;

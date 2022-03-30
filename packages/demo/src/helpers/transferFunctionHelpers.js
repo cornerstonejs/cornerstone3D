@@ -1,81 +1,81 @@
-import { cache, utilities } from '@cornerstonejs/core'
-import applyPreset from './applyPreset'
-import colors from './colors'
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps'
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction'
+import { cache, utilities } from '@cornerstonejs/core';
+import applyPreset from './applyPreset';
+import colors from './colors';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 function setCTWWWC({ volumeActor, volumeId }) {
-  let lower, upper, windowWidth, windowCenter
+  let lower, upper, windowWidth, windowCenter;
 
   if (volumeId) {
-    const volume = cache.getVolume(volumeId)
-    ;({ windowWidth, windowCenter } = volume.metadata.voiLut[0])
+    const volume = cache.getVolume(volumeId);
+    ({ windowWidth, windowCenter } = volume.metadata.voiLut[0]);
   } else {
-    windowWidth = 400
-    windowCenter = 40
+    windowWidth = 400;
+    windowCenter = 40;
   }
 
   if (windowWidth == undefined || windowCenter === undefined) {
     // Set to something so we can window level it manually.
-    lower = 200
-    upper = 400
+    lower = 200;
+    upper = 400;
   } else {
-    lower = windowCenter - windowWidth / 2.0
-    upper = windowCenter + windowWidth / 2.0
+    lower = windowCenter - windowWidth / 2.0;
+    upper = windowCenter + windowWidth / 2.0;
   }
 
   volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
-    .setMappingRange(lower, upper)
+    .setMappingRange(lower, upper);
 }
 
 function setSegmentationTransferFunction({ volumeActor, Settings }) {
-  const cfun = vtkColorTransferFunction.newInstance()
-  const ofun = vtkPiecewiseFunction.newInstance()
+  const cfun = vtkColorTransferFunction.newInstance();
+  const ofun = vtkPiecewiseFunction.newInstance();
 
-  ofun.addPoint(0, 0)
+  ofun.addPoint(0, 0);
   colors.forEach(({ integerLabel, color }) => {
-    cfun.addRGBPoint(integerLabel, ...color.slice(0, 3).map((c) => c / 255.0)) // label "1" will be red
-    ofun.addPoint(integerLabel, 0.9) // Red will have an opacity of 0.2.
-  })
+    cfun.addRGBPoint(integerLabel, ...color.slice(0, 3).map((c) => c / 255.0)); // label "1" will be red
+    ofun.addPoint(integerLabel, 0.9); // Red will have an opacity of 0.2.
+  });
 
-  ofun.setClamping(false)
+  ofun.setClamping(false);
 
-  volumeActor.getProperty().setRGBTransferFunction(0, cfun)
-  volumeActor.getProperty().setScalarOpacity(0, ofun)
-  volumeActor.getProperty().setInterpolationTypeToNearest()
+  volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+  volumeActor.getProperty().setScalarOpacity(0, ofun);
+  volumeActor.getProperty().setInterpolationTypeToNearest();
 
   const useOutline = Settings.getDefaultSettings().get(
     'segmentation.renderOutline'
-  )
+  );
   const outlineThickness = Settings.getDefaultSettings().get(
     'segmentation.outlineWidth'
-  )
-  volumeActor.getProperty().setUseLabelOutline(useOutline)
-  volumeActor.getProperty().setLabelOutlineThickness(outlineThickness)
+  );
+  volumeActor.getProperty().setUseLabelOutline(useOutline);
+  volumeActor.getProperty().setLabelOutlineThickness(outlineThickness);
 }
 
 function setPetTransferFunction({ volumeActor, volumeId }) {
   const rgbTransferFunction = volumeActor
     .getProperty()
-    .getRGBTransferFunction(0)
+    .getRGBTransferFunction(0);
 
-  rgbTransferFunction.setRange(0, 5)
+  rgbTransferFunction.setRange(0, 5);
 
-  utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction);
 }
 
 function setCTVRTransferFunction({ volumeActor, volumeId }) {
-  const volume = cache.getVolume(volumeId)
+  const volume = cache.getVolume(volumeId);
 
-  const { windowWidth, windowCenter } = volume.metadata.voiLut[0]
+  const { windowWidth, windowCenter } = volume.metadata.voiLut[0];
 
-  const lower = windowCenter - windowWidth / 2.0
-  const upper = windowCenter + windowWidth / 2.0
+  const lower = windowCenter - windowWidth / 2.0;
+  const upper = windowCenter + windowWidth / 2.0;
 
-  volumeActor.getProperty().getRGBTransferFunction(0).setRange(lower, upper)
+  volumeActor.getProperty().getRGBTransferFunction(0).setRange(lower, upper);
 
   const preset = {
     name: 'CT-Bones',
@@ -92,36 +92,36 @@ function setCTVRTransferFunction({ volumeActor, volumeId }) {
     diffuse: '1',
     interpolation: '1',
     effectiveRange: '152.19 952',
-  }
+  };
 
-  applyPreset(volumeActor, preset)
+  applyPreset(volumeActor, preset);
 
-  volumeActor.getProperty().setScalarOpacityUnitDistance(0, 2.5)
+  volumeActor.getProperty().setScalarOpacityUnitDistance(0, 2.5);
 }
 
 function setPetColorMapTransferFunction({ volumeActor }, colormap) {
-  const mapper = volumeActor.getMapper()
-  mapper.setSampleDistance(1.0)
+  const mapper = volumeActor.getMapper();
+  mapper.setSampleDistance(1.0);
 
-  const cfun = vtkColorTransferFunction.newInstance()
-  const preset = vtkColorMaps.getPresetByName(colormap)
-  cfun.applyColorMap(preset)
-  cfun.setMappingRange(0, 5)
+  const cfun = vtkColorTransferFunction.newInstance();
+  const preset = vtkColorMaps.getPresetByName(colormap);
+  cfun.applyColorMap(preset);
+  cfun.setMappingRange(0, 5);
 
-  volumeActor.getProperty().setRGBTransferFunction(0, cfun)
+  volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
   // Create scalar opacity function
-  const ofun = vtkPiecewiseFunction.newInstance()
-  ofun.addPoint(0, 0.0)
-  ofun.addPoint(0.1, 0.9)
-  ofun.addPoint(5, 1.0)
+  const ofun = vtkPiecewiseFunction.newInstance();
+  ofun.addPoint(0, 0.0);
+  ofun.addPoint(0.1, 0.9);
+  ofun.addPoint(5, 1.0);
 
-  volumeActor.getProperty().setScalarOpacity(0, ofun)
+  volumeActor.getProperty().setScalarOpacity(0, ofun);
 }
 
 function getSetPetColorMapTransferFunction(colormap) {
   return ({ volumeActor }) =>
-    setPetColorMapTransferFunction({ volumeActor }, colormap)
+    setPetColorMapTransferFunction({ volumeActor }, colormap);
 }
 
 export {
@@ -130,4 +130,4 @@ export {
   setCTVRTransferFunction,
   getSetPetColorMapTransferFunction,
   setSegmentationTransferFunction,
-}
+};

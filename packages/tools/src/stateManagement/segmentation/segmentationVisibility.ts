@@ -1,6 +1,6 @@
-import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents'
-import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState'
-import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes'
+import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
+import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
 
 /**
  * Set the visibility of a segmentation representation for a given tool group. It fires
@@ -17,10 +17,10 @@ function setSegmentationVisibility(
   visibility: boolean
 ): void {
   const toolGroupSegmentationRepresentations =
-    getSegmentationRepresentations(toolGroupId)
+    getSegmentationRepresentations(toolGroupId);
 
   if (!toolGroupSegmentationRepresentations) {
-    return
+    return;
   }
 
   toolGroupSegmentationRepresentations.forEach(
@@ -29,14 +29,14 @@ function setSegmentationVisibility(
         representation.segmentationRepresentationUID ===
         segmentationRepresentationUID
       ) {
-        representation.visibility = visibility
+        representation.visibility = visibility;
         triggerSegmentationRepresentationModified(
           toolGroupId,
           representation.segmentationRepresentationUID
-        )
+        );
       }
     }
-  )
+  );
 }
 
 /**
@@ -53,19 +53,19 @@ function getSegmentationVisibility(
   segmentationRepresentationUID: string
 ): boolean | undefined {
   const toolGroupSegRepresentations =
-    getSegmentationRepresentations(toolGroupId)
+    getSegmentationRepresentations(toolGroupId);
 
   const segmentationData = toolGroupSegRepresentations.find(
     (representation: ToolGroupSpecificRepresentation) =>
       representation.segmentationRepresentationUID ===
       segmentationRepresentationUID
-  )
+  );
 
   if (!segmentationData) {
-    return
+    return;
   }
 
-  return segmentationData.visibility
+  return segmentationData.visibility;
 }
 
-export { setSegmentationVisibility, getSegmentationVisibility }
+export { setSegmentationVisibility, getSegmentationVisibility };

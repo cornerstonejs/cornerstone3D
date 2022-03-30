@@ -1,54 +1,54 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
   volumeLoader,
   imageLoader,
   init as csRenderInit,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   SynchronizerManager,
   synchronizers,
   WindowLevelTool,
-} from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction'
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps'
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
-import getImageIds from './helpers/getImageIds'
-import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
+import getImageIds from './helpers/getImageIds';
+import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
 import {
   renderingEngineId,
   ptVolumeId,
   ctVolumeId,
   colormaps,
   ANNOTATION_TOOLS,
-} from './constants'
-import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
-import config from './config/default'
-import { cornerstoneStreamingImageVolumeLoader } from '@cornerstonejs/streaming-image-volume-loader'
-import { sharedArrayBufferImageLoader } from '@cornerstonejs/streaming-image-volume-loader'
+} from './constants';
+import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts';
+import config from './config/default';
+import { cornerstoneStreamingImageVolumeLoader } from '@cornerstonejs/streaming-image-volume-loader';
+import { sharedArrayBufferImageLoader } from '@cornerstonejs/streaming-image-volume-loader';
 
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import limitImageIds from './helpers/limitImageIds'
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
+import limitImageIds from './helpers/limitImageIds';
 
-volumeLoader.registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader)
+volumeLoader.registerUnknownVolumeLoader(cornerstoneStreamingImageVolumeLoader);
 volumeLoader.registerVolumeLoader(
   'cornerstoneStreamingImageVolume',
   cornerstoneStreamingImageVolumeLoader
-)
+);
 imageLoader.registerImageLoader(
   'streaming-wadors',
   sharedArrayBufferImageLoader
-)
+);
 
-const VOLUME = 'volume'
-const STACK = 'stack'
+const VOLUME = 'volume';
+const STACK = 'stack';
 
 let ctSceneToolGroup,
   ptSceneToolGroup,
@@ -57,10 +57,10 @@ let ctSceneToolGroup,
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
   ptTypesSceneToolGroup,
-  ptCtLayoutTools
+  ptCtLayoutTools;
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
-  synchronizers
+  synchronizers;
 
 class MPRExample extends Component {
   state = {
@@ -94,71 +94,71 @@ class MPRExample extends Component {
     ptCtLeftClickTool: 'Levels',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
+    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS);
 
-    this._elementNodes = new Map()
-    this._viewportGridRef = React.createRef()
-    this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this)
+    this._elementNodes = new Map();
+    this._viewportGridRef = React.createRef();
+    this.swapPetTransferFunction = this.swapPetTransferFunction.bind(this);
 
-    const { limitFrames } = config
+    const { limitFrames } = config;
 
     const callback = (imageIds) => {
       if (limitFrames !== undefined && typeof limitFrames === 'number') {
-        const NewImageIds = sortImageIdsByIPP(imageIds)
-        return limitImageIds(NewImageIds, limitFrames)
+        const NewImageIds = sortImageIdsByIPP(imageIds);
+        return limitImageIds(NewImageIds, limitFrames);
       }
-      return imageIds
-    }
+      return imageIds;
+    };
 
-    this.petVolumeImageIds = getImageIds('pt1', VOLUME, callback)
-    this.ctVolumeImageIds = getImageIds('ct1', VOLUME, callback)
+    this.petVolumeImageIds = getImageIds('pt1', VOLUME, callback);
+    this.ctVolumeImageIds = getImageIds('ct1', VOLUME, callback);
 
     Promise.all([this.petVolumeImageIds, this.ctVolumeImageIds]).then(() =>
       this.setState({ progressText: 'Loading data...' })
-    )
+    );
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    this.axialSync = createCameraPositionSynchronizer('axialSync')
-    this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
-    this.coronalSync = createCameraPositionSynchronizer('coronalSync')
-    this.ctWLSync = createVOISynchronizer('ctWLSync')
-    this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
-    ;({
+    await csRenderInit();
+    csTools3d.init();
+    this.axialSync = createCameraPositionSynchronizer('axialSync');
+    this.sagittalSync = createCameraPositionSynchronizer('sagittalSync');
+    this.coronalSync = createCameraPositionSynchronizer('coronalSync');
+    this.ctWLSync = createVOISynchronizer('ctWLSync');
+    this.ptThresholdSync = createVOISynchronizer('ptThresholdSync');
+    ({
       ctSceneToolGroup,
       ptSceneToolGroup,
       fusionSceneToolGroup,
       ptMipSceneToolGroup,
       ptTypesSceneToolGroup,
-    } = initToolGroups())
+    } = initToolGroups());
 
-    this.ctVolumeId = ctVolumeId
-    this.ptVolumeId = ptVolumeId
+    this.ctVolumeId = ctVolumeId;
+    this.ptVolumeId = ptVolumeId;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
 
-    window.renderingEngine = renderingEngine
+    window.renderingEngine = renderingEngine;
 
     ptCtFusion.setLayout(
       renderingEngine,
@@ -176,7 +176,7 @@ class MPRExample extends Component {
         ptThresholdSynchronizer: this.ptThresholdSync,
         ctWLSynchronizer: this.ctWLSync,
       }
-    )
+    );
 
     addToolsToToolGroups({
       ctSceneToolGroup,
@@ -184,61 +184,61 @@ class MPRExample extends Component {
       fusionSceneToolGroup,
       ptMipSceneToolGroup,
       ptTypesSceneToolGroup,
-    })
+    });
 
     // Create volumes
-    const ptImageIds = await this.petVolumeImageIds
-    const ctVolumeImageIds = await this.ctVolumeImageIds
+    const ptImageIds = await this.petVolumeImageIds;
+    const ctVolumeImageIds = await this.ctVolumeImageIds;
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptImageIds,
-    })
+    });
     const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
-    })
+    });
 
     // Initialize all CT values to -1024 so we don't get a grey box?
-    const { scalarData } = ctVolume
-    const ctLength = scalarData.length
+    const { scalarData } = ctVolume;
+    const ctLength = scalarData.length;
 
     for (let i = 0; i < ctLength; i++) {
-      scalarData[i] = -1024
+      scalarData[i] = -1024;
     }
 
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    ptVolume.load(onLoad)
-    ctVolume.load(onLoad)
+    ptVolume.load(onLoad);
+    ctVolume.load(onLoad);
 
     ptCtFusion.setVolumes(
       renderingEngine,
       ctVolumeId,
       ptVolumeId,
       colormaps[this.state.petColorMapIndex]
-    )
+    );
 
     // Set initial CT levels in UI
-    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
+    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
     this.setState({
       metadataLoaded: true,
       ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-    })
+    });
 
     // This will initialize volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
     // Start listening for resiz
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state
-    const { renderingEngine } = this
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const { layoutIndex } = this.state;
+    const { renderingEngine } = this;
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    const layout = LAYOUTS[layoutIndex]
+    const layout = LAYOUTS[layoutIndex];
 
     if (prevState.layoutIndex !== layoutIndex) {
       if (layout === 'FusionMIP') {
@@ -260,34 +260,34 @@ class MPRExample extends Component {
             ptThresholdSynchronizer: this.ptThresholdSync,
             ctWLSynchronizer: this.ctWLSync,
           }
-        )
+        );
 
         ptCtFusion.setVolumes(
           renderingEngine,
           ctVolumeId,
           ptVolumeId,
           colormaps[this.state.petColorMapIndex]
-        )
+        );
       } else if (layout === 'ObliqueCT') {
         obliqueCT.setLayout(renderingEngine, this._elementNodes, {
           ctObliqueToolGroup,
-        })
-        obliqueCT.setVolumes(renderingEngine, ctVolumeId)
+        });
+        obliqueCT.setVolumes(renderingEngine, ctVolumeId);
       } else if (layout === 'CTVR') {
         // CTVR
         fourUpCT.setLayout(renderingEngine, this._elementNodes, {
           ctSceneToolGroup,
           ctVRSceneToolGroup,
-        })
-        fourUpCT.setVolumes(renderingEngine, ctVolumeId)
+        });
+        fourUpCT.setVolumes(renderingEngine, ctVolumeId);
       } else if (layout === 'PetTypes') {
         // petTypes
         petTypes.setLayout(renderingEngine, this._elementNodes, {
           ptTypesSceneToolGroup,
-        })
-        petTypes.setVolumes(renderingEngine, ptVolumeId)
+        });
+        petTypes.setVolumes(renderingEngine, ptVolumeId);
       } else {
-        throw new Error('Unrecognised layout index')
+        throw new Error('Unrecognised layout index');
       }
     }
   }
@@ -295,108 +295,108 @@ class MPRExample extends Component {
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
-    this.renderingEngine.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
+    this.renderingEngine.destroy();
   }
 
   swapLayout = (layoutId) => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
+      return;
     }
 
-    const viewportGrid = JSON.parse(JSON.stringify(this.state.viewportGrid))
-    const layoutIndex = LAYOUTS.findIndex((id) => id === layoutId)
+    const viewportGrid = JSON.parse(JSON.stringify(this.state.viewportGrid));
+    const layoutIndex = LAYOUTS.findIndex((id) => id === layoutId);
 
-    viewportGrid.viewports = []
+    viewportGrid.viewports = [];
 
-    const layout = LAYOUTS[layoutIndex]
+    const layout = LAYOUTS[layoutIndex];
 
     if (layout === 'FusionMIP') {
-      viewportGrid.numCols = 4
-      viewportGrid.numRows = 3
-      ;[0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((x) =>
+      viewportGrid.numCols = 4;
+      viewportGrid.numRows = 3;
+      [0, 1, 2, 3, 4, 5, 6, 7, 8].forEach((x) =>
         viewportGrid.viewports.push({})
-      )
+      );
       viewportGrid.viewports.push({
         cellStyle: {
           gridRow: '1 / span 3',
           gridColumn: '4',
         },
-      })
+      });
     } else if (layout === 'ObliqueCT') {
-      viewportGrid.numCols = 1
-      viewportGrid.numRows = 1
-      viewportGrid.viewports.push({})
+      viewportGrid.numCols = 1;
+      viewportGrid.numRows = 1;
+      viewportGrid.viewports.push({});
     } else if (layout === 'CTVR') {
-      viewportGrid.numCols = 2
-      viewportGrid.numRows = 2
-      ;[0, 1, 2, 3].forEach((x) => viewportGrid.viewports.push({}))
+      viewportGrid.numCols = 2;
+      viewportGrid.numRows = 2;
+      [0, 1, 2, 3].forEach((x) => viewportGrid.viewports.push({}));
     } else if (layout === 'PetTypes') {
-      viewportGrid.numRows = 1
-      viewportGrid.numCols = 3
-      ;[0, 1, 2].forEach((x) => viewportGrid.viewports.push({}))
+      viewportGrid.numRows = 1;
+      viewportGrid.numCols = 3;
+      [0, 1, 2].forEach((x) => viewportGrid.viewports.push({}));
     }
 
     this.setState({
       layoutIndex,
       viewportGrid,
-    })
-  }
+    });
+  };
 
   swapPetTransferFunction() {
-    const renderingEngine = this.renderingEngine
+    const renderingEngine = this.renderingEngine;
 
-    const volumeActor = petCTScene.getVolumeActor(ptVolumeId)
+    const volumeActor = petCTScene.getVolumeActor(ptVolumeId);
 
-    let petColorMapIndex = this.state.petColorMapIndex
+    let petColorMapIndex = this.state.petColorMapIndex;
 
-    petColorMapIndex = petColorMapIndex === 0 ? 1 : 0
+    petColorMapIndex = petColorMapIndex === 0 ? 1 : 0;
 
-    const mapper = volumeActor.getMapper()
-    mapper.setSampleDistance(1.0)
+    const mapper = volumeActor.getMapper();
+    mapper.setSampleDistance(1.0);
 
     const range = volumeActor
       .getProperty()
       .getRGBTransferFunction(0)
-      .getMappingRange()
+      .getMappingRange();
 
-    const cfun = vtkColorTransferFunction.newInstance()
-    const preset = vtkColorMaps.getPresetByName(colormaps[petColorMapIndex])
-    cfun.applyColorMap(preset)
-    cfun.setMappingRange(range[0], range[1])
+    const cfun = vtkColorTransferFunction.newInstance();
+    const preset = vtkColorMaps.getPresetByName(colormaps[petColorMapIndex]);
+    cfun.applyColorMap(preset);
+    cfun.setMappingRange(range[0], range[1]);
 
-    volumeActor.getProperty().setRGBTransferFunction(0, cfun)
+    volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
     // Create scalar opacity function
-    const ofun = vtkPiecewiseFunction.newInstance()
-    ofun.addPoint(0, 0.0)
-    ofun.addPoint(0.1, 0.9)
-    ofun.addPoint(5, 1.0)
+    const ofun = vtkPiecewiseFunction.newInstance();
+    ofun.addPoint(0, 0.0);
+    ofun.addPoint(0.1, 0.9);
+    ofun.addPoint(5, 1.0);
 
-    volumeActor.getProperty().setScalarOpacity(0, ofun)
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
 
-    petCTScene.render()
+    petCTScene.render();
 
-    this.setState({ petColorMapIndex })
+    this.setState({ petColorMapIndex });
   }
 
   destroyAndDecacheAllVolumes = () => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
+      return;
     }
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
 
-    cache.purgeCache()
-  }
+    cache.purgeCache();
+  };
 
   swapPtCtTool = (evt) => {
-    const toolName = evt.target.value
+    const toolName = evt.target.value;
 
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false;
 
     ptCtToggleAnnotationTool(
       isAnnotationToolOn,
@@ -404,10 +404,10 @@ class MPRExample extends Component {
       ptSceneToolGroup,
       fusionSceneToolGroup,
       toolName
-    )
+    );
 
-    this.setState({ ptCtLeftClickTool: toolName })
-  }
+    this.setState({ ptCtLeftClickTool: toolName });
+  };
 
   render() {
     const {
@@ -416,9 +416,9 @@ class MPRExample extends Component {
       destroyed,
       ctWindowLevelDisplay,
       ptThresholdDisplay,
-    } = this.state
+    } = this.state;
 
-    const layoutID = LAYOUTS[layoutIndex]
+    const layoutID = LAYOUTS[layoutIndex];
     // TODO -> Move layout switching to a different example to reduce bloat.
     // TODO -> Move destroy to a seperate example
 
@@ -436,7 +436,7 @@ class MPRExample extends Component {
             ))}
           </select>
         </React.Fragment>
-      ) : null
+      ) : null;
 
     return (
       <div style={{ paddingBottom: '55px' }}>
@@ -480,8 +480,8 @@ class MPRExample extends Component {
           ))}
         </ViewportGrid>
       </div>
-    )
+    );
   }
 }
 
-export default MPRExample
+export default MPRExample;

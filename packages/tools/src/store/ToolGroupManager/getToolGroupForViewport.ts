@@ -1,5 +1,5 @@
-import { state } from '../index'
-import { IToolGroup } from '../../types'
+import { state } from '../index';
+import { IToolGroup } from '../../types';
 
 /**
  * Given a rendering engine Id and a viewport Id, return the tool group that
@@ -25,20 +25,20 @@ function getToolGroupForViewport(
         vp.renderingEngineId === renderingEngineId &&
         (!vp.viewportId || vp.viewportId === viewportId)
     )
-  )
+  );
 
   if (!toolGroupFilteredByIds.length) {
-    return
+    return;
   }
 
   if (toolGroupFilteredByIds.length > 1) {
     throw new Error(
       `Multiple tool groups found for renderingEngineId: ${renderingEngineId} and viewportId: ${viewportId}. You should only
       have one tool group per viewport in a renderingEngine.`
-    )
+    );
   }
 
-  return toolGroupFilteredByIds[0]
+  return toolGroupFilteredByIds[0];
 }
 
-export default getToolGroupForViewport
+export default getToolGroupForViewport;

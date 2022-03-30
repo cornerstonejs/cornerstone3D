@@ -28,7 +28,17 @@
     "strict": false,
     "strictNullChecks": false,
     "target": "es5", // esnext | es5
-    "downlevelIteration": true,
+    "downlevelIteration": true
   },
-  "exclude": ["node_modules", "dist", "packages/**/dist", "packages/**/lib", "packages/**/lib-esm", "packages/demo", "packages/docs", "snippets", "examples"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "packages/**/dist",
+    "packages/**/lib",
+    "packages/**/lib-esm",
+    "packages/demo",
+    "packages/docs",
+    "snippets",
+    "examples"
+  ]
 }

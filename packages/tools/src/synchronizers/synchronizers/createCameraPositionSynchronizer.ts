@@ -1,9 +1,9 @@
-import { createSynchronizer } from '../../store/SynchronizerManager'
-import { Enums } from '@cornerstonejs/core'
-import cameraSyncCallback from '../callbacks/cameraSyncCallback'
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer'
+import { createSynchronizer } from '../../store/SynchronizerManager';
+import { Enums } from '@cornerstonejs/core';
+import cameraSyncCallback from '../callbacks/cameraSyncCallback';
+import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
-const { CAMERA_MODIFIED } = Enums.Events
+const { CAMERA_MODIFIED } = Enums.Events;
 
 /**
  * A helper that creates a new `Synchronizer` which listens to the `CAMERA_MODIFIED`
@@ -20,7 +20,7 @@ export default function createCameraPositionSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
     cameraSyncCallback
-  )
+  );
 
-  return cameraPositionSynchronizer
+  return cameraPositionSynchronizer;
 }

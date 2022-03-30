@@ -1,11 +1,11 @@
-import { getRenderingEngines, utilities } from '@cornerstonejs/core'
+import { getRenderingEngines, utilities } from '@cornerstonejs/core';
 
 //import type { Types } from '@cornerstonejs/core'
 
 type RenderingEngineAndViewportIds = {
-  renderingEngine: any | undefined //Types.IRenderingEngine | undefined
-  viewportIds: Array<string>
-}
+  renderingEngine: any | undefined; //Types.IRenderingEngine | undefined
+  viewportIds: Array<string>;
+};
 
 /**
  * Given a volumeId, it finds the viewports and renderingEngines that
@@ -15,42 +15,42 @@ type RenderingEngineAndViewportIds = {
  */
 const autoLoad = (volumeId: string): void => {
   const renderingEngineAndViewportIds =
-    getRenderingEngineAndViewportsContainingVolume(volumeId)
+    getRenderingEngineAndViewportsContainingVolume(volumeId);
 
   if (!renderingEngineAndViewportIds || !renderingEngineAndViewportIds.length) {
-    return
+    return;
   }
 
   renderingEngineAndViewportIds.forEach(({ renderingEngine, viewportIds }) => {
     if (!renderingEngine.hasBeenDestroyed) {
-      renderingEngine.renderViewports(viewportIds)
+      renderingEngine.renderViewports(viewportIds);
     }
-  })
-}
+  });
+};
 
 function getRenderingEngineAndViewportsContainingVolume(
   volumeId: string
 ): Array<RenderingEngineAndViewportIds> {
-  const renderingEnginesArray = getRenderingEngines()
+  const renderingEnginesArray = getRenderingEngines();
 
-  const renderingEngineAndViewportIds = []
+  const renderingEngineAndViewportIds = [];
 
   for (let i = 0; i < renderingEnginesArray.length; i++) {
-    const renderingEngine = renderingEnginesArray[i]
+    const renderingEngine = renderingEnginesArray[i];
     const viewports = utilities.getVolumeViewportsContainingVolumeId(
       volumeId,
       renderingEngine.id
-    )
+    );
 
     if (viewports.length) {
       renderingEngineAndViewportIds.push({
         renderingEngine,
         viewportIds: viewports.map((viewport) => viewport.id),
-      })
+      });
     }
   }
 
-  return renderingEngineAndViewportIds
+  return renderingEngineAndViewportIds;
 }
 
-export default autoLoad
+export default autoLoad;

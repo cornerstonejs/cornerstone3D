@@ -1,8 +1,8 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
-import drawLine from './drawLine'
-import findClosestPoint from '../utilities/math/vec2/findClosestPoint'
-import { PlanarBoundingBox } from '../types'
+import drawLine from './drawLine';
+import findClosestPoint from '../utilities/math/vec2/findClosestPoint';
+import { PlanarBoundingBox } from '../types';
 
 /**
  * Draw a link between an annotation to a box.
@@ -25,12 +25,12 @@ function drawLink(
   const start =
     annotationAnchorPoints.length > 0
       ? findClosestPoint(annotationAnchorPoints, refPoint)
-      : refPoint
+      : refPoint;
 
   // Calculate the midpoints of the bounding box
-  const boundingBoxPoints = _boundingBoxPoints(boundingBox)
+  const boundingBoxPoints = _boundingBoxPoints(boundingBox);
   // Find the closest textBox midpoint to the annotation's anchor/start point
-  const end = findClosestPoint(boundingBoxPoints, start)
+  const end = findClosestPoint(boundingBoxPoints, start);
 
   // Finally we draw the dashed linking line
   const mergedOptions = Object.assign(
@@ -40,7 +40,7 @@ function drawLink(
       lineDash: '2,3',
     },
     options
-  )
+  );
 
   drawLine(
     svgDrawingHelper,
@@ -50,7 +50,7 @@ function drawLink(
     start,
     end,
     mergedOptions
-  )
+  );
 }
 
 /**
@@ -63,16 +63,16 @@ function drawLink(
 function _boundingBoxPoints(
   boundingBox: PlanarBoundingBox
 ): Array<Types.Point2> {
-  const { x: left, y: top, height, width } = boundingBox
-  const halfWidth = width / 2
-  const halfHeight = height / 2
+  const { x: left, y: top, height, width } = boundingBox;
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
 
-  const topMiddle = [left + halfWidth, top] as Types.Point2
-  const leftMiddle = [left, top + halfHeight] as Types.Point2
-  const bottomMiddle = [left + halfWidth, top + height] as Types.Point2
-  const rightMiddle = [left + width, top + halfHeight] as Types.Point2
+  const topMiddle = [left + halfWidth, top] as Types.Point2;
+  const leftMiddle = [left, top + halfHeight] as Types.Point2;
+  const bottomMiddle = [left + halfWidth, top + height] as Types.Point2;
+  const rightMiddle = [left + width, top + halfHeight] as Types.Point2;
 
-  return [topMiddle, leftMiddle, bottomMiddle, rightMiddle]
+  return [topMiddle, leftMiddle, bottomMiddle, rightMiddle];
 }
 
-export default drawLink
+export default drawLink;

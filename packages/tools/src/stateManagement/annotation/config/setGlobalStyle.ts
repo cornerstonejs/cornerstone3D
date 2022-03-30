@@ -1,4 +1,4 @@
-import { Settings } from '@cornerstonejs/core'
+import { Settings } from '@cornerstonejs/core';
 
 /**
  * Takes a `style` object and sets it as the
@@ -9,5 +9,5 @@ import { Settings } from '@cornerstonejs/core'
 export default function setGlobalStyle(
   style: Record<string, unknown>
 ): boolean {
-  return Settings.getRuntimeSettings().set('tool.style', style)
+  return Settings.getRuntimeSettings().set('tool.style', style);
 }

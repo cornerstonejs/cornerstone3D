@@ -1,6 +1,6 @@
-import getModalityLut from './getModalityLut'
-import getVOILUT from './getVOILut'
-import { IImage, CPUFallbackLUT } from '../../../../types'
+import getModalityLut from './getModalityLut';
+import getVOILUT from './getVOILut';
+import { IImage, CPUFallbackLUT } from '../../../../types';
 
 /**
  * Creates a LUT used while rendering to convert stored pixel values to
@@ -23,21 +23,21 @@ export default function (
   modalityLUT: CPUFallbackLUT,
   voiLUT: CPUFallbackLUT
 ): Uint8ClampedArray {
-  const maxPixelValue = image.maxPixelValue
-  const minPixelValue = image.minPixelValue
-  const offset = Math.min(minPixelValue, 0)
+  const maxPixelValue = image.maxPixelValue;
+  const minPixelValue = image.minPixelValue;
+  const offset = Math.min(minPixelValue, 0);
 
   if (image.cachedLut === undefined) {
-    const length = maxPixelValue - offset + 1
+    const length = maxPixelValue - offset + 1;
 
-    image.cachedLut = {}
-    image.cachedLut.lutArray = new Uint8ClampedArray(length)
+    image.cachedLut = {};
+    image.cachedLut.lutArray = new Uint8ClampedArray(length);
   }
 
-  const lut = image.cachedLut.lutArray
+  const lut = image.cachedLut.lutArray;
 
-  const mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT)
-  const vlutfn = getVOILUT(windowWidth, windowCenter, voiLUT)
+  const mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT);
+  const vlutfn = getVOILUT(windowWidth, windowCenter, voiLUT);
 
   if (invert === true) {
     for (
@@ -45,7 +45,7 @@ export default function (
       storedValue <= maxPixelValue;
       storedValue++
     ) {
-      lut[storedValue + -offset] = 255 - vlutfn(mlutfn(storedValue))
+      lut[storedValue + -offset] = 255 - vlutfn(mlutfn(storedValue));
     }
   } else {
     for (
@@ -53,9 +53,9 @@ export default function (
       storedValue <= maxPixelValue;
       storedValue++
     ) {
-      lut[storedValue + -offset] = vlutfn(mlutfn(storedValue))
+      lut[storedValue + -offset] = vlutfn(mlutfn(storedValue));
     }
   }
 
-  return lut
+  return lut;
 }

@@ -13,6 +13,5 @@ const DIST_DIR = path.join(__dirname, '../dist');
 module.exports = (env, argv) => {
   const baseConfig = webpackBase(env, argv, { SRC_DIR, DIST_DIR });
 
-  return merge(baseConfig, {
-  });
+  return merge(baseConfig, {});
 };

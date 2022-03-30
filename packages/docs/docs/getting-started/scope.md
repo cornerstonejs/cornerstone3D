@@ -33,9 +33,6 @@ a type-safe API. This means that you can use the library in a TypeScript environ
 and using type information, you can be assured that the parameters being passed to any method
 match what is expected.
 
-
-
-
 ## Browser Support
 
 `Cornerstone3D` uses the HTML5 canvas element to render images which is supported by all modern browsers such
@@ -51,12 +48,9 @@ If you are using an older browser, or don't have any graphics care, your device 
 render volumetric images with `Cornerstone3D`. However, you can still render stack images using the
 CPU fallback that we have implemented in `Cornerstone3D` for such scenarios.
 
-
 ## Mobile Support
 
-
 ## Monorepo hierarchy
-
 
 `Cornerstone3D` is a monorepo that contains the following packages:
 

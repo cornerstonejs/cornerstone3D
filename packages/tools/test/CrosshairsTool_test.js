@@ -1,5 +1,5 @@
-import * as cornerstone3D from '@cornerstonejs/core'
-import * as csTools3d from '../src/index'
+import * as cornerstone3D from '@cornerstonejs/core';
+import * as csTools3d from '../src/index';
 
 const {
   cache,
@@ -11,55 +11,55 @@ const {
   setVolumesForViewports,
   imageLoader,
   CONSTANTS,
-} = cornerstone3D
+} = cornerstone3D;
 
-const { utilities: toolsUtilities } = csTools3d
-const { transformPhysicalToIndex } = toolsUtilities
+const { utilities: toolsUtilities } = csTools3d;
+const { transformPhysicalToIndex } = toolsUtilities;
 
-const { Events, ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { Events, ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-const { unregisterAllImageLoaders } = imageLoader
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader
+const { unregisterAllImageLoaders } = imageLoader;
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 
 const {
   CrosshairsTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   annotation,
-} = csTools3d
+} = csTools3d;
 
-const { Events: csToolsEvents } = csToolsEnums
+const { Events: csToolsEvents } = csToolsEnums;
 
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
-  utilities.testUtils
+  utilities.testUtils;
 
-const renderingEngineId = utilities.uuidv4()
+const renderingEngineId = utilities.uuidv4();
 
-const viewportId1 = 'VIEWPORT1'
-const viewportId2 = 'VIEWPORT2'
-const viewportUID3 = 'VIEWPORT3'
+const viewportId1 = 'VIEWPORT1';
+const viewportId2 = 'VIEWPORT2';
+const viewportUID3 = 'VIEWPORT3';
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`
+const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
 
 function createViewports(renderingEngine, viewportType, width, height) {
-  const element1 = document.createElement('div')
+  const element1 = document.createElement('div');
 
-  element1.style.width = `${width}px`
-  element1.style.height = `${height}px`
-  document.body.appendChild(element1)
+  element1.style.width = `${width}px`;
+  element1.style.height = `${height}px`;
+  document.body.appendChild(element1);
 
-  const element2 = document.createElement('div')
+  const element2 = document.createElement('div');
 
-  element2.style.width = `${width}px`
-  element2.style.height = `${height}px`
-  document.body.appendChild(element2)
+  element2.style.width = `${width}px`;
+  element2.style.height = `${height}px`;
+  document.body.appendChild(element2);
 
-  const element3 = document.createElement('div')
+  const element3 = document.createElement('div');
 
-  element3.style.width = `${width}px`
-  element3.style.height = `${height}px`
-  document.body.appendChild(element3)
+  element3.style.width = `${width}px`;
+  element3.style.height = `${height}px`;
+  document.body.appendChild(element3);
 
   renderingEngine.setViewports([
     {
@@ -89,47 +89,47 @@ function createViewports(renderingEngine, viewportType, width, height) {
         orientation: ORIENTATION.CORONAL,
       },
     },
-  ])
-  return [element1, element2, element3]
+  ]);
+  return [element1, element2, element3];
 }
 
 describe('Cornerstone Tools: ', () => {
   beforeAll(() => {
     // initialize the library
-    cornerstone3D.setUseCPURendering(false)
-  })
+    cornerstone3D.setUseCPURendering(false);
+  });
 
   beforeEach(function () {
-    csTools3d.init()
-    csTools3d.addTool(CrosshairsTool)
-    cache.purgeCache()
-    this.DOMElements = []
+    csTools3d.init();
+    csTools3d.addTool(CrosshairsTool);
+    cache.purgeCache();
+    this.DOMElements = [];
 
-    this.testToolGroup = ToolGroupManager.createToolGroup('volume')
+    this.testToolGroup = ToolGroupManager.createToolGroup('volume');
     this.testToolGroup.addTool(CrosshairsTool.toolName, {
       configuration: {},
-    })
+    });
 
-    this.renderingEngine = new RenderingEngine(renderingEngineId)
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
-    metaData.addProvider(fakeMetaDataProvider, 10000)
-  })
+    this.renderingEngine = new RenderingEngine(renderingEngineId);
+    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
+    metaData.addProvider(fakeMetaDataProvider, 10000);
+  });
 
   afterEach(function () {
-    csTools3d.destroy()
+    csTools3d.destroy();
 
-    cache.purgeCache()
-    this.renderingEngine.destroy()
-    metaData.removeProvider(fakeMetaDataProvider)
-    unregisterAllImageLoaders()
-    ToolGroupManager.destroyToolGroup('volume')
+    cache.purgeCache();
+    this.renderingEngine.destroy();
+    metaData.removeProvider(fakeMetaDataProvider);
+    unregisterAllImageLoaders();
+    ToolGroupManager.destroyToolGroup('volume');
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
-        el.parentNode.removeChild(el)
+        el.parentNode.removeChild(el);
       }
-    })
-  })
+    });
+  });
 
   it('Should successfully initialize the crosshairs to the middle of the image and canvas', function (done) {
     const [element1, element2, element3] = createViewports(
@@ -137,93 +137,93 @@ describe('Cornerstone Tools: ', () => {
       ViewportType.ORTHOGRAPHIC,
       512,
       128
-    )
-    this.DOMElements.push(element1)
-    this.DOMElements.push(element2)
-    this.DOMElements.push(element3)
+    );
+    this.DOMElements.push(element1);
+    this.DOMElements.push(element2);
+    this.DOMElements.push(element3);
 
-    let canvasesRendered = 0
-    let annotationRendered = 0
+    let canvasesRendered = 0;
+    let annotationRendered = 0;
 
     const crosshairsEventHandler = () => {
-      annotationRendered += 1
+      annotationRendered += 1;
 
       if (annotationRendered !== 3) {
-        return
+        return;
       }
 
-      const vp = this.renderingEngine.getViewport(viewportId1)
-      const { imageData } = vp.getImageData()
+      const vp = this.renderingEngine.getViewport(viewportId1);
+      const { imageData } = vp.getImageData();
 
       const indexMiddle = imageData
         .getDimensions()
-        .map((s) => Math.floor(s / 2))
+        .map((s) => Math.floor(s / 2));
 
-      const imageCenterWorld = imageData.indexToWorld(indexMiddle)
+      const imageCenterWorld = imageData.indexToWorld(indexMiddle);
 
-      const { sHeight, sWidth } = vp
-      const centerCanvas = [sWidth * 0.5, sHeight * 0.5]
-      const canvasCenterWorld = vp.canvasToWorld(centerCanvas)
+      const { sHeight, sWidth } = vp;
+      const centerCanvas = [sWidth * 0.5, sHeight * 0.5];
+      const canvasCenterWorld = vp.canvasToWorld(centerCanvas);
 
       const crosshairAnnotations = annotation.state.getAnnotations(
         element1,
         CrosshairsTool.toolName
-      )
+      );
 
       // Can successfully add add crosshairs initial state
       // Todo: right now crosshairs are being initialized on camera reset
       // when crosshair initialization is decoupled from the initial reset
       // There should be no initial state for it
-      expect(crosshairAnnotations).toBeDefined()
-      expect(crosshairAnnotations.length).toBe(3)
+      expect(crosshairAnnotations).toBeDefined();
+      expect(crosshairAnnotations.length).toBe(3);
 
       crosshairAnnotations.map((crosshairAnnotation) => {
-        expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined()
+        expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined();
         crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
-          expect(p).toBeCloseTo(canvasCenterWorld[i], 3)
-          expect(p).toBeCloseTo(imageCenterWorld[i], 3)
-        })
+          expect(p).toBeCloseTo(canvasCenterWorld[i], 3);
+          expect(p).toBeCloseTo(imageCenterWorld[i], 3);
+        });
         annotation.state.removeAnnotation(
           element1,
           crosshairAnnotation.annotationUID
-        )
-      })
+        );
+      });
 
-      done()
-    }
+      done();
+    };
 
     const renderEventHandler = () => {
-      canvasesRendered += 1
+      canvasesRendered += 1;
 
       if (canvasesRendered !== 3) {
-        return
+        return;
       }
 
       element1.addEventListener(
         csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
-      )
+      );
       element2.addEventListener(
         csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
-      )
+      );
       element3.addEventListener(
         csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
-      )
+      );
 
       this.testToolGroup.setToolActive(CrosshairsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
-      })
-    }
+      });
+    };
 
-    element1.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
-    element2.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
-    element3.addEventListener(Events.IMAGE_RENDERED, renderEventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
+    element2.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
+    element3.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
-    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id)
-    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id)
-    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id);
+    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id);
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id);
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -231,13 +231,13 @@ describe('Cornerstone Tools: ', () => {
           this.renderingEngine,
           [{ volumeId: volumeId }],
           [viewportId1, viewportId2, viewportUID3]
-        )
-        this.renderingEngine.render()
-      })
+        );
+        this.renderingEngine.render();
+      });
     } catch (e) {
-      done.fail(e)
+      done.fail(e);
     }
-  })
+  });
 
   it('Should successfully jump to move the crosshairs', function (done) {
     const [element1, element2, element3] = createViewports(
@@ -245,92 +245,92 @@ describe('Cornerstone Tools: ', () => {
       ViewportType.ORTHOGRAPHIC,
       512,
       128
-    )
-    this.DOMElements.push(element1)
-    this.DOMElements.push(element2)
-    this.DOMElements.push(element3)
+    );
+    this.DOMElements.push(element1);
+    this.DOMElements.push(element2);
+    this.DOMElements.push(element3);
 
-    let canvasesRendered = 0
-    let annotationRendered = 0
+    let canvasesRendered = 0;
+    let annotationRendered = 0;
 
-    let p1
+    let p1;
 
     const crosshairsEventHandler = () => {
-      annotationRendered += 1
+      annotationRendered += 1;
 
       if (annotationRendered !== 3) {
-        return
+        return;
       }
 
       const crosshairAnnotationsAfter = annotation.state.getAnnotations(
         element1,
         CrosshairsTool.toolName
-      )
+      );
       const axialCanvasToolCenter =
-        crosshairAnnotationsAfter[0].data.handles.toolCenter
+        crosshairAnnotationsAfter[0].data.handles.toolCenter;
 
       crosshairAnnotationsAfter.map((crosshairAnnotation) => {
-        expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined()
+        expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined();
         crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
           // Can successfully move the tool center in all viewports
-          expect(p).toBeCloseTo(p1[i], 3)
-          expect(p).toBeCloseTo(axialCanvasToolCenter[i], 3)
+          expect(p).toBeCloseTo(p1[i], 3);
+          expect(p).toBeCloseTo(axialCanvasToolCenter[i], 3);
           annotation.state.removeAnnotation(
             element1,
             crosshairAnnotation.annotationUID
-          )
-        })
-      })
-      done()
-    }
+          );
+        });
+      });
+      done();
+    };
 
     const attachCrosshairsHandler = () => {
       element1.addEventListener(
         csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
-      )
+      );
       element2.addEventListener(
         csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
-      )
+      );
       element3.addEventListener(
         csToolsEvents.ANNOTATION_RENDERED,
         crosshairsEventHandler
-      )
-    }
+      );
+    };
 
     const eventHandler = () => {
-      canvasesRendered += 1
+      canvasesRendered += 1;
 
       if (canvasesRendered !== 3) {
-        return
+        return;
       }
 
       this.testToolGroup.setToolActive(CrosshairsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
-      })
+      });
 
-      const vp1 = this.renderingEngine.getViewport(viewportId1)
-      const { imageData } = vp1.getImageData()
+      const vp1 = this.renderingEngine.getViewport(viewportId1);
+      const { imageData } = vp1.getImageData();
 
       const crosshairAnnotations = annotation.state.getAnnotations(
         element1,
         CrosshairsTool.toolName
-      )
+      );
 
       // First viewport is axial
       const currentWorldLocation =
-        crosshairAnnotations[0].data.handles.toolCenter
+        crosshairAnnotations[0].data.handles.toolCenter;
       const currentIndexLocation = transformPhysicalToIndex(
         imageData,
         currentWorldLocation
-      )
+      );
 
       const jumpIndexLocation = [
         currentIndexLocation[0] + 20,
         currentIndexLocation[1] + 20,
         currentIndexLocation[2],
-      ]
+      ];
 
       const {
         pageX: pageX1,
@@ -343,8 +343,8 @@ describe('Cornerstone Tools: ', () => {
         jumpIndexLocation,
         element1,
         vp1
-      )
-      p1 = worldCoord1
+      );
+      p1 = worldCoord1;
 
       // Mouse Down
       let evt = new MouseEvent('mousedown', {
@@ -354,23 +354,23 @@ describe('Cornerstone Tools: ', () => {
         pageY: pageY1,
         clientX: clientX1,
         clientY: clientY1,
-      })
-      element1.dispatchEvent(evt)
+      });
+      element1.dispatchEvent(evt);
 
       // Mouse Up instantly after
-      evt = new MouseEvent('mouseup')
+      evt = new MouseEvent('mouseup');
 
-      attachCrosshairsHandler()
-      document.dispatchEvent(evt)
-    }
+      attachCrosshairsHandler();
+      document.dispatchEvent(evt);
+    };
 
-    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
-    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler);
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler);
+    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler);
 
-    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id)
-    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id)
-    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id);
+    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id);
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id);
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -378,13 +378,13 @@ describe('Cornerstone Tools: ', () => {
           this.renderingEngine,
           [{ volumeId: volumeId }],
           [viewportId1, viewportId2, viewportUID3]
-        )
-        this.renderingEngine.render()
-      })
+        );
+        this.renderingEngine.render();
+      });
     } catch (e) {
-      done.fail(e)
+      done.fail(e);
     }
-  })
+  });
 
   it('Should successfully drag and move the crosshairs', function (done) {
     const [element1, element2, element3] = createViewports(
@@ -392,46 +392,46 @@ describe('Cornerstone Tools: ', () => {
       ViewportType.ORTHOGRAPHIC,
       512,
       128
-    )
-    this.DOMElements.push(element1)
-    this.DOMElements.push(element2)
-    this.DOMElements.push(element3)
+    );
+    this.DOMElements.push(element1);
+    this.DOMElements.push(element2);
+    this.DOMElements.push(element3);
 
-    let canvasesRendered = 0
+    let canvasesRendered = 0;
 
     const eventHandler = () => {
-      canvasesRendered += 1
+      canvasesRendered += 1;
 
       if (canvasesRendered !== 3) {
-        return
+        return;
       }
 
       this.testToolGroup.setToolActive(CrosshairsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
-      })
+      });
 
-      const vp1 = this.renderingEngine.getViewport(viewportId1)
-      const { imageData } = vp1.getImageData()
+      const vp1 = this.renderingEngine.getViewport(viewportId1);
+      const { imageData } = vp1.getImageData();
 
       setTimeout(() => {
         const crosshairAnnotations = annotation.state.getAnnotations(
           element1,
           CrosshairsTool.toolName
-        )
+        );
 
         // First viewport is axial
         const currentWorldLocation =
-          crosshairAnnotations[0].data.handles.toolCenter
+          crosshairAnnotations[0].data.handles.toolCenter;
         const currentIndexLocation = transformPhysicalToIndex(
           imageData,
           currentWorldLocation
-        )
+        );
 
         const jumpIndexLocation = [
           currentIndexLocation[0] - 20,
           currentIndexLocation[1] - 20,
           currentIndexLocation[2],
-        ]
+        ];
 
         const {
           pageX: pageX1,
@@ -444,7 +444,7 @@ describe('Cornerstone Tools: ', () => {
           currentIndexLocation,
           element1,
           vp1
-        )
+        );
 
         const {
           pageX: pageX2,
@@ -457,7 +457,7 @@ describe('Cornerstone Tools: ', () => {
           jumpIndexLocation,
           element1,
           vp1
-        )
+        );
 
         // Mouse Down
         let evt = new MouseEvent('mousedown', {
@@ -467,8 +467,8 @@ describe('Cornerstone Tools: ', () => {
           pageY: pageY1,
           clientX: clientX1,
           clientY: clientY1,
-        })
-        element1.dispatchEvent(evt)
+        });
+        element1.dispatchEvent(evt);
 
         // Mouse move to put the end somewhere else
         evt = new MouseEvent('mousemove', {
@@ -478,43 +478,43 @@ describe('Cornerstone Tools: ', () => {
           clientY: clientY2,
           pageX: pageX2,
           pageY: pageY2,
-        })
-        document.dispatchEvent(evt)
+        });
+        document.dispatchEvent(evt);
 
         // Mouse Up instantly after
-        evt = new MouseEvent('mouseup')
+        evt = new MouseEvent('mouseup');
 
-        document.dispatchEvent(evt)
+        document.dispatchEvent(evt);
 
         // Moving Crosshairs
         setTimeout(() => {
           const crosshairAnnotationsAfter = annotation.state.getAnnotations(
             element1,
             CrosshairsTool.toolName
-          )
+          );
           crosshairAnnotationsAfter.map((crosshairAnnotation) => {
-            expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined()
+            expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined();
             crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
               // Can successfully move the tool center in all viewports
-              expect(p).toBeCloseTo(worldCoord2[i], 3)
+              expect(p).toBeCloseTo(worldCoord2[i], 3);
               annotation.state.removeAnnotation(
                 element1,
                 crosshairAnnotation.annotationUID
-              )
-            })
-          })
-          done()
-        }, 50)
-      }, 50)
-    }
+              );
+            });
+          });
+          done();
+        }, 50);
+      }, 50);
+    };
 
-    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler)
-    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler)
-    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler)
+    element1.addEventListener(Events.IMAGE_RENDERED, eventHandler);
+    element2.addEventListener(Events.IMAGE_RENDERED, eventHandler);
+    element3.addEventListener(Events.IMAGE_RENDERED, eventHandler);
 
-    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id)
-    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id)
-    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id)
+    this.testToolGroup.addViewport(viewportId1, this.renderingEngine.id);
+    this.testToolGroup.addViewport(viewportId2, this.renderingEngine.id);
+    this.testToolGroup.addViewport(viewportUID3, this.renderingEngine.id);
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -522,11 +522,11 @@ describe('Cornerstone Tools: ', () => {
           this.renderingEngine,
           [{ volumeId: volumeId }],
           [viewportId1, viewportId2, viewportUID3]
-        )
-        this.renderingEngine.render()
-      })
+        );
+        this.renderingEngine.render();
+      });
     } catch (e) {
-      done.fail(e)
+      done.fail(e);
     }
-  })
-})
+  });
+});

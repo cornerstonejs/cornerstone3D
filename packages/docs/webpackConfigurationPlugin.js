@@ -1,5 +1,5 @@
-const path = require('path')
-const CopyPlugin = require('copy-webpack-plugin')
+const path = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 
 // If we want to embed examples in the docusaurus we need the following
 // module.exports = function (context, options) {
@@ -69,7 +69,7 @@ module.exports = function (context, options) {
             'Cross-Origin-Opener-Policy': 'same-origin',
           },
         },
-      }
+      };
     },
   };
 };

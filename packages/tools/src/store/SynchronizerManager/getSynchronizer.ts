@@ -1,5 +1,5 @@
-import { state } from '../index'
-import Synchronizer from './Synchronizer'
+import { state } from '../index';
+import Synchronizer from './Synchronizer';
 
 /**
  * Get the synchronizer with the given id from the state.
@@ -7,7 +7,7 @@ import Synchronizer from './Synchronizer'
  * @returns A synchronizer object.
  */
 function getSynchronizer(synchronizerId: string): Synchronizer | void {
-  return state.synchronizers.find((s) => s.id === synchronizerId)
+  return state.synchronizers.find((s) => s.id === synchronizerId);
 }
 
-export default getSynchronizer
+export default getSynchronizer;

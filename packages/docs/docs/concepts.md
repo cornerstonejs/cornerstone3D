@@ -1,6 +1,5 @@
 ## Rendering
 
-
 _index.html_
 
 ```html
@@ -14,12 +13,12 @@ import {
   RenderingEngine, // class
   ORIENTATION, // constant
   ViewportType, // enum
-} from 'vtkjs-viewport'
+} from 'vtkjs-viewport';
 
 // RENDER
-const renderingEngine = new RenderingEngine('ExampleRenderingEngineID')
-const volumeId = 'VOLUME_ID '
-const viewports = []
+const renderingEngine = new RenderingEngine('ExampleRenderingEngineID');
+const volumeId = 'VOLUME_ID ';
+const viewports = [];
 const viewport = {
   sceneUID,
   viewportId: 'viewportUID_0',
@@ -29,14 +28,14 @@ const viewport = {
     orientation: ORIENTATION.AXIAL,
     background: [Math.random(), Math.random(), Math.random()],
   },
-}
+};
 
 // Kick-off rendering
-viewports.push(viewport)
-renderingEngine.setViewports(viewports)
+viewports.push(viewport);
+renderingEngine.setViewports(viewports);
 
 // Render backgrounds
-renderingEngine.render()
+renderingEngine.render();
 
 // Create and load our image volume
 // See: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration
@@ -44,32 +43,32 @@ const imageIds = [
   'streaming-wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
   'streaming-wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/2',
   'streaming-wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
-]
+];
 
-imageCache.makeAndCacheImageVolume(imageIds, volumeId)
+imageCache.makeAndCacheImageVolume(imageIds, volumeId);
 imageCache.loadVolume(volumeId, (event) => {
   if (event.framesProcessed === event.numFrames) {
-    console.log('done loading!')
+    console.log('done loading!');
   }
-})
+});
 
 // Tie scene to one or more image volumes
-const scene = renderingEngine.getScene(sceneUID)
+const scene = renderingEngine.getScene(sceneUID);
 
 scene.setVolumes([
   {
     volumeId,
     callback: ({ volumeActor, volumeId }) => {
       // Where you might setup a transfer function or PET colormap
-      console.log('volume loaded!')
+      console.log('volume loaded!');
     },
   },
-])
+]);
 
-const viewport = scene.getViewport(viewports[0].viewportId)
+const viewport = scene.getViewport(viewports[0].viewportId);
 
 // This will initialise volumes in GPU memory
-renderingEngine.render()
+renderingEngine.render();
 ```
 
 For the most part, updating is as simple as using:
@@ -81,7 +80,7 @@ If you're using clientside routing and/or need to clean up resources more
 aggressively, most constructs have a `.destroy` method. For example:
 
 ```js
-renderingEngine.destroy()
+renderingEngine.destroy();
 ```
 
 ## Tools
@@ -109,17 +108,17 @@ the `BaseTool` or `AnnotationTool`. Adding a tool makes it available to ToolGrou
 A high level `.removeTool` also exists.
 
 ```js
-import * as csTools3d from '@cornerstone/tools'
+import * as csTools3d from '@cornerstone/tools';
 
 // Add uninstantiated tool classes to the library
 // These will be used to initialize tool instances when we explicitly add each
 // tool to one or more tool groups
-const { PanTool, StackScrollMouseWheelTool, ZoomTool, LengthTool } = csTools3d
+const { PanTool, StackScrollMouseWheelTool, ZoomTool, LengthTool } = csTools3d;
 
-csTools3d.addTool(PanTool)
-csTools3d.addTool(StackScrollMouseWheelTool)
-csTools3d.addTool(ZoomTool)
-csTools3d.addTool(LengthTool)
+csTools3d.addTool(PanTool);
+csTools3d.addTool(StackScrollMouseWheelTool);
+csTools3d.addTool(ZoomTool);
+csTools3d.addTool(LengthTool);
 ```
 
 ### Tool Group Manager
@@ -130,19 +129,19 @@ by a Tool Group Manager. Tool Group Managers are used to create, search for, and
 destroy Tool Groups.
 
 ```js
-import { ToolGroupManager } from '@cornerstone/tools'
-import { ctVolumeId } from './constants'
+import { ToolGroupManager } from '@cornerstone/tools';
+import { ctVolumeId } from './constants';
 
-const toolGroupId = 'TOOL_GROUP_ID'
-const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
+const toolGroupId = 'TOOL_GROUP_ID';
+const sceneToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID);
 
 // Add tools to ToolGroup
-sceneToolGroup.addTool(PanTool.toolName)
-sceneToolGroup.addTool(ZoomTool.toolName)
-sceneToolGroup.addTool(StackScrollMouseWheelTool.toolName)
+sceneToolGroup.addTool(PanTool.toolName);
+sceneToolGroup.addTool(ZoomTool.toolName);
+sceneToolGroup.addTool(StackScrollMouseWheelTool.toolName);
 sceneToolGroup.addTool(LengthTool.toolName, {
   configuration: { volumeId: ctVolumeId },
-})
+});
 ```
 
 ### Tool Modes
@@ -199,16 +198,16 @@ _NOTE:_
 ```js
 // Set the ToolGroup's ToolMode for each tool
 // Possible modes include: 'Active', 'Passive', 'Enabled', 'Disabled'
-sceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
+sceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 sceneToolGroup.setToolActive(LengthTool.toolName, {
-  bindings: [ { mouseButton: MouseBindings.Primary } ],
-})
+  bindings: [{ mouseButton: MouseBindings.Primary }],
+});
 sceneToolGroup.setToolActive(PanTool.toolName, {
-  bindings: [ { mouseButton: MouseBindings.Auxiliary } ],
-})
+  bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+});
 sceneToolGroup.setToolActive(ZoomTool.toolName, {
-  bindings: [ { mouseButton: MouseBindings.Secondary } ],
-})
+  bindings: [{ mouseButton: MouseBindings.Secondary }],
+});
 ```
 
 ### Synchronizers
@@ -226,8 +225,8 @@ Synchronizers also expose a `disabled` flag that can be used to temporarily prev
 synchronization.
 
 ```js
-import { Events as RENDERING_EVENTS } from 'vtkjs-viewport'
-import { SynchronizerManager } from '@cornerstone/tools'
+import { Events as RENDERING_EVENTS } from 'vtkjs-viewport';
+import { SynchronizerManager } from '@cornerstone/tools';
 
 const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
   synchronizerName,
@@ -240,16 +239,16 @@ const cameraPositionSyncrhonizer = SynchronizerManager.createSynchronizer(
   ) => {
     // Synchronization logic should go here
   }
-)
+);
 
 // Add viewports to synchronize
-const firstViewport = { renderingEngineId, sceneUID, viewportId }
+const firstViewport = { renderingEngineId, sceneUID, viewportId };
 const secondViewport = {
   /* */
-}
+};
 
-sync.add(firstViewport)
-sync.add(secondViewport)
+sync.add(firstViewport);
+sync.add(secondViewport);
 ```
 
 ## Next steps

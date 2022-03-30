@@ -1,5 +1,5 @@
-import { state } from '../index'
-import { IToolGroup } from '../../types'
+import { state } from '../index';
+import { IToolGroup } from '../../types';
 
 /**
  * Given a tool group Id, return the tool group
@@ -8,7 +8,7 @@ import { IToolGroup } from '../../types'
  * passed in.
  */
 function getToolGroup(toolGroupId: string): IToolGroup | undefined {
-  return state.toolGroups.find((s) => s.id === toolGroupId)
+  return state.toolGroups.find((s) => s.id === toolGroupId);
 }
 
-export default getToolGroup
+export default getToolGroup;

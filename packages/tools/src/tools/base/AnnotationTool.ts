@@ -3,25 +3,25 @@ import {
   getEnabledElement,
   VolumeViewport,
   Settings,
-} from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { vec4, vec2 } from 'gl-matrix'
+import { vec4, vec2 } from 'gl-matrix';
 
-import BaseTool from './BaseTool'
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking'
-import { getViewportSpecificAnnotationManager } from '../../stateManagement/annotation/annotationState'
+import BaseTool from './BaseTool';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { getViewportSpecificAnnotationManager } from '../../stateManagement/annotation/annotationState';
 import {
   Annotation,
   Annotations,
   EventTypes,
   ToolHandle,
   InteractionTypes,
-} from '../../types'
-import triggerAnnotationRender from '../../utilities/triggerAnnotationRender'
-import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay'
-import { getStyleProperty } from '../../stateManagement/annotation/config/annotationStyle'
-import { getState } from '../../stateManagement/annotation/config'
+} from '../../types';
+import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
+import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
+import { getStyleProperty } from '../../stateManagement/annotation/config/annotationStyle';
+import { getState } from '../../stateManagement/annotation/config';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -34,7 +34,7 @@ import { getState } from '../../stateManagement/annotation/config'
  * abstract methods.
  */
 abstract class AnnotationTool extends BaseTool {
-  static toolName = 'AnnotationTool'
+  static toolName = 'AnnotationTool';
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
@@ -48,7 +48,7 @@ abstract class AnnotationTool extends BaseTool {
   abstract addNewAnnotation(
     evt: EventTypes.MouseDownActivateEventType,
     interactionType: InteractionTypes
-  ): Annotation
+  ): Annotation;
 
   /**
    * @abstract renderAnnotation it used to draw the tool's annotation in each
@@ -60,13 +60,13 @@ abstract class AnnotationTool extends BaseTool {
   abstract renderAnnotation(
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  )
+  );
 
   /**
    * @abstract cancel Used to cancel the ongoing tool drawing and manipulation
    *
    */
-  abstract cancel(element: HTMLElement)
+  abstract cancel(element: HTMLElement);
 
   /**
    * handleSelectedCallback Custom callback for when a handle is selected.
@@ -81,7 +81,7 @@ abstract class AnnotationTool extends BaseTool {
     annotation: Annotation,
     handle: ToolHandle,
     interactionType: InteractionTypes
-  ): void
+  ): void;
 
   /**
    * Custom callback for when an annotation is selected
@@ -94,7 +94,7 @@ abstract class AnnotationTool extends BaseTool {
     evt: EventTypes.MouseDownEventType,
     annotation: Annotation,
     interactionType: InteractionTypes
-  ): void
+  ): void;
 
   /**
    * Returns true if the provided canvas coordinate tool is near the annotation
@@ -113,7 +113,7 @@ abstract class AnnotationTool extends BaseTool {
     canvasCoords: Types.Point2,
     proximity: number,
     interactionType: string
-  ): boolean
+  ): boolean;
 
   /**
    * @virtual Given the element and annotations which is an array of annotation, it
@@ -131,13 +131,13 @@ abstract class AnnotationTool extends BaseTool {
     annotations: Annotations
   ): Annotations | undefined {
     if (!annotations || !annotations.length) {
-      return
+      return;
     }
 
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
-    return filterAnnotationsForDisplay(viewport, annotations)
+    return filterAnnotationsForDisplay(viewport, annotations);
   }
 
   /**
@@ -153,23 +153,23 @@ abstract class AnnotationTool extends BaseTool {
     filteredAnnotations?: Annotations
   ): boolean => {
     if (!filteredAnnotations) {
-      return false
+      return false;
     }
 
-    const { element, currentPoints } = evt.detail
-    const canvasCoords = currentPoints.canvas
-    let annotationsNeedToBeRedrawn = false
+    const { element, currentPoints } = evt.detail;
+    const canvasCoords = currentPoints.canvas;
+    let annotationsNeedToBeRedrawn = false;
 
     for (const annotation of filteredAnnotations) {
       // Do not do anything if the annotation is locked
       if (isAnnotationLocked(annotation)) {
-        continue
+        continue;
       }
 
-      const { data } = annotation
+      const { data } = annotation;
       const activateHandleIndex = data.handles
         ? data.handles.activeHandleIndex
-        : undefined
+        : undefined;
 
       // Perform tool specific imagePointNearToolOrHandle to determine if the mouse
       // is near the tool or its handles or its textBox.
@@ -178,24 +178,24 @@ abstract class AnnotationTool extends BaseTool {
         annotation,
         canvasCoords,
         6 // Todo: This should come from the state
-      )
+      );
 
-      const nearToolAndNotMarkedActive = near && !annotation.highlighted
-      const notNearToolAndMarkedActive = !near && annotation.highlighted
+      const nearToolAndNotMarkedActive = near && !annotation.highlighted;
+      const notNearToolAndMarkedActive = !near && annotation.highlighted;
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
-        annotation.highlighted = !annotation.highlighted
-        annotationsNeedToBeRedrawn = true
+        annotation.highlighted = !annotation.highlighted;
+        annotationsNeedToBeRedrawn = true;
       } else if (
         data.handles &&
         data.handles.activeHandleIndex !== activateHandleIndex
       ) {
         // Active handle index has changed, re-render.
-        annotationsNeedToBeRedrawn = true
+        annotationsNeedToBeRedrawn = true;
       }
     }
 
-    return annotationsNeedToBeRedrawn
-  }
+    return annotationsNeedToBeRedrawn;
+  };
 
   /**
    * On Image Calibration, take all the annotation from the AnnotationState manager,
@@ -216,30 +216,30 @@ abstract class AnnotationTool extends BaseTool {
       imageId,
       imageData: calibratedImageData,
       worldToIndex: noneCalibratedWorldToIndex,
-    } = evt.detail
+    } = evt.detail;
 
-    const { viewport } = getEnabledElement(element)
+    const { viewport } = getEnabledElement(element);
 
     if (viewport instanceof VolumeViewport) {
-      throw new Error('Cannot calibrate a volume viewport')
+      throw new Error('Cannot calibrate a volume viewport');
     }
 
-    const calibratedIndexToWorld = calibratedImageData.getIndexToWorld()
+    const calibratedIndexToWorld = calibratedImageData.getIndexToWorld();
 
-    const imageURI = utilities.imageIdToURI(imageId)
-    const stateManager = getViewportSpecificAnnotationManager(element)
-    const framesOfReference = stateManager.getFramesOfReference()
+    const imageURI = utilities.imageIdToURI(imageId);
+    const stateManager = getViewportSpecificAnnotationManager(element);
+    const framesOfReference = stateManager.getFramesOfReference();
 
     // For each frame Of Reference
     framesOfReference.forEach((frameOfReference) => {
       const frameOfReferenceSpecificAnnotations =
-        stateManager.getFrameOfReferenceAnnotations(frameOfReference)
+        stateManager.getFrameOfReferenceAnnotations(frameOfReference);
 
       const toolSpecificAnnotations =
-        frameOfReferenceSpecificAnnotations[this.getToolName()]
+        frameOfReferenceSpecificAnnotations[this.getToolName()];
 
       if (!toolSpecificAnnotations || !toolSpecificAnnotations.length) {
-        return
+        return;
       }
 
       // for this specific tool
@@ -248,8 +248,8 @@ abstract class AnnotationTool extends BaseTool {
         if (annotation.metadata.referencedImageId === imageURI) {
           // make them invalid since the image has been calibrated so that
           // we can update the cachedStats and also rendering
-          annotation.invalidated = true
-          annotation.data.cachedStats = {}
+          annotation.invalidated = true;
+          annotation.data.cachedStats = {};
 
           // Update annotation points to the new calibrated points. Basically,
           // using the worldToIndex function we get the index on the non-calibrated
@@ -257,19 +257,19 @@ abstract class AnnotationTool extends BaseTool {
           // corresponding point on the calibrated image world.
           annotation.data.handles.points = annotation.data.handles.points.map(
             (point) => {
-              const p = vec4.fromValues(...point, 1)
-              const pCalibrated = vec4.fromValues(0, 0, 0, 1)
-              const nonCalibratedIndexVec4 = vec4.create()
+              const p = vec4.fromValues(...point, 1);
+              const pCalibrated = vec4.fromValues(0, 0, 0, 1);
+              const nonCalibratedIndexVec4 = vec4.create();
               vec4.transformMat4(
                 nonCalibratedIndexVec4,
                 p,
                 noneCalibratedWorldToIndex
-              )
+              );
               const calibratedIndex = [
                 columnScale * nonCalibratedIndexVec4[0],
                 rowScale * nonCalibratedIndexVec4[1],
                 nonCalibratedIndexVec4[2],
-              ]
+              ];
 
               vec4.transformMat4(
                 pCalibrated,
@@ -280,17 +280,17 @@ abstract class AnnotationTool extends BaseTool {
                   1
                 ),
                 calibratedIndexToWorld
-              )
+              );
 
-              return pCalibrated.slice(0, 3) as Types.Point3
+              return pCalibrated.slice(0, 3) as Types.Point3;
             }
-          )
+          );
         }
-      })
+      });
 
-      triggerAnnotationRender(element)
-    })
-  }
+      triggerAnnotationRender(element);
+    });
+  };
 
   /**
    * It checks if the mouse click is near TextBoxHandle or AnnotationHandle itself, and
@@ -311,12 +311,12 @@ abstract class AnnotationTool extends BaseTool {
     canvasCoords: Types.Point2,
     proximity: number
   ): ToolHandle | undefined {
-    const enabledElement = getEnabledElement(element)
-    const { viewport } = enabledElement
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
-    const { data } = annotation
-    const { points, textBox } = data.handles
-    const { worldBoundingBox } = textBox
+    const { data } = annotation;
+    const { points, textBox } = data.handles;
+    const { worldBoundingBox } = textBox;
 
     if (worldBoundingBox) {
       const canvasBoundingBox = {
@@ -324,7 +324,7 @@ abstract class AnnotationTool extends BaseTool {
         topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
         bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
         bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
-      }
+      };
 
       if (
         canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
@@ -332,25 +332,25 @@ abstract class AnnotationTool extends BaseTool {
         canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
         canvasCoords[1] <= canvasBoundingBox.bottomRight[1]
       ) {
-        data.handles.activeHandleIndex = null
-        return textBox
+        data.handles.activeHandleIndex = null;
+        return textBox;
       }
     }
 
     for (let i = 0; i < points.length; i++) {
-      const point = points[i]
-      const annotationCanvasCoordinate = viewport.worldToCanvas(point)
+      const point = points[i];
+      const annotationCanvasCoordinate = viewport.worldToCanvas(point);
 
       const near =
-        vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity
+        vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity;
 
       if (near === true) {
-        data.handles.activeHandleIndex = i
-        return point
+        data.handles.activeHandleIndex = i;
+        return point;
       }
     }
 
-    data.handles.activeHandleIndex = null
+    data.handles.activeHandleIndex = null;
   }
 
   /**
@@ -368,7 +368,12 @@ abstract class AnnotationTool extends BaseTool {
     property: string,
     annotation?: Annotation
   ): unknown {
-    return getStyleProperty(settings, property, getState(annotation), this.mode)
+    return getStyleProperty(
+      settings,
+      property,
+      getState(annotation),
+      this.mode
+    );
   }
 
   /**
@@ -392,7 +397,7 @@ abstract class AnnotationTool extends BaseTool {
       background: this.getStyle(settings, 'textBox.background', annotation),
       lineWidth: this.getStyle(settings, 'textBox.link.lineWidth', annotation),
       lineDash: this.getStyle(settings, 'textBox.link.lineDash', annotation),
-    }
+    };
   }
 
   /**
@@ -417,10 +422,10 @@ abstract class AnnotationTool extends BaseTool {
       annotation,
       canvasCoords,
       proximity
-    )
+    );
 
     if (handleNearImagePoint) {
-      return true
+      return true;
     }
 
     // If the point is not near the handles, check if the point is near the tool
@@ -430,12 +435,12 @@ abstract class AnnotationTool extends BaseTool {
       canvasCoords,
       proximity,
       'mouse'
-    )
+    );
 
     if (toolNewImagePoint) {
-      return true
+      return true;
     }
   }
 }
 
-export default AnnotationTool
+export default AnnotationTool;

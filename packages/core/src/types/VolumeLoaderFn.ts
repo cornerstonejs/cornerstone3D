@@ -8,11 +8,11 @@ type VolumeLoaderFn = (
   options?: Record<string, any>
 ) => {
   /** promise that resolves to the volume object */
-  promise: Promise<Record<string, any>>
+  promise: Promise<Record<string, any>>;
   /** cancel function */
-  cancelFn?: () => void | undefined
+  cancelFn?: () => void | undefined;
   /** decache function */
-  decache?: () => void | undefined
-}
+  decache?: () => void | undefined;
+};
 
-export default VolumeLoaderFn
+export default VolumeLoaderFn;

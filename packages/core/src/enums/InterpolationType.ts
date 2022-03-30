@@ -10,4 +10,4 @@ enum InterpolationType {
   FAST_LINEAR,
 }
 
-export default InterpolationType
+export default InterpolationType;

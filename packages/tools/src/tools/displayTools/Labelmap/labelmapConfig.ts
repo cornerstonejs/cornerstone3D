@@ -1,4 +1,4 @@
-import { labelmapConfig } from '../../../types/LabelmapTypes'
+import { labelmapConfig } from '../../../types/LabelmapTypes';
 
 const defaultLabelmapConfig: labelmapConfig = {
   renderOutline: true,
@@ -11,10 +11,10 @@ const defaultLabelmapConfig: labelmapConfig = {
   // outlineAlpha: 0.7,
   // outlineAlphaInactive: 0.35,
   // Fill inside the render maps
-}
+};
 
 function getDefaultLabelmapConfig(): labelmapConfig {
-  return defaultLabelmapConfig
+  return defaultLabelmapConfig;
 }
 
 // Checks if the labelmap config is valid, which means
@@ -28,8 +28,8 @@ function isValidLabelmapConfig(config): boolean {
     typeof config.renderFill === 'boolean' &&
     typeof config.fillAlpha === 'number' &&
     typeof config.fillAlphaInactive === 'number'
-  )
+  );
 }
 
-export default getDefaultLabelmapConfig
-export { isValidLabelmapConfig }
+export default getDefaultLabelmapConfig;
+export { isValidLabelmapConfig };

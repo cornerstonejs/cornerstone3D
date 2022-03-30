@@ -9,7 +9,6 @@ defaults: &defaults
       environment:
         TERM: xterm # Enable colors in term
 
-
 jobs:
   CHECKOUT:
     <<: *defaults
@@ -103,7 +102,7 @@ jobs:
       - attach_workspace:
           at: ./
       - run: # print the name of the branch we're on
-          name: "What branch am I on?"
+          name: 'What branch am I on?'
           command: echo ${CIRCLE_BRANCH}
       - run:
           name: Deploy to Netlify

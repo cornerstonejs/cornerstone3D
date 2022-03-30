@@ -27,10 +27,10 @@ We create a volume similar to previous tutorials out of set of `imageIds`
 ```js
 const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
   imageIds: ptImageIds,
-})
+});
 const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
   imageIds: ctVolumeImageIds,
-})
+});
 ```
 
 ### Step 2: Getting imageLoad requests
@@ -38,8 +38,8 @@ const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
 Next, we need to get the imageLoad requests
 
 ```js
-const ctRequests = ctVolume.getImageLoadRequests()
-const ptRequests = ptVolume.getImageLoadRequests()
+const ctRequests = ctVolume.getImageLoadRequests();
+const ptRequests = ptVolume.getImageLoadRequests();
 ```
 
 ### Step 3: Custom ordering of requests
@@ -47,9 +47,11 @@ const ptRequests = ptVolume.getImageLoadRequests()
 We use lodash helpers to merge the requests together in one after the other fashion.
 
 ```js
-import _ from 'lodash'
+import _ from 'lodash';
 
-const ctPtRequests = _.flatten(_.zip(ctRequests, ptRequests)).filter((el) => el)
+const ctPtRequests = _.flatten(_.zip(ctRequests, ptRequests)).filter(
+  (el) => el
+);
 ```
 
 ### Step 4: Add requests back to imageLoadPoolManager
@@ -67,15 +69,15 @@ ctPtRequests.forEach((request) => {
     imageId,
     imageIdIndex,
     options,
-  } = request
+  } = request;
 
   imageLoadPoolManager.addRequest(
     callLoadImage.bind(null, imageId, imageIdIndex, options),
     requestType,
     additionalDetails,
     priority
-  )
-})
+  );
+});
 ```
 
 :::note Tip
@@ -84,7 +86,6 @@ There is no need to call `volume.load` since this method basically does the
 same process as our steps 3 and 4.
 
 :::
-
 
 ## Results
 

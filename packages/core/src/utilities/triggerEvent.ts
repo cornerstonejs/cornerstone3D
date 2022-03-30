@@ -1,4 +1,4 @@
-import eventTarget from '../eventTarget'
+import eventTarget from '../eventTarget';
 
 /**
  * Small utility to trigger a custom event for a given EventTarget.
@@ -26,13 +26,13 @@ export default function triggerEvent(
   detail: unknown = null
 ): boolean {
   if (!type) {
-    throw new Error('Event type was not defined')
+    throw new Error('Event type was not defined');
   }
 
   const event = new CustomEvent(type, {
     detail,
     cancelable: true,
-  })
+  });
 
-  return el.dispatchEvent(event)
+  return el.dispatchEvent(event);
 }

@@ -1,7 +1,7 @@
-import _cloneDeep from 'lodash.clonedeep'
-import { SegmentationPublicInput } from '../../types/SegmentationStateTypes'
-import { validateSegmentationInput } from './helpers'
-import { addSegmentation as addSegmentationToState } from './segmentationState'
+import _cloneDeep from 'lodash.clonedeep';
+import { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
+import { validateSegmentationInput } from './helpers';
+import { addSegmentation as addSegmentationToState } from './segmentationState';
 /**
  * Adds the segmentation to the cornerstone3D segmentation state. It should be
  * noted that segmentations are not added to any toolGroup's viewports. In order to
@@ -15,13 +15,13 @@ import { addSegmentation as addSegmentationToState } from './segmentationState'
 function addSegmentations(
   segmentationInputArray: SegmentationPublicInput[]
 ): void {
-  validateSegmentationInput(segmentationInputArray)
+  validateSegmentationInput(segmentationInputArray);
 
   segmentationInputArray.map((segInput) => {
-    const segmentationInput = _cloneDeep(segInput)
+    const segmentationInput = _cloneDeep(segInput);
 
-    addSegmentationToState(segmentationInput)
-  })
+    addSegmentationToState(segmentationInput);
+  });
 }
 
-export default addSegmentations
+export default addSegmentations;

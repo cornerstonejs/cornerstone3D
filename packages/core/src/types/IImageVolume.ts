@@ -1,5 +1,5 @@
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData'
-import { Metadata, Point3, IImageLoadObject } from '../types'
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { Metadata, Point3, IImageLoadObject } from '../types';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -7,47 +7,47 @@ import { Metadata, Point3, IImageLoadObject } from '../types'
  */
 interface IImageVolume {
   /** unique identifier of the volume in the cache */
-  readonly volumeId: string
+  readonly volumeId: string;
   /** volume dimensions */
-  dimensions: Point3
+  dimensions: Point3;
   /** volume direction */
-  direction: Float32Array
+  direction: Float32Array;
   /** volume metadata */
-  metadata: Metadata
+  metadata: Metadata;
   /** volume origin - set to the imagePositionPatient of the last image in the volume */
-  origin: Point3
+  origin: Point3;
   /** volume scalar data */
-  scalarData: any
+  scalarData: any;
   /** volume scaling metadata */
   scaling?: {
     PET?: {
-      SUVlbmFactor?: number
-      SUVbsaFactor?: number
-      suvbwToSuvlbm?: number
-      suvbwToSuvbsa?: number
-    }
-  }
+      SUVlbmFactor?: number;
+      SUVbsaFactor?: number;
+      suvbwToSuvlbm?: number;
+      suvbwToSuvbsa?: number;
+    };
+  };
   /** volume size in bytes */
-  sizeInBytes?: number
+  sizeInBytes?: number;
   /** volume spacing */
-  spacing: Point3
+  spacing: Point3;
   /** number of voxels in the volume */
-  numVoxels: number
+  numVoxels: number;
   /** volume image data as vtkImageData */
-  imageData?: vtkImageData
+  imageData?: vtkImageData;
   /** openGL texture for the volume */
-  vtkOpenGLTexture: any
+  vtkOpenGLTexture: any;
   /** loading status object for the volume containing loaded/loading statuses */
-  loadStatus?: Record<string, any>
+  loadStatus?: Record<string, any>;
   /** imageIds of the volume (if it is built of separate imageIds) */
-  imageIds?: Array<string>
+  imageIds?: Array<string>;
   /** volume referencedVolumeId (if it is derived from another volume) */
-  referencedVolumeId?: string // if volume is derived from another volume
+  referencedVolumeId?: string; // if volume is derived from another volume
   /** method to convert the volume data in the volume cache, to separate images in the image cache */
   convertToCornerstoneImage?: (
     imageId: string,
     imageIdIndex: number
-  ) => IImageLoadObject
+  ) => IImageLoadObject;
 }
 
-export default IImageVolume
+export default IImageVolume;

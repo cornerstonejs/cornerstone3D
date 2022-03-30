@@ -1,7 +1,7 @@
-import { getEnabledElement } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { getEnabledElement } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { IPoints } from '../../types'
+import { IPoints } from '../../types';
 
 /**
  * Given a native mouse event, get the associated cornerstone3D enabled element
@@ -15,19 +15,19 @@ export default function getMouseEventPoints(
   evt: MouseEvent,
   element?: HTMLElement
 ): IPoints {
-  const elementToUse = element || (evt.currentTarget as HTMLElement)
-  const { viewport } = getEnabledElement(elementToUse)
-  const clientPoint = _clientToPoint(evt)
-  const pagePoint = _pageToPoint(evt)
-  const canvasPoint = _pagePointsToCanvasPoints(elementToUse, pagePoint)
-  const worldPoint = viewport.canvasToWorld(canvasPoint)
+  const elementToUse = element || (evt.currentTarget as HTMLElement);
+  const { viewport } = getEnabledElement(elementToUse);
+  const clientPoint = _clientToPoint(evt);
+  const pagePoint = _pageToPoint(evt);
+  const canvasPoint = _pagePointsToCanvasPoints(elementToUse, pagePoint);
+  const worldPoint = viewport.canvasToWorld(canvasPoint);
 
   return {
     page: pagePoint,
     client: clientPoint,
     canvas: canvasPoint,
     world: worldPoint,
-  }
+  };
 }
 
 /**
@@ -41,11 +41,11 @@ function _pagePointsToCanvasPoints(
   element: HTMLElement,
   pagePoint: Types.Point2
 ): Types.Point2 {
-  const rect = element.getBoundingClientRect()
+  const rect = element.getBoundingClientRect();
   return [
     pagePoint[0] - rect.left - window.pageXOffset,
     pagePoint[1] - rect.top - window.pageYOffset,
-  ]
+  ];
 }
 
 /**
@@ -54,7 +54,7 @@ function _pagePointsToCanvasPoints(
  * @param evt - The Mouse `Event`
  */
 function _pageToPoint(evt: MouseEvent): Types.Point2 {
-  return [evt.pageX, evt.pageY]
+  return [evt.pageX, evt.pageY];
 }
 
 /**
@@ -62,5 +62,5 @@ function _pageToPoint(evt: MouseEvent): Types.Point2 {
  * @param evt - The Mouse `Event`
  */
 function _clientToPoint(evt: MouseEvent): Types.Point2 {
-  return [evt.clientX, evt.clientY]
+  return [evt.clientX, evt.clientY];
 }

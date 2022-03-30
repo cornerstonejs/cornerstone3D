@@ -222,4 +222,4 @@ enum Events {
   */
 }
 
-export default Events
+export default Events;

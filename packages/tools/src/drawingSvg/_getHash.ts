@@ -4,7 +4,7 @@ function _getHash(
   drawingElementType: string,
   nodeUID: string
 ): string {
-  return `${toolName}::${annotationUID}::${drawingElementType}::${nodeUID}`
+  return `${toolName}::${annotationUID}::${drawingElementType}::${nodeUID}`;
 }
 
-export default _getHash
+export default _getHash;

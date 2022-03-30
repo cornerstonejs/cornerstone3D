@@ -1,7 +1,7 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
-import drawTextBox from './drawTextBox'
-import drawLink from './drawLink'
+import drawTextBox from './drawTextBox';
+import drawLink from './drawLink';
 
 function drawLinkedTextBox(
   svgDrawingHelper: Record<string, unknown>,
@@ -26,7 +26,7 @@ function drawLinkedTextBox(
       },
     },
     options
-  )
+  );
 
   // Draw the text box
   const canvasBoundingBox = drawTextBox(
@@ -37,7 +37,7 @@ function drawLinkedTextBox(
     textLines,
     textBoxPosition,
     mergedOptions
-  )
+  );
   // if (textBox.hasMoved) {
   //   // Draw dashed link line between tool and text
   drawLink(
@@ -49,7 +49,7 @@ function drawLinkedTextBox(
     textBoxPosition, // refPoint (text)
     canvasBoundingBox, // textBoxBoundingBox
     mergedOptions
-  )
+  );
   // }
 
   // const { top, left, width, height } = canvasBoundingBox
@@ -61,7 +61,7 @@ function drawLinkedTextBox(
   //   bottomRight: canvasToWorld([left + width, top + height]),
   // }
 
-  return canvasBoundingBox
+  return canvasBoundingBox;
 }
 
-export default drawLinkedTextBox
+export default drawLinkedTextBox;

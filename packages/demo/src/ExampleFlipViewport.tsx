@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
@@ -7,42 +7,42 @@ import {
   CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   synchronizers,
   Enums as csToolsEnums,
   WindowLevelTool,
-} from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
 import {
   renderingEngineId,
   ctVolumeId,
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
-} from './constants'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
+} from './constants';
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
+import '@cornerstonejs/streaming-image-volume-loader'; // for loader to get registered
 
-import { setCTWWWC } from './helpers/transferFunctionHelpers'
+import { setCTWWWC } from './helpers/transferFunctionHelpers';
 
-const VOLUME = 'volume'
-const STACK = 'stack'
+const VOLUME = 'volume';
+const STACK = 'stack';
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-window.cache = cache
+window.cache = cache;
 
-let ctSceneToolGroup, stackCTViewportToolGroup
+let ctSceneToolGroup, stackCTViewportToolGroup;
 
-const toolsToUse = ANNOTATION_TOOLS
-const ctLayoutTools = ['Levels'].concat(toolsToUse)
-let viewportInput
+const toolsToUse = ANNOTATION_TOOLS;
+const ctLayoutTools = ['Levels'].concat(toolsToUse);
+let viewportInput;
 class FlipViewportExample extends Component {
   state = {
     progressText: 'fetching metadata...',
@@ -66,54 +66,54 @@ class FlipViewportExample extends Component {
     viewportUIDs: ['ctAxial', 'ctSagittal', 'ctCoronal', 'ctStack'],
     selectedViewportId: 'ctAxial',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    this._elementNodes = new Map()
-    this._viewportGridRef = React.createRef()
-    this._offScreenRef = React.createRef()
+    this._elementNodes = new Map();
+    this._viewportGridRef = React.createRef();
+    this._offScreenRef = React.createRef();
 
-    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME)
-    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
+    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME);
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK);
 
     const { createCameraPositionSynchronizer, createVOISynchronizer } =
-      synchronizers
+      synchronizers;
 
-    this.axialSync = createCameraPositionSynchronizer('axialSync')
+    this.axialSync = createCameraPositionSynchronizer('axialSync');
     // this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
     // this.coronalSync = createCameraPositionSynchronizer('coronalSync')
-    this.ctWLSync = createVOISynchronizer('ctWLSync')
+    this.ctWLSync = createVOISynchronizer('ctWLSync');
     // this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    ;({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups({
+    await csRenderInit();
+    csTools3d.init();
+    ({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups({
       configuration: { preventHandleOutsideImage: true },
-    }))
+    }));
 
-    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
-    const ctStackImageIds = await this.ctStackImageIdsPromise
+    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise;
+    const ctStackImageIds = await this.ctStackImageIdsPromise;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     viewportInput = [
       // CT volume axial
@@ -150,80 +150,80 @@ class FlipViewportExample extends Component {
           orientation: ORIENTATION.AXIAL,
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(viewportInput)
+    renderingEngine.setViewports(viewportInput);
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId);
 
     // stack ct, stack pet, and stack DX
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
       renderingEngineId
-    )
+    );
 
     addToolsToToolGroups({
       ctSceneToolGroup,
       stackCTViewportToolGroup,
-    })
+    });
 
     this.axialSync.add({
       renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.AXIAL,
-    })
+    });
     this.axialSync.add({
       renderingEngineId,
       viewportId: VIEWPORT_IDS.STACK.CT,
-    })
+    });
 
     this.ctWLSync.add({
       renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.AXIAL,
-    })
+    });
     this.ctWLSync.add({
       renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.CORONAL,
-    })
+    });
     this.ctWLSync.add({
       renderingEngineId,
       viewportId: VIEWPORT_IDS.CT.SAGITTAL,
-    })
+    });
     this.ctWLSync.add({
       renderingEngineId,
       viewportId: VIEWPORT_IDS.STACK.CT,
-    })
+    });
 
-    renderingEngine.render()
+    renderingEngine.render();
 
-    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2)
+    const ctStackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    const ctMiddleSlice = Math.floor(ctStackImageIds.length / 2);
     await ctStackViewport.setStack(
       sortImageIdsByIPP(ctStackImageIds),
       ctMiddleSlice
-    )
+    );
 
-    ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } })
+    ctStackViewport.setProperties({ voiRange: { lower: -160, upper: 240 } });
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
-    })
+    });
 
     // Initialize all CT values to -1024 so we don't get a grey box?
-    const { scalarData } = ctVolume
-    const ctLength = scalarData.length
+    const { scalarData } = ctVolume;
+    const ctLength = scalarData.length;
 
     // for (let i = 0; i < ctLength; i++) {
     //   scalarData[i] = -1024
     // }
 
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    ctVolume.load(onLoad)
+    ctVolume.load(onLoad);
 
     setVolumesForViewports(
       renderingEngine,
@@ -235,102 +235,102 @@ class FlipViewportExample extends Component {
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
-    )
+    );
 
     // Set initial CT levels in UI
-    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
+    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
     this.setState({
       metadataLoaded: true,
       ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-    })
+    });
 
     // This will initialise volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
 
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   showOffScreenCanvas = () => {
     // remove children
-    this._offScreenRef.current.innerHTML = ''
-    const uri = this.renderingEngine._debugRender()
-    const image = document.createElement('img')
-    image.src = uri
-    image.setAttribute('width', '100%')
+    this._offScreenRef.current.innerHTML = '';
+    const uri = this.renderingEngine._debugRender();
+    const image = document.createElement('img');
+    image.src = uri;
+    image.setAttribute('width', '100%');
 
-    this._offScreenRef.current.appendChild(image)
-  }
+    this._offScreenRef.current.appendChild(image);
+  };
 
   hideOffScreenCanvas = () => {
     // remove children
-    this._offScreenRef.current.innerHTML = ''
-  }
+    this._offScreenRef.current.innerHTML = '';
+  };
 
   swapTools = (evt) => {
-    const toolName = evt.target.value
+    const toolName = evt.target.value;
 
-    const isAnnotationToolOn = toolName !== 'Levels' ? true : false
+    const isAnnotationToolOn = toolName !== 'Levels' ? true : false;
     const options = {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    }
+    };
     if (isAnnotationToolOn) {
       // Set tool active
 
-      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName)
+      const toolsToSetPassive = toolsToUse.filter((name) => name !== toolName);
 
-      ctSceneToolGroup.setToolActive(toolName, options)
-      stackCTViewportToolGroup.setToolActive(toolName, options)
+      ctSceneToolGroup.setToolActive(toolName, options);
+      stackCTViewportToolGroup.setToolActive(toolName, options);
 
       toolsToSetPassive.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-        stackCTViewportToolGroup.setToolPassive(toolName)
-      })
+        ctSceneToolGroup.setToolPassive(toolName);
+        stackCTViewportToolGroup.setToolPassive(toolName);
+      });
 
-      ctSceneToolGroup.setToolDisabled(WindowLevelTool.toolName)
-      stackCTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName)
+      ctSceneToolGroup.setToolDisabled(WindowLevelTool.toolName);
+      stackCTViewportToolGroup.setToolDisabled(WindowLevelTool.toolName);
     } else {
       // Set window level + threshold
-      ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, options)
-      stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options)
+      ctSceneToolGroup.setToolActive(WindowLevelTool.toolName, options);
+      stackCTViewportToolGroup.setToolActive(WindowLevelTool.toolName, options);
 
       // Set all annotation tools passive
       toolsToUse.forEach((toolName) => {
-        ctSceneToolGroup.setToolPassive(toolName)
-        stackCTViewportToolGroup.setToolPassive(toolName)
-      })
+        ctSceneToolGroup.setToolPassive(toolName);
+        stackCTViewportToolGroup.setToolPassive(toolName);
+      });
     }
 
-    this.renderingEngine.render()
-    this.setState({ ptCtLeftClickTool: toolName })
-  }
+    this.renderingEngine.render();
+    this.setState({ ptCtLeftClickTool: toolName });
+  };
 
   flipHorizontal = () => {
-    const viewportId = this.state.selectedViewportId
-    const viewport = this.renderingEngine.getViewport(viewportId)
-    const { flipHorizontal } = viewport.getProperties()
-    viewport.flip({ flipHorizontal: !flipHorizontal })
-  }
+    const viewportId = this.state.selectedViewportId;
+    const viewport = this.renderingEngine.getViewport(viewportId);
+    const { flipHorizontal } = viewport.getProperties();
+    viewport.flip({ flipHorizontal: !flipHorizontal });
+  };
 
   flipVertical = () => {
-    const viewportId = this.state.selectedViewportId
-    const viewport = this.renderingEngine.getViewport(viewportId)
-    const { flipVertical } = viewport.getProperties()
-    viewport.flip({ flipVertical: !flipVertical })
-  }
+    const viewportId = this.state.selectedViewportId;
+    const viewport = this.renderingEngine.getViewport(viewportId);
+    const { flipVertical } = viewport.getProperties();
+    viewport.flip({ flipVertical: !flipVertical });
+  };
 
   render() {
     return (
@@ -433,8 +433,8 @@ class FlipViewportExample extends Component {
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default FlipViewportExample
+export default FlipViewportExample;

@@ -1,7 +1,7 @@
-import React from 'react'
-import clsx from 'clsx'
-import styles from './HomepageFeatures.module.css'
-import { useColorMode } from '@docusaurus/theme-common'
+import React from 'react';
+import clsx from 'clsx';
+import styles from './HomepageFeatures.module.css';
+import { useColorMode } from '@docusaurus/theme-common';
 
 const FeatureList = [
   {
@@ -30,10 +30,10 @@ const FeatureList = [
       </>
     ),
   },
-]
+];
 
 function Feature({ Svg, title, description }) {
-  const { isDarkTheme } = useColorMode()
+  const { isDarkTheme } = useColorMode();
 
   return (
     <div className={clsx('col col--4')}>
@@ -45,7 +45,7 @@ function Feature({ Svg, title, description }) {
         <p className={styles.paragraph}>{description}</p>
       </div>
     </div>
-  )
+  );
 }
 
 export default function HomepageFeatures() {
@@ -59,5 +59,5 @@ export default function HomepageFeatures() {
         </div>
       </div>
     </section>
-  )
+  );
 }

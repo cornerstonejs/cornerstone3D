@@ -1,13 +1,13 @@
-import { ToolModes, AnnotationStyleStates } from '../enums'
-import { getDefaultStyleProperty } from '../stateManagement/annotation/config/annotationStyle'
-import MouseCursor from './MouseCursor'
-import ImageMouseCursor from './ImageMouseCursor'
-import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor'
-import type { SVGCursorDescriptor } from '../types'
+import { ToolModes, AnnotationStyleStates } from '../enums';
+import { getDefaultStyleProperty } from '../stateManagement/annotation/config/annotationStyle';
+import MouseCursor from './MouseCursor';
+import ImageMouseCursor from './ImageMouseCursor';
+import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor';
+import type { SVGCursorDescriptor } from '../types';
 
-const PROPERTY = 'color'
-const STATE = AnnotationStyleStates.Highlighted
-const MODE = ToolModes.Active
+const PROPERTY = 'color';
+const STATE = AnnotationStyleStates.Highlighted;
+const MODE = ToolModes.Active;
 
 export default class SVGMouseCursor extends ImageMouseCursor {
   constructor(
@@ -17,7 +17,7 @@ export default class SVGMouseCursor extends ImageMouseCursor {
     name?: string | undefined,
     fallback?: MouseCursor | undefined
   ) {
-    super(url, x, y, name, fallback)
+    super(url, x, y, name, fallback);
   }
 
   /**
@@ -36,12 +36,12 @@ export default class SVGMouseCursor extends ImageMouseCursor {
     color?: string
   ): MouseCursor {
     if (!color) {
-      color = getDefaultStyleProperty(PROPERTY, STATE, MODE) as string
+      color = getDefaultStyleProperty(PROPERTY, STATE, MODE) as string;
     }
-    const urn = getCursorURN(name, pointer, color)
-    let cursor = super.getDefinedCursor(urn)
+    const urn = getCursorURN(name, pointer, color);
+    let cursor = super.getDefinedCursor(urn);
     if (!cursor) {
-      const descriptor = getDefinedSVGCursorDescriptor(name)
+      const descriptor = getDefinedSVGCursorDescriptor(name);
       if (descriptor) {
         cursor = createSVGMouseCursor(
           descriptor,
@@ -49,11 +49,11 @@ export default class SVGMouseCursor extends ImageMouseCursor {
           pointer,
           color,
           super.getDefinedCursor('default')
-        )
-        super.setDefinedCursor(urn, cursor)
+        );
+        super.setDefinedCursor(urn, cursor);
       }
     }
-    return cursor
+    return cursor;
   }
 }
 
@@ -62,16 +62,16 @@ export default class SVGMouseCursor extends ImageMouseCursor {
  */
 
 function format(template: string, dictionary: Record<string, unknown>): string {
-  const dict = Object(dictionary)
-  const defined = Object.prototype.hasOwnProperty.bind(dict)
+  const dict = Object(dictionary);
+  const defined = Object.prototype.hasOwnProperty.bind(dict);
   return (template + '').replace(/\{\{(\w+)\}\}/g, (match, key) => {
-    return defined(key) ? dict[key] + '' : ''
-  })
+    return defined(key) ? dict[key] + '' : '';
+  });
 }
 
 function getCursorURN(name: string, pointer: boolean, color: string) {
-  const type = pointer ? 'pointer' : 'cursor'
-  return `${type}:${name}/${color}`
+  const type = pointer ? 'pointer' : 'cursor';
+  return `${type}:${name}/${color}`;
 }
 
 function createSVGMouseCursor(
@@ -81,14 +81,14 @@ function createSVGMouseCursor(
   color: string,
   fallback: MouseCursor
 ): SVGMouseCursor {
-  const { x, y } = descriptor.mousePoint
+  const { x, y } = descriptor.mousePoint;
   return new SVGMouseCursor(
     createSVGIconUrl(descriptor, pointer, { color }),
     x,
     y,
     name,
     fallback
-  )
+  );
 }
 
 function createSVGIconUrl(
@@ -96,7 +96,7 @@ function createSVGIconUrl(
   pointer: boolean,
   options: Record<string, unknown>
 ): string {
-  return URL.createObjectURL(createSVGIconBlob(descriptor, pointer, options))
+  return URL.createObjectURL(createSVGIconBlob(descriptor, pointer, options));
 }
 
 function createSVGIconBlob(
@@ -107,36 +107,37 @@ function createSVGIconBlob(
   const svgString = (pointer ? createSVGIconWithPointer : createSVGIcon)(
     descriptor,
     options
-  )
-  return new Blob([svgString], { type: 'image/svg+xml' })
+  );
+  return new Blob([svgString], { type: 'image/svg+xml' });
 }
 
 function createSVGIcon(
   descriptor: SVGCursorDescriptor,
   options: Record<string, unknown>
 ): string {
-  const { iconContent, iconSize, viewBox } = descriptor
+  const { iconContent, iconSize, viewBox } = descriptor;
   const svgString = `
     <svg data-icon="cursor" role="img" xmlns="http://www.w3.org/2000/svg"
       width="${iconSize}" height="${iconSize}" viewBox="0 0
       ${viewBox.x} ${viewBox.y}">
       ${iconContent}
-    </svg>`
-  return format(svgString, options)
+    </svg>`;
+  return format(svgString, options);
 }
 
 function createSVGIconWithPointer(
   descriptor: SVGCursorDescriptor,
   options: Record<string, unknown>
 ) {
-  const { iconContent, iconSize, viewBox, mousePointerGroupString } = descriptor
-  const scale = iconSize / Math.max(viewBox.x, viewBox.y, 1)
-  const svgSize = 16 + iconSize
+  const { iconContent, iconSize, viewBox, mousePointerGroupString } =
+    descriptor;
+  const scale = iconSize / Math.max(viewBox.x, viewBox.y, 1);
+  const svgSize = 16 + iconSize;
   const svgString = `
     <svg data-icon="cursor" role="img" xmlns="http://www.w3.org/2000/svg"
       width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}">
       <g>${mousePointerGroupString}</g>
       <g transform="translate(16, 16) scale(${scale})">${iconContent}</g>
-    </svg>`
-  return format(svgString, options)
+    </svg>`;
+  return format(svgString, options);
 }

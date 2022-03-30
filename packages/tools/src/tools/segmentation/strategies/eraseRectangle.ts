@@ -1,18 +1,18 @@
-import { ImageVolume } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { ImageVolume } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import { getBoundingBoxAroundShape } from '../../../utilities/segmentation'
-import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex'
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents'
-import { pointInShapeCallback } from '../../../utilities'
+import { getBoundingBoxAroundShape } from '../../../utilities/segmentation';
+import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { pointInShapeCallback } from '../../../utilities';
 
 type EraseOperationData = {
-  segmentationId: string
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]
-  volume: ImageVolume
-  constraintFn: (x: [number, number, number]) => boolean
-  segmentsLocked: number[]
-}
+  segmentationId: string;
+  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
+  volume: ImageVolume;
+  constraintFn: (x: [number, number, number]) => boolean;
+  segmentsLocked: number[];
+};
 
 function eraseRectangle(
   enabledElement: Types.IEnabledElement,
@@ -24,32 +24,32 @@ function eraseRectangle(
     points,
     segmentsLocked,
     segmentationId,
-  } = operationData
-  const { imageData, dimensions, scalarData } = segmentation
+  } = operationData;
+  const { imageData, dimensions, scalarData } = segmentation;
 
   const rectangleCornersIJK = points.map((world) => {
-    return transformPhysicalToIndex(imageData, world)
-  })
+    return transformPhysicalToIndex(imageData, world);
+  });
 
-  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions)
+  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
 
   if (boundsIJK.every(([min, max]) => min !== max)) {
-    throw new Error('Oblique segmentation tools are not supported yet')
+    throw new Error('Oblique segmentation tools are not supported yet');
   }
 
   // Since always all points inside the boundsIJK is inside the rectangle...
-  const pointInShape = () => true
+  const pointInShape = () => true;
 
   const callback = ({ value, index }) => {
     if (segmentsLocked.includes(value)) {
-      return
+      return;
     }
-    scalarData[index] = 0
-  }
+    scalarData[index] = 0;
+  };
 
-  pointInShapeCallback(imageData, pointInShape, callback, boundsIJK)
+  pointInShapeCallback(imageData, pointInShape, callback, boundsIJK);
 
-  triggerSegmentationDataModified(segmentationId)
+  triggerSegmentationDataModified(segmentationId);
 }
 
 /**
@@ -62,7 +62,7 @@ export function eraseInsideRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: EraseOperationData
 ): void {
-  eraseRectangle(enabledElement, operationData, true)
+  eraseRectangle(enabledElement, operationData, true);
 }
 
 /**
@@ -75,5 +75,5 @@ export function eraseOutsideRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: EraseOperationData
 ): void {
-  eraseRectangle(enabledElement, operationData, false)
+  eraseRectangle(enabledElement, operationData, false);
 }

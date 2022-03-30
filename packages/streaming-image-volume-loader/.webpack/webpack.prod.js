@@ -38,7 +38,7 @@ module.exports = (env, argv) => {
           root: 'window',
           commonjs: '@cornerstonejs/core',
           commonjs2: '@cornerstonejs/core',
-          amd: '@cornerstonejs/core'
+          amd: '@cornerstonejs/core',
         },
         'gl-matrix': {
           root: 'window',
@@ -46,7 +46,7 @@ module.exports = (env, argv) => {
           commonjs2: 'gl-matrix',
           amd: 'gl-matrix',
         },
-      }
-    ]
+      },
+    ],
   });
 };

@@ -5,97 +5,97 @@ import {
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers'
-import * as cornerstoneTools from '@cornerstonejs/tools'
+} from '../../../../utils/demo/helpers';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
   SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-} = cornerstoneTools
+} = cornerstoneTools;
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
-const highResSegmentationId = 'HIGH_RES_SEGMENTATION_ID'
-const lowResSegmentationId = 'LOW_RES_SEGMENTATION_ID'
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderProtocolName}:${volumeName}`; // VolumeId with loader id + volume id
+const highResSegmentationId = 'HIGH_RES_SEGMENTATION_ID';
+const lowResSegmentationId = 'LOW_RES_SEGMENTATION_ID';
 
 // The amount we should downsample the second example segementation (should be a factor of 2)
-const DOWN_SAMPLE_RATE = 8
+const DOWN_SAMPLE_RATE = 8;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segmentation Rendering with different resolution to source data',
   'Here we demonstrate that the segmentation resolution need not be the same as the source data.'
-)
+);
 
-const size = '500px'
-const content = document.getElementById('content')
-const viewportGrid = document.createElement('div')
+const size = '500px';
+const content = document.getElementById('content');
+const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex'
-viewportGrid.style.display = 'flex'
-viewportGrid.style.flexDirection = 'row'
+viewportGrid.style.display = 'flex';
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
 
-const element1 = document.createElement('div')
-const element2 = document.createElement('div')
-element1.style.width = size
-element1.style.height = size
-element2.style.width = size
-element2.style.height = size
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
 
-viewportGrid.appendChild(element1)
-viewportGrid.appendChild(element2)
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
 
-content.appendChild(viewportGrid)
+content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p')
+const instructions = document.createElement('p');
 instructions.innerText = `
   Both viewports contain the same source data, yet they display different segmentations.
   The segmentation on the left viewport is the same resolution as the source data,
   yet the segmentation on the right viewport is downsampled by a factor of ${DOWN_SAMPLE_RATE}
-`
+`;
 
-content.append(instructions)
+content.append(instructions);
 // ============================= //
 
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
 function fillSegmentationWithCircles(segmentationVolume) {
-  const scalarData = segmentationVolume.scalarData
+  const scalarData = segmentationVolume.scalarData;
 
-  let voxelIndex = 0
+  let voxelIndex = 0;
 
-  const { dimensions } = segmentationVolume
+  const { dimensions } = segmentationVolume;
 
-  const center = [dimensions[0] / 2, dimensions[1] / 2]
-  const outerRadius = dimensions[0] / 4
-  const innerRadius = dimensions[0] / 8
+  const center = [dimensions[0] / 2, dimensions[1] / 2];
+  const outerRadius = dimensions[0] / 4;
+  const innerRadius = dimensions[0] / 8;
 
   for (let z = 0; z < dimensions[2]; z++) {
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
         const distanceFromCenter = Math.sqrt(
           (x - center[0]) * (x - center[0]) + (y - center[1]) * (y - center[1])
-        )
+        );
         if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1
+          scalarData[voxelIndex] = 1;
         } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2
+          scalarData[voxelIndex] = 2;
         }
 
-        voxelIndex++
+        voxelIndex++;
       }
     }
   }
@@ -107,17 +107,17 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   const highResSegmentationVolume =
     await volumeLoader.createAndCacheDerivedVolume(volumeId, {
       volumeId: highResSegmentationId,
-    })
+    });
 
   // Create a segmentation at a lower resolution than the source data,
   // using custom properties and
-  const highResDimensions = highResSegmentationVolume.dimensions
-  const highResSpacing = highResSegmentationVolume.spacing
+  const highResDimensions = highResSegmentationVolume.dimensions;
+  const highResSpacing = highResSegmentationVolume.spacing;
 
-  const direction = new Float32Array(9)
+  const direction = new Float32Array(9);
 
   for (let i = 0; i < direction.length; i++) {
-    direction[i] = highResSegmentationVolume.direction[i]
+    direction[i] = highResSegmentationVolume.direction[i];
   }
 
   const localVolumeOptions = {
@@ -138,12 +138,12 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
     ] as Types.Point3,
     origin: [...highResSegmentationVolume.origin] as Types.Point3,
     direction,
-  }
+  };
 
   const lowResSegmentationVolume = await volumeLoader.createLocalVolume(
     localVolumeOptions,
     lowResSegmentationId
-  )
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -168,11 +168,11 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
         },
       },
     },
-  ])
+  ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(highResSegmentationVolume)
-  fillSegmentationWithCircles(lowResSegmentationVolume)
+  fillSegmentationWithCircles(highResSegmentationVolume);
+  fillSegmentationWithCircles(lowResSegmentationVolume);
 
   // Add segmentation representations to the toolgroups
   segmentation.addSegmentationRepresentations(highResToolGroupId, [
@@ -180,13 +180,13 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
       segmentationId: highResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
-  ])
+  ]);
   segmentation.addSegmentationRepresentations(lowResToolGroupId, [
     {
       segmentationId: lowResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
-  ])
+  ]);
 }
 
 /**
@@ -194,22 +194,22 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo()
+  await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool)
+  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
-  const highResToolGroupId = 'HIGH_RESOLUTION_TOOLGROUP_ID'
-  const lowResToolGroupId = 'LOW_RESOLUTION_TOOLGROUP_ID'
-  const highResToolGroup = ToolGroupManager.createToolGroup(highResToolGroupId)
-  const lowResToolGroup = ToolGroupManager.createToolGroup(lowResToolGroupId)
+  const highResToolGroupId = 'HIGH_RESOLUTION_TOOLGROUP_ID';
+  const lowResToolGroupId = 'LOW_RESOLUTION_TOOLGROUP_ID';
+  const highResToolGroup = ToolGroupManager.createToolGroup(highResToolGroupId);
+  const lowResToolGroup = ToolGroupManager.createToolGroup(lowResToolGroupId);
 
-  highResToolGroup.addTool(SegmentationDisplayTool.toolName)
-  lowResToolGroup.addTool(SegmentationDisplayTool.toolName)
+  highResToolGroup.addTool(SegmentationDisplayTool.toolName);
+  lowResToolGroup.addTool(SegmentationDisplayTool.toolName);
 
-  highResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
-  lowResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
+  highResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  lowResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -219,25 +219,25 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'VOLUME',
-  })
+  });
 
-  const smallVolumeImageIds = [imageIds[0], imageIds[1]]
+  const smallVolumeImageIds = [imageIds[0], imageIds[1]];
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds: smallVolumeImageIds,
-  })
+  });
 
   // Add some segmentations based on the source data volume
-  addSegmentations(highResToolGroupId, lowResToolGroupId)
+  addSegmentations(highResToolGroupId, lowResToolGroupId);
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineId)
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId1 = 'CT_AXIAL_STACK_1'
-  const viewportId2 = 'CT_AXIAL_STACK_2'
+  const viewportId1 = 'CT_AXIAL_STACK_1';
+  const viewportId2 = 'CT_AXIAL_STACK_2';
 
   const viewportInputArray = [
     {
@@ -258,25 +258,25 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
-  ]
+  ];
 
-  renderingEngine.setViewports(viewportInputArray)
+  renderingEngine.setViewports(viewportInputArray);
 
-  highResToolGroup.addViewport(viewportId1, renderingEngineId)
-  lowResToolGroup.addViewport(viewportId2, renderingEngineId)
+  highResToolGroup.addViewport(viewportId1, renderingEngineId);
+  lowResToolGroup.addViewport(viewportId2, renderingEngineId);
 
   // Set the volume to load
-  volume.load()
+  volume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
     [viewportId1, viewportId2]
-  )
+  );
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2])
+  renderingEngine.renderViewports([viewportId1, viewportId2]);
 }
 
-run()
+run();

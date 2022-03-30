@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
@@ -7,32 +7,32 @@ import {
   CONSTANTS,
   init as csRenderInit,
   setVolumesForViewports,
-} from '@cornerstonejs/core'
-import * as csTools3d from '@cornerstonejs/tools'
-import { WindowLevelTool } from '@cornerstonejs/tools'
+} from '@cornerstonejs/core';
+import * as csTools3d from '@cornerstonejs/tools';
+import { WindowLevelTool } from '@cornerstonejs/tools';
 
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
 import {
   renderingEngineId,
   ctVolumeId,
   ctStackUID,
   VIEWPORT_IDS,
-} from './constants'
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import * as cs from '@cornerstonejs/core'
-import '@cornerstonejs/streaming-image-volume-loader' // for loader to get registered
+} from './constants';
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
+import * as cs from '@cornerstonejs/core';
+import '@cornerstonejs/streaming-image-volume-loader'; // for loader to get registered
 
-const VOLUME = 'volume'
-const STACK = 'stack'
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const VOLUME = 'volume';
+const STACK = 'stack';
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-window.cache = cache
+window.cache = cache;
 
-let ctSceneToolGroup, stackCTViewportToolGroup
+let ctSceneToolGroup, stackCTViewportToolGroup;
 
 class CacheDecacheExample extends Component {
   state = {
@@ -54,47 +54,47 @@ class CacheDecacheExample extends Component {
       viewports: [{}, {}, {}, {}],
     },
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    this._elementNodes = new Map()
-    this._viewportGridRef = React.createRef()
-    this._offScreenRef = React.createRef()
+    this._elementNodes = new Map();
+    this._viewportGridRef = React.createRef();
+    this._offScreenRef = React.createRef();
 
-    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME)
+    this.ctVolumeImageIdsPromise = getImageIds('ct1', VOLUME);
 
-    this.ctStackImageIdsPromise = getImageIds('ct1', STACK)
+    this.ctStackImageIdsPromise = getImageIds('ct1', STACK);
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    ;({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups())
+    await csRenderInit();
+    csTools3d.init();
+    ({ ctSceneToolGroup, stackCTViewportToolGroup } = initToolGroups());
 
-    this.ctVolumeId = ctVolumeId
-    this.ctStackUID = ctStackUID
+    this.ctVolumeId = ctVolumeId;
+    this.ctStackUID = ctStackUID;
 
     // Create volumes
-    const ctStackImageIds = await this.ctStackImageIdsPromise
+    const ctStackImageIds = await this.ctStackImageIdsPromise;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     // setMaxSimultaneousRequests(1000)
 
@@ -133,134 +133,134 @@ class CacheDecacheExample extends Component {
           orientation: ORIENTATION.AXIAL,
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(this.viewportInput)
+    renderingEngine.setViewports(this.viewportInput);
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId);
 
     // stack ct
     stackCTViewportToolGroup.addViewport(
       VIEWPORT_IDS.STACK.CT,
       renderingEngineId
-    )
+    );
 
-    addToolsToToolGroups({ ctSceneToolGroup, stackCTViewportToolGroup })
+    addToolsToToolGroups({ ctSceneToolGroup, stackCTViewportToolGroup });
 
-    renderingEngine.render()
+    renderingEngine.render();
 
-    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
+    const stackViewport = renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
 
-    const middleSlice = Math.floor(ctStackImageIds.length / 2)
+    const middleSlice = Math.floor(ctStackImageIds.length / 2);
     await stackViewport.setStack(
       sortImageIdsByIPP(ctStackImageIds),
       middleSlice
-    )
+    );
 
     // This will initialise volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   loadVolume = async () => {
-    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise
+    const ctVolumeImageIds = await this.ctVolumeImageIdsPromise;
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds,
-    })
+    });
 
     // Initialize all CT values to -1024 so we don't get a grey box?
-    const { scalarData } = ctVolume
-    const ctLength = scalarData.length
+    const { scalarData } = ctVolume;
+    const ctLength = scalarData.length;
 
     for (let i = 0; i < ctLength; i++) {
-      scalarData[i] = -1024
+      scalarData[i] = -1024;
     }
 
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
     setVolumesForViewports(
       this.renderingEngine,
       [{ volumeId: ctVolumeId }],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
-    )
+    );
 
-    ctVolume.load(onLoad)
+    ctVolume.load(onLoad);
 
     // Set initial CT levels in UI
-    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
+    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
     this.setState({
       metadataLoaded: true,
       ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-    })
-  }
+    });
+  };
 
   decacheVolume = () => {
-    const volume = cache.getVolume(ctVolumeId)
+    const volume = cache.getVolume(ctVolumeId);
 
     if (!volume) {
-      throw new Error('Volume is not loaded')
+      throw new Error('Volume is not loaded');
     }
 
-    const completelyRemove = true
-    volume.decache(completelyRemove)
-  }
+    const completelyRemove = true;
+    volume.decache(completelyRemove);
+  };
 
   convertVolumeToImage = () => {
-    const volume = cache.getVolume(ctVolumeId)
+    const volume = cache.getVolume(ctVolumeId);
 
     if (!volume) {
-      throw new Error('Volume is not loaded')
+      throw new Error('Volume is not loaded');
     }
-    const completelyRemove = false
-    volume.decache(completelyRemove)
-  }
+    const completelyRemove = false;
+    volume.decache(completelyRemove);
+  };
 
   decacheStackImage = () => {
-    const viewport = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT)
-    const imageId = viewport.getCurrentImageId()
+    const viewport = this.renderingEngine.getViewport(VIEWPORT_IDS.STACK.CT);
+    const imageId = viewport.getCurrentImageId();
 
-    cache.removeImageLoadObject(imageId)
-  }
+    cache.removeImageLoadObject(imageId);
+  };
 
   setMaxCacheSize = () => {
-    cache.setMaxCacheSize(this.state.maxCacheSize * 1000 * 1000) // byte
-  }
+    cache.setMaxCacheSize(this.state.maxCacheSize * 1000 * 1000); // byte
+  };
 
   loadStack = async () => {
-    const ctStackImageIds = await this.ctStackImageIdsPromise
+    const ctStackImageIds = await this.ctStackImageIdsPromise;
 
-    volumeLoader.loadAndCacheImages(ctStackImageIds)
-  }
+    volumeLoader.loadAndCacheImages(ctStackImageIds);
+  };
 
   getImageCacheForDisplay = () => {
-    const cachedImages = Array.from(cache._imageCache.keys())
+    const cachedImages = Array.from(cache._imageCache.keys());
     return cachedImages.map((str) => {
-      const colonIndex = str.indexOf(':')
+      const colonIndex = str.indexOf(':');
       return `${str.substring(0, colonIndex)}: .... ${str.substring(
         str.length - 20,
         str.length - 9
-      )}`
-    })
-  }
+      )}`;
+    });
+  };
 
   render() {
     return (
@@ -366,7 +366,7 @@ class CacheDecacheExample extends Component {
               this.setState({
                 imageCacheForDisplay: this.getImageCacheForDisplay(),
                 imageCacheSize: humanFileSize(cache._imageCacheSize),
-              })
+              });
             }}
             style={{ width: '50%' }}
           >
@@ -383,7 +383,7 @@ class CacheDecacheExample extends Component {
               this.setState({
                 volumeCacheForDisplay: Array.from(cache._volumeCache.keys()),
                 volumeCacheSize: humanFileSize(cache._volumeCacheSize),
-              })
+              });
             }}
             style={{ width: '50%' }}
           >
@@ -397,17 +397,17 @@ class CacheDecacheExample extends Component {
           </button>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default CacheDecacheExample
+export default CacheDecacheExample;
 
 function humanFileSize(size) {
-  const i = Math.floor(Math.log(size) / Math.log(1024))
+  const i = Math.floor(Math.log(size) / Math.log(1024));
   return (
     (size / Math.pow(1024, i)).toFixed(2) * 1 +
     ' ' +
     ['B', 'kB', 'MB', 'GB', 'TB'][i]
-  )
+  );
 }

@@ -17,4 +17,4 @@ enum ViewportType {
   PERSPECTIVE = 'perspective',
 }
 
-export default ViewportType
+export default ViewportType;

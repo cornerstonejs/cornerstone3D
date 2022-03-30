@@ -1,12 +1,12 @@
-import { eventTarget, triggerEvent } from '@cornerstonejs/core'
-import { Events } from '../../enums'
-import { Annotation } from '../../types'
-import { AnnotationLockChangeEventDetail } from '../../types/EventTypes'
+import { eventTarget, triggerEvent } from '@cornerstonejs/core';
+import { Events } from '../../enums';
+import { Annotation } from '../../types';
+import { AnnotationLockChangeEventDetail } from '../../types/EventTypes';
 
 /*
  * Constants
  */
-const globalLockedAnnotationsSet: Set<Annotation> = new Set()
+const globalLockedAnnotationsSet: Set<Annotation> = new Set();
 
 /*
  * Interface (Public API)
@@ -24,15 +24,15 @@ const globalLockedAnnotationsSet: Set<Annotation> = new Set()
  * be locked (true) or not (false)
  */
 function setAnnotationLocked(annotation: Annotation, locked = true): void {
-  const detail = makeEventDetail()
+  const detail = makeEventDetail();
   if (annotation) {
     if (locked) {
-      lock(annotation, globalLockedAnnotationsSet, detail)
+      lock(annotation, globalLockedAnnotationsSet, detail);
     } else {
-      unlock(annotation, globalLockedAnnotationsSet, detail)
+      unlock(annotation, globalLockedAnnotationsSet, detail);
     }
   }
-  publish(detail, globalLockedAnnotationsSet)
+  publish(detail, globalLockedAnnotationsSet);
 }
 
 /**
@@ -40,9 +40,9 @@ function setAnnotationLocked(annotation: Annotation, locked = true): void {
  *
  */
 function unlockAllAnnotations(): void {
-  const detail = makeEventDetail()
-  clearLockedAnnotationsSet(globalLockedAnnotationsSet, detail)
-  publish(detail, globalLockedAnnotationsSet)
+  const detail = makeEventDetail();
+  clearLockedAnnotationsSet(globalLockedAnnotationsSet, detail);
+  publish(detail, globalLockedAnnotationsSet);
 }
 
 /**
@@ -51,7 +51,7 @@ function unlockAllAnnotations(): void {
  *
  */
 function getAnnotationsLocked(): Array<Annotation> {
-  return Array.from(globalLockedAnnotationsSet)
+  return Array.from(globalLockedAnnotationsSet);
 }
 
 /**
@@ -60,7 +60,7 @@ function getAnnotationsLocked(): Array<Annotation> {
  * @returns A boolean value.
  */
 function isAnnotationLocked(annotation: Annotation): boolean {
-  return globalLockedAnnotationsSet.has(annotation)
+  return globalLockedAnnotationsSet.has(annotation);
 }
 
 /**
@@ -70,7 +70,7 @@ function isAnnotationLocked(annotation: Annotation): boolean {
  *
  */
 function getAnnotationsLockedCount(): number {
-  return globalLockedAnnotationsSet.size
+  return globalLockedAnnotationsSet.size;
 }
 
 /**
@@ -80,16 +80,16 @@ function getAnnotationsLockedCount(): number {
  */
 function checkAndDefineIsLockedProperty(annotation: Annotation): void {
   if (annotation) {
-    const isLocked = !!annotation.isLocked
+    const isLocked = !!annotation.isLocked;
     if (shouldDefineIsLockedProperty(annotation)) {
       Object.defineProperty(annotation, 'isLocked', {
         configurable: false,
         enumerable: true,
         set: setIsLocked,
         get: getIsLocked,
-      })
+      });
     }
-    setAnnotationLocked(annotation, isLocked)
+    setAnnotationLocked(annotation, isLocked);
   }
 }
 
@@ -102,7 +102,7 @@ function makeEventDetail(): AnnotationLockChangeEventDetail {
     added: [],
     removed: [],
     locked: [],
-  })
+  });
 }
 
 function lock(
@@ -111,8 +111,8 @@ function lock(
   detail: AnnotationLockChangeEventDetail
 ): void {
   if (!lockedAnnotationsSet.has(annotation)) {
-    lockedAnnotationsSet.add(annotation)
-    detail.added.push(annotation)
+    lockedAnnotationsSet.add(annotation);
+    detail.added.push(annotation);
   }
 }
 
@@ -122,7 +122,7 @@ function unlock(
   detail: AnnotationLockChangeEventDetail
 ): void {
   if (lockedAnnotationsSet.delete(annotation)) {
-    detail.removed.push(annotation)
+    detail.removed.push(annotation);
   }
 }
 
@@ -131,8 +131,8 @@ function clearLockedAnnotationsSet(
   detail: AnnotationLockChangeEventDetail
 ): void {
   lockedAnnotationsSet.forEach((annotation) => {
-    unlock(annotation, lockedAnnotationsSet, detail)
-  })
+    unlock(annotation, lockedAnnotationsSet, detail);
+  });
 }
 
 function publish(
@@ -140,28 +140,28 @@ function publish(
   lockedAnnotationsSet: Set<Annotation>
 ) {
   if (detail.added.length > 0 || detail.removed.length > 0) {
-    lockedAnnotationsSet.forEach((item) => void detail.locked.push(item))
-    triggerEvent(eventTarget, Events.ANNOTATION_LOCK_CHANGE, detail)
+    lockedAnnotationsSet.forEach((item) => void detail.locked.push(item));
+    triggerEvent(eventTarget, Events.ANNOTATION_LOCK_CHANGE, detail);
   }
 }
 
 function shouldDefineIsLockedProperty(annotation: Annotation): boolean {
-  const descriptor = Object.getOwnPropertyDescriptor(annotation, 'isLocked')
+  const descriptor = Object.getOwnPropertyDescriptor(annotation, 'isLocked');
   if (descriptor) {
     return (
       descriptor.configurable &&
       (descriptor.set !== setIsLocked || descriptor.get !== getIsLocked)
-    )
+    );
   }
-  return Object.isExtensible(annotation)
+  return Object.isExtensible(annotation);
 }
 
 function setIsLocked(locked: boolean) {
-  setAnnotationLocked(this as Annotation, locked)
+  setAnnotationLocked(this as Annotation, locked);
 }
 
 function getIsLocked() {
-  return isAnnotationLocked(this as Annotation)
+  return isAnnotationLocked(this as Annotation);
 }
 
 /*
@@ -175,4 +175,4 @@ export {
   unlockAllAnnotations,
   isAnnotationLocked,
   checkAndDefineIsLockedProperty,
-}
+};

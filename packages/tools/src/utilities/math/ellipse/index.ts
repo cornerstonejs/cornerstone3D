@@ -1,4 +1,4 @@
-import pointInEllipse from './pointInEllipse'
-import getCanvasEllipseCorners from './getCanvasEllipseCorners'
+import pointInEllipse from './pointInEllipse';
+import getCanvasEllipseCorners from './getCanvasEllipseCorners';
 
-export { pointInEllipse, getCanvasEllipseCorners }
+export { pointInEllipse, getCanvasEllipseCorners };

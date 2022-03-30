@@ -1,8 +1,8 @@
-import { ToolGroupManager } from '../../store'
-import { ToolModes } from '../../enums'
-import { EventTypes } from '../../types'
+import { ToolGroupManager } from '../../store';
+import { ToolModes } from '../../enums';
+import { EventTypes } from '../../types';
 
-type ModesFilter = Array<ToolModes>
+type ModesFilter = Array<ToolModes>;
 
 /**
  * Given the normalized mouse event and a filter of modes,
@@ -16,30 +16,30 @@ export default function getToolsWithModesForMouseEvent(
   modesFilter: ModesFilter,
   evtButton?: any
 ) {
-  const { renderingEngineId, viewportId } = evt.detail
+  const { renderingEngineId, viewportId } = evt.detail;
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
     renderingEngineId
-  )
+  );
 
   if (!toolGroup) {
-    return []
+    return [];
   }
 
-  const enabledTools = []
+  const enabledTools = [];
 
-  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
-    const toolName = toolGroupToolNames[j]
-    const tool = toolGroup.toolOptions[toolName]
+    const toolName = toolGroupToolNames[j];
+    const tool = toolGroup.toolOptions[toolName];
 
     // tool has binding that matches the mouse button - we match those with
     // any modifier keys too since they can be passively interacted with
     const correctBinding =
       evtButton != null && // not null or undefined
       tool.bindings.length &&
-      tool.bindings.some((binding) => binding.mouseButton === evtButton)
+      tool.bindings.some((binding) => binding.mouseButton === evtButton);
 
     if (
       modesFilter.includes(tool.mode) &&
@@ -47,10 +47,10 @@ export default function getToolsWithModesForMouseEvent(
       // or should, and the tool binding includes the event's button
       (!evtButton || correctBinding)
     ) {
-      const toolInstance = toolGroup.getToolInstance(toolName)
-      enabledTools.push(toolInstance)
+      const toolInstance = toolGroup.getToolInstance(toolName);
+      enabledTools.push(toolInstance);
     }
   }
 
-  return enabledTools
+  return enabledTools;
 }

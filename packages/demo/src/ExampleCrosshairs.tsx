@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
@@ -7,25 +7,25 @@ import {
   CONSTANTS,
   init as cs3dInit,
   setVolumesForViewports,
-} from '@cornerstonejs/core'
+} from '@cornerstonejs/core';
 import {
   Enums as csToolsEnums,
   WindowLevelTool,
   PanTool,
   CrosshairsTool,
   ZoomTool,
-} from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
 import {
   setCTWWWC,
   setPetTransferFunction,
-} from './helpers/transferFunctionHelpers'
+} from './helpers/transferFunctionHelpers';
 
-import getImageIds from './helpers/getImageIds'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
+import getImageIds from './helpers/getImageIds';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
 import {
   renderingEngineId,
   ctVolumeId,
@@ -33,22 +33,22 @@ import {
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
   prostateVolumeUID,
-} from './constants'
+} from './constants';
 
-const VOLUME = 'volume'
+const VOLUME = 'volume';
 
-window.cache = cache
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+window.cache = cache;
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-let ctSceneToolGroup, prostateSceneToolGroup
+let ctSceneToolGroup, prostateSceneToolGroup;
 
 const toolsToUse = [
   WindowLevelTool.toolName,
   PanTool.toolName,
   ZoomTool.toolName,
   ...ANNOTATION_TOOLS,
-]
+];
 
 class CrosshairsExample extends Component {
   state = {
@@ -68,48 +68,48 @@ class CrosshairsExample extends Component {
     toolGroups: {},
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    csTools3d.init()
-    this._elementNodes = new Map()
-    this._offScreenRef = React.createRef()
+    csTools3d.init();
+    this._elementNodes = new Map();
+    this._offScreenRef = React.createRef();
 
-    this._viewportGridRef = React.createRef()
+    this._viewportGridRef = React.createRef();
 
-    this.ctImageIds = getImageIds('ct1', VOLUME)
-    this.prostateImageIds = getImageIds('prostateX', VOLUME)
+    this.ctImageIds = getImageIds('ct1', VOLUME);
+    this.prostateImageIds = getImageIds('prostateX', VOLUME);
 
     Promise.all([this.ctImageIds, this.prostateImageIds]).then(() =>
       this.setState({ progressText: 'Loading data...' })
-    )
+    );
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await cs3dInit()
-    ;({ ctSceneToolGroup, prostateSceneToolGroup } = initToolGroups())
+    await cs3dInit();
+    ({ ctSceneToolGroup, prostateSceneToolGroup } = initToolGroups());
 
-    const ctImageIds = await this.ctImageIds
-    const prostateImageIds = await this.prostateImageIds
+    const ctImageIds = await this.ctImageIds;
+    const prostateImageIds = await this.prostateImageIds;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
-    window.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
+    window.renderingEngine = renderingEngine;
 
     const viewportInput = [
       // CT volume axial
@@ -158,52 +158,52 @@ class CrosshairsExample extends Component {
           background: [0, 0, 0],
         },
       },
-    ]
+    ];
 
-    renderingEngine.setViewports(viewportInput)
+    renderingEngine.setViewports(viewportInput);
 
     // volume ct
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId)
-    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId)
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.AXIAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.SAGITTAL, renderingEngineId);
+    ctSceneToolGroup.addViewport(VIEWPORT_IDS.CT.CORONAL, renderingEngineId);
     prostateSceneToolGroup.addViewport(
       renderingEngineId,
       VIEWPORT_IDS.PROSTATE.AXIAL
-    )
+    );
     prostateSceneToolGroup.addViewport(
       renderingEngineId,
       VIEWPORT_IDS.PROSTATE.SAGITTAL
-    )
+    );
 
     addToolsToToolGroups({
       ctSceneToolGroup,
       prostateSceneToolGroup,
-    })
+    });
 
-    window.ctSceneToolGroup = ctSceneToolGroup
+    window.ctSceneToolGroup = ctSceneToolGroup;
     this.setState({
       toolGroups: {
         FirstRow: ctSceneToolGroup,
         SecondRow: prostateSceneToolGroup,
       },
-    })
+    });
 
-    renderingEngine.render()
+    renderingEngine.render();
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctImageIds,
-    })
+    });
     const prostateVolume = await volumeLoader.createAndCacheVolume(
       prostateVolumeUID,
       {
         imageIds: prostateImageIds,
       }
-    )
+    );
 
-    ctVolume.load()
-    prostateVolume.load()
+    ctVolume.load();
+    prostateVolume.load();
 
     await setVolumesForViewports(
       renderingEngine,
@@ -215,7 +215,7 @@ class CrosshairsExample extends Component {
         },
       ],
       [VIEWPORT_IDS.CT.AXIAL, VIEWPORT_IDS.CT.SAGITTAL, VIEWPORT_IDS.CT.CORONAL]
-    )
+    );
     await setVolumesForViewports(
       renderingEngine,
       [
@@ -225,68 +225,68 @@ class CrosshairsExample extends Component {
         },
       ],
       [VIEWPORT_IDS.PROSTATE.AXIAL, VIEWPORT_IDS.PROSTATE.SAGITTAL]
-    )
+    );
 
     // This will initialise volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
 
     // Start listening for resize
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state
-    const { renderingEngine } = this
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const { layoutIndex } = this.state;
+    const { renderingEngine } = this;
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   setToolMode = (toolMode) => {
-    const toolGroup = this.state.toolGroups[this.state.toolGroupName]
+    const toolGroup = this.state.toolGroups[this.state.toolGroupName];
     if (toolMode === csToolsEnums.ToolModes.Active) {
-      const activeTool = toolGroup.getActivePrimaryMouseButtonTool()
+      const activeTool = toolGroup.getActivePrimaryMouseButtonTool();
       if (activeTool) {
-        toolGroup.setToolPassive(activeTool)
+        toolGroup.setToolPassive(activeTool);
       }
 
       toolGroup.setToolActive(this.state.leftClickTool, {
         bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-      })
+      });
     } else if (toolMode === csToolsEnums.ToolModes.Passive) {
-      toolGroup.setToolPassive(this.state.leftClickTool)
+      toolGroup.setToolPassive(this.state.leftClickTool);
     } else if (toolMode === csToolsEnums.ToolModes.Enabled) {
-      toolGroup.setToolEnabled(this.state.leftClickTool)
+      toolGroup.setToolEnabled(this.state.leftClickTool);
     } else if (toolMode === csToolsEnums.ToolModes.Disabled) {
-      toolGroup.setToolDisabled(this.state.leftClickTool)
+      toolGroup.setToolDisabled(this.state.leftClickTool);
     }
-  }
+  };
 
   showOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-    const uri = this.renderingEngine._debugRender()
-    const image = document.createElement('img')
-    image.src = uri
-    image.setAttribute('width', '100%')
+    this._offScreenRef.current.innerHTML = '';
+    const uri = this.renderingEngine._debugRender();
+    const image = document.createElement('img');
+    image.src = uri;
+    image.setAttribute('width', '100%');
 
-    this._offScreenRef.current.appendChild(image)
-  }
+    this._offScreenRef.current.appendChild(image);
+  };
 
   hideOffScreenCanvas = () => {
     // remove all children
-    this._offScreenRef.current.innerHTML = ''
-  }
+    this._offScreenRef.current.innerHTML = '';
+  };
 
   render() {
     return (
@@ -314,7 +314,7 @@ class CrosshairsExample extends Component {
         <select
           value={this.state.leftClickTool}
           onChange={(evt) => {
-            this.setState({ leftClickTool: evt.target.value })
+            this.setState({ leftClickTool: evt.target.value });
           }}
         >
           {toolsToUse.map((toolName) => (
@@ -327,7 +327,7 @@ class CrosshairsExample extends Component {
         <select
           value={this.state.toolGroupName}
           onChange={(evt) => {
-            this.setState({ toolGroupName: evt.target.value })
+            this.setState({ toolGroupName: evt.target.value });
           }}
         >
           {Object.keys(this.state.toolGroups).map((toolGroupName) => (
@@ -401,8 +401,8 @@ class CrosshairsExample extends Component {
           <div ref={this._offScreenRef}></div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default CrosshairsExample
+export default CrosshairsExample;

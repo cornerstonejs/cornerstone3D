@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Find the closest point to the target point
@@ -11,19 +11,19 @@ export default function findClosestPoint(
   sourcePoints: Array<Types.Point2>,
   targetPoint: Types.Point2
 ): Types.Point2 {
-  let minPoint = [0, 0]
-  let minDistance = Number.MAX_SAFE_INTEGER
+  let minPoint = [0, 0];
+  let minDistance = Number.MAX_SAFE_INTEGER;
 
   sourcePoints.forEach(function (sourcePoint) {
-    const distance = _distanceBetween(targetPoint, sourcePoint)
+    const distance = _distanceBetween(targetPoint, sourcePoint);
 
     if (distance < minDistance) {
-      minDistance = distance
-      minPoint = [...sourcePoint]
+      minDistance = distance;
+      minPoint = [...sourcePoint];
     }
-  })
+  });
 
-  return minPoint as Types.Point2
+  return minPoint as Types.Point2;
 }
 
 /**
@@ -33,8 +33,8 @@ export default function findClosestPoint(
  * @param p2
  */
 function _distanceBetween(p1: Types.Point2, p2: Types.Point2): number {
-  const [x1, y1] = p1
-  const [x2, y2] = p2
+  const [x1, y1] = p1;
+  const [x2, y2] = p2;
 
-  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2))
+  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }

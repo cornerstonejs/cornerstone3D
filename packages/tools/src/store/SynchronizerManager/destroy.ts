@@ -1,14 +1,14 @@
-import { state } from '../index'
+import { state } from '../index';
 
 /**
  * "Destroy all synchronizers."
  */
 function destroy(): void {
   while (state.synchronizers.length > 0) {
-    const synchronizer = state.synchronizers.pop()
+    const synchronizer = state.synchronizers.pop();
 
-    synchronizer.destroy()
+    synchronizer.destroy();
   }
 }
 
-export default destroy
+export default destroy;

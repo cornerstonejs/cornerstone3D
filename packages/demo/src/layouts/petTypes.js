@@ -1,8 +1,8 @@
-import { SCENE_IDS, VIEWPORT_IDS } from '../constants'
-import { Enums, CONSTANTS, utilities, cache } from '@cornerstonejs/core'
+import { SCENE_IDS, VIEWPORT_IDS } from '../constants';
+import { Enums, CONSTANTS, utilities, cache } from '@cornerstonejs/core';
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 function setLayout(
   renderingEngine,
@@ -43,93 +43,93 @@ function setLayout(
         background: [1, 1, 1],
       },
     },
-  ]
+  ];
 
-  renderingEngine.setViewports(viewportInput)
+  renderingEngine.setViewports(viewportInput);
 
-  const renderingEngineId = renderingEngine.uid
+  const renderingEngineId = renderingEngine.uid;
 
   viewportInput.forEach((viewportInputEntry) => {
-    const { sceneUID, viewportId } = viewportInputEntry
+    const { sceneUID, viewportId } = viewportInputEntry;
 
-    ptTypesSceneToolGroup.addViewport(viewportId, renderingEngineId)
-  })
+    ptTypesSceneToolGroup.addViewport(viewportId, renderingEngineId);
+  });
 }
 
 function setPetBWTransferFunction({ volumeActor, volumeId }) {
   const rgbTransferFunction = volumeActor
     .getProperty()
-    .getRGBTransferFunction(0)
+    .getRGBTransferFunction(0);
 
-  rgbTransferFunction.setRange(0, 5)
+  rgbTransferFunction.setRange(0, 5);
 
-  utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.invertRgbTransferFunction(rgbTransferFunction);
 }
 
 function setPetLBMTransferFunction({ volumeActor, volumeId }) {
-  const imageVolume = cache.getVolume(volumeId)
+  const imageVolume = cache.getVolume(volumeId);
 
-  let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET
+  let { suvbwToSuvlbm: scalingFactor } = imageVolume.scaling.PET;
 
   if (scalingFactor === undefined) {
     console.warn(
       'No suvbwToSuvlbm scaling factor, likely missing PatientWeight, PatientSex or PatientSize from dataset'
-    )
+    );
 
-    scalingFactor = 1
+    scalingFactor = 1;
   }
 
-  const max = 5 * scalingFactor
+  const max = 5 * scalingFactor;
 
   const rgbTransferFunction = volumeActor
     .getProperty()
-    .getRGBTransferFunction(0)
+    .getRGBTransferFunction(0);
 
-  rgbTransferFunction.setRange(0, max)
+  rgbTransferFunction.setRange(0, max);
 
-  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor);
+  utilities.invertRgbTransferFunction(rgbTransferFunction);
 }
 
 function setPetBSATransferFunction({ volumeActor, volumeId }) {
-  const imageVolume = cache.getVolume(volumeId)
+  const imageVolume = cache.getVolume(volumeId);
 
-  let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET
+  let { suvbwToSuvbsa: scalingFactor } = imageVolume.scaling.PET;
 
   if (scalingFactor === undefined) {
     console.warn(
       'No suvbwToSuvbsa scaling factor, likely missing PatientWeight or PatientSize from dataset'
-    )
+    );
 
-    scalingFactor = 1
+    scalingFactor = 1;
   }
 
   const rgbTransferFunction = volumeActor
     .getProperty()
-    .getRGBTransferFunction(0)
+    .getRGBTransferFunction(0);
 
-  const max = 5 * scalingFactor
+  const max = 5 * scalingFactor;
 
-  rgbTransferFunction.setRange(0, max)
+  rgbTransferFunction.setRange(0, max);
 
-  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor)
-  utilities.invertRgbTransferFunction(rgbTransferFunction)
+  utilities.scaleRgbTransferFunction(rgbTransferFunction, scalingFactor);
+  utilities.invertRgbTransferFunction(rgbTransferFunction);
 }
 
 function setVolumes(renderingEngine, ptVolumeId) {
-  const ptBWScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BW)
-  const ptLBMScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_LBM)
-  const ptBSAScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BSA)
+  const ptBWScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BW);
+  const ptLBMScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_LBM);
+  const ptBSAScene = renderingEngine.getScene(SCENE_IDS.PT_TYPES_SUV_BSA);
 
   ptBWScene.setVolumes([
     { volumeId: ptVolumeId, callback: setPetBWTransferFunction },
-  ])
+  ]);
   ptLBMScene.setVolumes([
     { volumeId: ptVolumeId, callback: setPetLBMTransferFunction },
-  ])
+  ]);
   ptBSAScene.setVolumes([
     { volumeId: ptVolumeId, callback: setPetBSATransferFunction },
-  ])
+  ]);
 }
 
-export default { setLayout, setVolumes }
+export default { setLayout, setVolumes };

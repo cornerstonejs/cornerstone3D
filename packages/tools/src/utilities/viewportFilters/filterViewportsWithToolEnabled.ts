@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core'
-import type { IToolGroup } from '../../types'
-import { ToolGroupManager } from '../../store'
-import { ToolModes } from '../../enums'
+import type { Types } from '@cornerstonejs/core';
+import type { IToolGroup } from '../../types';
+import { ToolGroupManager } from '../../store';
+import { ToolModes } from '../../enums';
 
-const { Active, Passive, Enabled } = ToolModes
+const { Active, Passive, Enabled } = ToolModes;
 
 /**
  * Given an array of viewports, returns a list of viewports that have the the specified tool enabled.
@@ -17,26 +17,29 @@ export default function filterViewportsWithToolEnabled(
   viewports: Array<Types.IStackViewport | Types.IVolumeViewport>,
   toolName: string
 ): Array<Types.IStackViewport | Types.IVolumeViewport> {
-  const numViewports = viewports.length
+  const numViewports = viewports.length;
 
-  const viewportsWithToolEnabled = []
+  const viewportsWithToolEnabled = [];
 
   for (let vp = 0; vp < numViewports; vp++) {
-    const viewport = viewports[vp]
+    const viewport = viewports[vp];
 
     const toolGroup = ToolGroupManager.getToolGroupForViewport(
       viewport.id,
       viewport.renderingEngineId
-    )
+    );
 
-    const hasTool = _toolGroupHasActiveEnabledOrPassiveTool(toolGroup, toolName)
+    const hasTool = _toolGroupHasActiveEnabledOrPassiveTool(
+      toolGroup,
+      toolName
+    );
 
     if (hasTool) {
-      viewportsWithToolEnabled.push(viewport)
+      viewportsWithToolEnabled.push(viewport);
     }
   }
 
-  return viewportsWithToolEnabled
+  return viewportsWithToolEnabled;
 }
 
 /**
@@ -52,14 +55,14 @@ function _toolGroupHasActiveEnabledOrPassiveTool(
   toolGroup: IToolGroup,
   toolName: string
 ) {
-  const { toolOptions } = toolGroup
-  const tool = toolOptions[toolName]
+  const { toolOptions } = toolGroup;
+  const tool = toolOptions[toolName];
 
   if (!tool) {
-    return false
+    return false;
   }
 
-  const toolMode = tool.mode
+  const toolMode = tool.mode;
 
-  return toolMode === Active || toolMode === Passive || toolMode === Enabled
+  return toolMode === Active || toolMode === Passive || toolMode === Enabled;
 }

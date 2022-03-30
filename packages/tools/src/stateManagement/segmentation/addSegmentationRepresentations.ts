@@ -1,12 +1,12 @@
-import _cloneDeep from 'lodash.clonedeep'
+import _cloneDeep from 'lodash.clonedeep';
 import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
-} from '../../types/SegmentationStateTypes'
-import Representations from '../../enums/SegmentationRepresentations'
-import { getToolGroup } from '../../store/ToolGroupManager'
+} from '../../types/SegmentationStateTypes';
+import Representations from '../../enums/SegmentationRepresentations';
+import { getToolGroup } from '../../store/ToolGroupManager';
 
-import { labelmapDisplay } from '../../tools/displayTools/Labelmap'
+import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
 
 /**
  * Set the specified segmentation representations on the viewports of the specified
@@ -24,10 +24,10 @@ async function addSegmentationRepresentations(
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<string[]> {
   // Check if there exists a toolGroup with the toolGroupId
-  const toolGroup = getToolGroup(toolGroupId)
+  const toolGroup = getToolGroup(toolGroupId);
 
   if (!toolGroup) {
-    throw new Error(`No tool group found for toolGroupId: ${toolGroupId}`)
+    throw new Error(`No tool group found for toolGroupId: ${toolGroupId}`);
   }
 
   const promises = representationInputArray.map((representationInput) => {
@@ -35,12 +35,12 @@ async function addSegmentationRepresentations(
       toolGroupId,
       representationInput,
       toolGroupSpecificRepresentationConfig
-    )
-  })
+    );
+  });
 
-  const segmentationRepresentationUIDs = await Promise.all(promises)
+  const segmentationRepresentationUIDs = await Promise.all(promises);
 
-  return segmentationRepresentationUIDs
+  return segmentationRepresentationUIDs;
 }
 
 async function _addSegmentationRepresentation(
@@ -48,7 +48,7 @@ async function _addSegmentationRepresentation(
   representationInput: RepresentationPublicInput,
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
-  let segmentationRepresentationUID
+  let segmentationRepresentationUID;
 
   if (representationInput.type === Representations.Labelmap) {
     segmentationRepresentationUID =
@@ -56,14 +56,14 @@ async function _addSegmentationRepresentation(
         toolGroupId,
         representationInput,
         toolGroupSpecificRepresentationConfig
-      )
+      );
   } else {
     throw new Error(
       `The representation type ${representationInput.type} is not supported`
-    )
+    );
   }
 
-  return segmentationRepresentationUID
+  return segmentationRepresentationUID;
 }
 
-export default addSegmentationRepresentations
+export default addSegmentationRepresentations;

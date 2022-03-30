@@ -1,25 +1,25 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core'
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers'
+} from '../../../../utils/demo/helpers';
 
-const { ViewportType } = Enums
+const { ViewportType } = Enums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Basic Stack',
   'Displays a single DICOM image in a Stack viewport.'
-)
+);
 
-const content = document.getElementById('content')
-const element = document.createElement('div')
-element.id = 'cornerstone-element'
-element.style.width = '500px'
-element.style.height = '500px'
+const content = document.getElementById('content');
+const element = document.createElement('div');
+element.id = 'cornerstone-element';
+element.style.width = '500px';
+element.style.height = '500px';
 
-content.appendChild(element)
+content.appendChild(element);
 // ============================= //
 
 /**
@@ -27,7 +27,7 @@ content.appendChild(element)
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo()
+  await initDemo();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -37,14 +37,14 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
     type: 'STACK',
-  })
+  });
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineId)
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  const viewportId = 'CT_STACK'
+  const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
     type: ViewportType.STACK,
@@ -52,21 +52,23 @@ async function run() {
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
     },
-  }
+  };
 
-  renderingEngine.enableElement(viewportInput)
+  renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId)
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportId)
+  );
 
   // Define a stack containing a single image
-  const stack = [imageIds[0]]
+  const stack = [imageIds[0]];
 
   // Set the stack on the viewport
-  viewport.setStack(stack)
+  viewport.setStack(stack);
 
   // Render the image
-  viewport.render()
+  viewport.render();
 }
 
-run()
+run();

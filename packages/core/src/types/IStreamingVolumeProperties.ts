@@ -1,13 +1,13 @@
 interface IStreamingVolumeProperties {
   /** imageIds of the volume  */
-  imageIds: Array<string>
+  imageIds: Array<string>;
   /** loading status object for the volume containing loaded/loading statuses */
   loadStatus: {
-    loaded: boolean
-    loading: boolean
-    cachedFrames: Array<boolean>
-    callbacks: Array<() => void>
-  }
+    loaded: boolean;
+    loading: boolean;
+    cachedFrames: Array<boolean>;
+    callbacks: Array<() => void>;
+  };
 }
 
-export default IStreamingVolumeProperties
+export default IStreamingVolumeProperties;

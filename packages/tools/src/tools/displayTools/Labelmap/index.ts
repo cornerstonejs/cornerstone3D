@@ -1,4 +1,4 @@
-import labelmapDisplay from './labelmapDisplay'
-import labelmapConfig from './labelmapConfig'
+import labelmapDisplay from './labelmapDisplay';
+import labelmapConfig from './labelmapConfig';
 
-export { labelmapDisplay, labelmapConfig }
+export { labelmapDisplay, labelmapConfig };

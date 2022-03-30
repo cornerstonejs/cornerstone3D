@@ -1,11 +1,11 @@
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray'
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData'
-import { ImageVolume } from '../index'
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { ImageVolume } from '../index';
 import {
   getVerticalBarRGBVolume,
   getVerticalBarVolume,
   getExactRegionVolume,
-} from './testUtilsPixelData'
+} from './testUtilsPixelData';
 
 /**
  * It creates a volume based on the volumeId name for testing purposes. It splits the volumeId
@@ -42,8 +42,8 @@ import {
  * @returns Promise that resolves to the image
  */
 const fakeVolumeLoader = (volumeId) => {
-  const volumeURI = volumeId.split(':')[1]
-  const uriName = volumeURI.split('_')[0]
+  const volumeURI = volumeId.split(':')[1];
+  const uriName = volumeURI.split('_')[0];
   const [
     _,
     rows,
@@ -60,18 +60,18 @@ const fakeVolumeLoader = (volumeId) => {
     endY,
     endZ,
     valueForSegmentIndex,
-  ] = volumeURI.split('_').map((v) => parseFloat(v))
+  ] = volumeURI.split('_').map((v) => parseFloat(v));
 
   // If uri name is volumeURIExact, it means that the metadata provided
   // has the start and end indices of the region of interest.
-  let useExactRegion = false
+  let useExactRegion = false;
   if (uriName === 'volumeURIExact') {
-    useExactRegion = true
+    useExactRegion = true;
   }
 
-  const dimensions = [rows, columns, slices]
+  const dimensions = [rows, columns, slices];
 
-  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2'
+  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
 
   const volumeMetadata = {
     BitsAllocated: rgb ? 24 : 8,
@@ -85,11 +85,11 @@ const fakeVolumeLoader = (volumeId) => {
     PixelSpacing: [x_spacing, y_spacing, z_spacing],
     Columns: columns,
     Rows: rows,
-  }
+  };
 
-  let pixelData
+  let pixelData;
   if (rgb) {
-    pixelData = getVerticalBarRGBVolume(rows, columns, slices)
+    pixelData = getVerticalBarRGBVolume(rows, columns, slices);
   } else if (useExactRegion) {
     pixelData = getExactRegionVolume(
       rows,
@@ -102,23 +102,23 @@ const fakeVolumeLoader = (volumeId) => {
       endY,
       endZ,
       valueForSegmentIndex
-    )
+    );
   } else {
-    pixelData = getVerticalBarVolume(rows, columns, slices)
+    pixelData = getVerticalBarVolume(rows, columns, slices);
   }
 
   const scalarArray = vtkDataArray.newInstance({
     name: 'Pixels',
     numberOfComponents: rgb ? 3 : 1,
     values: pixelData,
-  })
+  });
 
-  const imageData = vtkImageData.newInstance()
-  imageData.setDimensions(dimensions)
-  imageData.setSpacing([1, 1, 1])
-  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1])
-  imageData.setOrigin([0, 0, 0])
-  imageData.getPointData().setScalars(scalarArray)
+  const imageData = vtkImageData.newInstance();
+  imageData.setDimensions(dimensions);
+  imageData.setSpacing([1, 1, 1]);
+  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  imageData.setOrigin([0, 0, 0]);
+  imageData.getPointData().setScalars(scalarArray);
 
   const imageVolume = new ImageVolume({
     volumeId,
@@ -131,11 +131,11 @@ const fakeVolumeLoader = (volumeId) => {
     sizeInBytes: pixelData.byteLength,
     imageData: imageData,
     imageIds: [],
-  })
+  });
 
   return {
     promise: Promise.resolve(imageVolume),
-  }
-}
+  };
+};
 
-export { fakeVolumeLoader }
+export { fakeVolumeLoader };

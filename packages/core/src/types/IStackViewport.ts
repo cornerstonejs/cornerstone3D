@@ -1,30 +1,30 @@
-import CPUFallbackColormapData from './CPUFallbackColormapData'
-import CPUIImageData from './CPUIImageData'
-import ICamera from './ICamera'
-import IImageData from './IImageData'
-import { IViewport } from './IViewport'
-import Point2 from './Point2'
-import Point3 from './Point3'
-import { Scaling } from './ScalingParameters'
-import StackViewportProperties from './StackViewportProperties'
+import CPUFallbackColormapData from './CPUFallbackColormapData';
+import CPUIImageData from './CPUIImageData';
+import ICamera from './ICamera';
+import IImageData from './IImageData';
+import { IViewport } from './IViewport';
+import Point2 from './Point2';
+import Point3 from './Point3';
+import { Scaling } from './ScalingParameters';
+import StackViewportProperties from './StackViewportProperties';
 
 /**
  * Interface for Stack Viewport
  */
 export default interface IStackViewport extends IViewport {
-  modality: string
+  modality: string;
   /** Scaling parameters */
-  scaling: Scaling
+  scaling: Scaling;
   /**
    * Resizes the viewport - only used in CPU fallback for StackViewport. The
    * GPU resizing happens inside the RenderingEngine.
    */
-  resize: () => void
+  resize: () => void;
   /**
    * Returns the frame of reference UID, if the image doesn't have imagePlaneModule
    * metadata, it returns undefined, otherwise, frameOfReferenceUID is returned.
    */
-  getFrameOfReferenceUID: () => string
+  getFrameOfReferenceUID: () => string;
   /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
@@ -37,61 +37,61 @@ export default interface IStackViewport extends IViewport {
     rotation,
     flipHorizontal,
     flipVertical,
-  }: StackViewportProperties): void
+  }: StackViewportProperties): void;
   /**
    * Retrieve the viewport properties
    */
-  getProperties: () => StackViewportProperties
+  getProperties: () => StackViewportProperties;
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
    * projected onto the plane defined by the `Viewport`'s camera.
    */
-  canvasToWorld: (canvasPos: Point2) => Point3
+  canvasToWorld: (canvasPos: Point2) => Point3;
   /**
    * Returns the canvas coordinates of the given `worldPos`
    * projected onto the `Viewport`'s `canvas`.
    */
-  worldToCanvas: (worldPos: Point3) => Point2
+  worldToCanvas: (worldPos: Point3) => Point2;
   /**
    * Returns the index of the imageId being renderer
    */
-  getCurrentImageIdIndex: () => number
+  getCurrentImageIdIndex: () => number;
   /**
    * Returns the list of image Ids for the current viewport
    */
-  getImageIds: () => string[]
+  getImageIds: () => string[];
   /**
    * Returns the currently rendered imageId
    */
-  getCurrentImageId: () => string
+  getCurrentImageId: () => string;
   /**
    * Custom rendering pipeline for the rendering for the CPU fallback
    */
   customRenderViewportToCanvas: () => {
-    canvas: HTMLCanvasElement
-    element: HTMLElement
-    viewportId: string
-    renderingEngineId: string
-  }
+    canvas: HTMLCanvasElement;
+    element: HTMLElement;
+    viewportId: string;
+    renderingEngineId: string;
+  };
   /**
    * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
    */
-  getImageData(): IImageData | CPUIImageData
+  getImageData(): IImageData | CPUIImageData;
   /**
    * Reset the viewport properties to the default values
    */
-  resetProperties(): void
+  resetProperties(): void;
   /**
    * If the user has selected CPU rendering, return the CPU camera, otherwise
    * return the default camera
    */
-  getCamera(): ICamera
+  getCamera(): ICamera;
   /**
    * Set the camera based on the provided camera object.
    */
-  setCamera(cameraInterface: ICamera): void
+  setCamera(cameraInterface: ICamera): void;
   /**
    * Sets the imageIds to be visualized inside the stack viewport. It accepts
    * list of imageIds, the index of the first imageId to be viewed. It is a
@@ -101,34 +101,34 @@ export default interface IStackViewport extends IViewport {
   setStack(
     imageIds: Array<string>,
     currentImageIdIndex?: number
-  ): Promise<string>
+  ): Promise<string>;
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  resetCamera(resetPanZoomForViewPlane?: boolean): boolean
+  resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
   /**
    * Loads the image based on the provided imageIdIndex. It is an Async function which
    * returns a promise that resolves to the imageId.
    */
-  setImageIdIndex(imageIdIndex: number): Promise<string>
+  setImageIdIndex(imageIdIndex: number): Promise<string>;
   /**
    * Calibrates the image with new metadata that has been added for imageId. To calibrate
    * a viewport, you should add your calibration data manually to
    * calibratedPixelSpacingMetadataProvider and call viewport.calibrateSpacing
    * for it get applied.
    */
-  calibrateSpacing(imageId: string): void
+  calibrateSpacing(imageId: string): void;
   /**
    * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
    */
-  getRenderer(): any
+  getRenderer(): any;
   /**
    * Sets the colormap for the current viewport.
    * @param colormap - The colormap data to use.
    */
-  setColormap(colormap: CPUFallbackColormapData): void
+  setColormap(colormap: CPUFallbackColormapData): void;
   /**
    * It sets the colormap to the default colormap.
    */
-  unsetColormap(): void
+  unsetColormap(): void;
 }

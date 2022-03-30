@@ -1,6 +1,6 @@
-import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes'
-import { getDefaultSegmentationStateManager } from './segmentationState'
-import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents'
+import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
+import { getDefaultSegmentationStateManager } from './segmentationState';
+import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
 
 /**
  * Get the active segmentation representation for the tool group with
@@ -11,20 +11,20 @@ import { triggerSegmentationRepresentationModified } from './triggerSegmentation
 function getActiveSegmentationRepresentation(
   toolGroupId: string
 ): ToolGroupSpecificRepresentation {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
 
   const toolGroupSegmentationRepresentations =
-    segmentationStateManager.getSegmentationRepresentations(toolGroupId)
+    segmentationStateManager.getSegmentationRepresentations(toolGroupId);
 
   if (!toolGroupSegmentationRepresentations) {
-    return
+    return;
   }
 
   const activeRepresentation = toolGroupSegmentationRepresentations.find(
     (representation) => representation.active
-  )
+  );
 
-  return activeRepresentation
+  return activeRepresentation;
 }
 
 /**
@@ -39,17 +39,17 @@ function setActiveSegmentationRepresentation(
   toolGroupId: string,
   segmentationRepresentationUID: string
 ): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
+  const segmentationStateManager = getDefaultSegmentationStateManager();
 
   segmentationStateManager.setActiveSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
-  )
+  );
 
   triggerSegmentationRepresentationModified(
     toolGroupId,
     segmentationRepresentationUID
-  )
+  );
 }
 
 export {
@@ -57,4 +57,4 @@ export {
   getActiveSegmentationRepresentation,
   // set
   setActiveSegmentationRepresentation,
-}
+};

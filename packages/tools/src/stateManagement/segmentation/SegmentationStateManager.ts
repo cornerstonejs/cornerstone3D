@@ -1,7 +1,7 @@
-import cloneDeep from 'lodash.clonedeep'
-import { utilities as csUtils } from '@cornerstonejs/core'
+import cloneDeep from 'lodash.clonedeep';
+import { utilities as csUtils } from '@cornerstonejs/core';
 
-import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT'
+import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 
 import type {
   SegmentationState,
@@ -10,7 +10,7 @@ import type {
   ToolGroupSpecificRepresentation,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentations,
-} from '../../types/SegmentationStateTypes'
+} from '../../types/SegmentationStateTypes';
 
 /* A default initial state for the segmentation manager. */
 const initialDefaultState: SegmentationState = {
@@ -21,7 +21,7 @@ const initialDefaultState: SegmentationState = {
     representations: {},
   },
   toolGroups: {},
-}
+};
 
 /**
  * The SegmentationStateManager Class is responsible for managing the state of the
@@ -30,15 +30,15 @@ const initialDefaultState: SegmentationState = {
  * config. Note that this is a singleton state manager.
  */
 export default class SegmentationStateManager {
-  private state: SegmentationState
-  public readonly uid: string
+  private state: SegmentationState;
+  public readonly uid: string;
 
   constructor(uid?: string) {
     if (!uid) {
-      uid = csUtils.uuidv4()
+      uid = csUtils.uuidv4();
     }
-    this.state = cloneDeep(initialDefaultState)
-    this.uid = uid
+    this.state = cloneDeep(initialDefaultState);
+    this.uid = uid;
   }
 
   /**
@@ -46,7 +46,7 @@ export default class SegmentationStateManager {
    * @returns A deep copy of the state.
    */
   getState(): SegmentationState {
-    return this.state
+    return this.state;
   }
 
   /**
@@ -54,7 +54,7 @@ export default class SegmentationStateManager {
    * @returns An array of strings.
    */
   getToolGroups(): string[] {
-    return Object.keys(this.state.toolGroups)
+    return Object.keys(this.state.toolGroups);
   }
 
   /**
@@ -63,14 +63,14 @@ export default class SegmentationStateManager {
    * @returns A ColorLut object.
    */
   getColorLut(lutIndex: number): ColorLut | undefined {
-    return this.state.colorLut[lutIndex]
+    return this.state.colorLut[lutIndex];
   }
 
   /**
    * Reset the state to the default state
    */
   resetState(): void {
-    this.state = cloneDeep(initialDefaultState)
+    this.state = cloneDeep(initialDefaultState);
   }
 
   /**
@@ -81,7 +81,7 @@ export default class SegmentationStateManager {
   getSegmentation(segmentationId: string): Segmentation | undefined {
     return this.state.segmentations.find(
       (segmentation) => segmentation.segmentationId === segmentationId
-    )
+    );
   }
 
   /**
@@ -89,16 +89,16 @@ export default class SegmentationStateManager {
    * @param segmentation - Segmentation
    */
   addSegmentation(segmentation: Segmentation): void {
-    this._initDefaultColorLutIfNecessary()
+    this._initDefaultColorLutIfNecessary();
 
     // Check if the segmentation already exists with the segmentationId
     if (this.getSegmentation(segmentation.segmentationId)) {
       throw new Error(
         `Segmentation with id ${segmentation.segmentationId} already exists`
-      )
+      );
     }
 
-    this.state.segmentations.push(segmentation)
+    this.state.segmentations.push(segmentation);
   }
 
   /**
@@ -110,13 +110,13 @@ export default class SegmentationStateManager {
     toolGroupId: string
   ): ToolGroupSpecificRepresentations | undefined {
     const toolGroupSegRepresentationsWithConfig =
-      this.state.toolGroups[toolGroupId]
+      this.state.toolGroups[toolGroupId];
 
     if (!toolGroupSegRepresentationsWithConfig) {
-      return
+      return;
     }
 
-    return toolGroupSegRepresentationsWithConfig.segmentationRepresentations
+    return toolGroupSegRepresentationsWithConfig.segmentationRepresentations;
   }
 
   /**
@@ -133,15 +133,15 @@ export default class SegmentationStateManager {
       this.state.toolGroups[toolGroupId] = {
         segmentationRepresentations: [],
         config: {} as SegmentationRepresentationConfig,
-      }
+      };
     }
 
     // local toolGroupSpecificSegmentationState
     this.state.toolGroups[toolGroupId].segmentationRepresentations.push(
       segmentationRepresentation
-    )
+    );
 
-    this._handleActiveSegmentation(toolGroupId, segmentationRepresentation)
+    this._handleActiveSegmentation(toolGroupId, segmentationRepresentation);
   }
 
   /**
@@ -150,7 +150,7 @@ export default class SegmentationStateManager {
    * @returns The global config object.
    */
   getGlobalConfig(): SegmentationRepresentationConfig {
-    return this.state.globalConfig
+    return this.state.globalConfig;
   }
 
   /**
@@ -159,7 +159,7 @@ export default class SegmentationStateManager {
    * @param config - The global configuration for the segmentations.
    */
   setGlobalConfig(config: SegmentationRepresentationConfig): void {
-    this.state.globalConfig = config
+    this.state.globalConfig = config;
   }
 
   /**
@@ -174,15 +174,15 @@ export default class SegmentationStateManager {
     segmentationRepresentationUID: string
   ): ToolGroupSpecificRepresentation | undefined {
     const toolGroupSegRepresentations =
-      this.getSegmentationRepresentations(toolGroupId)
+      this.getSegmentationRepresentations(toolGroupId);
 
     const segmentationData = toolGroupSegRepresentations.find(
       (representation) =>
         representation.segmentationRepresentationUID ===
         segmentationRepresentationUID
-    )
+    );
 
-    return segmentationData
+    return segmentationData;
   }
 
   /**
@@ -195,7 +195,7 @@ export default class SegmentationStateManager {
     segmentationRepresentationUID: string
   ): void {
     const toolGroupSegmentationRepresentations =
-      this.getSegmentationRepresentations(toolGroupId)
+      this.getSegmentationRepresentations(toolGroupId);
 
     if (
       !toolGroupSegmentationRepresentations ||
@@ -203,31 +203,31 @@ export default class SegmentationStateManager {
     ) {
       throw new Error(
         `No viewport specific segmentation state found for viewport ${toolGroupId}`
-      )
+      );
     }
 
     const state =
-      toolGroupSegmentationRepresentations as ToolGroupSpecificRepresentations
+      toolGroupSegmentationRepresentations as ToolGroupSpecificRepresentations;
     const index = state.findIndex(
       (segData) =>
         segData.segmentationRepresentationUID === segmentationRepresentationUID
-    )
+    );
 
     if (index === -1) {
       console.warn(
         `No viewport specific segmentation state data found for viewport ${toolGroupId} and segmentation data UID ${segmentationRepresentationUID}`
-      )
+      );
     }
 
     const removedSegmentationRepresentation =
-      toolGroupSegmentationRepresentations[index]
+      toolGroupSegmentationRepresentations[index];
 
-    toolGroupSegmentationRepresentations.splice(index, 1)
+    toolGroupSegmentationRepresentations.splice(index, 1);
 
     this._handleActiveSegmentation(
       toolGroupId,
       removedSegmentationRepresentation
-    )
+    );
   }
 
   /**
@@ -241,28 +241,28 @@ export default class SegmentationStateManager {
     segmentationRepresentationUID: string
   ): void {
     const toolGroupSegmentations =
-      this.getSegmentationRepresentations(toolGroupId)
+      this.getSegmentationRepresentations(toolGroupId);
 
     if (!toolGroupSegmentations || !toolGroupSegmentations.length) {
       throw new Error(
         `No segmentation data found for toolGroupId: ${toolGroupId}`
-      )
+      );
     }
 
     const segmentationData = toolGroupSegmentations.find(
       (segmentationData) =>
         segmentationData.segmentationRepresentationUID ===
         segmentationRepresentationUID
-    )
+    );
 
     if (!segmentationData) {
       throw new Error(
         `No segmentation data found for segmentation data UID ${segmentationRepresentationUID}`
-      )
+      );
     }
 
-    segmentationData.active = true
-    this._handleActiveSegmentation(toolGroupId, segmentationData)
+    segmentationData.active = true;
+    this._handleActiveSegmentation(toolGroupId, segmentationData);
   }
 
   /**
@@ -274,13 +274,13 @@ export default class SegmentationStateManager {
   getToolGroupSpecificConfig(
     toolGroupId: string
   ): SegmentationRepresentationConfig | undefined {
-    const toolGroupStateWithConfig = this.state.toolGroups[toolGroupId]
+    const toolGroupStateWithConfig = this.state.toolGroups[toolGroupId];
 
     if (!toolGroupStateWithConfig) {
-      return
+      return;
     }
 
-    return toolGroupStateWithConfig.config
+    return toolGroupStateWithConfig.config;
   }
 
   /**
@@ -295,7 +295,7 @@ export default class SegmentationStateManager {
     toolGroupId: string,
     config: SegmentationRepresentationConfig
   ): void {
-    let toolGroupStateWithConfig = this.state.toolGroups[toolGroupId]
+    let toolGroupStateWithConfig = this.state.toolGroups[toolGroupId];
 
     if (!toolGroupStateWithConfig) {
       this.state.toolGroups[toolGroupId] = {
@@ -304,15 +304,15 @@ export default class SegmentationStateManager {
           renderInactiveSegmentations: true,
           representations: {},
         },
-      }
+      };
 
-      toolGroupStateWithConfig = this.state.toolGroups[toolGroupId]
+      toolGroupStateWithConfig = this.state.toolGroups[toolGroupId];
     }
 
     toolGroupStateWithConfig.config = {
       ...toolGroupStateWithConfig.config,
       ...config,
-    }
+    };
   }
 
   /**
@@ -322,10 +322,10 @@ export default class SegmentationStateManager {
    */
   addColorLUT(colorLut: ColorLut, lutIndex: number): void {
     if (this.state.colorLut[lutIndex]) {
-      console.log('Color LUT table already exists, overwriting')
+      console.log('Color LUT table already exists, overwriting');
     }
 
-    this.state.colorLut[lutIndex] = colorLut
+    this.state.colorLut[lutIndex] = colorLut;
   }
 
   /**
@@ -340,28 +340,28 @@ export default class SegmentationStateManager {
     recentlyAddedOrRemovedSegmentationRepresentation: ToolGroupSpecificRepresentation
   ): void {
     const segmentationRepresentations =
-      this.getSegmentationRepresentations(toolGroupId)
+      this.getSegmentationRepresentations(toolGroupId);
 
     // 1. If there is no segmentation representations, return early
     if (segmentationRepresentations.length === 0) {
-      return
+      return;
     }
 
     // 2. If there is only one segmentation representation, make that one active
     if (segmentationRepresentations.length === 1) {
-      segmentationRepresentations[0].active = true
-      return
+      segmentationRepresentations[0].active = true;
+      return;
     }
 
     // 3. If removed Segmentation representation was active, make the first one active
     const activeSegmentationRepresentations =
       segmentationRepresentations.filter(
         (representation) => representation.active
-      )
+      );
 
     if (activeSegmentationRepresentations.length === 0) {
-      segmentationRepresentations[0].active = true
-      return
+      segmentationRepresentations[0].active = true;
+      return;
     }
 
     // 4. If the added segmentation representation is active, make other segmentation
@@ -372,9 +372,9 @@ export default class SegmentationStateManager {
           representation.segmentationRepresentationUID !==
           recentlyAddedOrRemovedSegmentationRepresentation.segmentationRepresentationUID
         ) {
-          representation.active = false
+          representation.active = false;
         }
-      })
+      });
     }
 
     // 5. if added/removed segmentation is is inactive, do nothing
@@ -383,10 +383,10 @@ export default class SegmentationStateManager {
   _initDefaultColorLutIfNecessary() {
     // if colorLutTable is not specified or the default one is not found
     if (this.state.colorLut.length === 0 || !this.state.colorLut[0]) {
-      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLut, 0)
+      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLut, 0);
     }
   }
 }
 
-const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT')
-export { defaultSegmentationStateManager }
+const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+export { defaultSegmentationStateManager };

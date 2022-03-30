@@ -1,14 +1,14 @@
-import { VolumeActor } from './../../types/IActor'
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume'
-import { loadVolume } from '../../volumeLoader'
+import { VolumeActor } from './../../types/IActor';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import { loadVolume } from '../../volumeLoader';
 //@ts-ignore
-import createVolumeMapper from './createVolumeMapper'
-import BlendModes from '../../enums/BlendModes'
+import createVolumeMapper from './createVolumeMapper';
+import BlendModes from '../../enums/BlendModes';
 
 interface createVolumeActorInterface {
-  volumeId: string
-  callback?: ({ volumeActor: any, volumeId: string }) => void
-  blendMode?: BlendModes
+  volumeId: string;
+  callback?: ({ volumeActor: any, volumeId: string }) => void;
+  blendMode?: BlendModes;
 }
 
 /**
@@ -22,32 +22,32 @@ interface createVolumeActorInterface {
 async function createVolumeActor(
   props: createVolumeActorInterface
 ): Promise<VolumeActor> {
-  const { volumeId, callback, blendMode } = props
+  const { volumeId, callback, blendMode } = props;
 
-  const imageVolume = await loadVolume(volumeId)
+  const imageVolume = await loadVolume(volumeId);
 
   if (!imageVolume) {
     throw new Error(
       `imageVolume with id: ${imageVolume.volumeId} does not exist`
-    )
+    );
   }
 
-  const { imageData, vtkOpenGLTexture } = imageVolume
+  const { imageData, vtkOpenGLTexture } = imageVolume;
 
-  const volumeMapper = createVolumeMapper(imageData, vtkOpenGLTexture)
+  const volumeMapper = createVolumeMapper(imageData, vtkOpenGLTexture);
 
   if (blendMode) {
-    volumeMapper.setBlendMode(blendMode)
+    volumeMapper.setBlendMode(blendMode);
   }
 
-  const volumeActor = vtkVolume.newInstance()
-  volumeActor.setMapper(volumeMapper)
+  const volumeActor = vtkVolume.newInstance();
+  volumeActor.setMapper(volumeMapper);
 
   if (callback) {
-    callback({ volumeActor, volumeId })
+    callback({ volumeActor, volumeId });
   }
 
-  return volumeActor
+  return volumeActor;
 }
 
-export default createVolumeActor
+export default createVolumeActor;

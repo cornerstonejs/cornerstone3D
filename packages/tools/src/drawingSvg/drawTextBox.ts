@@ -1,7 +1,7 @@
-import type { Types } from '@cornerstonejs/core'
+import type { Types } from '@cornerstonejs/core';
 
-import _getHash from './_getHash'
-import _setAttributesIfNecessary from './_setAttributesIfNecessary'
+import _getHash from './_getHash';
+import _setAttributesIfNecessary from './_setAttributesIfNecessary';
 
 /**
  * Draws a textBox.
@@ -31,7 +31,7 @@ function drawTextBox(
       centerY: true,
     },
     options
-  )
+  );
 
   // Draw each of the text lines on top of the background box
   const textGroupBoundingBox = _drawTextGroup(
@@ -42,9 +42,9 @@ function drawTextBox(
     textLines,
     position,
     mergedOptions
-  )
+  );
 
-  return textGroupBoundingBox
+  return textGroupBoundingBox;
 }
 
 function _drawTextGroup(
@@ -56,63 +56,63 @@ function _drawTextGroup(
   position: Types.Point2,
   options: any
 ): SVGRect {
-  const { padding, color, fontFamily, fontSize, background } = options
+  const { padding, color, fontFamily, fontSize, background } = options;
 
-  let textGroupBoundingBox
-  const [x, y] = [position[0] + padding, position[1] + padding]
-  const svgns = 'http://www.w3.org/2000/svg'
-  const svgNodeHash = _getHash(toolName, annotationUID, 'text', textUID)
-  const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash)
+  let textGroupBoundingBox;
+  const [x, y] = [position[0] + padding, position[1] + padding];
+  const svgns = 'http://www.w3.org/2000/svg';
+  const svgNodeHash = _getHash(toolName, annotationUID, 'text', textUID);
+  const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash);
 
   // Todo: right now textBox gets a re-render even if the textBox has not changed
   // and evenIf the attributes are not set again since they are the same.
   if (existingTextGroup) {
     // TODO: Iterate each node and update color? font-size?
     // TODO: Does not support change in # of text lines
-    const textElement = existingTextGroup.querySelector('text')
-    const textSpans = Array.from(textElement.children) as Array<SVGElement>
+    const textElement = existingTextGroup.querySelector('text');
+    const textSpans = Array.from(textElement.children) as Array<SVGElement>;
 
     for (let i = 0; i < textSpans.length; i++) {
-      const textSpanElement = textSpans[i]
-      const text = textLines[i] || ''
+      const textSpanElement = textSpans[i];
+      const text = textLines[i] || '';
 
-      textSpanElement.textContent = text
+      textSpanElement.textContent = text;
     }
 
     const textAttributes = {
       fill: color,
       'font-size': fontSize,
       'font-family': fontFamily,
-    }
+    };
 
     const textGroupAttributes = {
       transform: `translate(${x} ${y})`,
-    }
+    };
 
     // Todo: for some reason this does not work to not re-render the textBox
-    _setAttributesIfNecessary(textAttributes, textElement)
-    _setAttributesIfNecessary(textGroupAttributes, existingTextGroup)
+    _setAttributesIfNecessary(textAttributes, textElement);
+    _setAttributesIfNecessary(textGroupAttributes, existingTextGroup);
 
-    textGroupBoundingBox = _drawTextBackground(existingTextGroup, background)
+    textGroupBoundingBox = _drawTextBackground(existingTextGroup, background);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash)
+    svgDrawingHelper._setNodeTouched(svgNodeHash);
   } else {
-    const textGroup = document.createElementNS(svgns, 'g')
+    const textGroup = document.createElementNS(svgns, 'g');
 
-    textGroup.setAttribute('transform', `translate(${x} ${y})`)
+    textGroup.setAttribute('transform', `translate(${x} ${y})`);
 
     //
-    const textElement = _createTextElement(options)
+    const textElement = _createTextElement(options);
     for (let i = 0; i < textLines.length; i++) {
-      const textLine = textLines[i]
-      const textSpan = _createTextSpan(textLine)
+      const textLine = textLines[i];
+      const textSpan = _createTextSpan(textLine);
 
-      textElement.appendChild(textSpan)
+      textElement.appendChild(textSpan);
     }
 
-    textGroup.appendChild(textElement)
-    svgDrawingHelper._appendNode(textGroup, svgNodeHash)
-    textGroupBoundingBox = _drawTextBackground(textGroup, background)
+    textGroup.appendChild(textElement);
+    svgDrawingHelper._appendNode(textGroup, svgNodeHash);
+    textGroupBoundingBox = _drawTextBackground(textGroup, background);
   }
 
   // We translate the group using `position`
@@ -123,66 +123,66 @@ function _drawTextGroup(
     y,
     height: textGroupBoundingBox.height + padding,
     width: textGroupBoundingBox.width + padding,
-  })
+  });
 }
 
 function _createTextElement(options: any): SVGElement {
-  const { color, fontFamily, fontSize } = options
-  const svgns = 'http://www.w3.org/2000/svg'
-  const textElement = document.createElementNS(svgns, 'text')
+  const { color, fontFamily, fontSize } = options;
+  const svgns = 'http://www.w3.org/2000/svg';
+  const textElement = document.createElementNS(svgns, 'text');
   const noSelectStyle =
-    'user-select: none; pointer-events: none; -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);'
-  const dropShadowStyle = 'filter:url(#shadow);'
-  const combinedStyle = `${noSelectStyle}${dropShadowStyle}`
+    'user-select: none; pointer-events: none; -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);';
+  const dropShadowStyle = 'filter:url(#shadow);';
+  const combinedStyle = `${noSelectStyle}${dropShadowStyle}`;
 
   // font-size="100"
-  textElement.setAttribute('x', '0')
-  textElement.setAttribute('y', '0')
-  textElement.setAttribute('fill', color)
-  textElement.setAttribute('font-family', fontFamily)
-  textElement.setAttribute('font-size', fontSize)
-  textElement.setAttribute('style', combinedStyle)
+  textElement.setAttribute('x', '0');
+  textElement.setAttribute('y', '0');
+  textElement.setAttribute('fill', color);
+  textElement.setAttribute('font-family', fontFamily);
+  textElement.setAttribute('font-size', fontSize);
+  textElement.setAttribute('style', combinedStyle);
 
-  return textElement
+  return textElement;
 }
 
 function _createTextSpan(text): SVGElement {
-  const svgns = 'http://www.w3.org/2000/svg'
-  const textSpanElement = document.createElementNS(svgns, 'tspan')
+  const svgns = 'http://www.w3.org/2000/svg';
+  const textSpanElement = document.createElementNS(svgns, 'tspan');
 
   // TODO: centerX
   // (parent width / 2) - my width
   // TODO: centerY
 
-  textSpanElement.setAttribute('x', '0')
-  textSpanElement.setAttribute('dy', '1.2em')
-  textSpanElement.textContent = text
+  textSpanElement.setAttribute('x', '0');
+  textSpanElement.setAttribute('dy', '1.2em');
+  textSpanElement.textContent = text;
 
-  return textSpanElement
+  return textSpanElement;
 }
 
 function _drawTextBackground(group: SVGGElement, color: string) {
-  let element = group.querySelector('rect.background')
+  let element = group.querySelector('rect.background');
 
   // If we have no background color, remove any element that exists and return
   // the bounding box of the text
   if (!color) {
     if (element) {
-      group.removeChild(element)
+      group.removeChild(element);
     }
 
-    return group.getBBox()
+    return group.getBBox();
   }
 
   // Otherwise, check if we have a <rect> element. If not, create one
   if (!element) {
-    element = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-    element.setAttribute('class', 'background')
-    group.insertBefore(element, group.firstChild)
+    element = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    element.setAttribute('class', 'background');
+    group.insertBefore(element, group.firstChild);
   }
 
   // Get the text groups's bounding box and use it to draw the background rectangle
-  const bBox = group.getBBox()
+  const bBox = group.getBBox();
 
   const attributes = {
     x: `${bBox.x}`,
@@ -190,11 +190,11 @@ function _drawTextBackground(group: SVGGElement, color: string) {
     width: `${bBox.width}`,
     height: `${bBox.height}`,
     fill: color,
-  }
+  };
 
-  _setAttributesIfNecessary(attributes, element)
+  _setAttributesIfNecessary(attributes, element);
 
-  return bBox
+  return bBox;
 }
 
-export default drawTextBox
+export default drawTextBox;

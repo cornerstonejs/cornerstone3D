@@ -1,5 +1,5 @@
-import triggerSegmentationRender from '../../utilities/triggerSegmentationRender'
-import { SegmentationRepresentationRemovedEventType } from '../../types/EventTypes'
+import triggerSegmentationRender from '../../utilities/triggerSegmentationRender';
+import { SegmentationRepresentationRemovedEventType } from '../../types/EventTypes';
 
 /** A function that listens to the `segmentationStateModified` event and triggers
  * the `triggerSegmentationRender` function. This function is called when the
@@ -8,8 +8,8 @@ import { SegmentationRepresentationRemovedEventType } from '../../types/EventTyp
 const segmentationRepresentationRemovedEventListener = function (
   evt: SegmentationRepresentationRemovedEventType
 ): void {
-  const { toolGroupId, segmentationRepresentationUID } = evt.detail
-  triggerSegmentationRender(toolGroupId)
-}
+  const { toolGroupId, segmentationRepresentationUID } = evt.detail;
+  triggerSegmentationRender(toolGroupId);
+};
 
-export default segmentationRepresentationRemovedEventListener
+export default segmentationRepresentationRemovedEventListener;

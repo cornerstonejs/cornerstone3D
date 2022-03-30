@@ -3,26 +3,26 @@ import {
   Enums,
   init as csInit,
   Types,
-} from '@cornerstonejs/core'
-import { init as csTools3dInit } from '@cornerstonejs/tools'
+} from '@cornerstonejs/core';
+import { init as csTools3dInit } from '@cornerstonejs/tools';
 
-const content = document.getElementById('content')
+const content = document.getElementById('content');
 
-const element = document.createElement('div')
-element.id = 'cornerstone-element'
-element.style.width = '500px'
-element.style.height = '500px'
+const element = document.createElement('div');
+element.id = 'cornerstone-element';
+element.style.width = '500px';
+element.style.height = '500px';
 
-content.appendChild(element)
+content.appendChild(element);
 
 async function setup() {
-  await csInit()
-  await csTools3dInit()
+  await csInit();
+  await csTools3dInit();
 
   // registerWebImageLoader(cs)
 
-  const renderingEngineId = 'myRenderingEngine'
-  const renderingEngine = new RenderingEngine(renderingEngineId)
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   const viewportInput = [
     {
@@ -33,9 +33,9 @@ async function setup() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
-  ]
+  ];
 
-  renderingEngine.setViewports(viewportInput)
+  renderingEngine.setViewports(viewportInput);
 }
 
-setup()
+setup();

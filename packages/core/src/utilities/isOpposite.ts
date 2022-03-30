@@ -1,4 +1,4 @@
-import type Point3 from '../types/Point3'
+import type Point3 from '../types/Point3';
 
 /**
  * returns equal if the two vec3s are opposite within the
@@ -19,5 +19,5 @@ export default function isOpposite(
     Math.abs(v1[0] + v2[0]) < tolerance &&
     Math.abs(v1[1] + v2[1]) < tolerance &&
     Math.abs(v1[2] + v2[2]) < tolerance
-  )
+  );
 }

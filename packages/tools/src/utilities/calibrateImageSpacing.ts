@@ -1,7 +1,7 @@
-import { utilities } from '@cornerstonejs/core'
-import type { Types } from '@cornerstonejs/core'
+import { utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-const { calibratedPixelSpacingMetadataProvider } = utilities
+const { calibratedPixelSpacingMetadataProvider } = utilities;
 
 /**
  * It adds the provided spacing to the Cornerstone internal calibratedPixelSpacing
@@ -21,24 +21,24 @@ export default function calibrateImageSpacing(
   // 1. Add the calibratedPixelSpacing metadata to the metadata provider
   // If no column spacing provided, assume square pixels
   if (!columnPixelSpacing) {
-    columnPixelSpacing = rowPixelSpacing
+    columnPixelSpacing = rowPixelSpacing;
   }
 
   calibratedPixelSpacingMetadataProvider.add(imageId, [
     rowPixelSpacing,
     columnPixelSpacing,
-  ])
+  ]);
 
   // 2. Update the actor for stackViewports
-  const viewports = renderingEngine.getStackViewports()
+  const viewports = renderingEngine.getStackViewports();
 
   // 2.1 If imageId is already being used in a stackViewport -> update actor
   viewports.forEach((viewport) => {
-    const imageIds = viewport.getImageIds()
+    const imageIds = viewport.getImageIds();
     if (imageIds.includes(imageId)) {
-      viewport.calibrateSpacing(imageId)
+      viewport.calibrateSpacing(imageId);
     }
-  })
+  });
 
   // 2.2 If imageId is cached but not being displayed in a viewport, stackViewport
   // will handle using the calibratedPixelSpacing since it has been added

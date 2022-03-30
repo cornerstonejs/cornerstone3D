@@ -1,7 +1,7 @@
-import cache from '../cache/cache'
+import cache from '../cache/cache';
 // import type { VolumeViewport } from '../RenderingEngine'
-import { ICamera, IImageVolume, IVolumeViewport } from '../types'
-import getSpacingInNormalDirection from './getSpacingInNormalDirection'
+import { ICamera, IImageVolume, IVolumeViewport } from '../types';
+import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 
 /**
  * Given a volume viewport and camera, find the target volume.
@@ -23,56 +23,56 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   camera: ICamera,
   targetVolumeId?: string
 ): {
-  imageVolume: IImageVolume
-  spacingInNormalDirection: number
+  imageVolume: IImageVolume;
+  spacingInNormalDirection: number;
 } {
-  const { viewPlaneNormal } = camera
-  const volumeActors = viewport.getActors()
+  const { viewPlaneNormal } = camera;
+  const volumeActors = viewport.getActors();
 
   if (!volumeActors && !volumeActors.length) {
-    return { spacingInNormalDirection: null, imageVolume: null }
+    return { spacingInNormalDirection: null, imageVolume: null };
   }
-  const numVolumeActors = volumeActors.length
-  const imageVolumes = volumeActors.map((va) => cache.getVolume(va.uid))
+  const numVolumeActors = volumeActors.length;
+  const imageVolumes = volumeActors.map((va) => cache.getVolume(va.uid));
 
   // If a volumeId is defined, set that volume as the target
   if (targetVolumeId) {
     const imageVolume = imageVolumes.find(
       (iv) => iv.volumeId === targetVolumeId
-    )
+    );
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
-    )
+    );
 
-    return { imageVolume, spacingInNormalDirection }
+    return { imageVolume, spacingInNormalDirection };
   }
 
   // Fetch volume actor with finest resolution in direction of projection.
   const smallest = {
     spacingInNormalDirection: Infinity,
     imageVolume: null,
-  }
+  };
 
   for (let i = 0; i < numVolumeActors; i++) {
-    const imageVolume = imageVolumes[i]
+    const imageVolume = imageVolumes[i];
 
     // TODO: Hacky workaround for undefined volumes created by Seg
     if (!imageVolume) {
-      continue
+      continue;
     }
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
-    )
+    );
 
     if (spacingInNormalDirection < smallest.spacingInNormalDirection) {
-      smallest.spacingInNormalDirection = spacingInNormalDirection
-      smallest.imageVolume = imageVolume
+      smallest.spacingInNormalDirection = spacingInNormalDirection;
+      smallest.imageVolume = imageVolume;
     }
   }
 
-  return smallest
+  return smallest;
 }

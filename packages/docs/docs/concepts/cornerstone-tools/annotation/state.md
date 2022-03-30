@@ -54,25 +54,22 @@ You can get/add annotations using the following API:
 
 ```js
 // Adds annotation
-cornerstone3DTools.annotations.state.addAnnotation(element, annotation)
+cornerstone3DTools.annotations.state.addAnnotation(element, annotation);
 
 // Remove the annotations given the annotation reference.
-cornerstone3DTools.annotations.state.removeAnnotation(element, annotationUID)
+cornerstone3DTools.annotations.state.removeAnnotation(element, annotationUID);
 
 // Returns the full annotations for a given Tool
-cornerstone3DTools.annotations.state.getAnnotations(element, toolName)
+cornerstone3DTools.annotations.state.getAnnotations(element, toolName);
 
 // A helper which returns the single annotation entry matching the UID.
-cornerstone3DTools.annotations.state.getAnnotation(annotationUID)
+cornerstone3DTools.annotations.state.getAnnotation(annotationUID);
 
 // Deletes the annotation found by the given UID.
-cornerstone3DTools.annotations.state.removeAnnotation(element, annotationUID)
+cornerstone3DTools.annotations.state.removeAnnotation(element, annotationUID);
 ```
 
-
 ## Read more
-
-
 
 :::note TIP
 Read more about the state API [here](/api/tools/namespace/annotation#state)

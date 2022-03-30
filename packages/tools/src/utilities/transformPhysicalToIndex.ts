@@ -7,8 +7,8 @@
  * @returns An array of integers.
  */
 export default function transformPhysicalToIndex(imageData, physicalPoint) {
-  const continuousIndex = imageData.worldToIndex(physicalPoint)
-  const index = continuousIndex.map(Math.round)
+  const continuousIndex = imageData.worldToIndex(physicalPoint);
+  const index = continuousIndex.map(Math.round);
 
-  return index
+  return index;
 }

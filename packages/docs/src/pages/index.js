@@ -1,11 +1,11 @@
-import React from 'react'
-import clsx from 'clsx'
-import Layout from '@theme/Layout'
-import Link from '@docusaurus/Link'
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
-import styles from './index.module.css'
-import { useColorMode } from '@docusaurus/theme-common'
-import HomepageFeatures from '../components/HomepageFeatures'
+import React from 'react';
+import clsx from 'clsx';
+import Layout from '@theme/Layout';
+import Link from '@docusaurus/Link';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import styles from './index.module.css';
+import { useColorMode } from '@docusaurus/theme-common';
+import HomepageFeatures from '../components/HomepageFeatures';
 
 function HomepageHeader() {
   return (
@@ -25,11 +25,11 @@ function HomepageHeader() {
       </div>
       <button className={styles.learnMore}>Learn More</button>
     </div>
-  )
+  );
 }
 
 export default function Home() {
-  const { siteConfig } = useDocusaurusContext()
+  const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
       title={`${siteConfig.title}`}
@@ -40,5 +40,5 @@ export default function Home() {
         <HomepageFeatures />
       </main>
     </Layout>
-  )
+  );
 }

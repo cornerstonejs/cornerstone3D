@@ -1,5 +1,5 @@
-import { state } from '../index'
-import Synchronizer, { ISynchronizerEventHandler } from './Synchronizer'
+import { state } from '../index';
+import Synchronizer, { ISynchronizerEventHandler } from './Synchronizer';
 
 /**
  * Create a new synchronizer instance from Synchronizer class
@@ -17,20 +17,24 @@ function createSynchronizer(
 ): Synchronizer {
   const synchronizerWithSameIdExists = state.synchronizers.some(
     (sync) => sync.id === synchronizerId
-  )
+  );
 
   if (synchronizerWithSameIdExists) {
-    throw new Error(`Synchronizer with id '${synchronizerId}' already exists.`)
+    throw new Error(`Synchronizer with id '${synchronizerId}' already exists.`);
   }
 
   // Create
-  const synchronizer = new Synchronizer(synchronizerId, eventName, eventHandler)
+  const synchronizer = new Synchronizer(
+    synchronizerId,
+    eventName,
+    eventHandler
+  );
 
   // Update state
-  state.synchronizers.push(synchronizer)
+  state.synchronizers.push(synchronizer);
 
   // Return reference
-  return synchronizer
+  return synchronizer;
 }
 
-export default createSynchronizer
+export default createSynchronizer;

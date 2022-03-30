@@ -4,13 +4,13 @@ id: overview
 
 # Overview
 
-
 `Cornerstone3D` is a lightweight Javascript library for visualization of medical images in modern web browsers that support the HTML5 canvas element.
 Using `Cornerstone3D` and its accompanying libraries such as `cornerstone3DTools`, you can achieve a wide range of imaging applications:
 
 ## Features
 
 ### Rendering
+
 Using the new `Cornerstone3D` renderingEngine and its Stack and Volume viewports, you can:
 
 - render all transfer syntaxes including various compressed formats such as JPEG2000, JPEG Lossless
@@ -26,6 +26,7 @@ Using the new `Cornerstone3D` renderingEngine and its Stack and Volume viewports
 ![](../assets/overview-rendering.gif)
 
 ### Manipulation
+
 `cornerstone3DTools` enables the following features:
 
 - zoom in and out of the image using mouse bindings
@@ -36,6 +37,7 @@ Using the new `Cornerstone3D` renderingEngine and its Stack and Volume viewports
 ![](../assets/overview-manipulation.gif)
 
 ### Annotation
+
 `cornerstone3DTools` also enables annotating images using tools. All annotations are
 rendered as SVG elements which ensures that they are displayed at the best possible quality
 in any monitor resolution. Annotations in `cornerstone3DTools` are stored
@@ -53,6 +55,7 @@ In addition, you can:
 ![](../assets/overview-annotation.gif)
 
 ### Segmentation
+
 `Cornerstone3D` supports rendering segmentations of images as labelmaps in the volume viewport.
 You can:
 
@@ -62,14 +65,13 @@ You can:
 - edit/draw a segment in Axial, Sagittal, Coronal using scissor tools such as Rectangle, Ellipse scissors
 - apply a certain threshold to a labelmap for the region of interest
 
-
 ### Synchronization
+
 `Cornerstone3D` supports synchronization between multiple viewports. Currently, there
 are two implemented synchronizers in `Cornerstone3D` and we are working on more.
 
 - windowLevel synchronizer: synchronizes the window level of the source and target viewports
 - camera synchronizer: synchronizes the camera of the source and target viewports
-
 
 ## About this documentation
 
@@ -84,9 +86,6 @@ Our documentation can be broken down into the following sections:
 - **Migration Guides**: includes instructions for upgrading from legacy `cornerstone-core` and `cornerstone-tools` to `Cornerstone3D` and `cornerstone3DTools`
 - **Test Coverage Report**: provides a detailed report of the test coverage of the library
 - **FAQ**: provides answers to frequently asked questions
-
-
-
 
 If a page is no longer up-to-date, you can author a PR to update it by modifying
 the files in `/packages/docs/docs/*.md`. Read more on how to contribute [here](../contribute/pull-request.md).

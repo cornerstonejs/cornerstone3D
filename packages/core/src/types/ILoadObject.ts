@@ -1,16 +1,16 @@
-import { ImageVolume } from './../cache/classes/ImageVolume'
-import IImage from './IImage'
+import { ImageVolume } from './../cache/classes/ImageVolume';
+import IImage from './IImage';
 
 /**
  * ImageLoadObject interface which any imageLoader should return
  */
 export interface IImageLoadObject {
   /** promise that resolves to an image */
-  promise: Promise<IImage>
+  promise: Promise<IImage>;
   /** optional cancel function for loading*/
-  cancel?: () => void
+  cancel?: () => void;
   /** optional decache function */
-  decache?: () => void
+  decache?: () => void;
 }
 
 /**
@@ -18,9 +18,9 @@ export interface IImageLoadObject {
  */
 export interface IVolumeLoadObject {
   /** promise that resolves to an ImageVolume */
-  promise: Promise<ImageVolume>
+  promise: Promise<ImageVolume>;
   /** optional cancel function for loading*/
-  cancel?: () => void
+  cancel?: () => void;
   /** optional decache function */
-  decache?: () => void
+  decache?: () => void;
 }

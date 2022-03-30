@@ -1,5 +1,5 @@
-import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData'
-import config from './../config/default'
+import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+import config from './../config/default';
 
 /**
  * Get the imageIds by passing the StudyInstanceUID, SeriesInstanceUID and type
@@ -8,11 +8,11 @@ import config from './../config/default'
  * @returns {Array} Array of imageIds
  */
 export default async function getImageIds(studyId, type, callback, codec) {
-  const study = config[studyId]
-  let wadoRsRoot = study.wadoRsRoot
+  const study = config[studyId];
+  let wadoRsRoot = study.wadoRsRoot;
 
-  if (codec){
-    wadoRsRoot = wadoRsRoot + '/' + codec
+  if (codec) {
+    wadoRsRoot = wadoRsRoot + '/' + codec;
   }
 
   let imageIds = await createImageIdsAndCacheMetaData({
@@ -20,11 +20,11 @@ export default async function getImageIds(studyId, type, callback, codec) {
     SeriesInstanceUID: study.SeriesInstanceUID,
     wadoRsRoot,
     type,
-  })
+  });
 
   if (callback) {
-    imageIds = callback(imageIds)
+    imageIds = callback(imageIds);
   }
 
-  return imageIds
+  return imageIds;
 }

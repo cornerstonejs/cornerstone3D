@@ -1,22 +1,22 @@
-import InterpolationType from '../enums/InterpolationType'
-import { VOIRange } from './voi'
+import InterpolationType from '../enums/InterpolationType';
+import { VOIRange } from './voi';
 
 /**
  * Stack Viewport Properties
  */
 type StackViewportProperties = {
   /** voi range (upper, lower) for the viewport */
-  voiRange?: VOIRange
+  voiRange?: VOIRange;
   /** invert flag - whether the image is inverted */
-  invert?: boolean
+  invert?: boolean;
   /** interpolation type - linear or nearest neighbor */
-  interpolationType?: InterpolationType
+  interpolationType?: InterpolationType;
   /** image rotation */
-  rotation?: number
+  rotation?: number;
   /** flip horizontal flag */
-  flipHorizontal?: boolean
+  flipHorizontal?: boolean;
   /** flip vertical flag */
-  flipVertical?: boolean
-}
+  flipVertical?: boolean;
+};
 
-export default StackViewportProperties
+export default StackViewportProperties;

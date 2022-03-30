@@ -1,19 +1,19 @@
-import RequestType from '../enums/RequestType'
+import RequestType from '../enums/RequestType';
 
 type AdditionalDetails = {
-  imageId?: string
-  volumeId?: string
-}
+  imageId?: string;
+  volumeId?: string;
+};
 
 type RequestDetailsInterface = {
-  requestFn: () => Promise<void>
-  type: RequestType
-  additionalDetails: AdditionalDetails
-}
+  requestFn: () => Promise<void>;
+  type: RequestType;
+  additionalDetails: AdditionalDetails;
+};
 
 type RequestPool = {
-  [name in RequestType]: { [key: number]: RequestDetailsInterface[] }
-}
+  [name in RequestType]: { [key: number]: RequestDetailsInterface[] };
+};
 
 // TODO: Some of this stuff shouldn't be public but it's easier right now
 /**
@@ -72,22 +72,22 @@ type RequestPool = {
  *
  */
 class RequestPoolManager {
-  private requestPool: RequestPool
-  private awake: boolean
+  private requestPool: RequestPool;
+  private awake: boolean;
   private numRequests = {
     interaction: 0,
     thumbnail: 0,
     prefetch: 0,
-  }
+  };
   /* maximum number of requests of each type. */
   public maxNumRequests: {
-    interaction: number
-    thumbnail: number
-    prefetch: number
-  }
+    interaction: number;
+    thumbnail: number;
+    prefetch: number;
+  };
   /* A public property that is used to set the delay between requests. */
-  public grabDelay: number
-  private timeoutHandle: number
+  public grabDelay: number;
+  private timeoutHandle: number;
 
   /**
    * By default a request pool containing three priority groups, one for each
@@ -99,22 +99,22 @@ class RequestPoolManager {
       interaction: { 0: [] },
       thumbnail: { 0: [] },
       prefetch: { 0: [] },
-    }
+    };
 
-    this.awake = false
-    this.grabDelay = 5
+    this.awake = false;
+    this.grabDelay = 5;
 
     this.numRequests = {
       interaction: 0,
       thumbnail: 0,
       prefetch: 0,
-    }
+    };
 
     this.maxNumRequests = {
       interaction: 6,
       thumbnail: 6,
       prefetch: 5,
-    }
+    };
   }
 
   /**
@@ -123,7 +123,7 @@ class RequestPoolManager {
    */
   public destroy(): void {
     if (this.timeoutHandle) {
-      window.clearTimeout(this.timeoutHandle)
+      window.clearTimeout(this.timeoutHandle);
     }
   }
 
@@ -150,20 +150,20 @@ class RequestPoolManager {
       requestFn,
       type,
       additionalDetails,
-    }
+    };
 
     // Check if the priority group exists on the request type
     if (this.requestPool[type][priority] === undefined) {
-      this.requestPool[type][priority] = []
+      this.requestPool[type][priority] = [];
     }
 
     // Adding the request to the correct priority group of the request type
-    this.requestPool[type][priority].push(requestDetails)
+    this.requestPool[type][priority].push(requestDetails);
 
     // Wake up
     if (!this.awake) {
-      this.awake = true
-      this.startGrabbing()
+      this.awake = true;
+      this.startGrabbing();
     }
   }
 
@@ -177,15 +177,15 @@ class RequestPoolManager {
     filterFunction: (requestDetails: RequestDetailsInterface) => boolean
   ): void {
     Object.keys(this.requestPool).forEach((type: string) => {
-      const requestType = this.requestPool[type]
+      const requestType = this.requestPool[type];
       Object.keys(requestType).forEach((priority) => {
         requestType[priority] = requestType[priority].filter(
           (requestDetails: RequestDetailsInterface) => {
-            return filterFunction(requestDetails)
+            return filterFunction(requestDetails);
           }
-        )
-      })
-    })
+        );
+      });
+    });
   }
 
   /**
@@ -197,21 +197,21 @@ class RequestPoolManager {
    */
   public clearRequestStack(type: string): void {
     if (!this.requestPool[type]) {
-      throw new Error(`No category for the type ${type} found`)
+      throw new Error(`No category for the type ${type} found`);
     }
-    this.requestPool[type] = { 0: [] }
+    this.requestPool[type] = { 0: [] };
   }
 
   protected sendRequest({ requestFn, type }: RequestDetailsInterface): void {
     // Increment the number of current requests of this type
-    this.numRequests[type]++
-    this.awake = true
+    this.numRequests[type]++;
+    this.awake = true;
 
     requestFn().finally(() => {
-      this.numRequests[type]--
+      this.numRequests[type]--;
 
-      this.startAgain()
-    })
+      this.startAgain();
+    });
   }
 
   protected startGrabbing(): void {
@@ -226,34 +226,34 @@ class RequestPoolManager {
     const maxRequests =
       this.maxNumRequests.interaction +
       this.maxNumRequests.thumbnail +
-      this.maxNumRequests.prefetch
+      this.maxNumRequests.prefetch;
     const currentRequests =
       this.numRequests.interaction +
       this.numRequests.thumbnail +
-      this.numRequests.prefetch
+      this.numRequests.prefetch;
 
-    const requestsToSend = maxRequests - currentRequests
+    const requestsToSend = maxRequests - currentRequests;
     for (let i = 0; i < requestsToSend; i++) {
-      const requestDetails = this.getNextRequest()
+      const requestDetails = this.getNextRequest();
       if (requestDetails === false) {
-        break
+        break;
       } else if (requestDetails) {
-        this.sendRequest(requestDetails)
+        this.sendRequest(requestDetails);
       }
     }
   }
 
   protected startAgain(): void {
     if (!this.awake) {
-      return
+      return;
     }
 
     if (this.grabDelay !== undefined) {
       this.timeoutHandle = window.setTimeout(() => {
-        this.startGrabbing()
-      }, this.grabDelay)
+        this.startGrabbing();
+      }, this.grabDelay);
     } else {
-      this.startGrabbing()
+      this.startGrabbing();
     }
   }
 
@@ -261,36 +261,36 @@ class RequestPoolManager {
     const priorities = Object.keys(this.requestPool[type])
       .map(Number)
       .filter((priority) => this.requestPool[type][priority].length)
-      .sort()
-    return priorities
+      .sort();
+    return priorities;
   }
 
   protected getNextRequest(): RequestDetailsInterface | false {
-    const interactionPriorities = this.getSortedPriorityGroups('interaction')
+    const interactionPriorities = this.getSortedPriorityGroups('interaction');
     for (const priority of interactionPriorities) {
       if (
         this.requestPool.interaction[priority].length &&
         this.numRequests.interaction < this.maxNumRequests.interaction
       ) {
-        return this.requestPool.interaction[priority].shift()
+        return this.requestPool.interaction[priority].shift();
       }
     }
-    const thumbnailPriorities = this.getSortedPriorityGroups('thumbnail')
+    const thumbnailPriorities = this.getSortedPriorityGroups('thumbnail');
     for (const priority of thumbnailPriorities) {
       if (
         this.requestPool.thumbnail[priority].length &&
         this.numRequests.thumbnail < this.maxNumRequests.thumbnail
       ) {
-        return this.requestPool.thumbnail[priority].shift()
+        return this.requestPool.thumbnail[priority].shift();
       }
     }
-    const prefetchPriorities = this.getSortedPriorityGroups('prefetch')
+    const prefetchPriorities = this.getSortedPriorityGroups('prefetch');
     for (const priority of prefetchPriorities) {
       if (
         this.requestPool.prefetch[priority].length &&
         this.numRequests.prefetch < this.maxNumRequests.prefetch
       ) {
-        return this.requestPool.prefetch[priority].shift()
+        return this.requestPool.prefetch[priority].shift();
       }
     }
 
@@ -299,9 +299,9 @@ class RequestPoolManager {
       !thumbnailPriorities.length &&
       !prefetchPriorities.length
     ) {
-      this.awake = false
+      this.awake = false;
     }
-    return false
+    return false;
   }
 
   /**
@@ -312,11 +312,11 @@ class RequestPoolManager {
    * the added request details
    */
   getRequestPool(): RequestPool {
-    return this.requestPool
+    return this.requestPool;
   }
 }
 
-const requestPoolManager = new RequestPoolManager()
+const requestPoolManager = new RequestPoolManager();
 
-export { RequestPoolManager }
-export default requestPoolManager
+export { RequestPoolManager };
+export default requestPoolManager;

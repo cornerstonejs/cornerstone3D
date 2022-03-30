@@ -1,4 +1,4 @@
-import { state } from './state'
+import { state } from './state';
 
 /**
  * Adds the tool class to the cornerstoneTools to be used later. This function
@@ -15,21 +15,21 @@ import { state } from './state'
  */
 export function addTool(ToolClass): void {
   // Check if tool exists and name is not undefined
-  const toolName = ToolClass.toolName
-  const toolAlreadyAdded = state.tools[toolName] !== undefined
+  const toolName = ToolClass.toolName;
+  const toolAlreadyAdded = state.tools[toolName] !== undefined;
 
   if (!toolName) {
-    throw new Error(`No Tool Found for the ToolClass ${ToolClass.name}`)
+    throw new Error(`No Tool Found for the ToolClass ${ToolClass.name}`);
   }
 
   if (toolAlreadyAdded) {
-    throw new Error(`${toolName} has already been added globally`)
+    throw new Error(`${toolName} has already been added globally`);
   }
 
   // Stores the toolNames and ToolClass to be instantiated in the toolGroup on toolGroup.addTool
   state.tools[toolName] = {
     toolClass: ToolClass,
-  }
+  };
 }
 
 /**
@@ -38,19 +38,19 @@ export function addTool(ToolClass): void {
  * @param ToolClass - A tool calls to instantiate.
  */
 export function removeTool(ToolClass): void {
-  const toolName = ToolClass.toolName
+  const toolName = ToolClass.toolName;
 
   if (!toolName) {
-    throw new Error(`No tool found for: ${ToolClass.name}`)
+    throw new Error(`No tool found for: ${ToolClass.name}`);
   }
 
   if (!state.tools[toolName] !== undefined) {
-    delete state.tools[toolName]
+    delete state.tools[toolName];
   } else {
     throw new Error(
       `${toolName} cannot be removed because it has not been added`
-    )
+    );
   }
 }
 
-export default addTool
+export default addTool;

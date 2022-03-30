@@ -1,4 +1,4 @@
-import { getEnabledElement, addVolumesToViewports } from '@cornerstonejs/core'
+import { getEnabledElement, addVolumesToViewports } from '@cornerstonejs/core';
 
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
@@ -15,14 +15,14 @@ async function addLabelmapToElement(
   volumeId: string,
   segmentationRepresentationUID: string
 ): Promise<void> {
-  const enabledElement = getEnabledElement(element)
-  const { renderingEngine, viewport } = enabledElement
-  const { id: viewportId } = viewport
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngine, viewport } = enabledElement;
+  const { id: viewportId } = viewport;
 
   // Default to true since we are setting a new segmentation, however,
   // in the event listener, we will make other segmentations visible/invisible
   // based on the config
-  const visibility = true
+  const visibility = true;
 
   // Add labelmap volumes to the viewports to be be rendered, but not force the render
   await addVolumesToViewports(
@@ -35,7 +35,7 @@ async function addLabelmapToElement(
       },
     ],
     [viewportId]
-  )
+  );
 }
 
-export default addLabelmapToElement
+export default addLabelmapToElement;

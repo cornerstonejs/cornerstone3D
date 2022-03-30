@@ -1,10 +1,10 @@
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 
 import {
   RepresentationConfig,
   SegmentationRepresentationConfig,
-} from '../../types/SegmentationStateTypes'
+} from '../../types/SegmentationStateTypes';
 
 /**
  * It returns the global segmentation config.
@@ -12,7 +12,7 @@ import {
  * config for each representation type and renderInactiveSegmentations flag.
  */
 function getGlobalConfig(): SegmentationRepresentationConfig {
-  return SegmentationState.getGlobalConfig()
+  return SegmentationState.getGlobalConfig();
 }
 
 /**
@@ -22,7 +22,7 @@ function getGlobalConfig(): SegmentationRepresentationConfig {
 function setGlobalConfig(
   segmentationConfig: SegmentationRepresentationConfig
 ): void {
-  SegmentationState.setGlobalConfig(segmentationConfig)
+  SegmentationState.setGlobalConfig(segmentationConfig);
 }
 
 /**
@@ -33,8 +33,8 @@ function setGlobalConfig(
 function getGlobalRepresentationConfig(
   representationType: SegmentationRepresentations
 ): RepresentationConfig['LABELMAP'] {
-  const globalConfig = getGlobalConfig()
-  return globalConfig.representations[representationType]
+  const globalConfig = getGlobalConfig();
+  return globalConfig.representations[representationType];
 }
 
 /**
@@ -49,7 +49,7 @@ function setGlobalRepresentationConfig(
   representationType: SegmentationRepresentations,
   config: RepresentationConfig['LABELMAP']
 ): void {
-  const globalConfig = getGlobalConfig()
+  const globalConfig = getGlobalConfig();
 
   setGlobalConfig({
     ...globalConfig,
@@ -57,7 +57,7 @@ function setGlobalRepresentationConfig(
       ...globalConfig.representations,
       [representationType]: config,
     },
-  })
+  });
 }
 
 /**
@@ -68,7 +68,7 @@ function setGlobalRepresentationConfig(
 function getToolGroupSpecificConfig(
   toolGroupId: string
 ): SegmentationRepresentationConfig {
-  return SegmentationState.getToolGroupSpecificConfig(toolGroupId)
+  return SegmentationState.getToolGroupSpecificConfig(toolGroupId);
 }
 
 function setToolGroupSpecificConfig(
@@ -78,7 +78,7 @@ function setToolGroupSpecificConfig(
   SegmentationState.setToolGroupSpecificConfig(
     toolGroupId,
     segmentationRepresentationConfig
-  )
+  );
 }
 
 export {
@@ -90,4 +90,4 @@ export {
   // ToolGroup Specific
   getToolGroupSpecificConfig,
   setToolGroupSpecificConfig,
-}
+};

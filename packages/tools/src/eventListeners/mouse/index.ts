@@ -1,6 +1,6 @@
-import mouseDoubleClickListener from './mouseDoubleClickListener'
-import mouseDownListener from './mouseDownListener'
-import mouseMoveListener from './mouseMoveListener'
+import mouseDoubleClickListener from './mouseDoubleClickListener';
+import mouseDownListener from './mouseDownListener';
+import mouseMoveListener from './mouseMoveListener';
 
 /**
  * Removes mouse event listeners for native mouse event. Enables
@@ -11,9 +11,9 @@ import mouseMoveListener from './mouseMoveListener'
  * @param element - The DOM element to remove event listeners from.
  */
 function disable(element: HTMLElement): void {
-  element.removeEventListener('dblclick', mouseDoubleClickListener)
-  element.removeEventListener('mousedown', mouseDownListener)
-  element.removeEventListener('mousemove', mouseMoveListener)
+  element.removeEventListener('dblclick', mouseDoubleClickListener);
+  element.removeEventListener('mousedown', mouseDownListener);
+  element.removeEventListener('mousemove', mouseMoveListener);
 }
 
 /**
@@ -26,14 +26,14 @@ function disable(element: HTMLElement): void {
  */
 function enable(element: HTMLElement): void {
   // Prevent handlers from being attached multiple times
-  disable(element)
+  disable(element);
 
-  element.addEventListener('dblclick', mouseDoubleClickListener)
-  element.addEventListener('mousedown', mouseDownListener)
-  element.addEventListener('mousemove', mouseMoveListener)
+  element.addEventListener('dblclick', mouseDoubleClickListener);
+  element.addEventListener('mousedown', mouseDownListener);
+  element.addEventListener('mousemove', mouseMoveListener);
 }
 
 export default {
   enable,
   disable,
-}
+};

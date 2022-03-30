@@ -3,11 +3,14 @@ import {
   StackViewport,
   VolumeViewport,
   utilities as csUtils,
-} from '@cornerstonejs/core'
-import clip from '../clip'
-import getSliceRange from './getSliceRange'
-import snapFocalPointToSlice from './snapFocalPointToSlice'
-import { MouseDragEventType, MouseWheelEventType } from '../../types/EventTypes'
+} from '@cornerstonejs/core';
+import clip from '../clip';
+import getSliceRange from './getSliceRange';
+import snapFocalPointToSlice from './snapFocalPointToSlice';
+import {
+  MouseDragEventType,
+  MouseWheelEventType,
+} from '../../types/EventTypes';
 
 /**
  * Scroll the stack defined by the event (`evt`)
@@ -27,38 +30,38 @@ export default function scrollThroughStack(
   volumeId: string,
   invert = false
 ): void {
-  const { element } = evt.detail
-  const { viewport } = getEnabledElement(element)
-  const { type: viewportType } = viewport
-  const camera = viewport.getCamera()
-  const { focalPoint, viewPlaneNormal, position } = camera
-  const delta = invert ? -deltaFrames : deltaFrames
+  const { element } = evt.detail;
+  const { viewport } = getEnabledElement(element);
+  const { type: viewportType } = viewport;
+  const camera = viewport.getCamera();
+  const { focalPoint, viewPlaneNormal, position } = camera;
+  const delta = invert ? -deltaFrames : deltaFrames;
 
   if (viewport instanceof StackViewport) {
     // stack viewport
-    const currentImageIdIndex = viewport.getCurrentImageIdIndex()
-    const numberOfFrames = viewport.getImageIds().length
-    let newImageIdIndex = currentImageIdIndex + delta
-    newImageIdIndex = clip(newImageIdIndex, 0, numberOfFrames - 1)
+    const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+    const numberOfFrames = viewport.getImageIds().length;
+    let newImageIdIndex = currentImageIdIndex + delta;
+    newImageIdIndex = clip(newImageIdIndex, 0, numberOfFrames - 1);
 
-    viewport.setImageIdIndex(newImageIdIndex)
+    viewport.setImageIdIndex(newImageIdIndex);
   } else if (viewport instanceof VolumeViewport) {
     // If volumeId is specified, scroll through that specific volume
     const { spacingInNormalDirection, imageVolume } =
-      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId)
+      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
 
     if (!imageVolume) {
-      return
+      return;
     }
 
-    const actor = viewport.getActor(imageVolume.volumeId)
+    const actor = viewport.getActor(imageVolume.volumeId);
 
     if (!actor) {
-      console.warn('No actor found for with actorUID of', imageVolume.volumeId)
+      console.warn('No actor found for with actorUID of', imageVolume.volumeId);
     }
 
-    const { volumeActor } = actor
-    const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint)
+    const { volumeActor } = actor;
+    const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
 
     const { newFocalPoint, newPosition } = snapFocalPointToSlice(
       focalPoint,
@@ -67,14 +70,14 @@ export default function scrollThroughStack(
       viewPlaneNormal,
       spacingInNormalDirection,
       delta
-    )
+    );
 
     viewport.setCamera({
       focalPoint: newFocalPoint,
       position: newPosition,
-    })
-    viewport.render()
+    });
+    viewport.render();
   } else {
-    throw new Error(`Not implemented for Viewport Type: ${viewportType}`)
+    throw new Error(`Not implemented for Viewport Type: ${viewportType}`);
   }
 }

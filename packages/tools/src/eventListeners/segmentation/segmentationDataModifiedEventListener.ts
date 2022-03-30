@@ -1,9 +1,9 @@
-import { cache } from '@cornerstonejs/core'
+import { cache } from '@cornerstonejs/core';
 
-import triggerSegmentationRender from '../../utilities/triggerSegmentationRender'
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations'
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState'
-import { SegmentationDataModifiedEventType } from '../../types/EventTypes'
+import triggerSegmentationRender from '../../utilities/triggerSegmentationRender';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
+import { SegmentationDataModifiedEventType } from '../../types/EventTypes';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -11,51 +11,51 @@ import { SegmentationDataModifiedEventType } from '../../types/EventTypes'
 const onSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
-  const { segmentationId, modifiedSlicesToUse } = evt.detail
+  const { segmentationId, modifiedSlicesToUse } = evt.detail;
 
   const { representationData, type } =
-    SegmentationState.getSegmentation(segmentationId)
+    SegmentationState.getSegmentation(segmentationId);
 
-  let toolGroupIds
+  let toolGroupIds;
   if (type === SegmentationRepresentations.Labelmap) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
     const segmentationVolume = cache.getVolume(
       representationData[type].volumeId
-    )
+    );
 
     if (!segmentationVolume) {
-      console.warn('segmentation not found in cache')
-      return
+      console.warn('segmentation not found in cache');
+      return;
     }
 
-    const { imageData, vtkOpenGLTexture } = segmentationVolume
+    const { imageData, vtkOpenGLTexture } = segmentationVolume;
 
     // Update the texture for the volume in the GPU
-    let slicesToUpdate
+    let slicesToUpdate;
     if (modifiedSlicesToUse && Array.isArray(modifiedSlicesToUse)) {
-      slicesToUpdate = modifiedSlicesToUse
+      slicesToUpdate = modifiedSlicesToUse;
     } else {
-      const numSlices = imageData.getDimensions()[2]
-      slicesToUpdate = [...Array(numSlices).keys()]
+      const numSlices = imageData.getDimensions()[2];
+      slicesToUpdate = [...Array(numSlices).keys()];
     }
 
     slicesToUpdate.forEach((i) => {
-      vtkOpenGLTexture.setUpdatedFrame(i)
-    })
+      vtkOpenGLTexture.setUpdatedFrame(i);
+    });
 
     // Trigger modified on the imageData to update the image
-    imageData.modified()
+    imageData.modified();
     toolGroupIds =
-      SegmentationState.getToolGroupsWithSegmentation(segmentationId)
+      SegmentationState.getToolGroupsWithSegmentation(segmentationId);
   } else {
     throw new Error(
       `onSegmentationDataModified: representationType ${type} not supported yet`
-    )
+    );
   }
 
   toolGroupIds.forEach((toolGroupId) => {
-    triggerSegmentationRender(toolGroupId)
-  })
-}
+    triggerSegmentationRender(toolGroupId);
+  });
+};
 
-export default onSegmentationDataModified
+export default onSegmentationDataModified;

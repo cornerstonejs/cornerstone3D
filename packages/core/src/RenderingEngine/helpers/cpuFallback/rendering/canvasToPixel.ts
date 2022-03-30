@@ -1,6 +1,6 @@
-import getTransform from './getTransform'
+import getTransform from './getTransform';
 
-import { Point2, CPUFallbackEnabledElement } from '../../../../types'
+import { Point2, CPUFallbackEnabledElement } from '../../../../types';
 
 /**
  * Converts a point in the canvas coordinate system to the pixel coordinate system
@@ -17,9 +17,9 @@ export default function (
   enabledElement: CPUFallbackEnabledElement,
   pt: Point2
 ): Point2 {
-  const transform = getTransform(enabledElement)
+  const transform = getTransform(enabledElement);
 
-  transform.invert()
+  transform.invert();
 
-  return transform.transformPoint(pt)
+  return transform.transformPoint(pt);
 }

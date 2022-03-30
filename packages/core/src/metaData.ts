@@ -1,7 +1,7 @@
 // This module defines a way to access various metadata about an imageId.  This layer of abstraction exists
 // So metadata can be provided in different ways (e.g. by parsing DICOM P10 or by a WADO-RS document)
 
-const providers = []
+const providers = [];
 
 /**
  * Adds a metadata provider with the specified priority
@@ -14,12 +14,12 @@ export function addProvider(
   provider: (type: string, imageId: string) => { any },
   priority = 0
 ): void {
-  let i
+  let i;
 
   // Find the right spot to insert this provider based on priority
   for (i = 0; i < providers.length; i++) {
     if (providers[i].priority <= priority) {
-      break
+      break;
     }
   }
 
@@ -27,7 +27,7 @@ export function addProvider(
   providers.splice(i, 0, {
     priority,
     provider,
-  })
+  });
 }
 
 /**
@@ -42,9 +42,9 @@ export function removeProvider(
 ): void {
   for (let i = 0; i < providers.length; i++) {
     if (providers[i].provider === provider) {
-      providers.splice(i, 1)
+      providers.splice(i, 1);
 
-      break
+      break;
     }
   }
 }
@@ -56,7 +56,7 @@ export function removeProvider(
  */
 export function removeAllProviders(): void {
   while (providers.length > 0) {
-    providers.pop()
+    providers.pop();
   }
 }
 
@@ -73,12 +73,12 @@ export function removeAllProviders(): void {
 function getMetaData(type: string, imageId: string): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, imageId)
+    const result = providers[i].provider(type, imageId);
 
     if (result !== undefined) {
-      return result
+      return result;
     }
   }
 }
 
-export { getMetaData as get }
+export { getMetaData as get };

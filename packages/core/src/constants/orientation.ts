@@ -1,4 +1,4 @@
-import { Orientation, Point3 } from '../types'
+import { Orientation, Point3 } from '../types';
 
 /**
  * Convenient reference values often used to set a specific orientation
@@ -46,8 +46,8 @@ const ORIENTATION: Record<string, Orientation> = {
     sliceNormal: <Point3>[0, 1, 0],
     viewUp: <Point3>[0, 0, 1],
   },
-}
+};
 
-Object.freeze(ORIENTATION)
+Object.freeze(ORIENTATION);
 
-export default ORIENTATION
+export default ORIENTATION;

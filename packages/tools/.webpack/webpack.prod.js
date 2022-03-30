@@ -38,13 +38,13 @@ module.exports = (env, argv) => {
           root: 'window',
           commonjs: 'cornerstone3D',
           commonjs2: 'cornerstone3D',
-          amd: 'cornerstone3D'
+          amd: 'cornerstone3D',
         },
         '@cornerstonejs/streaming-image-volume-loader': {
           root: 'window',
           commonjs: 'cornerstoneStreamingImageVolumeLoader',
           commonjs2: 'cornerstoneStreamingImageVolumeLoader',
-          amd: 'cornerstoneStreamingImageVolumeLoader'
+          amd: 'cornerstoneStreamingImageVolumeLoader',
         },
         'gl-matrix': {
           root: 'window',
@@ -52,7 +52,7 @@ module.exports = (env, argv) => {
           commonjs2: 'gl-matrix',
           amd: 'gl-matrix',
         },
-      }
-    ]
+      },
+    ],
   });
 };

@@ -1,8 +1,8 @@
-import resemble from 'resemblejs'
+import resemble from 'resemblejs';
 
-import { fakeImageLoader, fakeMetaDataProvider } from './testUtilsImageLoader'
-import { fakeVolumeLoader } from './testUtilsVolumeLoader'
-import { createNormalizedMouseEvent } from './testUtilsMouseEvents'
+import { fakeImageLoader, fakeMetaDataProvider } from './testUtilsImageLoader';
+import { fakeVolumeLoader } from './testUtilsVolumeLoader';
+import { createNormalizedMouseEvent } from './testUtilsMouseEvents';
 
 /**
  * TestUtils: used for colorizing the image and comparing it to a baseline,
@@ -19,9 +19,9 @@ const colors = [
   [0, 0, 0],
   [0, 0, 128],
   [255, 0, 255],
-]
+];
 
-Object.freeze(colors)
+Object.freeze(colors);
 
 /**
  * It compares the image to a baseline, and if it is different by 1% it will
@@ -43,27 +43,27 @@ function compareImages(imageDataURL, baseline, outputName) {
       transparency: 0.5,
       largeImageThreshold: 1200,
       outputDiff: true,
-    })
+    });
 
     resemble(baseline.default)
       .compareTo(imageDataURL)
       .onComplete((data) => {
-        const mismatch = parseFloat(data.misMatchPercentage)
+        const mismatch = parseFloat(data.misMatchPercentage);
         // If the error is greater than 1%, fail the test
         // and download the difference image
         // Todo: this should be a configurable threshold
         if (mismatch > 1) {
-          console.log('mismatch of ' + mismatch + '%')
-          const diff = data.getImageDataUrl()
-          console.log(diff)
+          console.log('mismatch of ' + mismatch + '%');
+          const diff = data.getImageDataUrl();
+          console.log(diff);
           // Todo: we should store the diff image somewhere
 
-          reject(new Error(`mismatch between images for ${outputName}`))
+          reject(new Error(`mismatch between images for ${outputName}`));
         } else {
-          resolve()
+          resolve();
         }
-      })
-  })
+      });
+  });
 }
 
 export {
@@ -74,4 +74,4 @@ export {
   createNormalizedMouseEvent,
   // utils
   colors,
-}
+};

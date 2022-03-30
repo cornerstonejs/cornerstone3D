@@ -1,6 +1,6 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 // ~~
-import * as cs from '@cornerstonejs/core'
+import * as cs from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -9,23 +9,23 @@ import {
   init as csRenderInit,
   setVolumesForViewports,
   CONSTANTS,
-} from '@cornerstonejs/core'
-import { Enums as csToolsEnums } from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/core';
+import { Enums as csToolsEnums } from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
-import { registerWebImageLoader } from './helpers/registerWebImageLoader'
-import config from './config/default'
-import { hardcodedMetaDataProvider } from './helpers/initCornerstone'
-import { initToolGroups } from './initToolGroups'
+import { registerWebImageLoader } from './helpers/registerWebImageLoader';
+import config from './config/default';
+import { hardcodedMetaDataProvider } from './helpers/initCornerstone';
+import { initToolGroups } from './initToolGroups';
 
-const { ViewportType } = Enums
-const { ORIENTATION } = CONSTANTS
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
-const axialViewportID = 'AXIAL'
-const sagittalViewportID = 'SAGITTAL'
-const coronalViewportID = 'CORONAL'
+const axialViewportID = 'AXIAL';
+const sagittalViewportID = 'SAGITTAL';
+const coronalViewportID = 'CORONAL';
 
-let colorSceneToolGroup
+let colorSceneToolGroup;
 class ColorExample extends Component {
   state = {
     viewportSizes: [
@@ -33,50 +33,50 @@ class ColorExample extends Component {
       [512, 512],
       [512, 512],
     ],
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    this.axialContainer = React.createRef()
-    this.sagittalContainer = React.createRef()
-    this.coronalContainer = React.createRef()
+    this.axialContainer = React.createRef();
+    this.sagittalContainer = React.createRef();
+    this.coronalContainer = React.createRef();
   }
 
   componentWillUnmount() {
-    csTools3d.destroy()
-    this.renderingEngine.destroy()
+    csTools3d.destroy();
+    this.renderingEngine.destroy();
   }
 
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    registerWebImageLoader(cs)
-    const renderingEngineId = 'ExampleRenderingEngineID'
-    const { imageIds } = config.colorImages
+    await csRenderInit();
+    csTools3d.init();
+    registerWebImageLoader(cs);
+    const renderingEngineId = 'ExampleRenderingEngineID';
+    const { imageIds } = config.colorImages;
 
-    ;({ colorSceneToolGroup } = initToolGroups())
+    ({ colorSceneToolGroup } = initToolGroups());
 
     metaData.addProvider(
       (type, imageId) => hardcodedMetaDataProvider(type, imageId, imageIds),
       10000
-    )
+    );
 
-    const volumeId = 'VOLUME'
+    const volumeId = 'VOLUME';
 
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
-    })
+    });
 
-    volume.load()
+    volume.load();
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
 
-    this.axialViewportID = axialViewportID
-    this.sagittalViewportID = sagittalViewportID
-    this.coronalViewportID = coronalViewportID
+    this.axialViewportID = axialViewportID;
+    this.sagittalViewportID = sagittalViewportID;
+    this.coronalViewportID = coronalViewportID;
 
     renderingEngine.setViewports([
       {
@@ -103,31 +103,31 @@ class ColorExample extends Component {
           orientation: ORIENTATION.CORONAL,
         },
       },
-    ])
+    ]);
 
     colorSceneToolGroup.addTool(WindowLevelTool.toolName, {
       configuration: { volumeId },
-    })
+    });
     colorSceneToolGroup.addTool(PanTool.toolName, {
       configuration: { volumeId },
-    })
+    });
     colorSceneToolGroup.addTool(ZoomTool.toolName, {
       configuration: { volumeId },
-    })
+    });
     colorSceneToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
       configuration: { volumeId },
-    })
+    });
 
-    colorSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
+    colorSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
     colorSceneToolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-    })
+    });
     colorSceneToolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
-    })
+    });
     colorSceneToolGroup.setToolActive(ZoomTool.toolName, {
       bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
-    })
+    });
 
     await setVolumesForViewports(
       this.renderingEngine,
@@ -135,38 +135,38 @@ class ColorExample extends Component {
         {
           volumeId: volumeId,
           callback: ({ volumeActor, volumeId }) => {
-            volumeActor.getProperty().setIndependentComponents(false)
-            volumeActor.getProperty().setInterpolationTypeToNearest()
+            volumeActor.getProperty().setIndependentComponents(false);
+            volumeActor.getProperty().setInterpolationTypeToNearest();
           },
         },
       ],
       [axialViewportID, sagittalViewportID, coronalViewportID]
-    )
+    );
 
-    colorSceneToolGroup.addViewport(axialViewportID, renderingEngineId)
-    colorSceneToolGroup.addViewport(sagittalViewportID, renderingEngineId)
-    colorSceneToolGroup.addViewport(coronalViewportID, renderingEngineId)
+    colorSceneToolGroup.addViewport(axialViewportID, renderingEngineId);
+    colorSceneToolGroup.addViewport(sagittalViewportID, renderingEngineId);
+    colorSceneToolGroup.addViewport(coronalViewportID, renderingEngineId);
 
-    renderingEngine.render()
+    renderingEngine.render();
   }
 
   render() {
-    const { viewportSizes } = this.state
+    const { viewportSizes } = this.state;
 
     const style0 = {
       width: `${viewportSizes[0][0]}px`,
       height: `${viewportSizes[0][1]}px`,
-    }
+    };
 
     const style1 = {
       width: `${viewportSizes[1][0]}px`,
       height: `${viewportSizes[1][1]}px`,
-    }
+    };
 
     const style2 = {
       width: `${viewportSizes[2][0]}px`,
       height: `${viewportSizes[2][1]}px`,
-    }
+    };
 
     return (
       <div>
@@ -213,8 +213,8 @@ class ColorExample extends Component {
           </div>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default ColorExample
+export default ColorExample;

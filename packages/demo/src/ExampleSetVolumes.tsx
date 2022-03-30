@@ -1,33 +1,33 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
 import {
   cache,
   RenderingEngine,
   volumeLoader,
   init as csRenderInit,
-} from '@cornerstonejs/core'
-import { synchronizers } from '@cornerstonejs/tools'
-import * as csTools3d from '@cornerstonejs/tools'
+} from '@cornerstonejs/core';
+import { synchronizers } from '@cornerstonejs/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
-import getImageIds from './helpers/getImageIds'
-import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool'
-import ViewportGrid from './components/ViewportGrid'
-import { initToolGroups, addToolsToToolGroups } from './initToolGroups'
-import './ExampleVTKMPR.css'
+import getImageIds from './helpers/getImageIds';
+import ptCtToggleAnnotationTool from './helpers/ptCtToggleAnnotationTool';
+import ViewportGrid from './components/ViewportGrid';
+import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
+import './ExampleVTKMPR.css';
 import {
   renderingEngineId,
   ptVolumeId,
   ctVolumeId,
   colormaps,
   ANNOTATION_TOOLS,
-} from './constants'
-import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts'
-import config from './config/default'
+} from './constants';
+import LAYOUTS, { ptCtFusion, fourUpCT, petTypes, obliqueCT } from './layouts';
+import config from './config/default';
 
-import sortImageIdsByIPP from './helpers/sortImageIdsByIPP'
-import limitImageIds from './helpers/limitImageIds'
+import sortImageIdsByIPP from './helpers/sortImageIdsByIPP';
+import limitImageIds from './helpers/limitImageIds';
 
-const VOLUME = 'volume'
-const STACK = 'stack'
+const VOLUME = 'volume';
+const STACK = 'stack';
 
 let ctSceneToolGroup,
   ptSceneToolGroup,
@@ -36,13 +36,13 @@ let ctSceneToolGroup,
   ctVRSceneToolGroup,
   ctObliqueToolGroup,
   ptTypesSceneToolGroup,
-  ptCtLayoutTools
+  ptCtLayoutTools;
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
-  synchronizers
+  synchronizers;
 
-const ctVolumeUID2 = 'ctvolume2'
-const ptVolumeUID2 = 'petvolume2'
+const ctVolumeUID2 = 'ctvolume2';
+const ptVolumeUID2 = 'petvolume2';
 
 class VTKSetVolumesExample extends Component {
   state = {
@@ -76,59 +76,59 @@ class VTKSetVolumesExample extends Component {
     ptCtLeftClickTool: 'Levels',
     ctWindowLevelDisplay: { ww: 0, wc: 0 },
     ptThresholdDisplay: 5,
-  }
+  };
 
   constructor(props) {
-    super(props)
+    super(props);
 
-    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS)
+    ptCtLayoutTools = ['Levels'].concat(ANNOTATION_TOOLS);
 
-    this._elementNodes = new Map()
-    this._viewportGridRef = React.createRef()
+    this._elementNodes = new Map();
+    this._viewportGridRef = React.createRef();
 
-    const { limitFrames } = config
+    const { limitFrames } = config;
 
     const callback = (imageIds) => {
       if (limitFrames !== undefined && typeof limitFrames === 'number') {
-        const NewImageIds = sortImageIdsByIPP(imageIds)
-        return limitImageIds(NewImageIds, limitFrames)
+        const NewImageIds = sortImageIdsByIPP(imageIds);
+        return limitImageIds(NewImageIds, limitFrames);
       }
 
-      return imageIds
-    }
+      return imageIds;
+    };
 
-    this.petVolumeImageIds1 = getImageIds('pt1', VOLUME, callback)
-    this.ctVolumeImageIds1 = getImageIds('ct1', VOLUME, callback)
+    this.petVolumeImageIds1 = getImageIds('pt1', VOLUME, callback);
+    this.ctVolumeImageIds1 = getImageIds('ct1', VOLUME, callback);
 
-    this.petVolumeImageIds2 = getImageIds('pt2', VOLUME, callback)
-    this.ctVolumeImageIds2 = getImageIds('ct2', VOLUME, callback)
+    this.petVolumeImageIds2 = getImageIds('pt2', VOLUME, callback);
+    this.ctVolumeImageIds2 = getImageIds('ct2', VOLUME, callback);
 
     Promise.all([this.petVolumeImageIds1, this.ctVolumeImageIds1]).then(() =>
       this.setState({ progressText: 'Loading data...' })
-    )
+    );
 
     this.viewportGridResizeObserver = new ResizeObserver((entries) => {
       // ThrottleFn? May not be needed. This is lightning fast.
       // Set in mount
       if (this.renderingEngine) {
-        this.renderingEngine.resize()
-        this.renderingEngine.render()
+        this.renderingEngine.resize();
+        this.renderingEngine.render();
       }
-    })
+    });
   }
 
   /**
    * LIFECYCLE
    */
   async componentDidMount() {
-    await csRenderInit()
-    csTools3d.init()
-    this.axialSync = createCameraPositionSynchronizer('axialSync')
-    this.sagittalSync = createCameraPositionSynchronizer('sagittalSync')
-    this.coronalSync = createCameraPositionSynchronizer('coronalSync')
-    this.ctWLSync = createVOISynchronizer('ctWLSync')
-    this.ptThresholdSync = createVOISynchronizer('ptThresholdSync')
-    ;({
+    await csRenderInit();
+    csTools3d.init();
+    this.axialSync = createCameraPositionSynchronizer('axialSync');
+    this.sagittalSync = createCameraPositionSynchronizer('sagittalSync');
+    this.coronalSync = createCameraPositionSynchronizer('coronalSync');
+    this.ctWLSync = createVOISynchronizer('ctWLSync');
+    this.ptThresholdSync = createVOISynchronizer('ptThresholdSync');
+    ({
       ctSceneToolGroup,
       ptSceneToolGroup,
       fusionSceneToolGroup,
@@ -136,16 +136,16 @@ class VTKSetVolumesExample extends Component {
       ctVRSceneToolGroup,
       ctObliqueToolGroup,
       ptTypesSceneToolGroup,
-    } = initToolGroups())
+    } = initToolGroups());
 
-    this.ctVolumeId = ctVolumeId
-    this.ptVolumeId = ptVolumeId
+    this.ctVolumeId = ctVolumeId;
+    this.ptVolumeId = ptVolumeId;
 
-    const renderingEngine = new RenderingEngine(renderingEngineId)
+    const renderingEngine = new RenderingEngine(renderingEngineId);
 
-    this.renderingEngine = renderingEngine
+    this.renderingEngine = renderingEngine;
 
-    window.renderingEngine = renderingEngine
+    window.renderingEngine = renderingEngine;
 
     ptCtFusion.setLayout(
       renderingEngine,
@@ -163,7 +163,7 @@ class VTKSetVolumesExample extends Component {
         ptThresholdSynchronizer: this.ptThresholdSync,
         ctWLSynchronizer: this.ctWLSync,
       }
-    )
+    );
 
     addToolsToToolGroups({
       ctSceneToolGroup,
@@ -173,121 +173,121 @@ class VTKSetVolumesExample extends Component {
       ctVRSceneToolGroup,
       ctObliqueToolGroup,
       ptTypesSceneToolGroup,
-    })
+    });
 
     // Create volumes
-    const ptVolumeImageIds1 = await this.petVolumeImageIds1
-    const ctVolumeImageIds1 = await this.ctVolumeImageIds1
+    const ptVolumeImageIds1 = await this.petVolumeImageIds1;
+    const ctVolumeImageIds1 = await this.ctVolumeImageIds1;
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
       imageIds: ptVolumeImageIds1,
-    })
+    });
     const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
       imageIds: ctVolumeImageIds1,
-    })
+    });
 
     // Initialise all CT values to -1024 so we don't get a grey box?
-    const { scalarData } = ctVolume
-    const ctLength = scalarData.length
+    const { scalarData } = ctVolume;
+    const ctLength = scalarData.length;
 
     for (let i = 0; i < ctLength; i++) {
-      scalarData[i] = -1024
+      scalarData[i] = -1024;
     }
 
-    const onLoad = () => this.setState({ progressText: 'Loaded.' })
+    const onLoad = () => this.setState({ progressText: 'Loaded.' });
 
-    ptVolume.load(onLoad)
-    ctVolume.load(onLoad)
+    ptVolume.load(onLoad);
+    ctVolume.load(onLoad);
 
     ptCtFusion.setVolumes(
       renderingEngine,
       ctVolumeId,
       ptVolumeId,
       colormaps[this.state.petColorMapIndex]
-    )
+    );
 
     // Set initial CT levels in UI
-    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0]
+    const { windowWidth, windowCenter } = ctVolume.metadata.voiLut[0];
 
     this.setState({
       metadataLoaded: true,
       ctWindowLevelDisplay: { ww: windowWidth, wc: windowCenter },
-    })
+    });
 
     // This will initialise volumes in GPU memory
-    renderingEngine.render()
+    renderingEngine.render();
     // Start listening for resiz
-    this.viewportGridResizeObserver.observe(this._viewportGridRef.current)
+    this.viewportGridResizeObserver.observe(this._viewportGridRef.current);
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { layoutIndex } = this.state
+    const { layoutIndex } = this.state;
   }
 
   componentWillUnmount() {
     // Stop listening for resize
     if (this.viewportGridResizeObserver) {
-      this.viewportGridResizeObserver.disconnect()
+      this.viewportGridResizeObserver.disconnect();
     }
 
-    cache.purgeCache()
-    csTools3d.destroy()
+    cache.purgeCache();
+    csTools3d.destroy();
 
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
   }
 
   destroyAndDecacheAllVolumes = () => {
     if (!this.state.metadataLoaded || this.state.destroyed) {
-      return
+      return;
     }
-    this.renderingEngine.destroy()
+    this.renderingEngine.destroy();
 
-    cache.purgeCache()
-  }
+    cache.purgeCache();
+  };
 
   swapVolume = async () => {
     this.setState(() => {
-      return { progressText: 'Swapping data' }
-    })
+      return { progressText: 'Swapping data' };
+    });
 
-    const ptVolumeImageIds2 = await this.petVolumeImageIds2
-    const ctVolumeImageIds2 = await this.ctVolumeImageIds2
+    const ptVolumeImageIds2 = await this.petVolumeImageIds2;
+    const ctVolumeImageIds2 = await this.ctVolumeImageIds2;
 
     // This only creates the volumes, it does not actually load all
     // of the pixel data (yet)
     const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeUID2, {
       imageIds: ptVolumeImageIds2,
-    })
+    });
     const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeUID2, {
       imageIds: ctVolumeImageIds2,
-    })
+    });
 
     // Initialise all CT values to -1024 so we don't get a grey box?
-    const { scalarData } = ctVolume
-    const ctLength = scalarData.length
+    const { scalarData } = ctVolume;
+    const ctLength = scalarData.length;
 
     for (let i = 0; i < ctLength; i++) {
-      scalarData[i] = -1024
+      scalarData[i] = -1024;
     }
 
-    const ctOnLoad = () => this.setState({ progressText: 'New CT Loaded.' })
-    const ptOnLoad = () => this.setState({ progressText: 'New PET Loaded.' })
+    const ctOnLoad = () => this.setState({ progressText: 'New CT Loaded.' });
+    const ptOnLoad = () => this.setState({ progressText: 'New PET Loaded.' });
 
-    ptVolume.load(ptOnLoad)
-    ctVolume.load(ctOnLoad)
+    ptVolume.load(ptOnLoad);
+    ctVolume.load(ctOnLoad);
 
     ptCtFusion.setVolumes(
       this.renderingEngine,
       ctVolumeUID2,
       ptVolumeUID2,
       colormaps[this.state.petColorMapIndex]
-    )
+    );
 
     // This will initialise volumes in GPU memory
-    this.renderingEngine.render()
-  }
+    this.renderingEngine.render();
+  };
 
   render() {
     return (
@@ -333,8 +333,8 @@ class VTKSetVolumesExample extends Component {
           ))}
         </ViewportGrid>
       </div>
-    )
+    );
   }
 }
 
-export default VTKSetVolumesExample
+export default VTKSetVolumesExample;

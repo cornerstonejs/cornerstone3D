@@ -1,5 +1,5 @@
-import macro from '@kitware/vtk.js/macros'
-import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper'
+import macro from '@kitware/vtk.js/macros';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 /**
  * vtkSharedVolumeMapper - A derived class of the core vtkVolumeMapper class
@@ -13,7 +13,7 @@ import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper'
  * @hidden
  */
 function vtkSharedVolumeMapper(publicAPI, model) {
-  model.classHierarchy.push('vtkSharedVolumeMapper')
+  model.classHierarchy.push('vtkSharedVolumeMapper');
 }
 
 // ----------------------------------------------------------------------------
@@ -24,23 +24,23 @@ function vtkSharedVolumeMapper(publicAPI, model) {
 
 const DEFAULT_VALUES = {
   scalarTexture: null,
-}
+};
 
 export function extend(publicAPI, model, initialValues = {}) {
-  Object.assign(model, DEFAULT_VALUES, initialValues)
+  Object.assign(model, DEFAULT_VALUES, initialValues);
 
-  vtkVolumeMapper.extend(publicAPI, model, initialValues)
+  vtkVolumeMapper.extend(publicAPI, model, initialValues);
 
-  macro.setGet(publicAPI, model, ['scalarTexture'])
+  macro.setGet(publicAPI, model, ['scalarTexture']);
 
   // Object methods
-  vtkSharedVolumeMapper(publicAPI, model)
+  vtkSharedVolumeMapper(publicAPI, model);
 }
 
 // ----------------------------------------------------------------------------
 
-export const newInstance = macro.newInstance(extend, 'vtkSharedVolumeMapper')
+export const newInstance = macro.newInstance(extend, 'vtkSharedVolumeMapper');
 
 // ----------------------------------------------------------------------------
 
-export default { newInstance, extend }
+export default { newInstance, extend };

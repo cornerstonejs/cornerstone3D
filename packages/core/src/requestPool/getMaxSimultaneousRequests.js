@@ -1,4 +1,4 @@
-let configMaxSimultaneousRequests
+let configMaxSimultaneousRequests;
 
 // Maximum concurrent connections to the same server
 // Information from http://sgdev-blog.blogspot.fr/2014/01/maximum-concurrent-connection-to-same.html
@@ -24,7 +24,7 @@ const maxSimultaneousRequests = {
   Safari: {
     default: 6,
   },
-}
+};
 
 // Browser name / version detection
 //
@@ -39,31 +39,31 @@ const maxSimultaneousRequests = {
  * @returns {string} The name and version of the browser.
  */
 function getBrowserInfo() {
-  const ua = navigator.userAgent
+  const ua = navigator.userAgent;
   let M =
     ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) ||
-    []
-  let tem
+    [];
+  let tem;
 
   if (/trident/i.test(M[1])) {
-    tem = /\brv[ :]+(\d+)/g.exec(ua) || []
+    tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
 
-    return `IE ${tem[1] || ''}`
+    return `IE ${tem[1] || ''}`;
   }
 
   if (M[1] === 'Chrome') {
-    tem = ua.match(/\b(OPR|Edge)\/(\d+)/)
+    tem = ua.match(/\b(OPR|Edge)\/(\d+)/);
     if (tem !== null) {
-      return tem.slice(1).join(' ').replace('OPR', 'Opera')
+      return tem.slice(1).join(' ').replace('OPR', 'Opera');
     }
   }
 
-  M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?']
+  M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
   if ((tem = ua.match(/version\/(\d+)/i)) !== null) {
-    M.splice(1, 1, tem[1])
+    M.splice(1, 1, tem[1]);
   }
 
-  return M.join(' ')
+  return M.join(' ');
 }
 
 /**
@@ -72,7 +72,7 @@ function getBrowserInfo() {
  * @category RequestPoolManager
  */
 function setMaxSimultaneousRequests(newMaxSimultaneousRequests) {
-  configMaxSimultaneousRequests = newMaxSimultaneousRequests
+  configMaxSimultaneousRequests = newMaxSimultaneousRequests;
 }
 
 /**
@@ -84,10 +84,10 @@ function setMaxSimultaneousRequests(newMaxSimultaneousRequests) {
  */
 function getMaxSimultaneousRequests() {
   if (configMaxSimultaneousRequests) {
-    return configMaxSimultaneousRequests
+    return configMaxSimultaneousRequests;
   }
 
-  return getDefaultSimultaneousRequests()
+  return getDefaultSimultaneousRequests();
 }
 
 /**
@@ -98,21 +98,21 @@ function getMaxSimultaneousRequests() {
  *
  */
 function getDefaultSimultaneousRequests() {
-  const infoString = getBrowserInfo()
-  const info = infoString.split(' ')
-  const browserName = info[0]
-  const browserVersion = info[1]
-  const browserData = maxSimultaneousRequests[browserName]
+  const infoString = getBrowserInfo();
+  const info = infoString.split(' ');
+  const browserName = info[0];
+  const browserVersion = info[1];
+  const browserData = maxSimultaneousRequests[browserName];
 
   if (!browserData) {
-    return maxSimultaneousRequests.default
+    return maxSimultaneousRequests.default;
   }
 
   if (!browserData[browserVersion]) {
-    return browserData.default
+    return browserData.default;
   }
 
-  return browserData[browserVersion]
+  return browserData[browserVersion];
 }
 
 /**
@@ -123,9 +123,9 @@ function getDefaultSimultaneousRequests() {
 function isMobileDevice() {
   const pattern = new RegExp(
     'Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini'
-  )
+  );
 
-  return pattern.test(navigator.userAgent)
+  return pattern.test(navigator.userAgent);
 }
 
 export {
@@ -134,4 +134,4 @@ export {
   setMaxSimultaneousRequests,
   getBrowserInfo,
   isMobileDevice,
-}
+};

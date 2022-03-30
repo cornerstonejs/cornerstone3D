@@ -1,9 +1,9 @@
-import { ToolGroupManager } from '../../store'
-import { MouseBindings, ToolModes } from '../../enums'
-import { keyEventListener } from '../../eventListeners'
-import { EventTypes } from '../../types'
+import { ToolGroupManager } from '../../store';
+import { MouseBindings, ToolModes } from '../../enums';
+import { keyEventListener } from '../../eventListeners';
+import { EventTypes } from '../../types';
 
-const { Active } = ToolModes
+const { Active } = ToolModes;
 
 /**
  * Iterate tool group tools until we find a tool that has a "ToolBinding"
@@ -18,26 +18,26 @@ export default function getActiveToolForMouseEvent(
   evt: EventTypes.NormalizedMouseEventType
 ) {
   // Todo: we should refactor this to use getToolsWithModesForMouseEvent instead
-  const { renderingEngineId, viewportId } = evt.detail
-  const mouseEvent = evt.detail.event
+  const { renderingEngineId, viewportId } = evt.detail;
+  const mouseEvent = evt.detail.event;
 
   // If any keyboard modifier key is also pressed
-  const modifierKey = keyEventListener.getModifierKey()
+  const modifierKey = keyEventListener.getModifierKey();
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
     renderingEngineId
-  )
+  );
 
   if (!toolGroup) {
-    return null
+    return null;
   }
 
-  const toolGroupToolNames = Object.keys(toolGroup.toolOptions)
+  const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
-    const toolName = toolGroupToolNames[j]
-    const toolOptions = toolGroup.toolOptions[toolName]
+    const toolName = toolGroupToolNames[j];
+    const toolOptions = toolGroup.toolOptions[toolName];
 
     // tool has binding that matches the mouse button, if mouseEvent is undefined
     // it uses the primary button
@@ -48,10 +48,10 @@ export default function getActiveToolForMouseEvent(
           binding.mouseButton ===
             (mouseEvent ? mouseEvent.buttons : MouseBindings.Primary) &&
           binding.modifierKey === modifierKey
-      )
+      );
 
     if (toolOptions.mode === Active && correctBinding) {
-      return toolGroup.getToolInstance(toolName)
+      return toolGroup.getToolInstance(toolName);
     }
   }
 }

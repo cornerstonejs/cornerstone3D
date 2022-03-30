@@ -1,5 +1,5 @@
-import { Settings } from '@cornerstonejs/core'
-import state from '../../../store/state'
+import { Settings } from '@cornerstonejs/core';
+import state from '../../../store/state';
 
 /**
  * Set the style of an annotation object
@@ -13,15 +13,15 @@ function setAnnotationStyle(
   annotation: Record<string, unknown>,
   style: Record<string, unknown>
 ): boolean {
-  const descriptor = state.tools[toolName]
+  const descriptor = state.tools[toolName];
   if (descriptor) {
-    const { toolClass } = descriptor
+    const { toolClass } = descriptor;
     return Settings.getObjectSettings(annotation, toolClass).set(
       'tool.style',
       style
-    )
+    );
   }
-  return false
+  return false;
 }
 
-export default setAnnotationStyle
+export default setAnnotationStyle;

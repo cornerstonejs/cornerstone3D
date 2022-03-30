@@ -1,7 +1,7 @@
-import { state } from '../../store'
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent'
-import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection'
-import { EventTypes } from '../../types'
+import { state } from '../../store';
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
+import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
+import { EventTypes } from '../../types';
 
 /**
  * If the `mouseDown` handler does not consume an event,
@@ -15,21 +15,21 @@ export default function mouseDownActivate(
 ) {
   // If a tool has locked the current state it is dealing with an interaction within its own eventLoop.
   if (state.isInteractingWithTool) {
-    return
+    return;
   }
 
-  const activeTool = getActiveToolForMouseEvent(evt)
+  const activeTool = getActiveToolForMouseEvent(evt);
 
   if (!activeTool) {
-    return
+    return;
   }
 
   if (state.isMultiPartToolActive) {
-    return
+    return;
   }
 
   if (activeTool.addNewAnnotation) {
-    const annotation = activeTool.addNewAnnotation(evt, 'mouse')
-    setAnnotationSelected(annotation)
+    const annotation = activeTool.addNewAnnotation(evt, 'mouse');
+    setAnnotationSelected(annotation);
   }
 }

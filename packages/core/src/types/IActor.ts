@@ -1,7 +1,7 @@
-import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume'
+import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 
 /** volume actor which is vtkVolume */
-export type VolumeActor = vtkVolume
+export type VolumeActor = vtkVolume;
 
 /**
  * Cornerstone Actor Entry including actor uid, actual volumeActor, and
@@ -10,7 +10,7 @@ export type VolumeActor = vtkVolume
  * is retrieved from viewport when calling viewport.getActor(s)
  */
 export type ActorEntry = {
-  uid: string
-  volumeActor: VolumeActor
-  slabThickness?: number
-}
+  uid: string;
+  volumeActor: VolumeActor;
+  slabThickness?: number;
+};

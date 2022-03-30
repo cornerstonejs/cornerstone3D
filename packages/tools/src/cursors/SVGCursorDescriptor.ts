@@ -1,4 +1,4 @@
-import { SVGCursorDescriptor } from '../types'
+import { SVGCursorDescriptor } from '../types';
 
 /*
  * Definitions
@@ -19,25 +19,25 @@ const BASE: SVGCursorDescriptor = {
     <path stroke="{{color}}" d="M8 16L8 0"></path>
     <path stroke="{{color}}" d="M16 8L0 8"></path>
   `,
-}
+};
 
 const SEGMENTATION_CURSOR_BOUNDARIES = {
   x: 127,
   y: 60,
-}
+};
 
 const MINUS_RECT = `
 <rect fill="{{color}}" x="80.19" y="25.03" width="47.14" height="15.85"/>
-`
+`;
 
 const PLUS_RECT = `
 <rect fill="{{color}}" x="80.19" y="25.03" width="47.14" height="15.85"/>
 <rect fill="{{color}}" x="95.84" y="9.38" width="15.85" height="47.14"/>
-`
+`;
 
-const SCISSOR_ICON = `<path fill="{{color}}" d="M82.89,10a12.09,12.09,0,0,0-16.8-2.5l-27.5,20.4-8.5-6.3a2.93,2.93,0,0,1-1.1-3,14.66,14.66,0,0,0,.1-6.6,14.08,14.08,0,1,0-6.5,15.2,2.87,2.87,0,0,1,3.2.2l8.2,6.1-8.2,6.1a2.87,2.87,0,0,1-3.2.2,14.16,14.16,0,1,0,6.7,14.4,14,14,0,0,0-.3-5.8,2.93,2.93,0,0,1,1.1-3l8.5-6.3,27.5,20.4A11.91,11.91,0,0,0,82.89,57l-31.7-23.5ZM15.29,21a5.9,5.9,0,1,1,5.9-5.9A5.91,5.91,0,0,1,15.29,21Zm0,36.8a5.9,5.9,0,1,1,5.9-5.9A5.91,5.91,0,0,1,15.29,57.77Zm28.3-21.5a2.8,2.8,0,1,1,2.8-2.8A2.8,2.8,0,0,1,43.59,36.27Z" transform="translate(-1.17 -0.96)"/>`
-const RECTANGLE_ICON = `<path fill="{{color}}" d="M8.86,2.25V66.08H72.69V2.25H8.86ZM65.28,58.67h-49v-49h49v49Z" transform="translate(-8.86 -2.25)"/>`
-const CIRCLE_ICON = `<path fill="{{color}}" d="M40.77,2.25A31.92,31.92,0,1,0,72.69,34.16,31.92,31.92,0,0,0,40.77,2.25Zm0,57.63A25.71,25.71,0,1,1,66.48,34.16,25.71,25.71,0,0,1,40.77,59.87Z" transform="translate(-8.86 -2.25)"/>`
+const SCISSOR_ICON = `<path fill="{{color}}" d="M82.89,10a12.09,12.09,0,0,0-16.8-2.5l-27.5,20.4-8.5-6.3a2.93,2.93,0,0,1-1.1-3,14.66,14.66,0,0,0,.1-6.6,14.08,14.08,0,1,0-6.5,15.2,2.87,2.87,0,0,1,3.2.2l8.2,6.1-8.2,6.1a2.87,2.87,0,0,1-3.2.2,14.16,14.16,0,1,0,6.7,14.4,14,14,0,0,0-.3-5.8,2.93,2.93,0,0,1,1.1-3l8.5-6.3,27.5,20.4A11.91,11.91,0,0,0,82.89,57l-31.7-23.5ZM15.29,21a5.9,5.9,0,1,1,5.9-5.9A5.91,5.91,0,0,1,15.29,21Zm0,36.8a5.9,5.9,0,1,1,5.9-5.9A5.91,5.91,0,0,1,15.29,57.77Zm28.3-21.5a2.8,2.8,0,1,1,2.8-2.8A2.8,2.8,0,0,1,43.59,36.27Z" transform="translate(-1.17 -0.96)"/>`;
+const RECTANGLE_ICON = `<path fill="{{color}}" d="M8.86,2.25V66.08H72.69V2.25H8.86ZM65.28,58.67h-49v-49h49v49Z" transform="translate(-8.86 -2.25)"/>`;
+const CIRCLE_ICON = `<path fill="{{color}}" d="M40.77,2.25A31.92,31.92,0,1,0,72.69,34.16,31.92,31.92,0,0,0,40.77,2.25Zm0,57.63A25.71,25.71,0,1,1,66.48,34.16,25.71,25.71,0,0,1,40.77,59.87Z" transform="translate(-8.86 -2.25)"/>`;
 
 const DefinedDescriptorsMap = {
   Angle: extend(BASE, {
@@ -409,7 +409,7 @@ const DefinedDescriptorsMap = {
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
-}
+};
 
 /*
  * Utils
@@ -419,7 +419,7 @@ function extend(
   base: SVGCursorDescriptor,
   values: Record<string, unknown>
 ): SVGCursorDescriptor {
-  return Object.assign(Object.create(base), values)
+  return Object.assign(Object.create(base), values);
 }
 
 /**
@@ -438,24 +438,20 @@ function registerCursor(
   DefinedDescriptorsMap[toolName] = extend(BASE, {
     iconContent,
     viewBox,
-  })
+  });
 }
 
 function getDefinedSVGCursorDescriptor(
   name: string
 ): SVGCursorDescriptor | undefined {
   if (Object.prototype.hasOwnProperty.call(DefinedDescriptorsMap, name)) {
-    return DefinedDescriptorsMap[name]
+    return DefinedDescriptorsMap[name];
   }
 }
 
 /*
  * Exports
  */
-const svgCursorNames = Object.keys(DefinedDescriptorsMap)
+const svgCursorNames = Object.keys(DefinedDescriptorsMap);
 
-export {
-  getDefinedSVGCursorDescriptor,
-  registerCursor,
-  svgCursorNames,
-}
+export { getDefinedSVGCursorDescriptor, registerCursor, svgCursorNames };
