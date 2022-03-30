@@ -9,6 +9,7 @@ import {
 } from '@cornerstonejs/core'
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
+import * as SegmentationConfig from '../../../stateManagement/segmentation/segmentationConfig'
 import Representations from '../../../enums/SegmentationRepresentations'
 import { getToolGroup } from '../../../store/ToolGroupManager'
 import type { labelmapConfig } from '../../../types/LabelmapTypes'
@@ -33,12 +34,14 @@ const labelMapConfigCache = new Map()
  * @param toolGroup - the tool group that contains the viewports
  * @param representationInput - The segmentation representation input
  * @param toolGroupSpecificConfig - The configuration object for toolGroup
+ *
+ * @returns The UID of the new segementation representation
  */
 async function addSegmentationRepresentation(
   toolGroupId: string,
   representationInput: RepresentationPublicInput,
   toolGroupSpecificConfig?: SegmentationRepresentationConfig
-): Promise<void> {
+): Promise<string> {
   const { segmentationId } = representationInput
   const segmentation = SegmentationState.getSegmentation(segmentationId)
   const { volumeId } = segmentation.representationData[Representations.Labelmap]
@@ -80,30 +83,28 @@ async function addSegmentationRepresentation(
     // the first one
     const suppressEvents = true
     const currentToolGroupConfig =
-      SegmentationState.getToolGroupSpecificConfig(toolGroupId)
+      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId)
 
     const mergedConfig = deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
     )
 
-    SegmentationState.setToolGroupSpecificConfig(
-      toolGroupId,
-      {
-        renderInactiveSegmentations:
-          mergedConfig.renderInactiveSegmentations || true,
-        representations: {
-          ...mergedConfig.representations,
-        },
+    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
+      renderInactiveSegmentations:
+        mergedConfig.renderInactiveSegmentations || true,
+      representations: {
+        ...mergedConfig.representations,
       },
-      suppressEvents
-    )
+    })
   }
 
   SegmentationState.addSegmentationRepresentation(
     toolGroupId,
     toolGroupSpecificRepresentation
   )
+
+  return segmentationRepresentationUID
 }
 
 /**

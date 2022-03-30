@@ -22,7 +22,7 @@ async function addSegmentationRepresentations(
   toolGroupId: string,
   representationInputArray: RepresentationPublicInput[],
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
-): Promise<void> {
+): Promise<string[]> {
   // Check if there exists a toolGroup with the toolGroupId
   const toolGroup = getToolGroup(toolGroupId)
 
@@ -38,25 +38,32 @@ async function addSegmentationRepresentations(
     )
   })
 
-  await Promise.all(promises)
+  const segmentationRepresentationUIDs = await Promise.all(promises)
+
+  return segmentationRepresentationUIDs
 }
 
 async function _addSegmentationRepresentation(
   toolGroupId: string,
   representationInput: RepresentationPublicInput,
   toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig
-) {
+): Promise<string> {
+  let segmentationRepresentationUID
+
   if (representationInput.type === Representations.Labelmap) {
-    await labelmapDisplay.addSegmentationRepresentation(
-      toolGroupId,
-      representationInput,
-      toolGroupSpecificRepresentationConfig
-    )
+    segmentationRepresentationUID =
+      await labelmapDisplay.addSegmentationRepresentation(
+        toolGroupId,
+        representationInput,
+        toolGroupSpecificRepresentationConfig
+      )
   } else {
     throw new Error(
       `The representation type ${representationInput.type} is not supported`
     )
   }
+
+  return segmentationRepresentationUID
 }
 
 export default addSegmentationRepresentations

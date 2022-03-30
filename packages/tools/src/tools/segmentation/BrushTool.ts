@@ -27,15 +27,8 @@ import {
 export default class BrushTool extends BaseTool {
   static toolName = 'Brush'
   private _editData: {
-    brushCursor: any
-    segmentation: any
-    segmentationId: string
-    segmentIndex: number
-    segmentationRepresentationUID: string
-    segmentsLocked: number[]
-    segmentColor: [number, number, number, number]
-    viewportIdsToRender: string[]
-    centerCanvas?: Array<number>
+    segmentation: any //
+    segmentsLocked: number[] //
   } | null
   private _hoverData: {
     brushCursor: any
@@ -76,6 +69,7 @@ export default class BrushTool extends BaseTool {
 
     const enabledElement = getEnabledElement(element)
     const { viewport, renderingEngine } = enabledElement
+    const { canvasToWorld } = viewport
 
     this._isDrawing = true
 
@@ -94,9 +88,8 @@ export default class BrushTool extends BaseTool {
     const { segmentationRepresentationUID, segmentationId, type } =
       activeSegmentationRepresentation
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupId)
-    const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(segmentationId)
+      segmentIndexController.getActiveSegmentIndex(segmentationId)
+    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
@@ -111,6 +104,21 @@ export default class BrushTool extends BaseTool {
     const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all
+    const centerCanvas = canvasPos
+
+    const radius = this.configuration.brushSize
+
+    const bottomCanvas: Types.Point2 = [
+      centerCanvas[0],
+      centerCanvas[1] + radius,
+    ]
+    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius]
+    const leftCanvas: Types.Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
+    const rightCanvas: Types.Point2 = [
+      centerCanvas[0] + radius,
+      centerCanvas[1],
+    ]
+
     const brushCursor = {
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
@@ -123,7 +131,12 @@ export default class BrushTool extends BaseTool {
       data: {
         invalidated: true,
         handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
+          points: [
+            canvasToWorld(bottomCanvas),
+            canvasToWorld(topCanvas),
+            canvasToWorld(leftCanvas),
+            canvasToWorld(rightCanvas),
+          ],
         },
         cachedStats: {},
       },
@@ -131,16 +144,11 @@ export default class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id]
 
+    // this.updateCursor()
+
     this._editData = {
-      brushCursor,
       segmentation,
-      centerCanvas: canvasPos,
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
       segmentsLocked,
-      segmentColor,
-      viewportIdsToRender,
     }
 
     this._activateDraw(element)
@@ -154,14 +162,21 @@ export default class BrushTool extends BaseTool {
     return true
   }
 
-  mouseMoveCallback = (evt: EventTypes.MouseDragEventType): void => {
-    debugger
+  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): void => {
+    this.updateCursor(evt)
+  }
+
+  private updateCursor(
+    evt:
+      | EventTypes.MouseMoveEventType
+      | EventTypes.MouseDragEventType
+      | EventTypes.MouseUpEventType
+  ) {
     const brushSize = this.configuration.brushSize
     const eventData = evt.detail
     const { element } = eventData
     const { currentPoints } = eventData
     const canvasPos = currentPoints.canvas
-    const worldPos = currentPoints.world
     const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewport } = enabledElement
     const { canvasToWorld } = viewport
@@ -174,16 +189,18 @@ export default class BrushTool extends BaseTool {
     const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentationRepresentation(toolGroupId)
     if (!activeSegmentationRepresentation) {
-      throw new Error(
+      console.warn(
         'No active segmentation detected, create one before using the brush tool'
       )
+      return
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
+    const { segmentationRepresentationUID, segmentationId } =
       activeSegmentationRepresentation
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupId)
+      segmentIndexController.getActiveSegmentIndex(segmentationId)
 
+    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
@@ -191,26 +208,6 @@ export default class BrushTool extends BaseTool {
     )
 
     const viewportIdsToRender = [viewport.id]
-    const brushCursor = {
-      metadata: {
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: '',
-        toolName: BrushTool.toolName,
-        segmentColor,
-      },
-      data: {
-        invalidated: true,
-        handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
-        },
-        cachedStats: {},
-      },
-    }
-
-    //////
-    const { data } = brushCursor
 
     const centerCanvas = canvasPos
 
@@ -229,14 +226,28 @@ export default class BrushTool extends BaseTool {
       centerCanvas[1],
     ]
 
-    data.handles.points = [
-      canvasToWorld(bottomCanvas),
-      canvasToWorld(topCanvas),
-      canvasToWorld(leftCanvas),
-      canvasToWorld(rightCanvas),
-    ]
-
-    data.invalidated = true
+    const brushCursor = {
+      metadata: {
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        referencedImageId: '',
+        toolName: BrushTool.toolName,
+        segmentColor,
+      },
+      data: {
+        invalidated: true,
+        handles: {
+          points: [
+            canvasToWorld(bottomCanvas),
+            canvasToWorld(topCanvas),
+            canvasToWorld(leftCanvas),
+            canvasToWorld(rightCanvas),
+          ],
+        },
+        cachedStats: {},
+      },
+    }
 
     this._hoverData = {
       brushCursor,
@@ -262,22 +273,20 @@ export default class BrushTool extends BaseTool {
     const { renderingEngine, viewport } = enabledElement
     const { canvasToWorld } = viewport
 
-    //////
+    const { segmentation, segmentsLocked } = this._editData
     const {
-      segmentation,
       segmentIndex,
-      segmentsLocked,
       segmentationId,
       segmentationRepresentationUID,
       brushCursor,
       viewportIdsToRender,
-    } = this._editData
+    } = this._hoverData
+
     const { viewPlaneNormal, viewUp } = brushCursor.metadata
     const { data } = brushCursor
 
-    const centerCanvas = currentCanvasPoints
-
     // Center of circle in canvas Coordinates
+    const centerCanvas = currentCanvasPoints
 
     const radius = brushSize
 
@@ -322,14 +331,14 @@ export default class BrushTool extends BaseTool {
     const eventData = evt.detail
     const { element } = eventData
 
+    const { segmentation, segmentsLocked } = this._editData
     const {
-      brushCursor,
-      segmentation,
       segmentIndex,
-      segmentsLocked,
       segmentationId,
       segmentationRepresentationUID,
-    } = this._editData
+      brushCursor,
+    } = this._hoverData
+
     const { data } = brushCursor
     const { viewPlaneNormal, viewUp } = brushCursor.metadata
 
@@ -342,6 +351,7 @@ export default class BrushTool extends BaseTool {
 
     this._editData = null
     this._isDrawing = false
+    this.updateCursor(evt)
 
     if (viewport instanceof StackViewport) {
       throw new Error('Not implemented yet')
@@ -390,33 +400,19 @@ export default class BrushTool extends BaseTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void {
-    if (!this._editData && !this._hoverData) {
+    if (!this._hoverData) {
       return
     }
     const { viewport } = enabledElement
 
-    let viewportIdsToRender
-    let brushCursor
+    const viewportIdsToRender = this._hoverData.viewportIdsToRender
 
-    if (this._isDrawing) {
-      viewportIdsToRender = this._editData.viewportIdsToRender
-
-      if (!viewportIdsToRender.includes(viewport.id)) {
-        return
-      }
-
-      brushCursor = this._editData.brushCursor
-    } else {
-      viewportIdsToRender = this._hoverData.viewportIdsToRender
-
-      if (!viewportIdsToRender.includes(viewport.id)) {
-        return
-      }
-
-      brushCursor = this._hoverData.brushCursor
+    if (!viewportIdsToRender.includes(viewport.id)) {
+      return
     }
 
-    // Todo: rectangle colro based on segment index
+    const brushCursor = this._hoverData.brushCursor
+
     const toolMetadata = brushCursor.metadata
     const annotationUID = toolMetadata.brushCursorUID
 

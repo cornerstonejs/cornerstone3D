@@ -35,27 +35,8 @@ import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
-import {
-  Annotation,
-  EventTypes,
-  ToolHandle,
-  PublicToolProps,
-  ToolProps,
-} from '../../types'
-
-interface ProbeAnnotation extends Annotation {
-  data: {
-    handles: { points: Types.Point3[] }
-    cachedStats: {
-      [targetId: string]: {
-        Modality: string
-        index: Types.Point3
-        value: number
-      }
-    }
-    label: string
-  }
-}
+import { EventTypes, ToolHandle, PublicToolProps, ToolProps } from '../../types'
+import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes'
 
 /**
  * ProbeTool let you get the underlying voxel value by putting a probe in that

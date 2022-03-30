@@ -80,7 +80,7 @@ async function run() {
   viewport.setStack(stack)
 
   // Render the image
-  renderingEngine.render()
+  viewport.render()
 
   element.addEventListener('mousemove', (evt) => {
     const rect = element.getBoundingClientRect()

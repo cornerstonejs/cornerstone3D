@@ -28,6 +28,7 @@ const {
   SegmentationDisplayTool,
   segmentation,
   Enums: csToolsEnums,
+  utilities: csToolsUtils,
   RectangleScissorsTool,
 } = csTools3d
 
@@ -224,8 +225,11 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.id)
+            csToolsUtils.segmentation
+              .createLabelmapVolumeForViewport({
+                viewportId: vp1.id,
+                renderingEngineId: this.renderingEngine.id,
+              })
               .then((segmentationId) => {
                 addSegmentations([
                   {
@@ -319,7 +323,15 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2)
+          const segmentationRepresentation =
+            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+              toolGroupId
+            )
+
+          segmentation.segmentIndex.setActiveSegmentIndex(
+            segmentationRepresentation.segmentationId,
+            2
+          )
 
           eventTarget.addEventListener(
             Events.SEGMENTATION_RENDERED,
@@ -333,11 +345,6 @@ describe('Segmentation Index Controller --', () => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
 
-        const activeSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
-
-        expect(activeSegmentIndex).toBe(2)
-
         // active segmentation
         const segmentationRepresentation =
           segmentation.activeSegmentation.getActiveSegmentationRepresentation(
@@ -350,7 +357,7 @@ describe('Segmentation Index Controller --', () => {
         expect(segmentationRepresentation.segmentationId).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
+          segmentation.segmentIndex.getActiveSegmentIndex(
             segmentationRepresentation.segmentationId
           )
 
@@ -384,8 +391,11 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.id)
+            csToolsUtils.segmentation
+              .createLabelmapVolumeForViewport({
+                viewportId: vp1.id,
+                renderingEngineId: this.renderingEngine.id,
+              })
               .then((segmentationId) => {
                 addSegmentations([
                   {
@@ -479,10 +489,18 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2)
+          const segmentationRepresentation =
+            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+              toolGroupId
+            )
+
+          segmentation.segmentIndex.setActiveSegmentIndex(
+            segmentationRepresentation.segmentationId,
+            2
+          )
 
           segmentation.segmentLocking.setSegmentIndexLocked(
-            toolGroupId,
+            segmentationRepresentation.segmentationId,
             1,
             true
           )
@@ -499,11 +517,6 @@ describe('Segmentation Index Controller --', () => {
         const canvas1 = vp1.getCanvas()
         const image1 = canvas1.toDataURL('image/png')
 
-        const activeSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
-
-        expect(activeSegmentIndex).toBe(2)
-
         // active segmentation
         const segmentationRepresentation =
           segmentation.activeSegmentation.getActiveSegmentationRepresentation(
@@ -516,32 +529,23 @@ describe('Segmentation Index Controller --', () => {
         expect(segmentationRepresentation.segmentationId).toBeDefined()
 
         const anotherWayActiveSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndexForSegmentation(
+          segmentation.segmentIndex.getActiveSegmentIndex(
             segmentationRepresentation.segmentationId
           )
 
         expect(anotherWayActiveSegmentIndex).toBe(2)
 
-        const locked1 =
-          segmentation.segmentLocking.getSegmentsLockedForSegmentation(
-            segmentationRepresentation.segmentationId
-          )
+        const locked1 = segmentation.segmentLocking.getLockedSegments(
+          segmentationRepresentation.segmentationId
+        )
 
         expect(locked1.length).toBe(1)
         expect(locked1[0]).toBe(1)
 
-        const lockedStatus1 = segmentation.segmentLocking.getSegmentIndexLocked(
-          toolGroupId,
-          1
+        const lockedStatus2 = segmentation.segmentLocking.getSegmentIndexLocked(
+          segmentationRepresentation.segmentationId,
+          2
         )
-
-        expect(lockedStatus1).toBe(true)
-
-        const lockedStatus2 =
-          segmentation.segmentLocking.getSegmentIndexLockedForSegmentation(
-            segmentationRepresentation.segmentationId,
-            2
-          )
         expect(lockedStatus2).toBe(false)
 
         compareImages(
@@ -572,8 +576,11 @@ describe('Segmentation Index Controller --', () => {
           ).then(() => {
             vp1.render()
 
-            segmentation
-              .createNewSegmentationForToolGroup(this.segToolGroup.id)
+            csToolsUtils.segmentation
+              .createLabelmapVolumeForViewport({
+                viewportId: vp1.id,
+                renderingEngineId: this.renderingEngine.id,
+              })
               .then((segmentationId) => {
                 addSegmentations([
                   {

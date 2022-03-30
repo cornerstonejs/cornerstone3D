@@ -173,15 +173,7 @@ async function run() {
   volumeViewport.setVolumes([{ volumeId }])
 
   // Render the image
-  renderingEngine.render()
-
-  // element2.addEventListener(RenderingEngineEvents.STACK_NEW_IMAGE, (evt) => {
-  //   const imageId = evt.detail.imageId
-
-  //   const imageIdIndex = stackImageIds.findIndex((imgId) => imgId === imageId)
-
-  //   console.log(imageIdIndex)
-  // })
+  renderingEngine.renderViewports(viewportIds)
 }
 
 run()

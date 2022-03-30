@@ -34,7 +34,6 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 import {
-  Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -42,38 +41,14 @@ import {
   ToolProps,
   InteractionTypes,
 } from '../../types'
+import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes'
+
 import {
   AnnotationModifiedEventDetail,
   MouseDragEventType,
   MouseMoveEventType,
 } from '../../types/EventTypes'
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
-
-interface BidirectionalAnnotation extends Annotation {
-  data: {
-    handles: {
-      points: Types.Point3[]
-      activeHandleIndex: number | null
-      textBox: {
-        hasMoved: boolean
-        worldPosition: Types.Point3
-        worldBoundingBox: {
-          topLeft: Types.Point3
-          topRight: Types.Point3
-          bottomLeft: Types.Point3
-          bottomRight: Types.Point3
-        }
-      }
-    }
-    label: string
-    cachedStats: {
-      [targetId: string]: {
-        length: number
-        width: number
-      }
-    }
-  }
-}
 
 /**
  * BidirectionalTool let you draw annotations that measures the length and

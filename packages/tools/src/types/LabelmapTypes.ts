@@ -7,8 +7,6 @@ import type { vtkPiecewiseFunction } from 'vtk.js/Sources/Common/DataModel/Piece
 export type labelmapConfig = {
   /** whether to render segmentation outline  */
   renderOutline?: boolean
-  /** thickness of the outline */
-  outlineWidth?: number
   /** thickness of the outline when segmentation is active */
   outlineWidthActive?: number
   /** thickness of the outline when segmentation is inactive */

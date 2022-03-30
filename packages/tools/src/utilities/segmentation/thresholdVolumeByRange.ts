@@ -27,8 +27,8 @@ export type AnnotationForThresholding = {
     handles: {
       points: Types.Point3[]
     }
-    cachedStats: {
-      projectionPoints: Types.Point3[][]
+    cachedStats?: {
+      projectionPoints?: Types.Point3[][]
     }
   }
 }

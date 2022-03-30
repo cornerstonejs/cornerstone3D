@@ -2,7 +2,6 @@ import { labelmapConfig } from '../../../types/LabelmapTypes'
 
 const defaultLabelmapConfig: labelmapConfig = {
   renderOutline: true,
-  outlineWidth: 3,
   outlineWidthActive: 3,
   outlineWidthInactive: 2,
   renderFill: true,
@@ -24,7 +23,6 @@ function isValidLabelmapConfig(config): boolean {
   return (
     config &&
     typeof config.renderOutline === 'boolean' &&
-    typeof config.outlineWidth === 'number' &&
     typeof config.outlineWidthActive === 'number' &&
     typeof config.outlineWidthInactive === 'number' &&
     typeof config.renderFill === 'boolean' &&

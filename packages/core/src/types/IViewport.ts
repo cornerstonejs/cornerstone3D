@@ -41,6 +41,8 @@ interface IViewport {
   canvasToWorld: (canvasPos: Point2) => Point3
   /** method to convert world to canvas coordinates */
   worldToCanvas: (worldPos: Point3) => Point2
+  /** get the first actor */
+  getDefaultActor(): ActorEntry
   /** returns all the actors on the viewport which includes both volumeActor object and its uid */
   getActors(): Array<ActorEntry>
   /** returns specific actor by its uid */

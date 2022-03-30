@@ -40,7 +40,7 @@ function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEve
 function addSegmentationRepresentation(toolGroupId: string, segmentationRepresentation: ToolGroupSpecificRepresentation, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationRepresentations(toolGroupId: string, representationInputArray: RepresentationPublicInput[], toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig): Promise<void>;
+function addSegmentationRepresentations(toolGroupId: string, representationInputArray: RepresentationPublicInput[], toolGroupSpecificRepresentationConfig?: SegmentationRepresentationConfig): Promise<string[]>;
 
 // @public (undocumented)
 function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): void;
@@ -238,6 +238,34 @@ export abstract class BaseTool implements IBaseTool {
 }
 
 // @public (undocumented)
+interface BidirectionalAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                length: number;
+                width: number;
+            };
+        };
+    };
+}
+
+// @public (undocumented)
 export class BidirectionalTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -307,7 +335,7 @@ export class BidirectionalTool extends AnnotationTool {
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
@@ -676,21 +704,26 @@ type CPUImageData = {
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
-function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
+function createLabelmapVolumeForViewport(input: {
+    viewportId: string;
+    renderingEngineId: string;
+    segmentationId?: string;
+    options?: {
+        volumeId?: string;
+        scalarData?: Float32Array | Uint8Array;
+        targetBuffer?: {
+            type: 'Float32Array' | 'Uint8Array';
+        };
+        metadata?: any;
+        dimensions?: Types_2.Point3;
+        spacing?: Types_2.Point3;
+        origin?: Types_2.Point3;
+        direction?: Float32Array;
+    };
+}): Promise<string>;
 
 // @public (undocumented)
-function createNewSegmentationForToolGroup(toolGroupId: string, options?: {
-    volumeId?: string;
-    scalarData?: Float32Array | Uint8Array;
-    targetBuffer?: {
-        type: 'Float32Array' | 'Uint8Array';
-    };
-    metadata?: any;
-    dimensions?: Types_2.Point3;
-    spacing?: Types_2.Point3;
-    origin?: Types_2.Point3;
-    direction?: Float32Array;
-}): Promise<string>;
+function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
@@ -943,6 +976,29 @@ declare namespace ellipse {
 }
 
 // @public (undocumented)
+interface EllipticalROIAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: [Types_2.Point3, Types_2.Point3, Types_2.Point3, Types_2.Point3];
+            activeHandleIndex: number | null;
+            textBox?: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats?: ROICachedStats;
+    };
+}
+
+// @public (undocumented)
 export class EllipticalROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -1184,10 +1240,7 @@ type FrameOfReferenceSpecificAnnotations = {
 function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpecificRepresentation;
 
 // @public (undocumented)
-function getActiveSegmentIndex(toolGroupId: string): number | undefined;
-
-// @public (undocumented)
-function getActiveSegmentIndexForSegmentation(segmentationId: string): number | undefined;
+function getActiveSegmentIndex(segmentationId: string): number | undefined;
 
 // @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
@@ -1259,6 +1312,9 @@ function getGlobalConfig_2(): SegmentationRepresentationConfig;
 function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig['LABELMAP'];
 
 // @public (undocumented)
+function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
 
 // @public (undocumented)
@@ -1277,13 +1333,7 @@ function getSegmentations(): Segmentation[] | [];
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
 
 // @public (undocumented)
-function getSegmentIndexLocked(toolGroupId: string, segmentIndex: number): boolean;
-
-// @public (undocumented)
-function getSegmentIndexLockedForSegmentation(segmentationId: string, segmentIndex: number): boolean;
-
-// @public (undocumented)
-function getSegmentsLockedForSegmentation(segmentationId: string): number[] | [];
+function getSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
@@ -1848,6 +1898,7 @@ interface IViewport {
     getCanvas(): HTMLCanvasElement
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[]
+    getDefaultActor(): ActorEntry
     getFrameOfReferenceUID: () => string
     getRenderer(): void
     getRenderingEngine(): any
@@ -1986,6 +2037,33 @@ type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
+
+// @public (undocumented)
+interface LengthAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                length: number;
+            };
+        };
+    };
+}
 
 // @public (undocumented)
 export class LengthTool extends AnnotationTool {
@@ -2305,6 +2383,24 @@ function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, po
 function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
 
 // @public (undocumented)
+interface ProbeAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+        };
+        cachedStats: {
+            [targetId: string]: {
+                Modality: string;
+                index: Types_2.Point3;
+                value: number;
+            };
+        };
+        label: string;
+    };
+}
+
+// @public (undocumented)
 export class ProbeTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -2383,6 +2479,64 @@ declare namespace rectangle {
 }
 
 // @public (undocumented)
+interface RectangleROIAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats?: ROICachedStats | {
+            projectionPoints?: Types_2.Point3[];
+            projectionPointsImageIds?: string[];
+        };
+    };
+}
+
+// @public (undocumented)
+interface RectangleROIStartEndThresholdAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        label: string;
+        startSlice: number;
+        endSlice: number;
+        cachedStats: {
+            projectionPoints: Types_2.Point3[][];
+            projectionPointsImageIds: string[];
+        };
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+    // (undocumented)
+    metadata: {
+        cameraPosition?: Types_2.Point3;
+        cameraFocalPoint?: Types_2.Point3;
+        viewPlaneNormal?: Types_2.Point3;
+        viewUp?: Types_2.Point3;
+        annotationUID?: string;
+        FrameOfReferenceUID: string;
+        referencedImageId?: string;
+        toolName: string;
+        enabledElement: any;
+        volumeId: string;
+        spacingInNormal: number;
+    };
+}
+
+// @public (undocumented)
 export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -2443,6 +2597,31 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     _throttledCalculateCachedStats: any;
     // (undocumented)
     static toolName: string;
+}
+
+// @public (undocumented)
+interface RectangleROIThresholdAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        label: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+    // (undocumented)
+    metadata: {
+        cameraPosition?: Types_2.Point3;
+        cameraFocalPoint?: Types_2.Point3;
+        viewPlaneNormal?: Types_2.Point3;
+        viewUp?: Types_2.Point3;
+        annotationUID?: string;
+        FrameOfReferenceUID: string;
+        referencedImageId?: string;
+        toolName: string;
+        enabledElement: Types_2.IEnabledElement;
+        volumeId: string;
+    };
 }
 
 // @public (undocumented)
@@ -2657,7 +2836,6 @@ declare namespace segmentation {
         activeSegmentation,
         addSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
-        createNewSegmentationForToolGroup,
         segmentLocking,
         segmentationColor,
         segmentationConfig,
@@ -2675,7 +2853,8 @@ declare namespace segmentation_2 {
         thresholdVolumeByRange,
         createMergedLabelmapForIndex,
         isValidRepresentationConfig,
-        getDefaultRepresentationConfig
+        getDefaultRepresentationConfig,
+        createLabelmapVolumeForViewport
     }
 }
 
@@ -2796,9 +2975,7 @@ declare namespace segmentationVisibility {
 declare namespace segmentIndex {
     export {
         getActiveSegmentIndex,
-        setActiveSegmentIndex,
-        getActiveSegmentIndexForSegmentation,
-        setActiveSegmentIndexForSegmentation
+        setActiveSegmentIndex
     }
 }
 
@@ -2806,9 +2983,7 @@ declare namespace segmentLocking {
     export {
         getSegmentIndexLocked,
         setSegmentIndexLocked,
-        getSegmentIndexLockedForSegmentation,
-        setSegmentIndexLockedForSegmentation,
-        getSegmentsLockedForSegmentation
+        getLockedSegments
     }
 }
 
@@ -2827,10 +3002,7 @@ declare namespace selection {
 function setActiveSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
-function setActiveSegmentIndex(toolGroupId: string, segmentIndex: number): void;
-
-// @public (undocumented)
-function setActiveSegmentIndexForSegmentation(segmentationId: string, segmentIndex: number): void;
+function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): void;
 
 // @public (undocumented)
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
@@ -2863,10 +3035,7 @@ function setGlobalStyle(style: Record<string, unknown>): boolean;
 function setSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string, visibility: boolean): void;
 
 // @public (undocumented)
-function setSegmentIndexLocked(toolGroupId: string, segmentIndex: number, locked?: boolean): void;
-
-// @public (undocumented)
-function setSegmentIndexLockedForSegmentation(segmentationId: string, segmentIndex: number, locked?: boolean): void;
+function setSegmentIndexLocked(segmentationId: string, segmentIndex: number, locked?: boolean): void;
 
 // @public (undocumented)
 type SetToolBindingsType = {
@@ -3162,6 +3331,18 @@ type ToolOptionsType = {
 // @public (undocumented)
 type ToolProps = SharedToolProp;
 
+declare namespace ToolSpecificAnnotationTypes {
+    export {
+        RectangleROIAnnotation,
+        ProbeAnnotation,
+        LengthAnnotation,
+        EllipticalROIAnnotation,
+        BidirectionalAnnotation,
+        RectangleROIThresholdAnnotation,
+        RectangleROIStartEndThresholdAnnotation
+    }
+}
+
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number]
 
@@ -3217,6 +3398,7 @@ declare namespace Types {
         Annotations,
         FrameOfReferenceSpecificAnnotations,
         AnnotationState,
+        ToolSpecificAnnotationTypes,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,

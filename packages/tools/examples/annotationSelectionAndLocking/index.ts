@@ -28,6 +28,8 @@ const { ViewportType } = Enums
 const defaultFrameOfReferenceSpecificAnnotationManager =
   annotation.state.getDefaultAnnotationManager()
 
+const viewportId = 'CT_STACK'
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Annotation Selection And Locking',
@@ -87,7 +89,7 @@ addButtonToToolbar('Select Length Annotation', () => {
   // Render the image to see it was selected
   const renderingEngine = getRenderingEngine(renderingEngineId)
 
-  renderingEngine.render()
+  renderingEngine.renderViewports([viewportId])
 })
 
 /**
@@ -133,7 +135,6 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create a stack viewport
-  const viewportId = 'CT_STACK'
   const viewportInput = {
     viewportId,
     type: ViewportType.STACK,
@@ -173,7 +174,7 @@ async function run() {
   )
 
   // Render the image
-  renderingEngine.render()
+  viewport.render()
 }
 
 run()

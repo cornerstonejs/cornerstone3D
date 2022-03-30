@@ -1191,6 +1191,8 @@ interface IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     // (undocumented)
+    getDefaultActor(): ActorEntry;
+    // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getRenderer(): void;

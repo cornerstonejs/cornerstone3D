@@ -2,55 +2,45 @@ import {
   RenderingEngine,
   Types,
   Enums,
-  volumeLoader,
   setVolumesForViewports,
+  volumeLoader,
   CONSTANTS,
 } from '@cornerstonejs/core'
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addDropdownToToolbar,
   addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers'
 import * as cornerstoneTools from '@cornerstonejs/tools'
 
 const {
-  PanTool,
-  WindowLevelTool,
-  ZoomTool,
+  SegmentationDisplayTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
   Enums: csToolsEnums,
-  synchronizers,
-  SynchronizerManager,
+  segmentation,
+  BrushTool,
+  PanTool,
+  ZoomTool,
+  StackScrollMouseWheelTool,
 } = cornerstoneTools
 
+const { MouseBindings } = csToolsEnums
 const { ViewportType } = Enums
 const { ORIENTATION } = CONSTANTS
-const { MouseBindings } = csToolsEnums
-
-const { createCameraPositionSynchronizer, createVOISynchronizer } =
-  synchronizers
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID' // Id of the volume less loader prefix
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume' // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderProtocolName}:${volumeName}` // VolumeId with loader id + volume id
-
-const cameraSynchronizerId = 'CAMERA_SYNCHRONIZER_ID'
-const voiSynchronizerId = 'VOI_SYNCHRONIZER_ID'
-
-const renderingEngineId = 'myRenderingEngine'
-const viewportIds = [
-  'CT_SAGITTAL_STACK_1',
-  'CT_SAGITTAL_STACK_2',
-  'CT_SAGITTAL_STACK_3',
-]
+const segmentationId = 'MY_SEGMENTATION_ID'
+const toolGroupId = 'MY_TOOLGROUP_ID'
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Synchronization of Volume Viewport Properties',
-  'Here we demonstrate camera and window/level synchronization across viewports.'
+  'Segment Locking',
+  'Here we demonstrate how a segment can be locked such that it cannot be edited by segmentation tools'
 )
 
 const size = '500px'
@@ -73,9 +63,7 @@ element3.style.height = size
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = (e) => e.preventDefault()
-// Disable right click context menu so we can have right click tools
 element2.oncontextmenu = (e) => e.preventDefault()
-// Disable right click context menu so we can have right click tools
 element3.oncontextmenu = (e) => e.preventDefault()
 
 viewportGrid.appendChild(element1)
@@ -86,53 +74,66 @@ content.appendChild(viewportGrid)
 
 const instructions = document.createElement('p')
 instructions.innerText = `
-Left Click to change window/level
-Use the mouse wheel to scroll through the stack.
+  - Switch segment using the drop down
+  - Lock segment 1 segment using the toggle.
 
-Toggle the controls to add viewports to the synchronization groups.
-`
+  When locked, segment 1 cannot be overriden with segment 2.
+
+  Left Click: Segmentation Brush
+  Middle Click: Pan
+  Right Click: Zoom
+  Mouse wheel: Scroll Stack
+  `
 
 content.append(instructions)
+
+// ============================= //
+addDropdownToToolbar(
+  {
+    options: ['1', '2'],
+    defaultOption: '1',
+  },
+  (segmentIndex) => {
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      segmentationId,
+      segmentIndex
+    )
+  }
+)
+
+addToggleButtonToToolbar(
+  'Toggle Locked Segment 1',
+  (evt, toggle) => {
+    segmentation.segmentLocking.setSegmentIndexLocked(segmentationId, 1, toggle)
+  },
+  false
+)
+
 // ============================= //
 
-const SynchronizerButtonInfo = [
-  { viewportLabel: 'A', viewportId: viewportIds[0] },
-  { viewportLabel: 'B', viewportId: viewportIds[1] },
-  { viewportLabel: 'C', viewportId: viewportIds[2] },
-]
-
-SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
-  addToggleButtonToToolbar(`Camera ${viewportLabel}`, (evt, toggle) => {
-    const synchronizer =
-      SynchronizerManager.getSynchronizer(cameraSynchronizerId)
-
-    if (!synchronizer) {
-      return
-    }
-
-    if (toggle) {
-      synchronizer.add({ renderingEngineId, viewportId })
-    } else {
-      synchronizer.remove({ renderingEngineId, viewportId })
-    }
+async function addSegmentationsToState() {
+  // Create a segmentation of the same resolution as the source data
+  // using volumeLoader.createAndCacheDerivedVolume.
+  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    volumeId: segmentationId,
   })
-})
 
-SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
-  addToggleButtonToToolbar(`VOI ${viewportLabel}`, (evt, toggle) => {
-    const synchronizer = SynchronizerManager.getSynchronizer(voiSynchronizerId)
-
-    if (!synchronizer) {
-      return
-    }
-
-    if (toggle) {
-      synchronizer.add({ renderingEngineId, viewportId })
-    } else {
-      synchronizer.remove({ renderingEngineId, viewportId })
-    }
-  })
-})
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ])
+}
 
 /**
  * Runs the demo
@@ -141,33 +142,30 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo()
 
-  const toolGroupId = 'TOOL_GROUP_ID'
-
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool)
-  cornerstoneTools.addTool(WindowLevelTool)
-  cornerstoneTools.addTool(StackScrollMouseWheelTool)
   cornerstoneTools.addTool(ZoomTool)
+  cornerstoneTools.addTool(StackScrollMouseWheelTool)
+  cornerstoneTools.addTool(SegmentationDisplayTool)
+  cornerstoneTools.addTool(BrushTool)
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
+  // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId)
 
-  // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName, { configuration: { volumeId } })
+  // Manipulation Tools
   toolGroup.addTool(PanTool.toolName)
   toolGroup.addTool(ZoomTool.toolName)
   toolGroup.addTool(StackScrollMouseWheelTool.toolName)
 
-  // Set the initial state of the tools, here all tools are active and bound to
-  // Different mouse inputs
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
+  // Segmentation Tools
+  toolGroup.addTool(SegmentationDisplayTool.toolName)
+  toolGroup.addTool(BrushTool.toolName)
+  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
+
+  toolGroup.setToolActive(BrushTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
   })
+
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -186,12 +184,7 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
 
-  // Create synchronizers
-  const cameraSynchronizer =
-    createCameraPositionSynchronizer(cameraSynchronizerId)
-  const voiSynchronizer = createVOISynchronizer(voiSynchronizerId)
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
+  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
@@ -201,59 +194,79 @@ async function run() {
     type: 'VOLUME',
   })
 
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  })
+
+  // Add some segmentations based on the source data volume
+  await addSegmentationsToState()
+
   // Instantiate a rendering engine
+  const renderingEngineId = 'myRenderingEngine'
   const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
+  const viewportId1 = 'CT_AXIAL'
+  const viewportId2 = 'CT_SAGITTAL'
+  const viewportId3 = 'CT_CORONAL'
+
   const viewportInputArray = [
     {
-      viewportId: viewportIds[0],
+      viewportId: viewportId1,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        orientation: ORIENTATION.AXIAL,
+        background: <Types.Point3>[0, 0, 0],
       },
     },
     {
-      viewportId: viewportIds[1],
+      viewportId: viewportId2,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: <Types.Point3>[0, 0, 0],
       },
     },
     {
-      viewportId: viewportIds[2],
+      viewportId: viewportId3,
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        orientation: ORIENTATION.CORONAL,
+        background: <Types.Point3>[0, 0, 0],
       },
     },
   ]
 
   renderingEngine.setViewports(viewportInputArray)
 
-  // Set the tool group on the viewports
-  viewportIds.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineId)
-  )
-
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  })
+  toolGroup.addViewport(viewportId1, renderingEngineId)
+  toolGroup.addViewport(viewportId2, renderingEngineId)
+  toolGroup.addViewport(viewportId3, renderingEngineId)
 
   // Set the volume to load
   volume.load()
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)
+  // Set volumes on the viewports
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId1, viewportId2, viewportId3]
+  )
+
+  // // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ])
 
   // Render the image
-  renderingEngine.renderViewports(viewportIds)
+  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3])
 }
 
 run()
