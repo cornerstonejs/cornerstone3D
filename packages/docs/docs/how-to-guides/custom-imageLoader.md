@@ -9,7 +9,7 @@ In this how-to guide we will show you how to create a custom image loader.
 ## Introduction
 
 Cornerstone **DOES NOT** deal with image loading. It delegates image loading to [Image Loaders](./concepts/cornerstone-core/imageLoader.md).
-Cornerstone team have already developed some commonly used image loaders (`CornerstoneWADOImageLoader` for loading images from wado-compliant dicom servers
+Cornerstone team have developed commonly used image loaders (`CornerstoneWADOImageLoader` for loading images from wado-compliant dicom servers
 using `wado-rs` or `wado-uri`, `CornerstoneWebImageLoader` to load web images such as PNG and JPEG and `cornerstone-nifti-image-loader` for loading NIFTI images).
 However, you might ask yourself:
 
@@ -21,9 +21,12 @@ How can I build a custom image loader?
 
 ## Implementation
 
-Here is an example of an Image Loader that fetches pixel data using XMLHttpRequest and return an Image Load Object containing a Promise to Cornerstone.
+Let's implement an `imageLoader` that fetches pixel data using `XMLHttpRequest` and return an Image Load Object containing a Promise that
+resolves to a Cornerstone [`image`](../concepts/cornerstone-core/images.md).
 
 ### Step 1: Create an Image Loader
+
+Below, we create an `imageLoader` which accepts an `imageId` and returns an `imageLoadObject` as a Promise.
 
 ```js
 function loadImage(imageId) {
@@ -66,9 +69,9 @@ function loadImage(imageId) {
 
 ### Step 2: Registration of Image Loader
 
-After you implement your image loader, you need to register it with cornerstone. First
+After you implement your image loader, you need to register it with Cornerstone. First
 you need to decide which URL scheme your image loader supports. Let's say your image loader
-supports the `custom1` scheme, then any imageId that starts with `custom1://` will be
+wants to support the `custom1` scheme, then any imageId that starts with `custom1://` will be
 handled by your image loader.
 
 ```js
@@ -80,5 +83,14 @@ cornerstone.imageLoader.registerImageLoader('custom1', loadImage)
 
 ```js
 // Images loaded as follows will be passed to our loadImage function:
-cornerstone.loadImage('custom1://example.com/image.dcm')
+stackViewport.setStack(['custom1://example.com/image.dcm'])
 ```
+
+<details>
+<summary>
+Use Viewport API to load an image
+</summary>
+
+In previous versions of Cornerstone, you could use `loadImage` or `loadAndCacheImage` to load an image. However,
+in `Cornerstone3D`, this task can be achieved using `Viewports` APIs.
+</details>

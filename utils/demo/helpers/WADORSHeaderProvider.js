@@ -18,7 +18,6 @@ function addInstance(imageId, dicomJSONDatasetOrP10ArrayBuffer) {
   }
 
   // Check if dataset is already naturalized.
-
   let naturalizedDataset
 
   if (dicomJSONDataset['SeriesInstanceUID'] === undefined) {

@@ -38,8 +38,8 @@ const { addSegmentationRepresentations, addSegmentations } = segmentation
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineId = utilities.uuidv4()
-const TOOL_GROUP_ID = utilities.uuidv4()
+const renderingEngineId = 'renderingEngineId-segmentationSphereScissor_test'
+const toolGroupId = 'toolGroupId-segmentationSphereScissor_test'
 
 const viewportId1 = 'AXIAL'
 
@@ -81,7 +81,7 @@ describe('Segmentation Controller --', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
+      this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(RectangleScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
@@ -104,7 +104,7 @@ describe('Segmentation Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
+      ToolGroupManager.destroyToolGroup(toolGroupId)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -245,7 +245,7 @@ describe('Segmentation Controller --', () => {
     //             )
 
     //             // add two volumes on the segmentation
-    //             addSegmentationRepresentations(TOOL_GROUP_ID, [
+    //             addSegmentationRepresentations(toolGroupId, [
     //               {
     //                 volumeId: seg1VolumeID,
     //                 colorLUTIndex: 1,
@@ -286,7 +286,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.segmentation.state.getSegmentationRepresentations(TOOL_GROUP_ID)
+    //       csTools3d.segmentation.state.getSegmentationRepresentations(toolGroupId)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].visibility).toBe(true)
@@ -316,7 +316,7 @@ describe('Segmentation Controller --', () => {
     //             vp1.render()
 
     //             // add two volumes on the segmentation
-    //             addSegmentationRepresentations(TOOL_GROUP_ID, [
+    //             addSegmentationRepresentations(toolGroupId, [
     //               {
     //                 volumeId: seg1VolumeID,
     //               },
@@ -326,11 +326,11 @@ describe('Segmentation Controller --', () => {
     //             ]).then(() => {
     //               const segmentationData =
     //                 segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-    //                   TOOL_GROUP_ID
+    //                   toolGroupId
     //                 )
 
     //               segmentation.segmentationVisibility.setSegmentationVisibility(
-    //                 TOOL_GROUP_ID,
+    //                 toolGroupId,
     //                 segmentationData.segmentationRepresentationUID,
     //                 false
     //               )

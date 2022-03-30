@@ -39,12 +39,11 @@ const { SegmentationRepresentations } = csToolsEnums
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } =
   utilities.testUtils
 
-const renderingEngineId = utilities.uuidv4()
-
 const viewportId1 = 'AXIAL'
 const AXIAL = 'AXIAL'
 
-const TOOL_GROUP_ID = utilities.uuidv4()
+const renderingEngineId = 'renderingEngine-segmentationConfigController_test'
+const toolGroupId = 'toolGroupId-segmentationConfigController_test'
 
 function createViewport(
   renderingEngine,
@@ -85,7 +84,7 @@ describe('Segmentation Controller --', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
+      this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(RectangleScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
@@ -108,7 +107,7 @@ describe('Segmentation Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
+      ToolGroupManager.destroyToolGroup(toolGroupId)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -148,7 +147,7 @@ describe('Segmentation Controller --', () => {
 
         const toolGroupSegRepresentationsConfig =
           segmentation.segmentationConfig.getToolGroupSpecificConfig(
-            TOOL_GROUP_ID
+            toolGroupId
           )
 
         const toolGroupLabelmapConfig =
@@ -195,7 +194,7 @@ describe('Segmentation Controller --', () => {
               ])
 
               addSegmentationRepresentations(
-                TOOL_GROUP_ID,
+                toolGroupId,
                 [
                   {
                     segmentationId: seg1VolumeID,
@@ -364,7 +363,7 @@ describe('Segmentation Controller --', () => {
 
     //           // add two volumes on the segmentation
     //           addSegmentationRepresentations(
-    //             TOOL_GROUP_ID,
+    //             toolGroupId,
     //             [
     //               {
     //                 volumeId: seg1VolumeID,

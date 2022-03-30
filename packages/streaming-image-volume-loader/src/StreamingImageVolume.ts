@@ -186,7 +186,7 @@ export default class StreamingImageVolume extends ImageVolume {
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests = () => {
+  public getImageLoadRequests = (priority: number) => {
     const { scalarData, loadStatus } = this
     const { cachedFrames } = loadStatus
 
@@ -433,6 +433,8 @@ export default class StreamingImageVolume extends ImageVolume {
         imageId,
         imageIdIndex,
         options,
+        priority,
+        requestType,
         additionalDetails: {
           volumeId: this.volumeId,
         },
@@ -443,7 +445,7 @@ export default class StreamingImageVolume extends ImageVolume {
   }
 
   private _prefetchImageIds(priority: number) {
-    const requests = this.getImageLoadRequests()
+    const requests = this.getImageLoadRequests(priority)
 
     requests.reverse().forEach((request) => {
       if (!request) {
@@ -456,6 +458,8 @@ export default class StreamingImageVolume extends ImageVolume {
         imageId,
         imageIdIndex,
         options,
+        priority,
+        requestType,
         additionalDetails,
       } = request
 

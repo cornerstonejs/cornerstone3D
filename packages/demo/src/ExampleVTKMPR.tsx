@@ -42,7 +42,10 @@ volumeLoader.registerVolumeLoader(
   'cornerstoneStreamingImageVolume',
   cornerstoneStreamingImageVolumeLoader
 )
-imageLoader.registerImageLoader('csiv', sharedArrayBufferImageLoader)
+imageLoader.registerImageLoader(
+  'streaming-wadors',
+  sharedArrayBufferImageLoader
+)
 
 const VOLUME = 'volume'
 const STACK = 'stack'

@@ -1,58 +1,125 @@
 ---
 id: tools
-title: Tools & ToolGroups
+title: Tools
 ---
 
 ## Introduction
-
-Tools will be added in much the same way as in CornerstoneTools (legacy): `CornerstoneTools3D.addTool()`; They will then be enabled on viewports via `Tool Groups`. Tool Groups are a new concept meant to replace the “Global Tool Sync” feature in CornerstoneTools. A consumer of CornerstoneTools currently has two options when initializing the library:
-
-- All viewports share tool configuration and tool modes OR
-- All viewports must add, configure, and set modes for tools individually
-
-The goal of tool groups is to support the above use cases, while also providing flexibility to coordinate tools across sets of viewports.
-
-
-
-## Tool
 
 A tool is an uninstantiated class that implements at least the `BaseTool` interface.
 Tools can be configured via their constructor. To use a tool, one must:
 
 - Add the uninstantiated tool using the library's top level `addTool` function
-- Add that same tool, by name, to a `ToolGroup`
+- Add that same tool, by name, to a ToolGroup
 
-The tool's behavior is then dependent on which rendering engines, scenes,
-and viewports are associated with its Tool Group; as well as the tool's current
-mode.
+Here we will introduce several concepts about tools (annotation and segmentation tools)
+inside `Cornerstone3DTools`.
 
-### Adding Tools
+## Tools
 
-The `Cornerstone3D-tools` library comes packaged with several common tools. All implement either
-the `BaseTool` or `AnnotationTool`. Adding a tool makes it available to ToolGroups.
+### Manipulation Tools
+`Cornerstone3DTools` provides a set of tools that can be used to manipulate the
+images in the viewports. These include:
+
+- enabling zooming in and out of the image (`ZoomTool`)
+- performing panning and navigation of the image (`PanTool`)
+- scrolling through the image (`StackScrollMouseWheelTool`)
+- manipulating the windowLevel of the image (`WindowLevelTool`)
+
+### Annotation Tools
+
+`Cornerstone3DTools` provide a set of annotation tools. You can use these tools
+to create and edit annotations for use cases such as:
+
+- Measuring distance between two points (Length Tool)
+- Measuring width and length for a structure (Bidirectional Tool)
+- Measuring area and statistics for a rectangular area (RectangleRoi Tool)
+- Measuring volume and statistics for a ellipsoid (EllipseRoi Tool)
+- Getting the underlying value for a voxel (Probe Tool)
+
+Below, you can see a screenshot of the annotation tools that are available in `Cornerstone3DTools`.
+
+<div style={{textAlign: 'center'}}>
+
+![](../../assets/annotation-tools.png)
+
+</div>
+
+
+### Dynamic tool statistics
+`Cornerstone3DTools` is capable of calculating dynamic statistics based on the modality of the volume being rendered. For instance, for CT volumes a `ProbeTool` will give Hounsfield Units and for PET it will calculate SUV stats.
+
+
+
+<div style={{textAlign: 'center', width:'85%'}}>
+
+![](../../assets/dynamic-stats.png)
+
+</div>
+
+
+### Annotation sharing in Frame of Reference
+
+Since, annotations are stored in the patient physical space, if there are
+two viewports that are displaying the same frame of reference, they will share
+the same annotations.
+
+
+
+### Segmentation Tools
+
+`Cornerstone3D` also provides segmentation tools. This includes 3D `SegmentationDisplay`
+and 3D segmentation editing tools such as brush, rectangle and circle scissors, and
+3d sphere tools.
+
+We will discuss in length the different types of segmentation tools and how they
+are used in `Cornerstone3DTools` in `Segmentation` section.
+
+<details>
+
+<summary>How tools work internally</summary>
+
+mouse and keyboard fire events, these events are captured and normalized by
+`Cornerstone3DTools`. The normalized events are then fired and handled by
+tools either as `mouseDown`, `mouseDrag` and `mouseUp` events.
+
+</details>
+
+<div style={{textAlign: 'center', width:'85%'}}>
+
+![](../../assets/segmentation-tools-intro.png)
+
+</div>
+
+## Adding Tools
+
+The `Cornerstone3DTools` library comes packaged with several common tools. All implement either
+the `BaseTool` or `AnnotationTool`. In order to be able to use the tools, you must
+first add them to the `Cornerstone3DTools`. You can do this by using the `addTool` function.
 
 
 ```js
-import * as csTools3d from '@ohif/cornerstone-tools'
+import * as csTools3d from '@cornerstone/tools'
 
-// Add uninstantiated tool classes to the library
-// These will be used to initialize tool instances when we explicitly add each
-// tool to one or more tool groups
-const { PanTool, ProbeTool, StackScrollMouseWheelTool, ZoomTool, LengthTool } = csTools3d
+const { PanTool, ProbeTool, ZoomTool, LengthTool } = csTools3d
 
 csTools3d.addTool(PanTool)
-csTools3d.addTool(StackScrollMouseWheelTool)
 csTools3d.addTool(ZoomTool)
 csTools3d.addTool(LengthTool)
 csTools3d.addTool(ProbeTool)
 ```
 
-> Tools added above should also be added to the corresponding toolGroup.
+:::note warning
+Adding a tool to the library will only let the library know about the tool.
+It will not automatically add the tool to any tool groups, nor will it
+instantiate the tool for usage.
+
+:::
 
 
-### Tool Modes
 
-Tools can be in one of four modes. Each mode impacts how the tool responds to
+## Tool Modes
+
+Tools (in their toolGroup) can be in one of four modes. Each mode impacts how the tool responds to
 interactions.
 
 > There should never be two active tools with the same binding
@@ -99,110 +166,3 @@ interactions.
     </td>
   </tr>
 </table>
-
-
-## ToolGroups
-
-Tool Groups are a way to share tool configuration, state, and modes across
-a set of `RengeringEngine`s, `Scene`s, and/or `Viewport`s.
-For instance, assume you have a scene containing 3 viewports visualizing the same CT from 3 different angles (e.g., Axial, Sagittal, Coronal). Using toolGroups you can easily manipulate the same window level/width on all 3 viewports.
-
-Tool Groups are managed
-by a Tool Group Manager. Tool Group Managers are used to create, search for, and
-destroy Tool Groups.
-
-> Currently ToolGroups are not optional, and in order to use a tool you should create a toolGroup and add it to the toolGroup.
-
-### Creating a ToolGroup
-ToolGroupManager can be utilized to create a tool group using `createToolGroup`.
-
-```js
-import { ToolGroupManager } from 'vtkjs-viewport-tools'
-
-const toolGroupId = 'ctToolGroup'
-const ctSceneToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
-
-// Add tools to ToolGroup
-// Manipulation tools
-ctSceneToolGroup.addTool(PanTool.toolName)
-ctSceneToolGroup.addTool(ZoomTool.toolName)
-ctSceneToolGroup.addTool(ProbeTool.toolName)
-```
-
-### Annotation sharing
-The annotations in StackViewport and VolumeViewport are immediately shared.
-You can activate both a Stack and a Volume viewport and draw annotations on
-one while editing (modifying or moving) the other. This is accomplished by
-providing the toolGroup of the VolumeViewports with the `VolumeId`.
-
-When drawing an annotation:
--The tool gets the volume using volumeId
-- It checks which imageId of the volume the tool has been drawn on
-- If in a stack viewport, we are at the same imageId, we render the tool
-
-```js
-ctSceneToolGroup.addTool(LengthTool.toolName, {
-  configuration: { volumeId: ctVolumeId },
-})
-ctStackToolGroup.addTool(LengthTool.toolName)
-```
-
-<div style={{padding:"56.25% 0 0 0", position:"relative"}}>
-    <iframe src="https://player.vimeo.com/video/601943316?badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;h=a6f3ee6e3d" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen style= {{ position:"absolute",top:0,left:0,width:"100%",height:"100%"}} title="annotation-report"></iframe>
-</div>
-
-
-#### Dynamic tool statistics
-Cornerstone3D-Tools is capable of calculating dynamic statistics based on the modality of the volume being rendered. For instance, for CT volumes a `ProbeTool` will give Hounsfield Units and for PET it will calculate SUV stats.
-
-In order to enable such dynamic tool statistics, you are required to provide the `volumeId` when you are adding the tool.
-
-```js
-ctSceneToolGroup.addTool(ProbeTool.toolName, {
-  configuration: { volumeId: ctVolumeId },
-})
-```
-
-
-
-
-### Activating a Tool
-You can use `setToolActive` for each toolGroup to activate a tool providing a corresponding mouse key.
-
-
-```js
-// Set the ToolGroup's ToolMode for each tool
-// Possible modes include: 'Active', 'Passive', 'Enabled', 'Disabled'
-ctSceneToolGroup.setToolActive(StackScrollMouseWheelTool.toolName)
-ctSceneToolGroup.setToolActive(LengthTool.toolName, {
-  bindings: [ { mouseButton: MouseBindings.Primary } ],
-})
-ctSceneToolGroup.setToolActive(PanTool.toolName, {
-  bindings: [ { mouseButton: MouseBindings.Auxiliary } ],
-})
-ctSceneToolGroup.setToolActive(ZoomTool.toolName, {
-  bindings: [ { mouseButton: MouseBindings.Secondary } ],
-})
-```
-
-
-### Knowlege Base
-mouse and keyboard fire events, we capture them and normalize them. Then fire our own events,
-which is mouseDown, then if any tool picked it up (either as tool selection or handle selection)
-we prevent default and go with that, otherwise the mouseDrag and mouseUp events are fired
-and normalized and we go with that logic.
-
-
-
-### Adding Viewports to ToolGroups
-Finally, the toolGroup needs to get viewports that it should act on. You can use `addViewport` API in order to achieve this.
-
-
-
-```js
-// Apply tool group to viewport or all viewports rendering a scene
-ctSceneToolGroup.addViewport(
-  viewportId,
-  renderingEngineId,
-)
-```

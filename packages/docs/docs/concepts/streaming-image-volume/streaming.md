@@ -4,20 +4,103 @@ id: streaming
 
 # Streaming of Volume data
 
-You don't need to wait for all of the volume to load to have an initial view. Below, you can see
-    streaming of two volumes that are simultaneously loaded into the scenes for a 3x3 PET/CT fusion layout with a MIP view on the right.
+With the addition of [`Volumes`](../cornerstone-core/volumes.md) to `Cornerstone3D`, we are adding and maintaining `Streaming-volume-image-loader`
+which is a progressive loader for volumes. This loader is designed to accept imageIds and
+load them into a `Volume`.
 
 
 ## Creating Volumes From Images
 
-During the design of `Cornerstone3D` we considered the following options for loading image volumes:
-
-1. Loading each image separately, then creating a volume from them
-2. Fetching metadata from all images, create a volume before hand, then insert each image inside the volume one by one as they are loaded
-
-We chose option 2. Below we will explain the rationale behind this choice, and the advantages and disadvantages of each option.
-
-### [Not Implemented]: Option 1
+Since 3D `Volume` is composed of 2D images (in `StreamingImageVolume`), its volume metadata is derived from the metadata of the 2D images.
+Therefore, an initial call to fetch images metadata is required for this loader. This way,
+not only we can pre-allocate and cache a `Volume` in memory, but we also can render the volume
+as the 2D images are being loaded (progressive loading).
 
 
-### [Implemented]: Option2
+<div style={{textAlign: 'center'}}>
+
+![](../../assets/volume-building.png)
+</div>
+
+
+
+
+By pre-fetching the metadata from all images (`imageIds`), we don't need to create
+the [`Image`](../cornerstone-core/images.md) object for each imageId. Instead, we can
+just insert the pixelData of the image is directly inserted into the volume
+at the correct location. This guarantees speed and memory efficiency (but comes
+at minimal cost of pre-fetching the metadata).
+
+
+
+## Converting volumes from/to images
+`StreamingImageVolume` loads a volume based on a series of fetched images (2D), a `Volume` can implement functions to convert its 3D pixel data to 2D images without re-requesting them over the network. For instance, using `convertToCornerstoneImage`, `StreamingImageVolume` instance takes an imageId and its imageId index and return a Cornerstone Image object (ImageId Index is required since we want to locate the imageId pixelData in the 3D array and copy it over the Cornerstone Image).
+
+This is a process that can be reverted; `Cornerstone3D` can create a volume from a set of `imageIds` if they have properties of a volume (Same FromOfReference, origin, dimension, direction and pixelSpacing).
+
+## Usage
+As mentioned before, a pre-cache volume should be created before hand from the image metadata. This can be
+done by calling the `createAndCacheVolume`.
+
+```js
+const ctVolumeId = 'cornerstoneStreamingImageVolume:CT_VOLUME'
+const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+  imageIds: ctImageIds,
+})
+```
+Then the volume can call its `load` method to actually load the pixel data of the images.
+
+```js
+await ctVolume.load()
+```
+
+
+## `streaming-wadors` imageLoader
+
+As mentioned before, we don't need to create the [`Image`](../cornerstone-core/images.md) object for each imageId in
+the `StreamingImageVolume`. Instead, we can just insert the pixelData of the image is directly inserted into the volume.
+To achieve this, we have created a new `imageLoader` called [`SharedArrayBufferImageLoader`](/api/streaming-image-volume-loader/function/sharedArrayBufferImageLoader) which is small stripped version of the `cornerstoneWADOImageLoader` which loads the images
+but don't create image objects to save memory.
+
+This imageLoader registers itself with `streaming-wadors` schema. This means that the `streaming-wadors` schema should be
+the first part of imagesIds. Therefore, the full code to use the streaming image loader is:
+
+```js
+// using sharedArrayBufferImageLoader to load the images
+const imageIds = ['streaming-wadors:imageId1', 'streaming-wadors:imageId2']
+
+const ctVolumeId = 'cornerstoneStreamingImageVolume:CT_VOLUME'
+
+const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+  imageIds: ctImageIds,
+})
+
+await ctVolume.load()
+```
+
+
+
+
+## Alternative implementations to consider
+
+<details>
+
+<summary>Alternative Implementation for Volume Loaders</summary>
+
+Although we believe our pre-fetching method for volumes ensures that the volume is loaded as fast as possible,
+There can be other implementations of volume loaders that don't rely on this prefetching.
+
+#### Creating Volumes without pre-fetching metadata
+In this scenario, each image needs to be created separately, which means each image needs to be loaded and a
+Cornerstone [`Image`](../cornerstone-core/images.md) should be created. This is a costly operation as all the image
+objects are loaded in memory and a separate creation of a [`Volume`](../cornerstone-core/volumes.md) is required from
+those images.
+
+Advantages:
+- Not need for a separate metadata call to fetch the image metadata.
+
+Disadvantages:
+- Performance cost
+- Cannot progressively load the image data, as it requires creating a new volume for each image change
+
+</details>

@@ -48,7 +48,7 @@ export default async function createImageIdsAndCacheMetaData({
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0]
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0]
 
-    const prefix = type === VOLUME ? 'csiv:' : 'wadors:'
+    const prefix = type === VOLUME ? 'streaming-wadors:' : 'wadors:'
 
     const imageId =
       prefix +
@@ -65,35 +65,6 @@ export default async function createImageIdsAndCacheMetaData({
       imageId,
       instanceMetaData
     )
-
-    // let imageId
-    // if (type === VOLUME) {
-    //   imageId =
-    //     `csiv:` +
-    //     wadoRsRoot +
-    //     '/studies/' +
-    //     StudyInstanceUID +
-    //     '/series/' +
-    //     SeriesInstanceUID +
-    //     '/instances/' +
-    //     SOPInstanceUID +
-    //     '/frames/1'
-
-    //   cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, instanceMetaData)
-    // } else {
-    //   imageId =
-    //     `wadors:` +
-    //     wadoRsRoot +
-    //     '/studies/' +
-    //     StudyInstanceUID +
-    //     '/series/' +
-    //     SeriesInstanceUID +
-    //     '/instances/' +
-    //     SOPInstanceUID +
-    //     '/frames/1'
-
-    //   cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, instanceMetaData)
-    // }
 
     WADORSHeaderProvider.addInstance(imageId, instanceMetaData)
 

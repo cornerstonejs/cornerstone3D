@@ -16,7 +16,9 @@ import type {
   ViewportInput,
   PublicViewportInput,
   InternalViewportInput,
+  NormalizedViewportInput,
 } from '../types/IViewport'
+import ORIENTATION from '../constants/orientation'
 
 export interface IRenderingEngine {
   id: string
@@ -149,10 +151,11 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @param viewportInputEntry - viewport specifications
    */
-
   public enableElement(viewportInputEntry: PublicViewportInput): void {
+    const viewportInput = this._normalizeViewportInputEntry(viewportInputEntry)
+
     this._throwIfDestroyed()
-    const { element, viewportId } = viewportInputEntry
+    const { element, viewportId } = viewportInput
 
     // Throw error if no canvas
     if (!element) {
@@ -170,7 +173,7 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
-    const { type } = viewportInputEntry
+    const { type } = viewportInput
 
     const viewportUsesCustomRenderingPipeline =
       viewportTypeUsesCustomRenderingPipeline(type)
@@ -181,15 +184,15 @@ class RenderingEngine implements IRenderingEngine {
     // If the viewport being added uses a custom pipeline, or we aren't using
     // GPU rendering, we don't need to resize the offscreen canvas.
     if (!this.useCPURendering && !viewportUsesCustomRenderingPipeline) {
-      this.enableVTKjsDrivenViewport(viewportInputEntry)
+      this.enableVTKjsDrivenViewport(viewportInput)
     } else {
       // 3 Add the requested viewport to rendering Engine
-      this.addCustomViewport(viewportInputEntry)
+      this.addCustomViewport(viewportInput)
     }
 
     // 5. Set the background color for the canvas
     const canvas = getOrCreateCanvas(element)
-    const { background } = viewportInputEntry.defaultOptions
+    const { background } = viewportInput.defaultOptions
     this.fillCanvasWithBackgroundColor(canvas, background)
   }
 
@@ -284,14 +287,19 @@ class RenderingEngine implements IRenderingEngine {
    * @param viewportInputEntries - Array<PublicViewportInput>
    */
 
-  public setViewports(viewportInputEntries: Array<PublicViewportInput>): void {
+  public setViewports(
+    publicViewportInputEntries: Array<PublicViewportInput>
+  ): void {
+    const viewportInputEntries = this._normalizeViewportInputEntries(
+      publicViewportInputEntries
+    )
     this._throwIfDestroyed()
     this._reset()
 
     // 1. Split viewports based on whether they use vtk.js or a custom pipeline.
 
-    const vtkDrivenViewportInputEntries: PublicViewportInput[] = []
-    const customRenderingViewportInputEntries: PublicViewportInput[] = []
+    const vtkDrivenViewportInputEntries: NormalizedViewportInput[] = []
+    const customRenderingViewportInputEntries: NormalizedViewportInput[] = []
 
     viewportInputEntries.forEach((vpie) => {
       if (
@@ -500,6 +508,46 @@ class RenderingEngine implements IRenderingEngine {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
   }
 
+  private _normalizeViewportInputEntry(
+    viewportInputEntry: PublicViewportInput
+  ) {
+    const { type, defaultOptions } = viewportInputEntry
+    let options = defaultOptions
+
+    if (!options || Object.keys(options).length === 0) {
+      options = {
+        background: [0, 0, 0],
+        orientation: null,
+      }
+
+      if (type === ViewportType.ORTHOGRAPHIC) {
+        options = {
+          ...options,
+          orientation: ORIENTATION.AXIAL,
+        }
+      }
+    }
+
+    return {
+      ...viewportInputEntry,
+      defaultOptions: options,
+    }
+  }
+
+  private _normalizeViewportInputEntries(
+    viewportInputEntries: Array<PublicViewportInput>
+  ): Array<NormalizedViewportInput> {
+    const normalizedViewportInputs = []
+
+    viewportInputEntries.forEach((viewportInput) => {
+      normalizedViewportInputs.push(
+        this._normalizeViewportInputEntry(viewportInput)
+      )
+    })
+
+    return normalizedViewportInputs
+  }
+
   private _resizeUsingCustomResizeHandler(
     customRenderingViewports: StackViewport[],
     immediate = true,
@@ -558,7 +606,9 @@ class RenderingEngine implements IRenderingEngine {
    * @param viewportInputEntry - Information object used to
    * construct and enable the viewport.
    */
-  private enableVTKjsDrivenViewport(viewportInputEntry: PublicViewportInput) {
+  private enableVTKjsDrivenViewport(
+    viewportInputEntry: NormalizedViewportInput
+  ) {
     const viewports = this._getViewportsAsArray()
     const viewportsDrivenByVtkJs = viewports.filter(
       (vp) => viewportTypeUsesCustomRenderingPipeline(vp.type) === false
@@ -787,7 +837,9 @@ class RenderingEngine implements IRenderingEngine {
    * @param viewportInputEntries - An array of information
    * objects used to construct and enable the viewports.
    */
-  private setVtkjsDrivenViewports(viewportInputEntries: PublicViewportInput[]) {
+  private setVtkjsDrivenViewports(
+    viewportInputEntries: NormalizedViewportInput[]
+  ) {
     // Deal with vtkjs driven viewports
     if (viewportInputEntries.length) {
       // 1. Getting all the canvases from viewports calculation of the new offScreen size

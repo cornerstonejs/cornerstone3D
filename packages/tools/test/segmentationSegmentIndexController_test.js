@@ -42,8 +42,9 @@ const {
   compareImages,
 } = utilities.testUtils
 
-const renderingEngineId = utilities.uuidv4()
-const TOOL_GROUP_ID = utilities.uuidv4()
+const renderingEngineId =
+  'renderingEngineId-segmentationSegmentIndexController_test'
+const toolGroupId = 'toolGroupId-segmentationSegmentIndexController_test'
 
 const viewportId1 = 'AXIAL'
 
@@ -85,7 +86,7 @@ describe('Segmentation Index Controller --', () => {
       cache.purgeCache()
       this.DOMElements = []
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(TOOL_GROUP_ID)
+      this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId)
       this.segToolGroup.addTool(SegmentationDisplayTool.toolName)
       this.segToolGroup.addTool(RectangleScissorsTool.toolName)
       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName)
@@ -108,7 +109,7 @@ describe('Segmentation Index Controller --', () => {
       this.renderingEngine.destroy()
       metaData.removeProvider(fakeMetaDataProvider)
       unregisterAllImageLoaders()
-      ToolGroupManager.destroyToolGroup(TOOL_GROUP_ID)
+      ToolGroupManager.destroyToolGroup(toolGroupId)
 
       this.DOMElements.forEach((el) => {
         if (el.parentNode) {
@@ -318,7 +319,7 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_ID, 2)
+          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2)
 
           eventTarget.addEventListener(
             Events.SEGMENTATION_RENDERED,
@@ -333,14 +334,14 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_ID)
+          segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationRepresentation =
           segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            TOOL_GROUP_ID
+            toolGroupId
           )
 
         expect(
@@ -478,10 +479,10 @@ describe('Segmentation Index Controller --', () => {
         setTimeout(() => {
           drawRectangle([20, 20, 0], [40, 40, 0])
 
-          segmentation.segmentIndex.setActiveSegmentIndex(TOOL_GROUP_ID, 2)
+          segmentation.segmentIndex.setActiveSegmentIndex(toolGroupId, 2)
 
           segmentation.segmentLocking.setSegmentIndexLocked(
-            TOOL_GROUP_ID,
+            toolGroupId,
             1,
             true
           )
@@ -499,14 +500,14 @@ describe('Segmentation Index Controller --', () => {
         const image1 = canvas1.toDataURL('image/png')
 
         const activeSegmentIndex =
-          segmentation.segmentIndex.getActiveSegmentIndex(TOOL_GROUP_ID)
+          segmentation.segmentIndex.getActiveSegmentIndex(toolGroupId)
 
         expect(activeSegmentIndex).toBe(2)
 
         // active segmentation
         const segmentationRepresentation =
           segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            TOOL_GROUP_ID
+            toolGroupId
           )
 
         expect(
@@ -530,7 +531,7 @@ describe('Segmentation Index Controller --', () => {
         expect(locked1[0]).toBe(1)
 
         const lockedStatus1 = segmentation.segmentLocking.getSegmentIndexLocked(
-          TOOL_GROUP_ID,
+          toolGroupId,
           1
         )
 

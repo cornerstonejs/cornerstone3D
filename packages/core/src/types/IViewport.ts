@@ -85,6 +85,17 @@ type PublicViewportInput = {
   /** type of the viewport */
   type: ViewportType
   /** options for the viewport */
+  defaultOptions?: ViewportInputOptions
+}
+
+type NormalizedViewportInput = {
+  /** HTML element in the DOM */
+  element: HTMLElement
+  /** unique id for the viewport in the renderingEngine */
+  viewportId: string
+  /** type of the viewport */
+  type: ViewportType
+  /** options for the viewport */
   defaultOptions: ViewportInputOptions
 }
 
@@ -114,4 +125,5 @@ export type {
   ViewportInput,
   PublicViewportInput,
   InternalViewportInput,
+  NormalizedViewportInput,
 }

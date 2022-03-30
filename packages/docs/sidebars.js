@@ -37,7 +37,12 @@ module.exports = {
         title: 'Tutorials',
         description: 'In this section you will find a collection of tutorials',
       },
-      items: ['tutorials/core-usage', 'tutorials/tools-usage'],
+      items: [
+        'tutorials/intro',
+        'tutorials/basic-stack',
+        'tutorials/core-usage',
+        'tutorials/tools-usage',
+      ],
     },
     {
       type: 'category',
@@ -53,6 +58,7 @@ module.exports = {
         'how-to-guides/configuration',
         'how-to-guides/custom-image-loader',
         'how-to-guides/custom-metadata-provider',
+        'how-to-guides/custom-volume-loading',
         'how-to-guides/custom-tools',
       ],
     },
@@ -90,7 +96,10 @@ module.exports = {
           label: 'Streaming Image Volume Loader',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/streaming-image-volume/index' },
-          items: ['concepts/streaming-image-volume/streaming'],
+          items: [
+            'concepts/streaming-image-volume/streaming',
+            'concepts/streaming-image-volume/re-order',
+          ],
         },
         {
           type: 'category',
@@ -99,10 +108,41 @@ module.exports = {
           link: { type: 'doc', id: 'concepts/cornerstone-tools/index' },
           items: [
             'concepts/cornerstone-tools/tools',
+            'concepts/cornerstone-tools/toolGroups',
             'concepts/cornerstone-tools/synchronizers',
-            'concepts/cornerstone-tools/state-management',
-            'concepts/cornerstone-tools/tools-eventListeners',
-            'concepts/cornerstone-tools/toolsStyle',
+            {
+              type: 'category',
+              label: 'Annotations',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/cornerstone-tools/annotation/index',
+              },
+              items: [
+                'concepts/cornerstone-tools/annotation/state',
+                'concepts/cornerstone-tools/annotation/selection',
+                'concepts/cornerstone-tools/annotation/locking',
+                'concepts/cornerstone-tools/annotation/config',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Segmentations',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/cornerstone-tools/segmentation/index',
+              },
+              items: [
+                'concepts/cornerstone-tools/segmentation/state',
+                'concepts/cornerstone-tools/segmentation/segment-index',
+                'concepts/cornerstone-tools/segmentation/active-segmentation',
+                'concepts/cornerstone-tools/segmentation/locking',
+                'concepts/cornerstone-tools/segmentation/config',
+                'concepts/cornerstone-tools/segmentation/brush',
+                'concepts/cornerstone-tools/segmentation/scissors',
+              ],
+            },
           ],
         },
       ],
@@ -119,11 +159,16 @@ module.exports = {
       items: ['contribute/pull-request', 'contribute/tests'],
     },
     'migrationGuides',
+    'faq',
     {
       type: 'link',
       label: 'Test Coverage Report',
-      href: '/coverage',
+      href: 'pathname:///test-coverage',
     },
-    'faq',
+    {
+      type: 'link',
+      label: 'Live Examples',
+      href: 'pathname:///examples',
+    },
   ],
 }

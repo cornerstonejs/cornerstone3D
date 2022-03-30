@@ -2373,7 +2373,7 @@ type PublicViewportInput = {
     element: HTMLElement
     viewportId: string
     type: ViewportType
-    defaultOptions: ViewportInputOptions
+    defaultOptions?: ViewportInputOptions
 }
 
 declare namespace rectangle {

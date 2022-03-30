@@ -162,7 +162,7 @@ export type ToolGroupSpecificRepresentations =
  *       segmentsLocked: new Set(),
  *       label: 'segmentation2',
  *       cachedStats: {},
- *       representations: {
+ *       representationData: {
  *         CONTOUR: {
  *           points: Float32Array,
  *         },

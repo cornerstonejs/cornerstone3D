@@ -4,6 +4,7 @@
 
 ```ts
 
+import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { mat4 } from 'gl-matrix';
 import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData';
 import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
@@ -939,7 +940,7 @@ type PublicViewportInput = {
     element: HTMLElement
     viewportId: string
     type: ViewportType
-    defaultOptions: ViewportInputOptions
+    defaultOptions?: ViewportInputOptions
 }
 
 // @public (undocumented)
@@ -996,7 +997,7 @@ export class StreamingImageVolume extends ImageVolume {
     // (undocumented)
     decache(completelyRemove?: boolean): void;
     // (undocumented)
-    getImageLoadRequests: () => {
+    getImageLoadRequests: (priority: number) => {
         callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
         imageId: string;
         imageIdIndex: number;
@@ -1011,6 +1012,8 @@ export class StreamingImageVolume extends ImageVolume {
                 scalingParameters: Types.ScalingParameters;
             };
         };
+        priority: number;
+        requestType: default_2;
         additionalDetails: {
             volumeId: string;
         };

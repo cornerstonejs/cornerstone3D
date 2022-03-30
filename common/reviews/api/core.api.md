@@ -1423,7 +1423,7 @@ type PublicViewportInput = {
     element: HTMLElement;
     viewportId: string;
     type: ViewportType;
-    defaultOptions: ViewportInputOptions;
+    defaultOptions?: ViewportInputOptions;
 };
 
 // @public (undocumented)
@@ -1488,7 +1488,7 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
     // (undocumented)
-    setViewports(viewportInputEntries: Array<PublicViewportInput>): void;
+    setViewports(publicViewportInputEntries: Array<PublicViewportInput>): void;
 }
 
 // @public (undocumented)
