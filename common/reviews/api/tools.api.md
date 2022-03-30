@@ -412,7 +412,8 @@ type Color = [number, number, number, number];
 declare namespace color {
     export {
         getColorForSegmentIndex,
-        addColorLUT_2 as addColorLUT
+        addColorLUT_2 as addColorLUT,
+        setColorLUT
     }
 }
 
@@ -3035,6 +3036,9 @@ function setAnnotationSelected(annotation: Annotation, selected?: boolean, prese
 
 // @public (undocumented)
 function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
+
+// @public (undocumented)
+function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
 function setCursorForElement(element: HTMLElement, cursorName: string): void;
