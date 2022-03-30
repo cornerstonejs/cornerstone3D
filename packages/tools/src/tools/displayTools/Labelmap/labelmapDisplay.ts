@@ -90,17 +90,13 @@ async function addSegmentationRepresentation(
       toolGroupSpecificConfig
     )
 
-    SegmentationConfig.setToolGroupSpecificConfig(
-      toolGroupId,
-      {
-        renderInactiveSegmentations:
-          mergedConfig.renderInactiveSegmentations || true,
-        representations: {
-          ...mergedConfig.representations,
-        },
+    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
+      renderInactiveSegmentations:
+        mergedConfig.renderInactiveSegmentations || true,
+      representations: {
+        ...mergedConfig.representations,
       },
-      suppressEvents
-    )
+    })
   }
 
   SegmentationState.addSegmentationRepresentation(
