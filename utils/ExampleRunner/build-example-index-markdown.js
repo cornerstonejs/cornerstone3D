@@ -29,7 +29,7 @@ module.exports = function buildExampleMarkdown(names, exampleBasePaths) {
       const { name, description } = example
       // const examplePath = exampleBasePaths[index]
 
-      const exampleLink = `[${name}](pathname:///examples/${exampleId}.html)`
+      const exampleLink = `[${name}](pathname:///live-examples/${exampleId}.html)`
 
       markdownResult += `| ${exampleLink} | ${description} |\n`
     })

@@ -151,7 +151,7 @@ module.exports = {
     'faq',
     {
       type: 'link',
-      label: 'API Reference',
+      label: 'API',
       href: '/api'
     },
     {
