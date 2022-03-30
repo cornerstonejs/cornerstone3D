@@ -5,6 +5,7 @@ import type {
   AnnotationState,
 } from './AnnotationTypes';
 import type * as EventTypes from './EventTypes';
+import type * as LabelmapTypes from './LabelmapTypes';
 import type IPoints from './IPoints';
 import type PlanarBoundingBox from './PlanarBoundingBox';
 import type {
@@ -67,6 +68,7 @@ export type {
   ToolGroupSpecificRepresentation,
   Color,
   ColorLut,
+  LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,
