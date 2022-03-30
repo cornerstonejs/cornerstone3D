@@ -1,0 +1,122 @@
+{
+  "categories": {
+    "core-basic": {
+      "description": "Basic examples of Core Usage (e.g. rendering, image loading)"
+    },
+    "core-advanced": {
+      "description": "Advanced Core usage"
+    },
+    "tools-basic": {
+      "description": "Basic examples of Tools usage"
+    },
+    "tools-segmentation": {
+      "description": "Segmentation usage"
+    },
+    "tools-advanced": {
+      "description": "Advanced Tools usage"
+    }
+  },
+  "examplesByCategory":
+  {
+    "core-basic": {
+      "tutorial": {
+        "name": "Tutorial",
+        "description": "This example shows the result of the basic rendering tutorial."
+      },
+      "stackBasic": {
+        "name": "Basic Stack Viewport Usage",
+        "description": "Displays a single image in a Stack Viewport."
+      },
+      "stackAPI": {
+        "name": "Stack Viewport API",
+        "description": "Demonstrates how to interact with a Stack viewport (e.g. Set VOI Range, Next/Previous Images, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "stackEvents": {
+        "name": "Stack Viewport Events",
+        "description": "Demonstrates the Events that are fired during interaction with a Stack Viewport"
+      },
+      "stackCanvasToWorld": {
+        "name": "Stack Viewport Canvas-to-World",
+        "description": "Demonstrates how to obtain the coordinates in the 3D world from a coordinate on the canvas."
+      },
+      "volumeBasic": {
+        "name": "Basic Volume Viewport Usage",
+        "description": "Displays a set of DICOM images in a Volume Viewport."
+      },
+      "volumeAPI": {
+        "name": "Volume Viewport API",
+        "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "volumeEvents": {
+        "name": "Volume Viewport Events",
+        "description": "Demonstrates the Events that are fired during interaction with a Volume Viewport"
+      },
+      "multiVolumeAPI": {
+        "name": "Multiple Volumes in a Volume Viewport",
+        "description": "Demonstrates how to interact with a Volume viewport when using multiple volumes (e.g. for PET/CT fusion)."
+      },
+      "multiVolumeCanvasToWorld": {
+        "name": "Multiple Volume Canvas-to-World",
+        "description": "Demonstrates how to use the canvasToWorld API to find the intensity value of each volume on mouse hover"
+      },
+      "wadouri": {
+        "name": "",
+        "description": ""
+      }
+    },
+    "core-advanced": {
+      "volumePriorityLoading": {
+        "name": "",
+        "description": ""
+      }
+    },
+    "tools-basic": {
+      "basic": {
+        "name": "",
+        "description": ""
+      },
+      "stackManipulationTools": {
+        "name": "",
+        "description": ""
+      },
+      "stackAnnotationTools": {
+        "name": "",
+        "description": ""
+      },
+      "volumeAnnotationTools": {
+        "name": "",
+        "description": ""
+      },
+      "annotationSelectionAndLocking": {
+        "name": "",
+        "description": ""
+      },
+      "annotationToolModes": {
+        "name": "",
+        "description": ""
+      },
+      "modifierKeys": {
+        "name": "",
+        "description": ""
+      }
+    },
+    "tools-advanced": {
+      "multipleToolGroups": {
+        "name": "",
+        "description": ""
+      },
+      "mipJumpToClick": {
+        "name": "",
+        "description": ""
+      },
+      "sharedToolState": {
+        "name": "",
+        "description": ""
+      },
+      "volumeViewportSynchronization": {
+        "name": "",
+        "description": ""
+      }
+    }
+  }
+}

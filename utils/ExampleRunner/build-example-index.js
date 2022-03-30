@@ -1,13 +1,13 @@
 const path = require('path')
 
 module.exports = function buildExampleIndex(names, exampleBasePaths) {
-  let exampleLinks = '';
+  let exampleLinks = ''
 
   names.forEach((name, index) => {
-    const examplePath = exampleBasePaths[index];
+    const examplePath = exampleBasePaths[index]
 
     exampleLinks += `
-      <a href=${name}.html>${name}</a>
+      <a href=${name}.html>${name}</a>\n
     `
   })
 
@@ -21,7 +21,7 @@ module.exports = function buildExampleIndex(names, exampleBasePaths) {
     <body>
       <div id="demo-title-container">
         <h1 id="demo-title">
-          <!-- Insert demo title here during demo -->
+          CornerstoneJS Examples
         </h1>
       </div>
       <div id="content">

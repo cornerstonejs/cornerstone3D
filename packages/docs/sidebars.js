@@ -168,7 +168,7 @@ module.exports = {
     {
       type: 'link',
       label: 'Live Examples',
-      href: 'pathname:///examples',
+      href: 'examples',
     },
   ],
 }
