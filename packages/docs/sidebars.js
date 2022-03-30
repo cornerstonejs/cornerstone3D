@@ -165,10 +165,6 @@ module.exports = {
       label: 'Test Coverage Report',
       href: 'pathname:///test-coverage',
     },
-    {
-      type: 'link',
-      label: 'Live Examples',
-      href: 'examples',
-    },
+    'examples'
   ],
 }

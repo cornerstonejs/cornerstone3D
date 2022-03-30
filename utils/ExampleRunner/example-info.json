@@ -19,10 +19,6 @@
   "examplesByCategory":
   {
     "core-basic": {
-      "tutorial": {
-        "name": "Tutorial",
-        "description": "This example shows the result of the basic rendering tutorial."
-      },
       "stackBasic": {
         "name": "Basic Stack Viewport Usage",
         "description": "Displays a single image in a Stack Viewport."

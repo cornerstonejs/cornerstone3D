@@ -15,9 +15,9 @@ module.exports = {
   projectName: 'Cornerstone', // Usually your repo name.
   themeConfig: {
     navbar: {
-      title: 'Cornerstone JS',
+      title: 'Cornerstone.js',
       logo: {
-        alt: 'Cornerstone JS',
+        alt: 'Cornerstone.js',
         src: 'img/logo.svg',
         srcDark: 'img/logo-white.svg',
       },
@@ -32,6 +32,11 @@ module.exports = {
           to: 'api',
           position: 'left',
           label: 'API Reference',
+        },
+        {
+          to: 'examples',
+          position: 'left',
+          label: 'Examples',
         },
         {
           type: 'doc',
