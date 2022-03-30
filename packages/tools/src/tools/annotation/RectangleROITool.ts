@@ -39,7 +39,6 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
 import {
-  Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -47,17 +46,8 @@ import {
   PublicToolProps,
   InteractionTypes,
 } from '../../types'
+import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
-
-interface RectangleROICachedStats {
-  [targetId: string]: {
-    Modality: string
-    area: number
-    max: number
-    mean: number
-    stdDev: number
-  }
-}
 
 /**
  * RectangleROIAnnotation let you draw annotations that measures the statistics
@@ -97,32 +87,6 @@ interface RectangleROICachedStats {
  *
  * Read more in the Docs section of the website.
  */
-export interface RectangleROIAnnotation extends Annotation {
-  data: {
-    handles: {
-      points: Types.Point3[]
-      activeHandleIndex: number | null
-      textBox: {
-        hasMoved: boolean
-        worldPosition: Types.Point3
-        worldBoundingBox: {
-          topLeft: Types.Point3
-          topRight: Types.Point3
-          bottomLeft: Types.Point3
-          bottomRight: Types.Point3
-        }
-      }
-    }
-    label: string
-    cachedStats?:
-      | RectangleROICachedStats
-      | {
-          projectionPoints?: Types.Point3[]
-          projectionPointsImageIds?: string[]
-        }
-  }
-}
-
 export default class RectangleROITool extends AnnotationTool {
   static toolName = 'RectangleROI'
 

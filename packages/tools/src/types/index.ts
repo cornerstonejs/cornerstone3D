@@ -13,6 +13,7 @@ import type {
   ToolOptionsType,
 } from './ISetToolModeOptions'
 import type IToolGroup from './IToolGroup'
+import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes'
 import type ToolHandle from './ToolHandle'
 import type { AnnotationHandle, TextBoxHandle } from './ToolHandle'
 import type InteractionTypes from './InteractionTypes'
@@ -37,6 +38,7 @@ export type {
   Annotations,
   FrameOfReferenceSpecificAnnotations,
   AnnotationState,
+  ToolSpecificAnnotationTypes,
   // Geometry
   PlanarBoundingBox,
   ToolProps,

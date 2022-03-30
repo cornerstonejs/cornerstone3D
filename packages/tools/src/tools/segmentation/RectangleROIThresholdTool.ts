@@ -21,32 +21,10 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
-import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
+import { PublicToolProps, ToolProps, EventTypes } from '../../types'
+import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes'
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 import RectangleROITool from '../annotation/RectangleROITool'
-
-export interface RectangleROIThresholdAnnotation extends Annotation {
-  metadata: {
-    cameraPosition?: Types.Point3
-    cameraFocalPoint?: Types.Point3
-    viewPlaneNormal?: Types.Point3
-    viewUp?: Types.Point3
-    annotationUID?: string
-    FrameOfReferenceUID: string
-    referencedImageId?: string
-    toolName: string
-    enabledElement: any // Todo: how to remove this from the annotation??
-    volumeId: string
-  }
-  data: {
-    label: string
-    handles: {
-      points: Types.Point3[]
-      activeHandleIndex: number | null
-    }
-    // segmentationId: string
-  }
-}
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,

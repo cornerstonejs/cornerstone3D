@@ -24,37 +24,9 @@ import { AnnotationModifiedEventDetail } from '../../types/EventTypes'
 import { hideElementCursor } from '../../cursors/elementCursor'
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 
-import { Annotation, PublicToolProps, ToolProps, EventTypes } from '../../types'
+import { PublicToolProps, ToolProps, EventTypes } from '../../types'
+import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes'
 import RectangleROITool from '../annotation/RectangleROITool'
-
-export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
-  metadata: {
-    cameraPosition?: Types.Point3
-    cameraFocalPoint?: Types.Point3
-    viewPlaneNormal?: Types.Point3
-    viewUp?: Types.Point3
-    annotationUID?: string
-    FrameOfReferenceUID: string
-    referencedImageId?: string
-    toolName: string
-    enabledElement: any // Todo: how to remove this from the annotation??
-    volumeId: string
-    spacingInNormal: number
-  }
-  data: {
-    label: string
-    startSlice: number
-    endSlice: number
-    cachedStats: {
-      projectionPoints: Types.Point3[][] // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
-      projectionPointsImageIds: string[]
-    }
-    handles: {
-      points: Types.Point3[]
-      activeHandleIndex: number | null
-    }
-  }
-}
 
 /**
  * This tool is similar to the RectangleROIThresholdTool which

@@ -110,7 +110,7 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
     })
 
   // Create a segmentation at a lower resolution than the source data,
-  // using custom propeties and
+  // using custom properties and
   const highResDimensions = highResSegmentationVolume.dimensions
   const highResSpacing = highResSegmentationVolume.spacing
 
@@ -130,13 +130,13 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
       highResDimensions[0] / DOWN_SAMPLE_RATE,
       highResDimensions[1] / DOWN_SAMPLE_RATE,
       highResDimensions[2],
-    ],
+    ] as Types.Point3,
     spacing: [
       highResSpacing[0] * DOWN_SAMPLE_RATE,
       highResSpacing[1] * DOWN_SAMPLE_RATE,
       highResSpacing[2],
-    ],
-    origin: [...highResSegmentationVolume.origin],
+    ] as Types.Point3,
+    origin: [...highResSegmentationVolume.origin] as Types.Point3,
     direction,
   }
 

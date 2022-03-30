@@ -783,6 +783,7 @@ interface IViewport {
     getCanvas(): HTMLCanvasElement
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[]
+    getDefaultActor(): ActorEntry
     getFrameOfReferenceUID: () => string
     getRenderer(): void
     getRenderingEngine(): any

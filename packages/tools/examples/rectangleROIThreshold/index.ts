@@ -100,7 +100,7 @@ let upperThreshold = 500
 addButtonToToolbar('Execute threshold', () => {
   const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
     RectangleROIThresholdTool.toolName
-  )
+  ) as Array<cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation>
 
   if (!selectedAnnotations) {
     throw new Error('No annotation selected ')
@@ -108,11 +108,8 @@ addButtonToToolbar('Execute threshold', () => {
 
   const annotation = selectedAnnotations[0]
 
-  const {
-    metadata: {
-      enabledElement: { viewport },
-    },
-  } = annotation // assuming they are all overlayed on the same toolGroup
+  const { metadata } = annotation // assuming they are all overlayed on the same toolGroup
+  const viewport = metadata.enabledElement.viewport as Types.IVolumeViewport
 
   const volumeActorInfo = viewport.getDefaultActor()
 

@@ -98,7 +98,7 @@ addDropdownToToolbar(
     defaultOption: BrushTool.toolName,
   },
   (toolName) => {
-    const toolGroup = ToolGroupManager.getToolGroupById(toolGroupId)
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId)
 
     // Set the other tools disabled so we don't get conflicts.
     // Note we only strictly need to change the one which is currently active.

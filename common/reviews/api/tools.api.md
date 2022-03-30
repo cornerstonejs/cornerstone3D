@@ -238,6 +238,34 @@ export abstract class BaseTool implements IBaseTool {
 }
 
 // @public (undocumented)
+interface BidirectionalAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                length: number;
+                width: number;
+            };
+        };
+    };
+}
+
+// @public (undocumented)
 export class BidirectionalTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -945,6 +973,29 @@ declare namespace ellipse {
         pointInEllipse,
         getCanvasEllipseCorners
     }
+}
+
+// @public (undocumented)
+interface EllipticalROIAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: [Types_2.Point3, Types_2.Point3, Types_2.Point3, Types_2.Point3];
+            activeHandleIndex: number | null;
+            textBox?: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats?: ROICachedStats;
+    };
 }
 
 // @public (undocumented)
@@ -1847,6 +1898,7 @@ interface IViewport {
     getCanvas(): HTMLCanvasElement
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[]
+    getDefaultActor(): ActorEntry
     getFrameOfReferenceUID: () => string
     getRenderer(): void
     getRenderingEngine(): any
@@ -1985,6 +2037,33 @@ type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
+
+// @public (undocumented)
+interface LengthAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                length: number;
+            };
+        };
+    };
+}
 
 // @public (undocumented)
 export class LengthTool extends AnnotationTool {
@@ -2304,6 +2383,24 @@ function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, po
 function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
 
 // @public (undocumented)
+interface ProbeAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+        };
+        cachedStats: {
+            [targetId: string]: {
+                Modality: string;
+                index: Types_2.Point3;
+                value: number;
+            };
+        };
+        label: string;
+    };
+}
+
+// @public (undocumented)
 export class ProbeTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -2382,6 +2479,64 @@ declare namespace rectangle {
 }
 
 // @public (undocumented)
+interface RectangleROIAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats?: ROICachedStats | {
+            projectionPoints?: Types_2.Point3[];
+            projectionPointsImageIds?: string[];
+        };
+    };
+}
+
+// @public (undocumented)
+interface RectangleROIStartEndThresholdAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        label: string;
+        startSlice: number;
+        endSlice: number;
+        cachedStats: {
+            projectionPoints: Types_2.Point3[][];
+            projectionPointsImageIds: string[];
+        };
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+    // (undocumented)
+    metadata: {
+        cameraPosition?: Types_2.Point3;
+        cameraFocalPoint?: Types_2.Point3;
+        viewPlaneNormal?: Types_2.Point3;
+        viewUp?: Types_2.Point3;
+        annotationUID?: string;
+        FrameOfReferenceUID: string;
+        referencedImageId?: string;
+        toolName: string;
+        enabledElement: any;
+        volumeId: string;
+        spacingInNormal: number;
+    };
+}
+
+// @public (undocumented)
 export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -2442,6 +2597,31 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     _throttledCalculateCachedStats: any;
     // (undocumented)
     static toolName: string;
+}
+
+// @public (undocumented)
+interface RectangleROIThresholdAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        label: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+        };
+    };
+    // (undocumented)
+    metadata: {
+        cameraPosition?: Types_2.Point3;
+        cameraFocalPoint?: Types_2.Point3;
+        viewPlaneNormal?: Types_2.Point3;
+        viewUp?: Types_2.Point3;
+        annotationUID?: string;
+        FrameOfReferenceUID: string;
+        referencedImageId?: string;
+        toolName: string;
+        enabledElement: Types_2.IEnabledElement;
+        volumeId: string;
+    };
 }
 
 // @public (undocumented)
@@ -3151,6 +3331,18 @@ type ToolOptionsType = {
 // @public (undocumented)
 type ToolProps = SharedToolProp;
 
+declare namespace ToolSpecificAnnotationTypes {
+    export {
+        RectangleROIAnnotation,
+        ProbeAnnotation,
+        LengthAnnotation,
+        EllipticalROIAnnotation,
+        BidirectionalAnnotation,
+        RectangleROIThresholdAnnotation,
+        RectangleROIStartEndThresholdAnnotation
+    }
+}
+
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number]
 
@@ -3206,6 +3398,7 @@ declare namespace Types {
         Annotations,
         FrameOfReferenceSpecificAnnotations,
         AnnotationState,
+        ToolSpecificAnnotationTypes,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,

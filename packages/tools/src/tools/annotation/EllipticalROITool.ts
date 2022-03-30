@@ -39,7 +39,6 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor'
 import {
-  Annotation,
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -47,6 +46,8 @@ import {
   ToolProps,
   InteractionTypes,
 } from '../../types'
+import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes'
+
 import {
   AnnotationModifiedEventDetail,
   MouseDragEventType,
@@ -54,35 +55,6 @@ import {
 } from '../../types/EventTypes'
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds'
 import { pointInShapeCallback } from '../../utilities/'
-
-export interface EllipticalROIAnnotation extends Annotation {
-  data: {
-    handles: {
-      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3] // [bottom, top, left, right]
-      activeHandleIndex: number | null
-      textBox?: {
-        hasMoved: boolean
-        worldPosition: Types.Point3
-        worldBoundingBox: {
-          topLeft: Types.Point3
-          topRight: Types.Point3
-          bottomLeft: Types.Point3
-          bottomRight: Types.Point3
-        }
-      }
-    }
-    label: string
-    cachedStats?: {
-      [targetId: string]: {
-        Modality: string
-        area: number
-        max: number
-        mean: number
-        stdDev: number
-      }
-    }
-  }
-}
 
 /**
  * EllipticalROITool let you draw annotations that measures the statistics
