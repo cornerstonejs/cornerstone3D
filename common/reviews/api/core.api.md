@@ -6,10 +6,10 @@
 
 import type { mat4 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
-import type { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera';
-import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData';
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VtkObject } from 'vtk.js/Sources/interfaces';
-import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
+import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
 type ActorEntry = {

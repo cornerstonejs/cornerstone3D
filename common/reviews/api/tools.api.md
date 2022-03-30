@@ -5,10 +5,10 @@
 ```ts
 
 import type { mat4 } from 'gl-matrix';
-import type { vtkColorTransferFunction } from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
-import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData';
-import type { vtkPiecewiseFunction } from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
-import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
+import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
     export {
