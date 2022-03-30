@@ -4,7 +4,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula')
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
-  title: 'Cornerstone JS',
+  title: 'Cornerstone.js',
   tagline: 'Medical Imaging, Simplified',
   url: 'https://cornerstonejs.org',
   baseUrl: '/',
@@ -24,19 +24,20 @@ module.exports = {
       items: [
         {
           type: 'doc',
-          docId: 'introduction/overview',
+          docId: 'getting-started/overview',
           position: 'left',
           label: 'Docs',
         },
         {
-          to: 'api',
-          position: 'left',
-          label: 'API Reference',
-        },
-        {
-          to: 'examples',
+          type: 'doc',
+          docId: 'examples',
           position: 'left',
           label: 'Examples',
+        },
+        {
+          to: 'https://ohif.org/community/',
+          position: 'left',
+          label: 'Community',
         },
         {
           type: 'doc',
