@@ -76,6 +76,7 @@ export default class BrushTool extends BaseTool {
 
     const enabledElement = getEnabledElement(element)
     const { viewport, renderingEngine } = enabledElement
+    const { canvasToWorld } = viewport
 
     this._isDrawing = true
 
@@ -111,6 +112,21 @@ export default class BrushTool extends BaseTool {
     const segmentation = cache.getVolume(volumeId)
 
     // Todo: Used for drawing the svg only, we might not need it at all
+    const centerCanvas = canvasPos
+
+    const radius = this.configuration.brushSize
+
+    const bottomCanvas: Types.Point2 = [
+      centerCanvas[0],
+      centerCanvas[1] + radius,
+    ]
+    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius]
+    const leftCanvas: Types.Point2 = [centerCanvas[0] - radius, centerCanvas[1]]
+    const rightCanvas: Types.Point2 = [
+      centerCanvas[0] + radius,
+      centerCanvas[1],
+    ]
+
     const brushCursor = {
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
@@ -123,7 +139,12 @@ export default class BrushTool extends BaseTool {
       data: {
         invalidated: true,
         handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
+          points: [
+            canvasToWorld(bottomCanvas),
+            canvasToWorld(topCanvas),
+            canvasToWorld(leftCanvas),
+            canvasToWorld(rightCanvas),
+          ],
         },
         cachedStats: {},
       },
@@ -154,13 +175,21 @@ export default class BrushTool extends BaseTool {
     return true
   }
 
-  mouseMoveCallback = (evt: EventTypes.MouseDragEventType): void => {
+  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): void => {
+    this.updateCursor(evt)
+  }
+
+  private updateCursor(
+    evt:
+      | EventTypes.MouseMoveEventType
+      | EventTypes.MouseDragEventType
+      | EventTypes.MouseUpEventType
+  ) {
     const brushSize = this.configuration.brushSize
     const eventData = evt.detail
     const { element } = eventData
     const { currentPoints } = eventData
     const canvasPos = currentPoints.canvas
-    const worldPos = currentPoints.world
     const enabledElement = getEnabledElement(element)
     const { renderingEngine, viewport } = enabledElement
     const { canvasToWorld } = viewport
@@ -191,26 +220,6 @@ export default class BrushTool extends BaseTool {
     )
 
     const viewportIdsToRender = [viewport.id]
-    const brushCursor = {
-      metadata: {
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: '',
-        toolName: BrushTool.toolName,
-        segmentColor,
-      },
-      data: {
-        invalidated: true,
-        handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
-        },
-        cachedStats: {},
-      },
-    }
-
-    //////
-    const { data } = brushCursor
 
     const centerCanvas = canvasPos
 
@@ -229,14 +238,28 @@ export default class BrushTool extends BaseTool {
       centerCanvas[1],
     ]
 
-    data.handles.points = [
-      canvasToWorld(bottomCanvas),
-      canvasToWorld(topCanvas),
-      canvasToWorld(leftCanvas),
-      canvasToWorld(rightCanvas),
-    ]
-
-    data.invalidated = true
+    const brushCursor = {
+      metadata: {
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        referencedImageId: '',
+        toolName: BrushTool.toolName,
+        segmentColor,
+      },
+      data: {
+        invalidated: true,
+        handles: {
+          points: [
+            canvasToWorld(bottomCanvas),
+            canvasToWorld(topCanvas),
+            canvasToWorld(leftCanvas),
+            canvasToWorld(rightCanvas),
+          ],
+        },
+        cachedStats: {},
+      },
+    }
 
     this._hoverData = {
       brushCursor,
@@ -275,9 +298,8 @@ export default class BrushTool extends BaseTool {
     const { viewPlaneNormal, viewUp } = brushCursor.metadata
     const { data } = brushCursor
 
-    const centerCanvas = currentCanvasPoints
-
     // Center of circle in canvas Coordinates
+    const centerCanvas = currentCanvasPoints
 
     const radius = brushSize
 
@@ -342,6 +364,7 @@ export default class BrushTool extends BaseTool {
 
     this._editData = null
     this._isDrawing = false
+    this.updateCursor(evt)
 
     if (viewport instanceof StackViewport) {
       throw new Error('Not implemented yet')
