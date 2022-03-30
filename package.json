@@ -116,9 +116,8 @@
     }
   },
   "lint-staged": {
-    "src/**/*.{js,jsx,ts,tsx,json,css}": [
-      "prettier --write",
-      "eslint --fix"
+    "packages/**/*.{ts,js,jsx,tsx,json,md,css}": [
+      "prettier --write"
     ]
   },
   "browserslist": [
