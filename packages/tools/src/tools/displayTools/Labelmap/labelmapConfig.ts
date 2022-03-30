@@ -2,7 +2,6 @@ import { labelmapConfig } from '../../../types/LabelmapTypes'
 
 const defaultLabelmapConfig: labelmapConfig = {
   renderOutline: true,
-  outlineWidth: 3,
   outlineWidthActive: 3,
   outlineWidthInactive: 2,
   renderFill: true,
