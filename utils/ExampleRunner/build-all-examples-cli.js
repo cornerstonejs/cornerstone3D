@@ -14,8 +14,10 @@ var webpackConfigPath = path.join(__dirname, './webpack-all-examples-AUTOGENERAT
 
 var buildConfig = require('./template-multiexample-config.js')
 const buildExampleIndex = require('./build-example-index.js');
+const buildExampleMarkdown = require('./build-example-index-markdown.js');
 const rootPath = path.resolve(path.join(__dirname, '../..'))
 var distDir = path.join(rootPath, '/.static-examples')
+var docsDir = path.join(rootPath, '/packages/docs/docs/')
 
 if (!fs.existsSync(distDir)){
   console.log('Creating directory: ' + distDir);
@@ -104,6 +106,9 @@ if (configuration.examples) {
 
   const exampleIndexHTML = buildExampleIndex(exampleNames, examplePaths, validPath(rootPath))
   shell.ShellString(exampleIndexHTML).to(path.join(distDir, 'index.html'))
+
+  const exampleIndexMarkdown = buildExampleMarkdown(exampleNames, examplePaths, validPath(rootPath))
+  shell.ShellString(exampleIndexMarkdown).to(path.join(docsDir, 'examples.md'))
   //shell.cd(rootPath);
 
   if (options.build == true) {

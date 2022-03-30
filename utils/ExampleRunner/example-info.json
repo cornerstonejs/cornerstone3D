@@ -1,0 +1,118 @@
+{
+  "categories": {
+    "core-basic": {
+      "description": "Basic usage"
+    },
+    "tools-basic": {
+      "description": "Basic usage of Tools library"
+    },
+    "tools-segmentation": {
+      "description": "Segmentation usage"
+    },
+    "core-advanced": {
+      "description": "Advanced usage"
+    },
+    "tools-advanced": {
+      "description": "Advanced usage of Tools library"
+    }
+  },
+  "examplesByCategory":
+  {
+    "core-basic": {
+      "stackBasic": {
+        "name": "Basic Stack Viewport Usage",
+        "description": "Displays a single image in a Stack Viewport."
+      },
+      "stackAPI": {
+        "name": "Stack Viewport API",
+        "description": "Demonstrates how to interact with a Stack viewport (e.g. Set VOI Range, Next/Previous Images, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "stackEvents": {
+        "name": "Stack Viewport Events",
+        "description": "Demonstrates the Events that are fired during interaction with a Stack Viewport"
+      },
+      "stackCanvasToWorld": {
+        "name": "Stack Viewport Canvas-to-World",
+        "description": "Demonstrates how to obtain the coordinates in the 3D world from a coordinate on the canvas."
+      },
+      "volumeBasic": {
+        "name": "Basic Volume Viewport Usage",
+        "description": "Displays a set of DICOM images in a Volume Viewport."
+      },
+      "volumeAPI": {
+        "name": "Volume Viewport API",
+        "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "volumeEvents": {
+        "name": "Volume Viewport Events",
+        "description": "Demonstrates the Events that are fired during interaction with a Volume Viewport"
+      },
+      "multiVolumeAPI": {
+        "name": "Multiple Volumes in a Volume Viewport",
+        "description": "Demonstrates how to interact with a Volume viewport when using multiple volumes (e.g. for PET/CT fusion)."
+      },
+      "multiVolumeCanvasToWorld": {
+        "name": "Multiple Volume Canvas-to-World",
+        "description": "Demonstrates how to use the canvasToWorld API to find the intensity value of each volume on mouse hover"
+      },
+      "wadouri": {
+        "name": "Legacy DICOMweb (WADO-URI) Support",
+        "description": "Demonstrates how to support retrieval of entire Part 10 DICOM files directly via URL"
+      }
+    },
+    "core-advanced": {
+      "volumePriorityLoading": {
+        "name": "Prioritizing Slices during Volume Loading",
+        "description": "Demonstrates how to customize the slice loading order using the streaming-image volume loader"
+      }
+    },
+    "tools-basic": {
+      "basic": {
+        "name": "Basic Usage",
+        "description": "Demonstrates how to set up and use Tools with Cornerstone"
+      },
+      "multipleToolGroups": {
+        "name": "Multiple Tool Groups",
+        "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
+      },
+      "stackManipulationTools": {
+        "name": "Stack Manipulation Tools",
+        "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
+      },
+      "annotationToolModes": {
+        "name": "Annotation Tool Modes",
+        "description": "Demonstrates the various tool modes for annotation tools (active, passive, enabled, disabled)"
+      },
+      "stackAnnotationTools": {
+        "name": "Stack Annotation Tools",
+        "description": "Demonstrates usage of various annotation tools (Probe, Rectangle ROI, Elliptical ROI, Bidirectional measurements) on a Stack Viewport."
+      },
+      "volumeAnnotationTools": {
+        "name": "Volume Annotation Tools ",
+        "description": "Demonstrates annotation using the Length tool in a Volume Viewport (on axial, sagittal, and oblique views)"
+      },
+      "annotationSelectionAndLocking": {
+        "name": "Annotation Selection and Locking",
+        "description": "Demonstrates how to toggle the Locked and Selected states for Annotations"
+      },
+      "modifierKeys": {
+        "name": "Binding Tools with Modifier Keys",
+        "description": "Demonstrates how to bind a tool to a keyboard and mouse combination (e.g. shift+click, ctrl+click)"
+      }
+    },
+    "tools-advanced": {
+      "mipJumpToClick": {
+        "name": "Maximum Intensity Projection (MIP) - Jump to Click",
+        "description": "Demonstrates how to obtain the location of the maximum value along the ray in a MIP view, and then navigate another set of viewports to this location."
+      },
+      "sharedToolState": {
+        "name": "Shared Tool State",
+        "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."
+      },
+      "volumeViewportSynchronization": {
+        "name": "Volume Viewport Synchronization",
+        "description": "Demonstrates hwo to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
+      }
+    }
+  }
+}

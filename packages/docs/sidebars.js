@@ -4,29 +4,18 @@ module.exports = {
   docs: [
     {
       type: 'category',
-      label: 'Introduction',
-      link: {
-        type: 'generated-index',
-        title: 'Introduction',
-        description: 'An Introduction to cornerstone3D',
-      },
-      items: [
-        'introduction/overview',
-        'introduction/scope',
-        'introduction/related-libraries',
-      ],
-    },
-    {
-      type: 'category',
       label: 'Getting Started',
-      collapsed: true,
       link: {
         type: 'generated-index',
         title: 'Getting Started',
-        description:
-          'In this section you will find the basics of using cornerstone3D',
+        description: 'In this section you will find the basics of using Cornerstone',
       },
-      items: ['getting-started/installation', 'getting-started/live-examples'],
+      items: [
+        'getting-started/overview',
+        'getting-started/scope',
+        'getting-started/related-libraries',
+        'getting-started/installation'
+      ],
     },
     {
       type: 'category',
@@ -162,13 +151,14 @@ module.exports = {
     'faq',
     {
       type: 'link',
-      label: 'Test Coverage Report',
-      href: 'pathname:///test-coverage',
+      label: 'API Reference',
+      href: '/api'
     },
     {
       type: 'link',
-      label: 'Live Examples',
-      href: 'pathname:///examples',
+      label: 'Test Coverage Report',
+      href: 'pathname:///test-coverage',
     },
+    'examples'
   ],
 }
