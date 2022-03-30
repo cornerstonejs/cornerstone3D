@@ -20,7 +20,6 @@ viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MP
 
 ![](../../assets/viewports.png)
 
-
 </div>
 
 

@@ -1,14 +1,14 @@
 ---
-id: toolsStyle
-title: Tool Styles
+id: config
+title: Config
 ---
 
 In this section we will explain various ways you can change the tool styles. This
-includes various properties such as color when selected, highlighted, or locked;
+includes various properties such as `color` when `selected`, `highlighted`, or `locked`;
 textbox color, line dash style and thickness and more.
 
 ## Default Setting
-CornerstoneTools 3D comes with a default settings for tools styles that can be found here `packages/cornerstone-tools/src/stateManagement/annotationStyle.ts`
+`Cornerstone3DTools` comes with a default settings for tools styles that can be found in `packages/tools/src/stateManagement/annotations/config/annotationStyle.ts`
 
 ```js
 {
@@ -43,8 +43,8 @@ However, you can adjust each of the above parameters along with other styles tha
 ## Runtime settings vs Object settings
 There are two settings that can be applied to style tools.
 
-- **Runtime settings**: gets applied on ALL tools and can be accessed via
-- **Object settings**: gets applied on the tool (object) and can be obtained via
+- **Runtime settings**: gets applied on ALL tools
+- **Object settings**: gets applied on the tool (object)
 
 
 ### Hierarchical settings
@@ -52,7 +52,7 @@ It should be noted settings are hierarchical:
 
 `DefaultSettings <- RuntimeSettings <- ObjectSettings`
 
-This means that if there is a object-specific settings, csTools3D
+This means that if there is a object-specific settings, `cornerstone3DTools`
 will use that, if not, it will take a look inside `RuntimeSettings` and finally `DefaultSettings` will get applied.
 
 
@@ -66,7 +66,7 @@ const settings = Settings.getRuntimeSettings()
 
 // 2. Changing the active color of tools
 settings.set("tool.style.colorActive", "blue")
-// settings.set("tool.style.colorActive", "rgb(0, 0, 255)")
+settings.set("tool.style.colorActive", "rgb(0, 0, 255)")
 ```
 
 ## Tool-specific style
@@ -74,14 +74,12 @@ settings.set("tool.style.colorActive", "blue")
 ```js
 import { Settings } from '@cornerstone/core'
 
-1. Getting the annotation to be used to locate the tool settings
-
-// 2. Getting objectSettings for the desired tools
-const settings = Settings.getObjectSettings()
+// 1. Getting objectSettings for the desired tools
+const settings = Settings.getObjectSettings(annotation)
 
 // 3. Changing the active color of the tool
 settings.set("tool.style.colorActive", "blue")
-// settings.set("tool.style.colorActive", "rgb(0, 0, 255)")
+settings.set("tool.style.colorActive", "rgb(0, 0, 255)")
 ```
 
 
@@ -197,12 +195,3 @@ tool.style.textBox.link.lineWidthSelected
 tool.style.textBox.link.lineWidthSelectedActive
 tool.style.textBox.link.lineWidthSelectedPassive
 ```
-
-
-## Example Demo page
-You can open "Tool Display Configuration Example" in the demos to play with each of the settings.
-If you hover on the left side of the page the following control panel will appear that
-shows various configurations in effect. The source code for this demo
-can be found in `packages/demo/src/ExampleToolDisplayConfiguration.tsx`.
-
-![2021-08-15-21-55-02](../../../assets/toolStyles.png)
