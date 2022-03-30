@@ -24,7 +24,7 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^0.1.0",
+    "@cornerstonejs/core": "^0.3.0",
     "gl-matrix": "^3.3.0",
     "@kitware/vtk.js": "24.0.0"
   },
