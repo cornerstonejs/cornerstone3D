@@ -329,7 +329,7 @@ class RenderingEngine implements IRenderingEngine {
     this._throwIfDestroyed();
 
     // 1. Get the viewports' canvases
-    const viewports = this._getViewportsAsArray()
+    const viewports = this._getViewportsAsArray();
 
     const vtkDrivenViewports = [];
     const customRenderingViewports = [];
