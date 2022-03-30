@@ -21,7 +21,6 @@ import TestUtils from './ExampleTestUtils'
 import TestUtilsVolume from './ExampleTestUtilsVolume'
 import CalibrationExample from './ExampleCalibration'
 import { resetUseCPURendering } from '@cornerstonejs/core'
-import SegmentationRender from './ExampleSegmentationRender'
 import RenderToCanvasExample from './ExampleRenderToCanvas'
 import CrosshairsExample from './ExampleCrosshairs'
 import ApplyPresetsExample from './ExampleApplyPreset'
@@ -271,11 +270,6 @@ function AppRouter() {
       children: <CalibrationExample />,
     })
 
-  const segmentationRender = () =>
-    Example({
-      children: <SegmentationRender />,
-    })
-
   const stackViewport = () =>
     Example({
       children: <StackViewportExample />,
@@ -389,7 +383,6 @@ function AppRouter() {
         <Route exact path="/testUtils/" render={Test} />
         <Route exact path="/testUtilsVolume/" render={TestVolume} />
         <Route exact path="/calibratedImages/" render={calibratedImages} />
-        <Route exact path="/segmentationRender/" render={segmentationRender} />
         <Route exact path="/crosshairs/" render={crosshairs} />
         <Route exact path="/applyPresets/" render={applyPresets} />
         <Route exact path="/cursor/" render={cursorExample} />

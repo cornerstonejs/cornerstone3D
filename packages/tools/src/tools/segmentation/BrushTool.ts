@@ -95,9 +95,8 @@ export default class BrushTool extends BaseTool {
     const { segmentationRepresentationUID, segmentationId, type } =
       activeSegmentationRepresentation
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupId)
-    const segmentsLocked =
-      segmentLocking.getSegmentsLockedForSegmentation(segmentationId)
+      segmentIndexController.getActiveSegmentIndex(segmentationId)
+    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
@@ -208,16 +207,18 @@ export default class BrushTool extends BaseTool {
       return
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
+    const { segmentationRepresentationUID, segmentationId } =
       activeSegmentationRepresentation
     const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(toolGroupId)
+      segmentIndexController.getActiveSegmentIndex(segmentationId)
 
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex
     )
+
+    debugger
 
     const viewportIdsToRender = [viewport.id]
 
@@ -441,6 +442,8 @@ export default class BrushTool extends BaseTool {
 
     // Todo: rectangle colro based on segment index
     const toolMetadata = brushCursor.metadata
+
+    debugger
     const annotationUID = toolMetadata.brushCursorUID
 
     const data = brushCursor.data

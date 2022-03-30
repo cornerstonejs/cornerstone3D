@@ -94,7 +94,7 @@ addDropdownToToolbar(
     defaultOption: '1',
   },
   (segmentIndex) => {
-    segmentation.segmentIndex.setActiveSegmentIndexForSegmentation(
+    segmentation.segmentIndex.setActiveSegmentIndex(
       segmentationId,
       segmentIndex
     )
@@ -104,11 +104,7 @@ addDropdownToToolbar(
 addToggleButtonToToolbar(
   'Toggle Locked Segment 1',
   (evt, toggle) => {
-    segmentation.segmentLocking.setSegmentIndexLockedForSegmentation(
-      segmentationId,
-      1,
-      toggle
-    )
+    segmentation.segmentLocking.setSegmentIndexLocked(segmentationId, 1, toggle)
   },
   false
 )

@@ -211,34 +211,6 @@ function setGlobalConfig(
 }
 
 /**
- * Get the active segmentation representation for a given tool group by searching the
- * segmentation state of the tool group and returning the segmentation data with
- * the given UID.
- *
- * @param toolGroupId - The Id of the tool group that the segmentation
- * data belongs to.
- * @returns The active segmentation data for the tool group.
- */
-function getActiveSegmentationRepresentation(
-  toolGroupId: string
-): ToolGroupSpecificRepresentation | undefined {
-  const segmentationStateManager = getDefaultSegmentationStateManager()
-
-  const toolGroupSegmentationRepresentations =
-    segmentationStateManager.getSegmentationRepresentations(toolGroupId)
-
-  if (toolGroupSegmentationRepresentations.length === 0) {
-    return
-  }
-
-  const activeRepresentation = toolGroupSegmentationRepresentations.find(
-    (representation) => representation.active
-  )
-
-  return activeRepresentation
-}
-
-/**
  * Get the segmentation data object for a given tool group and
  * segmentation data UID. It searches all the toolGroup specific segmentation
  * data objects and returns the first one that matches the UID.

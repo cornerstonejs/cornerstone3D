@@ -9,6 +9,7 @@ import {
 } from '@cornerstonejs/core'
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState'
+import * as SegmentationConfig from '../../../stateManagement/segmentation/segmentationConfig'
 import Representations from '../../../enums/SegmentationRepresentations'
 import { getToolGroup } from '../../../store/ToolGroupManager'
 import type { labelmapConfig } from '../../../types/LabelmapTypes'
@@ -82,14 +83,14 @@ async function addSegmentationRepresentation(
     // the first one
     const suppressEvents = true
     const currentToolGroupConfig =
-      SegmentationState.getToolGroupSpecificConfig(toolGroupId)
+      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId)
 
     const mergedConfig = deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
     )
 
-    SegmentationState.setToolGroupSpecificConfig(
+    SegmentationConfig.setToolGroupSpecificConfig(
       toolGroupId,
       {
         renderInactiveSegmentations:
