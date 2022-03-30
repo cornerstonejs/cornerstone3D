@@ -146,7 +146,11 @@ module.exports = {
         description: 'How to contribute to cornerstone3D',
       },
       collapsed: true,
-      items: ['contribute/pull-request', 'contribute/tests'],
+      items: [
+        'contribute/pull-request',
+        'contribute/tests',
+        'contribute/documentation',
+      ],
     },
     'migrationGuides',
     'faq',
@@ -160,6 +164,6 @@ module.exports = {
       label: 'Test Coverage Report',
       href: 'pathname:///test-coverage',
     },
-    // 'examples',
+    'examples',
   ],
 };

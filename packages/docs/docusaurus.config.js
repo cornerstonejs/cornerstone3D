@@ -28,12 +28,12 @@ module.exports = {
           position: 'left',
           label: 'Docs',
         },
-        // {
-        //   type: 'doc',
-        //   docId: 'examples',
-        //   position: 'left',
-        //   label: 'Examples',
-        // },
+        {
+          type: 'doc',
+          docId: 'examples',
+          position: 'left',
+          label: 'Examples',
+        },
         {
           to: 'https://ohif.org/community/',
           position: 'left',
