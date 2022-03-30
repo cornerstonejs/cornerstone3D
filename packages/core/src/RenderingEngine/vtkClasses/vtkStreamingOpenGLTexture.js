@@ -49,7 +49,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return
     }
 
-    model.openGLRenderWindow.activateTexture(publicAPI)
+    model._openGLRenderWindow.activateTexture(publicAPI)
     publicAPI.createTexture()
     publicAPI.bind()
 

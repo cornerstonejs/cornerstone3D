@@ -19335,9 +19335,10 @@ vscode-textmate@5.2.0:
   resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-5.2.0.tgz#01f01760a391e8222fe4f33fbccbd1ad71aed74e"
   integrity sha512-Uw5ooOQxRASHgu6C7GVvUxisKXfSgW4oFlO+aa+PAkgmH89O3CXxEEzNRNtHSqtXFTl0nAC1uYj0GMSH27uwtQ==
 
-"vtk.js@git+https://github.com/jadh4v/vtk-js.git#image-volume-half-voxel":
-  version "0.0.0-semantically-release"
-  resolved "git+https://github.com/jadh4v/vtk-js.git#4d9026b7fdf398d5a268c6ee7330c8da60b6bdf5"
+vtk.js@24.0.0:
+  version "24.0.0"
+  resolved "https://registry.yarnpkg.com/vtk.js/-/vtk.js-24.0.0.tgz#e75a4d1fed62363f8e87ea6371eeec81a4f261e0"
+  integrity sha512-zuTgQMbreoT1ho7XRYio38phek/8sgeymd5fO9vzZaAG0lNDJkar77EaWJkvgU54Dupff12G+nfRo7ynyEiByA==
   dependencies:
     "@babel/runtime" "7.16.7"
     commander "8.3.0"
