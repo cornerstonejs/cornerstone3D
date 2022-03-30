@@ -87,7 +87,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         }
       }
 
-      model.opacityTexture.releaseGraphicsResources(model.openGLRenderWindow)
+      model.opacityTexture.releaseGraphicsResources(model._openGLRenderWindow)
       model.opacityTexture.setMinificationFilter(Filter.LINEAR)
       model.opacityTexture.setMagnificationFilter(Filter.LINEAR)
 
@@ -96,7 +96,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // visible artifacts. High values of opacity quickly terminate without
       // artifacts.
       if (
-        model.openGLRenderWindow.getWebgl2() ||
+        model._openGLRenderWindow.getWebgl2() ||
         (model.context.getExtension('OES_texture_float') &&
           model.context.getExtension('OES_texture_float_linear'))
       ) {
@@ -142,7 +142,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         }
       }
 
-      model.colorTexture.releaseGraphicsResources(model.openGLRenderWindow)
+      model.colorTexture.releaseGraphicsResources(model._openGLRenderWindow)
       model.colorTexture.setMinificationFilter(Filter.LINEAR)
       model.colorTexture.setMagnificationFilter(Filter.LINEAR)
 
@@ -186,7 +186,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       }
 
       if (shouldReset) {
-        model.scalarTexture.releaseGraphicsResources(model.openGLRenderWindow)
+        model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow)
         model.scalarTexture.resetFormatAndType()
 
         model.scalarTexture.create3DFilterableFromRaw(
@@ -375,7 +375,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     program.setUniform3f('vVCToIJK', vctoijk[0], vctoijk[1], vctoijk[2])
     program.setUniform3i('volumeDimensions', dims[0], dims[1], dims[2])
 
-    if (!model.openGLRenderWindow.getWebgl2()) {
+    if (!model._openGLRenderWindow.getWebgl2()) {
       const volInfo = model.scalarTexture.getVolumeInfo()
       program.setUniformf('texWidth', model.scalarTexture.getWidth())
       program.setUniformf('texHeight', model.scalarTexture.getHeight())
@@ -517,7 +517,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
   //     return [model._smallViewportWidth, model._smallViewportHeight]
   //   }
 
-  //   return model.openGLRenderWindow.getFramebufferSize()
+  //   return model._openGLRenderWindow.getFramebufferSize()
   // }
   publicAPI.getRenderTargetSize = () => {
     if (model._useSmallViewport) {
