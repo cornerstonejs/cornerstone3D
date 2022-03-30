@@ -325,7 +325,7 @@ describe('Segmentation Index Controller --', () => {
 
           const segmentationRepresentation =
             segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-              TOOL_GROUP_ID
+              toolGroupId
             )
 
           segmentation.segmentIndex.setActiveSegmentIndex(
@@ -491,7 +491,7 @@ describe('Segmentation Index Controller --', () => {
 
           const segmentationRepresentation =
             segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-              TOOL_GROUP_ID
+              toolGroupId
             )
 
           segmentation.segmentIndex.setActiveSegmentIndex(

@@ -474,7 +474,7 @@ describe('Segmentation Tools --', () => {
 
             csToolsUtils.segmentation
               .createLabelmapVolumeForViewport({
-                viewportId: vp.id,
+                viewportId: vp1.id,
                 renderingEngineId: this.renderingEngine.id,
               })
               .then((segmentationId) => {
