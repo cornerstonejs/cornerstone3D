@@ -336,7 +336,7 @@ async function run() {
   segmentationRepresentationByUID = segmentationRepresentationByUIDs[0]
 
   // Render the image
-  renderingEngine.render()
+  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3])
 }
 
 run()

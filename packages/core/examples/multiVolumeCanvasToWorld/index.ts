@@ -134,7 +134,7 @@ async function run() {
   ])
 
   // Render the image
-  renderingEngine.render()
+  viewport.render()
 
   function getValue(volume, worldPos) {
     const { dimensions, scalarData, imageData } = volume

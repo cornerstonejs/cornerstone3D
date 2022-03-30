@@ -250,7 +250,7 @@ async function run() {
   activeSegmentationRepresentationUID = segmentationRepresentationUID
 
   // Render the image
-  renderingEngine.render()
+  renderingEngine.renderViewports([viewportId])
 }
 
 run()

@@ -187,7 +187,7 @@ async function run() {
   toolGroup2.addViewport(viewportIds[2], renderingEngineId)
 
   // Render the image
-  renderingEngine.render()
+  renderingEngine.renderViewports(viewportIds)
 }
 
 run()

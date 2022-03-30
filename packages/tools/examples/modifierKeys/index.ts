@@ -145,7 +145,7 @@ async function run() {
   viewport.setStack(stack)
 
   // Render the image
-  renderingEngine.render()
+  viewport.render()
 }
 
 run()

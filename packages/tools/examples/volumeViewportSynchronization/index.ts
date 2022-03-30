@@ -253,7 +253,7 @@ async function run() {
   setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)
 
   // Render the image
-  renderingEngine.render()
+  renderingEngine.renderViewports(viewportIds)
 }
 
 run()

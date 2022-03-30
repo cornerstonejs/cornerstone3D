@@ -86,7 +86,7 @@ async function run() {
   viewport.setVolumes([{ volumeId }])
 
   // Render the image
-  renderingEngine.render()
+  viewport.render()
 }
 
 run()

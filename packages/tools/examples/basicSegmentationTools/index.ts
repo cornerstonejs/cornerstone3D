@@ -275,7 +275,7 @@ async function run() {
   ])
 
   // Render the image
-  renderingEngine.render()
+  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3])
 }
 
 run()

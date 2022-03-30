@@ -35,6 +35,7 @@ const segmentationId1 = 'SEGMENTATION_ID_1'
 const segmentationId2 = 'SEGMENTATION_ID_2'
 const toolGroupId = 'MY_ TOOL_GROUP_ID'
 const renderingEngineId = 'myRenderingEngine'
+const viewportId = 'CT_AXIAL_STACK'
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -60,7 +61,7 @@ function setConfigValue(property, value) {
 
   const renderingEngine = getRenderingEngine(renderingEngineId)
 
-  renderingEngine.render()
+  renderingEngine.renderViewports([viewportId])
 }
 
 addToggleButtonToToolbar(
@@ -73,7 +74,7 @@ addToggleButtonToToolbar(
 
     const renderingEngine = getRenderingEngine(renderingEngineId)
 
-    renderingEngine.render()
+    renderingEngine.renderViewports([viewportId])
   },
   true
 )
@@ -247,8 +248,6 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId)
 
   // Create the viewports
-  const viewportId = 'CT_AXIAL_STACK'
-
   const viewportInput = {
     viewportId,
     type: ViewportType.ORTHOGRAPHIC,
@@ -282,7 +281,7 @@ async function run() {
   ])
 
   // Render the image
-  renderingEngine.render()
+  renderingEngine.renderViewports([viewportId])
 }
 
 run()
