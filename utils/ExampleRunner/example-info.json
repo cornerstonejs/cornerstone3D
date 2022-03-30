@@ -1,19 +1,19 @@
 {
   "categories": {
     "core-basic": {
-      "description": "Basic examples of Core Usage (e.g. rendering, image loading)"
-    },
-    "core-advanced": {
-      "description": "Advanced Core usage"
+      "description": "Basic usage"
     },
     "tools-basic": {
-      "description": "Basic examples of Tools usage"
+      "description": "Basic usage of Tools library"
     },
     "tools-segmentation": {
       "description": "Segmentation usage"
     },
+    "core-advanced": {
+      "description": "Advanced usage"
+    },
     "tools-advanced": {
-      "description": "Advanced Tools usage"
+      "description": "Advanced usage of Tools library"
     }
   },
   "examplesByCategory":
@@ -60,62 +60,62 @@
         "description": "Demonstrates how to use the canvasToWorld API to find the intensity value of each volume on mouse hover"
       },
       "wadouri": {
-        "name": "",
-        "description": ""
+        "name": "Legacy DICOMweb (WADO-URI) Support",
+        "description": "Demonstrates how to support retrieval of entire Part 10 DICOM files directly via URL"
       }
     },
     "core-advanced": {
       "volumePriorityLoading": {
-        "name": "",
-        "description": ""
+        "name": "Prioritizing Slices during Volume Loading",
+        "description": "Demonstrates how to customize the slice loading order using the streaming-image volume loader"
       }
     },
     "tools-basic": {
       "basic": {
-        "name": "",
-        "description": ""
+        "name": "Basic Usage",
+        "description": "Demonstrates how to set up and use Tools with Cornerstone"
+      },
+      "multipleToolGroups": {
+        "name": "Multiple Tool Groups",
+        "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
       },
       "stackManipulationTools": {
-        "name": "",
-        "description": ""
-      },
-      "stackAnnotationTools": {
-        "name": "",
-        "description": ""
-      },
-      "volumeAnnotationTools": {
-        "name": "",
-        "description": ""
-      },
-      "annotationSelectionAndLocking": {
-        "name": "",
-        "description": ""
+        "name": "Stack Manipulation Tools",
+        "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
       },
       "annotationToolModes": {
-        "name": "",
-        "description": ""
+        "name": "Annotation Tool Modes",
+        "description": "Demonstrates the various tool modes for annotation tools (active, passive, enabled, disabled)"
+      },
+      "stackAnnotationTools": {
+        "name": "Stack Annotation Tools",
+        "description": "Demonstrates usage of various annotation tools (Probe, Rectangle ROI, Elliptical ROI, Bidirectional measurements) on a Stack Viewport."
+      },
+      "volumeAnnotationTools": {
+        "name": "Volume Annotation Tools ",
+        "description": "Demonstrates annotation using the Length tool in a Volume Viewport (on axial, sagittal, and oblique views)"
+      },
+      "annotationSelectionAndLocking": {
+        "name": "Annotation Selection and Locking",
+        "description": "Demonstrates how to toggle the Locked and Selected states for Annotations"
       },
       "modifierKeys": {
-        "name": "",
-        "description": ""
+        "name": "Binding Tools with Modifier Keys",
+        "description": "Demonstrates how to bind a tool to a keyboard and mouse combination (e.g. shift+click, ctrl+click)"
       }
     },
     "tools-advanced": {
-      "multipleToolGroups": {
-        "name": "",
-        "description": ""
-      },
       "mipJumpToClick": {
-        "name": "",
-        "description": ""
+        "name": "Maximum Intensity Projection (MIP) - Jump to Click",
+        "description": "Demonstrates how to obtain the location of the maximum value along the ray in a MIP view, and then navigate another set of viewports to this location."
       },
       "sharedToolState": {
-        "name": "",
-        "description": ""
+        "name": "Shared Tool State",
+        "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."
       },
       "volumeViewportSynchronization": {
-        "name": "",
-        "description": ""
+        "name": "Volume Viewport Synchronization",
+        "description": "Demonstrates hwo to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
       }
     }
   }
