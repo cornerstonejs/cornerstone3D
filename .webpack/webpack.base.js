@@ -9,8 +9,6 @@ const CopyPlugin = require('copy-webpack-plugin');
 const PROJECT_ROOT = path.join(__dirname, '../')
 const SRC_PATH = path.join(PROJECT_ROOT, './src')
 const NODE_ENV = process.env.NODE_ENV;
-const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
-    .rules;
 const excludeNodeModulesExcept = require('./excludeNodeModulesExcept.js');
 
 const exclude = excludeNodeModulesExcept([]);

@@ -1,5 +1,5 @@
 import { VolumeActor } from './../../types/IActor'
-import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume'
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume'
 import { loadVolume } from '../../volumeLoader'
 //@ts-ignore
 import createVolumeMapper from './createVolumeMapper'

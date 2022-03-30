@@ -1,5 +1,5 @@
-import macro from 'vtk.js/Sources/macros'
-import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow'
+import macro from '@kitware/vtk.js/macros'
+import vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow'
 import vtkStreamingOpenGLViewNodeFactory from './vtkStreamingOpenGLViewNodeFactory'
 
 /**

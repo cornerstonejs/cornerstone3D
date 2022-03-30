@@ -1,8 +1,6 @@
 const path = require('path')
 const webpack = require('webpack')
 const autoprefixer = require('autoprefixer')
-const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
-  .rules
 // Plugins
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
@@ -14,13 +12,6 @@ const NODE_ENV = process.NODE_ENV
 const PROJECT_ROOT = path.join(__dirname, '..', 'packages/demo')
 const ENTRY_DEMO = path.join(PROJECT_ROOT, 'src/index.tsx')
 const OUT_PATH = path.join(__dirname, '..', 'packages', 'demo', 'dist')
-
-// Need to add this if you want to yarn link locally.
-// Add this additional call so we can yarn link vtk.js
-const shaderLoader = {
-  test: /\.glsl$/i,
-  loader: 'shader-loader',
-}
 
 const csRenderBasePath = path.resolve('../core/src/index')
 const csToolsBasePath = path.resolve('../tools/src/index')
@@ -95,9 +86,7 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
             },
           ],
         },
-      ].concat(vtkRules),
-      // Only enable this with a linked version of VTK
-      //.concat(shaderLoader),
+      ]
     },
     resolve: {
       modules: [path.resolve(__dirname, './../node_modules')],

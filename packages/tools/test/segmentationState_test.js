@@ -234,8 +234,14 @@ describe('Segmentation State -- ', () => {
         expect(Object.values(stateConfig)).toEqual(
           Object.values(representationConfig)
         )
-        done()
       })
+
+      eventTarget.addEventListener(
+        Events.SEGMENTATION_REPRESENTATION_MODIFIED,
+        (evt) => {
+          done()
+        }
+      )
 
       this.segToolGroup.addViewport(vp.id, this.renderingEngine.id)
 

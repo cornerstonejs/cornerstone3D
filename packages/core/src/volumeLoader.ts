@@ -1,6 +1,8 @@
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
-import type { vtkImageData as vtkImageDataType } from 'vtk.js/Sources/Common/DataModel/ImageData'
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
+import '@kitware/vtk.js/Rendering/Profiles/Volume'
+
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData'
+import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData'
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray'
 import cloneDeep from 'lodash.clonedeep'
 
 import { ImageVolume } from './cache/classes/ImageVolume'

@@ -1257,10 +1257,10 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
-"@cornerstonejs/calculate-suv@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/calculate-suv/-/calculate-suv-1.0.1.tgz#03981a3cedeb58c68b2103b682e0c66d058f814a"
-  integrity sha512-N3pzkaSAAbO0UEijOJQoLuQXwtUYVIChpAkgvzOvj9JOreV2gE5D9ogOb7ueeiPN3jMYMYxU390DQ9A1YiuEzQ==
+"@cornerstonejs/calculate-suv@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/calculate-suv/-/calculate-suv-1.0.2.tgz#c97ddba5ce3c0ee85798bb40df025b7d07075aea"
+  integrity sha512-xkd+NN+pbpz6bKT/lCRu/SRQd4R3GIDPx+QHMhngm9TN2JCRPjV7jigUC8csJb1mqhFbtW1kmBBoQE2CRX5IhA==
 
 "@cornerstonejs/codec-charls@^0.1.1":
   version "0.1.1"
@@ -1852,6 +1852,27 @@
   dependencies:
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
+
+"@kitware/vtk.js@24.0.0":
+  version "24.0.0"
+  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-24.0.0.tgz#6dbb24f97ec7ebbaa80627d1c0a33e0c81a66d02"
+  integrity sha512-DK3EZL9y72ibrfB0DNIlYHJEbr1MGiNTwVejILMa05YpDy2FQGzu80hgCR1hffYsYdher9sOhSkw/QbjqbWmNQ==
+  dependencies:
+    "@babel/runtime" "7.16.7"
+    commander "8.3.0"
+    d3-scale "4.0.2"
+    gl-matrix "3.4.3"
+    globalthis "1.0.2"
+    jszip "3.7.1"
+    pako "2.0.4"
+    seedrandom "3.0.5"
+    shader-loader "1.3.1"
+    shelljs "0.8.5"
+    spark-md5 "^3.0.2"
+    stream-browserify "3.0.0"
+    webworker-promise "0.4.4"
+    worker-loader "3.0.8"
+    xmlbuilder2 "3.0.2"
 
 "@lerna/add@4.0.0":
   version "4.0.0"
@@ -19334,27 +19355,6 @@ vscode-textmate@5.2.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/vscode-textmate/-/vscode-textmate-5.2.0.tgz#01f01760a391e8222fe4f33fbccbd1ad71aed74e"
   integrity sha512-Uw5ooOQxRASHgu6C7GVvUxisKXfSgW4oFlO+aa+PAkgmH89O3CXxEEzNRNtHSqtXFTl0nAC1uYj0GMSH27uwtQ==
-
-vtk.js@24.0.0:
-  version "24.0.0"
-  resolved "https://registry.yarnpkg.com/vtk.js/-/vtk.js-24.0.0.tgz#e75a4d1fed62363f8e87ea6371eeec81a4f261e0"
-  integrity sha512-zuTgQMbreoT1ho7XRYio38phek/8sgeymd5fO9vzZaAG0lNDJkar77EaWJkvgU54Dupff12G+nfRo7ynyEiByA==
-  dependencies:
-    "@babel/runtime" "7.16.7"
-    commander "8.3.0"
-    d3-scale "4.0.2"
-    gl-matrix "3.4.3"
-    globalthis "1.0.2"
-    jszip "3.7.1"
-    pako "2.0.4"
-    seedrandom "3.0.5"
-    shader-loader "1.3.1"
-    shelljs "0.8.5"
-    spark-md5 "^3.0.2"
-    stream-browserify "3.0.0"
-    webworker-promise "0.4.4"
-    worker-loader "3.0.8"
-    xmlbuilder2 "3.0.2"
 
 wait-on@^6.0.1:
   version "6.0.1"

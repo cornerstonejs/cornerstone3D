@@ -1,4 +1,4 @@
-import vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import vtkMath from '@kitware/vtk.js/Common/Core/Math'
 import { utilities as csUtils } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
 import { VolumeViewport } from '@cornerstonejs/core'

@@ -6,8 +6,8 @@
 
 import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { mat4 } from 'gl-matrix';
-import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData';
-import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public
 type ActorEntry = {

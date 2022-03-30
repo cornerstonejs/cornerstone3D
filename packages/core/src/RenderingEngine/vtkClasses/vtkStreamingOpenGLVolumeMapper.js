@@ -1,11 +1,11 @@
 import { mat3, mat4, vec3 } from 'gl-matrix'
-import macro from 'vtk.js/Sources/macros'
-import vtkOpenGLVolumeMapper from 'vtk.js/Sources/Rendering/OpenGL/VolumeMapper'
-import { Filter } from 'vtk.js/Sources/Rendering/OpenGL/Texture/Constants'
-import { VtkDataTypes } from 'vtk.js/Sources/Common/Core/DataArray/Constants'
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
-import { Representation } from 'vtk.js/Sources/Rendering/Core/Property/Constants'
-import { BlendMode } from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
+import macro from '@kitware/vtk.js/macros'
+import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper'
+import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants'
+import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants'
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray'
+import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants'
+import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants'
 
 const { vtkWarningMacro } = macro
 /**
