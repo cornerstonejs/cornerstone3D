@@ -12,9 +12,9 @@ import * as csTools3d from '@cornerstonejs/tools'
 import _ from 'lodash'
 import getInterleavedFrames from './helpers/getInterleavedFrames'
 
-import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction'
-import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction'
-import vtkColorMaps from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction/ColorMaps'
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction'
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction'
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps'
 
 import getImageIds from './helpers/getImageIds'
 import ViewportGrid from './components/ViewportGrid'

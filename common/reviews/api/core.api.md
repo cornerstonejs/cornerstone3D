@@ -8,7 +8,7 @@ import type { mat4 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { VtkObject } from 'vtk.js/Sources/interfaces';
+import type { VtkObject } from '@kitware/vtk.js/interfaces';
 import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
