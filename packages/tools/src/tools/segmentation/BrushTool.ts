@@ -27,15 +27,8 @@ import {
 export default class BrushTool extends BaseTool {
   static toolName = 'Brush'
   private _editData: {
-    brushCursor: any
-    segmentation: any
-    segmentationId: string
-    segmentIndex: number
-    segmentationRepresentationUID: string
-    segmentsLocked: number[]
-    segmentColor: [number, number, number, number]
-    viewportIdsToRender: string[]
-    centerCanvas?: Array<number>
+    segmentation: any //
+    segmentsLocked: number[] //
   } | null
   private _hoverData: {
     brushCursor: any
@@ -151,16 +144,11 @@ export default class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id]
 
+    // this.updateCursor()
+
     this._editData = {
-      brushCursor,
       segmentation,
-      centerCanvas: canvasPos,
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
       segmentsLocked,
-      segmentColor,
-      viewportIdsToRender,
     }
 
     this._activateDraw(element)
@@ -212,13 +200,12 @@ export default class BrushTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId)
 
+    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId)
     const segmentColor = segmentationColor.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
       segmentIndex
     )
-
-    debugger
 
     const viewportIdsToRender = [viewport.id]
 
@@ -286,16 +273,15 @@ export default class BrushTool extends BaseTool {
     const { renderingEngine, viewport } = enabledElement
     const { canvasToWorld } = viewport
 
-    //////
+    const { segmentation, segmentsLocked } = this._editData
     const {
-      segmentation,
       segmentIndex,
-      segmentsLocked,
       segmentationId,
       segmentationRepresentationUID,
       brushCursor,
       viewportIdsToRender,
-    } = this._editData
+    } = this._hoverData
+
     const { viewPlaneNormal, viewUp } = brushCursor.metadata
     const { data } = brushCursor
 
@@ -345,14 +331,14 @@ export default class BrushTool extends BaseTool {
     const eventData = evt.detail
     const { element } = eventData
 
+    const { segmentation, segmentsLocked } = this._editData
     const {
-      brushCursor,
-      segmentation,
       segmentIndex,
-      segmentsLocked,
       segmentationId,
       segmentationRepresentationUID,
-    } = this._editData
+      brushCursor,
+    } = this._hoverData
+
     const { data } = brushCursor
     const { viewPlaneNormal, viewUp } = brushCursor.metadata
 
@@ -414,36 +400,20 @@ export default class BrushTool extends BaseTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
   ): void {
-    if (!this._editData && !this._hoverData) {
+    if (!this._hoverData) {
       return
     }
     const { viewport } = enabledElement
 
-    let viewportIdsToRender
-    let brushCursor
+    const viewportIdsToRender = this._hoverData.viewportIdsToRender
 
-    if (this._isDrawing) {
-      viewportIdsToRender = this._editData.viewportIdsToRender
-
-      if (!viewportIdsToRender.includes(viewport.id)) {
-        return
-      }
-
-      brushCursor = this._editData.brushCursor
-    } else {
-      viewportIdsToRender = this._hoverData.viewportIdsToRender
-
-      if (!viewportIdsToRender.includes(viewport.id)) {
-        return
-      }
-
-      brushCursor = this._hoverData.brushCursor
+    if (!viewportIdsToRender.includes(viewport.id)) {
+      return
     }
 
-    // Todo: rectangle colro based on segment index
-    const toolMetadata = brushCursor.metadata
+    const brushCursor = this._hoverData.brushCursor
 
-    debugger
+    const toolMetadata = brushCursor.metadata
     const annotationUID = toolMetadata.brushCursorUID
 
     const data = brushCursor.data

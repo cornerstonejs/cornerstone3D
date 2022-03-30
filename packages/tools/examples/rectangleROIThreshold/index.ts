@@ -102,8 +102,6 @@ addButtonToToolbar('Execute threshold', () => {
     RectangleRoiThresholdTool.toolName
   )
 
-  debugger
-
   if (!selectedAnnotations) {
     throw new Error('No annotation selected ')
   }
@@ -174,10 +172,7 @@ addSliderToToolbar(
   },
   // Update label on change
   (value, label) => {
-    debugger
     label.innerText = `Upper Threshold: ${value}`
-
-    debugger
   }
 )
 
