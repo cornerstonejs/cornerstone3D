@@ -117,6 +117,7 @@
   },
   "lint-staged": {
     "packages/**/*.{ts,js,jsx,tsx,json,md,css}": [
+      "eslint --fix",
       "prettier --write"
     ]
   },

@@ -1329,9 +1329,9 @@ export default RenderingEngine;
 
 // debugging utils for offScreen canvas
 function _TEMPDownloadURI(uri) {
-  const link = document.createElement('a')
+  const link = document.createElement('a');
 
-  link.download = 'viewport.png'
+  link.download = 'viewport.png';
   link.href = uri;
   document.body.appendChild(link);
   link.click();
