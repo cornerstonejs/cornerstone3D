@@ -23,8 +23,8 @@ import { Events } from '../enums'
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters'
 import { resetElementCursor, hideElementCursor } from '../cursors/elementCursor'
 import { math } from '../utilities'
-import vtkMath from 'vtk.js/Sources/Common/Core/Math'
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
+import vtkMath from '@kitware/vtk.js/Common/Core/Math'
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder'
 import * as lineSegment from '../utilities/math/line'
 import {
   Annotation,

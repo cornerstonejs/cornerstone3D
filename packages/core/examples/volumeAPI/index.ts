@@ -16,7 +16,7 @@ import {
   addSliderToToolbar,
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers'
-import vtkConstants from 'vtk.js/Sources/Rendering/Core/VolumeMapper/Constants'
+import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants'
 
 const { ViewportType } = Enums
 const { BlendMode } = vtkConstants

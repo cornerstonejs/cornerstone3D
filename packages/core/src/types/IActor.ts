@@ -1,4 +1,4 @@
-import type { vtkVolume } from 'vtk.js/Sources/Rendering/Core/Volume'
+import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume'
 
 /** volume actor which is vtkVolume */
 export type VolumeActor = vtkVolume

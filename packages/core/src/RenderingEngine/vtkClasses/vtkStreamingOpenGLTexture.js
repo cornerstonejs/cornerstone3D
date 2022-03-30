@@ -1,5 +1,5 @@
-import macro from 'vtk.js/Sources/macros'
-import vtkOpenGLTexture from 'vtk.js/Sources/Rendering/OpenGL/Texture'
+import macro from '@kitware/vtk.js/macros'
+import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture'
 
 /**
  * vtkStreamingOpenGLTexture - A dervied class of the core vtkOpenGLTexture.

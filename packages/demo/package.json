@@ -27,7 +27,7 @@
     "react-dom": "17.0.2",
     "react-resize-detector": "6.7.8",
     "react-router-dom": "5.3.0",
-    "vtk.js": "24.0.0"
+    "@kitware/vtk.js": "24.0.0"
   },
   "devDependencies": {
     "eslint-config-react-app": "^6.0.0",

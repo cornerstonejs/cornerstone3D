@@ -1,6 +1,6 @@
 import { utilities as csUtils } from '@cornerstonejs/core'
 import type { Types } from '@cornerstonejs/core'
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder'
 
 /**
  * Given a `vtkVolumeActor`, and a normal direction,

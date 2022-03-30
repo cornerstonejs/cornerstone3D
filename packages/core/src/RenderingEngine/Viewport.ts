@@ -1,6 +1,6 @@
-import type { vtkCamera } from 'vtk.js/Sources/Rendering/Core/Camera'
-import vtkMatrixBuilder from 'vtk.js/Sources/Common/Core/MatrixBuilder'
-import vtkMath from 'vtk.js/Sources/Common/Core/Math'
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera'
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder'
+import vtkMath from '@kitware/vtk.js/Common/Core/Math'
 
 import { vec3, mat4 } from 'gl-matrix'
 import _cloneDeep from 'lodash.clonedeep'

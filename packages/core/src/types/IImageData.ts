@@ -1,4 +1,4 @@
-import type { vtkImageData } from 'vtk.js/Sources/Common/DataModel/ImageData'
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData'
 import { Point3, Scaling } from '../types'
 
 /**

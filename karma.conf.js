@@ -1,14 +1,6 @@
 const path = require('path')
 
 process.env.CHROME_BIN = require('puppeteer').executablePath()
-const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
-
-// Need to add this if you want to yarn link locally.
-// Add this additional call so we can yarn link vtk.js
-const shaderLoader = {
-  test: /\.glsl$/i,
-  loader: 'shader-loader',
-}
 
 module.exports = function (config) {
   config.set({
@@ -112,7 +104,7 @@ module.exports = function (config) {
               options: { esModules: true },
             },
           },
-        ].concat(vtkRules),
+        ],
       },
       resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],

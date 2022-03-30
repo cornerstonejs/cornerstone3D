@@ -1,5 +1,5 @@
-import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray'
-import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData'
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray'
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData'
 import { ImageVolume } from '../index'
 import {
   getVerticalBarRGBVolume,
