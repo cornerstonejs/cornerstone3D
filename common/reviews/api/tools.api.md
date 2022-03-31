@@ -1354,7 +1354,7 @@ function getSegmentations(): Segmentation[] | [];
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
 
 // @public (undocumented)
-function getSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
+function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
@@ -3005,7 +3005,7 @@ declare namespace segmentIndex {
 
 declare namespace segmentLocking {
     export {
-        getSegmentIndexLocked,
+        isSegmentIndexLocked,
         setSegmentIndexLocked,
         getLockedSegments
     }
