@@ -12,8 +12,6 @@
   overflow: hidden;
 }
 
-
-
 .buttons {
   display: flex;
   align-items: center;
@@ -81,48 +79,57 @@
   width: 65px;
   font-size: 15px;
   font-weight: 500;
-  padding: 7px 11px 7px 15px;
+  padding: 9px 11px 6px 15px;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
   background-color: #5e16eb;
+  margin-left: 15px;
+
 }
 
 .announcementBar {
-  display: flex
-}
-
-.smallScreenAnnouncement{
-  display: none
-}
-
-.announcementPart{
   display: flex;
+}
+
+.smallScreenAnnouncement {
+  display: none;
+  padding: 6px 14px 6px 10px;
+  background-color: #0e235c;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.bigScreenAnnouncement {
   padding: 6px 14px 6px 10px;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   background-color: #0e235c;
+  margin-bottom: 0em;
+  margin-right: 10px;
 }
 
-
-@media screen and (max-width: 425px) {
-  .cornerstoneText{
-    font-size: 50px;
+@media screen and (max-width: 375px) {
+  .cornerstoneText {
+    font-size: 35px;
   }
 
-  .threeDText{
-    font-size: 50px;
-
+  .threeDText {
+    font-size: 35px;
   }
 
   .textDescription {
-    max-width: 400px;
+    max-width: 300px;
   }
 
-  .smallScreenAnnouncement{
+  .smallScreenAnnouncement {
     display: inline;
   }
 
-  .announcementBar{
+  .announcementBar {
     max-width: 300px;
+  }
+
+  .bigScreenAnnouncement {
+    display: none;
   }
 }

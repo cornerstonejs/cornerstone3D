@@ -12,12 +12,10 @@ function NewAnnouncementBar() {
       <div className={styles.smallScreenAnnouncement}>
         Cornerstone 3D is now available!
       </div>
-      <div className={styles.announcementPart}>
-        <div style={{ fontWeight: 600 }}>Cornerstone3D</div>
-        <div>
-          , released as public beta on April 1st, 2022, represents a major
-          improvement to the framework
-        </div>
+      <div className={styles.bigScreenAnnouncement}>
+        <span style={{ fontWeight: 600 }}>Cornerstone3D</span>, released as
+        public beta on April 1st, 2022, represents a major improvement to the
+        framework
       </div>
     </div>
   );
@@ -47,7 +45,6 @@ function HomepageHeader() {
         <Link to="http://ohif.org/" style={{ color: '#5ACCE6' }}>
           Open Health Imaging Foundation
         </Link>
-        .
       </div>
       <Link to="docs/getting-started/overview">
         <button className={styles.learnMore}>Learn More</button>
