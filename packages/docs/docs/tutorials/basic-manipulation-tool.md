@@ -63,14 +63,14 @@ viewport.setStack(imageIds);
 viewport.render();
 ```
 
-In order for us to use manipulation tools, we need to add them inside `Cornerstone3DTools` internal state via the `addTool` API.
+In order for us to use manipulation tools, add them inside `Cornerstone3DTools` internal state via the `addTool` API.
 
 ```js
 addTool(ZoomTool);
 addTool(WindowLevelTool);
 ```
 
-Next, we need to create a ToolGroup and add the tools we want to use.
+Next, create a ToolGroup and add the tools we want to use.
 ToolGroups makes it possible to share tools between multiple viewports, so we also need to let the ToolGroup know which viewports it should act on.
 
 ```js
@@ -85,11 +85,11 @@ toolGroup.addViewport(viewportId, renderingEngineId);
 
 :::note Tip
 
-Why do we need to add renderingEngineUID to the ToolGroup? Because viewportId is unique within each renderingEngine.
+Why do add renderingEngineUID to the ToolGroup? Because viewportId is unique within each renderingEngine.
 
 :::
 
-Next, we need to set the Tool to be active, which means we also need to define a bindings for the tool (which mouse button makes it active).
+Next, set the Tool to be active, which means we also need to define a bindings for the tool (which mouse button makes it active).
 
 ```js
 // Set the windowLevel tool to be active when the mouse left button is pressed
@@ -191,4 +191,5 @@ For advanced usage of Stack Viewport, please visit <a href="/live-examples/stack
 
 - Visit [Examples](examples.md#run-examples-locally) page to see how to run the examples locally.
 - Check how to debug examples in the [Debugging](examples.md#debugging) section.
-  :::
+
+:::

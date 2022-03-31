@@ -33,6 +33,7 @@ module.exports = {
         'tutorials/basic-volume',
         'tutorials/basic-manipulation-tool',
         'tutorials/basic-annotation-tool',
+        'tutorials/basic-segmentation-tools',
         'tutorials/examples',
       ],
     },

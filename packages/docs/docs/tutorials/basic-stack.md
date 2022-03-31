@@ -111,6 +111,8 @@ Learn more about:
 For advanced usage of Stack Viewport, please visit <a href="/live-examples/stackAPI.html" target="_blank">StackViewport API</a> example page.
 
 :::note Tip
+
 - Visit [Examples](examples.md#run-examples-locally) page to see how to run the examples locally.
 - Check how to debug examples in the [Debugging](examples.md#debugging) section.
+
 :::

@@ -8,10 +8,13 @@ import {
 } from '@cornerstonejs/core';
 import {
   addTool,
+  BrushTool,
+  SegmentationDisplayTool,
   BidirectionalTool,
   ToolGroupManager,
   WindowLevelTool,
   ZoomTool,
+  segmentation,
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 import {
@@ -72,65 +75,6 @@ async function run() {
    *
    *
    */
-  const content = document.getElementById('content');
-
-  const element = document.createElement('div');
-
-  // Disable the default context menu
-  element.oncontextmenu = (e) => e.preventDefault();
-  element.style.width = '500px';
-  element.style.height = '500px';
-
-  content.appendChild(element);
-
-  const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  const viewportId = 'CT_AXIAL_STACK';
-
-  const viewportInput = {
-    viewportId,
-    element,
-    type: ViewportType.STACK,
-  };
-
-  renderingEngine.enableElement(viewportInput);
-
-  const viewport = renderingEngine.getViewport(viewportId);
-
-  viewport.setStack(imageIds);
-
-  viewport.render();
-
-  addTool(ZoomTool);
-  addTool(WindowLevelTool);
-
-  const toolGroupId = 'myToolGroup';
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Add tools to the ToolGroup
-
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(WindowLevelTool.toolName);
-
-  toolGroup.addViewport(viewportId, renderingEngineId);
-
-  // Set the windowLevel tool to be active when the mouse left button is pressed
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
-    bindings: [
-      {
-        mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: csToolsEnums.MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
 }
 
 run();
