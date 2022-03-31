@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.3](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/core@0.3.2...@cornerstonejs/core@0.3.3) (2022-03-31)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+
+
+
+
 ## [0.3.2](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/core@0.3.1...@cornerstonejs/core@0.3.2) (2022-03-30)
 
 **Note:** Version bump only for package @cornerstonejs/core
