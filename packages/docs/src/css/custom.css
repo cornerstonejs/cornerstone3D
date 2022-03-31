@@ -353,6 +353,20 @@ html[data-theme='light'] .tsd-flag-readonly {
   max-width: 60ch;
 }
 
+#open-example-button{
+  margin-top: 20px;
+  background-color: #0944b3;
+  color: white;
+  font-size: 18px;
+  padding: 9px 20px;
+  box-shadow: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  width: 400px;
+  margin: auto;
+}
 
 
 a.card > h2 {
