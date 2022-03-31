@@ -76,7 +76,7 @@ module.exports = {
           items: [
             {
               html: `
-                <img src='img/cornerstone-dark.png' id="cs-logo" alt="cornerstone" />
+                <img src='/img/cornerstone-dark.png' id="cs-logo" alt="cornerstone" />
               `,
             },
           ],

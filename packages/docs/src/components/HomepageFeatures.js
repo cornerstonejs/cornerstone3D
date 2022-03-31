@@ -8,8 +8,7 @@ const FeatureList = [
     title: 'Standards Compliant',
     description: (
       <>
-        Robust DICOM Parsing. Supports all transfer syntaxes. Supports WADO-URI
-        and WADO-RS
+        Robust DICOM Parsing. Supports DICOMweb and all transfer syntaxes out-of-the-box.
       </>
     ),
   },
@@ -17,8 +16,7 @@ const FeatureList = [
     title: 'Fast',
     description: (
       <>
-        High performance image display. Multi-threaded image decoding in Web
-        Workers
+        High performance GPU-accelerated image display. Multi-threaded image decoding. Progressive data streaming.
       </>
     ),
   },
@@ -33,8 +31,6 @@ const FeatureList = [
 ];
 
 function Feature({ Svg, title, description }) {
-  const { isDarkTheme } = useColorMode();
-
   return (
     <div className={clsx('col col--4')}>
       {/* <div className="text--center">
