@@ -10,7 +10,6 @@ import throttle from './throttle';
 import isObject from './isObject';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
-import transformPhysicalToIndex from './transformPhysicalToIndex';
 
 import pointInShapeCallback from './pointInShapeCallback';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
@@ -44,5 +43,4 @@ export {
   pointInSurroundingSphereCallback,
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
-  transformPhysicalToIndex,
 };

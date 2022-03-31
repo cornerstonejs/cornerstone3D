@@ -37,6 +37,8 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
+const viewportIds = ['CT_AXIAL_STACK', 'CT_SAGITTAL_STACK', 'CT_OBLIQUE_STACK'];
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'MIP Jump To Click',
@@ -90,7 +92,9 @@ async function run() {
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
 
   mipToolGroup.addTool('VolumeRotateMouseWheel');
-  mipToolGroup.addTool('MIPJumpToClickTool');
+  mipToolGroup.addTool('MIPJumpToClickTool', {
+    targetViewportIds: [viewportIds[0], viewportIds[1]],
+  });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -131,11 +135,6 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportIds = [
-    'CT_AXIAL_STACK',
-    'CT_SAGITTAL_STACK',
-    'CT_OBLIQUE_STACK',
-  ];
 
   const viewportInputArray = [
     {

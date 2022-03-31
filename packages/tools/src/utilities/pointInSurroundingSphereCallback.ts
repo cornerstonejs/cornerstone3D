@@ -1,3 +1,4 @@
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -7,7 +8,8 @@ import { getBoundingBoxAroundShape } from './segmentation/getBoundingBoxUtils';
 import pointInShapeCallback, {
   PointInShapeCallback,
 } from './pointInShapeCallback';
-import transformPhysicalToIndex from './transformPhysicalToIndex';
+
+const { transformPhysicalToIndex } = csUtils;
 
 // Todo: I *think* this can be done without the need to access viewport's camera
 // since sphere's center circle can be in any plane as long as its center

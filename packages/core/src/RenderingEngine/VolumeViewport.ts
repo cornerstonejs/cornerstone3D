@@ -8,6 +8,7 @@ import { loadVolume } from '../volumeLoader';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import { getShouldUseCPURendering } from '../init';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
+import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import type {
   Point2,
   Point3,
@@ -236,10 +237,20 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @returns The intensity value of the voxel at the given point.
    */
   public getIntensityFromWorld(point: Point3): number {
-    const volumeActor = this.getDefaultActor().volumeActor;
+    const { volumeActor, uid } = this.getDefaultActor();
     const imageData = volumeActor.getMapper().getInputData();
 
-    return imageData.getScalarValueFromWorld(point);
+    const volume = cache.getVolume(uid);
+    const { dimensions } = volume;
+
+    const index = transformWorldToIndex(imageData, point);
+
+    const voxelIndex =
+      index[2] * dimensions[0] * dimensions[1] +
+      index[1] * dimensions[0] +
+      index[0];
+
+    return volume.scalarData[voxelIndex];
   }
 
   /**

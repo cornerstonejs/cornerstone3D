@@ -1,3 +1,5 @@
+import type Point3 from '../types/Point3';
+
 /**
  * Given an imageData object and a point in physical space, return the index of the
  * voxel that contains the point. TODO: this should be pushed to vtk upstream.
@@ -6,8 +8,8 @@
  * index space.
  * @returns An array of integers.
  */
-export default function transformPhysicalToIndex(imageData, physicalPoint) {
-  const continuousIndex = imageData.worldToIndex(physicalPoint);
+export default function transformWorldToIndex(imageData, worldPos: Point3) {
+  const continuousIndex = imageData.worldToIndex(worldPos);
   const index = continuousIndex.map(Math.round);
 
   return index;

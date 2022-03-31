@@ -13,7 +13,6 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import throttle from '../../utilities/throttle';
-import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex';
 import {
   addAnnotation,
   getAnnotations,
@@ -48,6 +47,8 @@ import {
 } from '../../types';
 import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+
+const { transformWorldToIndex } = csUtils;
 
 /**
  * RectangleROIAnnotation let you draw annotations that measures the statistics
@@ -876,13 +877,13 @@ export default class RectangleROITool extends AnnotationTool {
 
       const { dimensions, scalarData, imageData, metadata } = image;
 
-      const worldPos1Index = transformPhysicalToIndex(imageData, worldPos1);
+      const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0]);
       worldPos1Index[1] = Math.floor(worldPos1Index[1]);
       worldPos1Index[2] = Math.floor(worldPos1Index[2]);
 
-      const worldPos2Index = transformPhysicalToIndex(imageData, worldPos2);
+      const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
 
       worldPos2Index[0] = Math.floor(worldPos2Index[0]);
       worldPos2Index[1] = Math.floor(worldPos2Index[1]);

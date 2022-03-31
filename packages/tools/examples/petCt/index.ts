@@ -24,10 +24,12 @@ const {
   ZoomTool,
   StackScrollMouseWheelTool,
   synchronizers,
+  MIPJumpToClickTool,
+  VolumeRotateMouseWheelTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
-const { ViewportType } = Enums;
+const { ViewportType, BlendModes } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
@@ -42,6 +44,7 @@ const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`;
 const ctPtToolGroupId = 'CT_PT_TOOLGROUP_ID';
 const fusionToolGroupId = 'FUSION_TOOLGROUP_ID';
+const mipToolGroupUID = 'MIP_TOOLGROUP_ID';
 
 const viewportIds = {
   CT: { AXIAL: 'CT_AXIAL', SAGITTAL: 'CT_SAGITTAL', CORONAL: 'CT_CORONAL' },
@@ -50,6 +53,9 @@ const viewportIds = {
     AXIAL: 'FUSION_AXIAL',
     SAGITTAL: 'FUSION_SAGITTAL',
     CORONAL: 'FUSION_CORONAL',
+  },
+  PETMIP: {
+    CORONAL: 'PET_MIP_CORONAL',
   },
 };
 
@@ -60,22 +66,17 @@ setTitleAndDescription(
 );
 
 const size = '250px';
+
+const viewportGrid = document.createElement('div');
+
+viewportGrid.style.display = 'grid';
+viewportGrid.style.gridTemplateRows = `[row1-start] ${size} [row2-start] ${size} [row3-start] ${size} [end]`;
+viewportGrid.style.gridTemplateRows = `[col1-start] ${size} [col2-start] ${size} [col3-start] ${size} [col4-start] ${size} [end]`;
+viewportGrid.style.width = '750px';
+
 const content = document.getElementById('content');
 
-const row1 = document.createElement('div');
-const row2 = document.createElement('div');
-const row3 = document.createElement('div');
-
-const rows = [row1, row2, row3];
-
-rows.forEach((row) => {
-  row.style.display = 'flex';
-  row1.style.flexDirection = 'row';
-});
-
-content.appendChild(row1);
-content.appendChild(row2);
-content.appendChild(row3);
+content.appendChild(viewportGrid);
 
 const element1_1 = document.createElement('div');
 const element1_2 = document.createElement('div');
@@ -86,16 +87,43 @@ const element2_3 = document.createElement('div');
 const element3_1 = document.createElement('div');
 const element3_2 = document.createElement('div');
 const element3_3 = document.createElement('div');
+const element_mip = document.createElement('div');
 
-row1.appendChild(element1_1);
-row1.appendChild(element1_2);
-row1.appendChild(element1_3);
-row2.appendChild(element2_1);
-row2.appendChild(element2_2);
-row2.appendChild(element2_3);
-row3.appendChild(element3_1);
-row3.appendChild(element3_2);
-row3.appendChild(element3_3);
+// Place main 3x3 viewports
+element1_1.style.gridColumnStart = '1';
+element1_1.style.gridRowStart = '1';
+element1_2.style.gridColumnStart = '2';
+element1_2.style.gridRowStart = '1';
+element1_3.style.gridColumnStart = '3';
+element1_3.style.gridRowStart = '1';
+element2_1.style.gridColumnStart = '1';
+element2_1.style.gridRowStart = '2';
+element2_2.style.gridColumnStart = '2';
+element2_2.style.gridRowStart = '2';
+element2_3.style.gridColumnStart = '3';
+element2_3.style.gridRowStart = '2';
+element3_1.style.gridColumnStart = '1';
+element3_1.style.gridRowStart = '3';
+element3_2.style.gridColumnStart = '2';
+element3_2.style.gridRowStart = '3';
+element3_3.style.gridColumnStart = '3';
+element3_3.style.gridRowStart = '3';
+
+// Place MIP viewport
+element_mip.style.gridColumnStart = '4';
+element_mip.style.gridRowStart = '1';
+element_mip.style.gridRowEnd = 'span 3';
+
+viewportGrid.appendChild(element1_1);
+viewportGrid.appendChild(element1_2);
+viewportGrid.appendChild(element1_3);
+viewportGrid.appendChild(element2_1);
+viewportGrid.appendChild(element2_2);
+viewportGrid.appendChild(element2_3);
+viewportGrid.appendChild(element3_1);
+viewportGrid.appendChild(element3_2);
+viewportGrid.appendChild(element3_3);
+viewportGrid.appendChild(element_mip);
 
 const elements = [
   element1_1,
@@ -116,6 +144,10 @@ elements.forEach((element) => {
   element.oncontextmenu = (e) => e.preventDefault();
 });
 
+element_mip.style.width = '250px';
+element_mip.style.height = '750px';
+element_mip.oncontextmenu = (e) => e.preventDefault();
+
 // ============================= //
 
 function setUpToolGroups() {
@@ -124,9 +156,11 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(MIPJumpToClickTool);
+  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
 
-  // Define tool groups to add the segmentation display tool to
-  // We need two tool groups as we want to specify for the fusion which volume
+  // Define tool groups for the main 9 viewports.
+  // We need two tool groups for the main viewports as we want to specify for the fusion which volume
   // to control with the window/level tool. For the CT and PT, we can use the
   // default, which is the first (and only) volume present
   const ctPtToolGroup = ToolGroupManager.createToolGroup(ctPtToolGroupId);
@@ -183,6 +217,39 @@ function setUpToolGroups() {
   fusionToolGroup.addViewport(viewportIds.FUSION.AXIAL, renderingEngineId);
   fusionToolGroup.addViewport(viewportIds.FUSION.SAGITTAL, renderingEngineId);
   fusionToolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
+
+  // MIP Tool Groups
+  const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
+
+  mipToolGroup.addTool('VolumeRotateMouseWheel');
+  mipToolGroup.addTool('MIPJumpToClickTool', {
+    targetViewportIds: [
+      viewportIds.CT.AXIAL,
+      viewportIds.CT.SAGITTAL,
+      viewportIds.CT.CORONAL,
+      viewportIds.PT.AXIAL,
+      viewportIds.PT.SAGITTAL,
+      viewportIds.PT.CORONAL,
+      viewportIds.FUSION.AXIAL,
+      viewportIds.FUSION.SAGITTAL,
+      viewportIds.FUSION.CORONAL,
+    ],
+  });
+
+  // Set the initial state of the tools, here we set one tool active on left click.
+  // This means left click will draw that tool.
+  mipToolGroup.setToolActive('MIPJumpToClickTool', {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // hook instead of mouse buttons, it does not need to assign any mouse button.
+  mipToolGroup.setToolActive('VolumeRotateMouseWheel');
+
+  mipToolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
 }
 
 function setUpSynchronizers() {
@@ -266,6 +333,7 @@ function setUpSynchronizers() {
     viewportIds.FUSION.AXIAL,
     viewportIds.FUSION.SAGITTAL,
     viewportIds.FUSION.CORONAL,
+    viewportIds.PETMIP.CORONAL,
   ].forEach((viewportId) => {
     ptVoiSynchronizer.add({
       renderingEngineId,
@@ -383,6 +451,15 @@ async function setUpDisplay() {
         orientation: ORIENTATION.CORONAL,
       },
     },
+    {
+      viewportId: viewportIds.PETMIP.CORONAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element_mip,
+      defaultOptions: {
+        orientation: ORIENTATION.CORONAL,
+        background: <Types.Point3>[1, 1, 1],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
@@ -407,7 +484,7 @@ async function setUpDisplay() {
   await setVolumesForViewports(
     renderingEngine,
     [
-      { volumeId: ctVolumeId, setCtTransferFunctionForVolumeActor },
+      { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
       {
         volumeId: ptVolumeId,
         callback: setPetColorMapTransferFunctionForVolumeActor,
@@ -418,6 +495,29 @@ async function setUpDisplay() {
       viewportIds.FUSION.SAGITTAL,
       viewportIds.FUSION.CORONAL,
     ]
+  );
+
+  // Calculate size of fullBody pet mip
+  const ptVolumeDimensions = ptVolume.dimensions;
+
+  // Only make the MIP as large as it needs to be.
+  const slabThickness = Math.sqrt(
+    ptVolumeDimensions[0] * ptVolumeDimensions[0] +
+      ptVolumeDimensions[1] * ptVolumeDimensions[1] +
+      ptVolumeDimensions[2] * ptVolumeDimensions[2]
+  );
+
+  setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: ptVolumeId,
+        callback: setPetTransferFunctionForVolumeActor,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        slabThickness,
+      },
+    ],
+    [viewportIds.PETMIP.CORONAL]
   );
 
   // Render the viewports
