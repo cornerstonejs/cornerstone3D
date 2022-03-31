@@ -75,7 +75,6 @@ module.exports = {
       // },
       links: [
         {
-          title: 'Medical Imaging Simplified',
           items: [
             {
               html: `
