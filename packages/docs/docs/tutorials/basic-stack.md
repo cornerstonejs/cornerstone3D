@@ -4,6 +4,8 @@ id: basic-stack
 
 # Render Stack of Images
 
+In this tutorial, you will learn how to render a stack of images.
+
 ## Preface
 
 In order to render a set of images we need:
@@ -88,6 +90,10 @@ const viewport = renderingEngine.getViewport(viewportInput.viewportId);
 
 viewport.setStack(imageIds, 60);
 ```
+
+You should see the following:
+
+![](../assets/tutorial-basic-stack.png)
 
 ## Read more
 

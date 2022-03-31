@@ -1,10 +1,10 @@
 ---
-id: basic-volume
+id: basic-annotation-tool
 ---
 
-# Render Volume
+# Annotation Tools
 
-In this tutorial, you will learn how to render a volume.
+In this tutorial, you will learn how to use annotation tools to annotate.
 
 ## Preface
 
@@ -22,10 +22,6 @@ First let's create two HTMLDivElements and style them to contain viewports.
 ```js
 const content = document.getElementById('content');
 
-const viewportGrid = document.createElement('div');
-viewportGrid.style.display = 'flex';
-viewportGrid.style.flexDirection = 'row';
-
 // element for axial view
 const element1 = document.createElement('div');
 element1.style.width = '500px';
@@ -36,10 +32,8 @@ const element2 = document.createElement('div');
 element2.style.width = '500px';
 element2.style.height = '500px';
 
-viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
-
-content.appendChild(viewportGrid);
+content.appendChild(element1);
+content.appendChild(element2);
 ```
 
 Next, we need a `renderingEngine`
@@ -88,20 +82,49 @@ const viewportInput = [
 renderingEngine.setViewports(viewportInput);
 ```
 
-RenderingEngine will handle creation of the viewports. Next, we need to perform the `load` on the volume.
+In order for us to use tools, we need to add them inside `Cornerstone3DTools` internal state via the `addTool` API.
 
-:::note Important
-Defining a volume is not the same as loading it.
+```js
+addTool(BidirectionalTool.toolName);
+```
+
+Next, we need to create a ToolGroup and add the tools we want to use.
+ToolGroups makes it possible to share tools between multiple viewports, so we also need to let the ToolGroup know which viewports it should act on.
+
+```js
+const toolGroupId = 'myToolGroup';
+const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+toolGroup.addTool(BidirectionalTool.toolName);
+
+toolGroup.addViewport({ viewportId: viewportId1, renderingEngineUID });
+toolGroup.addViewport({ viewportId: viewportId2, renderingEngineUID });
+```
+
+:::note Tip
+
+Why do we need to add renderingEngineUID to the ToolGroup? Because viewportId is unique within each renderingEngine.
+
 :::
+
+Next, we need to set the Tool to be active, which means we also need to define a bindings for the tool (which mouse button makes it active).
+
+```js
+toolGroup.setToolActive(BidirectionalTool.toolName, {
+  bindings: [
+    {
+      mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
+    },
+  ],
+});
+```
+
+
+Let's load the volume and set the viewports to render the volume.
 
 ```js
 // Set the volume to load
 volume.load();
-```
 
-Finally, let the viewports know about the volume.
-
-```js
 setVolumesForViewports(
   renderingEngine,
   [{ volumeId }],
@@ -117,10 +140,6 @@ renderingEngine.renderViewports([viewportId1, viewportId2]);
 ```js
 const content = document.getElementById('content');
 
-const viewportGrid = document.createElement('div');
-viewportGrid.style.display = 'flex';
-viewportGrid.style.flexDirection = 'row';
-
 // element for axial view
 const element1 = document.createElement('div');
 element1.style.width = '500px';
@@ -131,10 +150,8 @@ const element2 = document.createElement('div');
 element2.style.width = '500px';
 element2.style.height = '500px';
 
-viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
-
-content.appendChild(viewportGrid);
+content.appendChild(element1);
+content.appendChild(element2);
 
 const renderingEngineId = 'myRenderingEngine';
 const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -144,7 +161,9 @@ const renderingEngine = new RenderingEngine(renderingEngineId);
 const volumeId = 'cornerStreamingImageVolume: myVolume';
 
 // Define a volume in memory
-const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
+const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  imageIds,
+});
 
 const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
@@ -170,6 +189,22 @@ const viewportInput = [
 
 renderingEngine.setViewports(viewportInput);
 
+addTool(BidirectionalTool);
+
+const toolGroupId = 'myToolGroup';
+const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+toolGroup.addTool(BidirectionalTool.toolName);
+
+toolGroup.addViewport(viewportId1, renderingEngineId);
+toolGroup.addViewport(viewportId2, renderingEngineId);
+toolGroup.setToolActive(BidirectionalTool.toolName, {
+  bindings: [
+    {
+      mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
+    },
+  ],
+});
+
 // Set the volume to load
 volume.load();
 
@@ -183,51 +218,15 @@ setVolumesForViewports(
 renderingEngine.renderViewports([viewportId1, viewportId2]);
 ```
 
-You should be able to see:
-
-<div style={{width:"75%"}}>
-
-![](../assets/tutorial-basic-volume-1.png)
-
-</div>
-
-We can apply a `window/level` callback on the viewports when they load via the `setVolumesForViewports` API.
-
-```js
-setVolumesForViewports(
-  renderingEngine,
-  [
-    {
-      volumeId,
-      callback: ({ volumeActor }) => {
-        // the volumeActor of the volume's that is created
-        volumeActor
-          .getProperty()
-          .getRGBTransferFunction(0)
-          .setMappingRange(-180, 220);
-      },
-    },
-  ],
-  [viewportId1, viewportId2]
-);
-```
-
-<div style={{width:"75%"}}>
-
-
-![](../assets/tutorial-basic-volume-2.png)
-
-</div>
 
 ## Read more
 
 Learn more about:
 
-- [volumes](../concepts/cornerstone-core/volumes.md)
-- [rendering engine](../concepts/cornerstone-core/renderingEngine.md)
-- [viewport](../concepts/cornerstone-core/viewports.md)
+- [ToolGroup](../concepts/cornerstone-tools/toolGroups.md)
+- [Annotations](../concepts/cornerstone-tools/annotation/index.md)
 
-For advanced usage of Stack Viewport, please visit <a href="/live-examples/volumeAPI.html" target="_blank">VolumeViewport API</a> example page.
+For advanced usage of Stack Viewport, please visit <a href="/live-examples/volumeAnnotationTools.html" target="_blank">Volume Annotation Tools</a> example page.
 
 :::note Tip
 

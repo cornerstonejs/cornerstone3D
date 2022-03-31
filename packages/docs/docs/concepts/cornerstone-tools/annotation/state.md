@@ -48,6 +48,7 @@ state is stored. Below, you can see a high-level overview of the state object.
 
 </div>
 
+
 ## API
 
 You can get/add annotations using the following API:

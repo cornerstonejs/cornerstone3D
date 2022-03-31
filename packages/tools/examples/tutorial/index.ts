@@ -7,6 +7,12 @@ import {
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
+  addTool,
+  BidirectionalTool,
+  ToolGroupManager,
+  Enums as csToolsEnums,
+} from '@cornerstonejs/tools';
+import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
@@ -23,7 +29,7 @@ const { ORIENTATION } = CONSTANTS;
 // ============================= //
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Tutorial Play Ground',
+  'Tutorial Playground',
   'The playground for you to copy paste the codes in the tutorials and run it'
 );
 
@@ -64,7 +70,26 @@ async function run() {
    *
    *
    */
+  const windowWidth = 400;
+  const windowCenter = 40;
+
+  const lower = windowCenter - windowWidth / 2.0;
+  const upper = windowCenter + windowWidth / 2.0;
+
+  const ctVoiRange = [lower, upper];
+
+  function setCtTransferFunctionForVolumeActor({ volumeActor }) {
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(lower, upper);
+  }
+
   const content = document.getElementById('content');
+
+  const viewportGrid = document.createElement('div');
+  viewportGrid.style.display = 'flex';
+  viewportGrid.style.flexDirection = 'row';
 
   // element for axial view
   const element1 = document.createElement('div');
@@ -76,8 +101,10 @@ async function run() {
   element2.style.width = '500px';
   element2.style.height = '500px';
 
-  content.appendChild(element1);
-  content.appendChild(element2);
+  viewportGrid.appendChild(element1);
+  viewportGrid.appendChild(element2);
+
+  content.appendChild(viewportGrid);
 
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -120,7 +147,11 @@ async function run() {
 
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeId }],
+    [
+      {
+        volumeId,
+      },
+    ],
     [viewportId1, viewportId2]
   );
 
