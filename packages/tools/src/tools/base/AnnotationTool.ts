@@ -66,7 +66,7 @@ abstract class AnnotationTool extends BaseTool {
    * @abstract cancel Used to cancel the ongoing tool drawing and manipulation
    *
    */
-  abstract cancel(element: HTMLElement);
+  abstract cancel(element: HTMLDivElement);
 
   /**
    * handleSelectedCallback Custom callback for when a handle is selected.
@@ -108,7 +108,7 @@ abstract class AnnotationTool extends BaseTool {
    * @returns boolean if the point is near.
    */
   abstract isPointNearTool(
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: Annotation,
     canvasCoords: Types.Point2,
     proximity: number,
@@ -127,7 +127,7 @@ abstract class AnnotationTool extends BaseTool {
    * @returns The filtered annotations
    */
   filterInteractableAnnotationsForElement(
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotations: Annotations
   ): Annotations | undefined {
     if (!annotations || !annotations.length) {
@@ -306,7 +306,7 @@ abstract class AnnotationTool extends BaseTool {
    * is not near any of the handles.
    */
   getHandleNearImagePoint(
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: Annotation,
     canvasCoords: Types.Point2,
     proximity: number
@@ -411,7 +411,7 @@ abstract class AnnotationTool extends BaseTool {
    * @returns If the point is near.
    */
   private _imagePointNearToolOrHandle(
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: Annotation,
     canvasCoords: Types.Point2,
     proximity: number

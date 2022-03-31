@@ -11,7 +11,7 @@ import { getEnabledElement, addVolumesToViewports } from '@cornerstonejs/core';
  * @internal
  */
 async function addLabelmapToElement(
-  element: HTMLElement,
+  element: HTMLDivElement,
   volumeId: string,
   segmentationRepresentationUID: string
 ): Promise<void> {

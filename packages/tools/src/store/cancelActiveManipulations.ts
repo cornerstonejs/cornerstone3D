@@ -13,7 +13,7 @@ import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsFo
  * @returns annotationUID that is cancelled
  */
 export default function cancelActiveManipulations(
-  element: HTMLElement
+  element: HTMLDivElement
 ): string | undefined {
   const tools = getToolsWithModesForElement(element, [
     ToolModes.Active,

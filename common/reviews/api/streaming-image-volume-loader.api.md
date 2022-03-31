@@ -23,7 +23,7 @@ type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 type CameraModifiedEventDetail = {
     previousCamera: ICamera;
     camera: ICamera;
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -317,7 +317,7 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public
 type ElementDisabledEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -327,7 +327,7 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public
 type ElementEnabledEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -624,7 +624,7 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public
 type ImageRenderedEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
@@ -636,7 +636,7 @@ CustomEvent_2<ImageSpacingCalibratedEventDetail>;
 
 // @public
 type ImageSpacingCalibratedEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
@@ -712,7 +712,7 @@ interface IStackViewport extends IViewport {
     canvasToWorld: (canvasPos: Point2) => Point3;
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
-        element: HTMLElement;
+        element: HTMLDivElement;
         viewportId: string;
         renderingEngineId: string;
     };
@@ -776,7 +776,7 @@ interface IViewport {
     canvasToWorld: (canvasPos: Point2) => Point3;
     customRenderViewportToCanvas: () => unknown;
     defaultOptions: any;
-    element: HTMLElement;
+    element: HTMLDivElement;
     getActor(actorUID: string): ActorEntry;
     getActors(): Array<ActorEntry>;
     getCamera(): ICamera;
@@ -938,7 +938,7 @@ type PTScaling = {
 
 // @public
 type PublicViewportInput = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;

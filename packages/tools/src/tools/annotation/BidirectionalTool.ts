@@ -241,7 +241,7 @@ export default class BidirectionalTool extends AnnotationTool {
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: BidirectionalAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
@@ -857,7 +857,7 @@ export default class BidirectionalTool extends AnnotationTool {
    * Cancels an ongoing drawing of a bidirectional annotation
    * @param element - HTML Element
    */
-  cancel = (element: HTMLElement) => {
+  cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false;

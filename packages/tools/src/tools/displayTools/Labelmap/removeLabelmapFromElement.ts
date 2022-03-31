@@ -12,7 +12,7 @@ import type { Types } from '@cornerstonejs/core';
  * @internal
  */
 function removeLabelmapFromElement(
-  element: HTMLElement,
+  element: HTMLDivElement,
   segmentationRepresentationUID: string,
   removeFromCache = false // Todo
 ): void {

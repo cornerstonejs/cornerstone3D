@@ -5,8 +5,8 @@ import { CPUFallbackEnabledElement } from '../../../../types';
 /**
  * This module is responsible for enabling an element to display images with cornerstone
  *
- * @param {HTMLElement} element The DOM element enabled for Cornerstone
- * @param {HTMLElement} canvas The Canvas DOM element within the DOM element enabled for Cornerstone
+ * @param {HTMLDivElement} element The DOM element enabled for Cornerstone
+ * @param {HTMLDivElement} canvas The Canvas DOM element within the DOM element enabled for Cornerstone
  * @returns {void}
  */
 function setCanvasSize(enabledElement: CPUFallbackEnabledElement) {
@@ -79,7 +79,7 @@ function relativeRescale(
 /**
  * Resizes an enabled element and optionally fits the image to window
  *
- * @param {HTMLElement} element The DOM element enabled for Cornerstone
+ * @param {HTMLDivElement} element The DOM element enabled for Cornerstone
  * @param {Boolean} forceFitToWindow true to to force a refit, false to rescale accordingly
  * @returns {void}
  */

@@ -18,7 +18,7 @@ import {
  * @returns The filtered array containing ToolAndAnnotation
  */
 export default function filterMoveableAnnotationTools(
-  element: HTMLElement,
+  element: HTMLDivElement,
   ToolAndAnnotations: ToolAnnotationsPair[],
   canvasCoords: Types.Point2,
   interactionType = 'mouse'

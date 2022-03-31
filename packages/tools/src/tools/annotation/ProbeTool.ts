@@ -216,7 +216,7 @@ export default class ProbeTool extends AnnotationTool {
    * is not near any of the handles.
    */
   getHandleNearImagePoint(
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: ProbeAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
@@ -325,7 +325,7 @@ export default class ProbeTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  cancel = (element: HTMLElement) => {
+  cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false;

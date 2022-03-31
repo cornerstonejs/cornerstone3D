@@ -10,7 +10,7 @@ import mouseMoveListener from './mouseMoveListener';
  * @private
  * @param element - The DOM element to remove event listeners from.
  */
-function disable(element: HTMLElement): void {
+function disable(element: HTMLDivElement): void {
   element.removeEventListener('dblclick', mouseDoubleClickListener);
   element.removeEventListener('mousedown', mouseDownListener);
   element.removeEventListener('mousemove', mouseMoveListener);
@@ -24,7 +24,7 @@ function disable(element: HTMLElement): void {
  * @private
  * @param element - The DOM element to register event listeners on.
  */
-function enable(element: HTMLElement): void {
+function enable(element: HTMLDivElement): void {
   // Prevent handlers from being attached multiple times
   disable(element);
 

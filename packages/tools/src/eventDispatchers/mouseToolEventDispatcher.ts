@@ -17,7 +17,7 @@ import {
  *
  * @param element - The element to add the event listeners to.
  */
-const enable = function (element: HTMLElement): void {
+const enable = function (element: HTMLDivElement): void {
   element.addEventListener(Events.MOUSE_CLICK, mouseClick);
   element.addEventListener(Events.MOUSE_DOWN, mouseDown);
   element.addEventListener(Events.MOUSE_DOWN_ACTIVATE, mouseDownActivate);
@@ -31,9 +31,9 @@ const enable = function (element: HTMLElement): void {
 /**
  * Disable and Remove the MouseToolEventDispatcher handlers from the element.
  *
- * @param element - HTMLElement
+ * @param element - HTMLDivElement
  */
-const disable = function (element: HTMLElement) {
+const disable = function (element: HTMLDivElement) {
   element.removeEventListener(Events.MOUSE_CLICK, mouseClick);
   element.removeEventListener(Events.MOUSE_DOWN, mouseDown);
   element.removeEventListener(Events.MOUSE_DOWN_ACTIVATE, mouseDownActivate);

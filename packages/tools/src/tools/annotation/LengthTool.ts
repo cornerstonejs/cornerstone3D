@@ -231,7 +231,7 @@ class LengthTool extends AnnotationTool {
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: LengthAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
@@ -438,7 +438,7 @@ class LengthTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  cancel = (element: HTMLElement) => {
+  cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false;
@@ -465,7 +465,7 @@ class LengthTool extends AnnotationTool {
     }
   };
 
-  _activateModify = (element: HTMLElement) => {
+  _activateModify = (element: HTMLDivElement) => {
     state.isInteractingWithTool = true;
 
     element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
@@ -476,7 +476,7 @@ class LengthTool extends AnnotationTool {
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   };
 
-  _deactivateModify = (element: HTMLElement) => {
+  _deactivateModify = (element: HTMLDivElement) => {
     state.isInteractingWithTool = false;
 
     element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
@@ -487,7 +487,7 @@ class LengthTool extends AnnotationTool {
     // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   };
 
-  _activateDraw = (element: HTMLElement) => {
+  _activateDraw = (element: HTMLDivElement) => {
     state.isInteractingWithTool = true;
 
     element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
@@ -499,7 +499,7 @@ class LengthTool extends AnnotationTool {
     // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   };
 
-  _deactivateDraw = (element: HTMLElement) => {
+  _deactivateDraw = (element: HTMLDivElement) => {
     state.isInteractingWithTool = false;
 
     element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);

@@ -12,7 +12,7 @@ import BaseTool from '../tools/base/BaseTool';
  * @returns The array of tools with their found annotations.
  */
 export default function filterToolsWithAnnotationsForElement(
-  element: HTMLElement,
+  element: HTMLDivElement,
   tools: AnnotationTool[]
 ): ToolAnnotationsPair[] {
   const result = [];

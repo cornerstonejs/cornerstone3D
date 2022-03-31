@@ -6,7 +6,7 @@ import { keyDown, keyUp } from './keyboardEventHandlers';
  *
  * @param element - The HTML element to attach the event listeners to.
  */
-const enable = function (element: HTMLElement) {
+const enable = function (element: HTMLDivElement) {
   element.addEventListener(Events.KEY_DOWN, keyDown);
   element.addEventListener(Events.KEY_UP, keyUp);
 };
@@ -15,7 +15,7 @@ const enable = function (element: HTMLElement) {
  * Disable Key down and key up listeners
  * @param element - The HTML element to attach the event listeners to.
  */
-const disable = function (element: HTMLElement) {
+const disable = function (element: HTMLDivElement) {
   element.removeEventListener(Events.KEY_DOWN, keyDown);
   element.removeEventListener(Events.KEY_UP, keyUp);
 };

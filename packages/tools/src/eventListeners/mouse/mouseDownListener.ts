@@ -11,7 +11,7 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
 
 interface IMouseDownListenerState {
   mouseButton: number;
-  element: HTMLElement;
+  element: HTMLDivElement;
   renderingEngineId: string;
   viewportId: string;
   isClickEvent: boolean;
@@ -84,7 +84,7 @@ let state: IMouseDownListenerState = {
  * @private
  */
 function mouseDownListener(evt: MouseEvent) {
-  state.element = <HTMLElement>evt.currentTarget;
+  state.element = <HTMLDivElement>evt.currentTarget;
 
   state.mouseButton = evt.button;
 
@@ -239,7 +239,7 @@ function _copyPoints(points: IPoints): IPoints {
  * @param lastPoints - The last points
  */
 function _updateMouseEventsLastPoints(
-  element: HTMLElement,
+  element: HTMLDivElement,
   lastPoints: IPoints
 ): IPoints {
   const { viewport } = getEnabledElement(element);

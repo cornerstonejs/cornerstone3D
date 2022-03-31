@@ -69,7 +69,7 @@ export default interface IStackViewport extends IViewport {
    */
   customRenderViewportToCanvas: () => {
     canvas: HTMLCanvasElement;
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
   };

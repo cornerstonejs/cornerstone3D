@@ -8,7 +8,7 @@ interface IKeyDownListenerState {
   viewportId: string;
   key: string | null;
   keyCode: number | null;
-  element: HTMLElement;
+  element: HTMLDivElement;
 }
 
 const defaultState: IKeyDownListenerState = {
@@ -36,7 +36,7 @@ let state: IKeyDownListenerState = {
  * @param evt - DOM Keyboard event
  */
 function keyListener(evt: KeyboardEvent): void {
-  state.element = <HTMLElement>evt.currentTarget;
+  state.element = <HTMLDivElement>evt.currentTarget;
 
   const enabledElement = getEnabledElement(state.element);
   const { renderingEngineId, viewportId } = enabledElement;

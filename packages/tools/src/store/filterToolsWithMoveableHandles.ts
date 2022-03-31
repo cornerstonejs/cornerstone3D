@@ -15,7 +15,7 @@ import {
  * @returns The filtered array.
  */
 export default function filterToolsWithMoveableHandles(
-  element: HTMLElement,
+  element: HTMLDivElement,
   ToolAndAnnotations: ToolAnnotationsPair[],
   canvasCoords: Types.Point2,
   interactionType = 'mouse'

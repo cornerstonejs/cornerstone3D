@@ -1,11 +1,11 @@
 import keyDownListener, { getModifierKey } from './keyDownListener';
 
-function enable(element: HTMLElement): void {
+function enable(element: HTMLDivElement): void {
   disable(element);
   element.addEventListener('keydown', keyDownListener);
 }
 
-function disable(element: HTMLElement): void {
+function disable(element: HTMLDivElement): void {
   element.removeEventListener('keydown', keyDownListener);
 }
 

@@ -6,7 +6,7 @@ import wheelListener from './wheelListener';
  *
  * @param element - The HTML element
  */
-function enable(element: HTMLElement) {
+function enable(element: HTMLDivElement) {
   disable(element);
   element.addEventListener('wheel', wheelListener, { passive: false });
 }
@@ -17,7 +17,7 @@ function enable(element: HTMLElement) {
  *
  * @param element - THe HTML element
  */
-function disable(element: HTMLElement) {
+function disable(element: HTMLDivElement) {
   element.removeEventListener('wheel', wheelListener);
 }
 

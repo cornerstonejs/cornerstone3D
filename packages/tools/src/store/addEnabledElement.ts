@@ -133,6 +133,9 @@ function _setSvgNodeCache(element) {
  * @param newNode
  * @param referenceNode
  */
-function _appendChild(newNode: SVGElement, referenceNode: HTMLElement): void {
+function _appendChild(
+  newNode: SVGElement,
+  referenceNode: HTMLDivElement
+): void {
   referenceNode.querySelector('div.viewport-element').appendChild(newNode);
 }

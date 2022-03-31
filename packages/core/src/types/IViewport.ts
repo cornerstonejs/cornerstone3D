@@ -18,7 +18,7 @@ interface IViewport {
   /** canvas associated to the viewport */
   canvas: HTMLCanvasElement;
   /** public DOM element associated to the viewport */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** sx of the viewport on the offscreen canvas (if rendering using GPU) */
   sx: number;
   /** sy of the viewport on the offscreen canvas (if rendering using GPU) */
@@ -81,7 +81,7 @@ interface IViewport {
  */
 type PublicViewportInput = {
   /** HTML element in the DOM */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** unique id for the viewport in the renderingEngine */
   viewportId: string;
   /** type of the viewport */
@@ -92,7 +92,7 @@ type PublicViewportInput = {
 
 type NormalizedViewportInput = {
   /** HTML element in the DOM */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** unique id for the viewport in the renderingEngine */
   viewportId: string;
   /** type of the viewport */
@@ -102,7 +102,7 @@ type NormalizedViewportInput = {
 };
 
 type InternalViewportInput = {
-  element: HTMLElement;
+  element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   viewportId: string;
   type: ViewportType;
@@ -111,7 +111,7 @@ type InternalViewportInput = {
 
 type ViewportInput = {
   id: string;
-  element: HTMLElement;
+  element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   renderingEngineId: string;
   type: ViewportType;

@@ -52,7 +52,7 @@ For both methods, a ViewportInput object is passed as an argument.
 ```js
 PublicViewportInput = {
   /** HTML element in the DOM */
-  element: HTMLElement
+  element: HTMLDivElement
   /** unique id for the viewport in the renderingEngine */
   viewportId: string
   /** type of the viewport VolumeViewport or StackViewport*/

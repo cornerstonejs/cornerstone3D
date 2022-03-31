@@ -254,7 +254,7 @@ export default class EllipticalROITool extends AnnotationTool {
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: EllipticalROIAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
@@ -612,7 +612,7 @@ export default class EllipticalROITool extends AnnotationTool {
     }
   };
 
-  cancel = (element: HTMLElement) => {
+  cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false;

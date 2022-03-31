@@ -470,7 +470,7 @@ class ToolDisplayConfigurationExample extends Component {
   }
 }
 
-function onExportSettings(e: React.MouseEvent<HTMLElement>) {
+function onExportSettings(e: React.MouseEvent<HTMLDivElement>) {
   const settings = getTargetSettings();
   const blob = new Blob([JSON.stringify(settings.dump(), null, 2)], {
     type: 'application/octet-stream',
@@ -510,7 +510,7 @@ function onUseRuntimeSettings() {
   updateTargetElement('');
 }
 
-function onUseSelectedAnnotation(e: React.MouseEvent<HTMLElement>) {
+function onUseSelectedAnnotation(e: React.MouseEvent<HTMLDivElement>) {
   const targetId = (e.currentTarget.dataset.targetId || '') + '';
   updateTargetElement(targetId);
 }
@@ -549,7 +549,7 @@ function onAnnotationSelectionChange(e: CustomEvent): void {
   (
     document.querySelector(
       '.tool-style-controls button#use-selected-annotation'
-    ) as HTMLElement
+    ) as HTMLDivElement
   ).dataset.targetId = annotation
     ? `annotation:${annotation.annotationUID}`
     : '';
@@ -659,7 +659,7 @@ function unsetStyleProperty(name: string) {
  * (and other buttons)
  */
 
-function onSetProperty(e: React.MouseEvent<HTMLElement>): void {
+function onSetProperty(e: React.MouseEvent<HTMLDivElement>): void {
   const input = e.currentTarget.parentElement.querySelector('input');
   if (input) {
     setStyleProperty(input.name + '', input.value + '');
@@ -668,7 +668,7 @@ function onSetProperty(e: React.MouseEvent<HTMLElement>): void {
   }
 }
 
-function onUnsetProperty(e: React.MouseEvent<HTMLElement>) {
+function onUnsetProperty(e: React.MouseEvent<HTMLDivElement>) {
   const input = e.currentTarget.parentElement.querySelector('input');
   if (input) {
     unsetStyleProperty(input.name + '');
