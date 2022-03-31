@@ -99,7 +99,8 @@ const optionsValues = [
 // ============================= //
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
-  onSelectedValueChange: (toolName) => {
+  onSelectedValueChange: (toolNameAsStringOrNumber) => {
+    const toolName = String(toolNameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the other tools disabled so we don't get conflicts.

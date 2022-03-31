@@ -257,7 +257,7 @@ addSliderToToolbar({
   range: [0, 50],
   defaultValue: 0,
   onSelectedValueChange: (value) => {
-    const valueAsNumber = Number(value);
+    let valueAsNumber = Number(value);
 
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
