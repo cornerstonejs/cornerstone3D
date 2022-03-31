@@ -46,12 +46,18 @@ module.exports = {
         },
         {
           type: 'doc',
+          docId: 'help',
+          label: 'Help',
+          position: 'right',
+        },
+        {
+          type: 'doc',
           docId: 'faq',
           label: 'FAQ',
           position: 'right',
         },
         {
-          to: 'https://github.com/PrecisionMetrics/cornerstone-3d-alpha',
+          to: 'https://github.com/cornerstonejs/cornerstone-3d-alpha/',
           position: 'right',
           className: 'header-github-link',
           'aria-label': 'GitHub Repository',

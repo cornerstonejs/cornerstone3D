@@ -156,9 +156,10 @@ module.exports = {
     'faq',
     {
       type: 'link',
-      label: 'API',
+      label: 'API References',
       href: '/api',
     },
+    'help',
     {
       type: 'link',
       label: 'Test Coverage Report',

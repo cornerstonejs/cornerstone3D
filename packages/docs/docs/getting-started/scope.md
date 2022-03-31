@@ -48,7 +48,6 @@ If you are using an older browser, or don't have any graphics care, your device 
 render volumetric images with `Cornerstone3D`. However, you can still render stack images using the
 CPU fallback that we have implemented in `Cornerstone3D` for such scenarios.
 
-## Mobile Support
 
 ## Monorepo hierarchy
 
