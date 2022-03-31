@@ -18,13 +18,6 @@ console.warn(
 const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
-const content = document.getElementById('content');
-const element = document.createElement('div');
-element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
-
-content.appendChild(element);
 // ============================= //
 
 /**
@@ -45,27 +38,25 @@ async function run() {
   });
 
   /**
+   *
+   *
+   *
+   *
+   *
+   *
+   *
+   *
    * Copy-paste the code from tutorials below to try them locally.
    * You can run the tutorial after by running `yarn run example tutorial` when
    * you are at the root of the tools package directory.
+   *
+   *
+   *
+   *
+   *
+   *
+   *
    */
-  const renderingEngineId = 'myRenderingEngine';
-  const viewportId = 'CT_SAGITTAL_STACK';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  const viewportInput = {
-    viewportId,
-    element,
-    type: ViewportType.STACK,
-  };
-
-  renderingEngine.enableElement(viewportInput);
-
-  const viewport = renderingEngine.getViewport(
-    viewportInput.viewportId
-  ) as Types.IStackViewport;
-
-  viewport.setStack(imageIds, 60);
 }
 
 run();
