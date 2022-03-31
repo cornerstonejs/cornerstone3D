@@ -13,6 +13,8 @@ export type LabelmapConfig = {
   outlineWidthInactive?: number;
   /** whether to render segmentation filling */
   renderFill?: boolean;
+  /** whether to render segmentation filling when inactive */
+  renderFillInactive?: boolean;
   /** alpha of the fill */
   fillAlpha?: number;
   /** alpha of the fill when inactive */
