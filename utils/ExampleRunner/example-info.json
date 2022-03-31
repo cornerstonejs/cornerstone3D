@@ -128,6 +128,10 @@
         "name": "Maximum Intensity Projection (MIP) - Jump to Click",
         "description": "Demonstrates how to obtain the location of the maximum value along the ray in a MIP view, and then navigate another set of viewports to this location."
       },
+      "petCT": {
+        "name": "PET-CT Fusion + MIPLayout",
+        "description": "PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold"
+      },
       "sharedToolState": {
         "name": "Shared Tool State",
         "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."

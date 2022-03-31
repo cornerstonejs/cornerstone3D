@@ -805,7 +805,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
-    init: (viewports: ViewportInputs) => void;
+    init: () => void;
     // (undocumented)
     initializeViewport: ({ renderingEngineId, viewportId, }: Types_2.IViewportId) => {
         normal: Types_2.Point3;
@@ -825,6 +825,12 @@ export class CrosshairsTool extends AnnotationTool {
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     onCameraModified: (evt: any) => void;
+    // (undocumented)
+    onSetToolActive(): void;
+    // (undocumented)
+    onSetToolEnabled(): void;
+    // (undocumented)
+    onSetToolPassive(): void;
     // (undocumented)
     _pointNearReferenceLine: (annotation: any, canvasCoords: any, proximity: any, lineViewport: any) => boolean;
     // (undocumented)
@@ -2920,11 +2926,11 @@ type SegmentationDataModifiedEventType = Types_2.CustomEventType<SegmentationDat
 export class SegmentationDisplayTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    disableCallback(): void;
-    // (undocumented)
-    enableCallback(): void;
-    // (undocumented)
     _getMergedRepresentationsConfig(toolGroupId: string): SegmentationRepresentationConfig;
+    // (undocumented)
+    onSetToolDisabled(): void;
+    // (undocumented)
+    onSetToolEnabled(): void;
     // (undocumented)
     renderSegmentation: (toolGroupId: string) => void;
     // (undocumented)
@@ -3374,9 +3380,6 @@ declare namespace ToolSpecificAnnotationTypes {
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
-function transformPhysicalToIndex(imageData: any, physicalPoint: any): any;
-
-// @public (undocumented)
 function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
 
 // @public
@@ -3477,8 +3480,7 @@ declare namespace utilities {
         pointInShapeCallback,
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
-        getAnnotationNearPointOnEnabledElement,
-        transformPhysicalToIndex
+        getAnnotationNearPointOnEnabledElement
     }
 }
 export { utilities }

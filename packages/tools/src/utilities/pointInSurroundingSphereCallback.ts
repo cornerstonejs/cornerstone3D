@@ -83,8 +83,10 @@ export default function pointInSurroundingSphereCallback(
   // convert the world coordinates to index coordinates
 
   const sphereCornersIJK = [
-    <Types.Point3>transformWorldToIndex(imageData, topLeftWorld),
-    <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
+    <Types.Point3>transformWorldToIndex(imageData, <Types.Point3>topLeftWorld),
+    <Types.Point3>(
+      transformWorldToIndex(imageData, <Types.Point3>bottomRightWorld)
+    ),
   ];
 
   // get the bounding box of the sphere in the image

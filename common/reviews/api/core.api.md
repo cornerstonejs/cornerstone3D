@@ -1584,6 +1584,9 @@ function toWindowLevel(low: number, high: number): {
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
+function transformWorldToIndex(imageData: any, worldPos: Point3): any;
+
+// @public (undocumented)
 export function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
 
 declare namespace Types {
@@ -1672,7 +1675,8 @@ declare namespace utilities {
         getVolumeActorCorners,
         indexWithinDimensions,
         getVolumeViewportsContainingSameVolumes,
-        getVolumeViewportsContainingVolumeId
+        getVolumeViewportsContainingVolumeId,
+        transformWorldToIndex
     }
 }
 export { utilities }

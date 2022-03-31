@@ -64,7 +64,7 @@ const viewportIds = {
 // ======== Set up page ======== //
 setTitleAndDescription(
   'PET-CT',
-  'PT CT 3x3 + MIP layout with Crosshairs, and synchronizers cameras, CT W/L and PET threshold'
+  'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
 );
 
 const size = '250px';
