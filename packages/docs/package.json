@@ -19,7 +19,9 @@
     "prep-coverage": "cd ../.. && yarn run test:ci && cd packages/docs && yarn run copy-coverage-to-docs",
     "prep-examples": "cd ../.. && yarn run build-all-examples && cd packages/docs && yarn run copy-examples-to-docs",
     "prep": "yarn run prep-coverage && yarn run prep-examples",
+    "prep-no-tests": "yarn run copy-coverage-to-docs && yarn run prep-examples",
     "docs:ci": "cross-env NODE_OPTIONS=--max_old_space_size=16384 && yarn run prep && yarn run build:docs",
+    "docs:ci-no-tests": "cross-env NODE_OPTIONS=--max_old_space_size=16384 && yarn run prep-no-tests && yarn run build:docs",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids"
   },

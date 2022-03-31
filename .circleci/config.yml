@@ -39,7 +39,10 @@ jobs:
       - run: yarn run build
       - persist_to_workspace:
           root: ~/repo
-          paths: .
+          paths:
+            - packages/core/dist
+            - packages/tools/dist
+            - packages/streaming-image-volume-loader/dist
 
   API_CHECK:
     <<: *defaults
@@ -47,9 +50,6 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run: yarn run api-check
-      - persist_to_workspace:
-          root: ~/repo
-          paths: .
 
   # https://circleci.com/docs/2.0/collect-test-data/#karma
   TEST:
@@ -69,11 +69,12 @@ jobs:
       - store_artifacts:
           path: ./junit
       - persist_to_workspace:
-          root: ./
+          root: ~/repo
           paths:
-            - packages/docs
+            - coverage
+            - junit
 
-  BUILD_DOCS:
+  BUILD_DOCS_FOR_PR:
     <<: *defaults
     resource_class: xlarge
     steps:
@@ -89,18 +90,7 @@ jobs:
       #    command: cd packages/docs && yarn run prep-examples && cd ..
       - run:
           name: Build Docs
-          command: cd packages/docs && yarn run docs:ci && cd ../..
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - packages/docs/build
-
-  DEPLOY_DOCS:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - attach_workspace:
-          at: ./
+          command: cd packages/docs && yarn run docs:ci-no-tests && cd ../..
       - run: # print the name of the branch we're on
           name: 'What branch am I on?'
           command: echo ${CIRCLE_BRANCH}
@@ -111,12 +101,26 @@ jobs:
           # NETLIFY_SITE_ID
           command: ./node_modules/netlify-cli/bin/run deploy --dir=./packages/docs/build --alias ${CIRCLE_BRANCH}
 
-  DEPLOY_DOCS_TO_PROD:
+  BUILD_DOCS_FOR_PROD:
     <<: *defaults
-    resource_class: small
+    resource_class: xlarge
     steps:
       - attach_workspace:
-          at: ./
+          at: ~/repo
+      # TODO: Coverage is not found? Not persisted?
+      #- run:
+      #    name: Copy Test Coverage for Docs
+      #    command: cd packages/docs && yarn run copy-coverage-to-docs && cd ..
+      # TODO: Try to fix this later
+      #- run:
+      #    name: Prep Examples
+      #    command: cd packages/docs && yarn run prep-examples && cd ..
+      - run:
+          name: Build Docs
+          command: cd packages/docs && yarn run docs:ci-no-tests && cd ../..
+      - run: # print the name of the branch we're on
+          name: 'What branch am I on?'
+          command: echo ${CIRCLE_BRANCH}
       - run:
           name: Deploy to Netlify
           # This uses environment variables in the CircleCI
@@ -165,13 +169,10 @@ workflows:
       - TEST:
           requires:
             - CHECKOUT # TODO: Also require build?
-      - BUILD_DOCS:
+      - BUILD_DOCS_FOR_PR:
           requires:
             - BUILD
             - TEST
-      - DEPLOY_DOCS:
-          requires:
-            - BUILD_DOCS
 
   # MERGE TO MAIN
   TEST_AND_RELEASE:
@@ -190,10 +191,7 @@ workflows:
           requires:
             - BUILD
             - TEST
-      - BUILD_DOCS:
+      - BUILD_DOCS_FOR_PROD:
           requires:
             - BUILD
             - TEST
-      - DEPLOY_DOCS_TO_PROD:
-          requires:
-            - BUILD_DOCS
