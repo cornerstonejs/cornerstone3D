@@ -199,9 +199,8 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Create synchronizers
-  const cameraSynchronizer =
-    createCameraPositionSynchronizer(cameraSynchronizerId);
-  const voiSynchronizer = createVOISynchronizer(voiSynchronizerId);
+  createCameraPositionSynchronizer(cameraSynchronizerId);
+  createVOISynchronizer(voiSynchronizerId);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

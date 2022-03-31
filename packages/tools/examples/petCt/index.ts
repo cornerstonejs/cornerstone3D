@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
@@ -23,13 +22,18 @@ const {
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
+  synchronizers,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
-// Define a unique id for the volume
+const { createCameraPositionSynchronizer, createVOISynchronizer } =
+  synchronizers;
+
+let renderingEngine;
+const renderingEngineId = 'myRenderingEngine';
 const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}`; // VolumeId with loader id + volume id
@@ -37,10 +41,20 @@ const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`;
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
+const viewportIds = {
+  CT: { AXIAL: 'CT_AXIAL', SAGITTAL: 'CT_SAGITTAL', CORONAL: 'CT_CORONAL' },
+  PT: { AXIAL: 'PT_AXIAL', SAGITTAL: 'PT_SAGITTAL', CORONAL: 'PT_CORONAL' },
+  FUSION: {
+    AXIAL: 'FUSION_AXIAL',
+    SAGITTAL: 'FUSION_SAGITTAL',
+    CORONAL: 'FUSION_CORONAL',
+  },
+};
+
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'PET CT',
-  'PT CT 3x3 + MIP layout with Crosshairs and synchronized cameras'
+  'PET-CT',
+  'PT CT 3x3 + MIP layout with Crosshairs, and synchronizers cameras, CT W/L and PET threshold'
 );
 
 const size = '250px';
@@ -102,13 +116,7 @@ elements.forEach((element) => {
 
 // ============================= //
 
-/**
- * Runs the demo
- */
-async function run() {
-  // Init Cornerstone and related libraries
-  await initDemo();
-
+function setUpToolGroups() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(PanTool);
@@ -149,6 +157,107 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
+  toolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.FUSION.AXIAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.FUSION.SAGITTAL, renderingEngineId);
+  toolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
+}
+
+function setUpSynchronizers() {
+  const axialCameraSynchronizerId = 'AXIAL_CAMERA_SYNCHRONIZER_ID';
+  const sagittalCameraSynchronizerId = 'SAGITTAL_CAMERA_SYNCHRONIZER_ID';
+  const coronalCameraSynchronizerId = 'CORONAL_CAMERA_SYNCHRONIZER_ID';
+  const ctVoiSynchronizerId = 'CT_VOI_SYNCHRONIZER_ID';
+  const ptVoiSynchronizerId = 'PT_VOI_SYNCHRONIZER_ID';
+
+  const axialCameraPositionSynchronizer = createCameraPositionSynchronizer(
+    axialCameraSynchronizerId
+  );
+  const sagittalCameraPositionSynchronizer = createCameraPositionSynchronizer(
+    sagittalCameraSynchronizerId
+  );
+  const coronalCameraPositionSynchronizer = createCameraPositionSynchronizer(
+    coronalCameraSynchronizerId
+  );
+  const ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId);
+  const ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId);
+
+  // Add viewports to camera synchronizers
+  [
+    viewportIds.CT.AXIAL,
+    viewportIds.PT.AXIAL,
+    viewportIds.FUSION.AXIAL,
+  ].forEach((viewportId) => {
+    axialCameraPositionSynchronizer.add({
+      renderingEngineId,
+      viewportId,
+    });
+  });
+  [
+    viewportIds.CT.SAGITTAL,
+    viewportIds.PT.SAGITTAL,
+    viewportIds.FUSION.SAGITTAL,
+  ].forEach((viewportId) => {
+    sagittalCameraPositionSynchronizer.add({
+      renderingEngineId,
+      viewportId,
+    });
+  });
+  [
+    viewportIds.CT.CORONAL,
+    viewportIds.PT.CORONAL,
+    viewportIds.FUSION.CORONAL,
+  ].forEach((viewportId) => {
+    coronalCameraPositionSynchronizer.add({
+      renderingEngineId,
+      viewportId,
+    });
+  });
+
+  // Add viewports to VOI synchronizers
+  [
+    viewportIds.CT.AXIAL,
+    viewportIds.CT.SAGITTAL,
+    viewportIds.CT.CORONAL,
+  ].forEach((viewportId) => {
+    ctVoiSynchronizer.add({
+      renderingEngineId,
+      viewportId,
+    });
+  });
+  [
+    viewportIds.FUSION.AXIAL,
+    viewportIds.FUSION.SAGITTAL,
+    viewportIds.FUSION.CORONAL,
+  ].forEach((viewportId) => {
+    // In this example, the fusion viewports are only targets for CT VOI
+    // synchronization, not sources
+    ctVoiSynchronizer.addTarget({
+      renderingEngineId,
+      viewportId,
+    });
+  });
+  [
+    viewportIds.PT.AXIAL,
+    viewportIds.PT.SAGITTAL,
+    viewportIds.PT.CORONAL,
+    viewportIds.FUSION.AXIAL,
+    viewportIds.FUSION.SAGITTAL,
+    viewportIds.FUSION.CORONAL,
+  ].forEach((viewportId) => {
+    ptVoiSynchronizer.add({
+      renderingEngineId,
+      viewportId,
+    });
+  });
+}
+
+async function setUpDisplay() {
   const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
@@ -179,27 +288,11 @@ async function run() {
     imageIds: ptImageIds,
   });
 
-  // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
   // Create the viewports
-
-  const viewportIds = [
-    'CT_AXIAL',
-    'CT_SAGITTAL',
-    'CT_CORONAL',
-    'PT_AXIAL',
-    'PT_SAGITTAL',
-    'PT_CORONAL',
-    'FUSION_AXIAL',
-    'FUSION_SAGITTAL',
-    'FUSION_CORONAL',
-  ];
 
   const viewportInputArray = [
     {
-      viewportId: viewportIds[0],
+      viewportId: viewportIds.CT.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1_1,
       defaultOptions: {
@@ -207,7 +300,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[1],
+      viewportId: viewportIds.CT.SAGITTAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1_2,
       defaultOptions: {
@@ -215,7 +308,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[2],
+      viewportId: viewportIds.CT.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1_3,
       defaultOptions: {
@@ -223,7 +316,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[3],
+      viewportId: viewportIds.PT.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2_1,
       defaultOptions: {
@@ -232,7 +325,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[4],
+      viewportId: viewportIds.PT.SAGITTAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2_2,
       defaultOptions: {
@@ -241,7 +334,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[5],
+      viewportId: viewportIds.PT.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2_3,
       defaultOptions: {
@@ -250,7 +343,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[6],
+      viewportId: viewportIds.FUSION.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element3_1,
       defaultOptions: {
@@ -258,7 +351,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[7],
+      viewportId: viewportIds.FUSION.SAGITTAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element3_2,
       defaultOptions: {
@@ -266,7 +359,7 @@ async function run() {
       },
     },
     {
-      viewportId: viewportIds[8],
+      viewportId: viewportIds.FUSION.CORONAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element3_3,
       defaultOptions: {
@@ -277,10 +370,6 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  viewportIds.forEach((viewportId) => {
-    toolGroup.addViewport(viewportId, renderingEngineId);
-  });
-
   // Set the volumes to load
   ptVolume.load();
   ctVolume.load();
@@ -289,13 +378,13 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ctVolumeId }],
-    [viewportIds[0], viewportIds[1], viewportIds[2]]
+    [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL, viewportIds.CT.CORONAL]
   );
 
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId: ptVolumeId, callback: setPetTransferFunctionForVolumeActor }],
-    [viewportIds[3], viewportIds[4], viewportIds[5]]
+    [viewportIds.PT.AXIAL, viewportIds.PT.SAGITTAL, viewportIds.PT.CORONAL]
   );
 
   await setVolumesForViewports(
@@ -307,11 +396,32 @@ async function run() {
         callback: setPetColorMapTransferFunctionForVolumeActor,
       },
     ],
-    [viewportIds[6], viewportIds[7], viewportIds[8]]
+    [
+      viewportIds.FUSION.AXIAL,
+      viewportIds.FUSION.SAGITTAL,
+      viewportIds.FUSION.CORONAL,
+    ]
   );
 
-  // Render the image
+  // Render the viewports
   renderingEngine.render();
+}
+
+/**
+ * Runs the demo
+ */
+async function run() {
+  // Init Cornerstone and related libraries
+  await initDemo();
+
+  // Instantiate a rendering engine
+  renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // Display needs to be set up first so that we have viewport to reference for tools and synchronizers.
+  await setUpDisplay();
+  // Tools and synchronizers can be set up in any order.
+  setUpToolGroups();
+  setUpSynchronizers();
 }
 
 run();
