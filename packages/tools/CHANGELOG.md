@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.7.0](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/tools@0.6.0...@cornerstonejs/tools@0.7.0) (2022-03-31)
+
+
+### Features
+
+* add crosshairs example and fix locking ([#40](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/issues/40)) ([fe9ec50](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/commit/fe9ec50a61c16a2f3655b1dbb405fa7e2ec2438f))
+
+
+
+
+
 # [0.6.0](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/tools@0.5.4...@cornerstonejs/tools@0.6.0) (2022-03-31)
 
 
