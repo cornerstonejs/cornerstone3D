@@ -76,9 +76,6 @@ await ctVolume.load();
 
 ## Alternative implementations to consider
 
-<details>
-
-<summary>Alternative Implementation for Volume Loaders</summary>
 
 Although we believe our pre-fetching method for volumes ensures that the volume is loaded as fast as possible,
 There can be other implementations of volume loaders that don't rely on this prefetching.
@@ -98,5 +95,3 @@ Disadvantages:
 
 - Performance cost
 - Cannot progressively load the image data, as it requires creating a new volume for each image change
-
-</details>

@@ -17,11 +17,11 @@ const onImageRendered = function (evt: Types.EventTypes.ImageRenderedEvent) {
   triggerAnnotationRender(evt.detail.element);
 };
 
-const enable = function (element: HTMLElement): void {
+const enable = function (element: HTMLDivElement): void {
   element.addEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered);
 };
 
-const disable = function (element: HTMLElement): void {
+const disable = function (element: HTMLDivElement): void {
   element.removeEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered);
 };
 

@@ -16,7 +16,7 @@ import * as ToolGroupManager from '../store/ToolGroupManager';
  * @returns The annotation for the element
  */
 function getAnnotationNearPoint(
-  element: HTMLElement,
+  element: HTMLDivElement,
   canvasPoint: Types.Point2,
   proximity = 5
 ): Annotation | null {

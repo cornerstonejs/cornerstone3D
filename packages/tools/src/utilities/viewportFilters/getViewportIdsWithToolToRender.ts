@@ -15,7 +15,7 @@ import filterViewportsWithSameOrientation from './filterViewportsWithSameOrienta
  * @returns An array of viewportIds.
  */
 export default function getViewportIdsWithToolToRender(
-  element: HTMLElement,
+  element: HTMLDivElement,
   toolName: string,
   requireSameOrientation = true
 ): string[] {

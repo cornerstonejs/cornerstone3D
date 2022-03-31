@@ -14,6 +14,11 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const { ViewportType, BlendModes } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
@@ -26,11 +31,11 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 // Define a unique id for each volume
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}`; // VolumeId with loader id + volume id
+const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
-const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`;
+const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
 function setPetTransferFunction({ volumeActor }) {
   const rgbTransferFunction = volumeActor

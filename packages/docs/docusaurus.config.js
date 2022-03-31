@@ -15,11 +15,10 @@ module.exports = {
   projectName: 'Cornerstone', // Usually your repo name.
   themeConfig: {
     navbar: {
-      title: 'Cornerstone.js',
       logo: {
         alt: 'Cornerstone.js',
-        src: 'img/logo.svg',
-        srcDark: 'img/logo-white.svg',
+        src: 'img/cornerstone-light.png',
+        srcDark: 'img/cornerstone-dark.png',
       },
       items: [
         {
@@ -46,12 +45,18 @@ module.exports = {
         },
         {
           type: 'doc',
+          docId: 'help',
+          label: 'Help',
+          position: 'right',
+        },
+        {
+          type: 'doc',
           docId: 'faq',
           label: 'FAQ',
           position: 'right',
         },
         {
-          to: 'https://github.com/PrecisionMetrics/cornerstone-3d-alpha',
+          to: 'https://github.com/cornerstonejs/cornerstone-3d-alpha/',
           position: 'right',
           className: 'header-github-link',
           'aria-label': 'GitHub Repository',
@@ -71,7 +76,7 @@ module.exports = {
           items: [
             {
               html: `
-                <img crossorigin src='https://i.imgur.com/yE2WibH.png' id="cs-logo" alt="cornerstone" />
+                <img src='img/cornerstone-dark.png' id="cs-logo" alt="cornerstone" />
               `,
             },
           ],
@@ -141,6 +146,7 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
+          breadcrumbs: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl:

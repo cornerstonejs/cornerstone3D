@@ -97,6 +97,30 @@
       "modifierKeys": {
         "name": "Binding Tools with Modifier Keys",
         "description": "Demonstrates how to bind a tool to a keyboard and mouse combination (e.g. shift+click, ctrl+click)"
+      },
+      "segmentationRendering": {
+        "name": "Labelmap Segmentation Rendering",
+        "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
+      },
+      "segmentationSwapping": {
+        "name": "Segmentation Swapping",
+        "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
+      },
+      "globalSegmentationConfiguration": {
+        "name": "Global Segmentation Configuration",
+        "description": "Demonstrates how to set a global configuration for segmentation representations"
+      },
+      "toolGroupSpecificSegmentationRepresentationConfiguration": {
+        "name": "ToolGroup Specific Segmentation Configuration",
+        "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"
+      },
+      "basicSegmentationTools": {
+        "name": "Segmentation Tools - Brush, Scissors",
+        "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
+      },
+      "segmentLocking": {
+        "name": "Segmentation Swapping",
+        "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       }
     },
     "tools-advanced": {
@@ -110,7 +134,15 @@
       },
       "volumeViewportSynchronization": {
         "name": "Volume Viewport Synchronization",
-        "description": "Demonstrates hwo to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
+        "description": "Demonstrates how to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
+      },
+      "segmentationRenderingDifferentResolutions": {
+        "name": "Rendering Labelmap Segmentations with Different Resolutions",
+        "description": "Demonstrates that the segmentation resolution need not to be the same as the source data"
+      },
+      "rectangleROIThreshold": {
+        "name": "Rectangle ROI Threshold Segmentation",
+        "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
       }
     }
   }

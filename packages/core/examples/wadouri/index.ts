@@ -11,6 +11,11 @@ import {
 import initCornerstoneWADOImageLoader from '../../../../utils/demo/helpers/initCornerstoneWADOImageLoader';
 import { init as csRenderInit } from '@cornerstonejs/core';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const { ViewportType } = Enums;
 
 // ======== Set up page ======== //

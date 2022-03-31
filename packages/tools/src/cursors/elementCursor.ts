@@ -7,7 +7,7 @@ const ELEMENT_CURSORS_MAP = Symbol('ElementCursorsMap');
  */
 
 function initElementCursor(
-  element: HTMLElement,
+  element: HTMLDivElement,
   cursor: MouseCursor | null
 ): void {
   _getElementCursors(element)[0] = cursor;
@@ -15,7 +15,7 @@ function initElementCursor(
 }
 
 function _setElementCursor(
-  element: HTMLElement,
+  element: HTMLDivElement,
   cursor: MouseCursor | null
 ): void {
   const cursors = _getElementCursors(element);
@@ -28,11 +28,11 @@ function _setElementCursor(
   ).getStyleProperty();
 }
 
-function resetElementCursor(element: HTMLElement): void {
+function resetElementCursor(element: HTMLDivElement): void {
   _setElementCursor(element, _getElementCursors(element)[1]);
 }
 
-function hideElementCursor(element: HTMLElement): void {
+function hideElementCursor(element: HTMLDivElement): void {
   _setElementCursor(element, MouseCursor.getDefinedCursor('none'));
 }
 
@@ -41,7 +41,7 @@ function hideElementCursor(element: HTMLElement): void {
  */
 
 function _getElementCursors(
-  element: HTMLElement
+  element: HTMLDivElement
 ): [MouseCursor | null, MouseCursor | null] {
   let map = _getElementCursors[ELEMENT_CURSORS_MAP];
   if (!(map instanceof WeakMap)) {

@@ -11,7 +11,10 @@ import SVGMouseCursor from './SVGMouseCursor';
  * any cursor name either Cornerstone-specific cursor names or the standard
  * CSS cursor names.
  */
-function setCursorForElement(element: HTMLElement, cursorName: string): void {
+function setCursorForElement(
+  element: HTMLDivElement,
+  cursorName: string
+): void {
   let cursor = SVGMouseCursor.getDefinedCursor(cursorName, true);
   if (!cursor) {
     cursor = MouseCursor.getDefinedCursor(cursorName);

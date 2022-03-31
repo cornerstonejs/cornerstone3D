@@ -14,6 +14,11 @@ import {
   camera as cameraHelpers,
 } from '../../../../utils/demo/helpers';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
@@ -22,8 +27,8 @@ const viewportId = 'CT_SAGITTAL_STACK';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderProtocolName}:${volumeName}`; // VolumeId with loader id + volume id
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(

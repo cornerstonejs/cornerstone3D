@@ -41,7 +41,7 @@ about this in the next section.
 `Segmentation` related functions and classes are available in the `segmentation` module.
 
 ```js
-import { segmentations } from '@cornerstone/tools';
+import { segmentation } from '@cornerstonejs/tools';
 
 // segmentation state holding all segmentations and their toolGroup specific representations
 segmentations.state.XYZ;

@@ -17,7 +17,7 @@ type NormalizedMouseEventDetail = {
   /** The camera at the time of the event. */
   camera: Record<string, unknown>;
   /** The element that the event was fired on. */
-  element: HTMLElement;
+  element: HTMLDivElement;
 };
 
 /**
@@ -86,7 +86,7 @@ type AnnotationLockChangeEventDetail = {
  */
 type AnnotationRenderedEventDetail = {
   /** The HTML element that the annotation was rendered on. */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** unique id of the viewport */
   viewportId: string;
   /** unique id of the rendering engine */
@@ -147,7 +147,7 @@ type SegmentationModifiedEventDetail = {
  */
 type KeyDownEventDetail = {
   /** html element */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** unique id of the viewport */
   viewportId: string;
   /** unique id of the rendering engine */

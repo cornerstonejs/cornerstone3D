@@ -19,7 +19,7 @@ function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
  *
  * @param {vtkImageData} imageData
  * @param {[number, number,number]} index - IJK index of the point to click
- * @param {HTMLElement} element - the canvas to be clicked on
+ * @param {HTMLDivElement} element - the canvas to be clicked on
  * @param {IStackViewport|IVolumeViewport} viewport
  * @returns pageX, pageY, clientX, clientY, worldCoordinate
  */

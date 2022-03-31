@@ -9,8 +9,8 @@ interfaces and functionality are broadly identified as:
 - Metadata Provider
 - Tools
 
-`@cornerstone/core` is a "rendering" library built on top of `vtk.js`.
+`@cornerstonejs/core` is a "rendering" library built on top of `vtk.js`.
 which leverages `cornerstone`'s existing plumbing to integrate with image loaders and metadata providers. The `demo` package in this repository contains a simple "metadata provider", named "WADORSHeaderProvider", that allows for querying metadata by instance and
 imageId.
 
-This repository's `@cornerstone/tools` is a "tools" library that, once initialized, will listen for custom events emitted by `@cornerstone/core`. Please note, the event naming and handling overlaps the events and event handling in the `cornerstone-tools` library. If you attempt to use `cornerstone-tools` in tandem, you will likely encounter issues. As this is a possible use case, please don't hesitate to report any issues and propose potential solutions.
+This repository's `@cornerstonejs/tools` is a "tools" library that, once initialized, will listen for custom events emitted by `@cornerstonejs/core`. Please note, the event naming and handling overlaps the events and event handling in the `cornerstone-tools` library. If you attempt to use `cornerstone-tools` in tandem, you will likely encounter issues. As this is a possible use case, please don't hesitate to report any issues and propose potential solutions.

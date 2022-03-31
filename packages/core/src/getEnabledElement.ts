@@ -30,7 +30,7 @@ import { IEnabledElement } from './types';
  * can be found
  */
 export default function getEnabledElement(
-  element: HTMLElement | undefined
+  element: HTMLDivElement | undefined
 ): IEnabledElement | undefined {
   if (!element) {
     return;

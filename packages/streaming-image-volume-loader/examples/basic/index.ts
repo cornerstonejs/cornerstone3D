@@ -6,6 +6,11 @@ import {
 } from '@cornerstonejs/core';
 import { init as csTools3dInit } from '@cornerstonejs/tools';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const content = document.getElementById('content');
 
 const element = document.createElement('div');

@@ -387,7 +387,7 @@ describe('Segmentation Render -- ', () => {
           expect(toolGroupState).toBeDefined();
 
           const toolGroupConfig =
-            segmentation.segmentationConfig.getToolGroupSpecificConfig(
+            segmentation.config.getToolGroupSpecificConfig(
               this.segToolGroup.id
             );
 

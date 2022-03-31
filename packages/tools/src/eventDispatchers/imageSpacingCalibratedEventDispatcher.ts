@@ -30,14 +30,14 @@ const onImageSpacingCalibrated = function (
   });
 };
 
-const enable = function (element: HTMLElement) {
+const enable = function (element: HTMLDivElement) {
   element.addEventListener(
     Enums.Events.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated
   );
 };
 
-const disable = function (element: HTMLElement) {
+const disable = function (element: HTMLDivElement) {
   element.removeEventListener(
     Enums.Events.IMAGE_SPACING_CALIBRATED,
     onImageSpacingCalibrated

@@ -24,7 +24,7 @@ module.exports = function (config) {
       showSpecTiming: false, // print the time elapsed for each spec
       failFast: false, // test would finish with error when a first fail occurs
       prefixes: {
-        success: '    OK: ', // override prefix for passed tests, default is '✓ '
+        success: '  PASS: ', // override prefix for passed tests, default is '✓ '
         failure: 'FAILED: ', // override prefix for failed tests, default is '✗ '
         skipped: 'SKIPPED: ', // override prefix for skipped tests, default is '- '
       },

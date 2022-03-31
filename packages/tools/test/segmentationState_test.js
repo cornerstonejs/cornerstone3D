@@ -215,7 +215,7 @@ describe('Segmentation State -- ', () => {
       const vp = this.renderingEngine.getViewport(viewportId);
 
       eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
-        const globalConfig = segmentation.state.getGlobalConfig();
+        const globalConfig = segmentation.config.getGlobalConfig();
 
         expect(globalConfig.renderInactiveSegmentations).toBe(true);
         expect(globalConfig.representations).toBeDefined();

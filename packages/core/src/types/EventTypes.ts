@@ -17,7 +17,7 @@ type CameraModifiedEventDetail = {
   /** Current camera properties */
   camera: ICamera;
   /** Viewport HTML element in the DOM */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
@@ -41,7 +41,7 @@ type VoiModifiedEventDetail = {
  */
 type ElementDisabledEventDetail = {
   /** Viewport HTML element in the DOM */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
@@ -53,7 +53,7 @@ type ElementDisabledEventDetail = {
  */
 type ElementEnabledEventDetail = {
   /** Viewport HTML element in the DOM */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
@@ -65,7 +65,7 @@ type ElementEnabledEventDetail = {
  */
 type ImageRenderedEventDetail = {
   /** Viewport HTML element in the DOM */
-  element: HTMLElement;
+  element: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
@@ -167,7 +167,7 @@ type StackNewImageEventDetail = {
  * IMAGE_SPACING_CALIBRATED Event's data
  */
 type ImageSpacingCalibratedEventDetail = {
-  element: HTMLElement;
+  element: HTMLDivElement;
   viewportId: string;
   renderingEngineId: string;
   imageId: string;

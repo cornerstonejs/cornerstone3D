@@ -11,11 +11,14 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addButtonToToolbar,
   addToggleButtonToToolbar,
-  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
 
 const {
   SegmentationDisplayTool,
@@ -29,8 +32,8 @@ const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderProtocolName}:${volumeName}`; // VolumeId with loader id + volume id
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId1 = 'SEGMENTATION_ID_1';
 const segmentationId2 = 'SEGMENTATION_ID_2';
 const toolGroupId1 = 'MY_TOOL_GROUP_ID_1';
@@ -78,8 +81,7 @@ instructions.innerText = `
 addToggleButtonToToolbar(
   'toggle outline rendering',
   (evt, toggle) => {
-    let config =
-      segmentation.segmentationConfig.getToolGroupSpecificConfig(toolGroupId2);
+    let config = segmentation.config.getToolGroupSpecificConfig(toolGroupId2);
 
     if (config.representations === undefined) {
       config = {
@@ -94,10 +96,7 @@ addToggleButtonToToolbar(
       config.representations.LABELMAP.renderOutline = toggle;
     }
 
-    segmentation.segmentationConfig.setToolGroupSpecificConfig(
-      toolGroupId2,
-      config
-    );
+    segmentation.config.setToolGroupSpecificConfig(toolGroupId2, config);
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
 

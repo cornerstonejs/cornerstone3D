@@ -1,10 +1,10 @@
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 
 import {
   RepresentationConfig,
   SegmentationRepresentationConfig,
-} from '../../types/SegmentationStateTypes';
+} from '../../../types/SegmentationStateTypes';
 
 /**
  * It returns the global segmentation config.

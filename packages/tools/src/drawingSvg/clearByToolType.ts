@@ -1,10 +1,13 @@
 import getSvgDrawingHelper from './getSvgDrawingHelper';
 
-function clearByToolType(
-  canvasElement: HTMLCanvasElement,
-  toolType: string
-): void {
-  const svgDrawingHelper = getSvgDrawingHelper(canvasElement);
+/**
+ * We are not using it anywhere yet.
+ * @param element
+ * @param toolType
+ * @internal
+ */
+function clearByToolType(element: HTMLDivElement, toolType: string): void {
+  const svgDrawingHelper = getSvgDrawingHelper(element);
   const nodes = svgDrawingHelper._svgLayerElement.querySelectorAll(
     'svg > *'
   ) as NodeListOf<SVGElement>;

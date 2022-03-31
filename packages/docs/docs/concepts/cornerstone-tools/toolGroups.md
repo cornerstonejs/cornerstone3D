@@ -44,7 +44,7 @@ destroy Tool Groups.
 ToolGroupManager can be utilized to create a tool group using `createToolGroup`.
 
 ```js
-import { ToolGroupManager } from '@cornerstone/tools';
+import { ToolGroupManager } from '@cornerstonejs/tools';
 
 const toolGroupId = 'ctToolGroup';
 const ctToolGroup = ToolGroupManager.createToolGroup(toolGroupId);

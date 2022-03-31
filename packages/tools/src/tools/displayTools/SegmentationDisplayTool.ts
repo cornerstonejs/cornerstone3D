@@ -3,7 +3,7 @@ import { getEnabledElementByIds } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
 import { labelmapDisplay } from './Labelmap';
-import { segmentationConfig } from '../../stateManagement/segmentation';
+import { config as segmentationConfig } from '../../stateManagement/segmentation';
 import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { getToolGroup } from '../../store/ToolGroupManager';
 

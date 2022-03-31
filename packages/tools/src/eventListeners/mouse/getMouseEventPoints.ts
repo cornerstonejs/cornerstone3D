@@ -7,15 +7,15 @@ import { IPoints } from '../../types';
  * Given a native mouse event, get the associated cornerstone3D enabled element
  * and derive a set of coordinates useful for tools.
  * @param evt - The Mouse event.
- * @param element - The DOM HTMLElement that the event was triggered on.
+ * @param element - The DOM HTMLDivElement that the event was triggered on.
  * @returns The points related to the event in the form of a `IPoints` object containing
  * the following properties: `page`, `client`, `canvas`, and `world` details of the event.
  */
 export default function getMouseEventPoints(
   evt: MouseEvent,
-  element?: HTMLElement
+  element?: HTMLDivElement
 ): IPoints {
-  const elementToUse = element || (evt.currentTarget as HTMLElement);
+  const elementToUse = element || (evt.currentTarget as HTMLDivElement);
   const { viewport } = getEnabledElement(elementToUse);
   const clientPoint = _clientToPoint(evt);
   const pagePoint = _pageToPoint(evt);
@@ -32,13 +32,13 @@ export default function getMouseEventPoints(
 
 /**
  * Converts point from page coordinates to canvas coordinates.
- * @param element - HTMLElement
+ * @param element - HTMLDivElement
  * @param pagePoint - Point in page coordinates pageX and pageY
  *
  * @returns The canvas coordinate points
  */
 function _pagePointsToCanvasPoints(
-  element: HTMLElement,
+  element: HTMLDivElement,
   pagePoint: Types.Point2
 ): Types.Point2 {
   const rect = element.getBoundingClientRect();

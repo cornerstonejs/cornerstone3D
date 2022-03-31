@@ -12,7 +12,7 @@ const eventName = Events.MOUSE_MOVE;
  * @param evt - The mouse event.
  */
 function mouseMoveListener(evt: MouseEvent) {
-  const element = <HTMLElement>evt.currentTarget;
+  const element = <HTMLDivElement>evt.currentTarget;
   const enabledElement = getEnabledElement(element);
   const { renderingEngineId, viewportId } = enabledElement;
 

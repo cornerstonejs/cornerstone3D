@@ -46,7 +46,7 @@ import {
   imageLoadPoolManager,
   loadAndCacheImage,
   RequestType,
-} from '@cornerstone/core';
+} from '@cornerstonejs/core';
 
 function sendRequest(imageId, imageIdIndex, options) {
   return loadAndCacheImage(imageId, options).then(

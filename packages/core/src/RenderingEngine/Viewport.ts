@@ -23,7 +23,7 @@ import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 
 /**
  * An object representing a single viewport, which is a camera
- * looking into a viewport, and an associated target output `HTMLElement`.
+ * looking into a viewport, and an associated target output `HTMLDivElement`.
  * Viewport is a base class that can be extended to create a specific
  * viewport type. Both VolumeViewport and StackViewport are subclasses
  * of Viewport. Common logic for all viewports is contained in Viewport class
@@ -34,7 +34,7 @@ class Viewport implements IViewport {
   /** unique identifier for the viewport */
   readonly id: string;
   /** HTML element in DOM that is used for rendering the viewport */
-  readonly element: HTMLElement;
+  readonly element: HTMLDivElement;
   /** an internal canvas that is created on the provided HTML element */
   readonly canvas: HTMLCanvasElement;
   /** RenderingEngine id that the viewport belongs to */

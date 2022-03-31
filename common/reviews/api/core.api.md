@@ -36,7 +36,7 @@ type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 type CameraModifiedEventDetail = {
     previousCamera: ICamera;
     camera: ICamera;
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -371,7 +371,7 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public (undocumented)
 type ElementDisabledEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -381,7 +381,7 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public (undocumented)
 type ElementEnabledEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -557,7 +557,7 @@ type FlipDirection = {
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3, viewUp: Point3): string;
 
 // @public (undocumented)
-export function getEnabledElement(element: HTMLElement | undefined): IEnabledElement | undefined;
+export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
 export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
@@ -572,7 +572,7 @@ function getMinMax(storedPixelData: number[]): {
 };
 
 // @public (undocumented)
-export function getOrCreateCanvas(element: HTMLElement): HTMLCanvasElement;
+export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement;
 
 // @public (undocumented)
 export function getRenderingEngine(id: string): IRenderingEngine | undefined;
@@ -943,7 +943,7 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public (undocumented)
 type ImageRenderedEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
@@ -957,7 +957,7 @@ type ImageSpacingCalibratedEvent = CustomEvent_2<ImageSpacingCalibratedEventDeta
 
 // @public (undocumented)
 type ImageSpacingCalibratedEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
@@ -1093,7 +1093,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
-        element: HTMLElement;
+        element: HTMLDivElement;
         viewportId: string;
         renderingEngineId: string;
     };
@@ -1179,7 +1179,7 @@ interface IViewport {
     // (undocumented)
     defaultOptions: any;
     // (undocumented)
-    element: HTMLElement;
+    element: HTMLDivElement;
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
     // (undocumented)
@@ -1422,7 +1422,7 @@ type PTScaling = {
 
 // @public (undocumented)
 type PublicViewportInput = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;
@@ -1580,7 +1580,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
-        element: HTMLElement;
+        element: HTMLDivElement;
         viewportId: string;
         renderingEngineId: string;
     };
@@ -1795,7 +1795,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     readonly defaultOptions: any;
     // (undocumented)
-    readonly element: HTMLElement;
+    readonly element: HTMLDivElement;
     // (undocumented)
     protected flip({ flipHorizontal, flipVertical }: FlipDirection): void;
     // (undocumented)

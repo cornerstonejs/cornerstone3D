@@ -240,7 +240,7 @@ export default class RectangleROITool extends AnnotationTool {
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: RectangleROIAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
@@ -502,7 +502,7 @@ export default class RectangleROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  cancel = (element: HTMLElement) => {
+  cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false;

@@ -11,7 +11,7 @@ import { MouseWheelEventDetail } from '../../types/EventTypes';
  * @param evt - The mouse wheel event.
  */
 function wheelListener(evt: WheelEvent) {
-  const element = <HTMLElement>evt.currentTarget;
+  const element = <HTMLDivElement>evt.currentTarget;
   const enabledElement = getEnabledElement(element);
   const { renderingEngineId, viewportId } = enabledElement;
 

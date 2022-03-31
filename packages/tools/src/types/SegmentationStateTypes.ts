@@ -1,6 +1,6 @@
 import * as Enums from '../enums';
 import type {
-  labelmapConfig,
+  LabelmapConfig,
   LabelmapSegmentationData,
   LabelmapRenderingConfig,
 } from './LabelmapTypes';
@@ -22,7 +22,7 @@ export type ColorLut = Array<Color>;
 
 export type RepresentationConfig = {
   /** labelmap configuration */
-  LABELMAP?: labelmapConfig;
+  LABELMAP?: LabelmapConfig;
 };
 
 export type SegmentationRepresentationConfig = {

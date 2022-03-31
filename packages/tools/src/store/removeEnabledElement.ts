@@ -69,7 +69,7 @@ function removeEnabledElement(
   _removeEnabledElement(element);
 }
 
-const _removeViewportFromSynchronizers = (element: HTMLElement) => {
+const _removeViewportFromSynchronizers = (element: HTMLDivElement) => {
   const enabledElement = getEnabledElement(element);
 
   const synchronizers = getSynchronizersForViewport(
@@ -81,7 +81,7 @@ const _removeViewportFromSynchronizers = (element: HTMLElement) => {
   });
 };
 
-const _removeViewportFromToolGroup = (element: HTMLElement) => {
+const _removeViewportFromToolGroup = (element: HTMLDivElement) => {
   const { renderingEngineId, viewportId } = getEnabledElement(element);
 
   const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
@@ -105,7 +105,7 @@ const _removeAllToolsForElement = function (element) {
   });
 };
 
-function _resetSvgNodeCache(element: HTMLElement) {
+function _resetSvgNodeCache(element: HTMLDivElement) {
   const { viewportUid: viewportId, renderingEngineUid: renderingEngineId } =
     element.dataset;
   const elementHash = `${viewportId}:${renderingEngineId}`;
@@ -117,7 +117,7 @@ function _resetSvgNodeCache(element: HTMLElement) {
  * @private
  * @param enabledElement
  */
-const _removeEnabledElement = function (element: HTMLElement) {
+const _removeEnabledElement = function (element: HTMLDivElement) {
   const foundElementIndex = state.enabledElements.findIndex(
     (el) => el === element
   );

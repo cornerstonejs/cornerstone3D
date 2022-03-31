@@ -14,7 +14,7 @@ type ModesFilter = Array<ToolModes>;
  * @returns enabled tool instances
  */
 export default function getToolsWithModesForElement(
-  element: HTMLElement,
+  element: HTMLDivElement,
   modesFilter: ModesFilter
 ) {
   const enabledElement = getEnabledElement(element);

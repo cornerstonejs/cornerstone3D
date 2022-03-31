@@ -7,7 +7,7 @@ const CANVAS_CSS_CLASS = 'cornerstone-canvas';
  * @param element - An HTML Element
  * @returns canvas - A Canvas DOM element
  */
-function createCanvas(element: Element | HTMLElement): HTMLCanvasElement {
+function createCanvas(element: Element | HTMLDivElement): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
 
   canvas.style.position = 'absolute';
@@ -25,7 +25,7 @@ function createCanvas(element: Element | HTMLElement): HTMLCanvasElement {
  * @returns div Cornerstone internal div that will include the canvas and SVG
  * as its children
  */
-export function createViewportElement(element: HTMLElement): HTMLElement {
+export function createViewportElement(element: HTMLDivElement): HTMLDivElement {
   const div = document.createElement('div');
   div.style.position = 'relative';
   div.style.width = '100%';
@@ -44,7 +44,7 @@ export function createViewportElement(element: HTMLElement): HTMLElement {
  * @returns canvas a Canvas DOM element
  */
 export default function getOrCreateCanvas(
-  element: HTMLElement
+  element: HTMLDivElement
 ): HTMLCanvasElement {
   const canvasSelector = `canvas.${CANVAS_CSS_CLASS}`;
   const viewportElement = `div.${VIEWPORT_ELEMENT}`;

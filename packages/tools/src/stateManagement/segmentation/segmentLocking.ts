@@ -10,7 +10,7 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents';
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not.
  */
-function getSegmentIndexLocked(
+function isSegmentIndexLocked(
   segmentationId: string,
   segmentIndex: number
 ): boolean {
@@ -69,4 +69,4 @@ function getLockedSegments(segmentationId: string): number[] | [] {
   return Array.from(segmentsLocked);
 }
 
-export { getSegmentIndexLocked, setSegmentIndexLocked, getLockedSegments };
+export { isSegmentIndexLocked, setSegmentIndexLocked, getLockedSegments };

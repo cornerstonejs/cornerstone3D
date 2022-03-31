@@ -38,7 +38,7 @@ After creating a renderingEngine, we can assign viewports to it for rendering. T
 You can instantiate a `RenderingEngine` by calling the `new RenderingEngine()` method.
 
 ```js
-import { RenderingEngine } from '@cornerstone/core';
+import { RenderingEngine } from '@cornerstonejs/core';
 
 const renderingEngineId = 'myEngine';
 const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -52,7 +52,7 @@ For both methods, a ViewportInput object is passed as an argument.
 ```js
 PublicViewportInput = {
   /** HTML element in the DOM */
-  element: HTMLElement
+  element: HTMLDivElement
   /** unique id for the viewport in the renderingEngine */
   viewportId: string
   /** type of the viewport VolumeViewport or StackViewport*/

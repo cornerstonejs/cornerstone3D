@@ -329,7 +329,7 @@ describe('Segmentation Controller --', () => {
     //                   toolGroupId
     //                 )
 
-    //               segmentation.segmentationVisibility.setSegmentationVisibility(
+    //               segmentation.config.visibility.setSegmentationVisibility(
     //                 toolGroupId,
     //                 segmentationData.segmentationRepresentationUID,
     //                 false

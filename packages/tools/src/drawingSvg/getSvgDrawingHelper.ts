@@ -6,7 +6,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
  * @param element - The HTML element to get the SVG drawing helper for.
  * @private
  */
-function getSvgDrawingHelper(element: HTMLElement) {
+function getSvgDrawingHelper(element: HTMLDivElement) {
   const enabledElement = getEnabledElement(element);
   const { viewportId, renderingEngineId } = enabledElement;
   const canvasHash = `${viewportId}:${renderingEngineId}`;

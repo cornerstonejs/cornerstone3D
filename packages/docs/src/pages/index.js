@@ -12,13 +12,18 @@ function HomepageHeader() {
     <div className={styles.cs3DBanner}>
       <img
         className={styles.cs3DLogo}
-        src={'img/cs3DLogo.png'}
+        src={'img/cornerstone-logo-badge.png'}
         alt="Cornerstone JS 3D Logo"
       />
       <div>
         <span className={styles.cornerstoneText}>Cornerstone</span>
-        <span className={styles.threeDText}>3D</span>
+        <span className={styles.threeDText}> 3D</span>
       </div>
+      <img
+        className={styles.dotBackground}
+        src={'img/dot-bg.png'}
+        alt="Cornerstone JS 3D Logo"
+      />
       <div className={styles.textDescription}>
         A Medical Imageing Lorem ipsum dolor, sit amet consectetur adipisicing
         elit. Quod magni nemo,

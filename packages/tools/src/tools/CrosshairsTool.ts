@@ -352,7 +352,7 @@ export default class CrosshairsTool extends AnnotationTool {
    * is not near any of the handles.
    */
   getHandleNearImagePoint(
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: Annotation,
     canvasCoords: Types.Point2,
     proximity: number
@@ -418,7 +418,7 @@ export default class CrosshairsTool extends AnnotationTool {
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
-    element: HTMLElement,
+    element: HTMLDivElement,
     annotation: CrosshairsAnnotation,
     canvasCoords: Types.Point2,
     proximity: number

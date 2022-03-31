@@ -25,7 +25,7 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
-function addAnnotation(element: HTMLElement, annotation: Annotation): void;
+function addAnnotation(element: HTMLDivElement, annotation: Annotation): void;
 
 // @public (undocumented)
 function addColorLUT(colorLut: ColorLut, index: number): void;
@@ -139,7 +139,7 @@ type AnnotationRemovedEventType = Types_2.CustomEventType<AnnotationRemovedEvent
 
 // @public (undocumented)
 type AnnotationRenderedEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -182,11 +182,11 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     abstract addNewAnnotation(evt: EventTypes_2.MouseDownActivateEventType, interactionType: InteractionTypes): Annotation;
     // (undocumented)
-    abstract cancel(element: HTMLElement): any;
+    abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLElement, annotations: Annotations): Annotations | undefined;
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    getHandleNearImagePoint(element: HTMLElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
+    getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
     getLinkedTextBoxStyle(settings: Settings, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
@@ -194,7 +194,7 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
     // (undocumented)
-    abstract isPointNearTool(element: HTMLElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
+    abstract isPointNearTool(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredAnnotations?: Annotations) => boolean;
     // (undocumented)
@@ -279,7 +279,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _calculateLength(pos1: any, pos2: any): number;
     // (undocumented)
-    cancel: (element: HTMLElement) => any;
+    cancel: (element: HTMLDivElement) => any;
     // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
@@ -304,7 +304,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _isInsideVolume: (index1: any, index2: any, index3: any, index4: any, dimensions: any) => boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLElement, annotation: BidirectionalAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLDivElement, annotation: BidirectionalAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
@@ -354,13 +354,13 @@ type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
 type CameraModifiedEventDetail = {
     previousCamera: ICamera;
     camera: ICamera;
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
 
 // @public (undocumented)
-export function cancelActiveManipulations(element: HTMLElement): string | undefined;
+export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
 
 // @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
@@ -409,6 +409,14 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 // @public (undocumented)
 type Color = [number, number, number, number];
 
+declare namespace color {
+    export {
+        getColorForSegmentIndex,
+        addColorLUT_2 as addColorLUT,
+        setColorLUT
+    }
+}
+
 // @public (undocumented)
 type ColorLut = Array<Color>;
 
@@ -420,6 +428,19 @@ declare namespace config {
         setAnnotationStyle,
         setGlobalStyle,
         setToolStyle
+    }
+}
+
+declare namespace config_2 {
+    export {
+        color,
+        visibility,
+        getGlobalConfig_2 as getGlobalConfig,
+        getGlobalRepresentationConfig,
+        getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
+        setGlobalConfig_2 as setGlobalConfig,
+        setGlobalRepresentationConfig,
+        setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig
     }
 }
 
@@ -768,7 +789,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
-    getHandleNearImagePoint(element: HTMLElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
+    getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
     _getReferenceLineColor?: (viewportId: string) => string;
     // (undocumented)
@@ -793,7 +814,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _isClockWise(a: any, b: any, c: any): boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLElement, annotation: CrosshairsAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLDivElement, annotation: CrosshairsAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     _jump: (enabledElement: any, jumpWorld: any) => boolean;
     // (undocumented)
@@ -896,7 +917,7 @@ function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
 
 // @public (undocumented)
-function draw(element: HTMLElement, fn: (svgDrawingElement: any) => any): void;
+function draw(element: HTMLDivElement, fn: (svgDrawingElement: any) => any): void;
 
 // @public (undocumented)
 function drawCircle(svgDrawingHelper: any, toolName: string, annotationUID: string, circleUID: string, center: Types_2.Point2, radius: number, options?: {}): void;
@@ -953,7 +974,7 @@ type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public
 type ElementDisabledEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -963,7 +984,7 @@ type ElementEnabledEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public
 type ElementEnabledEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -1010,7 +1031,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
-    cancel: (element: HTMLElement) => any;
+    cancel: (element: HTMLDivElement) => any;
     // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
@@ -1041,7 +1062,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLElement, annotation: EllipticalROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLDivElement, annotation: EllipticalROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
@@ -1249,16 +1270,16 @@ function getAllSynchronizers(): Array<Synchronizer>;
 function getAllToolGroups(): Array<IToolGroup>;
 
 // @public (undocumented)
-function getAnnotation(annotationUID: string, element?: HTMLElement): Annotation;
+function getAnnotation(annotationUID: string, element?: HTMLDivElement): Annotation;
 
 // @public (undocumented)
-function getAnnotationNearPoint(element: HTMLElement, canvasPoint: Types_2.Point2, proximity?: number): Annotation | null;
+function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Point2, proximity?: number): Annotation | null;
 
 // @public (undocumented)
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
 
 // @public (undocumented)
-function getAnnotations(element: HTMLElement, toolName: string): Annotations;
+function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
 
 // @public (undocumented)
 function getAnnotationSelected(annotationUID: string): Annotation;
@@ -1294,7 +1315,7 @@ function getColorLut(index: number): ColorLut | undefined;
 function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
-function getDefaultRepresentationConfig(segmentation: Segmentation): labelmapConfig;
+function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapConfig;
 
 // @public (undocumented)
 function getDefaultSegmentationStateManager(): SegmentationStateManager;
@@ -1331,9 +1352,6 @@ function getSegmentations(): Segmentation[] | [];
 
 // @public (undocumented)
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
-
-// @public (undocumented)
-function getSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
 
 // @public (undocumented)
 function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
@@ -1373,10 +1391,10 @@ function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresen
 function getToolGroupsWithSegmentation(segmentationId: string): string[];
 
 // @public (undocumented)
-function getViewportIdsWithToolToRender(element: HTMLElement, toolName: string, requireSameOrientation?: boolean): string[];
+function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireSameOrientation?: boolean): string[];
 
 // @public (undocumented)
-function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLElement): FrameOfReferenceSpecificAnnotationManager;
+function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLDivElement): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
 function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, topLeftWorld: Types_2.Point3, bottomRightWorld: Types_2.Point3): {
@@ -1385,7 +1403,7 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 };
 
 // @public (undocumented)
-function hideElementCursor(element: HTMLElement): void;
+function hideElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
 interface ICache {
@@ -1643,7 +1661,7 @@ type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
 // @public
 type ImageRenderedEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
@@ -1655,7 +1673,7 @@ CustomEvent_2<ImageSpacingCalibratedEventDetail>;
 
 // @public
 type ImageSpacingCalibratedEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
     imageId: string;
@@ -1678,7 +1696,7 @@ type ImageVolumeModifiedEventDetail = {
 export function init(defaultConfiguration?: {}): void;
 
 // @public (undocumented)
-function initElementCursor(element: HTMLElement, cursor: MouseCursor | null): void;
+function initElementCursor(element: HTMLDivElement, cursor: MouseCursor | null): void;
 
 // @public (undocumented)
 type InteractionTypes = 'Mouse';
@@ -1754,13 +1772,16 @@ function isAnnotationSelected(annotation: Annotation): boolean;
 // @public (undocumented)
 function isObject(value: any): boolean;
 
+// @public (undocumented)
+function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
+
 // @public
 interface IStackViewport extends IViewport {
     calibrateSpacing(imageId: string): void;
     canvasToWorld: (canvasPos: Point2) => Point3;
     customRenderViewportToCanvas: () => {
         canvas: HTMLCanvasElement;
-        element: HTMLElement;
+        element: HTMLDivElement;
         viewportId: string;
         renderingEngineId: string;
     };
@@ -1891,7 +1912,7 @@ interface IViewport {
     canvasToWorld: (canvasPos: Point2) => Point3;
     customRenderViewportToCanvas: () => unknown;
     defaultOptions: any;
-    element: HTMLElement;
+    element: HTMLDivElement;
     getActor(actorUID: string): ActorEntry;
     getActors(): Array<ActorEntry>;
     getCamera(): ICamera;
@@ -2022,7 +2043,7 @@ enum KeyboardBindings {
 
 // @public (undocumented)
 type KeyDownEventDetail = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
     key: string;
@@ -2037,6 +2058,36 @@ type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
+
+// @public (undocumented)
+type LabelmapConfig = {
+    renderOutline?: boolean;
+    outlineWidthActive?: number;
+    outlineWidthInactive?: number;
+    renderFill?: boolean;
+    fillAlpha?: number;
+    fillAlphaInactive?: number;
+};
+
+// @public (undocumented)
+type LabelmapRenderingConfig = {
+    cfun?: vtkColorTransferFunction;
+    ofun?: vtkPiecewiseFunction;
+};
+
+// @public (undocumented)
+type LabelmapSegmentationData = {
+    volumeId: string;
+    referencedVolumeId?: string;
+};
+
+declare namespace LabelmapTypes {
+    export {
+        LabelmapConfig,
+        LabelmapRenderingConfig,
+        LabelmapSegmentationData
+    }
+}
 
 // @public (undocumented)
 interface LengthAnnotation extends Annotation {
@@ -2069,9 +2120,9 @@ interface LengthAnnotation extends Annotation {
 export class LengthTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _activateDraw: (element: HTMLElement) => void;
+    _activateDraw: (element: HTMLDivElement) => void;
     // (undocumented)
-    _activateModify: (element: HTMLElement) => void;
+    _activateModify: (element: HTMLDivElement) => void;
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => LengthAnnotation;
     // (undocumented)
@@ -2079,11 +2130,11 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _calculateLength(pos1: any, pos2: any): number;
     // (undocumented)
-    cancel: (element: HTMLElement) => any;
+    cancel: (element: HTMLDivElement) => any;
     // (undocumented)
-    _deactivateDraw: (element: HTMLElement) => void;
+    _deactivateDraw: (element: HTMLDivElement) => void;
     // (undocumented)
-    _deactivateModify: (element: HTMLElement) => void;
+    _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
     editData: {
         annotation: any;
@@ -2104,7 +2155,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLElement, annotation: LengthAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLDivElement, annotation: LengthAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
@@ -2318,7 +2369,7 @@ type NormalizedMouseEventDetail = {
     renderingEngineId: string;
     viewportId: string;
     camera: Record<string, unknown>;
-    element: HTMLElement;
+    element: HTMLDivElement;
 };
 
 // @public (undocumented)
@@ -2410,7 +2461,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
-    cancel: (element: HTMLElement) => any;
+    cancel: (element: HTMLDivElement) => any;
     // (undocumented)
     _deactivateModify: (element: any) => void;
     // (undocumented)
@@ -2424,7 +2475,7 @@ export class ProbeTool extends AnnotationTool {
         renderingEngineId: string;
     };
     // (undocumented)
-    getHandleNearImagePoint(element: HTMLElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
+    getHandleNearImagePoint(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
     _getTextLines(data: any, targetId: any): any[];
     // (undocumented)
@@ -2466,7 +2517,7 @@ type PublicToolProps = SharedToolProp & {
 
 // @public
 type PublicViewportInput = {
-    element: HTMLElement;
+    element: HTMLDivElement;
     viewportId: string;
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;
@@ -2686,7 +2737,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
-    cancel: (element: HTMLElement) => any;
+    cancel: (element: HTMLDivElement) => any;
     // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
@@ -2718,7 +2769,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
     // (undocumented)
-    isPointNearTool: (element: HTMLElement, annotation: RectangleROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    isPointNearTool: (element: HTMLDivElement, annotation: RectangleROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     _mouseDragCallback: (evt: EventTypes_2.MouseMoveEventType | EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
@@ -2779,7 +2830,7 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
-function removeAnnotation(element: HTMLElement, annotationUID: string): void;
+function removeAnnotation(element: HTMLDivElement, annotationUID: string): void;
 
 // @public (undocumented)
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
@@ -2792,11 +2843,11 @@ export function removeTool(ToolClass: any): void;
 
 // @public (undocumented)
 type RepresentationConfig = {
-    LABELMAP?: labelmapConfig;
+    LABELMAP?: LabelmapConfig;
 };
 
 // @public (undocumented)
-function resetElementCursor(element: HTMLElement): void;
+function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
 type Scaling = {
@@ -2837,9 +2888,7 @@ declare namespace segmentation {
         addSegmentationRepresentations,
         removeSegmentationsFromToolGroup,
         segmentLocking,
-        segmentationColor,
-        segmentationConfig,
-        segmentationVisibility,
+        config_2 as config,
         segmentIndex,
         triggerSegmentationEvents
     }
@@ -2855,24 +2904,6 @@ declare namespace segmentation_2 {
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport
-    }
-}
-
-declare namespace segmentationColor {
-    export {
-        getColorForSegmentIndex,
-        addColorLUT_2 as addColorLUT
-    }
-}
-
-declare namespace segmentationConfig {
-    export {
-        getGlobalConfig_2 as getGlobalConfig,
-        setGlobalConfig_2 as setGlobalConfig,
-        getGlobalRepresentationConfig,
-        setGlobalRepresentationConfig,
-        getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
-        setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig
     }
 }
 
@@ -2965,13 +2996,6 @@ type SegmentationState = {
     };
 };
 
-declare namespace segmentationVisibility {
-    export {
-        setSegmentationVisibility,
-        getSegmentationVisibility
-    }
-}
-
 declare namespace segmentIndex {
     export {
         getActiveSegmentIndex,
@@ -2981,7 +3005,7 @@ declare namespace segmentIndex {
 
 declare namespace segmentLocking {
     export {
-        getSegmentIndexLocked,
+        isSegmentIndexLocked,
         setSegmentIndexLocked,
         getLockedSegments
     }
@@ -3014,10 +3038,13 @@ function setAnnotationSelected(annotation: Annotation, selected?: boolean, prese
 function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
 
 // @public (undocumented)
-function setCursorForElement(element: HTMLElement, cursorName: string): void;
+function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
-function _setElementCursor(element: HTMLElement, cursor: MouseCursor | null): void;
+function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
+
+// @public (undocumented)
+function _setElementCursor(element: HTMLDivElement, cursor: MouseCursor | null): void;
 
 // @public (undocumented)
 function setGlobalConfig(config: SegmentationRepresentationConfig, suppressEvents?: boolean): void;
@@ -3422,6 +3449,7 @@ declare namespace Types {
         ToolGroupSpecificRepresentation,
         Color,
         ColorLut,
+        LabelmapTypes,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint
     }
@@ -3476,6 +3504,13 @@ type ViewportInputOptions = {
     orientation?: Orientation;
     suppressEvents?: boolean;
 };
+
+declare namespace visibility {
+    export {
+        setSegmentationVisibility,
+        getSegmentationVisibility
+    }
+}
 
 // @public (undocumented)
 type VOI = {

@@ -10,7 +10,7 @@ import { EventTypes, IPoints } from '../../types';
  * @param evt - The mouse event.
  */
 function mouseDoubleClickListener(evt: MouseEvent): void {
-  const element = <HTMLElement>evt.currentTarget;
+  const element = <HTMLDivElement>evt.currentTarget;
 
   const { viewportId, renderingEngineId } = getEnabledElement(element);
 

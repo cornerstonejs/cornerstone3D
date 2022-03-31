@@ -25,28 +25,28 @@ const { Active, Passive, Enabled } = ToolModes;
  */
 class AnnotationRenderingEngine {
   public hasBeenDestroyed: boolean;
-  private _needsRender: Set<HTMLElement> = new Set();
+  private _needsRender: Set<HTMLDivElement> = new Set();
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
-  private _viewportElements: Map<string, HTMLElement>;
+  private _viewportElements: Map<string, HTMLDivElement>;
 
   constructor() {
     this._viewportElements = new Map();
   }
 
   /**
-   * Add the viewport's HTMLElement to the viewports for rendering. This method
+   * Add the viewport's HTMLDivElement to the viewports for rendering. This method
    * just informs the annotationRenderingEngine about the viewport and
    * does not initiate a render.
    * @param viewportId - Viewport Unique identifier
-   * @param element - HTMLElement
+   * @param element - HTMLDivElement
    */
-  public addViewportElement(viewportId: string, element: HTMLElement) {
+  public addViewportElement(viewportId: string, element: HTMLDivElement) {
     this._viewportElements.set(viewportId, element);
   }
 
   /**
-   * Remove the viewport's HTMLElement from subsequent annotation renders
+   * Remove the viewport's HTMLDivElement from subsequent annotation renders
    * @param viewportId - Viewport Unique identifier
    */
   public removeViewportElement(viewportId: string) {
@@ -64,7 +64,7 @@ class AnnotationRenderingEngine {
    *
    * @param element - The element to render.
    */
-  public renderViewport(element: HTMLElement): void {
+  public renderViewport(element: HTMLDivElement): void {
     this._setViewportsToBeRenderedNextFrame([element]);
   }
 
@@ -104,7 +104,7 @@ class AnnotationRenderingEngine {
     }
   };
 
-  private _setViewportsToBeRenderedNextFrame(elements: HTMLElement[]) {
+  private _setViewportsToBeRenderedNextFrame(elements: HTMLDivElement[]) {
     // Add the viewports to the set of flagged viewports
     elements.forEach((element) => {
       this._needsRender.add(element);
@@ -202,7 +202,7 @@ const annotationRenderingEngine = new AnnotationRenderingEngine();
  * the `AnnotationRenderingEngine`
  * @param element - The element to render the annotation on.
  */
-function triggerAnnotationRender(element: HTMLElement): void {
+function triggerAnnotationRender(element: HTMLDivElement): void {
   annotationRenderingEngine.renderViewport(element);
 }
 
