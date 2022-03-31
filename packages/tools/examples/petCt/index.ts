@@ -39,7 +39,8 @@ const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`;
-const toolGroupId = 'MY_TOOLGROUP_ID';
+const ctPtToolGroupId = 'CT_PT_TOOLGROUP_ID';
+const fusionToolGroupId = 'FUSION_TOOLGROUP_ID';
 
 const viewportIds = {
   CT: { AXIAL: 'CT_AXIAL', SAGITTAL: 'CT_SAGITTAL', CORONAL: 'CT_CORONAL' },
@@ -124,48 +125,63 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Define tool groups to add the segmentation display tool to
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  // We need two tool groups as we want to specify for the fusion which volume
+  // to control with the window/level tool. For the CT and PT, we can use the
+  // default, which is the first (and only) volume present
+  const ctPtToolGroup = ToolGroupManager.createToolGroup(ctPtToolGroupId);
+  const fusionToolGroup = ToolGroupManager.createToolGroup(fusionToolGroupId);
 
   // Manipulation Tools
-  toolGroup.addTool(WindowLevelTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  [ctPtToolGroup, fusionToolGroup].forEach((toolGroup) => {
+    toolGroup.addTool(PanTool.toolName);
+    toolGroup.addTool(ZoomTool.toolName);
+    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  });
 
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Middle Click
-      },
-    ],
+  // Here is the difference in the toolgroups used, that we need to specify the
+  // volume to use for the WindowLevelTool for the fusion viewports
+  ctPtToolGroup.addTool(WindowLevelTool.toolName);
+  fusionToolGroup.addTool(WindowLevelTool.toolName, {
+    volumeId: ptVolumeId,
   });
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  toolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.FUSION.AXIAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.FUSION.SAGITTAL, renderingEngineId);
-  toolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
+  [ctPtToolGroup, fusionToolGroup].forEach((toolGroup) => {
+    toolGroup.setToolActive(WindowLevelTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Middle Click
+        },
+      ],
+    });
+    toolGroup.setToolActive(PanTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Auxiliary, // Middle Click
+        },
+      ],
+    });
+    toolGroup.setToolActive(ZoomTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Secondary, // Right Click
+        },
+      ],
+    });
+
+    // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+    // hook instead of mouse buttons, it does not need to assign any mouse button.
+    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  });
+
+  ctPtToolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
+  fusionToolGroup.addViewport(viewportIds.FUSION.AXIAL, renderingEngineId);
+  fusionToolGroup.addViewport(viewportIds.FUSION.SAGITTAL, renderingEngineId);
+  fusionToolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
 }
 
 function setUpSynchronizers() {
