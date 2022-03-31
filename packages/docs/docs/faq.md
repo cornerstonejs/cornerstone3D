@@ -1,12 +1,9 @@
 ---
 id: faq
 ---
-
 # Frequently Asked Questions
 
-<br />
-
-## What is the difference between Cornerstone (legacy) and Cornerstone3D (alpha) and react-vtkjs-viewport?
+### What is the difference between Cornerstone (legacy) and Cornerstone3D (alpha) and react-vtkjs-viewport?
 
 Although Cornerstone (legacy) has gpu-accelerated rendering through webgl, it only handles
 2D rendering of medical images. To address this issue, we created [react-vtkjs-viewport](https://github.com/OHIF/react-vtkjs-viewport) which enabled 3D rendering of medical images by moving the
@@ -16,7 +13,7 @@ To satisfy complex imaging use cases, we have chosen to build Cornerstone render
 
 This approach allows us to efficiently share GPU texture memory between different views/representations of the same data. For example, in a PET/CT Fusion MPR hanging protocol, only one PET volume is stored in the GPU memory and is used when rendering both the inverted PET and fusion PET viewports.
 
-## What are the feature parity between Cornerstone and Cornerstone3D?
+### What are the feature parity between Cornerstone and Cornerstone3D?
 
 The following will not be migrated at the current time
 

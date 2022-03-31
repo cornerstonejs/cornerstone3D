@@ -1,10 +1,8 @@
 import React from 'react';
-import clsx from 'clsx';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
-import { useColorMode } from '@docusaurus/theme-common';
 import HomepageFeatures from '../components/HomepageFeatures';
 
 function HomepageHeader() {
@@ -13,7 +11,7 @@ function HomepageHeader() {
       <img
         className={styles.cs3DLogo}
         src={'img/cornerstone-logo-badge.png'}
-        alt="Cornerstone JS 3D Logo"
+        alt="Cornerstone.js 3D Logo"
       />
       <div>
         <span className={styles.cornerstoneText}>Cornerstone</span>
@@ -22,13 +20,16 @@ function HomepageHeader() {
       <img
         className={styles.dotBackground}
         src={'img/dot-bg.png'}
-        alt="Cornerstone JS 3D Logo"
+        alt="Spacing dots"
       />
       <div className={styles.textDescription}>
-        A Medical Imageing Lorem ipsum dolor, sit amet consectetur adipisicing
-        elit. Quod magni nemo,
+        The easiest way to build interactive medical imaging web applications.
+        Supported by the <Link to="http://ohif.org/">Open Health Imaging Foundation</Link>.
       </div>
-      <button className={styles.learnMore}>Learn More</button>
+      <div className={styles.textDescription}>
+        <strong>NEW:</strong> Cornerstone3D, released as a public beta on April 1st, 2022, represents a major improvement to the framework.
+      </div>
+      <Link to='docs/getting-started/overview'><button className={styles.learnMore}>Learn More</button></Link>
     </div>
   );
 }
@@ -38,7 +39,7 @@ export default function Home() {
   return (
     <Layout
       title={`${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      description="Cornerstone.js - JavaScript library for building web-based medical imaging applications <head />"
     >
       <HomepageHeader />
       <main style={{ marginTop: '50px', marginBottom: '50px' }}>
