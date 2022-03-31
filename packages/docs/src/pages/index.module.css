@@ -1,5 +1,4 @@
 /* stylelint-disable docusaurus/copyright-header */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
 
 /**
  * CSS files with the .module.css suffix will be treated as CSS modules
@@ -13,11 +12,7 @@
   overflow: hidden;
 }
 
-@media screen and (max-width: 966px) {
-  .heroBanner {
-    padding: 2rem;
-  }
-}
+
 
 .buttons {
   display: flex;
@@ -29,7 +24,7 @@
   background-color: #080a2d;
   color: white;
   display: flex;
-  padding-top: 45px;
+  padding-top: 17px;
   padding-bottom: 45px;
   flex-direction: column;
   justify-content: center;
@@ -44,6 +39,7 @@
 .cs3DLogo {
   width: 102px;
   height: 102px;
+  margin-top: 41px;
 }
 
 .cornerstoneText {
@@ -79,4 +75,54 @@
 .dotBackground {
   max-width: 96px;
   max-height: 6px;
+}
+
+.newPart {
+  width: 65px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 7px 11px 7px 15px;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  background-color: #5e16eb;
+}
+
+.announcementBar {
+  display: flex
+}
+
+.smallScreenAnnouncement{
+  display: none
+}
+
+.announcementPart{
+  display: flex;
+  padding: 6px 14px 6px 10px;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background-color: #0e235c;
+}
+
+
+@media screen and (max-width: 425px) {
+  .cornerstoneText{
+    font-size: 50px;
+  }
+
+  .threeDText{
+    font-size: 50px;
+
+  }
+
+  .textDescription {
+    max-width: 400px;
+  }
+
+  .smallScreenAnnouncement{
+    display: inline;
+  }
+
+  .announcementBar{
+    max-width: 300px;
+  }
 }
