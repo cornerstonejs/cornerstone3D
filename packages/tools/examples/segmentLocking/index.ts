@@ -105,7 +105,7 @@ addDropdownToToolbar({
 
 addToggleButtonToToolbar({
   title: 'Toggle Locked Segment 1',
-  onClick: (evt, toggle) => {
+  onClick: (toggle) => {
     segmentation.segmentLocking.setSegmentIndexLocked(
       segmentationId,
       1,

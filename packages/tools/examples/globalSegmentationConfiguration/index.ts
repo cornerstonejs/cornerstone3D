@@ -84,14 +84,14 @@ addToggleButtonToToolbar({
 });
 addToggleButtonToToolbar({
   title: 'toggle outline rendering',
-  onClick: (evt, toggle) => {
+  onClick: (toggle) => {
     setConfigValue('renderOutline', toggle);
   },
   defaultToggle: true,
 });
 addToggleButtonToToolbar({
   title: 'toggle fill rendering',
-  onClick: (evt, toggle) => {
+  onClick: (toggle) => {
     setConfigValue('renderFill', toggle);
   },
   defaultToggle: true,

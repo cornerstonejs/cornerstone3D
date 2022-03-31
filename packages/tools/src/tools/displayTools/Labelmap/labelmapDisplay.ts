@@ -209,6 +209,10 @@ function _setLabelmapColorAndOpacity(
     ? labelmapConfig.outlineWidthActive
     : labelmapConfig.outlineWidthInactive;
 
+  const renderFill = isActiveLabelmap
+    ? labelmapConfig.renderFill
+    : labelmapConfig.renderFillInactive;
+
   // Note: MAX_NUMBER_COLORS = 256 is needed because the current method to generate
   // the default color table uses RGB.
 
@@ -220,7 +224,8 @@ function _setLabelmapColorAndOpacity(
     viewportId,
     uid,
     fillAlpha,
-    colorLUTIndex
+    colorLUTIndex,
+    renderFill
   );
 
   if (needColorUpdate) {
@@ -237,13 +242,22 @@ function _setLabelmapColorAndOpacity(
   }
 
   if (needOpacityUpdate) {
-    for (let i = 0; i < numColors; i++) {
-      const color = colorLUT[i];
+    if (labelmapConfig.renderFill) {
+      for (let i = 0; i < numColors; i++) {
+        const color = colorLUT[i];
 
-      // Set the opacity per label.
-      const segmentOpacity = (color[3] / 255) * fillAlpha;
-      ofun.addPoint(i, segmentOpacity);
+        // Set the opacity per label.
+        const segmentOpacity = (color[3] / 255) * fillAlpha;
+        ofun.addPoint(i, segmentOpacity);
+      }
+    } else {
+      for (let i = 0; i < numColors; i++) {
+        // TODO -> This at least gives the correct visual effect for now.
+        // But if we set all values to 0 the outline doesn't render
+        ofun.addPoint(i, 0.01);
+      }
     }
+
     ofun.setClamping(false);
     volumeActor.getProperty().setScalarOpacity(0, ofun);
   }
@@ -265,7 +279,8 @@ function _needsTransferFunctionUpdate(
   viewportId: string,
   actorUID: string,
   fillAlpha: number,
-  colorLUTIndex: number
+  colorLUTIndex: number,
+  renderFill: boolean
 ) {
   const cacheUID = `${viewportId}-${actorUID}`;
   const config = labelMapConfigCache.get(cacheUID);
@@ -289,6 +304,10 @@ function _needsTransferFunctionUpdate(
 
   if (config && config.colorLUTIndex !== colorLUTIndex) {
     needColorUpdate = true;
+  }
+
+  if (config && config.renderFill !== renderFill) {
+    needOpacityUpdate = true;
   }
 
   return { needColorUpdate, needOpacityUpdate };

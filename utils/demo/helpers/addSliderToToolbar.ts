@@ -26,7 +26,9 @@ export default function addSliderToToolbar({
 
   input.oninput = (evt) => {
     onSelectedValueChange(evt.target.value);
-    updateLabelOnChange(evt.target.value, label);
+    if (updateLabelOnChange !== undefined) {
+      updateLabelOnChange(evt.target.value, label);
+    }
   };
   toolbar.append(label);
   toolbar.append(input);
