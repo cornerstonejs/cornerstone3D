@@ -1,6 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { ImageVolume } from '../index';
+import { ImageVolume } from '@cornerstonejs/core';
 import {
   getVerticalBarRGBVolume,
   getVerticalBarVolume,

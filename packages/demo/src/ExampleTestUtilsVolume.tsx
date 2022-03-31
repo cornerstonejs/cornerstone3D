@@ -38,8 +38,7 @@ window.cache = cache;
 const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
-const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } =
-  utilities.testUtils;
+const { fakeImageLoader, fakeVolumeLoader, fakeMetaDataProvider } = testUtils;
 
 let ctTestSceneToolGroup, ptTestSceneToolGroup;
 

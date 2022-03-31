@@ -1,4 +1,5 @@
 import * as cornerstone3D from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 import * as cpu_imageURI_64_64_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_64_20_5_1_1_0.png';
 import * as cpu_imageURI_64_33_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_33_20_5_1_1_0.png';
@@ -26,8 +27,7 @@ const {
 
 const { Events, ViewportType } = Enums;
 const { CPU_COLORMAPS } = CONSTANTS;
-const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
-  utilities.testUtils;
+const { fakeImageLoader, fakeMetaDataProvider, compareImages } = testUtils;
 
 const renderingEngineId = utilities.uuidv4();
 

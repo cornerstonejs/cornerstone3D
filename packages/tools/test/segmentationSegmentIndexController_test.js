@@ -1,5 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_controller_1 from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_controller_1.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_indexController from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_indexController.png';
@@ -41,7 +42,7 @@ const {
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
   compareImages,
-} = utilities.testUtils;
+} = testUtils;
 
 const renderingEngineId =
   'renderingEngineId-segmentationSegmentIndexController_test';

@@ -1,6 +1,5 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { getOrCreateCanvas } from '../RenderingEngine';
-import type { IVolumeViewport, IStackViewport } from '../types';
+import { getOrCreateCanvas } from '@cornerstonejs/core';
 
 function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
   const rect = DomCanvasElement.getBoundingClientRect();

@@ -1,5 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -32,7 +33,7 @@ const {
 const { Events: csToolsEvents } = csToolsEnums;
 
 const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
-  utilities.testUtils;
+  testUtils;
 
 const renderingEngineId = utilities.uuidv4();
 

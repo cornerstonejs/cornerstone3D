@@ -51,12 +51,6 @@ function cancelLoadImage(imageId: string): void;
 function cancelLoadImages(imageIds: Array<string>): void;
 
 // @public (undocumented)
-const colors: number[][];
-
-// @public (undocumented)
-function compareImages(imageDataURL: string, baseline: string, outputName: any): Promise<any>;
-
-// @public (undocumented)
 export const CONSTANTS: {
     ORIENTATION: Record<string, Types.Orientation>;
     CPU_COLORMAPS: Types.CPUFallbackColormapsData;
@@ -341,15 +335,6 @@ function createFloat32SharedArray(length: number): Float32Array;
 function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): ImageVolume;
 
 // @public (undocumented)
-function createNormalizedMouseEvent(imageData: vtkImageData, index: any, element: any, viewport: any): {
-    pageX: any;
-    pageY: any;
-    clientX: any;
-    clientY: any;
-    worldCoord: any;
-};
-
-// @public (undocumented)
 function createUint8SharedArray(length: number): Uint8Array;
 
 // @public (undocumented)
@@ -478,74 +463,6 @@ declare namespace EventTypes {
         ImageLoadProgressEventDetail
     }
 }
-
-// @public (undocumented)
-function fakeImageLoader(imageId: any): {
-    promise: Promise<{
-        rows: any;
-        columns: any;
-        width: any;
-        height: any;
-        imageId: any;
-        intercept: number;
-        slope: number;
-        invert: boolean;
-        windowCenter: number;
-        windowWidth: number;
-        maxPixelValue: number;
-        minPixelValue: number;
-        rowPixelSpacing: number;
-        columnPixelSpacing: number;
-        getPixelData: () => any;
-        sizeInBytes: number;
-        FrameOfReferenceUID: string;
-    }>;
-};
-
-// @public (undocumented)
-function fakeMetaDataProvider(type: string, imageId: string): {
-    photometricInterpretation: string;
-    rows: number;
-    columns: number;
-    samplesPerPixel: number;
-    bitsAllocated: number;
-    bitsStored: number;
-    highBit: number;
-    pixelRepresentation: number;
-} | {
-    modality: string;
-} | {
-    suvbw: number;
-    suvlbm: number;
-    suvbsa: number;
-} | {
-    rows: number;
-    columns: number;
-    width: number;
-    height: number;
-    imageOrientationPatient: number[];
-    rowCosines: number[];
-    columnCosines: number[];
-    imagePositionPatient: number[];
-    pixelSpacing: number[];
-    rowPixelSpacing: number;
-    columnPixelSpacing: number;
-} | {
-    windowWidth: any;
-    windowCenter: any;
-    rescaleSlope?: undefined;
-    rescaleIntercept?: undefined;
-} | {
-    rescaleSlope: any;
-    rescaleIntercept: any;
-    windowWidth?: undefined;
-    windowCenter?: undefined;
-};
-
-// @public (undocumented)
-function fakeVolumeLoader(volumeId: any): {
-    promise: Promise<ImageVolume>;
-};
 
 // @public (undocumented)
 type FlipDirection = {
@@ -1648,17 +1565,6 @@ type StackViewportProperties = {
     flipVertical?: boolean;
 };
 
-declare namespace testUtils {
-    export {
-        compareImages,
-        colors,
-        fakeImageLoader,
-        fakeMetaDataProvider,
-        fakeVolumeLoader,
-        createNormalizedMouseEvent
-    }
-}
-
 // @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
@@ -1759,7 +1665,6 @@ declare namespace utilities {
         isOpposite,
         createFloat32SharedArray,
         createUint8SharedArray,
-        testUtils,
         windowLevel,
         getClosestImageId,
         getSpacingInNormalDirection,

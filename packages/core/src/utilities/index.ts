@@ -20,7 +20,6 @@ import getVolumeViewportsContainingVolumeId from './getVolumeViewportsContaining
 
 // name spaces
 import * as planar from './planar';
-import * as testUtils from './testUtils';
 import * as windowLevel from './windowLevel';
 
 export {
@@ -37,7 +36,6 @@ export {
   isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,
-  testUtils,
   windowLevel,
   getClosestImageId,
   getSpacingInNormalDirection,

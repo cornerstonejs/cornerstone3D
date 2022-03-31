@@ -1,5 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_AX from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_AX.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SAG from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SAG.png';
@@ -37,8 +38,7 @@ const { Events } = csToolsEnums;
 const { addSegmentationRepresentations, addSegmentations } = segmentation;
 const { SegmentationRepresentations } = csToolsEnums;
 
-const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
-  utilities.testUtils;
+const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } = testUtils;
 
 const renderingEngineId = 'renderingEngineId-segmentationRender_test';
 const toolGroupId = 'toolGroupId-segmentationRender_test';
