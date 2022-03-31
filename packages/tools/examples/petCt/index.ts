@@ -427,7 +427,7 @@ function setUpSynchronizers() {
 }
 
 async function setUpDisplay() {
-  const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs';
+  const wadoRsRoot = 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 

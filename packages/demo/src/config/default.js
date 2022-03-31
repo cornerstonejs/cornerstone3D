@@ -1,13 +1,13 @@
 export default {
   pt1: {
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
   },
   ct1: {
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
@@ -30,26 +30,26 @@ export default {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
   },
   ct2: {
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.459769504433903221904322299373',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.215671774264447622181109852188',
   },
   pt2: {
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.459769504433903221904322299373',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.281132140722412980625087351608',
   },
   dx: {
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.2',
   },
   ctStack: {
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
