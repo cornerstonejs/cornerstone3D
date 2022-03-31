@@ -7,6 +7,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import { getToolGroup } from '../store/ToolGroupManager';
+
 import {
   addAnnotation,
   getAnnotations,
@@ -219,6 +221,18 @@ export default class CrosshairsTool extends AnnotationTool {
     };
   };
 
+  onSetToolActive() {
+    this.init();
+  }
+
+  onSetToolPassive() {
+    this.init();
+  }
+
+  onSetToolEnabled() {
+    this.init();
+  }
+
   /**
    * When activated, it initializes the crosshairs. It begins by computing
    * the intersection of viewports associated with the crosshairs instance.
@@ -228,7 +242,9 @@ export default class CrosshairsTool extends AnnotationTool {
    * of the two rendering viewports.
    * @param viewports Array of viewportInputs which each item containing {viewportId, renderingEngineId}
    */
-  init = (viewports: ViewportInputs): void => {
+  init = (): void => {
+    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
+
     if (!viewports.length || viewports.length === 1) {
       throw new Error(
         'For crosshairs to operate, at least two viewports must be given.'

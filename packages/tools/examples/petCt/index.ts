@@ -26,6 +26,7 @@ const {
   synchronizers,
   MIPJumpToClickTool,
   VolumeRotateMouseWheelTool,
+  CrosshairsTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -150,6 +151,74 @@ element_mip.oncontextmenu = (e) => e.preventDefault();
 
 // ============================= //
 
+const viewportColors = {
+  [viewportIds.CT.AXIAL]: 'rgb(200, 0, 0)',
+  [viewportIds.CT.SAGITTAL]: 'rgb(200, 200, 0)',
+  [viewportIds.CT.CORONAL]: 'rgb(0, 200, 0)',
+  [viewportIds.PT.AXIAL]: 'rgb(200, 0, 0)',
+  [viewportIds.PT.SAGITTAL]: 'rgb(200, 200, 0)',
+  [viewportIds.PT.CORONAL]: 'rgb(0, 200, 0)',
+  [viewportIds.FUSION.AXIAL]: 'rgb(200, 0, 0)',
+  [viewportIds.FUSION.SAGITTAL]: 'rgb(200, 200, 0)',
+  [viewportIds.FUSION.CORONAL]: 'rgb(0, 200, 0)',
+};
+
+const viewportReferenceLineControllable = [
+  viewportIds.CT.AXIAL,
+  viewportIds.CT.SAGITTAL,
+  viewportIds.CT.CORONAL,
+  viewportIds.PT.AXIAL,
+  viewportIds.PT.SAGITTAL,
+  viewportIds.PT.CORONAL,
+  viewportIds.FUSION.AXIAL,
+  viewportIds.FUSION.SAGITTAL,
+  viewportIds.FUSION.CORONAL,
+];
+
+const viewportReferenceLineDraggableRotatable = [
+  viewportIds.CT.AXIAL,
+  viewportIds.CT.SAGITTAL,
+  viewportIds.CT.CORONAL,
+  viewportIds.PT.AXIAL,
+  viewportIds.PT.SAGITTAL,
+  viewportIds.PT.CORONAL,
+  viewportIds.FUSION.AXIAL,
+  viewportIds.FUSION.SAGITTAL,
+  viewportIds.FUSION.CORONAL,
+];
+
+const viewportReferenceLineSlabThicknessControlsOn = [
+  viewportIds.CT.AXIAL,
+  viewportIds.CT.SAGITTAL,
+  viewportIds.CT.CORONAL,
+  viewportIds.PT.AXIAL,
+  viewportIds.PT.SAGITTAL,
+  viewportIds.PT.CORONAL,
+  viewportIds.FUSION.AXIAL,
+  viewportIds.FUSION.SAGITTAL,
+  viewportIds.FUSION.CORONAL,
+];
+
+function getReferenceLineColor(viewportId) {
+  return viewportColors[viewportId];
+}
+
+function getReferenceLineControllable(viewportId) {
+  const index = viewportReferenceLineControllable.indexOf(viewportId);
+  return index !== -1;
+}
+
+function getReferenceLineDraggableRotatable(viewportId) {
+  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportId);
+  return index !== -1;
+}
+
+function getReferenceLineSlabThicknessControlsOn(viewportId) {
+  const index =
+    viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportId);
+  return index !== -1;
+}
+
 function setUpToolGroups() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
@@ -158,6 +227,7 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
   cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
+  cornerstoneTools.addTool(CrosshairsTool);
 
   // Define tool groups for the main 9 viewports.
   // We need two tool groups for the main viewports as we want to specify for the fusion which volume
@@ -166,11 +236,27 @@ function setUpToolGroups() {
   const ctPtToolGroup = ToolGroupManager.createToolGroup(ctPtToolGroupId);
   const fusionToolGroup = ToolGroupManager.createToolGroup(fusionToolGroupId);
 
+  ctPtToolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
+  ctPtToolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
+  fusionToolGroup.addViewport(viewportIds.FUSION.AXIAL, renderingEngineId);
+  fusionToolGroup.addViewport(viewportIds.FUSION.SAGITTAL, renderingEngineId);
+  fusionToolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
+
   // Manipulation Tools
   [ctPtToolGroup, fusionToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    toolGroup.addTool(CrosshairsTool.toolName, {
+      getReferenceLineColor,
+      getReferenceLineControllable,
+      getReferenceLineDraggableRotatable,
+      getReferenceLineSlabThicknessControlsOn,
+    });
   });
 
   // Here is the difference in the toolgroups used, that we need to specify the
@@ -181,13 +267,13 @@ function setUpToolGroups() {
   });
 
   [ctPtToolGroup, fusionToolGroup].forEach((toolGroup) => {
-    toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Middle Click
-        },
-      ],
-    });
+    // toolGroup.setToolActive(WindowLevelTool.toolName, {
+    //   bindings: [
+    //     {
+    //       mouseButton: MouseBindings.Primary, // Left Click
+    //     },
+    //   ],
+    // });
     toolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
@@ -203,20 +289,15 @@ function setUpToolGroups() {
       ],
     });
 
-    // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-    // hook instead of mouse buttons, it does not need to assign any mouse button.
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    toolGroup.setToolEnabled(CrosshairsTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+        },
+      ],
+    });
   });
-
-  ctPtToolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
-  fusionToolGroup.addViewport(viewportIds.FUSION.AXIAL, renderingEngineId);
-  fusionToolGroup.addViewport(viewportIds.FUSION.SAGITTAL, renderingEngineId);
-  fusionToolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
 
   // MIP Tool Groups
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);

@@ -48,7 +48,7 @@ export default class SegmentationDisplayTool extends BaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  enableCallback(): void {
+  onSetToolEnabled(): void {
     const toolGroupId = this.toolGroupId;
     const toolGroupSegmentationRepresentations =
       getSegmentationRepresentations(toolGroupId);
@@ -70,7 +70,7 @@ export default class SegmentationDisplayTool extends BaseTool {
     }
   }
 
-  disableCallback(): void {
+  onSetToolDisabled(): void {
     const toolGroupId = this.toolGroupId;
     const toolGroupSegmentationRepresentations =
       getSegmentationRepresentations(toolGroupId);

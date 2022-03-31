@@ -9,7 +9,7 @@ import pointInShapeCallback, {
   PointInShapeCallback,
 } from './pointInShapeCallback';
 
-const { transformPhysicalToIndex } = csUtils;
+const { transformWorldToIndex } = csUtils;
 
 // Todo: I *think* this can be done without the need to access viewport's camera
 // since sphere's center circle can be in any plane as long as its center
@@ -83,8 +83,8 @@ export default function pointInSurroundingSphereCallback(
   // convert the world coordinates to index coordinates
 
   const sphereCornersIJK = [
-    <Types.Point3>transformPhysicalToIndex(imageData, topLeftWorld),
-    <Types.Point3>transformPhysicalToIndex(imageData, bottomRightWorld),
+    <Types.Point3>transformWorldToIndex(imageData, topLeftWorld),
+    <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
   ];
 
   // get the bounding box of the sphere in the image

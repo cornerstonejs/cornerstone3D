@@ -209,8 +209,8 @@ export default class ToolGroup implements IToolGroup {
       this.setViewportsCursorByToolName(toolName);
     }
 
-    if (typeof this._toolInstances[toolName].init === 'function') {
-      this._toolInstances[toolName].init(this.viewportsInfo);
+    if (typeof this._toolInstances[toolName].onSetToolActive === 'function') {
+      this._toolInstances[toolName].onSetToolActive();
     }
     this._renderViewports();
   }
@@ -259,6 +259,10 @@ export default class ToolGroup implements IToolGroup {
 
     this.toolOptions[toolName] = toolOptions;
     this._toolInstances[toolName].mode = mode;
+
+    if (typeof this._toolInstances[toolName].onSetToolPassive === 'function') {
+      this._toolInstances[toolName].onSetToolPassive();
+    }
     this._renderViewports();
   }
 
@@ -286,8 +290,8 @@ export default class ToolGroup implements IToolGroup {
     this.toolOptions[toolName] = toolOptions;
     this._toolInstances[toolName].mode = Enabled;
 
-    if (this._toolInstances[toolName].enableCallback) {
-      this._toolInstances[toolName].enableCallback(this.id);
+    if (typeof this._toolInstances[toolName].onSetToolEnabled === 'function') {
+      this._toolInstances[toolName].onSetToolEnabled();
     }
 
     this._renderViewports();
@@ -318,8 +322,8 @@ export default class ToolGroup implements IToolGroup {
     this.toolOptions[toolName] = toolOptions;
     this._toolInstances[toolName].mode = Disabled;
 
-    if (this._toolInstances[toolName].disableCallback) {
-      this._toolInstances[toolName].disableCallback(this.id);
+    if (typeof this._toolInstances[toolName].onSetToolDisabled === 'function') {
+      this._toolInstances[toolName].onSetToolDisabled();
     }
     this._renderViewports();
   }
