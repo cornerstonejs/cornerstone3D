@@ -170,5 +170,6 @@ export {
   getAnnotationSelected,
   getAnnotationsSelectedByToolName,
   getAnnotationsSelectedCount,
+  deselectAnnotation,
   isAnnotationSelected,
 };
