@@ -1,15 +1,19 @@
-export default function addToggleButtonToToolbar(
-  toggleTitle,
-  onclick,
-  defaultToggle = false
-) {
+export default function addToggleButtonToToolbar({
+  title,
+  onClick,
+  defaultToggle = false,
+}: {
+  title: string;
+  onClick: (toggle: boolean) => void;
+  defaultToggle?: boolean;
+}) {
   const toolbar = document.getElementById('demo-toolbar');
   const button = document.createElement('button');
 
   const toggleOnBackgroundColor = '#fcfba9';
   const toggleOffBackgroundColor = '#ffffff';
 
-  let toggle = defaultToggle;
+  let toggle = !!defaultToggle;
 
   function setBackgroundColor() {
     button.style.backgroundColor = toggle
@@ -19,11 +23,11 @@ export default function addToggleButtonToToolbar(
 
   setBackgroundColor();
 
-  button.innerHTML = toggleTitle;
-  button.onclick = (evt) => {
+  button.innerHTML = title;
+  button.onclick = () => {
     toggle = !toggle;
     setBackgroundColor();
-    onclick(evt, toggle);
+    onClick(toggle);
   };
 
   toolbar.append(button);

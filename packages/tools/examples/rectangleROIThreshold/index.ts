@@ -102,81 +102,85 @@ let numSlicesToProject = 3;
 let lowerThreshold = 100;
 let upperThreshold = 500;
 
-addButtonToToolbar('Execute threshold', () => {
-  const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
-    RectangleROIThresholdTool.toolName
-  ) as Array<cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation>;
+addButtonToToolbar({
+  title: 'Execute threshold',
+  onClick: () => {
+    const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
+      RectangleROIThresholdTool.toolName
+    ) as Array<cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation>;
 
-  if (!selectedAnnotations) {
-    throw new Error('No annotation selected ');
-  }
-
-  const annotation = selectedAnnotations[0];
-
-  const { metadata } = annotation; // assuming they are all overlayed on the same toolGroup
-  const viewport = metadata.enabledElement.viewport as Types.IVolumeViewport;
-
-  const volumeActorInfo = viewport.getDefaultActor();
-
-  // Todo: this only works for volumeViewport
-  const { uid } = volumeActorInfo;
-  const referenceVolume = cache.getVolume(uid);
-
-  const segmentationRepresentation =
-    segmentation.state.getSegmentationRepresentationByUID(
-      toolGroupId,
-      segmentationRepresentationByUID
-    );
-
-  csToolsUtils.segmentation.thresholdVolumeByRange(
-    selectedAnnotations,
-    [referenceVolume],
-    segmentationRepresentation,
-    {
-      lowerThreshold,
-      higherThreshold: upperThreshold,
-      numSlicesToProject,
-      overwrite: false,
+    if (!selectedAnnotations) {
+      throw new Error('No annotation selected ');
     }
-  );
+
+    const annotation = selectedAnnotations[0];
+
+    const { metadata } = annotation; // assuming they are all overlayed on the same toolGroup
+    const viewport = metadata.enabledElement.viewport as Types.IVolumeViewport;
+
+    const volumeActorInfo = viewport.getDefaultActor();
+
+    // Todo: this only works for volumeViewport
+    const { uid } = volumeActorInfo;
+    const referenceVolume = cache.getVolume(uid);
+
+    const segmentationRepresentation =
+      segmentation.state.getSegmentationRepresentationByUID(
+        toolGroupId,
+        segmentationRepresentationByUID
+      );
+
+    csToolsUtils.segmentation.thresholdVolumeByRange(
+      selectedAnnotations,
+      [referenceVolume],
+      segmentationRepresentation,
+      {
+        lowerThreshold,
+        higherThreshold: upperThreshold,
+        numSlicesToProject,
+        overwrite: false,
+      }
+    );
+  },
 });
 
-addSliderToToolbar(
-  `Number of Slices to Segment: ${numSlicesToProject.toString().padStart(4)}`,
-  { range: [1, 5], defaultValue: numSlicesToProject },
-  // Set value on change
-  (value) => {
-    numSlicesToProject = value;
+addSliderToToolbar({
+  title: `Number of Slices to Segment: ${numSlicesToProject
+    .toString()
+    .padStart(4)}`,
+  range: [1, 5],
+  defaultValue: numSlicesToProject,
+  onSelectedValueChange: (value) => {
+    numSlicesToProject = Number(value);
   },
-  // Update label on change
-  (value, label) => {
+  updateLabelOnChange: (value, label) => {
     label.innerText = `Number of Slices to Segment: ${value}`;
-  }
-);
-
-addSliderToToolbar(
-  `Lower Threshold: ${lowerThreshold}`,
-  { range: [100, 400], defaultValue: lowerThreshold },
-  (value) => {
-    lowerThreshold = value;
   },
-  // Update label on change
-  (value, label) => {
+});
+
+addSliderToToolbar({
+  title: `Lower Threshold: ${lowerThreshold}`,
+  range: [100, 400],
+  defaultValue: lowerThreshold,
+  onSelectedValueChange: (value) => {
+    lowerThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
     label.innerText = `Lower Threshold: ${value}`;
-  }
-);
-
-addSliderToToolbar(
-  `Upper Threshold: ${upperThreshold.toString().padStart(4)}`,
-  { range: [500, 1000], defaultValue: upperThreshold },
-  (value) => {
-    upperThreshold = value;
   },
-  // Update label on change
-  (value, label) => {
+});
+
+addSliderToToolbar({
+  title: `Upper Threshold: ${upperThreshold.toString().padStart(4)}`,
+  range: [500, 1000],
+  defaultValue: upperThreshold,
+  onSelectedValueChange: (value) => {
+    upperThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
     label.innerText = `Upper Threshold: ${value}`;
-  }
-);
+  },
+});
 
 // ============================= //
 
@@ -259,7 +263,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
 

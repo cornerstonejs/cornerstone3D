@@ -17,6 +17,7 @@ import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getVolumeViewportsContainingVolumeId from './getVolumeViewportsContainingVolumeId';
+import transformWorldToIndex from './transformWorldToIndex';
 
 // name spaces
 import * as planar from './planar';
@@ -44,4 +45,5 @@ export {
   indexWithinDimensions,
   getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeId,
+  transformWorldToIndex,
 };

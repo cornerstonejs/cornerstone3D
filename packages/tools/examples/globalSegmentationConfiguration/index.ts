@@ -68,9 +68,9 @@ function setConfigValue(property, value) {
   renderingEngine.renderViewports([viewportId]);
 }
 
-addToggleButtonToToolbar(
-  'toggle render inactive segmentations',
-  (evt, toggle) => {
+addToggleButtonToToolbar({
+  title: 'toggle render inactive segmentations',
+  onClick: (toggle) => {
     const config = segmentation.config.getGlobalConfig();
 
     config.renderInactiveSegmentations = toggle;
@@ -80,53 +80,58 @@ addToggleButtonToToolbar(
 
     renderingEngine.renderViewports([viewportId]);
   },
-  true
-);
-addToggleButtonToToolbar(
-  'toggle outline rendering',
-  (evt, toggle) => {
+  defaultToggle: true,
+});
+addToggleButtonToToolbar({
+  title: 'toggle outline rendering',
+  onClick: (toggle) => {
     setConfigValue('renderOutline', toggle);
   },
-  true
-);
-addToggleButtonToToolbar(
-  'toggle fill rendering',
-  (evt, toggle) => {
+  defaultToggle: true,
+});
+addToggleButtonToToolbar({
+  title: 'toggle fill rendering',
+  onClick: (toggle) => {
     setConfigValue('renderFill', toggle);
   },
-  true
-);
+  defaultToggle: true,
+});
 
-addSliderToToolbar(
-  'outline width active',
-  { range: [1, 5], defaultValue: 1 },
-  (value) => {
+addSliderToToolbar({
+  title: 'outline width active',
+  range: [1, 5],
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
     setConfigValue('outlineWidthActive', value);
-  }
-);
-addSliderToToolbar(
-  'outline width inactive',
-  { range: [1, 5], defaultValue: 1 },
-  (value) => {
+  },
+});
+addSliderToToolbar({
+  title: 'outline width inactive',
+  range: [1, 5],
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
     setConfigValue('outlineWidthInactive', value);
-  }
-);
-addSliderToToolbar(
-  'fill alpha',
-  { range: [0, 100], defaultValue: 50 },
-  (value) => {
-    const mappedValue = value / 100.0;
+  },
+});
+addSliderToToolbar({
+  title: 'fill alpha',
+  range: [0, 100],
+  defaultValue: 50,
+  onSelectedValueChange: (value) => {
+    const mappedValue = Number(value) / 100.0;
+
     setConfigValue('fillAlpha', mappedValue);
-  }
-);
-addSliderToToolbar(
-  'fill alpha inactive',
-  { range: [0, 100], defaultValue: 50 },
-  (value) => {
-    const mappedValue = value / 100.0;
+  },
+});
+addSliderToToolbar({
+  title: 'fill alpha inactive',
+  range: [0, 100],
+  defaultValue: 50,
+  onSelectedValueChange: (value) => {
+    const mappedValue = Number(value) / 100.0;
     setConfigValue('fillAlphaInactive', mappedValue);
-  }
-);
+  },
+});
 
 // ============================= //
 
@@ -234,7 +239,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
 

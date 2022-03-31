@@ -1,4 +1,4 @@
-import { cache } from '@cornerstonejs/core';
+import { cache, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
@@ -8,9 +8,10 @@ import {
 import { pointInShapeCallback } from '../../utilities';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
-import transformPhysicalToIndex from '../transformPhysicalToIndex';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+
+const { transformWorldToIndex } = csUtils;
 
 export type ThresholdRangeOptions = {
   higherThreshold: number;
@@ -96,7 +97,7 @@ function thresholdVolumeByRange(
     }
 
     const rectangleCornersIJK = pointsToUse.map(
-      (world) => transformPhysicalToIndex(imageData, world) as Types.Point3
+      (world) => transformWorldToIndex(imageData, world) as Types.Point3
     );
     let boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
 

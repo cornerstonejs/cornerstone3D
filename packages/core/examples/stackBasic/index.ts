@@ -3,6 +3,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  ctVoiRange,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -40,7 +41,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     type: 'STACK',
   });
 
@@ -70,7 +71,10 @@ async function run() {
   const stack = [imageIds[0]];
 
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  await viewport.setStack(stack);
+
+  // Set the VOI of the stack
+  viewport.setProperties({ voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

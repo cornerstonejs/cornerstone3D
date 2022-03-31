@@ -12,7 +12,6 @@ import type { Types } from '@cornerstonejs/core';
 
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
-import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex';
 import {
   addAnnotation,
   getAnnotations,
@@ -46,6 +45,8 @@ import {
   InteractionTypes,
 } from '../../types';
 import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+
+const { transformWorldToIndex } = csUtils;
 
 /**
  * LengthTool let you draw annotations that measures the length of two drawing
@@ -706,8 +707,8 @@ class LengthTool extends AnnotationTool {
 
       const length = this._calculateLength(worldPos1, worldPos2);
 
-      const index1 = transformPhysicalToIndex(imageData, worldPos1);
-      const index2 = transformPhysicalToIndex(imageData, worldPos2);
+      const index1 = transformWorldToIndex(imageData, worldPos1);
+      const index2 = transformWorldToIndex(imageData, worldPos2);
 
       this._isInsideVolume(index1, index2, dimensions)
         ? (this.isHandleOutsideImage = false)

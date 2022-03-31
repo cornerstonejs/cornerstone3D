@@ -1,10 +1,11 @@
-import { ImageVolume } from '@cornerstonejs/core';
+import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation';
 import { pointInShapeCallback } from '../../../utilities';
-import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+
+const { transformWorldToIndex } = csUtils;
 
 type OperationData = {
   segmentationId: string;
@@ -40,7 +41,7 @@ function fillRectangle(
   const { imageData, dimensions, scalarData } = segmentation;
 
   let rectangleCornersIJK = points.map((world) => {
-    return transformPhysicalToIndex(imageData, world);
+    return transformWorldToIndex(imageData, world);
   });
 
   // math round

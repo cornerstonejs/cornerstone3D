@@ -107,35 +107,42 @@ const SynchronizerButtonInfo = [
 ];
 
 SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
-  addToggleButtonToToolbar(`Camera ${viewportLabel}`, (evt, toggle) => {
-    const synchronizer =
-      SynchronizerManager.getSynchronizer(cameraSynchronizerId);
+  addToggleButtonToToolbar({
+    title: `Camera ${viewportLabel}`,
+    onClick: (toggle) => {
+      const synchronizer =
+        SynchronizerManager.getSynchronizer(cameraSynchronizerId);
 
-    if (!synchronizer) {
-      return;
-    }
+      if (!synchronizer) {
+        return;
+      }
 
-    if (toggle) {
-      synchronizer.add({ renderingEngineId, viewportId });
-    } else {
-      synchronizer.remove({ renderingEngineId, viewportId });
-    }
+      if (toggle) {
+        synchronizer.add({ renderingEngineId, viewportId });
+      } else {
+        synchronizer.remove({ renderingEngineId, viewportId });
+      }
+    },
   });
 });
 
 SynchronizerButtonInfo.forEach(({ viewportLabel, viewportId }) => {
-  addToggleButtonToToolbar(`VOI ${viewportLabel}`, (evt, toggle) => {
-    const synchronizer = SynchronizerManager.getSynchronizer(voiSynchronizerId);
+  addToggleButtonToToolbar({
+    title: `VOI ${viewportLabel}`,
+    onClick: (toggle) => {
+      const synchronizer =
+        SynchronizerManager.getSynchronizer(voiSynchronizerId);
 
-    if (!synchronizer) {
-      return;
-    }
+      if (!synchronizer) {
+        return;
+      }
 
-    if (toggle) {
-      synchronizer.add({ renderingEngineId, viewportId });
-    } else {
-      synchronizer.remove({ renderingEngineId, viewportId });
-    }
+      if (toggle) {
+        synchronizer.add({ renderingEngineId, viewportId });
+      } else {
+        synchronizer.remove({ renderingEngineId, viewportId });
+      }
+    },
   });
 });
 
@@ -192,9 +199,8 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Create synchronizers
-  const cameraSynchronizer =
-    createCameraPositionSynchronizer(cameraSynchronizerId);
-  const voiSynchronizer = createVOISynchronizer(voiSynchronizerId);
+  createCameraPositionSynchronizer(cameraSynchronizerId);
+  createVOISynchronizer(voiSynchronizerId);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

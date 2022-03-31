@@ -24,7 +24,6 @@ import {
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
-import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import {
@@ -42,6 +41,8 @@ import {
   ToolProps,
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+
+const { transformWorldToIndex } = csUtils;
 
 /**
  * ProbeTool let you get the underlying voxel value by putting a probe in that
@@ -585,7 +586,7 @@ export default class ProbeTool extends AnnotationTool {
       const { dimensions, scalarData, imageData, metadata } = image;
 
       const modality = metadata.Modality;
-      const index = transformPhysicalToIndex(imageData, worldPos);
+      const index = transformWorldToIndex(imageData, worldPos);
 
       index[0] = Math.round(index[0]);
       index[1] = Math.round(index[1]);

@@ -28,7 +28,6 @@ import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as lineSegment from '../../utilities/math/line';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import transformPhysicalToIndex from '../../utilities/transformPhysicalToIndex';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -49,6 +48,8 @@ import {
   MouseMoveEventType,
 } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+
+const { transformWorldToIndex } = csUtils;
 
 /**
  * BidirectionalTool let you draw annotations that measures the length and
@@ -1201,10 +1202,10 @@ export default class BidirectionalTool extends AnnotationTool {
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 
-      const index1 = transformPhysicalToIndex(imageData, worldPos1);
-      const index2 = transformPhysicalToIndex(imageData, worldPos2);
-      const index3 = transformPhysicalToIndex(imageData, worldPos3);
-      const index4 = transformPhysicalToIndex(imageData, worldPos4);
+      const index1 = transformWorldToIndex(imageData, worldPos1);
+      const index2 = transformWorldToIndex(imageData, worldPos2);
+      const index3 = transformWorldToIndex(imageData, worldPos3);
+      const index4 = transformWorldToIndex(imageData, worldPos4);
 
       this._isInsideVolume(index1, index2, index3, index4, dimensions)
         ? (this.isHandleOutsideImage = false)

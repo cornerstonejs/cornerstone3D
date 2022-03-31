@@ -92,6 +92,7 @@ export default async function createImageIdsAndCacheMetaData({
       }
     });
     if (InstanceMetadataArray.length) {
+      debugger;
       const suvScalingFactors = calculateSUVScalingFactors(
         InstanceMetadataArray
       );

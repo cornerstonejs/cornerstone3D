@@ -111,6 +111,7 @@ export default class WindowLevelTool extends BaseTool {
     }
 
     rgbTransferFunction.setRange(newRange.lower, newRange.upper);
+
     viewportsContainingVolumeUID.forEach((vp) => {
       vp.render();
     });

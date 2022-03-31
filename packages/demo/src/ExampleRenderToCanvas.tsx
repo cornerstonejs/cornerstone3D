@@ -13,7 +13,7 @@ import { renderingEngineId } from './constants';
 const STACK = 'stack';
 
 const imageId =
-  'wadors:https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs/studies/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1/series/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.2/instances/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.3/frames/1';
+  'wadors:https://d1qmxk7r72ysft.cloudfront.net/dicomweb/studies/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1/series/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.2/instances/1.3.6.1.4.1.25403.345050719074.3824.20170125095258.3/frames/1';
 
 class RenderToCanvasExample extends Component {
   state = {

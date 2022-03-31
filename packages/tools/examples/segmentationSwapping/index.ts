@@ -63,37 +63,40 @@ content.append(instructions);
 let segmentationDisplayed = segmentationId1;
 let activeSegmentationRepresentationUID;
 
-addButtonToToolbar('Swap Segmentation', async () => {
-  // Remove the currently displayed segmentation representation
-  segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
-    activeSegmentationRepresentationUID,
-  ]);
+addButtonToToolbar({
+  title: 'Swap Segmentation',
+  onClick: async () => {
+    // Remove the currently displayed segmentation representation
+    segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+      activeSegmentationRepresentationUID,
+    ]);
 
-  if (segmentationDisplayed === segmentationId1) {
-    // Add segmentation 2
-    const [segmentationRepresentationUID] =
-      await segmentation.addSegmentationRepresentations(toolGroupId, [
-        {
-          segmentationId: segmentationId2,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]);
+    if (segmentationDisplayed === segmentationId1) {
+      // Add segmentation 2
+      const [segmentationRepresentationUID] =
+        await segmentation.addSegmentationRepresentations(toolGroupId, [
+          {
+            segmentationId: segmentationId2,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          },
+        ]);
 
-    activeSegmentationRepresentationUID = segmentationRepresentationUID;
-    segmentationDisplayed = segmentationId2;
-  } else {
-    // Add segmentation 1
-    const [segmentationRepresentationUID] =
-      await segmentation.addSegmentationRepresentations(toolGroupId, [
-        {
-          segmentationId: segmentationId1,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]);
+      activeSegmentationRepresentationUID = segmentationRepresentationUID;
+      segmentationDisplayed = segmentationId2;
+    } else {
+      // Add segmentation 1
+      const [segmentationRepresentationUID] =
+        await segmentation.addSegmentationRepresentations(toolGroupId, [
+          {
+            segmentationId: segmentationId1,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          },
+        ]);
 
-    activeSegmentationRepresentationUID = segmentationRepresentationUID;
-    segmentationDisplayed = segmentationId1;
-  }
+      activeSegmentationRepresentationUID = segmentationRepresentationUID;
+      segmentationDisplayed = segmentationId1;
+    }
+  },
 });
 
 // ============================= //
@@ -202,7 +205,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
 

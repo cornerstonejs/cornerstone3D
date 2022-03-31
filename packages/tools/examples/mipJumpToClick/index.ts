@@ -4,13 +4,13 @@ import {
   Enums,
   setVolumesForViewports,
   Types,
-  utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -37,15 +37,7 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
-function setPetTransferFunction({ volumeActor }) {
-  const rgbTransferFunction = volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0);
-
-  rgbTransferFunction.setRange(0, 5);
-
-  utilities.invertRgbTransferFunction(rgbTransferFunction);
-}
+const viewportIds = ['CT_AXIAL_STACK', 'CT_SAGITTAL_STACK', 'CT_OBLIQUE_STACK'];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -100,7 +92,9 @@ async function run() {
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
 
   mipToolGroup.addTool('VolumeRotateMouseWheel');
-  mipToolGroup.addTool('MIPJumpToClickTool');
+  mipToolGroup.addTool('MIPJumpToClickTool', {
+    targetViewportIds: [viewportIds[0], viewportIds[1]],
+  });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -115,7 +109,7 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   mipToolGroup.setToolActive('VolumeRotateMouseWheel');
 
-  const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs';
+  const wadoRsRoot = 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
@@ -141,11 +135,6 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportIds = [
-    'CT_AXIAL_STACK',
-    'CT_SAGITTAL_STACK',
-    'CT_OBLIQUE_STACK',
-  ];
 
   const viewportInputArray = [
     {
@@ -211,7 +200,7 @@ async function run() {
   );
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeId: ptVolumeId, callback: setPetTransferFunction }],
+    [{ volumeId: ptVolumeId, callback: setPetTransferFunctionForVolumeActor }],
     [viewportIds[1]]
   );
 
@@ -220,7 +209,7 @@ async function run() {
     [
       {
         volumeId: ptVolumeId,
-        callback: setPetTransferFunction,
+        callback: setPetTransferFunctionForVolumeActor,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },

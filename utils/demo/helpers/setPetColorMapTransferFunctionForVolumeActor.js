@@ -2,7 +2,9 @@ import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/C
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
-export default function setPetColorMapTransferFunction({ volumeActor }) {
+export default function setPetColorMapTransferFunctionForVolumeActor({
+  volumeActor,
+}) {
   const mapper = volumeActor.getMapper();
   mapper.setSampleDistance(1.0);
 

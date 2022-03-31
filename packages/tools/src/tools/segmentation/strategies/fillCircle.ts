@@ -1,14 +1,16 @@
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 
 import {
   getCanvasEllipseCorners,
   pointInEllipse,
 } from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShape } from '../../../utilities/segmentation';
-import transformPhysicalToIndex from '../../../utilities/transformPhysicalToIndex';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
+
+const { transformWorldToIndex } = csUtils;
 
 type OperationData = {
   segmentationId: string;
@@ -55,8 +57,8 @@ function fillCircle(
   const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
 
   const ellipsoidCornersIJK = [
-    <Types.Point3>transformPhysicalToIndex(imageData, topLeftWorld),
-    <Types.Point3>transformPhysicalToIndex(imageData, bottomRightWorld),
+    <Types.Point3>transformWorldToIndex(imageData, topLeftWorld),
+    <Types.Point3>transformWorldToIndex(imageData, bottomRightWorld),
   ];
 
   const boundsIJK = getBoundingBoxAroundShape(ellipsoidCornersIJK, dimensions);

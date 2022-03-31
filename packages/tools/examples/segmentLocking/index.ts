@@ -93,30 +93,27 @@ instructions.innerText = `
 content.append(instructions);
 
 // ============================= //
-addDropdownToToolbar(
-  {
-    options: ['1', '2'],
-    defaultOption: '1',
-  },
-  (segmentIndex) => {
+addDropdownToToolbar({
+  options: { values: ['1', '2'], defaultValue: '1' },
+  onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
       segmentationId,
-      segmentIndex
+      Number(segmentIndex)
     );
-  }
-);
+  },
+});
 
-addToggleButtonToToolbar(
-  'Toggle Locked Segment 1',
-  (evt, toggle) => {
+addToggleButtonToToolbar({
+  title: 'Toggle Locked Segment 1',
+  onClick: (toggle) => {
     segmentation.segmentLocking.setSegmentIndexLocked(
       segmentationId,
       1,
       toggle
     );
   },
-  false
-);
+  defaultToggle: false,
+});
 
 // ============================= //
 
@@ -199,7 +196,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
 

@@ -89,7 +89,7 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const options = [
+const optionsValues = [
   BrushTool.toolName,
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
@@ -97,25 +97,23 @@ const options = [
 ];
 
 // ============================= //
-addDropdownToToolbar(
-  {
-    options,
-    defaultOption: BrushTool.toolName,
-  },
-  (toolName) => {
+addDropdownToToolbar({
+  options: { values: optionsValues, defaultValue: BrushTool.toolName },
+  onSelectedValueChange: (toolNameAsStringOrNumber) => {
+    const toolName = String(toolNameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the other tools disabled so we don't get conflicts.
     // Note we only strictly need to change the one which is currently active.
-    options.forEach((toolName) => {
+    optionsValues.forEach((toolName) => {
       toolGroup.setToolDisabled(toolName);
     });
 
     toolGroup.setToolActive(toolName, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
-  }
-);
+  },
+});
 
 // ============================= //
 
@@ -204,7 +202,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
 

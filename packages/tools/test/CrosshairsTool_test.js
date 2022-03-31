@@ -15,7 +15,7 @@ const {
 } = cornerstone3D;
 
 const { utilities: toolsUtilities } = csTools3d;
-const { transformPhysicalToIndex } = toolsUtilities;
+const { transformWorldToIndex } = utilities;
 
 const { Events, ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
@@ -322,7 +322,7 @@ describe('Cornerstone Tools: ', () => {
       // First viewport is axial
       const currentWorldLocation =
         crosshairAnnotations[0].data.handles.toolCenter;
-      const currentIndexLocation = transformPhysicalToIndex(
+      const currentIndexLocation = transformWorldToIndex(
         imageData,
         currentWorldLocation
       );
@@ -423,7 +423,7 @@ describe('Cornerstone Tools: ', () => {
         // First viewport is axial
         const currentWorldLocation =
           crosshairAnnotations[0].data.handles.toolCenter;
-        const currentIndexLocation = transformPhysicalToIndex(
+        const currentIndexLocation = transformWorldToIndex(
           imageData,
           currentWorldLocation
         );

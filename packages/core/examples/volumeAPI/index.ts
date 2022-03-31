@@ -15,6 +15,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   camera as cameraHelpers,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
@@ -53,125 +54,142 @@ content.appendChild(element);
 // TODO -> Maybe some of these implementations should be pushed down to some API
 
 // Buttons
-addButtonToToolbar('Set VOI Range', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Set VOI Range',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the stack viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Get the volume actor from the viewport
-  const actor = viewport.getActor(volumeId);
+    // Get the volume actor from the viewport
+    const actor = viewport.getActor(volumeId);
 
-  // Set the mapping range of the actor to a range to highlight bones
-  actor.volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setMappingRange(-1500, 2500);
+    // Set the mapping range of the actor to a range to highlight bones
+    actor.volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(-1500, 2500);
 
-  viewport.render();
+    viewport.render();
+  },
 });
-addButtonToToolbar('Flip H', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Flip H',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Flip the viewport horizontally
-  const { flipHorizontal } = viewport.getProperties();
+    // Flip the viewport horizontally
+    const { flipHorizontal } = viewport.getProperties();
 
-  viewport.flip({ flipHorizontal: !flipHorizontal });
+    viewport.flip({ flipHorizontal: !flipHorizontal });
 
-  viewport.render();
-});
-
-addButtonToToolbar('Flip V', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-
-  // Flip the viewport vertically
-  const { flipVertical } = viewport.getProperties();
-
-  viewport.flip({ flipVertical: !flipVertical });
-
-  viewport.render();
+    viewport.render();
+  },
 });
 
-addButtonToToolbar('Invert', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Flip V',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Get the volume actor from the viewport
-  const actor = viewport.getActor(volumeId);
+    // Flip the viewport vertically
+    const { flipVertical } = viewport.getProperties();
 
-  const rgbTransferFunction = actor.volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0);
+    viewport.flip({ flipVertical: !flipVertical });
 
-  utilities.invertRgbTransferFunction(rgbTransferFunction);
-
-  viewport.render();
+    viewport.render();
+  },
 });
 
-addButtonToToolbar('Apply Random Zoom And Pan', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Invert',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the stack viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Reset the camera so that we can set some pan and zoom relative to the
-  // defaults for this demo. Note that changes could be relative instead.
-  viewport.resetCamera();
+    // Get the volume actor from the viewport
+    const actor = viewport.getActor(volumeId);
 
-  // Get the current camera properties
-  const camera = viewport.getCamera();
+    const rgbTransferFunction = actor.volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0);
 
-  const { parallelScale, position, focalPoint } =
-    cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
+    utilities.invertRgbTransferFunction(rgbTransferFunction);
 
-  viewport.setCamera({
-    parallelScale,
-    position: <Types.Point3>position,
-    focalPoint: <Types.Point3>focalPoint,
-  });
-  viewport.render();
+    viewport.render();
+  },
 });
 
-addButtonToToolbar('Reset Viewport', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Apply Random Zoom And Pan',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Resets the viewport's camera
-  viewport.resetCamera();
-  // TODO reset the viewport properties, we don't have API for this.
+    // Reset the camera so that we can set some pan and zoom relative to the
+    // defaults for this demo. Note that changes could be relative instead.
+    viewport.resetCamera();
 
-  viewport.render();
+    // Get the current camera properties
+    const camera = viewport.getCamera();
+
+    const { parallelScale, position, focalPoint } =
+      cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
+
+    viewport.setCamera({
+      parallelScale,
+      position: <Types.Point3>position,
+      focalPoint: <Types.Point3>focalPoint,
+    });
+    viewport.render();
+  },
 });
 
-// TOOD -> Oblique
+addButtonToToolbar({
+  title: 'Reset Viewport',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    // Resets the viewport's camera
+    viewport.resetCamera();
+    // TODO reset the viewport properties, we don't have API for this.
+
+    viewport.render();
+  },
+});
+
 const orientationOptions = {
   axial: 'axial',
   sagittal: 'sagittal',
@@ -179,12 +197,12 @@ const orientationOptions = {
   oblique: 'oblique',
 };
 
-addDropdownToToolbar(
-  {
-    options: ['axial', 'sagittal', 'coronal', 'oblique'],
-    defaultOption: 'sagittal',
+addDropdownToToolbar({
+  options: {
+    values: ['axial', 'sagittal', 'coronal', 'oblique'],
+    defaultValue: 'sagittal',
   },
-  (selectedValue) => {
+  onSelectedValueChange: (selectedValue) => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -231,13 +249,16 @@ addDropdownToToolbar(
     // Reset the camera after the normal changes
     viewport.resetCamera();
     viewport.render();
-  }
-);
+  },
+});
 
-addSliderToToolbar(
-  'Slab Thickness',
-  { range: [0, 50], defaultValue: 0 },
-  (value) => {
+addSliderToToolbar({
+  title: 'Slab Thickness',
+  range: [0, 50],
+  defaultValue: 0,
+  onSelectedValueChange: (value) => {
+    let valueAsNumber = Number(value);
+
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -248,9 +269,9 @@ addSliderToToolbar(
 
     let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND;
 
-    if (value < 0.1) {
+    if (valueAsNumber < 0.1) {
       // Cannot render zero thickness
-      value = 0.1;
+      valueAsNumber = 0.1;
 
       // Not a mip, just show slice
       blendMode = BlendMode.COMPOSITE_BLEND;
@@ -259,14 +280,14 @@ addSliderToToolbar(
     // Get the volume actor from the viewport
     const actor = viewport.getActor(volumeId);
 
-    viewport.setSlabThickness(value);
+    viewport.setSlabThickness(valueAsNumber);
 
     // TODO -> We should have set blend mode for volume on the viewport?
     actor.volumeActor.getMapper().setBlendMode(blendMode);
 
     viewport.render();
-  }
-);
+  },
+});
 
 /**
  * Runs the demo
@@ -281,7 +302,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
 
@@ -315,7 +336,9 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeId }]);
+  viewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
 
   // Render the image
   viewport.render();

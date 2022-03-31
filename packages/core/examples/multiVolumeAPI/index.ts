@@ -12,7 +12,8 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  setPetColorMapTransferFunction,
+  setCtTransferFunctionForVolumeActor,
+  setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -52,68 +53,82 @@ content.appendChild(element);
 // TODO -> Maybe some of these implementations should be pushed down to some API
 
 // Buttons
-addButtonToToolbar('Set CT VOI Range', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Set CT VOI Range',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the stack viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Get the volume actor from the viewport
-  const actor = viewport.getActor(ctVolumeId);
+    // Get the volume actor from the viewport
+    const actor = viewport.getActor(ctVolumeId);
 
-  // Set the mapping range of the actor to a range to highlight bones
-  actor.volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setMappingRange(-1500, 2500);
+    // Set the mapping range of the actor to a range to highlight bones
+    actor.volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(-1500, 2500);
 
-  viewport.render();
+    viewport.render();
+  },
 });
 
-addButtonToToolbar('Reset Viewport', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Reset Viewport',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Resets the viewport's camera
-  viewport.resetCamera();
-  // TODO reset the viewport properties, we don't have API for this.
+    // Resets the viewport's camera
+    viewport.resetCamera();
+    // TODO reset the viewport properties, we don't have API for this.
 
-  viewport.render();
+    viewport.render();
+  },
 });
 
 let fused = false;
 
-addButtonToToolbar('toggle PET', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'toggle PET',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-  if (fused) {
-    // Removes the PT actor from the scene
-    viewport.removeVolumeActors([ptVolumeId], true);
-
-    fused = false;
-  } else {
-    // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
-    // If it was in a different frame of reference, you would need to register it first.
-    viewport.addVolumes(
-      [{ volumeId: ptVolumeId, callback: setPetColorMapTransferFunction }],
-      true
+    // Get the volume viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
     );
+    if (fused) {
+      // Removes the PT actor from the scene
+      viewport.removeVolumeActors([ptVolumeId], true);
 
-    fused = true;
-  }
+      fused = false;
+    } else {
+      // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
+      // If it was in a different frame of reference, you would need to register it first.
+      viewport.addVolumes(
+        [
+          {
+            volumeId: ptVolumeId,
+            callback: setPetColorMapTransferFunctionForVolumeActor,
+          },
+        ],
+        true
+      );
+
+      fused = true;
+    }
+  },
 });
 
 const orientationOptions = {
@@ -123,12 +138,12 @@ const orientationOptions = {
   oblique: 'oblique',
 };
 
-addDropdownToToolbar(
-  {
-    options: ['axial', 'sagittal', 'coronal', 'oblique'],
-    defaultOption: 'sagittal',
+addDropdownToToolbar({
+  options: {
+    values: ['axial', 'sagittal', 'coronal', 'oblique'],
+    defaultValue: 'sagittal',
   },
-  (selectedValue) => {
+  onSelectedValueChange: (selectedValue) => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -175,8 +190,8 @@ addDropdownToToolbar(
     // Reset the camera after the normal changes
     viewport.resetCamera();
     viewport.render();
-  }
-);
+  },
+});
 
 /**
  * Runs the demo
@@ -185,7 +200,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs';
+  const wadoRsRoot = 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
@@ -236,7 +251,9 @@ async function run() {
   ctVolume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeId: ctVolumeId }]);
+  viewport.setVolumes([
+    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
 
   // Render the image
   renderingEngine.render();

@@ -1,7 +1,6 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { VolumeViewport } from '@cornerstonejs/core';
 /**
  * Returns a point based on some criteria (e.g., minimum or maximum intensity) in
  * the line of sight (on the line between the passed worldPosition and camera position).
