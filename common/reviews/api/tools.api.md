@@ -899,6 +899,9 @@ const _default_2: {
 };
 
 // @public (undocumented)
+function deselectAnnotation(annotation?: Annotation): void;
+
+// @public (undocumented)
 export function destroy(): void;
 
 // @public (undocumented)
@@ -3025,6 +3028,7 @@ declare namespace selection {
         getAnnotationSelected,
         getAnnotationsSelectedByToolName,
         getAnnotationsSelectedCount,
+        deselectAnnotation,
         isAnnotationSelected
     }
 }
