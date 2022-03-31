@@ -77,5 +77,6 @@
 }
 
 .dotBackground {
-  width: 150px;
+  max-width: 96px;
+  max-height: 6px;
 }

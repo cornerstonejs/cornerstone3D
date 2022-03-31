@@ -24,12 +24,19 @@ function HomepageHeader() {
       />
       <div className={styles.textDescription}>
         The easiest way to build interactive medical imaging web applications.
-        Supported by the <Link to="http://ohif.org/">Open Health Imaging Foundation</Link>.
+        Supported by the{' '}
+        <Link to="http://ohif.org/" style={{ color: '#5ACCE6' }}>
+          Open Health Imaging Foundation
+        </Link>
+        .
       </div>
       <div className={styles.textDescription}>
-        <strong>NEW:</strong> Cornerstone3D, released as a public beta on April 1st, 2022, represents a major improvement to the framework.
+        <strong>NEW:</strong> Cornerstone3D, released as a public beta on April
+        1st, 2022, represents a major improvement to the framework.
       </div>
-      <Link to='docs/getting-started/overview'><button className={styles.learnMore}>Learn More</button></Link>
+      <Link to="docs/getting-started/overview">
+        <button className={styles.learnMore}>Learn More</button>
+      </Link>
     </div>
   );
 }

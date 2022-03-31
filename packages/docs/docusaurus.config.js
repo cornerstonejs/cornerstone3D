@@ -30,6 +30,7 @@ module.exports = {
         {
           type: 'doc',
           docId: 'examples',
+          activeBasePath: 'docs/examples',
           position: 'left',
           label: 'Examples',
         },
@@ -46,6 +47,7 @@ module.exports = {
         {
           type: 'doc',
           docId: 'help',
+          activeBasePath: 'docs/help',
           label: 'Help',
           position: 'right',
         },
@@ -53,6 +55,7 @@ module.exports = {
           type: 'doc',
           docId: 'faq',
           label: 'FAQ',
+          activeBasePath: 'docs/faq',
           position: 'right',
         },
         {

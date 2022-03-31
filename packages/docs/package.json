@@ -9,7 +9,7 @@
     "docusaurus": "docusaurus",
     "docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 docusaurus start --port 3333",
     "start": "yarn run docs",
-    "dev": "yarn run docs",
+    "dev": "yarn run docs:ci && yarn run start",
     "dev:watch": "cross-env NODE_OPTIONS=--max_old_space_size=16384 TYPEDOC_WATCH=true docusaurus start",
     "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 docusaurus build",
     "swizzle": "docusaurus swizzle",
