@@ -1,4 +1,3 @@
-import { getActiveSegmentationRepresentation } from './activeSegmentation';
 import { getSegmentation } from './segmentationState';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
