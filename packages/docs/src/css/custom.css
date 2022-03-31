@@ -248,6 +248,7 @@ div[class^='codeBlockContent__'] {
 /* Footer logo MGH */
 #cs-logo {
   margin-right: 100px;
+  margin-top: 25px;
   width: 200px;
 }
 

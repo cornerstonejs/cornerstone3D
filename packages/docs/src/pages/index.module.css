@@ -61,6 +61,7 @@
 .textDescription {
   width: 600px;
   text-align: center;
+  margin-top: 24px;
 }
 
 .learnMore {
@@ -72,4 +73,8 @@
   box-shadow: none;
   border: none;
   border-radius: 4px;
+}
+
+.dotBackground {
+  width: 150px;
 }

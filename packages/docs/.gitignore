@@ -1,6 +1,12 @@
 # Dependencies
 /node_modules
-/static
+/static/live-examples
+/static/test-coverage
+/static/_headers
+/static/_redirects
+/static/.nojekyll
+
+
 
 # Production
 /build
