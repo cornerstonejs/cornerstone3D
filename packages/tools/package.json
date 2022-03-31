@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -29,8 +29,8 @@
     "gl-matrix": "^3.3.0"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "^0.3.4",
-    "@cornerstonejs/streaming-image-volume-loader": "^0.2.8",
+    "@cornerstonejs/core": "^0.4.0",
+    "@cornerstonejs/streaming-image-volume-loader": "^0.2.9",
     "@kitware/vtk.js": "24.0.0"
   },
   "contributors": [
