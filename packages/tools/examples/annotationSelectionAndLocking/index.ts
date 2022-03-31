@@ -71,30 +71,33 @@ const annotationsJSON =
 const lengthAnnotationUID = 'lengthAnnotationUID.1.2.3.4.5';
 const bidirectionalAnnotationUID = 'bidirectionalAnnotationUID.1.2.3.4.5';
 
-addToggleButtonToToolbar(
-  'Toggle lock bidirectional annotation',
-  (evt, toggle) => {
+addToggleButtonToToolbar({
+  title: 'Toggle lock bidirectional annotation',
+  onClick: (toggle) => {
     const annotation =
       defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
         bidirectionalAnnotationUID
       );
 
     locking.setAnnotationLocked(annotation, toggle);
-  }
-);
+  },
+});
 
-addButtonToToolbar('Select Length Annotation', () => {
-  const annotation =
-    defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
-      lengthAnnotationUID
-    );
+addButtonToToolbar({
+  title: 'Select Length Annotation',
+  onClick: () => {
+    const annotation =
+      defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
+        lengthAnnotationUID
+      );
 
-  selection.setAnnotationSelected(annotation, true);
+    selection.setAnnotationSelected(annotation, true);
 
-  // Render the image to see it was selected
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+    // Render the image to see it was selected
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  renderingEngine.renderViewports([viewportId]);
+    renderingEngine.renderViewports([viewportId]);
+  },
 });
 
 /**

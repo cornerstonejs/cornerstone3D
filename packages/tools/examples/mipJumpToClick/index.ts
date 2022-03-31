@@ -4,13 +4,13 @@ import {
   Enums,
   setVolumesForViewports,
   Types,
-  utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -36,16 +36,6 @@ const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
-
-function setPetTransferFunction({ volumeActor }) {
-  const rgbTransferFunction = volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0);
-
-  rgbTransferFunction.setRange(0, 5);
-
-  utilities.invertRgbTransferFunction(rgbTransferFunction);
-}
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -211,7 +201,7 @@ async function run() {
   );
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeId: ptVolumeId, callback: setPetTransferFunction }],
+    [{ volumeId: ptVolumeId, callback: setPetTransferFunctionForVolumeActor }],
     [viewportIds[1]]
   );
 
@@ -220,7 +210,7 @@ async function run() {
     [
       {
         volumeId: ptVolumeId,
-        callback: setPetTransferFunction,
+        callback: setPetTransferFunctionForVolumeActor,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness,
       },

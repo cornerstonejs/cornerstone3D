@@ -63,37 +63,40 @@ content.append(instructions);
 let segmentationDisplayed = segmentationId1;
 let activeSegmentationRepresentationUID;
 
-addButtonToToolbar('Swap Segmentation', async () => {
-  // Remove the currently displayed segmentation representation
-  segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
-    activeSegmentationRepresentationUID,
-  ]);
+addButtonToToolbar({
+  title: 'Swap Segmentation',
+  onClick: async () => {
+    // Remove the currently displayed segmentation representation
+    segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+      activeSegmentationRepresentationUID,
+    ]);
 
-  if (segmentationDisplayed === segmentationId1) {
-    // Add segmentation 2
-    const [segmentationRepresentationUID] =
-      await segmentation.addSegmentationRepresentations(toolGroupId, [
-        {
-          segmentationId: segmentationId2,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]);
+    if (segmentationDisplayed === segmentationId1) {
+      // Add segmentation 2
+      const [segmentationRepresentationUID] =
+        await segmentation.addSegmentationRepresentations(toolGroupId, [
+          {
+            segmentationId: segmentationId2,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          },
+        ]);
 
-    activeSegmentationRepresentationUID = segmentationRepresentationUID;
-    segmentationDisplayed = segmentationId2;
-  } else {
-    // Add segmentation 1
-    const [segmentationRepresentationUID] =
-      await segmentation.addSegmentationRepresentations(toolGroupId, [
-        {
-          segmentationId: segmentationId1,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]);
+      activeSegmentationRepresentationUID = segmentationRepresentationUID;
+      segmentationDisplayed = segmentationId2;
+    } else {
+      // Add segmentation 1
+      const [segmentationRepresentationUID] =
+        await segmentation.addSegmentationRepresentations(toolGroupId, [
+          {
+            segmentationId: segmentationId1,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          },
+        ]);
 
-    activeSegmentationRepresentationUID = segmentationRepresentationUID;
-    segmentationDisplayed = segmentationId1;
-  }
+      activeSegmentationRepresentationUID = segmentationRepresentationUID;
+      segmentationDisplayed = segmentationId1;
+    }
+  },
 });
 
 // ============================= //

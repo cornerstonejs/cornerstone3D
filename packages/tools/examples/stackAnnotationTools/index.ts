@@ -60,9 +60,9 @@ const toolsNames = [
 ];
 let selectedToolName = toolsNames[0];
 
-addDropdownToToolbar(
-  { options: toolsNames, defaultOption: selectedToolName },
-  (newSelectedToolName) => {
+addDropdownToToolbar({
+  options: { values: toolsNames, defaultValue: selectedToolName },
+  onSelectedValueChange: (newSelectedToolName) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the new tool active
@@ -78,8 +78,8 @@ addDropdownToToolbar(
     toolGroup.setToolPassive(selectedToolName);
 
     selectedToolName = newSelectedToolName;
-  }
-);
+  },
+});
 
 /**
  * Runs the demo

@@ -93,30 +93,27 @@ instructions.innerText = `
 content.append(instructions);
 
 // ============================= //
-addDropdownToToolbar(
-  {
-    options: ['1', '2'],
-    defaultOption: '1',
-  },
-  (segmentIndex) => {
+addDropdownToToolbar({
+  options: { values: ['1', '2'], defaultValue: '1' },
+  onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
       segmentationId,
       segmentIndex
     );
-  }
-);
+  },
+});
 
-addToggleButtonToToolbar(
-  'Toggle Locked Segment 1',
-  (evt, toggle) => {
+addToggleButtonToToolbar({
+  title: 'Toggle Locked Segment 1',
+  onClick: (evt, toggle) => {
     segmentation.segmentLocking.setSegmentIndexLocked(
       segmentationId,
       1,
       toggle
     );
   },
-  false
-);
+  defaultToggle: false,
+});
 
 // ============================= //
 

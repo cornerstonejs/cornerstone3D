@@ -78,9 +78,9 @@ instructions.innerText = `
 `;
 // ============================= //
 
-addToggleButtonToToolbar(
-  'toggle outline rendering',
-  (evt, toggle) => {
+addToggleButtonToToolbar({
+  title: 'toggle outline rendering',
+  onClick: (toggle) => {
     let config = segmentation.config.getToolGroupSpecificConfig(toolGroupId2);
 
     if (config.representations === undefined) {
@@ -102,8 +102,8 @@ addToggleButtonToToolbar(
 
     renderingEngine.renderViewports([viewportId1, viewportId2]);
   },
-  true
-);
+  defaultToggle: true,
+});
 
 // ============================= //
 

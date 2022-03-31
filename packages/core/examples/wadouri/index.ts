@@ -64,28 +64,34 @@ const ptImageId = createWADOURIImageId({
   contentType,
 });
 
-addButtonToToolbar('Load CT Image', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Load CT Image',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  viewport.setStack([ctImageId]);
+    viewport.setStack([ctImageId]);
+  },
 });
 
-addButtonToToolbar('Load PT Image', () => {
-  // Get the rendering engine
-  const renderingEngine = getRenderingEngine(renderingEngineId);
+addButtonToToolbar({
+  title: 'Load PT Image',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  viewport.setStack([ptImageId]);
+    viewport.setStack([ptImageId]);
+  },
 });
 /**
  * Runs the demo
@@ -118,7 +124,10 @@ async function run() {
   const stack = [ctImageId];
 
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  await viewport.setStack(stack);
+
+  // Set the VOI of the stack
+  viewport.setProperties({ voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

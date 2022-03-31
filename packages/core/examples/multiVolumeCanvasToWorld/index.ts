@@ -11,7 +11,8 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setPetColorMapTransferFunction,
+  setPetColorMapTransferFunctionForVolumeActor,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -134,8 +135,11 @@ async function run() {
 
   // Set the volume on the viewport
   viewport.setVolumes([
-    { volumeId: ctVolumeId },
-    { volumeId: ptVolumeId, callback: setPetColorMapTransferFunction },
+    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
+    {
+      volumeId: ptVolumeId,
+      callback: setPetColorMapTransferFunctionForVolumeActor,
+    },
   ]);
 
   // Render the image

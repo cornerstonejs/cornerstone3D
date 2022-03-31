@@ -56,9 +56,9 @@ const toolModes = [
 ];
 const selectedToolMode = ToolModes.Active;
 
-addDropdownToToolbar(
-  { options: toolModes, defaultOption: selectedToolMode },
-  (newToolMode) => {
+addDropdownToToolbar({
+  options: { values: toolModes, defaultValue: selectedToolMode },
+  onSelectedValueChange: (newToolMode) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the new tool active
@@ -71,8 +71,8 @@ addDropdownToToolbar(
     });
 
     instructions.innerText = instructionText[newToolMode];
-  }
-);
+  },
+});
 
 /**
  * Runs the demo

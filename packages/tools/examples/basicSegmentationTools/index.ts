@@ -89,7 +89,7 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const options = [
+const optionsValues = [
   BrushTool.toolName,
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
@@ -97,25 +97,22 @@ const options = [
 ];
 
 // ============================= //
-addDropdownToToolbar(
-  {
-    options,
-    defaultOption: BrushTool.toolName,
-  },
-  (toolName) => {
+addDropdownToToolbar({
+  options: { values: optionsValues, defaultValue: BrushTool.toolName },
+  onSelectedValueChange: (toolName) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the other tools disabled so we don't get conflicts.
     // Note we only strictly need to change the one which is currently active.
-    options.forEach((toolName) => {
+    optionsValues.forEach((toolName) => {
       toolGroup.setToolDisabled(toolName);
     });
 
     toolGroup.setToolActive(toolName, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
-  }
-);
+  },
+});
 
 // ============================= //
 

@@ -68,9 +68,9 @@ function setConfigValue(property, value) {
   renderingEngine.renderViewports([viewportId]);
 }
 
-addToggleButtonToToolbar(
-  'toggle render inactive segmentations',
-  (evt, toggle) => {
+addToggleButtonToToolbar({
+  title: 'toggle render inactive segmentations',
+  onClick: (toggle) => {
     const config = segmentation.config.getGlobalConfig();
 
     config.renderInactiveSegmentations = toggle;
@@ -80,53 +80,57 @@ addToggleButtonToToolbar(
 
     renderingEngine.renderViewports([viewportId]);
   },
-  true
-);
-addToggleButtonToToolbar(
-  'toggle outline rendering',
-  (evt, toggle) => {
+  defaultToggle: true,
+});
+addToggleButtonToToolbar({
+  title: 'toggle outline rendering',
+  onClick: (evt, toggle) => {
     setConfigValue('renderOutline', toggle);
   },
-  true
-);
-addToggleButtonToToolbar(
-  'toggle fill rendering',
-  (evt, toggle) => {
+  defaultToggle: true,
+});
+addToggleButtonToToolbar({
+  title: 'toggle fill rendering',
+  onClick: (evt, toggle) => {
     setConfigValue('renderFill', toggle);
   },
-  true
-);
+  defaultToggle: true,
+});
 
-addSliderToToolbar(
-  'outline width active',
-  { range: [1, 5], defaultValue: 1 },
-  (value) => {
+addSliderToToolbar({
+  title: 'outline width active',
+  range: [1, 5],
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
     setConfigValue('outlineWidthActive', value);
-  }
-);
-addSliderToToolbar(
-  'outline width inactive',
-  { range: [1, 5], defaultValue: 1 },
-  (value) => {
+  },
+});
+addSliderToToolbar({
+  title: 'outline width inactive',
+  range: [1, 5],
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
     setConfigValue('outlineWidthInactive', value);
-  }
-);
-addSliderToToolbar(
-  'fill alpha',
-  { range: [0, 100], defaultValue: 50 },
-  (value) => {
+  },
+});
+addSliderToToolbar({
+  title: 'fill alpha',
+  range: [0, 100],
+  defaultValue: 50,
+  onSelectedValueChange: (value) => {
     const mappedValue = value / 100.0;
     setConfigValue('fillAlpha', mappedValue);
-  }
-);
-addSliderToToolbar(
-  'fill alpha inactive',
-  { range: [0, 100], defaultValue: 50 },
-  (value) => {
+  },
+});
+addSliderToToolbar({
+  title: 'fill alpha inactive',
+  range: [0, 100],
+  defaultValue: 50,
+  onSelectedValueChange: (value) => {
     const mappedValue = value / 100.0;
     setConfigValue('fillAlphaInactive', mappedValue);
-  }
-);
+  },
+});
 
 // ============================= //
 

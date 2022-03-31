@@ -1,6 +1,10 @@
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
 import initDemo from './initDemo';
-import setPetColorMapTransferFunction from './setPetColorMapTransferFunction';
+import setCtTransferFunctionForVolumeActor, {
+  ctVoiRange,
+} from './setCtTransferFunctionForVolumeActor';
+import setPetTransferFunctionForVolumeActor from './setPetTransferFunctionForVolumeActor';
+import setPetColorMapTransferFunctionForVolumeActor from './setPetColorMapTransferFunctionForVolumeActor';
 import setTitleAndDescription from './setTitleAndDescription';
 import addButtonToToolbar from './addButtonToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
@@ -16,6 +20,9 @@ export {
   addDropdownToToolbar,
   addSliderToToolbar,
   addToggleButtonToToolbar,
-  setPetColorMapTransferFunction,
+  setPetColorMapTransferFunctionForVolumeActor,
+  setPetTransferFunctionForVolumeActor,
+  setCtTransferFunctionForVolumeActor,
+  ctVoiRange,
   camera,
 };

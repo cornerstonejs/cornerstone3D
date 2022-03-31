@@ -9,6 +9,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -88,7 +89,9 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeId }]);
+  viewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
 
   // Render the image
   viewport.render();

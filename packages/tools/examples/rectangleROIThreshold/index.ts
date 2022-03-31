@@ -102,81 +102,85 @@ let numSlicesToProject = 3;
 let lowerThreshold = 100;
 let upperThreshold = 500;
 
-addButtonToToolbar('Execute threshold', () => {
-  const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
-    RectangleROIThresholdTool.toolName
-  ) as Array<cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation>;
+addButtonToToolbar({
+  title: 'Execute threshold',
+  onClick: () => {
+    const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
+      RectangleROIThresholdTool.toolName
+    ) as Array<cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation>;
 
-  if (!selectedAnnotations) {
-    throw new Error('No annotation selected ');
-  }
-
-  const annotation = selectedAnnotations[0];
-
-  const { metadata } = annotation; // assuming they are all overlayed on the same toolGroup
-  const viewport = metadata.enabledElement.viewport as Types.IVolumeViewport;
-
-  const volumeActorInfo = viewport.getDefaultActor();
-
-  // Todo: this only works for volumeViewport
-  const { uid } = volumeActorInfo;
-  const referenceVolume = cache.getVolume(uid);
-
-  const segmentationRepresentation =
-    segmentation.state.getSegmentationRepresentationByUID(
-      toolGroupId,
-      segmentationRepresentationByUID
-    );
-
-  csToolsUtils.segmentation.thresholdVolumeByRange(
-    selectedAnnotations,
-    [referenceVolume],
-    segmentationRepresentation,
-    {
-      lowerThreshold,
-      higherThreshold: upperThreshold,
-      numSlicesToProject,
-      overwrite: false,
+    if (!selectedAnnotations) {
+      throw new Error('No annotation selected ');
     }
-  );
+
+    const annotation = selectedAnnotations[0];
+
+    const { metadata } = annotation; // assuming they are all overlayed on the same toolGroup
+    const viewport = metadata.enabledElement.viewport as Types.IVolumeViewport;
+
+    const volumeActorInfo = viewport.getDefaultActor();
+
+    // Todo: this only works for volumeViewport
+    const { uid } = volumeActorInfo;
+    const referenceVolume = cache.getVolume(uid);
+
+    const segmentationRepresentation =
+      segmentation.state.getSegmentationRepresentationByUID(
+        toolGroupId,
+        segmentationRepresentationByUID
+      );
+
+    csToolsUtils.segmentation.thresholdVolumeByRange(
+      selectedAnnotations,
+      [referenceVolume],
+      segmentationRepresentation,
+      {
+        lowerThreshold,
+        higherThreshold: upperThreshold,
+        numSlicesToProject,
+        overwrite: false,
+      }
+    );
+  },
 });
 
-addSliderToToolbar(
-  `Number of Slices to Segment: ${numSlicesToProject.toString().padStart(4)}`,
-  { range: [1, 5], defaultValue: numSlicesToProject },
-  // Set value on change
-  (value) => {
+addSliderToToolbar({
+  title: `Number of Slices to Segment: ${numSlicesToProject
+    .toString()
+    .padStart(4)}`,
+  range: [1, 5],
+  defaultValue: numSlicesToProject,
+  onSelectedValueChange: (value) => {
     numSlicesToProject = value;
   },
-  // Update label on change
-  (value, label) => {
+  updateLabelOnChange: (value, label) => {
     label.innerText = `Number of Slices to Segment: ${value}`;
-  }
-);
+  },
+});
 
-addSliderToToolbar(
-  `Lower Threshold: ${lowerThreshold}`,
-  { range: [100, 400], defaultValue: lowerThreshold },
-  (value) => {
+addSliderToToolbar({
+  title: `Lower Threshold: ${lowerThreshold}`,
+  range: [100, 400],
+  defaultValue: lowerThreshold,
+  onSelectedValueChange: (value) => {
     lowerThreshold = value;
   },
-  // Update label on change
-  (value, label) => {
+  updateLabelOnChange: (value, label) => {
     label.innerText = `Lower Threshold: ${value}`;
-  }
-);
+  },
+});
 
-addSliderToToolbar(
-  `Upper Threshold: ${upperThreshold.toString().padStart(4)}`,
-  { range: [500, 1000], defaultValue: upperThreshold },
-  (value) => {
+addSliderToToolbar({
+  title: `Upper Threshold: ${upperThreshold.toString().padStart(4)}`,
+  range: [500, 1000],
+  defaultValue: upperThreshold,
+  onSelectedValueChange: (value) => {
     upperThreshold = value;
   },
-  // Update label on change
-  (value, label) => {
+  updateLabelOnChange: (value, label) => {
     label.innerText = `Upper Threshold: ${value}`;
-  }
-);
+  },
+});
 
 // ============================= //
 

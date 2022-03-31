@@ -3,6 +3,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  ctVoiRange,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -70,7 +71,10 @@ async function run() {
   const stack = [imageIds[0]];
 
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  await viewport.setStack(stack);
+
+  // Set the VOI of the stack
+  viewport.setProperties({ voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();
