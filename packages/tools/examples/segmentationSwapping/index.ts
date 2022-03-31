@@ -26,8 +26,8 @@ const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderProtocolName = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderProtocolName}:${volumeName}`; // VolumeId with loader id + volume id
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId1 = 'SEGMENTATION_ID_1';
 const segmentationId2 = 'SEGMENTATION_ID_2';
 const toolGroupId = 'MY_ TOOL_GROUP_ID';
