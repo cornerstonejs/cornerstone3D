@@ -118,9 +118,7 @@ addSliderToToolbar({
   range: [0, 100],
   defaultValue: 50,
   onSelectedValueChange: (value) => {
-    // const mappedValue = value / 100.0;
-
-    const mappedValue = 0.999999999;
+    const mappedValue = value / 100.0;
 
     setConfigValue('fillAlpha', mappedValue);
   },
@@ -215,7 +213,7 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  // fillSegmentationWithCircles(segmentationVolume1, [50, 50]);
+  fillSegmentationWithCircles(segmentationVolume1, [50, 50]);
   fillSegmentationWithCircles(segmentationVolume2, [-50, -50]);
 }
 
