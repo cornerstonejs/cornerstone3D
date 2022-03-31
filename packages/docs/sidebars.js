@@ -31,6 +31,7 @@ module.exports = {
         'tutorials/intro',
         'tutorials/basic-stack',
         'tutorials/basic-volume',
+        'tutorials/basic-manipulation-tool',
         'tutorials/basic-annotation-tool',
         'tutorials/examples',
       ],

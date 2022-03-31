@@ -15,7 +15,7 @@ In order to render a volume we need:
 
 ## Implementation
 
-We have already stored images on a dicom server for the purpose of this tutorial.
+We have already stored images on a server for the purpose of this tutorial.
 
 First let's create two HTMLDivElements and style them to contain viewports.
 
@@ -200,7 +200,7 @@ setVolumesForViewports(
     {
       volumeId,
       callback: ({ volumeActor }) => {
-        // the volumeActor of the volume's that is created
+        // set the windowLevel after the volumeActor is created
         volumeActor
           .getProperty()
           .getRGBTransferFunction(0)

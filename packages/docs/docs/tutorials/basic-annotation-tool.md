@@ -15,7 +15,7 @@ In order to render a volume we need:
 
 ## Implementation
 
-We have already stored images on a dicom server for the purpose of this tutorial.
+We have already stored images on a server for the purpose of this tutorial.
 
 First let's create two HTMLDivElements and style them to contain viewports.
 
@@ -85,7 +85,7 @@ renderingEngine.setViewports(viewportInput);
 In order for us to use tools, we need to add them inside `Cornerstone3DTools` internal state via the `addTool` API.
 
 ```js
-addTool(BidirectionalTool.toolName);
+addTool(BidirectionalTool);
 ```
 
 Next, we need to create a ToolGroup and add the tools we want to use.
@@ -94,10 +94,12 @@ ToolGroups makes it possible to share tools between multiple viewports, so we al
 ```js
 const toolGroupId = 'myToolGroup';
 const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+// Add tools to the ToolGroup
 toolGroup.addTool(BidirectionalTool.toolName);
 
-toolGroup.addViewport({ viewportId: viewportId1, renderingEngineUID });
-toolGroup.addViewport({ viewportId: viewportId2, renderingEngineUID });
+toolGroup.addViewport(viewportId1, renderingEngineId);
+toolGroup.addViewport(viewportId2, renderingEngineId);
 ```
 
 :::note Tip
@@ -109,6 +111,7 @@ Why do we need to add renderingEngineUID to the ToolGroup? Because viewportId is
 Next, we need to set the Tool to be active, which means we also need to define a bindings for the tool (which mouse button makes it active).
 
 ```js
+// Set the
 toolGroup.setToolActive(BidirectionalTool.toolName, {
   bindings: [
     {
@@ -127,7 +130,18 @@ volume.load();
 
 setVolumesForViewports(
   renderingEngine,
-  [{ volumeId }],
+  [
+    {
+      volumeId,
+      callback: ({ volumeActor }) => {
+        // set the windowLevel after the volumeActor is created
+        volumeActor
+          .getProperty()
+          .getRGBTransferFunction(0)
+          .setMappingRange(-180, 220);
+      },
+    },
+  ],
   [viewportId1, viewportId2]
 );
 
@@ -210,7 +224,18 @@ volume.load();
 
 setVolumesForViewports(
   renderingEngine,
-  [{ volumeId }],
+  [
+    {
+      volumeId,
+      callback: ({ volumeActor }) => {
+        // set the windowLevel after the volumeActor is created
+        volumeActor
+          .getProperty()
+          .getRGBTransferFunction(0)
+          .setMappingRange(-180, 220);
+      },
+    },
+  ],
   [viewportId1, viewportId2]
 );
 
@@ -218,6 +243,10 @@ setVolumesForViewports(
 renderingEngine.renderViewports([viewportId1, viewportId2]);
 ```
 
+You should be able to annotate images with the tools you added.
+
+
+![](../assets/tutorial-annotation.png)
 
 ## Read more
 

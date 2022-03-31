@@ -15,14 +15,14 @@ In order to render a set of images we need:
 
 ## Implementation
 
-We have already stored images on a dicom server for the purpose of this tutorial.
+We have already stored images on a server for the purpose of this tutorial.
 
 First let's create an HTML element and style it to look like a viewport.
 
 ```js
 const content = document.getElementById('content');
 const element = document.createElement('div');
-element.id = 'cornerstone-element';
+
 element.style.width = '500px';
 element.style.height = '500px';
 
@@ -57,6 +57,8 @@ RenderingEngine will handle creation of the viewports, and we can get the viewpo
 const viewport = renderingEngine.getViewport(viewportId);
 
 viewport.setStack(imageIds, 60);
+
+viewport.render()
 ```
 
 :::note Tip
@@ -89,6 +91,8 @@ renderingEngine.enableElement(viewportInput);
 const viewport = renderingEngine.getViewport(viewportInput.viewportId);
 
 viewport.setStack(imageIds, 60);
+
+viewport.render()
 ```
 
 You should see the following:

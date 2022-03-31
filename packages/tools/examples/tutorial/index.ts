@@ -10,6 +10,8 @@ import {
   addTool,
   BidirectionalTool,
   ToolGroupManager,
+  WindowLevelTool,
+  ZoomTool,
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 import {
@@ -70,93 +72,65 @@ async function run() {
    *
    *
    */
-  const windowWidth = 400;
-  const windowCenter = 40;
-
-  const lower = windowCenter - windowWidth / 2.0;
-  const upper = windowCenter + windowWidth / 2.0;
-
-  const ctVoiRange = [lower, upper];
-
-  function setCtTransferFunctionForVolumeActor({ volumeActor }) {
-    volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .setMappingRange(lower, upper);
-  }
-
   const content = document.getElementById('content');
 
-  const viewportGrid = document.createElement('div');
-  viewportGrid.style.display = 'flex';
-  viewportGrid.style.flexDirection = 'row';
+  const element = document.createElement('div');
 
-  // element for axial view
-  const element1 = document.createElement('div');
-  element1.style.width = '500px';
-  element1.style.height = '500px';
+  // Disable the default context menu
+  element.oncontextmenu = (e) => e.preventDefault();
+  element.style.width = '500px';
+  element.style.height = '500px';
 
-  // element for sagittal view
-  const element2 = document.createElement('div');
-  element2.style.width = '500px';
-  element2.style.height = '500px';
-
-  viewportGrid.appendChild(element1);
-  viewportGrid.appendChild(element2);
-
-  content.appendChild(viewportGrid);
+  content.appendChild(element);
 
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // note we need to add the cornerstoneStreamingImageVolume: to
-  // use the streaming volume loader
-  const volumeId = 'cornerStreamingImageVolume: myVolume';
+  const viewportId = 'CT_AXIAL_STACK';
 
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
+  const viewportInput = {
+    viewportId,
+    element,
+    type: ViewportType.STACK,
+  };
 
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_SAGITTAL';
+  renderingEngine.enableElement(viewportInput);
 
-  const viewportInput = [
-    {
-      viewportId: viewportId1,
-      element: element1,
-      type: ViewportType.ORTHOGRAPHIC,
-      defaultOptions: {
-        orientation: ORIENTATION.AXIAL,
-      },
-    },
-    {
-      viewportId: viewportId2,
-      element: element2,
-      type: ViewportType.ORTHOGRAPHIC,
-      defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
-      },
-    },
-  ];
+  const viewport = renderingEngine.getViewport(viewportId);
 
-  renderingEngine.setViewports(viewportInput);
+  viewport.setStack(imageIds);
 
-  // Set the volume to load
-  volume.load();
+  viewport.render();
 
-  setVolumesForViewports(
-    renderingEngine,
-    [
+  addTool(ZoomTool);
+  addTool(WindowLevelTool);
+
+  const toolGroupId = 'myToolGroup';
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Add tools to the ToolGroup
+
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(WindowLevelTool.toolName);
+
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  // Set the windowLevel tool to be active when the mouse left button is pressed
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
+    bindings: [
       {
-        volumeId,
+        mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
       },
     ],
-    [viewportId1, viewportId2]
-  );
+  });
 
-  // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2]);
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: csToolsEnums.MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
 }
 
 run();
