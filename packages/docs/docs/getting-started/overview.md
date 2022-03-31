@@ -77,8 +77,7 @@ are two implemented synchronizers in `Cornerstone3D` and we are working on more.
 
 Our documentation can be broken down into the following sections:
 
-- [**Introduction**](/docs/category/introduction): covers scope of the project, related libraries and other relevant information
-- **Getting Started**: includes installation instructions, basic usage and examples
+- **Getting Started**: covers the scope of the project, related libraries and other relevant information, and installation instructions
 - **How-to-Guides**: provides guides for common tasks such as loading images, rendering images, and annotating images
 - **Concepts**: explains an in-depth look at various technical concepts that are used in the library
 - **API Reference**: provides a detailed description of the API and how to use each function
