@@ -25,8 +25,8 @@ Synchronizers also expose a `disabled` flag that can be used to temporarily prev
 synchronization.
 
 ```js
-import { Enums } from '@cornerstone/core';
-import { SynchronizerManager } from '@cornerstone/tools';
+import { Enums } from '@cornerstonejs/core';
+import { SynchronizerManager } from '@cornerstonejs/tools';
 
 const cameraPositionSynchronizer = SynchronizerManager.createSynchronizer(
   'synchronizerName',

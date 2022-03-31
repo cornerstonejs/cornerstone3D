@@ -38,8 +38,8 @@ viewportPane.appendChild(canvas);
 The following code-block explains how to add annotation tools to a canvas.
 
 ```js
-import { ToolGroupManager, ToolBindings } from '@cornerstone/tools';
-import * as csTools3D from '@cornerstone/tools';
+import { ToolGroupManager, ToolBindings } from '@cornerstonejs/tools';
+import * as csTools3D from '@cornerstonejs/tools';
 
 // 1. Initializing the Cornerstone Tools
 csTools3d.init();

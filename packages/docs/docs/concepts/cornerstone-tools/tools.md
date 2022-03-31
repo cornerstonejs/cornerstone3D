@@ -93,7 +93,7 @@ the `BaseTool` or `AnnotationTool`. In order to be able to use the tools, you mu
 first add them to the `Cornerstone3DTools`. You can do this by using the `addTool` function.
 
 ```js
-import * as csTools3d from '@cornerstone/tools';
+import * as csTools3d from '@cornerstonejs/tools';
 
 const { PanTool, ProbeTool, ZoomTool, LengthTool } = csTools3d;
 

@@ -60,7 +60,7 @@ will use that, if not, it will take a look inside `RuntimeSettings` and finally 
 ## Global Tool Styles
 
 ```js
-import { Settings } from '@cornerstone/core';
+import { Settings } from '@cornerstonejs/core';
 
 // 1. Getting runtimeSettings for all tools
 const settings = Settings.getRuntimeSettings();
@@ -73,7 +73,7 @@ settings.set('tool.style.colorActive', 'rgb(0, 0, 255)');
 ## Tool-specific style
 
 ```js
-import { Settings } from '@cornerstone/core';
+import { Settings } from '@cornerstonejs/core';
 
 // 1. Getting objectSettings for the desired tools
 const settings = Settings.getObjectSettings(annotation);
