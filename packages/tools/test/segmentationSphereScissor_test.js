@@ -1,5 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG.png';
@@ -40,7 +41,7 @@ const {
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
   compareImages,
-} = utilities.testUtils;
+} = testUtils;
 
 const renderingEngineId = 'renderingEngineId-segmentationSphereScissor_test';
 const toolGroupId = 'toolGroupId-segmentationSphereScissor_test';

@@ -3,9 +3,9 @@ import {
   StreamingImageVolume,
 } from '../src';
 import * as cornerstone from '@cornerstonejs/core';
+import * as testUtils from '../../../utils/test/testUtils';
 
-const { cache, metaData, utilities, imageLoader, volumeLoader } = cornerstone;
-const { testUtils } = utilities;
+const { cache, metaData, imageLoader, volumeLoader } = cornerstone;
 
 const imageIds = [
   'fakeSharedBufferImageLoader:imageId1',

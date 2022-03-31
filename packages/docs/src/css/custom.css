@@ -1,5 +1,5 @@
 /* stylelint-disable docusaurus/copyright-header */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap');
 
 /**
  * Any CSS included here will be global. The classic template
@@ -244,60 +244,85 @@ div[class^='codeBlockContent__'] {
 }
 
 /* Footer logo MGH */
-#cs-logo {
+#cs-logo-footer {
   margin-right: 100px;
   margin-top: 25px;
-  width: 200px;
+  width: 250px;
+}
+
+#ohif-logo-footer {
+  margin-left: 3px;
+  margin-top: 25px;
+  width: 250px;
+  margin-bottom: 25px;
+}
+
+.footer__title {
+  margin-bottom: 15px;
 }
 
 @media (max-width: 480px) {
-  #cs-logo {
-    width: 100px;
+  #cs-logo-footer {
+    width: 200px;
+  }
+  #ohif-logo-footer {
+    width: 200px;
+  }
+  #logo-wrapper-footer {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  #logo-wrapper-footer {
+    display: flex;
+    align-items: start;
   }
 }
 
 /* API css */
 html[data-theme='dark'] .tsd-panel-header {
-  background-color: #0B1A42 !important;
+  background-color: #0b1a42 !important;
 }
 
 html[data-theme='dark'] .tsd-flag-const {
   background-color: black !important;
-  border: 1px solid #5acce6 ;
+  border: 1px solid #5acce6;
   color: white;
 }
 
 html[data-theme='dark'] .tsd-flag-optional {
   background-color: black !important;
-  border: 1px solid #5acce6 ;
+  border: 1px solid #5acce6;
   color: white;
 }
 
 html[data-theme='dark'] .tsd-flag-readonly {
   background-color: black !important;
-  border: 1px solid #5acce6 ;
+  border: 1px solid #5acce6;
   color: white;
 }
 
 html[data-theme='light'] .tsd-flag-optional {
   background-color: white !important;
-  border: 1px solid #0151D9 ;
-  color: #0151D9;
+  border: 1px solid #0151d9;
+  color: #0151d9;
 }
 
 html[data-theme='light'] .tsd-panel-header {
-  background-color: #E3EFF5 !important;
+  background-color: #e3eff5 !important;
 }
 
 html[data-theme='light'] .tsd-flag-const {
   background-color: white !important;
-  border: 1px solid #0151D9 ;
-  color: #0151D9;
+  border: 1px solid #0151d9;
+  color: #0151d9;
 }
 html[data-theme='light'] .tsd-flag-readonly {
   background-color: white !important;
-  border: 1px solid #0151D9 ;
-  color: #0151D9;
+  border: 1px solid #0151d9;
+  color: #0151d9;
 }
 
 /* hide long strings in the overview tables */

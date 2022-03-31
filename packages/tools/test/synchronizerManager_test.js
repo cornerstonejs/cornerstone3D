@@ -1,5 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 import * as windowLevel_canvas2 from './groundTruth/windowLevel_canvas2.png';
 
@@ -32,8 +33,7 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 
-const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } =
-  utilities.testUtils;
+const { fakeMetaDataProvider, fakeVolumeLoader, compareImages } = testUtils;
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;

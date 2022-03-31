@@ -30,6 +30,7 @@ module.exports = {
         {
           type: 'doc',
           docId: 'examples',
+          activeBasePath: 'docs/examples',
           position: 'left',
           label: 'Examples',
         },
@@ -46,6 +47,7 @@ module.exports = {
         {
           type: 'doc',
           docId: 'help',
+          activeBasePath: 'docs/help',
           label: 'Help',
           position: 'right',
         },
@@ -53,6 +55,7 @@ module.exports = {
           type: 'doc',
           docId: 'faq',
           label: 'FAQ',
+          activeBasePath: 'docs/faq',
           position: 'right',
         },
         {
@@ -65,18 +68,15 @@ module.exports = {
     },
     footer: {
       style: 'dark',
-      // logo: {
-      //   alt: 'OHIF ',
-      //   src: 'img/logo-white.svg',
-      //   href: 'https://ohif.org',
-      // },
       links: [
         {
-          title: 'Medical Imaging Simplified',
           items: [
             {
               html: `
-                <img src='/img/cornerstone-dark.png' id="cs-logo" alt="cornerstone" />
+               <div id="logo-wrapper-footer">
+                <img src='/img/cornerstone-dark-footer.png' id="cs-logo-footer" alt="cornerstone" />
+                <img src='/img/ohif-logo-dark.svg' id="ohif-logo-footer" alt="ohif" />
+               </div>
               `,
             },
           ],
@@ -133,7 +133,6 @@ module.exports = {
           ],
         },
       ],
-
       copyright: `Cornerstone is a set of open source libraries released under the MIT license.`,
     },
     prism: {

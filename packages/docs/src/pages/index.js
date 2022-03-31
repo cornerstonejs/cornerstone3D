@@ -5,9 +5,26 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
 import HomepageFeatures from '../components/HomepageFeatures';
 
+function NewAnnouncementBar() {
+  return (
+    <div className={styles.announcementBar}>
+      <div className={styles.newPart}>NEW</div>
+      <div className={styles.smallScreenAnnouncement}>
+        Cornerstone 3D is now available!
+      </div>
+      <div className={styles.bigScreenAnnouncement}>
+        <span style={{ fontWeight: 600 }}>Cornerstone3D</span>, released as
+        public beta on April 1st, 2022, represents a major improvement to the
+        framework
+      </div>
+    </div>
+  );
+}
+
 function HomepageHeader() {
   return (
     <div className={styles.cs3DBanner}>
+      <NewAnnouncementBar />
       <img
         className={styles.cs3DLogo}
         src={'img/cornerstone-logo-badge.png'}
@@ -15,7 +32,7 @@ function HomepageHeader() {
       />
       <div>
         <span className={styles.cornerstoneText}>Cornerstone</span>
-        <span className={styles.threeDText}> 3D</span>
+        <span className={styles.threeDText}>3D</span>
       </div>
       <img
         className={styles.dotBackground}
@@ -24,12 +41,14 @@ function HomepageHeader() {
       />
       <div className={styles.textDescription}>
         The easiest way to build interactive medical imaging web applications.
-        Supported by the <Link to="http://ohif.org/">Open Health Imaging Foundation</Link>.
+        Supported by the{' '}
+        <Link to="http://ohif.org/" style={{ color: '#5ACCE6' }}>
+          Open Health Imaging Foundation
+        </Link>
       </div>
-      <div className={styles.textDescription}>
-        <strong>NEW:</strong> Cornerstone3D, released as a public beta on April 1st, 2022, represents a major improvement to the framework.
-      </div>
-      <Link to='docs/getting-started/overview'><button className={styles.learnMore}>Learn More</button></Link>
+      <Link to="docs/getting-started/overview">
+        <button className={styles.learnMore}>Learn More</button>
+      </Link>
     </div>
   );
 }

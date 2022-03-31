@@ -1,4 +1,6 @@
 import * as cornerstone3D from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
+
 // import { User } from ... doesn't work right now since we don't have named exports set up
 
 // nearest neighbor interpolation
@@ -31,8 +33,7 @@ const { ORIENTATION } = CONSTANTS;
 const { registerVolumeLoader } = volumeLoader;
 const { unregisterAllImageLoaders } = imageLoader;
 
-const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } =
-  utilities.testUtils;
+const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } = testUtils;
 
 const renderingEngineId = utilities.uuidv4();
 

@@ -1,5 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -32,7 +33,7 @@ const { Events } = csToolsEnums;
 const { addSegmentationRepresentations, addSegmentations } = segmentation;
 const { SegmentationRepresentations } = csToolsEnums;
 
-const { fakeMetaDataProvider, fakeVolumeLoader } = utilities.testUtils;
+const { fakeMetaDataProvider, fakeVolumeLoader } = testUtils;
 
 const renderingEngineId = 'renderingEngineId-segmentationState_test';
 const toolGroupId = 'toolGroupId-segmentationState_test';

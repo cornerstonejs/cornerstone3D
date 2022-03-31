@@ -1,5 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as csTools3d from '../../tools/src/index';
+import * as testUtils from '../../../utils/test/testUtils';
 
 // nearest neighbor interpolation
 import * as imageURI_64_33_20_5_1_1_0_nearest from './groundTruth/imageURI_64_33_20_5_1_1_0_nearest.png';
@@ -31,8 +32,7 @@ const { cache, RenderingEngine, utilities, imageLoader, metaData, Enums } =
 const { Events, ViewportType, InterpolationType } = Enums;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
-const { fakeImageLoader, fakeMetaDataProvider, compareImages } =
-  utilities.testUtils;
+const { fakeImageLoader, fakeMetaDataProvider, compareImages } = testUtils;
 
 const renderingEngineId = utilities.uuidv4();
 
