@@ -27,8 +27,10 @@ function getVolumeViewportsContainingVolumeId(
   renderingEngines.forEach((renderingEngine) => {
     const viewports = renderingEngine.getVolumeViewports();
     const filteredViewports = viewports.filter((vp) => {
-      const actor = vp.getDefaultActor();
-      return actor.volumeActor && actor.uid === volumeId;
+      const actors = vp.getActors();
+      return actors.some(
+        (actor) => actor.volumeActor && actor.uid === volumeId
+      );
     });
     sameVolumeViewports.push(...filteredViewports);
   });

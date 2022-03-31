@@ -12,6 +12,7 @@ import {
   setTitleAndDescription,
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -393,7 +394,7 @@ async function setUpDisplay() {
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId: ctVolumeId }],
+    [{ volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor }],
     [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL, viewportIds.CT.CORONAL]
   );
 
@@ -406,7 +407,7 @@ async function setUpDisplay() {
   await setVolumesForViewports(
     renderingEngine,
     [
-      { volumeId: ctVolumeId },
+      { volumeId: ctVolumeId, setCtTransferFunctionForVolumeActor },
       {
         volumeId: ptVolumeId,
         callback: setPetColorMapTransferFunctionForVolumeActor,
