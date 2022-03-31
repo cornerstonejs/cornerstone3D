@@ -2,7 +2,7 @@ export default function addDropDownToToolbar({
   options,
   onSelectedValueChange,
 }: {
-  options: { values: number[]; defaultValue: number };
+  options: { values: number[] | string[]; defaultValue: number | string };
   onSelectedValueChange: (value: number) => void;
 }) {
   const { values, defaultValue } = options;

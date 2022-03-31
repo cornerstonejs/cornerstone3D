@@ -2071,6 +2071,7 @@ type LabelmapConfig = {
     outlineWidthActive?: number;
     outlineWidthInactive?: number;
     renderFill?: boolean;
+    renderFillInactive?: boolean;
     fillAlpha?: number;
     fillAlphaInactive?: number;
 };

@@ -5,7 +5,7 @@ export default function addToggleButtonToToolbar({
 }: {
   title: string;
   onClick: (toggle: boolean) => void;
-  defaultToggle: boolean;
+  defaultToggle?: boolean;
 }) {
   const toolbar = document.getElementById('demo-toolbar');
   const button = document.createElement('button');
@@ -13,7 +13,7 @@ export default function addToggleButtonToToolbar({
   const toggleOnBackgroundColor = '#fcfba9';
   const toggleOffBackgroundColor = '#ffffff';
 
-  let toggle = defaultToggle;
+  let toggle = !!defaultToggle;
 
   function setBackgroundColor() {
     button.style.backgroundColor = toggle
