@@ -1,0 +1,187 @@
+---
+id: basic-volume
+---
+
+# Render Volume
+
+## Preface
+
+In order to render a volume we need:
+
+- HTMLDivElements to render different orientation of the volume (e.g., one for Axial, one for Sagittal)
+- The path to the images (`imageId`s).
+-
+
+## Implementation
+
+We have already stored images on a dicom server for the purpose of this tutorial.
+
+First let's create two HTMLDivElements and style them to contain viewports.
+
+```js
+const content = document.getElementById('content');
+
+// element for axial view
+const element1 = document.createElement('div');
+element1.style.width = '500px';
+element1.style.height = '500px';
+
+// element for sagittal view
+const element2 = document.createElement('div');
+element2.style.width = '500px';
+element2.style.height = '500px';
+
+content.appendChild(element1);
+content.appendChild(element2);
+```
+
+Next, we need a `renderingEngine`
+
+```js
+const renderingEngineId = 'myRenderingEngine';
+const renderingEngine = new RenderingEngine(renderingEngineId);
+```
+
+Loading a volume is possible by using the `volumeLoader` API.
+
+```js
+// note we need to add the cornerstoneStreamingImageVolume: to
+// use the streaming volume loader
+const volumeId = 'cornerStreamingImageVolume: myVolume';
+
+// Define a volume in memory
+const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
+```
+
+We can then create a `viewport`s inside the renderingEngine by using the `setViewports` API.
+
+```js
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+
+const viewportInput = [
+  {
+    viewportId: viewportId1,
+    element: element1,
+    type: ViewportType.ORTHOGRAPHIC,
+    defaultOptions: {
+      orientation: ORIENTATION.AXIAL,
+    },
+  },
+  {
+    viewportId: viewportId2,
+    element: element2,
+    type: ViewportType.ORTHOGRAPHIC,
+    defaultOptions: {
+      orientation: ORIENTATION.SAGITTAL,
+    },
+  },
+];
+
+renderingEngine.setViewports(viewportInput);
+```
+
+RenderingEngine will handle creation of the viewports. Next, we need to perform the `load` on the volume.
+
+:::note Important
+Defining a volume is not the same as loading it.
+:::
+
+```js
+// Set the volume to load
+volume.load();
+```
+
+Finally, let the viewports know about the volume.
+
+```js
+setVolumesForViewports(
+  renderingEngine,
+  [{ volumeId }],
+  [viewportId1, viewportId2]
+);
+
+// Render the image
+renderingEngine.renderViewports([viewportId1, viewportId2]);
+```
+
+## Final code
+
+```js
+const content = document.getElementById('content');
+
+// element for axial view
+const element1 = document.createElement('div');
+element1.style.width = '500px';
+element1.style.height = '500px';
+
+// element for sagittal view
+const element2 = document.createElement('div');
+element2.style.width = '500px';
+element2.style.height = '500px';
+
+content.appendChild(element1);
+content.appendChild(element2);
+
+const renderingEngineId = 'myRenderingEngine';
+const renderingEngine = new RenderingEngine(renderingEngineId);
+
+// note we need to add the cornerstoneStreamingImageVolume: to
+// use the streaming volume loader
+const volumeId = 'cornerStreamingImageVolume: myVolume';
+
+// Define a volume in memory
+const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
+
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+
+const viewportInput = [
+  {
+    viewportId: viewportId1,
+    element: element1,
+    type: ViewportType.ORTHOGRAPHIC,
+    defaultOptions: {
+      orientation: ORIENTATION.AXIAL,
+    },
+  },
+  {
+    viewportId: viewportId2,
+    element: element2,
+    type: ViewportType.ORTHOGRAPHIC,
+    defaultOptions: {
+      orientation: ORIENTATION.SAGITTAL,
+    },
+  },
+];
+
+renderingEngine.setViewports(viewportInput);
+
+// Set the volume to load
+volume.load();
+
+setVolumesForViewports(
+  renderingEngine,
+  [{ volumeId }],
+  [viewportId1, viewportId2]
+);
+
+// Render the image
+renderingEngine.renderViewports([viewportId1, viewportId2]);
+```
+
+## Read more
+
+Learn more about:
+
+- [volumes](../concepts/cornerstone-core/volumes.md)
+- [rendering engine](../concepts/cornerstone-core/renderingEngine.md)
+- [viewport](../concepts/cornerstone-core/viewports.md)
+
+For advanced usage of Stack Viewport, please visit <a href="/live-examples/volumeAPI.html" target="_blank">VolumeViewport API</a> example page.
+
+:::note Tip
+
+- Visit [Examples](examples.md#run-examples-locally) page to see how to run the examples locally.
+- Check how to debug examples in the [Debugging](examples.md#debugging) section.
+  :::
