@@ -13,6 +13,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addSliderToToolbar,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -326,7 +327,7 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId }],
+    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
     [viewportId1, viewportId2, viewportId3]
   );
 

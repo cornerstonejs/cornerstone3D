@@ -555,23 +555,40 @@ async function setUpDisplay() {
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [
+      {
+        volumeId: ctVolumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+      },
+    ],
     [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL, viewportIds.CT.CORONAL]
   );
 
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId: ptVolumeId, callback: setPetTransferFunctionForVolumeActor }],
+    [
+      {
+        volumeId: ptVolumeId,
+        callback: setPetTransferFunctionForVolumeActor,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+      },
+    ],
     [viewportIds.PT.AXIAL, viewportIds.PT.SAGITTAL, viewportIds.PT.CORONAL]
   );
 
   await setVolumesForViewports(
     renderingEngine,
     [
-      { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
+      {
+        volumeId: ctVolumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+      },
       {
         volumeId: ptVolumeId,
         callback: setPetColorMapTransferFunctionForVolumeActor,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [
