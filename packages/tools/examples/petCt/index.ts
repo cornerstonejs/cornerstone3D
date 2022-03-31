@@ -43,7 +43,8 @@ const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderProtocolName}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderProtocolName}:${ptVolumeName}`;
-const ctPtToolGroupId = 'CT_PT_TOOLGROUP_ID';
+const ctToolGroupId = 'CT_TOOLGROUP_ID';
+const ptToolGroupId = 'PT_TOOLGROUP_ID';
 const fusionToolGroupId = 'FUSION_TOOLGROUP_ID';
 const mipToolGroupUID = 'MIP_TOOLGROUP_ID';
 
@@ -230,24 +231,25 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(CrosshairsTool);
 
   // Define tool groups for the main 9 viewports.
-  // We need two tool groups for the main viewports as we want to specify for the fusion which volume
-  // to control with the window/level tool. For the CT and PT, we can use the
-  // default, which is the first (and only) volume present
-  const ctPtToolGroup = ToolGroupManager.createToolGroup(ctPtToolGroupId);
+  // Crosshairs currently only supports 3 viewports for a toolgroup due to the
+  // way it is constructed, but its configuration input allows us to synchronize
+  // multiple sets of 3 viewports.
+  const ctToolGroup = ToolGroupManager.createToolGroup(ctToolGroupId);
+  const ptToolGroup = ToolGroupManager.createToolGroup(ptToolGroupId);
   const fusionToolGroup = ToolGroupManager.createToolGroup(fusionToolGroupId);
 
-  ctPtToolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
-  ctPtToolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
+  ctToolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
+  ctToolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
+  ctToolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
+  ptToolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
+  ptToolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
+  ptToolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
   fusionToolGroup.addViewport(viewportIds.FUSION.AXIAL, renderingEngineId);
   fusionToolGroup.addViewport(viewportIds.FUSION.SAGITTAL, renderingEngineId);
   fusionToolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
 
   // Manipulation Tools
-  [ctPtToolGroup, fusionToolGroup].forEach((toolGroup) => {
+  [ctToolGroup, ptToolGroup, fusionToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
@@ -261,12 +263,13 @@ function setUpToolGroups() {
 
   // Here is the difference in the toolgroups used, that we need to specify the
   // volume to use for the WindowLevelTool for the fusion viewports
-  ctPtToolGroup.addTool(WindowLevelTool.toolName);
+  ctToolGroup.addTool(WindowLevelTool.toolName);
+  ptToolGroup.addTool(WindowLevelTool.toolName);
   fusionToolGroup.addTool(WindowLevelTool.toolName, {
     volumeId: ptVolumeId,
   });
 
-  [ctPtToolGroup, fusionToolGroup].forEach((toolGroup) => {
+  [ctToolGroup, ptToolGroup, fusionToolGroup].forEach((toolGroup) => {
     // toolGroup.setToolActive(WindowLevelTool.toolName, {
     //   bindings: [
     //     {
@@ -290,7 +293,7 @@ function setUpToolGroups() {
     });
 
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(CrosshairsTool.toolName, {
+    toolGroup.setToolActive(CrosshairsTool.toolName, {
       bindings: [
         {
           mouseButton: MouseBindings.Primary,
