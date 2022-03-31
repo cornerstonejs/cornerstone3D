@@ -1354,9 +1354,6 @@ function getSegmentations(): Segmentation[] | [];
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
 
 // @public (undocumented)
-function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
-
-// @public (undocumented)
 function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
     min: number;
     max: number;
@@ -1774,6 +1771,9 @@ function isAnnotationSelected(annotation: Annotation): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
+
+// @public (undocumented)
+function isSegmentIndexLocked(segmentationId: string, segmentIndex: number): boolean;
 
 // @public
 interface IStackViewport extends IViewport {
