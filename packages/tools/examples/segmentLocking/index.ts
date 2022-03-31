@@ -98,7 +98,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
       segmentationId,
-      segmentIndex
+      Number(segmentIndex)
     );
   },
 });

@@ -151,7 +151,7 @@ addSliderToToolbar({
   range: [1, 5],
   defaultValue: numSlicesToProject,
   onSelectedValueChange: (value) => {
-    numSlicesToProject = value;
+    numSlicesToProject = Number(value);
   },
   updateLabelOnChange: (value, label) => {
     label.innerText = `Number of Slices to Segment: ${value}`;
@@ -163,7 +163,7 @@ addSliderToToolbar({
   range: [100, 400],
   defaultValue: lowerThreshold,
   onSelectedValueChange: (value) => {
-    lowerThreshold = value;
+    lowerThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
     label.innerText = `Lower Threshold: ${value}`;
@@ -175,7 +175,7 @@ addSliderToToolbar({
   range: [500, 1000],
   defaultValue: upperThreshold,
   onSelectedValueChange: (value) => {
-    upperThreshold = value;
+    upperThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
     label.innerText = `Upper Threshold: ${value}`;

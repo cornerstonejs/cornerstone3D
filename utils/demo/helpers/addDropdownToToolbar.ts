@@ -3,7 +3,7 @@ export default function addDropDownToToolbar({
   onSelectedValueChange,
 }: {
   options: { values: number[] | string[]; defaultValue: number | string };
-  onSelectedValueChange: (value: number) => void;
+  onSelectedValueChange: (value: number | string) => void;
 }) {
   const { values, defaultValue } = options;
   const toolbar = document.getElementById('demo-toolbar');
@@ -22,7 +22,13 @@ export default function addDropDownToToolbar({
     select.append(optionElement);
   });
 
-  select.onchange = (evt) => onSelectedValueChange(evt.target.value);
+  select.onchange = (evt) => {
+    const selectElement = <HTMLSelectElement>evt.target;
+
+    if (selectElement) {
+      onSelectedValueChange(selectElement.value);
+    }
+  };
 
   toolbar.append(select);
 }

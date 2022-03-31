@@ -118,7 +118,7 @@ addSliderToToolbar({
   range: [0, 100],
   defaultValue: 50,
   onSelectedValueChange: (value) => {
-    const mappedValue = value / 100.0;
+    const mappedValue = Number(value) / 100.0;
 
     setConfigValue('fillAlpha', mappedValue);
   },
@@ -128,7 +128,7 @@ addSliderToToolbar({
   range: [0, 100],
   defaultValue: 50,
   onSelectedValueChange: (value) => {
-    const mappedValue = value / 100.0;
+    const mappedValue = Number(value) / 100.0;
     setConfigValue('fillAlphaInactive', mappedValue);
   },
 });

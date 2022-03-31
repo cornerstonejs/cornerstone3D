@@ -7,6 +7,7 @@ import {
 import {
   addButtonToToolbar,
   setTitleAndDescription,
+  ctVoiRange,
 } from '../../../../utils/demo/helpers';
 import initCornerstoneWADOImageLoader from '../../../../utils/demo/helpers/initCornerstoneWADOImageLoader';
 import { init as csRenderInit } from '@cornerstonejs/core';

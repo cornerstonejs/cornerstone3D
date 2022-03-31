@@ -252,10 +252,13 @@ addDropdownToToolbar({
   },
 });
 
-addSliderToToolbar(
-  'Slab Thickness',
-  { range: [0, 50], defaultValue: 0 },
-  (value) => {
+addSliderToToolbar({
+  title: 'Slab Thickness',
+  range: [0, 50],
+  defaultValue: 0,
+  onSelectedValueChange: (value) => {
+    const valueAsNumber = Number(value);
+
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -266,9 +269,9 @@ addSliderToToolbar(
 
     let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND;
 
-    if (value < 0.1) {
+    if (valueAsNumber < 0.1) {
       // Cannot render zero thickness
-      value = 0.1;
+      valueAsNumber = 0.1;
 
       // Not a mip, just show slice
       blendMode = BlendMode.COMPOSITE_BLEND;
@@ -277,14 +280,14 @@ addSliderToToolbar(
     // Get the volume actor from the viewport
     const actor = viewport.getActor(volumeId);
 
-    viewport.setSlabThickness(value);
+    viewport.setSlabThickness(valueAsNumber);
 
     // TODO -> We should have set blend mode for volume on the viewport?
     actor.volumeActor.getMapper().setBlendMode(blendMode);
 
     viewport.render();
-  }
-);
+  },
+});
 
 /**
  * Runs the demo

@@ -77,7 +77,7 @@ addDropdownToToolbar({
     // Set the old tool passive
     toolGroup.setToolPassive(selectedToolName);
 
-    selectedToolName = newSelectedToolName;
+    selectedToolName = <string>newSelectedToolName;
   },
 });
 
