@@ -8,6 +8,7 @@ import {
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -19,6 +20,11 @@ const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
 // ============================= //
+// ======== Set up page ======== //
+setTitleAndDescription(
+  'Tutorial Play Ground',
+  'The playground for you to copy paste the codes in the tutorials and run it'
+);
 
 /**
  * Runs the demo

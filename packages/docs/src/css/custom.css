@@ -221,6 +221,19 @@ article header h3 {
   --ifm-button-background-color: #e8f7f7;
 }
 
+/* Admonition */
+html[data-theme='dark'] .admonition {
+  background-color: #0B1A42;
+  border-color: #0B1A42;
+  color: #5ACCE6;
+}
+
+html[data-theme='light'] .admonition {
+  background-color: #e3eff5;
+  border-color: #e3eff5;
+  color: #0B1A42;
+}
+
 .admonition-icon svg {
   fill: #0151d9;
 }
@@ -339,6 +352,8 @@ html[data-theme='light'] .tsd-flag-readonly {
   text-overflow: ellipsis;
   max-width: 60ch;
 }
+
+
 
 a.card > h2 {
   font-size: 1.5rem;

@@ -77,18 +77,18 @@
 
 .newPart {
   width: 65px;
-  font-size: 15px;
   font-weight: 500;
-  padding: 9px 11px 6px 15px;
+  padding: 8px 11px 6px 15px;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
   background-color: #5e16eb;
   margin-left: 15px;
-
+  font-size:16px
 }
 
 .announcementBar {
   display: flex;
+  font-size:16px
 }
 
 .smallScreenAnnouncement {
