@@ -18,6 +18,11 @@ import {
 } from '../../../../utils/demo/helpers';
 import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const { ViewportType } = Enums;
 const { BlendMode } = vtkConstants;
 const { ORIENTATION } = CONSTANTS;

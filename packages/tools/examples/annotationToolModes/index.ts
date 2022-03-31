@@ -7,6 +7,11 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const { LengthTool, ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
 
 const { MouseBindings, ToolModes } = csToolsEnums;

@@ -27,12 +27,7 @@ module.exports = {
         title: 'Tutorials',
         description: 'In this section you will find a collection of tutorials',
       },
-      items: [
-        'tutorials/intro',
-        'tutorials/basic-stack',
-        'tutorials/core-usage',
-        'tutorials/tools-usage',
-      ],
+      items: ['tutorials/intro', 'tutorials/examples', 'tutorials/basic-stack'],
     },
     {
       type: 'category',

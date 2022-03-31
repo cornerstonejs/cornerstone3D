@@ -12,6 +12,11 @@ import {
 } from '../../../../utils/demo/helpers';
 import { vec3 } from 'gl-matrix';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const { ViewportType } = Enums;
 
 // ======== Constants ======= //
