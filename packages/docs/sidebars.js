@@ -149,11 +149,6 @@ module.exports = {
     },
     'migrationGuides',
     'faq',
-    {
-      type: 'link',
-      label: 'API References',
-      href: '/api',
-    },
     'help',
     {
       type: 'link',
