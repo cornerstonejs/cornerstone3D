@@ -154,6 +154,11 @@ article header h3 {
   box-shadow: none;
 }
 
+/* to fix the api page footer */
+.tsd-footer{
+  margin-bottom: 400px;
+}
+
 /* Navigation color and type updates */
 
 .footer {

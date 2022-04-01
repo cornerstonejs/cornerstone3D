@@ -149,8 +149,9 @@ module.exports = {
       collapsed: true,
       items: [
         'contribute/pull-request',
-        'contribute/tests',
+        'contribute/update-api',
         'contribute/documentation',
+        'contribute/tests',
       ],
     },
     'migrationGuides',
