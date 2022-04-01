@@ -361,13 +361,7 @@ function setUpToolGroups() {
     });
 
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolPassive(CrosshairsTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
+    toolGroup.setToolPassive(CrosshairsTool.toolName);
   });
 
   // MIP Tool Groups
