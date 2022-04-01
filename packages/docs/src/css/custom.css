@@ -322,6 +322,12 @@ html[data-theme='dark'] .tsd-flag-readonly {
   color: white;
 }
 
+html[data-theme='dark'] .tsd-flag-public {
+  background-color: black !important;
+  border: 1px solid #5acce6;
+  color: white;
+}
+
 html[data-theme='light'] .tsd-flag-optional {
   background-color: white !important;
   border: 1px solid #0151d9;
@@ -338,6 +344,11 @@ html[data-theme='light'] .tsd-flag-const {
   color: #0151d9;
 }
 html[data-theme='light'] .tsd-flag-readonly {
+  background-color: white !important;
+  border: 1px solid #0151d9;
+  color: #0151d9;
+}
+html[data-theme='light'] .tsd-flag-public {
   background-color: white !important;
   border: 1px solid #0151d9;
   color: #0151d9;

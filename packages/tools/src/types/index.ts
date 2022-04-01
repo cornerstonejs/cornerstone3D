@@ -31,6 +31,7 @@ import type {
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   SegmentationState,
+  RepresentationPublicInput,
 } from './SegmentationStateTypes';
 
 export type {
@@ -66,6 +67,7 @@ export type {
   ToolGroupSpecificRepresentationState,
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
+  RepresentationPublicInput,
   Color,
   ColorLut,
   LabelmapTypes,
