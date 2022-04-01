@@ -209,7 +209,7 @@ describe('Segmentation Controller --', () => {
       }
     });
 
-    // Todo: we don't have a way to have initially set the colorLutIndex anymore
+    // Todo: we don't have a way to have initially set the colorLUTIndex anymore
     // it('should be able to set a global representation configuration', function (done) {
     //   const element = createViewport(this.renderingEngine, AXIAL)
     //   this.DOMElements.push(element)

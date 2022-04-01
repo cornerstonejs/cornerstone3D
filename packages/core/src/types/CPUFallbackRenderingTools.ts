@@ -24,7 +24,7 @@ type CPUFallbackRenderingTools = {
     ) => unknown;
   };
   colormapId?: string;
-  colorLut?: CPUFallbackLookupTable;
+  colorLUT?: CPUFallbackLookupTable;
   renderCanvasData?: {
     data: Uint8ClampedArray;
   };

@@ -1,7 +1,7 @@
 import { utilities } from '@cornerstonejs/core';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { Color } from '../../../types/SegmentationStateTypes';
-import { ColorLut } from '../../../types/SegmentationStateTypes';
+import { ColorLUT } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 
 /**
@@ -12,7 +12,7 @@ import { triggerSegmentationRepresentationModified } from '../triggerSegmentatio
  * @param colorLUT - An array of The colorLUT to set.
  * @returns
  */
-function addColorLUT(colorLUT: ColorLut, colorLUTIndex: number): void {
+function addColorLUT(colorLUT: ColorLUT, colorLUTIndex: number): void {
   if (!colorLUT) {
     throw new Error('addColorLUT: colorLUT is required');
   }
@@ -52,7 +52,7 @@ function setColorLUT(
     );
   }
 
-  if (!SegmentationState.getColorLut(colorLUTIndex)) {
+  if (!SegmentationState.getColorLUT(colorLUTIndex)) {
     throw new Error(
       `setColorLUT: could not find colorLUT with index ${colorLUTIndex}`
     );
@@ -96,8 +96,8 @@ function getColorForSegmentIndex(
   const { colorLUTIndex } = segmentationRepresentation;
 
   // get colorLUT
-  const colorLut = SegmentationState.getColorLut(colorLUTIndex);
-  return colorLut[segmentIndex];
+  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
+  return colorLUT[segmentIndex];
 }
 
 export { getColorForSegmentIndex, addColorLUT, setColorLUT };

@@ -75,19 +75,19 @@ function getRenderCanvas(
   let start = now();
 
   if (
-    !enabledElement.renderingTools.colorLut ||
+    !enabledElement.renderingTools.colorLUT ||
     invalidated ||
     enabledElement.renderingTools.colormapId !== colormapId
   ) {
     colormap.setNumberOfColors(256);
-    enabledElement.renderingTools.colorLut = colormap.createLookupTable();
+    enabledElement.renderingTools.colorLUT = colormap.createLookupTable();
     enabledElement.renderingTools.colormapId = colormapId;
   }
 
   const renderCanvasData = enabledElement.renderingTools.renderCanvasData;
   const renderCanvasContext = enabledElement.renderingTools.renderCanvasContext;
   const { viewport } = enabledElement;
-  const colorLut = enabledElement.renderingTools.colorLut;
+  const colorLUT = enabledElement.renderingTools.colorLUT;
 
   if (viewport.modality === 'PT') {
     const { windowWidth, windowCenter } = viewport.voi;
@@ -119,7 +119,7 @@ function getRenderCanvas(
     storedPixelDataToCanvasImageDataPseudocolorLUTPET(
       image,
       petVOILutFunction,
-      colorLut,
+      colorLUT,
       renderCanvasData.data
     );
   } else {
@@ -131,7 +131,7 @@ function getRenderCanvas(
     storedPixelDataToCanvasImageDataPseudocolorLUT(
       image,
       lut,
-      colorLut,
+      colorLUT,
       renderCanvasData.data
     );
   }

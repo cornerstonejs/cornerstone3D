@@ -6,7 +6,7 @@ import type { IImage, CPUFallbackLookupTable } from '../../../../types';
  *
  * @param {Image} image A Cornerstone Image Object
  * @param {Array} grayscaleLut Lookup table array
- * @param {LookupTable|Array} colorLut Lookup table array
+ * @param {LookupTable|Array} colorLUT Lookup table array
  * @param {Uint8ClampedArray} canvasImageDataData canvasImageData.data buffer filled with white pixels
  *
  * @returns {void}
@@ -15,7 +15,7 @@ import type { IImage, CPUFallbackLookupTable } from '../../../../types';
 function storedPixelDataToCanvasImageDataPseudocolorLUT(
   image: IImage,
   grayscaleLut: Uint8ClampedArray,
-  colorLut: CPUFallbackLookupTable,
+  colorLUT: CPUFallbackLookupTable,
   canvasImageDataData: Uint8ClampedArray
 ): void {
   let start = now();
@@ -33,10 +33,10 @@ function storedPixelDataToCanvasImageDataPseudocolorLUT(
 
   start = now();
 
-  if (colorLut instanceof colors.LookupTable) {
-    clut = colorLut.Table;
+  if (colorLUT instanceof colors.LookupTable) {
+    clut = colorLUT.Table;
   } else {
-    clut = colorLut;
+    clut = colorLUT;
   }
 
   if (minPixelValue < 0) {

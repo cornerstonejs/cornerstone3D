@@ -5,7 +5,7 @@ import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 
 import type {
   SegmentationState,
-  ColorLut,
+  ColorLUT,
   Segmentation,
   ToolGroupSpecificRepresentation,
   SegmentationRepresentationConfig,
@@ -14,7 +14,7 @@ import type {
 
 /* A default initial state for the segmentation manager. */
 const initialDefaultState: SegmentationState = {
-  colorLut: [],
+  colorLUT: [],
   segmentations: [],
   globalConfig: {
     renderInactiveSegmentations: true,
@@ -58,12 +58,12 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * It returns the colorLut at the specified index.
+   * It returns the colorLUT at the specified index.
    * @param lutIndex - The index of the color LUT to retrieve.
-   * @returns A ColorLut object.
+   * @returns A ColorLUT object.
    */
-  getColorLut(lutIndex: number): ColorLut | undefined {
-    return this.state.colorLut[lutIndex];
+  getColorLUT(lutIndex: number): ColorLUT | undefined {
+    return this.state.colorLUT[lutIndex];
   }
 
   /**
@@ -89,7 +89,7 @@ export default class SegmentationStateManager {
    * @param segmentation - Segmentation
    */
   addSegmentation(segmentation: Segmentation): void {
-    this._initDefaultColorLutIfNecessary();
+    this._initDefaultColorLUTIfNecessary();
 
     // Check if the segmentation already exists with the segmentationId
     if (this.getSegmentation(segmentation.segmentationId)) {
@@ -317,15 +317,15 @@ export default class SegmentationStateManager {
 
   /**
    * It adds a color LUT to the state.
-   * @param colorLut - ColorLut
+   * @param colorLUT - ColorLUT
    * @param lutIndex - The index of the color LUT table to add.
    */
-  addColorLUT(colorLut: ColorLut, lutIndex: number): void {
-    if (this.state.colorLut[lutIndex]) {
+  addColorLUT(colorLUT: ColorLUT, lutIndex: number): void {
+    if (this.state.colorLUT[lutIndex]) {
       console.log('Color LUT table already exists, overwriting');
     }
 
-    this.state.colorLut[lutIndex] = colorLut;
+    this.state.colorLUT[lutIndex] = colorLUT;
   }
 
   /**
@@ -380,10 +380,10 @@ export default class SegmentationStateManager {
     // 5. if added/removed segmentation is is inactive, do nothing
   }
 
-  _initDefaultColorLutIfNecessary() {
-    // if colorLutTable is not specified or the default one is not found
-    if (this.state.colorLut.length === 0 || !this.state.colorLut[0]) {
-      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLut, 0);
+  _initDefaultColorLUTIfNecessary() {
+    // if colorLUTTable is not specified or the default one is not found
+    if (this.state.colorLUT.length === 0 || !this.state.colorLUT[0]) {
+      this.addColorLUT(CORNERSTONE_COLOR_LUT as ColorLUT, 0);
     }
   }
 }

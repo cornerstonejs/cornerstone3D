@@ -1,5 +1,5 @@
 import now from './now';
-import generateColorLut from './generateColorLut';
+import generateColorLUT from './generateColorLUT';
 import storedColorPixelDataToCanvasImageData from './storedColorPixelDataToCanvasImageData';
 import storedRGBAPixelDataToCanvasImageData from './storedRGBAPixelDataToCanvasImageData';
 import setToPixelCoordinateSystem from './setToPixelCoordinateSystem';
@@ -33,7 +33,7 @@ function getLut(image: IImage, viewport: CPUFallbackViewport) {
   }
 
   // Lut is invalid or not present, regenerate it and cache it
-  generateColorLut(
+  generateColorLUT(
     image,
     viewport.voi.windowWidth,
     viewport.voi.windowCenter,
@@ -103,7 +103,7 @@ function getRenderCanvas(
 
   // Get the lut to use
   let start = now();
-  const colorLut = getLut(image, enabledElement.viewport);
+  const colorLUT = getLut(image, enabledElement.viewport);
 
   image.stats = image.stats || {};
   image.stats.lastLutGenerateTime = now() - start;
@@ -116,13 +116,13 @@ function getRenderCanvas(
   if (image.rgba) {
     storedRGBAPixelDataToCanvasImageData(
       image,
-      colorLut,
+      colorLUT,
       renderCanvasData.data
     );
   } else {
     storedColorPixelDataToCanvasImageData(
       image,
-      colorLut,
+      colorLUT,
       renderCanvasData.data
     );
   }
