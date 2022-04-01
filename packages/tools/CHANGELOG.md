@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.2...@cornerstonejs/tools@0.7.3) (2022-04-01)
+
+
+### Bug Fixes
+
+* Webpack externals were not properly defined ([70499a5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/70499a55c5824b3f94920ffd48411118e6fe4bb8))
+
+
+
+
+
 ## [0.7.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.1...@cornerstonejs/tools@0.7.2) (2022-04-01)
 
 **Note:** Version bump only for package @cornerstonejs/tools

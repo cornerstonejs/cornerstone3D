@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.2.10...@cornerstonejs/streaming-image-volume-loader@0.2.11) (2022-04-01)
+
+
+### Bug Fixes
+
+* Webpack externals were not properly defined ([70499a5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/70499a55c5824b3f94920ffd48411118e6fe4bb8))
+
+
+
+
+
 ## [0.2.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.2.9...@cornerstonejs/streaming-image-volume-loader@0.2.10) (2022-04-01)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
