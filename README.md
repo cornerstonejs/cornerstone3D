@@ -17,7 +17,7 @@ The documentation is divided into several sections:
 
 - [Tutorial](https://cornerstonejs.org/docs/category/tutorials)
 - [Main Concepts](https://cornerstonejs.org/docs/category/concepts)
-- [Live Examples](https://cornerstonejs.org/examples/)
+- [Live Examples](https://www.cornerstonejs.org/docs/examples)
 - [API Reference](https://cornerstonejs.org/api)
 - [How-to Guides](https://cornerstonejs.org/docs/category/how-to-guides)
 - [FAQ](https://cornerstonejs.org/docs/faq)
