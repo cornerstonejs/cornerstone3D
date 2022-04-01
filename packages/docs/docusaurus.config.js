@@ -124,10 +124,14 @@ module.exports = {
               label: 'GitHub',
               href: 'https://github.com/cornerstonejs/cornerstone',
             },
+            {
+              label: 'Twitter',
+              href: 'https://twitter.com/OHIFviewer',
+            },
           ],
         },
       ],
-      copyright: `Cornerstone is a set of open source libraries released under the MIT license.`,
+      copyright: `Cornerstone is open source software released under the MIT license.`,
     },
     prism: {
       theme: lightCodeTheme,
