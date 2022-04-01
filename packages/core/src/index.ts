@@ -1,10 +1,5 @@
-import Events from './enums/Events';
-import RequestType from './enums/RequestType';
-import ViewportType from './enums/ViewportType';
-import InterpolationType from './enums/InterpolationType';
-import BlendModes from './enums/BlendModes';
-//
-import ORIENTATION from './constants/orientation';
+import * as Enums from './enums';
+import * as CONSTANTS from './constants';
 //
 import {
   createVolumeActor,
@@ -26,7 +21,6 @@ import { ImageVolume } from './cache/classes/ImageVolume';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests';
-import CPU_COLORMAPS from './RenderingEngine/helpers/cpuFallback/colors/colormaps';
 
 import getEnabledElement, { getEnabledElementByIds } from './getEnabledElement';
 import * as metaData from './metaData';
@@ -55,18 +49,8 @@ import {
   addVolumesToViewports,
 } from './RenderingEngine/helpers';
 
-const Enums = {
-  Events,
-  ViewportType,
-  InterpolationType,
-  RequestType,
-  BlendModes,
-};
-
-const CONSTANTS = {
-  ORIENTATION,
-  CPU_COLORMAPS,
-};
+// CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
+const EVENTS = Enums.Events;
 
 export type { Types };
 
@@ -76,7 +60,7 @@ export {
   // enums
   Enums,
   CONSTANTS,
-  Events as EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
+  EVENTS,
   //
   Settings,
   // Rendering Engine

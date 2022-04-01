@@ -4,7 +4,6 @@
 
 ```ts
 
-import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { mat4 } from 'gl-matrix';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
@@ -15,6 +14,14 @@ type ActorEntry = {
     volumeActor: VolumeActor;
     slabThickness?: number;
 };
+
+// @public
+enum BlendModes {
+    AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
+    COMPOSITE = BlendMode.COMPOSITE,
+    MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
+    MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
+}
 
 // @public
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
@@ -331,6 +338,33 @@ type ElementEnabledEventDetail = {
     viewportId: string;
     renderingEngineId: string;
 };
+
+// @public
+enum Events {
+    CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
+    CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
+
+    ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
+    ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
+    IMAGE_CACHE_IMAGE_ADDED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED',
+    IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
+    IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
+    IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
+    IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
+    IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
+    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
+    IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
+    IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+    STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
+    VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+    VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
+    VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+    VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
+    VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
+    // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
+    // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
+    // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+}
 
 declare namespace EventTypes {
     export {
@@ -656,6 +690,14 @@ type ImageVolumeModifiedEventDetail = {
 };
 
 // @public
+enum InterpolationType {
+    // (undocumented)
+    FAST_LINEAR,
+    LINEAR,
+    NEAREST,
+}
+
+// @public
 interface IRegisterImageLoader {
     // (undocumented)
     registerImageLoader: (scheme: string, imageLoader: ImageLoaderFn) => void;
@@ -944,6 +986,13 @@ type PublicViewportInput = {
     defaultOptions?: ViewportInputOptions;
 };
 
+// @public
+enum RequestType {
+    Interaction = 'interaction',
+    Prefetch = 'prefetch',
+    Thumbnail = 'thumbnail',
+}
+
 // @public (undocumented)
 type Scaling = {
     PET?: PTScaling;
@@ -1014,7 +1063,7 @@ export class StreamingImageVolume extends ImageVolume {
             };
         };
         priority: number;
-        requestType: default_2;
+        requestType: Enums.RequestType;
         additionalDetails: {
             volumeId: string;
         };
@@ -1039,6 +1088,13 @@ type ViewportInputOptions = {
     orientation?: Orientation;
     suppressEvents?: boolean;
 };
+
+// @public
+enum ViewportType {
+    ORTHOGRAPHIC = 'orthographic',
+    PERSPECTIVE = 'perspective',
+    STACK = 'stack',
+}
 
 // @public (undocumented)
 type VOI = {

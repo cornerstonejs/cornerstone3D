@@ -27,6 +27,18 @@ function addProvider(provider: (type: string, imageId: string) => {
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // @public (undocumented)
+enum BlendModes {
+    // (undocumented)
+    AVERAGE_INTENSITY_BLEND,
+    // (undocumented)
+    COMPOSITE,
+    // (undocumented)
+    MAXIMUM_INTENSITY_BLEND,
+    // (undocumented)
+    MINIMUM_INTENSITY_BLEND
+}
+
+// @public (undocumented)
 export const cache: Cache_2;
 
 // @public (undocumented)
@@ -51,10 +63,15 @@ function cancelLoadImage(imageId: string): void;
 function cancelLoadImages(imageIds: Array<string>): void;
 
 // @public (undocumented)
-export const CONSTANTS: {
-    ORIENTATION: Record<string, Types.Orientation>;
-    CPU_COLORMAPS: Types.CPUFallbackColormapsData;
-};
+const colormapsData: CPUFallbackColormapsData;
+
+declare namespace CONSTANTS {
+    export {
+        ORIENTATION,
+        colormapsData as CPU_COLORMAPS
+    }
+}
+export { CONSTANTS }
 
 // @public (undocumented)
 interface CPUFallbackColormap {
@@ -371,17 +388,22 @@ type ElementEnabledEventDetail = {
     renderingEngineId: string;
 };
 
-// @public (undocumented)
-export const Enums: {
-    Events: typeof EVENTS;
-    ViewportType: typeof ViewportType;
-    InterpolationType: typeof InterpolationType;
-    RequestType: typeof RequestType;
-    BlendModes: typeof BlendModes;
-};
+declare namespace Enums {
+    export {
+        Events,
+        BlendModes,
+        InterpolationType,
+        RequestType,
+        ViewportType
+    }
+}
+export { Enums }
 
 // @public (undocumented)
-export enum EVENTS {
+export const EVENTS: typeof Enums.Events;
+
+// @public (undocumented)
+enum Events {
     // (undocumented)
     CACHE_SIZE_EXCEEDED = "CACHE_SIZE_EXCEEDED",
     // (undocumented)
@@ -942,6 +964,16 @@ function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 export function init(defaultConfiguration?: {}): Promise<boolean>;
 
 // @public (undocumented)
+enum InterpolationType {
+    // (undocumented)
+    FAST_LINEAR = 2,
+    // (undocumented)
+    LINEAR = 1,
+    // (undocumented)
+    NEAREST = 0
+}
+
+// @public (undocumented)
 function invertRgbTransferFunction(rgbTransferFunction: any): void;
 
 // @public (undocumented)
@@ -1303,6 +1335,9 @@ const metadataProvider: {
 };
 
 // @public (undocumented)
+const ORIENTATION: Record<string, Orientation>;
+
+// @public (undocumented)
 type Orientation = {
     sliceNormal: Point3;
     viewUp: Point3;
@@ -1412,6 +1447,16 @@ export class RenderingEngine implements IRenderingEngine {
 
 // @public (undocumented)
 export function renderToCanvas(imageId: string, canvas: HTMLCanvasElement, renderingEngineId?: any, suppressEvents?: boolean): Promise<string>;
+
+// @public (undocumented)
+enum RequestType {
+    // (undocumented)
+    Interaction = "interaction",
+    // (undocumented)
+    Prefetch = "prefetch",
+    // (undocumented)
+    Thumbnail = "thumbnail"
+}
 
 // @public (undocumented)
 export function resetUseCPURendering(): void;
@@ -1791,6 +1836,16 @@ type ViewportInputOptions = {
     orientation?: Orientation;
     suppressEvents?: boolean;
 };
+
+// @public (undocumented)
+enum ViewportType {
+    // (undocumented)
+    ORTHOGRAPHIC = "orthographic",
+    // (undocumented)
+    PERSPECTIVE = "perspective",
+    // (undocumented)
+    STACK = "stack"
+}
 
 // @public (undocumented)
 type VOI = {
