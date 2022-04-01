@@ -44,7 +44,7 @@ function HomepageHeader() {
       <div className={styles.textDescription}>
         The easiest way to build interactive medical imaging web applications.
         Supported by the{' '}
-        <Link to="http://ohif.org/" style={{ color: '#5ACCE6' }}>
+        <Link to="https://ohif.org/" style={{ color: '#5ACCE6' }}>
           Open Health Imaging Foundation
         </Link>
       </div>
