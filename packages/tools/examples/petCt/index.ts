@@ -5,6 +5,7 @@ import {
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,6 +14,7 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   setCtTransferFunctionForVolumeActor,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -67,14 +69,47 @@ setTitleAndDescription(
   'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
 );
 
-const size = '250px';
+const optionsValues = [WindowLevelTool.toolName, CrosshairsTool.toolName];
+
+// ============================= //
+addDropdownToToolbar({
+  options: { values: optionsValues, defaultValue: WindowLevelTool.toolName },
+  onSelectedValueChange: (toolNameAsStringOrNumber) => {
+    const toolName = String(toolNameAsStringOrNumber);
+
+    [ctToolGroupId, ptToolGroupId, fusionToolGroupId].forEach((toolGroupId) => {
+      const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+      // Set the other tools disabled so we don't get conflicts.
+      // Note we only strictly need to change the one which is currently active.
+      optionsValues.forEach((toolName) => {
+        toolGroup.setToolDisabled(toolName);
+      });
+
+      toolGroup.setToolActive(toolName, {
+        bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
+    });
+  },
+});
+
+const resizeObserver = new ResizeObserver(() => {
+  console.log('Size changed');
+
+  renderingEngine = getRenderingEngine(renderingEngineId);
+
+  if (renderingEngine) {
+    renderingEngine.resize(true, false);
+  }
+});
 
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'grid';
-viewportGrid.style.gridTemplateRows = `[row1-start] ${size} [row2-start] ${size} [row3-start] ${size} [end]`;
-viewportGrid.style.gridTemplateRows = `[col1-start] ${size} [col2-start] ${size} [col3-start] ${size} [col4-start] ${size} [end]`;
-viewportGrid.style.width = '750px';
+viewportGrid.style.gridTemplateRows = `[row1-start] 33% [row2-start] 33% [row3-start] 33% [end]`;
+viewportGrid.style.gridTemplateColumns = `[col1-start] 20% [col2-start] 20% [col3-start] 20% [col4-start] 20% [col5-start] 20%[end]`;
+viewportGrid.style.width = '95vw';
+viewportGrid.style.height = '80vh';
 
 const content = document.getElementById('content');
 
@@ -140,15 +175,48 @@ const elements = [
 ];
 
 elements.forEach((element) => {
-  element.style.width = size;
-  element.style.height = size;
+  element.style.width = '100%';
+  element.style.height = '100%';
+
   // Disable right click context menu so we can have right click tools
   element.oncontextmenu = (e) => e.preventDefault();
+
+  resizeObserver.observe(element);
 });
 
-element_mip.style.width = '250px';
-element_mip.style.height = '750px';
+element_mip.style.width = '100%';
+element_mip.style.height = '100%';
 element_mip.oncontextmenu = (e) => e.preventDefault();
+resizeObserver.observe(element_mip);
+
+const instructions = document.createElement('p');
+
+instructions.innerText = `
+  Basic Controls:
+  - Left click: Use selected tool
+  - Middle click: Pan
+  - Right click: Zoom
+  - Mouse Wheel: Stack Scroll
+
+  Window Level Tool:
+  - Drag to set the window level for the CT and threshold for the PET.
+
+  Crosshairs:
+  - When the tool is active: Click/Drag anywhere in the viewport to move the center of the crosshairs.
+  - Drag a reference line to move it, scrolling the other views.
+  - Square (closest to center): Drag these to change the thickness of the MIP slab in that plane.
+  - Circle (further from center): Drag these to rotate the axes.
+
+  PET MIP:
+  - Mouse Wheel: Rotate PET
+  - Left click: Jump all views to the point of highest SUV in the region clicked.
+  `;
+
+instructions.style.gridColumnStart = '5';
+instructions.style.gridRowStart = '1';
+instructions.style.gridRowEnd = 'span 3';
+
+viewportGrid.append(instructions);
 
 // ============================= //
 
@@ -270,13 +338,13 @@ function setUpToolGroups() {
   });
 
   [ctToolGroup, ptToolGroup, fusionToolGroup].forEach((toolGroup) => {
-    // toolGroup.setToolActive(WindowLevelTool.toolName, {
-    //   bindings: [
-    //     {
-    //       mouseButton: MouseBindings.Primary, // Left Click
-    //     },
-    //   ],
-    // });
+    toolGroup.setToolActive(WindowLevelTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
     toolGroup.setToolActive(PanTool.toolName, {
       bindings: [
         {
@@ -293,13 +361,7 @@ function setUpToolGroups() {
     });
 
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolActive(CrosshairsTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
+    toolGroup.setToolPassive(CrosshairsTool.toolName);
   });
 
   // MIP Tool Groups
@@ -588,7 +650,6 @@ async function setUpDisplay() {
       {
         volumeId: ptVolumeId,
         callback: setPetColorMapTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [
