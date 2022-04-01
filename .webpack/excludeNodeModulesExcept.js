@@ -1,6 +1,6 @@
 function excludeNodeModulesExcept(modules) {
   var moduleRegExps = modules.map(function (modName) {
-    return new RegExp('node_modules[/\\]' + pathSep + modName);
+    return new RegExp('node_modules[/\\]' + modName);
   });
 
   return function (modulePath) {
