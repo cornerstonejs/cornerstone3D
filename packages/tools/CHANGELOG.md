@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.2](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/tools@0.7.1...@cornerstonejs/tools@0.7.2) (2022-04-01)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
 ## [0.7.1](https://github.com/PrecisionMetrics/cornerstone3d-FORPUBLIC/compare/@cornerstonejs/tools@0.7.0...@cornerstonejs/tools@0.7.1) (2022-04-01)
 
 
