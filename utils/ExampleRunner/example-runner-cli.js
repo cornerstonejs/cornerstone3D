@@ -31,7 +31,7 @@ function getSplitedPath(filePath) {
 }
 
 function validPath(str) {
-  return str.replace(/\//g, path.sep);
+  return str.replaceAll("\\", "/");
 }
 
 // ----------------------------------------------------------------------------
@@ -111,6 +111,7 @@ if (configuration.examples) {
       validPath(rootPath),
       validPath(exBasePath)
     );
+    // console.log('buildConfig result', conf);
     shell.ShellString(conf).to(webpackConfigPath);
     shell.cd(exBasePath);
     shell.exec(`webpack serve --progress --config ${webpackConfigPath}`);

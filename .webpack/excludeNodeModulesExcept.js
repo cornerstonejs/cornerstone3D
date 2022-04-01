@@ -1,12 +1,6 @@
-const path = require('path');
-
 function excludeNodeModulesExcept(modules) {
-  var pathSep = path.sep;
-  if (pathSep == '\\')
-    // must be quoted for use in a regexp:
-    pathSep = '\\\\';
   var moduleRegExps = modules.map(function (modName) {
-    return new RegExp('node_modules' + pathSep + modName);
+    return new RegExp('node_modules[/\\]' + pathSep + modName);
   });
 
   return function (modulePath) {

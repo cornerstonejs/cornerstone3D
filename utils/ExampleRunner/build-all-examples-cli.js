@@ -40,13 +40,11 @@ program
 const options = program.opts();
 
 function getSplitedPath(filePath) {
-  var a = filePath.split('/');
-  var b = filePath.split('\\');
-  return a.length > b.length ? a : b;
+  return filePath.split(/[/\\]/);
 }
 
 function validPath(str) {
-  return str.replace(/\//g, path.sep);
+  return str.replaceAll('\\', '/');
 }
 
 // ----------------------------------------------------------------------------
@@ -102,7 +100,7 @@ if (configuration.examples) {
         console.log(' -', exampleName, ':', file);
         exampleCount++;
 
-        allExamplePaths[exampleName] = path.resolve(file);
+        allExamplePaths[exampleName] = validPath(path.resolve(file));
       });
   });
 

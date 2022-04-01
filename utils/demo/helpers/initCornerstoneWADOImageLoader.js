@@ -15,7 +15,7 @@ export default function initCornerstoneWADOImageLoader() {
   let maxWebWorkers = 1;
 
   if (navigator.hardwareConcurrency) {
-    maxWebWorkers = Math.min(navigator.hardwareConcurrency, 7);
+    maxWebWorkers = Math.min(navigator.hardwareConcurrency, 3);
   }
 
   var config = {
