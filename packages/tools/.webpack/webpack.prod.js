@@ -35,16 +35,16 @@ module.exports = (env, argv) => {
       /\b(vtk.js)/,
       {
         '@cornerstonejs/core': {
-          root: 'window',
-          commonjs: 'cornerstone3D',
-          commonjs2: 'cornerstone3D',
-          amd: 'cornerstone3D',
+          root: 'cornerstone3D',
+          commonjs: '@cornerstonejs/core',
+          commonjs2: '@cornerstonejs/core',
+          amd: '@cornerstonejs/core',
         },
         '@cornerstonejs/streaming-image-volume-loader': {
-          root: 'window',
-          commonjs: 'cornerstoneStreamingImageVolumeLoader',
-          commonjs2: 'cornerstoneStreamingImageVolumeLoader',
-          amd: 'cornerstoneStreamingImageVolumeLoader',
+          root: 'cornerstoneStreamingImageVolumeLoader',
+          commonjs: '@cornerstonejs/streaming-image-volume-loader',
+          commonjs2: '@cornerstonejs/streaming-image-volume-loader',
+          amd: '@cornerstonejs/streaming-image-volume-loader',
         },
         'gl-matrix': {
           root: 'window',
