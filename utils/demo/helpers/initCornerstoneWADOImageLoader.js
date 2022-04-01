@@ -12,8 +12,14 @@ export default function initCornerstoneWADOImageLoader() {
     },
   });
 
+  let maxWebWorkers = 1;
+
+  if (navigator.hardwareConcurrency) {
+    maxWebWorkers = Math.min(navigator.hardwareConcurrency, 7);
+  }
+
   var config = {
-    maxWebWorkers: navigator.hardwareConcurrency || 1,
+    maxWebWorkers,
     startWebWorkersOnDemand: false,
     taskConfiguration: {
       decodeTask: {
