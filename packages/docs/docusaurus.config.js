@@ -83,16 +83,16 @@ module.exports = {
               to: '/docs/getting-started/overview',
             },
             {
-              label: 'Concepts',
-              to: '/docs/category/concepts',
-            },
-            {
               label: 'Tutorials',
               to: '/docs/category/tutorials',
             },
             {
               label: 'How-to Guides',
               to: '/docs/category/how-to-guides',
+            },
+            {
+              label: 'Concepts',
+              to: '/docs/category/concepts',
             },
           ],
         },
@@ -101,7 +101,7 @@ module.exports = {
           items: [
             {
               label: 'Discussion board',
-              to: 'https://community.ohif.org/',
+              href: 'https://community.ohif.org/',
             },
             {
               label: 'Help',
@@ -118,11 +118,11 @@ module.exports = {
           items: [
             {
               label: 'Donate',
-              to: 'https://ohif.org/donate/',
+              href: 'https://ohif.org/donate/',
             },
             {
               label: 'GitHub',
-              to: 'https://github.com/cornerstonejs/cornerstone',
+              href: 'https://github.com/cornerstonejs/cornerstone',
             },
           ],
         },
