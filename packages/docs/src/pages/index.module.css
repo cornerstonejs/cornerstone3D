@@ -133,3 +133,55 @@
     display: none;
   }
 }
+
+@media screen and (max-width: 425px) {
+  .cornerstoneText {
+    font-size: 45px;
+  }
+
+  .threeDText {
+    font-size: 45px;
+  }
+
+  .textDescription {
+    max-width: 350px;
+  }
+
+  .smallScreenAnnouncement {
+    display: inline;
+  }
+
+  .announcementBar {
+    max-width: 300px;
+  }
+
+  .bigScreenAnnouncement {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 320px) {
+  .cornerstoneText {
+    font-size: 30px;
+  }
+
+  .threeDText {
+    font-size: 30px;
+  }
+
+  .textDescription {
+    max-width: 300px;
+  }
+
+  .smallScreenAnnouncement {
+    display: inline;
+  }
+
+  .announcementBar {
+    max-width: 260px;
+  }
+
+  .bigScreenAnnouncement {
+    display: none;
+  }
+}
