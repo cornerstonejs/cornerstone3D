@@ -36,8 +36,7 @@ match what is expected.
 ## Browser Support
 
 `Cornerstone3D` uses the HTML5 canvas element and WebGL 2.0 GPU rendering to render images which is supported by all modern browsers.
-Advanced features such as volume streaming which uses SharedArrayBuffer to transfer data between
-multiple web workers are not supported in all browsers. The following browsers are supported:
+Advanced features such as volume streaming which uses [SharedArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer) to create a shared memory is not supported in all browsers. The following browsers are supported:
 
 - Chrome > 68
 - Firefox > 79
@@ -46,6 +45,13 @@ multiple web workers are not supported in all browsers. The following browsers a
 If you are using an older browser, or don't have any graphics cards, your device might not be able to
 render volumetric images with `Cornerstone3D`. However, you can still render stack images using the
 CPU fallback that we have implemented in `Cornerstone3D` for such scenarios.
+
+:::note Important
+`SharedArrayBuffer` requires cross-origin-isolation in the browsers. This means that you cannot use
+it in a browser that is not cross-origin isolated.
+[Read More](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements)
+
+:::
 
 ## Monorepo hierarchy
 
