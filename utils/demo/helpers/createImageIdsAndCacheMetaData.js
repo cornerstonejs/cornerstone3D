@@ -87,6 +87,16 @@ export default async function createImageIdsAndCacheMetaData({
     const InstanceMetadataArray = [];
     imageIds.forEach((imageId) => {
       const instanceMetadata = getPTImageIdInstanceMetadata(imageId);
+
+      // TODO: Temporary fix because static-wado is producing a string, not an array of values
+      // (or maybe dcmjs isn't parsing it correctly?)
+      // It's showing up like 'DECY\\ATTN\\SCAT\\DTIM\\RAN\\RADL\\DCAL\\SLSENS\\NORM'
+      // but calculate-suv expects ['DECY', 'ATTN', ...]
+      if (typeof instanceMetadata.CorrectedImage === 'string') {
+        instanceMetadata.CorrectedImage =
+          instanceMetadata.CorrectedImage.split('\\');
+      }
+
       if (instanceMetadata) {
         InstanceMetadataArray.push(instanceMetadata);
       }
