@@ -82,13 +82,19 @@ addDropdownToToolbar({
 
       // Set the other tools disabled so we don't get conflicts.
       // Note we only strictly need to change the one which is currently active.
-      optionsValues.forEach((toolName) => {
-        toolGroup.setToolDisabled(toolName);
-      });
 
-      toolGroup.setToolActive(toolName, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
+      if (toolName === WindowLevelTool.toolName) {
+        // Set crosshairs passive so they are still interactable
+        toolGroup.setToolPassive(CrosshairsTool.toolName);
+        toolGroup.setToolActive(WindowLevelTool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Primary }],
+        });
+      } else {
+        toolGroup.setToolDisabled(WindowLevelTool.toolName);
+        toolGroup.setToolActive(CrosshairsTool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Primary }],
+        });
+      }
     });
   },
 });
