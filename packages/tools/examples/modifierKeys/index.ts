@@ -44,7 +44,12 @@ element.style.height = '500px';
 content.appendChild(element);
 
 const instructions = document.createElement('p');
-instructions.innerText = 'Left Click to use selected tool TODO';
+instructions.innerText = `
+- Left click to use the Window/Level tool.
+- Shift + Left click to use the Length tool.
+- Ctrl + Left click to use the Bidirectional tool.
+- Alt/Option + Left click to use the RectangleROI tool.
+`;
 
 content.append(instructions);
 // ============================= //
