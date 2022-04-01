@@ -35,7 +35,7 @@ module.exports = (env, argv) => {
       /\b(vtk.js)/,
       {
         '@cornerstonejs/core': {
-          root: 'window',
+          root: 'cornerstone3D',
           commonjs: '@cornerstonejs/core',
           commonjs2: '@cornerstonejs/core',
           amd: '@cornerstonejs/core',
