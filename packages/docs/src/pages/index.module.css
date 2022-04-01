@@ -77,18 +77,18 @@
 
 .newPart {
   width: 65px;
-  font-size: 15px;
   font-weight: 500;
-  padding: 9px 11px 6px 15px;
+  padding: 8px 11px 6px 15px;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
   background-color: #5e16eb;
   margin-left: 15px;
-
+  font-size:16px
 }
 
 .announcementBar {
   display: flex;
+  font-size:16px
 }
 
 .smallScreenAnnouncement {
@@ -127,6 +127,58 @@
 
   .announcementBar {
     max-width: 300px;
+  }
+
+  .bigScreenAnnouncement {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 425px) {
+  .cornerstoneText {
+    font-size: 45px;
+  }
+
+  .threeDText {
+    font-size: 45px;
+  }
+
+  .textDescription {
+    max-width: 350px;
+  }
+
+  .smallScreenAnnouncement {
+    display: inline;
+  }
+
+  .announcementBar {
+    max-width: 300px;
+  }
+
+  .bigScreenAnnouncement {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 320px) {
+  .cornerstoneText {
+    font-size: 30px;
+  }
+
+  .threeDText {
+    font-size: 30px;
+  }
+
+  .textDescription {
+    max-width: 300px;
+  }
+
+  .smallScreenAnnouncement {
+    display: inline;
+  }
+
+  .announcementBar {
+    max-width: 260px;
   }
 
   .bigScreenAnnouncement {

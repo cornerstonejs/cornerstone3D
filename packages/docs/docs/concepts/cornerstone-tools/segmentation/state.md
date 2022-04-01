@@ -13,11 +13,12 @@ Therefore, the state also stores segmentations and their toolGroup-specific repr
 
 An overview of the state is shown below.
 
-<div style={{textAlign: 'center'}}>
+<div style={{textAlign: 'center', width:"80%"}}>
 
 ![](../../../assets/segmentation-state.png)
 
 </div>
+
 
 ## Global Config
 

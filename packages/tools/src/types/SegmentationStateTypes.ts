@@ -14,7 +14,7 @@ export type Color = [number, number, number, number];
  * Color LUT Array - Array of colors
  * [[0,0,0,0], [200,200,200,200], ....]
  */
-export type ColorLut = Array<Color>;
+export type ColorLUT = Array<Color>;
 
 /**
  * Segmentation Config
@@ -203,7 +203,7 @@ export type ToolGroupSpecificRepresentations =
  */
 export type SegmentationState = {
   /** Array of colorLUT for segmentation to render */
-  colorLut: ColorLut[];
+  colorLUT: ColorLUT[];
   /** segmentations */
   segmentations: Segmentation[];
   /** global segmentation state with config */

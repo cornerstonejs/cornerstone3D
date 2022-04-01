@@ -1,10 +1,12 @@
 import { RequestPoolManager } from './requestPoolManager';
 
 /**
- * ImageRetrieval Pool Manager
- * Retrieval (usually) === XHR requests
- * @category RequestPoolManager
+ * ImageRetrievalPoolManager
+ * You don't need to directly use the imageRetrievalPoolManager to load images
+ * since the imageLoadPoolManager will automatically use it for retrieval. However,
+ * maximum number of concurrent requests can be set by calling `setMaxConcurrentRequests`.
  *
+ * Retrieval (usually) === XHR requests
  */
 const imageRetrievalPoolManager = new RequestPoolManager();
 

@@ -22,20 +22,18 @@ module.exports = {
       },
       items: [
         {
-          type: 'doc',
-          docId: 'getting-started/overview',
+          to: 'docs/getting-started/overview',
           position: 'left',
+          activeBaseRegex: 'docs/(?!(example|faq|help))',
           label: 'Docs',
         },
         {
-          type: 'doc',
-          docId: 'examples',
-          activeBasePath: 'docs/examples',
+          to: 'docs/examples',
           position: 'left',
           label: 'Examples',
         },
         {
-          to: 'https://ohif.org/community/',
+          href: 'https://ohif.org/community/',
           position: 'left',
           label: 'Community',
         },
@@ -45,21 +43,17 @@ module.exports = {
           label: 'API',
         },
         {
-          type: 'doc',
-          docId: 'help',
-          activeBasePath: 'docs/help',
+          to: 'docs/help',
           label: 'Help',
           position: 'right',
         },
         {
-          type: 'doc',
-          docId: 'faq',
           label: 'FAQ',
-          activeBasePath: 'docs/faq',
+          to: 'docs/faq',
           position: 'right',
         },
         {
-          to: 'https://github.com/cornerstonejs/cornerstone-3d-alpha/',
+          href: 'https://github.com/cornerstonejs/cornerstone-3d-alpha/',
           position: 'right',
           className: 'header-github-link',
           'aria-label': 'GitHub Repository',
@@ -89,16 +83,16 @@ module.exports = {
               to: '/docs/getting-started/overview',
             },
             {
-              label: 'Concepts',
-              to: '/docs/category/concepts',
-            },
-            {
               label: 'Tutorials',
               to: '/docs/category/tutorials',
             },
             {
               label: 'How-to Guides',
               to: '/docs/category/how-to-guides',
+            },
+            {
+              label: 'Concepts',
+              to: '/docs/category/concepts',
             },
           ],
         },
@@ -107,7 +101,7 @@ module.exports = {
           items: [
             {
               label: 'Discussion board',
-              to: 'https://community.ohif.org/',
+              href: 'https://community.ohif.org/',
             },
             {
               label: 'Help',
@@ -124,11 +118,11 @@ module.exports = {
           items: [
             {
               label: 'Donate',
-              to: 'https://ohif.org/donate/',
+              href: 'https://ohif.org/donate/',
             },
             {
               label: 'GitHub',
-              to: 'https://github.com/cornerstonejs/cornerstone',
+              href: 'https://github.com/cornerstonejs/cornerstone',
             },
           ],
         },

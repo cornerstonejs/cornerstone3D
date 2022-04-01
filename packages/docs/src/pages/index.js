@@ -10,12 +10,14 @@ function NewAnnouncementBar() {
     <div className={styles.announcementBar}>
       <div className={styles.newPart}>NEW</div>
       <div className={styles.smallScreenAnnouncement}>
-        Cornerstone 3D is now available!
+        {/* Cornerstone 3D is now available! */}
+        Major Release: Cornerstone3D public beta
       </div>
       <div className={styles.bigScreenAnnouncement}>
-        <span style={{ fontWeight: 600 }}>Cornerstone3D</span>, released as
+        🎉 Major Release: Cornerstone3D public beta 🎉
+        {/* <span style={{ fontWeight: 600 }}>Cornerstone3D</span>, released as
         public beta on April 1st, 2022, represents a major improvement to the
-        framework
+        framework */}
       </div>
     </div>
   );

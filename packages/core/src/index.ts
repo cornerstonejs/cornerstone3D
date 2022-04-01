@@ -1,10 +1,6 @@
-import Events from './enums/Events';
-import RequestType from './enums/RequestType';
-import ViewportType from './enums/ViewportType';
-import InterpolationType from './enums/InterpolationType';
-import BlendModes from './enums/BlendModes';
-//
-import ORIENTATION from './constants/orientation';
+import * as Enums from './enums';
+import * as CONSTANTS from './constants';
+import { Events } from './enums';
 //
 import {
   createVolumeActor,
@@ -21,12 +17,10 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache from './cache';
-import { ImageVolume } from './cache/classes/ImageVolume';
+import cache, { ImageVolume } from './cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests';
-import CPU_COLORMAPS from './RenderingEngine/helpers/cpuFallback/colors/colormaps';
 
 import getEnabledElement, { getEnabledElementByIds } from './getEnabledElement';
 import * as metaData from './metaData';
@@ -54,19 +48,6 @@ import {
   setVolumesForViewports,
   addVolumesToViewports,
 } from './RenderingEngine/helpers';
-
-const Enums = {
-  Events,
-  ViewportType,
-  InterpolationType,
-  RequestType,
-  BlendModes,
-};
-
-const CONSTANTS = {
-  ORIENTATION,
-  CPU_COLORMAPS,
-};
 
 export type { Types };
 

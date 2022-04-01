@@ -28,10 +28,10 @@ type ActorEntry = {
 function addAnnotation(element: HTMLDivElement, annotation: Annotation): void;
 
 // @public (undocumented)
-function addColorLUT(colorLut: ColorLut, index: number): void;
+function addColorLUT(colorLUT: ColorLUT, index: number): void;
 
 // @public (undocumented)
-function addColorLUT_2(colorLUT: ColorLut, colorLUTIndex: number): void;
+function addColorLUT_2(colorLUT: ColorLUT, colorLUTIndex: number): void;
 
 // @public (undocumented)
 function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEvents?: boolean): void;
@@ -418,7 +418,7 @@ declare namespace color {
 }
 
 // @public (undocumented)
-type ColorLut = Array<Color>;
+type ColorLUT = Array<Color>;
 
 declare namespace config {
     export {
@@ -631,7 +631,7 @@ type CPUFallbackRenderingTools = {
         ) => unknown;
     };
     colormapId?: string;
-    colorLut?: CPUFallbackLookupTable;
+    colorLUT?: CPUFallbackLookupTable;
     renderCanvasData?: {
         data: Uint8ClampedArray;
     };
@@ -1094,14 +1094,17 @@ export class EllipticalROITool extends AnnotationTool {
     touchDragCallback: any;
 }
 
-// @public (undocumented)
-export const Enums: {
-    MouseBindings: typeof MouseBindings;
-    KeyboardBindings: typeof KeyboardBindings;
-    ToolModes: typeof ToolModes;
-    Events: typeof Events;
-    SegmentationRepresentations: typeof SegmentationRepresentations;
-};
+declare namespace Enums {
+    export {
+        MouseBindings,
+        KeyboardBindings,
+        ToolModes,
+        AnnotationStyleStates,
+        Events,
+        SegmentationRepresentations
+    }
+}
+export { Enums }
 
 // @public (undocumented)
 enum Events {
@@ -1318,7 +1321,7 @@ function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<
 function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): Color;
 
 // @public (undocumented)
-function getColorLut(index: number): ColorLut | undefined;
+function getColorLUT(index: number): ColorLUT | undefined;
 
 // @public (undocumented)
 function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
@@ -2857,6 +2860,12 @@ type RepresentationConfig = {
 };
 
 // @public (undocumented)
+type RepresentationPublicInput = {
+    segmentationId: string;
+    type: Enums.SegmentationRepresentations;
+};
+
+// @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
@@ -2880,7 +2889,7 @@ function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, delta
 // @public (undocumented)
 type Segmentation = {
     segmentationId: string;
-    type: Enums_2.SegmentationRepresentations;
+    type: Enums.SegmentationRepresentations;
     label: string;
     activeSegmentIndex: number;
     segmentsLocked: Set<number>;
@@ -2995,7 +3004,7 @@ enum SegmentationRepresentations {
 
 // @public (undocumented)
 type SegmentationState = {
-    colorLut: ColorLut[];
+    colorLUT: ColorLUT[];
     segmentations: Segmentation[];
     globalConfig: SegmentationRepresentationConfig;
     toolGroups: {
@@ -3218,7 +3227,7 @@ declare namespace state_2 {
         getToolGroupsWithSegmentation,
         getSegmentationRepresentationByUID,
         addColorLUT,
-        getColorLut
+        getColorLUT
     }
 }
 
@@ -3338,7 +3347,7 @@ type ToolGroupSpecificRepresentation = ToolGroupSpecificLabelmapRepresentation;
 type ToolGroupSpecificRepresentationState = {
     segmentationRepresentationUID: string;
     segmentationId: string;
-    type: Enums_2.SegmentationRepresentations;
+    type: Enums.SegmentationRepresentations;
     active: boolean;
     segmentsHidden: Set<number>;
     visibility: boolean;
@@ -3455,8 +3464,9 @@ declare namespace Types {
         ToolGroupSpecificRepresentationState,
         ToolGroupSpecificLabelmapRepresentation,
         ToolGroupSpecificRepresentation,
+        RepresentationPublicInput,
         Color,
-        ColorLut,
+        ColorLUT,
         LabelmapTypes,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint

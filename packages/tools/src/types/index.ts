@@ -22,7 +22,7 @@ import type { ToolProps, PublicToolProps } from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type {
   Color,
-  ColorLut,
+  ColorLUT,
   RepresentationConfig,
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
@@ -31,6 +31,7 @@ import type {
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
   SegmentationState,
+  RepresentationPublicInput,
 } from './SegmentationStateTypes';
 
 export type {
@@ -66,8 +67,9 @@ export type {
   ToolGroupSpecificRepresentationState,
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
+  RepresentationPublicInput,
   Color,
-  ColorLut,
+  ColorLUT,
   LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,

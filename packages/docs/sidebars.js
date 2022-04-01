@@ -27,7 +27,15 @@ module.exports = {
         title: 'Tutorials',
         description: 'In this section you will find a collection of tutorials',
       },
-      items: ['tutorials/intro', 'tutorials/examples', 'tutorials/basic-stack'],
+      items: [
+        'tutorials/intro',
+        'tutorials/basic-stack',
+        'tutorials/basic-volume',
+        'tutorials/basic-manipulation-tool',
+        'tutorials/basic-annotation-tool',
+        'tutorials/basic-segmentation-tools',
+        'tutorials/examples',
+      ],
     },
     {
       type: 'category',
@@ -40,11 +48,9 @@ module.exports = {
           'In this section you will find how-to guides for cornerstone3D',
       },
       items: [
-        'how-to-guides/configuration',
         'how-to-guides/custom-image-loader',
         'how-to-guides/custom-metadata-provider',
         'how-to-guides/custom-volume-loading',
-        'how-to-guides/custom-tools',
       ],
     },
     {
@@ -143,8 +149,9 @@ module.exports = {
       collapsed: true,
       items: [
         'contribute/pull-request',
-        'contribute/tests',
+        'contribute/update-api',
         'contribute/documentation',
+        'contribute/tests',
       ],
     },
     'migrationGuides',

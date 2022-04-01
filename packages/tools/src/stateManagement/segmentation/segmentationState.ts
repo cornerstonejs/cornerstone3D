@@ -5,7 +5,7 @@ import {
   triggerSegmentationRepresentationRemoved,
 } from './triggerSegmentationEvents';
 import type {
-  ColorLut,
+  ColorLUT,
   Segmentation,
   SegmentationPublicInput,
   SegmentationRepresentationConfig,
@@ -260,21 +260,21 @@ function removeSegmentationRepresentation(
 /**
  * Get the color lut for a given index
  * @param index - The index of the color lut to retrieve.
- * @returns A ColorLut array.
+ * @returns A ColorLUT array.
  */
-function getColorLut(index: number): ColorLut | undefined {
+function getColorLUT(index: number): ColorLUT | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getColorLut(index);
+  return segmentationStateManager.getColorLUT(index);
 }
 
 /**
  * Add a color LUT to the segmentation state manager
- * @param colorLut - The color LUT array to add.
+ * @param colorLUT - The color LUT array to add.
  * @param index - The index of the color LUT to add.
  */
-function addColorLUT(colorLut: ColorLut, index: number): void {
+function addColorLUT(colorLUT: ColorLUT, index: number): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.addColorLUT(colorLut, index);
+  segmentationStateManager.addColorLUT(colorLUT, index);
   // Todo: trigger event color LUT added
 }
 
@@ -312,5 +312,5 @@ export {
   getSegmentationRepresentationByUID,
   // color
   addColorLUT,
-  getColorLut,
+  getColorLUT,
 };

@@ -4,6 +4,8 @@ id: basic-stack
 
 # Render Stack of Images
 
+In this tutorial, you will learn how to render a stack of images.
+
 ## Preface
 
 In order to render a set of images we need:
@@ -13,14 +15,14 @@ In order to render a set of images we need:
 
 ## Implementation
 
-We have already stored images on a dicom server for the purpose of this tutorial.
+We have already stored images on a server for the purpose of this tutorial.
 
 First let's create an HTML element and style it to look like a viewport.
 
 ```js
 const content = document.getElementById('content');
 const element = document.createElement('div');
-element.id = 'cornerstone-element';
+
 element.style.width = '500px';
 element.style.height = '500px';
 
@@ -38,7 +40,7 @@ We can then create a `viewport` inside the renderingEngine by using the `enableE
 purpose of this tutorial, we specify the type of the viewport to be `Stack`.
 
 ```js
-const viewportId = 'CT_SAGITTAL_STACK';
+const viewportId = 'CT_AXIAL_STACK';
 
 const viewportInput = {
   viewportId,
@@ -55,6 +57,8 @@ RenderingEngine will handle creation of the viewports, and we can get the viewpo
 const viewport = renderingEngine.getViewport(viewportId);
 
 viewport.setStack(imageIds, 60);
+
+viewport.render()
 ```
 
 :::note Tip
@@ -67,14 +71,13 @@ the second argument of `setStack`.
 ```js
 const content = document.getElementById('content');
 const element = document.createElement('div');
-element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
 
 content.appendChild(element);
 
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_SAGITTAL_STACK';
+const viewportId = 'CT_AXIAL_STACK';
 const renderingEngine = new RenderingEngine(renderingEngineId);
 
 const viewportInput = {
@@ -88,4 +91,28 @@ renderingEngine.enableElement(viewportInput);
 const viewport = renderingEngine.getViewport(viewportInput.viewportId);
 
 viewport.setStack(imageIds, 60);
+
+viewport.render()
 ```
+
+You should see the following:
+
+![](../assets/tutorial-basic-stack.png)
+
+## Read more
+
+Learn more about:
+
+- [imageId](../concepts/cornerstone-core/imageId.md)
+- [rendering engine](../concepts/cornerstone-core/renderingEngine.md)
+- [viewport](../concepts/cornerstone-core/viewports.md)
+
+
+For advanced usage of Stack Viewport, please visit <a href="/live-examples/stackAPI.html" target="_blank">StackViewport API</a> example page.
+
+:::note Tip
+
+- Visit [Examples](examples.md#run-examples-locally) page to see how to run the examples locally.
+- Check how to debug examples in the [Debugging](examples.md#debugging) section.
+
+:::

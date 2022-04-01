@@ -44,21 +44,7 @@ import {
   BrushTool,
 } from './tools';
 
-import {
-  MouseBindings,
-  KeyboardBindings,
-  ToolModes,
-  Events,
-  SegmentationRepresentations,
-} from './enums';
-
-const Enums = {
-  MouseBindings,
-  KeyboardBindings,
-  ToolModes,
-  Events,
-  SegmentationRepresentations,
-};
+import * as Enums from './enums';
 
 export {
   //

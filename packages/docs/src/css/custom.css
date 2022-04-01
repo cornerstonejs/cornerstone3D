@@ -154,6 +154,11 @@ article header h3 {
   box-shadow: none;
 }
 
+/* to fix the api page footer */
+.tsd-footer{
+  margin-bottom: 400px;
+}
+
 /* Navigation color and type updates */
 
 .footer {
@@ -219,6 +224,19 @@ article header h3 {
 
 .button--secondary:not(.button--outline) {
   --ifm-button-background-color: #e8f7f7;
+}
+
+/* Admonition */
+html[data-theme='dark'] .admonition {
+  background-color: #0B1A42;
+  border-color: #0B1A42;
+  color: #5ACCE6;
+}
+
+html[data-theme='light'] .admonition {
+  background-color: #e3eff5;
+  border-color: #e3eff5;
+  color: #0B1A42;
 }
 
 .admonition-icon svg {
@@ -304,6 +322,12 @@ html[data-theme='dark'] .tsd-flag-readonly {
   color: white;
 }
 
+html[data-theme='dark'] .tsd-flag-public {
+  background-color: black !important;
+  border: 1px solid #5acce6;
+  color: white;
+}
+
 html[data-theme='light'] .tsd-flag-optional {
   background-color: white !important;
   border: 1px solid #0151d9;
@@ -324,6 +348,11 @@ html[data-theme='light'] .tsd-flag-readonly {
   border: 1px solid #0151d9;
   color: #0151d9;
 }
+html[data-theme='light'] .tsd-flag-public {
+  background-color: white !important;
+  border: 1px solid #0151d9;
+  color: #0151d9;
+}
 
 /* hide long strings in the overview tables */
 .tsd-index-list > li {
@@ -339,6 +368,37 @@ html[data-theme='light'] .tsd-flag-readonly {
   text-overflow: ellipsis;
   max-width: 60ch;
 }
+
+#open-example-button{
+  margin-top: 20px;
+  background-color: #0944b3;
+  color: white;
+  font-size: 18px;
+  padding: 9px 20px;
+  box-shadow: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  width: 400px;
+  margin: auto;
+}
+
+#open-ptct-button{
+  margin-top: 20px;
+  background-color: #0944b3;
+  color: white;
+  font-size: 18px;
+  padding: 9px 20px;
+  box-shadow: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  width: 200px;
+  margin: auto;
+}
+
 
 a.card > h2 {
   font-size: 1.5rem;

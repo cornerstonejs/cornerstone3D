@@ -53,6 +53,10 @@ class CornerstoneEventTarget implements EventTarget {
     return !event.defaultPrevented;
   }
 }
+
+/**
+ * EventTarget - Provides the [EventTarget](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) interface
+ */
 const eventTarget = new CornerstoneEventTarget();
 
 export default eventTarget;

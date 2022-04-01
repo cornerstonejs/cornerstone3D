@@ -216,7 +216,7 @@ function _setLabelmapColorAndOpacity(
   // Note: MAX_NUMBER_COLORS = 256 is needed because the current method to generate
   // the default color table uses RGB.
 
-  const colorLUT = SegmentationState.getColorLut(colorLUTIndex);
+  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
   const numColors = Math.min(256, colorLUT.length);
   const { volumeActor, uid } = actor;
 

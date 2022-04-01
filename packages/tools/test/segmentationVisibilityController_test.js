@@ -195,7 +195,7 @@ describe('Segmentation Controller --', () => {
       }
     });
 
-    // Todo: we don't have the ability to initially change the colorLut of the segmentation representation yet
+    // Todo: we don't have the ability to initially change the colorLUT of the segmentation representation yet
 
     // it('should be able to load two segmentations on the toolGroup with different colorIndices', function (done) {
     //   const element = createViewport(this.renderingEngine, AXIAL)

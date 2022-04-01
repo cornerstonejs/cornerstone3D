@@ -1,5 +1,5 @@
 import LookupTable from './lookupTable';
-import colormapsData from './colormaps';
+import CPU_COLORMAPS from '../../../../constants/cpuColormaps';
 import {
   CPUFallbackColormap,
   CPUFallbackColormapData,
@@ -188,11 +188,11 @@ function createLinearSegmentedColormap(segmentedData, N, gamma) {
  */
 export function getColormapsList() {
   const colormaps = [];
-  const keys = Object.keys(colormapsData);
+  const keys = Object.keys(CPU_COLORMAPS);
 
   keys.forEach(function (key) {
-    if (colormapsData.hasOwnProperty(key)) {
-      const colormap = colormapsData[key];
+    if (CPU_COLORMAPS.hasOwnProperty(key)) {
+      const colormap = CPU_COLORMAPS[key];
 
       colormaps.push({
         id: key,
@@ -228,10 +228,10 @@ export function getColormap(
   id: string,
   colormapData?: CPUFallbackColormapData
 ): CPUFallbackColormap {
-  let colormap = colormapsData[id];
+  let colormap = CPU_COLORMAPS[id];
 
   if (!colormap) {
-    colormap = colormapsData[id] = colormapData || {
+    colormap = CPU_COLORMAPS[id] = colormapData || {
       name: '',
       colors: [],
     };

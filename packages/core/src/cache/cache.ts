@@ -14,46 +14,6 @@ import Events from '../enums/Events';
 
 const MAX_CACHE_SIZE_1GB = 1073741824;
 
-/**
- * This module deals with Caching of images and volumes
- * The cache has two main components: a volatile portion for images and a
- * non-volatile portion for volumes. Individual 2D images are volatile and
- * will be replaced by new images hitting the cache. When you allocate volumes,
- * these are non-volatile and reserve a block of memory from the cache.
- * Volumes must be released manually.
- * We will have a shared block of memory allocated for the entire cache, e.g. 1GB
- * which will be shared for images and volumes.
- *
- * **When a new image is added:**
- * We check if there is enough unallocated + volatile space for the single image
- *
- * if so
- * - We allocate the image in image cache, and if necessary oldest images
- * are decached to match the maximumCacheSize criteria
- * - If a volume contains that imageId, copy it over using TypedArray's set method.
- * If no volumes contain the imageId, the image is fetched by image loaders
- *
- * If not (cache is mostly/completely full with volumes)
- * - throw that the cache does not have enough working space to allocate the image
- *
- *
- * **When a new volume is added:**
- * Check if there is enough unallocated + volatile space to allocate the volume:
- *
- * If so:
- * - Decache oldest images which won't be included in this volume until
- * we have enough free space for the volume
- * - If not enough space from previous space, decache images that will be included
- * in the volume until we have enough free space (These will need to be re-fetched,
- * but we must do this not to straddle over the given memory limit, even for a
- * short time, as this may crash the app)
- * - At this point, if any of the frames (indexed by imageId) are present in the volatile
- * image cache, copy these over to the volume now
- *
- * If not (cache is mostly/completely full with volumes),
- * - throw that the cache does not have enough working space to allocate the volume.
- *
- */
 class Cache implements ICache {
   private readonly _imageCache: Map<string, ICachedImage>; // volatile space
   private readonly _volumeCache: Map<string, ICachedVolume>; // non-volatile space
@@ -733,6 +693,46 @@ class Cache implements ICache {
   };
 }
 
+/**
+ * This module deals with Caching of images and volumes
+ * The cache has two main components: a volatile portion for images and a
+ * non-volatile portion for volumes. Individual 2D images are volatile and
+ * will be replaced by new images hitting the cache. When you allocate volumes,
+ * these are non-volatile and reserve a block of memory from the cache.
+ * Volumes must be released manually.
+ * We will have a shared block of memory allocated for the entire cache, e.g. 1GB
+ * which will be shared for images and volumes.
+ *
+ * **When a new image is added:**
+ * We check if there is enough unallocated + volatile space for the single image
+ *
+ * if so
+ * - We allocate the image in image cache, and if necessary oldest images
+ * are decached to match the maximumCacheSize criteria
+ * - If a volume contains that imageId, copy it over using TypedArray's set method.
+ * If no volumes contain the imageId, the image is fetched by image loaders
+ *
+ * If not (cache is mostly/completely full with volumes)
+ * - throw that the cache does not have enough working space to allocate the image
+ *
+ *
+ * **When a new volume is added:**
+ * Check if there is enough unallocated + volatile space to allocate the volume:
+ *
+ * If so:
+ * - Decache oldest images which won't be included in this volume until
+ * we have enough free space for the volume
+ * - If not enough space from previous space, decache images that will be included
+ * in the volume until we have enough free space (These will need to be re-fetched,
+ * but we must do this not to straddle over the given memory limit, even for a
+ * short time, as this may crash the app)
+ * - At this point, if any of the frames (indexed by imageId) are present in the volatile
+ * image cache, copy these over to the volume now
+ *
+ * If not (cache is mostly/completely full with volumes),
+ * - throw that the cache does not have enough working space to allocate the volume.
+ *
+ */
 const cache = new Cache();
 export default cache;
 export { Cache }; // for documentation

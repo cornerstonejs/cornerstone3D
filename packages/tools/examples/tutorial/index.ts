@@ -2,12 +2,25 @@ import {
   RenderingEngine,
   Types,
   Enums,
+  setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
+  addTool,
+  BrushTool,
+  SegmentationDisplayTool,
+  BidirectionalTool,
+  ToolGroupManager,
+  WindowLevelTool,
+  ZoomTool,
+  segmentation,
+  Enums as csToolsEnums,
+} from '@cornerstonejs/tools';
+import {
   initDemo,
   createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -19,6 +32,11 @@ const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
 // ============================= //
+// ======== Set up page ======== //
+setTitleAndDescription(
+  'Tutorial Playground',
+  'The playground for you to copy paste the codes in the tutorials and run it'
+);
 
 /**
  * Runs the demo

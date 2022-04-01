@@ -1,3 +1,6 @@
+/**
+ * Cornerstone Color LUT used for Segmentations
+ */
 const CORNERSTONE_COLOR_LUT = [
   [0, 0, 0, 0],
   [221, 84, 84, 255],

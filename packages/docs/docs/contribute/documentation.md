@@ -18,7 +18,7 @@ To run documentation you need to execute
 ```sh
 cs packages/docs/
 
-yarn run dev
+yarn run start
 ```
 
 This will open up port `3333` and start the documentation server. Then you can
@@ -27,8 +27,8 @@ visit `http://localhost:3333` to see the documentation page.
 :::note Important
 Running the documentation server will probably fail complaining about the `example.md`
 file not being found. This is because the `example.md` file is created at build time
-and is not available in the repository. To fix this, you can run `yarn run docs:ci`
-to generate the `example.md` file, and then run the documentation server.
+and is not available in the repository. To fix this, you can run it the first time with `yarn run dev`
+to generate the `example.md` file, and for subsequent runs you can run `yarn run start`
 :::
 
 
