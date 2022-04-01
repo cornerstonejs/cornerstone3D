@@ -27,14 +27,14 @@ import ViewportGrid from './components/ViewportGrid';
 import { initToolGroups, addToolsToToolGroups } from './initToolGroups';
 import './ExampleVTKMPR.css';
 import { renderingEngineId, VIEWPORT_IDS, ANNOTATION_TOOLS } from './constants';
-
+import * as testUtils from '../../../utils/test/testUtils';
 const VOLUME = 'volume';
 const STACK = 'stack';
 
 window.cache = cache;
 const { ViewportType } = Enums;
 
-const { fakeImageLoader, fakeMetaDataProvider } = utilities.testUtils;
+const { fakeImageLoader, fakeMetaDataProvider } = testUtils;
 
 let stackCTViewportToolGroup;
 

@@ -427,7 +427,7 @@ function setUpSynchronizers() {
 }
 
 async function setUpDisplay() {
-  const wadoRsRoot = 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
@@ -621,8 +621,58 @@ async function setUpDisplay() {
     [viewportIds.PETMIP.CORONAL]
   );
 
+  initializeCameraSync(renderingEngine);
+
   // Render the viewports
   renderingEngine.render();
+}
+
+function initializeCameraSync(renderingEngine) {
+  // The fusion scene is the target as it is scaled to both volumes.
+  // TODO -> We should have a more generic way to do this,
+  // So that when all data is added we can synchronize zoom/position before interaction.
+
+  const axialCtViewport = renderingEngine.getViewport(viewportIds.CT.AXIAL);
+  const sagittalCtViewport = renderingEngine.getViewport(
+    viewportIds.CT.SAGITTAL
+  );
+  const coronalCtViewport = renderingEngine.getViewport(viewportIds.CT.CORONAL);
+
+  const axialPtViewport = renderingEngine.getViewport(viewportIds.PT.AXIAL);
+  const sagittalPtViewport = renderingEngine.getViewport(
+    viewportIds.PT.SAGITTAL
+  );
+  const coronalPtViewport = renderingEngine.getViewport(viewportIds.PT.CORONAL);
+
+  const axialFusionViewport = renderingEngine.getViewport(
+    viewportIds.FUSION.AXIAL
+  );
+  const sagittalFusionViewport = renderingEngine.getViewport(
+    viewportIds.FUSION.SAGITTAL
+  );
+  const coronalFusionViewport = renderingEngine.getViewport(
+    viewportIds.FUSION.CORONAL
+  );
+
+  initCameraSynchronization(axialFusionViewport, axialCtViewport);
+  initCameraSynchronization(axialFusionViewport, axialPtViewport);
+
+  initCameraSynchronization(sagittalFusionViewport, sagittalCtViewport);
+  initCameraSynchronization(sagittalFusionViewport, sagittalPtViewport);
+
+  initCameraSynchronization(coronalFusionViewport, coronalCtViewport);
+  initCameraSynchronization(coronalFusionViewport, coronalPtViewport);
+
+  renderingEngine.render();
+}
+
+function initCameraSynchronization(sViewport, tViewport) {
+  // Initialise the sync as they viewports will have
+  // Different initial zoom levels for viewports of different sizes.
+
+  const camera = sViewport.getCamera();
+
+  tViewport.setCamera(camera);
 }
 
 /**

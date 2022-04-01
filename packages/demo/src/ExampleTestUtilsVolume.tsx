@@ -28,6 +28,8 @@ import {
   VIEWPORT_IDS,
   ANNOTATION_TOOLS,
 } from './constants';
+import * as testUtils from '../../../utils/test/testUtils';
+
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;
 
