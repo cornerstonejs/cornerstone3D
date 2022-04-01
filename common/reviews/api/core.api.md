@@ -247,7 +247,7 @@ type CPUFallbackRenderingTools = {
         putImageData: (renderCanvasData: unknown, dx: number, dy: number) => unknown;
     };
     colormapId?: string;
-    colorLut?: CPUFallbackLookupTable;
+    colorLUT?: CPUFallbackLookupTable;
     renderCanvasData?: {
         data: Uint8ClampedArray;
     };
@@ -390,7 +390,7 @@ type ElementEnabledEventDetail = {
 
 declare namespace Enums {
     export {
-        Events,
+        EVENTS as Events,
         BlendModes,
         InterpolationType,
         RequestType,
@@ -400,10 +400,7 @@ declare namespace Enums {
 export { Enums }
 
 // @public (undocumented)
-export const EVENTS: typeof Enums.Events;
-
-// @public (undocumented)
-enum Events {
+export enum EVENTS {
     // (undocumented)
     CACHE_SIZE_EXCEEDED = "CACHE_SIZE_EXCEEDED",
     // (undocumented)
