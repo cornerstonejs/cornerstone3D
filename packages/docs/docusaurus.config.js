@@ -53,7 +53,7 @@ module.exports = {
           position: 'right',
         },
         {
-          href: 'https://github.com/cornerstonejs/cornerstone-3d-alpha/',
+          href: 'https://github.com/cornerstonejs/cornerstone3D-beta/',
           position: 'right',
           className: 'header-github-link',
           'aria-label': 'GitHub Repository',
@@ -147,7 +147,7 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl:
-            'https://github.com/cornerstonejs/cornerstone-3d-alpha/edit/master/website/',
+            'https://github.com/cornerstonejs/cornerstone3D-beta/edit/main/packages/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
