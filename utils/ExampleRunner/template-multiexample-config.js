@@ -26,7 +26,7 @@ module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
         filename: '${name}.html',
         template: '${root.replace(
           /\\/g,
-          '\\\\'
+          '/'
         )}/utils/ExampleRunner/template.html',
       }),`;
   });
@@ -44,7 +44,7 @@ const ESLintPlugin = require('eslint-webpack-plugin');
 const CopyPlugin = require("copy-webpack-plugin");
 const webpack = require('webpack');
 
-const dir = "${destPath.replace(/\\/g, '\\\\')}";
+const dir = "${destPath.replace(/\\/g, '/')}";
 
 if (!fs.existsSync(dir)){
     console.log('Creating directory: ' + dir);
@@ -64,15 +64,15 @@ module.exports = {
       patterns: [
         { from: '${root.replace(
           /\\/g,
-          '\\\\'
+          '/'
         )}/utils/ExampleRunner/serve.json', to: "${destPath.replace(
     /\\/g,
-    '\\\\'
+    '/'
   )}" },
       {
         from:
           '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
-        to: '${destPath.replace(/\\/g, '\\\\')}',
+        to: '${destPath.replace(/\\/g, '/')}',
       },
       ],
     }),
@@ -81,7 +81,7 @@ module.exports = {
     ${multiExampleEntryPoints}
   },
   output: {
-    path: '${destPath.replace(/\\/g, '\\\\')}',
+    path: '${destPath.replace(/\\/g, '/')}',
     filename: '[name].js',
   },
   module: {
@@ -89,11 +89,11 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '\\\\')}',
-      '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '\\\\')}',
+      '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
         /\\/g,
-        '\\\\'
+        '/'
       )}',
       // We use this alias and the CopyPlugin to support using the dynamic-import version
       // of WADO Image Loader

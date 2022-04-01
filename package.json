@@ -1,6 +1,6 @@
 {
   "name": "root",
-  "description": "Cornerstone.js Monorepo Root - Not published",
+  "description": "Cornerstone.js Monorepo Root - Beta",
   "private": true,
   "workspaces": [
     "packages/*"
