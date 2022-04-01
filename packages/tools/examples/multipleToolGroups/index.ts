@@ -53,8 +53,12 @@ viewportGrid.appendChild(element3);
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
-instructions.innerText =
-  'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+instructions.innerText = `
+  In this example we have two tool groups.
+
+  The left viewport has a toolgroup with Window/Level bound to left click.
+  The middle and right viewports have a toolgroup with the Length totol bound to left click.
+  `;
 
 content.append(instructions);
 // ============================= //
