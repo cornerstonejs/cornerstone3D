@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "scripts": {
     "preinstall": "node preinstall.js",
@@ -28,7 +28,7 @@
   "dependencies": {
     "@cornerstonejs/core": "^0.4.1",
     "@cornerstonejs/streaming-image-volume-loader": "^0.2.11",
-    "@cornerstonejs/tools": "^0.7.4",
+    "@cornerstonejs/tools": "^0.7.5",
     "@docusaurus/core": "2.0.0-beta.18",
     "@docusaurus/module-type-aliases": "2.0.0-beta.18",
     "@docusaurus/preset-classic": "2.0.0-beta.18",
