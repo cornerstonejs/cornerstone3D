@@ -23,7 +23,7 @@ export default function initCornerstoneWADOImageLoader() {
     startWebWorkersOnDemand: false,
     taskConfiguration: {
       decodeTask: {
-        initializeCodecsOnStartup: true,
+        initializeCodecsOnStartup: false,
         strict: false,
       },
     },
