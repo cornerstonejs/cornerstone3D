@@ -54,7 +54,7 @@ It should be noted settings are hierarchical:
 
 `DefaultSettings <- RuntimeSettings <- ObjectSettings`
 
-This means that if there is a object-specific settings, `cornerstone3DTools`
+This means that if there is a object-specific settings, `Cornerstone3DTools`
 will use that, if not, it will take a look inside `RuntimeSettings` and finally `DefaultSettings` will get applied.
 
 ## Global Tool Styles

@@ -11,7 +11,7 @@ we maintain and use.
 
 [`cornerstone-core`](https://github.com/cornerstonejs/cornerstone) and [`cornerstone-tools`](https://github.com/cornerstonejs/cornerstoneTools) are two packages that we have been developing
 and maintaining since 2014. Since the significance of
-improvements in `Cornerstone3D` over `cornerstone-core` and `cornerstone3DTools` over `cornerstone-tools`
+improvements in `Cornerstone3D` over `cornerstone-core` and `Cornerstone3DTools` over `cornerstone-tools`
 is much greater, in long term we will switch our focus to `Cornerstone3D` and
 provide adequate documentation for how to upgrade from legacy `cornerstone`
 to the new `Cornerstone3D`. In the meantime, we will continue to maintain
@@ -25,9 +25,9 @@ It is an extensible web imaging
 platform with zero footprint and installation required. Currently, OHIF relies on the `cornerstone-core` and `cornerstone-tools` libraries for its image rendering and annotation features and OHIF team has been actively maintaining
 these libraries for the past several years.
 
-As `Cornerstone3D` and `cornerstone3DTools` will replace
+As `Cornerstone3D` and `Cornerstone3DTools` will replace
 `cornerstone-core` and `cornerstone-tools` in the future, OHIF in its next stable release (v3)
-will move towards using `Cornerstone3D` and `cornerstone3DTools` instead of `cornerstone-core` and `cornerstone-tools`.
+will move towards using `Cornerstone3D` and `Cornerstone3DTools` instead of `cornerstone-core` and `cornerstone-tools`.
 You can see OHIF's roadmap for the next stable release [here](https://ohif.org/roadmap/).
 
 ## react-vtkjs-viewport
