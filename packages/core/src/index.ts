@@ -1,5 +1,6 @@
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
+import { Events } from './enums';
 //
 import {
   createVolumeActor,
@@ -16,8 +17,7 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache from './cache';
-import { ImageVolume } from './cache/classes/ImageVolume';
+import cache, { ImageVolume } from './cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests';
@@ -49,9 +49,6 @@ import {
   addVolumesToViewports,
 } from './RenderingEngine/helpers';
 
-// CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
-const EVENTS = Enums.Events;
-
 export type { Types };
 
 export {
@@ -60,7 +57,7 @@ export {
   // enums
   Enums,
   CONSTANTS,
-  EVENTS,
+  Events as EVENTS, // CornerstoneWADOImageLoader uses this, Todo: remove it after fixing wado
   //
   Settings,
   // Rendering Engine

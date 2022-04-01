@@ -15,7 +15,6 @@ type RequestPool = {
   [name in RequestType]: { [key: number]: RequestDetailsInterface[] };
 };
 
-// TODO: Some of this stuff shouldn't be public but it's easier right now
 /**
  * RequestPool manager class is a base class that manages the request pools.
  * It is used imageRetrievalPoolManager, and imageLoadPoolManager to retrieve and load images.
@@ -68,8 +67,6 @@ type RequestPool = {
  * You don't need to directly use the imageRetrievalPoolManager to load images
  * since the imageLoadPoolManager will automatically use it for retrieval. However,
  * maximum number of concurrent requests can be set by calling `setMaxConcurrentRequests`.
- *
- *
  */
 class RequestPoolManager {
   private requestPool: RequestPool;
