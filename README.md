@@ -7,7 +7,7 @@ Cornerstone is a set of JavaScript libraries that can be used to build web-based
 - **Community Driven:** Cornerstone is supported by the [Open Health Imaging Foundation](https://ohif.org/). We publish our roadmap and welcome contributions and collaboration.
 - **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box.
 
-[Learn how to use Cornerstone in your project](https://cs3d-docs.netlify.app/docs/introduction/overview).
+[Learn how to use Cornerstone in your project](https://cornerstonejs.org/docs/introduction/overview).
 
 ## Documentation
 
@@ -15,13 +15,13 @@ You can find the Cornerstone documentation [on the website](https://cornerstonej
 
 The documentation is divided into several sections:
 
-- [Tutorial](https://cs3d-docs.netlify.app/docs/category/tutorials)
-- [Main Concepts](https://cs3d-docs.netlify.app/docs/category/concepts)
-- [Live Examples](https://cs3d-docs.netlify.app/examples/)
-- [API Reference](https://cs3d-docs.netlify.app/api)
-- [How-to Guides](https://cs3d-docs.netlify.app/docs/category/how-to-guides)
-- [FAQ](https://cs3d-docs.netlify.app/docs/faq)
-- [How-to Contribute](https://cs3d-docs.netlify.app/docs/category/contributing)
+- [Tutorial](https://cornerstonejs.org/docs/category/tutorials)
+- [Main Concepts](https://cornerstonejs.org/docs/category/concepts)
+- [Live Examples](https://cornerstonejs.org/examples/)
+- [API Reference](https://cornerstonejs.org/api)
+- [How-to Guides](https://cornerstonejs.org/docs/category/how-to-guides)
+- [FAQ](https://cornerstonejs.org/docs/faq)
+- [How-to Contribute](https://cornerstonejs.org/docs/category/contributing)
 
 ## Support
 
@@ -35,9 +35,9 @@ The [OHIF Resources page](https://v3-docs.ohif.org/resources) may be of interest
 
 Cornerstone has adopted a [Code of Conduct](./CODE_OF_CONDUCT.md) that we expect project participants to adhere to.
 
-### [Contributing Guide](https://cs3d-docs.netlify.app/docs/category/contributing)
+### [Contributing Guide](https://cornerstonejs.org/docs/category/contributing)
 
-Read our guide on [How-to Contribute](https://cs3d-docs.netlify.app/docs/category/contributing) and about our [Issue Triage process](https://v3-docs.ohif.org/development/our-process).
+Read our guide on [How-to Contribute](https://cornerstonejs.org/docs/category/contributing) and about our [Issue Triage process](https://v3-docs.ohif.org/development/our-process).
 
 ### License
 
