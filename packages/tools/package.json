@@ -4,7 +4,7 @@
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
-  "module": "dist/esm/index.ts",
+  "module": "dist/esm/index.js",
   "files": [
     "dist/"
   ],
