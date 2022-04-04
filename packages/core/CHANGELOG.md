@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.4.1...@cornerstonejs/core@0.4.2) (2022-04-04)
+
+
+### Bug Fixes
+
+* change package.json 'module' field to use '.js' extension from '.ts' ([#65](https://github.com/cornerstonejs/cornerstone3D-beta/issues/65)) ([42f66c2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/42f66c2c8887467036c55b07d3a7041db467efab))
+
+
+
+
+
 ## [0.4.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.4.0...@cornerstonejs/core@0.4.1) (2022-04-01)
 
 
