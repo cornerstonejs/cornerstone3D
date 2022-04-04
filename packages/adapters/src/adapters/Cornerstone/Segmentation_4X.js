@@ -610,37 +610,67 @@ function findReferenceSourceImageId(
     metadataProvider,
     tolerance
 ) {
+    let imageId = undefined;
+
+    if (!multiframe) {
+        return imageId;
+    }
+
     const {
         FrameOfReferenceUID,
         PerFrameFunctionalGroupsSequence,
         SourceImageSequence,
         ReferencedSeriesSequence
     } = multiframe;
+
+    if (
+        !PerFrameFunctionalGroupsSequence ||
+        PerFrameFunctionalGroupsSequence.length === 0
+    ) {
+        return imageId;
+    }
+
     const PerFrameFunctionalGroup =
         PerFrameFunctionalGroupsSequence[frameSegment];
-    let imageId = undefined;
 
-    let sourceImageSequence;
-    if (SourceImageSequence) {
-        sourceImageSequence = multiframe.SourceImageSequence[frameSegment];
+    if (!PerFrameFunctionalGroup) {
+        return imageId;
+    }
+
+    let frameSourceImageSequence = undefined;
+    if (SourceImageSequence && SourceImageSequence.length !== 0) {
+        frameSourceImageSequence = SourceImageSequence[frameSegment];
     } else if (PerFrameFunctionalGroup.DerivationImageSequence) {
         let DerivationImageSequence =
             PerFrameFunctionalGroup.DerivationImageSequence;
-        DerivationImageSequence = Array.isArray(DerivationImageSequence)
-            ? DerivationImageSequence[0]
-            : DerivationImageSequence;
+        if (Array.isArray(DerivationImageSequence)) {
+            if (DerivationImageSequence.length !== 0) {
+                DerivationImageSequence = DerivationImageSequence[0];
+            } else {
+                DerivationImageSequence = undefined;
+            }
+        }
 
-        sourceImageSequence = DerivationImageSequence.SourceImageSequence;
-        sourceImageSequence = Array.isArray(sourceImageSequence)
-            ? sourceImageSequence[0]
-            : sourceImageSequence;
+        if (DerivationImageSequence) {
+            frameSourceImageSequence =
+                DerivationImageSequence.SourceImageSequence;
+            if (Array.isArray(frameSourceImageSequence)) {
+                if (frameSourceImageSequence.length !== 0) {
+                    frameSourceImageSequence = frameSourceImageSequence[0];
+                } else {
+                    frameSourceImageSequence = undefined;
+                }
+            }
+        }
     }
 
-    imageId = getImageIdOfSourceImagebySourceImageSequence(
-        sourceImageSequence,
-        imageIds,
-        metadataProvider
-    );
+    if (frameSourceImageSequence) {
+        imageId = getImageIdOfSourceImagebySourceImageSequence(
+            frameSourceImageSequence,
+            imageIds,
+            metadataProvider
+        );
+    }
 
     if (imageId === undefined && ReferencedSeriesSequence) {
         const referencedSeriesSequence = Array.isArray(ReferencedSeriesSequence)
