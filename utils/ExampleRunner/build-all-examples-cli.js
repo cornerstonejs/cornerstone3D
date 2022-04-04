@@ -44,7 +44,7 @@ function getSplitedPath(filePath) {
 }
 
 function validPath(str) {
-  return str.replaceAll('\\', '/');
+  return str.replace(/\\\\/g, '/');
 }
 
 // ----------------------------------------------------------------------------
