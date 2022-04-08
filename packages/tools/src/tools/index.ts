@@ -13,6 +13,7 @@ import LengthTool from './annotation/LengthTool';
 import ProbeTool from './annotation/ProbeTool';
 import RectangleROITool from './annotation/RectangleROITool';
 import EllipticalROITool from './annotation/EllipticalROITool';
+import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -44,6 +45,7 @@ export {
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
+  PlanarFreehandROITool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools

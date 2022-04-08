@@ -34,6 +34,7 @@ import {
   RectangleROITool,
   EllipticalROITool,
   BidirectionalTool,
+  PlanarFreehandROITool,
   CrosshairsTool,
   RectangleScissorsTool,
   CircleScissorsTool,
@@ -71,6 +72,7 @@ export {
   RectangleROITool,
   EllipticalROITool,
   BidirectionalTool,
+  PlanarFreehandROITool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
