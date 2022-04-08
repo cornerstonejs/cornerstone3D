@@ -9,6 +9,7 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec2 } from 'gl-matrix';
 
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
@@ -19,6 +20,7 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
+import { polyline } from '../../utilities/math';
 
 import {
   drawHandles as drawHandlesSvg,
@@ -42,9 +44,9 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  Annotation,
 } from '../../types';
 import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { annotation } from '@cornerstonejs/tools';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -80,7 +82,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class PlanarFreehandROITool extends AnnotationTool {
-  static toolName = 'PlanarFreehandROI';
+  static toolName: string = 'PlanarFreehandROI';
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -88,16 +90,16 @@ class PlanarFreehandROITool extends AnnotationTool {
   private drawData?: {
     canvasPoints: number[];
     handleIndex: number;
-    annotationUID: string;
+    annotation: Types.Annotation;
     viewportIdsToRender: string[];
   };
   private editData?: {
-    annotationUID: string;
+    annotation: Types.Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
   } | null;
-  isDrawing: boolean;
-  isEditing: boolean;
+  isDrawing: boolean = false;
+  isEditing: boolean = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -137,7 +139,6 @@ class PlanarFreehandROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    hideElementCursor(element);
     this.isDrawing = true;
 
     const camera = viewport.getCamera();
@@ -204,8 +205,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     this.drawData = {
       canvasPoints: [canvasPos],
       handleIndex: 0,
-      // @ts-ignore
-      annotationUID: annotation.annotationUID, // This UID will be set on addAnnotation
+      annotation,
       viewportIdsToRender,
     };
     this.activateDraw(element);
@@ -240,13 +240,94 @@ class PlanarFreehandROITool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: LengthAnnotation,
+    annotation: Annotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    // TODO -> Need to see if point is near the tool so we can begin the edit loop.
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const points = annotation.data.handles.points;
+
+    // NOTE: It is implemented this way so that we do not double calculate
+    // points when number crunching adjacent line segments.
+    let previousPoint = viewport.worldToCanvas(points[0]);
+
+    for (let i = 1; i < points.length; i++) {
+      const p1 = previousPoint;
+      const p2 = viewport.worldToCanvas(points[i]);
+
+      let distance = this.pointCanProjectOnLine(
+        canvasCoords,
+        p1,
+        p2,
+        proximity
+      );
+
+      if (distance) {
+        return true;
+      }
+
+      previousPoint = p2;
+    }
+
+    // check last point to first point
+    const pStart = viewport.worldToCanvas(points[0]);
+    const pEnd = viewport.worldToCanvas(points[points.length - 1]);
+
+    let distance = this.pointCanProjectOnLine(
+      canvasCoords,
+      pStart,
+      pEnd,
+      proximity
+    );
+
+    if (distance) {
+      return true;
+    }
 
     return false;
+  };
+
+  private pointCanProjectOnLine = (p, p1, p2, proximity) => {
+    // Perfom checks in order of computational complexity.
+    const p1p = [p[0] - p1[0], p[1] - p1[1]]; // { x: p.x - p1.x, y: p.y - p1.y };
+    const p1p2 = [p2[0] - p1[0], p2[1] - p1[1]]; //{ x: p2.x - p1.x, y: p2.y - p1.y };
+
+    const dot = p1p[0] * p1p2[0] + p1p[1] * p1p2[1];
+
+    // const dot = p1p.x * p1p2.x + p1p.y * p1p2.y;
+
+    // Dot product needs to be positive to be a candidate for projection onto line segment.
+    if (dot < 0) {
+      return false;
+    }
+
+    const p1p2Mag = Math.sqrt(p1p2[0] * p1p2[0] + p1p2[1] * p1p2[1]);
+    const projectionVectorMag = dot / p1p2Mag;
+    const p1p2UnitVector = [p1p2[0] / p1p2Mag, p1p2[1] / p1p2Mag];
+    const projectionVector = [
+      p1p2UnitVector[0] * projectionVectorMag,
+      p1p2UnitVector[1] * projectionVectorMag,
+    ];
+    const projectionPoint = <Type.Point2>[
+      p1[0] + projectionVector[0],
+      p1[1] + projectionVector[1],
+    ];
+
+    const distance = vec2.distance(p, projectionPoint);
+
+    if (distance > proximity) {
+      // point is too far away.
+      return false;
+    }
+
+    // Check projects onto line segment.
+    if (vec2.distance(p1, projectionPoint) > vec2.distance(p1, p2)) {
+      return false;
+    }
+
+    return distance;
   };
 
   toolSelectedCallback = (
@@ -254,19 +335,11 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotation: LengthAnnotation,
     interactionType: InteractionTypes
   ): void => {
-    // TODO -> use this or handle selected callback to start edits.
-    // I think tool is better actually.
-  };
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
 
-  handleSelectedCallback(
-    evt: EventTypes.MouseDownEventType,
-    annotation: LengthAnnotation,
-    handle: ToolHandle,
-    interactionType = 'mouse'
-  ): void {
-    debugger;
-    // TODO -> Not sure if we need this or it should always just be tool selected
-  }
+    this.activateEdit(element);
+  };
 
   // ========== Drawing loop ========== //
   private mouseDragDrawCallback = (
@@ -282,7 +355,6 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     const lastCanvasPoint = canvasPoints[handleIndex];
 
-    // TODO -> Maybe should check its a different voxel?
     if (
       lastCanvasPoint[0] === canvasPos[0] &&
       lastCanvasPoint[0] === canvasPos[0]
@@ -294,44 +366,107 @@ class PlanarFreehandROITool extends AnnotationTool {
     canvasPoints.push(canvasPos);
     this.drawData.handleIndex = handleIndex + 1;
 
+    this.checkIfCrossedDuringCreate(evt);
+
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
+
+  private checkIfCrossedDuringCreate(evt) {
+    const { canvasPoints } = this.drawData;
+    const pointsLessLastTwo = canvasPoints.slice(0, -2);
+
+    const secondTolastPoint = canvasPoints[canvasPoints.length - 2];
+    const lastPoint = canvasPoints[canvasPoints.length - 1];
+
+    const lineSegment = polyline.getFirstIntersectionWithPolyline(
+      pointsLessLastTwo,
+      secondTolastPoint,
+      lastPoint,
+      false
+    );
+
+    if (!lineSegment) {
+      return;
+    }
+
+    debugger;
+
+    this.applyCreateOnCross(evt, lineSegment[1]);
+  }
+
+  private applyCreateOnCross = (evt, lineSegment) => {
+    // TODO
   };
 
   private mouseUpDrawCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    // TODO: Update annotation here. This is to stop us from constantly reworking out world positions for hundreds/thousands of points.
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
+
+    // Convert annotation to world coordinates
+
+    const { canvasPoints, annotation, viewportIdsToRender } = this.drawData;
+
+    // TODO -> This is really expensive and won't scale! What should we do here?
+    // It would be best if we could get the transformation matrix and then just
+    // apply this to the points, but its still 16 multiplications per point.
+    const worldPoints = canvasPoints.map((canvasPoint) =>
+      viewport.canvasToWorld(canvasPoint)
+    );
+
+    annotation.data.handles.points = worldPoints;
+
+    this.isDrawing = false;
+    this.drawData = undefined;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    this.deactivateDraw(element);
   };
   // ================================== //
 
   // ============ Edit loop =========== //
   private mouseDragEditCallback = (
     evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
-  ) => {};
+  ) => {
+    console.log('TODO -> Contour editing');
+  };
 
   private mouseUpEditCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ) => {};
+  ) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    this.deactivateEdit(element);
+  };
   // ================================== //
 
   cancel = (element: HTMLDivElement) => {
     // TODO CANCEL
   };
 
-  private activateModify = (element: HTMLDivElement) => {
+  private activateEdit = (element: HTMLDivElement) => {
     state.isInteractingWithTool = true;
 
     element.addEventListener(Events.MOUSE_UP, this.mouseUpEditCallback);
     element.addEventListener(Events.MOUSE_DRAG, this.mouseDragEditCallback);
     element.addEventListener(Events.MOUSE_CLICK, this.mouseUpEditCallback);
+
+    hideElementCursor(element);
   };
 
-  private deactivateModify = (element: HTMLDivElement) => {
+  private deactivateEdit = (element: HTMLDivElement) => {
     state.isInteractingWithTool = false;
 
     element.removeEventListener(Events.MOUSE_UP, this.mouseUpEditCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this.mouseDragEditCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this.mouseUpEditCallback);
+
+    resetElementCursor(element);
   };
 
   private activateDraw = (element: HTMLDivElement) => {
@@ -340,6 +475,8 @@ class PlanarFreehandROITool extends AnnotationTool {
     element.addEventListener(Events.MOUSE_UP, this.mouseUpDrawCallback);
     element.addEventListener(Events.MOUSE_DRAG, this.mouseDragDrawCallback);
     element.addEventListener(Events.MOUSE_CLICK, this.mouseUpDrawCallback);
+
+    hideElementCursor(element);
   };
 
   private deactivateDraw = (element: HTMLDivElement) => {
@@ -348,6 +485,8 @@ class PlanarFreehandROITool extends AnnotationTool {
     element.removeEventListener(Events.MOUSE_UP, this.mouseUpDrawCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this.mouseDragDrawCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this.mouseUpDrawCallback);
+
+    resetElementCursor(element);
   };
 
   /**
@@ -393,8 +532,8 @@ class PlanarFreehandROITool extends AnnotationTool {
     }
 
     const activeAnnotationUID = isDrawing
-      ? this.drawData.annotationUID
-      : this.editData.annotationUID;
+      ? this.drawData.annotation.annotationUID
+      : this.editData.annotation.annotationUID;
 
     annotations.forEach((annotation) => {
       if (annotation.annotationUID === activeAnnotationUID) {
@@ -431,7 +570,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       PlanarFreehandROITool
     );
 
-    const { annotationUID, canvasPoints } = this.drawData;
+    const { canvasPoints } = this.drawData;
 
     const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
     // const lineDash = this.getStyle(settings, 'lineDash', annotation);
@@ -442,14 +581,12 @@ class PlanarFreehandROITool extends AnnotationTool {
       width: lineWidth === undefined ? undefined : <number>lineWidth,
     };
 
-    // TODO
-
     const polylineUID = '1';
 
     drawPolylineSvg(
       svgDrawingHelper,
       PlanarFreehandROITool.toolName,
-      annotationUID,
+      annotation.annotationUID,
       polylineUID,
       canvasPoints,
       options
@@ -463,7 +600,41 @@ class PlanarFreehandROITool extends AnnotationTool {
   ) => {};
 
   private renderContour = (enabledElement, svgDrawingHelper, annotation) => {
-    // TODO -> Render contours not being drawn or edited.
+    const { viewport } = enabledElement;
+
+    const settings = Settings.getObjectSettings(
+      annotation,
+      PlanarFreehandROITool
+    );
+
+    // Todo -> Its unfortunate that we have to do this for each annotation,
+    // Even if its unchanged. Perhaps we should cache canvas points per element
+    // on the tool? That feels very weird also as we'd need to manage it/clean
+    // them up.
+    const canvasPoints = annotation.data.handles.points.map((worldPos) =>
+      viewport.worldToCanvas(worldPos)
+    );
+
+    const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
+    // const lineDash = this.getStyle(settings, 'lineDash', annotation);
+    const color = this.getStyle(settings, 'color', annotation);
+
+    const options = {
+      color: color === undefined ? undefined : <string>color,
+      width: lineWidth === undefined ? undefined : <number>lineWidth,
+      connectLastToFirst: true,
+    };
+
+    const polylineUID = '1';
+
+    drawPolylineSvg(
+      svgDrawingHelper,
+      PlanarFreehandROITool.toolName,
+      annotation.annotationUID,
+      polylineUID,
+      canvasPoints,
+      options
+    );
   };
 }
 

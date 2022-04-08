@@ -13,6 +13,9 @@ console.warn(
 
 const {
   PlanarFreehandROITool,
+  PanTool,
+  StackScrollMouseWheelTool,
+  ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -57,6 +60,9 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -64,9 +70,11 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
 
-  // Set the initial state of the tools, here we set one tool active on left click.
-  // This means left click will draw that tool.
+  // Set the initial state of the tools.
   toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
     bindings: [
       {
@@ -74,6 +82,23 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+    ],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
+  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // hook instead of mouse buttons, it does not need to assign any mouse button.
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -111,7 +136,7 @@ async function run() {
   );
 
   // Define a stack containing a single image
-  const stack = [imageIds[0]];
+  const stack = [imageIds[0], imageIds[1]];
 
   // Set the stack on the viewport
   viewport.setStack(stack);

@@ -52,6 +52,12 @@ export default function drawPolyline(
     pointsAttribute += `${point[0]}, ${point[1]} `;
   }
 
+  if (options.connectLastToFirst) {
+    const firstPoint = points[0];
+
+    pointsAttribute += `${firstPoint[0]}, ${firstPoint[1]}`;
+  }
+
   const attributes = {
     points: pointsAttribute,
     stroke: color,
