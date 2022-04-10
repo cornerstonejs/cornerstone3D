@@ -41,11 +41,11 @@ You can also see it in action with the
 
 Get the distributed unminimized file:
 
-- [cornerstoneWADOImageLoader.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.js)
+- [cornerstoneWADOImageLoader.js](https://unpkg.com/cornerstone-wado-image-loader)
 
 or the distributed minimized file:
 
-- [cornerstoneWADOImageLoader.min.js](https://unpkg.com/cornerstone-wado-image-loader/dist/cornerstoneWADOImageLoader.min.js)
+- [cornerstoneWADOImageLoader.bundle.min.js](https://unpkg.com/cornerstone-wado-image-loader)
 
 ## Usage
 
