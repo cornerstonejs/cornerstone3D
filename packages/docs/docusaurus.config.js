@@ -14,6 +14,12 @@ module.exports = {
   organizationName: 'CornerstoneJS', // Usually your GitHub org/user name.
   projectName: 'Cornerstone', // Usually your repo name.
   themeConfig: {
+    algolia: {
+      appId: 'OWBKNRE2E5',
+      apiKey: 'e15ff95ce3ebe52c0995b8222b808a18',
+      indexName: 'cornerstonejs',
+      contextualSearch: true,
+    },
     navbar: {
       logo: {
         alt: 'Cornerstone.js',
