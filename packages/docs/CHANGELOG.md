@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.10...docs@0.2.11) (2022-04-11)
+
+
+### Bug Fixes
+
+* extract IRenderingEngine type, docs: add documentation search ([#70](https://github.com/cornerstonejs/cornerstone3D-beta/issues/70)) ([6a705a8](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6a705a8f3cb9e8463c0ab6fe4d59dd3bb8bf5ef2))
+
+
+
+
+
 ## [0.2.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.9...docs@0.2.10) (2022-04-04)
 
 **Note:** Version bump only for package docs
