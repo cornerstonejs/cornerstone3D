@@ -252,10 +252,6 @@ html[data-theme='light'] .admonition {
   margin-right: 20%;
 }
 
-.DocSearch {
-  display: none;
-}
-
 /* code blcok font sizes */
 div[class^='codeBlockContent__'] {
   font-size: 16px;
