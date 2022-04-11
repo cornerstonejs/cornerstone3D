@@ -1,5 +1,5 @@
 import renderingEngineCache from './renderingEngineCache';
-import type { IRenderingEngine } from './RenderingEngine';
+import type { IRenderingEngine } from '../types';
 
 /**
  * Method to retrieve a RenderingEngine by its unique identifier.

@@ -10,6 +10,7 @@ import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesC
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
+import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -19,31 +20,6 @@ import type {
   NormalizedViewportInput,
 } from '../types/IViewport';
 import ORIENTATION from '../constants/orientation';
-
-export interface IRenderingEngine {
-  id: string;
-  hasBeenDestroyed: boolean;
-  offscreenMultiRenderWindow: any;
-  offScreenCanvasContainer: any;
-  setViewports(viewports: Array<PublicViewportInput>): void;
-  resize(): void;
-  getViewport(id: string): IStackViewport | IVolumeViewport;
-  getViewports(): Array<IStackViewport | IVolumeViewport>;
-  render(): void;
-  renderViewports(viewportIds: Array<string>): void;
-  renderViewport(viewportId: string): void;
-  renderFrameOfReference(FrameOfReferenceUID: string): void;
-  fillCanvasWithBackgroundColor(
-    canvas: HTMLCanvasElement,
-    backgroundColor: [number, number, number]
-  ): void;
-  enableElement(viewportInputEntry: PublicViewportInput): void;
-  disableElement(viewportId: string): void;
-  getStackViewports(): Array<IStackViewport>;
-  getVolumeViewports(): Array<IVolumeViewport>;
-  destroy(): void;
-  _debugRender(): void;
-}
 
 type ViewportDisplayCoords = {
   sxStartDisplayCoords: number;

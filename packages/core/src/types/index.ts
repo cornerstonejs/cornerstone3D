@@ -53,7 +53,7 @@ import type CPUFallbackLUT from './CPUFallbackLUT';
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
 import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput';
 import type * as EventTypes from './EventTypes';
-import type { IRenderingEngine } from '../RenderingEngine/RenderingEngine';
+import type IRenderingEngine from './IRenderingEngine';
 
 export type {
   ICamera,
