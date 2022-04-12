@@ -95,7 +95,8 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented');
     } else {
-      volumeId = this.getTargetId(viewport);
+      const targetId = this.getTargetId(viewport);
+      volumeId = targetId.split('volumeId:')[1];
       imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,

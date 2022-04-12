@@ -143,11 +143,13 @@ export default class ProbeTool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
+    const targetId = this.getTargetId(viewport);
     let referencedImageId;
+
     if (viewport instanceof StackViewport) {
-      referencedImageId = this.getTargetId(viewport);
+      referencedImageId = targetId.split('imageId:')[1];
     } else {
-      const volumeId = this.getTargetId(viewport);
+      const volumeId = targetId.split('volumeId:')[1];
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -188,6 +190,8 @@ export default class ProbeTool extends AnnotationTool {
       element,
       ProbeTool.toolName
     );
+
+    console.debug(viewportIdsToRender);
 
     this.editData = {
       annotation,
@@ -478,7 +482,7 @@ export default class ProbeTool extends AnnotationTool {
 
       const textLines = this._getTextLines(data, targetId);
       if (textLines) {
-        const textCanvasCoorinates = [
+        const textCanvasCoordinates = [
           canvasCoordinates[0] + 6,
           canvasCoordinates[1] - 6,
         ];
@@ -490,7 +494,7 @@ export default class ProbeTool extends AnnotationTool {
           annotationUID,
           textUID,
           textLines,
-          [textCanvasCoorinates[0], textCanvasCoorinates[1]],
+          [textCanvasCoordinates[0], textCanvasCoordinates[1]],
           this.getLinkedTextBoxStyle(settings, annotation)
         );
       }
@@ -601,10 +605,11 @@ export default class ProbeTool extends AnnotationTool {
 
         // Index[2] for stackViewport is always 0, but for visualization
         // we reset it to be imageId index
-        if (targetId.startsWith('imagId')) {
+        if (targetId.startsWith('imageId:')) {
           const renderingEngine = getRenderingEngine(renderingEngineId);
           const viewports = renderingEngine.getStackViewports();
-          const viewport = viewports.find((vp) => vp.hasImageId(targetId));
+          const imageId = targetId.split('imageId:')[1];
+          const viewport = viewports.find((vp) => vp.hasImageId(imageId));
           index[2] = viewport.getCurrentImageIdIndex();
         }
 

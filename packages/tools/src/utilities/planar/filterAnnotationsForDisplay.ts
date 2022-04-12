@@ -29,6 +29,12 @@ export default function filterAnnotationsForDisplay(
     const imageURI = imageId.substring(colonIndex + 1);
 
     // 3. Filter annotation in the frame of reference by the referenced image ID property
+    // Todo: We can go a step further below, and check if the imageIds are close to each other
+    // For instance, the following check fails for the case where there is e.g., volume CT Axial
+    // and stack PT axial and the annotation is drawn on the volume. What happens is that
+    // the following check will not pass since imageId (from stack PT), and the referenceImageId (from volume CT)
+    // are not the same. But, drawing on the stack PT makes the annotation appear on the volume CT
+    // since we check for annotationsWithinSlice.
     return annotations.filter((annotation) => {
       return annotation.metadata.referencedImageId === imageURI;
     });

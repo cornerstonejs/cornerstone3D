@@ -31,9 +31,9 @@ export default class StackScrollTool extends BaseTool {
     const { deltaPoints, viewportId, renderingEngineId } = evt.detail;
     const deltaFrames = deltaPoints.canvas[1];
     const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
-    const volumeId = this.getTargetId(viewport);
+    const targetId = this.getTargetId(viewport);
     const { invert } = this.configuration;
 
-    scrollThroughStack(evt, deltaFrames, volumeId, invert);
+    scrollThroughStack(viewport, targetId, deltaFrames, invert);
   }
 }

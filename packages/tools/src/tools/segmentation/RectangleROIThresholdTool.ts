@@ -79,11 +79,13 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
+    const targetId = this.getTargetId(viewport);
     let referencedImageId, volumeId;
+
     if (viewport instanceof StackViewport) {
-      referencedImageId = this.getTargetId(viewport);
+      referencedImageId = targetId.split('imageId:')[1];
     } else {
-      volumeId = this.getTargetId(viewport);
+      volumeId = targetId.split('volumeId:')[1];
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,

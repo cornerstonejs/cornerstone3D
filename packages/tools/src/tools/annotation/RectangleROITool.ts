@@ -145,11 +145,13 @@ export default class RectangleROITool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
+    const targetId = this.getTargetId(viewport);
     let referencedImageId;
+
     if (viewport instanceof StackViewport) {
-      referencedImageId = this.getTargetId(viewport);
+      referencedImageId = targetId.split('imageId:')[1];
     } else {
-      const volumeId = this.getTargetId(viewport);
+      const volumeId = targetId.split('volumeId:')[1];
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
