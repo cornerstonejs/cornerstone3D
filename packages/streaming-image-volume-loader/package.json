@@ -23,10 +23,12 @@
     "prepublishOnly": "yarn run build",
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
+  "dependencies": {
+    "cornerstone-wado-image-loader": "^4.1.2"
+  },
   "peerDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2",
-    "@cornerstonejs/core": "^0.3.0",
-    "cornerstone-wado-image-loader": "^4.1.2"
+    "@cornerstonejs/core": "^0.4.3"
   },
   "devDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2",
