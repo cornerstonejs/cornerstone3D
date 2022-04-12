@@ -146,8 +146,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     let referencedImageId;
     if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
+      referencedImageId = this.getTargetId(viewport);
     } else {
       const volumeId = this.getTargetId(viewport);
       const imageVolume = cache.getVolume(volumeId);
@@ -159,6 +158,7 @@ export default class BidirectionalTool extends AnnotationTool {
       );
     }
 
+    // If acquisition plane annotation
     if (referencedImageId) {
       const colonIndex = referencedImageId.indexOf(':');
       referencedImageId = referencedImageId.substring(colonIndex + 1);
@@ -1190,10 +1190,7 @@ export default class BidirectionalTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const { image } = this.getTargetIdViewportAndImage(
-        targetId,
-        renderingEngine
-      );
+      const image = this.getTargetIdImage(targetId, renderingEngine);
 
       const { imageData, dimensions } = image;
 

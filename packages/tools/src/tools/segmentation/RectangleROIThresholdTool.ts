@@ -81,8 +81,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
 
     let referencedImageId, volumeId;
     if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
+      referencedImageId = this.getTargetId(viewport);
     } else {
       volumeId = this.getTargetId(viewport);
       const imageVolume = cache.getVolume(volumeId);

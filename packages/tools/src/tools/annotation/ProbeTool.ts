@@ -10,6 +10,7 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -144,8 +145,7 @@ export default class ProbeTool extends AnnotationTool {
 
     let referencedImageId;
     if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
+      referencedImageId = this.getTargetId(viewport);
     } else {
       const volumeId = this.getTargetId(viewport);
       const imageVolume = cache.getVolume(volumeId);
@@ -437,23 +437,25 @@ export default class ProbeTool extends AnnotationTool {
         if (viewport instanceof VolumeViewport) {
           const { referencedImageId } = annotation.metadata;
 
-          // todo: this is not efficient, but necessary
           // invalidate all the relevant stackViewports if they are not
           // at the referencedImageId
-          const viewports = renderingEngine.getViewports();
-          viewports.forEach((vp) => {
-            const stackTargetId = this.getTargetId(vp);
-            // only delete the cachedStats for the stackedViewports if the tool
-            // is dragged inside the volume and the stackViewports are not at the
-            // referencedImageId for the tool
-            if (
-              vp instanceof StackViewport &&
-              !vp.getCurrentImageId().includes(referencedImageId) &&
-              data.cachedStats[stackTargetId]
-            ) {
-              delete data.cachedStats[stackTargetId];
+          for (const targetId in data.cachedStats) {
+            if (targetId.startsWith('imageId')) {
+              const viewports = renderingEngine.getStackViewports();
+
+              const invalidatedStack = viewports.find((vp) => {
+                // The stack viewport that contains the imageId but is not
+                // showing it currently
+                const hasImageId = vp.hasImageId(referencedImageId);
+                const currentImageId = vp.getCurrentImageId();
+                return hasImageId && currentImageId !== referencedImageId;
+              });
+
+              if (invalidatedStack) {
+                delete data.cachedStats[targetId];
+              }
             }
-          });
+          }
         }
       }
 
@@ -578,10 +580,7 @@ export default class ProbeTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const { image, viewport } = this.getTargetIdViewportAndImage(
-        targetId,
-        renderingEngine
-      );
+      const image = this.getTargetIdImage(targetId, renderingEngine);
 
       const { dimensions, scalarData, imageData, metadata } = image;
 
@@ -602,7 +601,10 @@ export default class ProbeTool extends AnnotationTool {
 
         // Index[2] for stackViewport is always 0, but for visualization
         // we reset it to be imageId index
-        if (viewport instanceof StackViewport) {
+        if (targetId.startsWith('imagId')) {
+          const renderingEngine = getRenderingEngine(renderingEngineId);
+          const viewports = renderingEngine.getStackViewports();
+          const viewport = viewports.find((vp) => vp.hasImageId(targetId));
           index[2] = viewport.getCurrentImageIdIndex();
         }
 

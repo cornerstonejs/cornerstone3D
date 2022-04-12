@@ -1896,6 +1896,15 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   /**
+   * Returns true if the viewport contains the given imageId
+   * @param imageId - imageId
+   * @returns boolean if imageId is in viewport
+   */
+  public hasImageId = (imageId: string): boolean => {
+    return this.imageIds.includes(imageId);
+  };
+
+  /**
    * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
    *
    * @returns The `vtkRenderer` for the `Viewport`.

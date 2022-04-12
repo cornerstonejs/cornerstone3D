@@ -145,8 +145,7 @@ class LengthTool extends AnnotationTool {
     // TODO: what do we do here? this feels wrong
     let referencedImageId;
     if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
+      referencedImageId = this.getTargetId(viewport);
     } else {
       const volumeId = this.getTargetId(viewport);
       const imageVolume = cache.getVolume(volumeId);
@@ -698,10 +697,7 @@ class LengthTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const { image } = this.getTargetIdViewportAndImage(
-        targetId,
-        renderingEngine
-      );
+      const image = this.getTargetIdImage(targetId, renderingEngine);
 
       const { imageData, dimensions } = image;
 
