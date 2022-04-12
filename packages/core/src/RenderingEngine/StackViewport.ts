@@ -1224,6 +1224,13 @@ class StackViewport extends Viewport implements IStackViewport {
         imageIdIndex: number,
         imageId: string
       ) {
+        // Perform this check after the image has finished loading
+        // in case the user has already scrolled away to another image.
+        // In that case, do not render this image.
+        if (this.currentImageIdIndex !== imageIdIndex) {
+          return;
+        }
+
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
@@ -1273,13 +1280,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
         // Todo: trigger an event to allow applications to hook into END of loading state
         // Currently we use loadHandlerManagers for this
-
-        // Perform this check after the image has finished loading
-        // in case the user has already scrolled away to another image.
-        // In that case, do not render this image.
-        if (this.currentImageIdIndex !== imageIdIndex) {
-          return;
-        }
 
         // Trigger the image to be drawn on the next animation frame
         this.render();
@@ -1364,6 +1364,16 @@ class StackViewport extends Viewport implements IStackViewport {
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(image, imageIdIndex, imageId) {
+        // Todo: trigger an event to allow applications to hook into END of loading state
+        // Currently we use loadHandlerManagers for this
+
+        // Perform this check after the image has finished loading
+        // in case the user has already scrolled away to another image.
+        // In that case, do not render this image.
+        if (this.currentImageIdIndex !== imageIdIndex) {
+          return;
+        }
+
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
@@ -1374,16 +1384,6 @@ class StackViewport extends Viewport implements IStackViewport {
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
         this._updateActorToDisplayImageId(image);
-
-        // Todo: trigger an event to allow applications to hook into END of loading state
-        // Currently we use loadHandlerManagers for this
-
-        // Perform this check after the image has finished loading
-        // in case the user has already scrolled away to another image.
-        // In that case, do not render this image.
-        if (this.currentImageIdIndex !== imageIdIndex) {
-          return;
-        }
 
         // Trigger the image to be drawn on the next animation frame
         this.render();
