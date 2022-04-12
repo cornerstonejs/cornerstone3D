@@ -23,6 +23,9 @@
     "prepublishOnly": "yarn run build",
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
+  "dependencies": {
+    "lodash.clonedeep": "4.5.0"
+  },
   "peerDependencies": {
     "@cornerstonejs/core": "^0.3.0",
     "@kitware/vtk.js": "24.0.0",
