@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.4.3...@cornerstonejs/core@0.4.4) (2022-04-12)
+
+
+### Bug Fixes
+
+* Only fire STACK_NEW_IMAGE event after we are certain this image will be displayed ([#72](https://github.com/cornerstonejs/cornerstone3D-beta/issues/72)) ([bfb8b91](https://github.com/cornerstonejs/cornerstone3D-beta/commit/bfb8b91baafb3bd342239ab9f1c4da0a1bfdf12a))
+
+
+
+
+
 ## [0.4.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.4.2...@cornerstonejs/core@0.4.3) (2022-04-11)
 
 
