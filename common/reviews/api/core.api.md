@@ -1364,6 +1364,9 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
+function prefetchStack(imageIds: string[], requestType?: RequestType, priority?: number): void;
+
+// @public (undocumented)
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
@@ -1443,7 +1446,7 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-export function renderToCanvas(imageId: string, canvas: HTMLCanvasElement, renderingEngineId?: any, suppressEvents?: boolean): Promise<string>;
+export function renderToCanvas(canvas: HTMLCanvasElement, imageId: string, requestType?: RequestType, priority?: number): Promise<string>;
 
 // @public (undocumented)
 enum RequestType {
@@ -1718,7 +1721,8 @@ declare namespace utilities {
         indexWithinDimensions,
         getVolumeViewportsContainingSameVolumes,
         getVolumeViewportsContainingVolumeId,
-        transformWorldToIndex
+        transformWorldToIndex,
+        prefetchStack
     }
 }
 export { utilities }
