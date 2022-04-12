@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.10...@cornerstonejs/tools@0.7.11) (2022-04-12)
+
+
+### Bug Fixes
+
+* Remove resemblejs from dependencies, add detect-gpu, clonedeep, CWIL ([#73](https://github.com/cornerstonejs/cornerstone3D-beta/issues/73)) ([db65d50](https://github.com/cornerstonejs/cornerstone3D-beta/commit/db65d50a5c7488f323ab2424cf9d750055b2e6d5))
+
+
+
+
+
 ## [0.7.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.9...@cornerstonejs/tools@0.7.10) (2022-04-12)
 
 **Note:** Version bump only for package @cornerstonejs/tools
