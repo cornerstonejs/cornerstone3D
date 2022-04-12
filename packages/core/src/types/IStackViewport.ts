@@ -65,6 +65,10 @@ export default interface IStackViewport extends IViewport {
    */
   hasImageId: (imageId: string) => boolean;
   /**
+   * Returns true if the viewport contains the imageURI
+   */
+  hasImageURI: (imageURI: string) => boolean;
+  /**
    * Returns the currently rendered imageId
    */
   getCurrentImageId: () => string;

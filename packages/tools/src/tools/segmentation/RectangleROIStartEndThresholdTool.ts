@@ -107,9 +107,6 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     }
 
     if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    } else {
       throw new Error('This tool does not work on non-acquisition planes');
     }
 

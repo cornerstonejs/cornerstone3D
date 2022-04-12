@@ -158,11 +158,6 @@ class LengthTool extends AnnotationTool {
       );
     }
 
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
-
     const annotation = {
       highlighted: true,
       invalidated: true,

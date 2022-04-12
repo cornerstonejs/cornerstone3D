@@ -95,11 +95,6 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       );
     }
 
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
-
     // Todo: how not to store enabledElement on the annotation, segmentationModule needs the element to
     // decide on the active segmentIndex, active segmentationIndex etc.
     const annotation = {

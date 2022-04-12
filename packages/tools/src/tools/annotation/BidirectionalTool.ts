@@ -160,12 +160,6 @@ export default class BidirectionalTool extends AnnotationTool {
       );
     }
 
-    // If acquisition plane annotation
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
-
     const annotation: BidirectionalAnnotation = {
       highlighted: true,
       invalidated: true,

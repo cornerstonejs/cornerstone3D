@@ -245,7 +245,11 @@ abstract class AnnotationTool extends BaseTool {
       // for this specific tool
       toolSpecificAnnotations.forEach((annotation) => {
         // if the annotation is drawn on the same imageId
-        if (annotation.metadata.referencedImageId === imageURI) {
+        const referencedImageURI = utilities.imageIdToURI(
+          annotation.metadata.referencedImageId
+        );
+
+        if (referencedImageURI === imageURI) {
           // make them invalid since the image has been calibrated so that
           // we can update the cachedStats and also rendering
           annotation.invalidated = true;

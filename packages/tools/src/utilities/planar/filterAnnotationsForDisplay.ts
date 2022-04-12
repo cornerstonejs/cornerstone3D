@@ -36,7 +36,10 @@ export default function filterAnnotationsForDisplay(
     // are not the same. But, drawing on the stack PT makes the annotation appear on the volume CT
     // since we check for annotationsWithinSlice.
     return annotations.filter((annotation) => {
-      return annotation.metadata.referencedImageId === imageURI;
+      const imageId = annotation.metadata.referencedImageId;
+      const colonIndex = imageId.indexOf(':');
+      const referenceImageURI = imageId.substring(colonIndex + 1);
+      return referenceImageURI === imageURI;
     });
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();

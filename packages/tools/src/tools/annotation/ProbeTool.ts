@@ -159,11 +159,6 @@ export default class ProbeTool extends AnnotationTool {
       );
     }
 
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
-
     const annotation = {
       invalidated: true,
       highlighted: true,
@@ -190,8 +185,6 @@ export default class ProbeTool extends AnnotationTool {
       element,
       ProbeTool.toolName
     );
-
-    console.debug(viewportIdsToRender);
 
     this.editData = {
       annotation,
@@ -450,9 +443,13 @@ export default class ProbeTool extends AnnotationTool {
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
                 // showing it currently
-                const hasImageId = vp.hasImageId(referencedImageId);
-                const currentImageId = vp.getCurrentImageId();
-                return hasImageId && currentImageId !== referencedImageId;
+                const referencedImageURI =
+                  csUtils.imageIdToURI(referencedImageId);
+                const hasImageURI = vp.hasImageURI(referencedImageURI);
+                const currentImageURI = csUtils.imageIdToURI(
+                  vp.getCurrentImageId()
+                );
+                return hasImageURI && currentImageURI !== referencedImageURI;
               });
 
               if (invalidatedStack) {

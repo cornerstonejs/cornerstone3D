@@ -56,7 +56,7 @@ export default class WindowLevelTool extends BaseTool {
 
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
-      const volumeId = targetId.split('volumeId:')[1];
+      volumeId = targetId.split('volumeId:')[1];
       ({ volumeActor } = viewport.getActor(volumeId));
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
       viewportsContainingVolumeUID =

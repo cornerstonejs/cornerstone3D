@@ -16,6 +16,7 @@ import {
   isEqual,
   invertRgbTransferFunction,
   windowLevel as windowLevelUtil,
+  imageIdToURI,
 } from '../utilities';
 import {
   Point2,
@@ -1902,6 +1903,17 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public hasImageId = (imageId: string): boolean => {
     return this.imageIds.includes(imageId);
+  };
+
+  /**
+   * Returns true if the viewport contains the given imageURI (no data loader scheme)
+   * @param imageURI - imageURI
+   * @returns boolean if imageURI is in viewport
+   */
+  public hasImageURI = (imageURI: string): boolean => {
+    // Todo: maybe cache URIs too?
+    const imageURIs = this.imageIds.map(imageIdToURI);
+    return imageURIs.includes(imageURI);
   };
 
   /**
