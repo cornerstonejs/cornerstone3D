@@ -18,6 +18,7 @@ import indexWithinDimensions from './indexWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getVolumeViewportsContainingVolumeId from './getVolumeViewportsContainingVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
+import prefetchStack from './prefetchStack';
 
 // name spaces
 import * as planar from './planar';
@@ -46,4 +47,5 @@ export {
   getVolumeViewportsContainingSameVolumes,
   getVolumeViewportsContainingVolumeId,
   transformWorldToIndex,
+  prefetchStack,
 };
