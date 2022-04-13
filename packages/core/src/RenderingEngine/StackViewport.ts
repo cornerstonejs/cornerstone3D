@@ -1911,9 +1911,12 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns boolean if imageURI is in viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    // Todo: maybe cache URIs too?
-    const imageURIs = this.imageIds.map(imageIdToURI);
-    return imageURIs.includes(imageURI);
+    const imageIds = this.imageIds;
+    for (let i = 0; i < imageIds.length; i++) {
+      if (imageIdToURI(imageIds[i]) === imageURI) return true;
+    }
+
+    return false;
   };
 
   /**
