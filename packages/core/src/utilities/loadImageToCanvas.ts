@@ -1,15 +1,13 @@
-import { IImage, CPUFallbackEnabledElement } from '../../types';
+import { IImage } from '../types';
 
-import getDefaultViewport from './cpuFallback/rendering/getDefaultViewport';
-import calculateTransform from './cpuFallback/rendering/calculateTransform';
-import drawImageSync from './cpuFallback/drawImageSync';
-import { loadAndCacheImage } from '../../imageLoader';
-import * as metaData from '../../metaData';
-import { RequestType } from '../../enums';
-import imageLoadPoolManager from '../../requestPool/imageLoadPoolManager';
+import { loadAndCacheImage } from '../imageLoader';
+import * as metaData from '../metaData';
+import { RequestType } from '../enums';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
+import renderToCanvas from './renderToCanvas';
 
 /**
- * Renders an imageId to a Canvas. It will use the CPU rendering pipeline
+ * Loads and renders an imageId to a Canvas. It will use the CPU rendering pipeline
  * for image.
  *
  * @example
@@ -17,7 +15,7 @@ import imageLoadPoolManager from '../../requestPool/imageLoadPoolManager';
  * const canvas = document.getElementById('myCanvas')
  * const imageId = 'myImageId'
  *
- * renderToCanvas(canvas, imageId)
+ * loadImageToCanvas(canvas, imageId)
  * ```
  * @param imageId - The imageId to render
  * @param canvas - Canvas element to render to
@@ -26,7 +24,7 @@ import imageLoadPoolManager from '../../requestPool/imageLoadPoolManager';
  * @param priority - The priority of the request within the request type (lower is higher priority)
  * @returns - A promise that resolves when the image has been rendered with the imageId
  */
-export default function renderToCanvas(
+export default function loadImageToCanvas(
   canvas: HTMLCanvasElement,
   imageId: string,
   requestType = RequestType.Interaction,
@@ -34,20 +32,7 @@ export default function renderToCanvas(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     function successCallback(image: IImage, imageId: string) {
-      const viewport = getDefaultViewport(canvas, image);
-
-      const enabledElement: CPUFallbackEnabledElement = {
-        canvas,
-        viewport,
-        image,
-        renderingTools: {},
-      };
-
-      enabledElement.transform = calculateTransform(enabledElement);
-
-      const invalidated = true;
-      drawImageSync(enabledElement, invalidated);
-
+      renderToCanvas(canvas, image);
       resolve(imageId);
     }
 

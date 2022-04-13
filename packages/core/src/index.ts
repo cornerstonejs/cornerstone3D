@@ -7,7 +7,6 @@ import {
   createVolumeMapper,
   getOrCreateCanvas,
 } from './RenderingEngine';
-import { renderToCanvas } from './RenderingEngine';
 import RenderingEngine from './RenderingEngine';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
@@ -74,7 +73,6 @@ export {
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
-  renderToCanvas,
   // cache
   cache,
   // event helpers
