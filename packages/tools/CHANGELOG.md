@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.8.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.12...@cornerstonejs/tools@0.8.0) (2022-04-13)
+
+
+### Features
+
+* cachedStats to store imageId and volumeId ([#75](https://github.com/cornerstonejs/cornerstone3D-beta/issues/75)) ([a2404c4](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a2404c4f1cb15a3935ba3af58fa7fc556716458c))
+
+
+
+
+
 ## [0.7.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.11...@cornerstonejs/tools@0.7.12) (2022-04-13)
 
 **Note:** Version bump only for package @cornerstonejs/tools
