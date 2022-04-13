@@ -16,9 +16,9 @@ function metaDataProvider(type, imageId) {
   if (type === 'generalSeriesModule') {
     return {
       modality: getValue(metaData['00080060']),
-      seriesInstanceUID: getValue(metaData['0020000e']),
+      seriesInstanceUID: getValue(metaData['0020000E']),
       seriesNumber: getNumberValue(metaData['00200011']),
-      studyInstanceUID: getValue(metaData['0020000d']),
+      studyInstanceUID: getValue(metaData['0020000D']),
       seriesDate: dicomParser.parseDA(getValue(metaData['00080021'])),
       seriesTime: dicomParser.parseTM(getValue(metaData['00080031'], 0, '')),
     };
