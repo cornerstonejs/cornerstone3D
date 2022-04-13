@@ -22,6 +22,8 @@ export default function makeVolumeMetadata(
     samplesPerPixel,
   } = metaData.get('imagePixelModule', imageId0);
 
+  const { seriesInstanceUID } = metaData.get('generalSeriesModule', imageId0);
+
   // Add list of VOIs stored on the DICOM.
   const voiLut = [];
 
@@ -64,6 +66,7 @@ export default function makeVolumeMetadata(
   // Map to dcmjs-style keywords. This is becoming the standard and makes it
   // Easier to swap out cornerstoneWADOImageLoader at a later date.
   return {
+    SeriesInstanceUID: seriesInstanceUID,
     BitsAllocated: bitsAllocated,
     BitsStored: bitsStored,
     SamplesPerPixel: samplesPerPixel,

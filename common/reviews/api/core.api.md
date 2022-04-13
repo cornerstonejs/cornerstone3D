@@ -1060,6 +1060,10 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
+    hasImageId: (imageId: string) => boolean;
+    // (undocumented)
+    hasImageURI: (imageURI: string) => boolean;
+    // (undocumented)
     modality: string;
     // (undocumented)
     resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
@@ -1303,6 +1307,7 @@ function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Ty
 
 // @public (undocumented)
 type Metadata = {
+    SeriesInstanceUID: string;
     BitsAllocated: number;
     BitsStored: number;
     SamplesPerPixel: number;
@@ -1571,6 +1576,10 @@ export class StackViewport extends Viewport implements IStackViewport {
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer(): any;
+    // (undocumented)
+    hasImageId: (imageId: string) => boolean;
+    // (undocumented)
+    hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
     // (undocumented)

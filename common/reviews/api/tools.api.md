@@ -61,6 +61,7 @@ type Annotation = {
         viewUp?: Types_2.Point3;
         FrameOfReferenceUID: string;
         toolName: string;
+        referencedSeriesInstanceUID?: string;
         referencedImageId?: string;
         volumeId?: string;
     };
@@ -190,6 +191,11 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     getLinkedTextBoxStyle(settings: Settings, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
+    protected getReferencedIds(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): {
+        referencedImageId?: string | undefined;
+        referencedSeriesInstanceUID?: string | undefined;
+    };
+    // (undocumented)
     getStyle(settings: Settings, property: string, annotation?: Annotation): unknown;
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
@@ -217,10 +223,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
-    protected getTargetIdViewportAndImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): {
-        viewport: Types_2.IViewport;
-        image: Types_2.IImageData;
-    };
+    protected getTargetIdImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): Types_2.IImageData | Types_2.CPUIImageData | Types_2.IImageVolume;
     // (undocumented)
     getToolName(): string;
     // (undocumented)
@@ -1805,6 +1808,8 @@ interface IStackViewport extends IViewport {
     getImageIds: () => string[];
     getProperties: () => StackViewportProperties;
     getRenderer(): any;
+    hasImageId: (imageId: string) => boolean;
+    hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
     resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
@@ -2217,6 +2222,7 @@ declare namespace math {
 
 // @public
 type Metadata = {
+    SeriesInstanceUID: string;
     BitsAllocated: number;
     BitsStored: number;
     SamplesPerPixel: number;
@@ -2884,7 +2890,7 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeId: string, invert?: boolean): void;
+function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, deltaFrames: number, invert?: boolean): void;
 
 // @public (undocumented)
 type Segmentation = {

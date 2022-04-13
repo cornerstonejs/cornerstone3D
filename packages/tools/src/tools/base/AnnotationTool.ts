@@ -2,7 +2,10 @@ import {
   utilities,
   getEnabledElement,
   VolumeViewport,
+  StackViewport,
   Settings,
+  cache,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -355,6 +358,46 @@ abstract class AnnotationTool extends BaseTool {
     }
 
     data.handles.activeHandleIndex = null;
+  }
+
+  protected getReferencedIds(
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    worldPos: Types.Point3,
+    viewPlaneNormal: Types.Point3,
+    viewUp: Types.Point3
+  ): {
+    referencedImageId?: string | undefined;
+    referencedSeriesInstanceUID?: string | undefined;
+  } {
+    const targetId = this.getTargetId(viewport);
+
+    let referencedImageId, referencedSeriesInstanceUID;
+
+    if (viewport instanceof StackViewport) {
+      referencedImageId = targetId.split('imageId:')[1];
+      const generalSeriesModule = metaData.get(
+        'generalSeriesModule',
+        referencedImageId
+      );
+
+      if (generalSeriesModule) {
+        referencedSeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
+      }
+    } else {
+      const volumeId = targetId.split('volumeId:')[1];
+      const imageVolume = cache.getVolume(volumeId);
+
+      referencedImageId = utilities.getClosestImageId(
+        imageVolume,
+        worldPos,
+        viewPlaneNormal,
+        viewUp
+      );
+
+      referencedSeriesInstanceUID = imageVolume.metadata.SeriesInstanceUID;
+    }
+
+    return { referencedImageId, referencedSeriesInstanceUID };
   }
 
   /**

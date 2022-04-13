@@ -158,33 +158,19 @@ export default class EllipticalROITool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const targetId = this.getTargetId(viewport);
-    let referencedImageId;
-
-    if (viewport instanceof StackViewport) {
-      referencedImageId = targetId.split('imageId:')[1];
-    } else {
-      const volumeId = targetId.split('volumeId:')[1];
-      const imageVolume = cache.getVolume(volumeId);
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal,
-        viewUp
-      );
-    }
-
-    this.isDrawing = true;
+    const { referencedImageId, referencedSeriesInstanceUID } =
+      this.getReferencedIds(viewport, worldPos, viewPlaneNormal, viewUp);
 
     const annotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
+        toolName: EllipticalROITool.toolName,
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: EllipticalROITool.toolName,
+        referencedSeriesInstanceUID,
       },
       data: {
         label: '',
