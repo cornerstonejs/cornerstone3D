@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.4.5...@cornerstonejs/core@0.4.6) (2022-04-13)
+
+
+### Bug Fixes
+
+* renderToCanvas to use CPU rendering ([#74](https://github.com/cornerstonejs/cornerstone3D-beta/issues/74)) ([97ba32f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/97ba32f629376960f45bfbc3f22552476f934198))
+
+
+
+
+
 ## [0.4.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.4.4...@cornerstonejs/core@0.4.5) (2022-04-12)
 
 
