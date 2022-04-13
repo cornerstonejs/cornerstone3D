@@ -16,7 +16,7 @@ import {
 export default function (
   canvas: HTMLCanvasElement,
   image: IImage,
-  modality: string,
+  modality?: string,
   colormap?: CPUFallbackColormap
 ): CPUFallbackViewport {
   if (canvas === undefined) {

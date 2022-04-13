@@ -1296,6 +1296,9 @@ function loadAndCacheImages(imageIds: Array<string>, options?: ImageLoaderOption
 function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
+function loadImageToCanvas(canvas: HTMLCanvasElement, imageId: string, requestType?: RequestType, priority?: number): Promise<string>;
+
+// @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
@@ -1362,6 +1365,9 @@ type Point3 = [number, number, number];
 
 // @public (undocumented)
 type Point4 = [number, number, number, number];
+
+// @public (undocumented)
+function prefetchStack(imageIds: string[], requestType?: RequestType, priority?: number): void;
 
 // @public (undocumented)
 type PTScaling = {
@@ -1443,7 +1449,7 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-export function renderToCanvas(imageId: string, canvas: HTMLCanvasElement, renderingEngineId?: any, suppressEvents?: boolean): Promise<string>;
+function renderToCanvas(canvas: HTMLCanvasElement, image: IImage): void;
 
 // @public (undocumented)
 enum RequestType {
@@ -1718,7 +1724,10 @@ declare namespace utilities {
         indexWithinDimensions,
         getVolumeViewportsContainingSameVolumes,
         getVolumeViewportsContainingVolumeId,
-        transformWorldToIndex
+        transformWorldToIndex,
+        prefetchStack,
+        loadImageToCanvas,
+        renderToCanvas
     }
 }
 export { utilities }

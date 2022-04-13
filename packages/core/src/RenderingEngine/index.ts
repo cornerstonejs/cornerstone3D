@@ -5,7 +5,6 @@ import {
   createVolumeActor,
   createVolumeMapper,
   getOrCreateCanvas,
-  renderToCanvas,
 } from './helpers';
 
 export {
@@ -15,7 +14,6 @@ export {
   createVolumeActor,
   createVolumeMapper,
   getOrCreateCanvas,
-  renderToCanvas,
 };
 
 export default RenderingEngine;
