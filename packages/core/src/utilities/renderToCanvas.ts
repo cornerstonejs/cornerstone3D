@@ -14,7 +14,7 @@ import drawImageSync from '../RenderingEngine/helpers/cpuFallback/drawImageSync'
 export default function renderToCanvas(
   canvas: HTMLCanvasElement,
   image: IImage
-): string {
+): void {
   const viewport = getDefaultViewport(canvas, image);
 
   const enabledElement: CPUFallbackEnabledElement = {
@@ -28,6 +28,4 @@ export default function renderToCanvas(
 
   const invalidated = true;
   drawImageSync(enabledElement, invalidated);
-
-  return image.imageId;
 }
