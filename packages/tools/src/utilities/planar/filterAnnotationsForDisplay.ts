@@ -29,8 +29,15 @@ export default function filterAnnotationsForDisplay(
     const imageURI = imageId.substring(colonIndex + 1);
 
     // 3. Filter annotation in the frame of reference by the referenced image ID property
+    // Note: With the current implementation drawing on the stack (PT stack) will not
+    // show the annotation on a volume that does not share the same imageURIs (CT Volume),
+    // and we don't have a proper way to check distance either since a stack can be
+    // composed of multiple unrelated images
     return annotations.filter((annotation) => {
-      return annotation.metadata.referencedImageId === imageURI;
+      const imageId = annotation.metadata.referencedImageId;
+      const colonIndex = imageId.indexOf(':');
+      const referenceImageURI = imageId.substring(colonIndex + 1);
+      return referenceImageURI === imageURI;
     });
   } else if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();

@@ -2,7 +2,10 @@ import {
   utilities,
   getEnabledElement,
   VolumeViewport,
+  StackViewport,
   Settings,
+  cache,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -245,7 +248,11 @@ abstract class AnnotationTool extends BaseTool {
       // for this specific tool
       toolSpecificAnnotations.forEach((annotation) => {
         // if the annotation is drawn on the same imageId
-        if (annotation.metadata.referencedImageId === imageURI) {
+        const referencedImageURI = utilities.imageIdToURI(
+          annotation.metadata.referencedImageId
+        );
+
+        if (referencedImageURI === imageURI) {
           // make them invalid since the image has been calibrated so that
           // we can update the cachedStats and also rendering
           annotation.invalidated = true;
@@ -351,6 +358,33 @@ abstract class AnnotationTool extends BaseTool {
     }
 
     data.handles.activeHandleIndex = null;
+  }
+
+  protected getReferencedImageId(
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    worldPos: Types.Point3,
+    viewPlaneNormal: Types.Point3,
+    viewUp: Types.Point3
+  ): string {
+    const targetId = this.getTargetId(viewport);
+
+    let referencedImageId;
+
+    if (viewport instanceof StackViewport) {
+      referencedImageId = targetId.split('imageId:')[1];
+    } else {
+      const volumeId = targetId.split('volumeId:')[1];
+      const imageVolume = cache.getVolume(volumeId);
+
+      referencedImageId = utilities.getClosestImageId(
+        imageVolume,
+        worldPos,
+        viewPlaneNormal,
+        viewUp
+      );
+    }
+
+    return referencedImageId;
   }
 
   /**

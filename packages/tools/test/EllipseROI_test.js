@@ -129,9 +129,7 @@ describe('Ellipse Tool: ', () => {
           expect(ellipseAnnotations.length).toBe(1);
 
           const ellipseAnnotation = ellipseAnnotations[0];
-          expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
             EllipticalROITool.toolName
@@ -452,9 +450,7 @@ describe('Ellipse Tool: ', () => {
           expect(ellipseAnnotations.length).toBe(1);
 
           const ellipseAnnotation = ellipseAnnotations[0];
-          expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
             EllipticalROITool.toolName

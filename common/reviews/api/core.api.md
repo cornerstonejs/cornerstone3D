@@ -1060,6 +1060,10 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
+    hasImageId: (imageId: string) => boolean;
+    // (undocumented)
+    hasImageURI: (imageURI: string) => boolean;
+    // (undocumented)
     modality: string;
     // (undocumented)
     resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
@@ -1571,6 +1575,10 @@ export class StackViewport extends Viewport implements IStackViewport {
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer(): any;
+    // (undocumented)
+    hasImageId: (imageId: string) => boolean;
+    // (undocumented)
+    hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
     // (undocumented)

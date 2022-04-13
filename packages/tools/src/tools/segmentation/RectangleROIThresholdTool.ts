@@ -79,12 +79,13 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
+    const targetId = this.getTargetId(viewport);
     let referencedImageId, volumeId;
+
     if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
+      referencedImageId = targetId.split('imageId:')[1];
     } else {
-      volumeId = this.getTargetId(viewport);
+      volumeId = targetId.split('volumeId:')[1];
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -92,11 +93,6 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
         viewPlaneNormal,
         viewUp
       );
-    }
-
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
     }
 
     // Todo: how not to store enabledElement on the annotation, segmentationModule needs the element to

@@ -128,9 +128,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(rectangleAnnotations.length).toBe(1);
 
           const rectangleAnnotation = rectangleAnnotations[0];
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
 
           expect(rectangleAnnotation.metadata.toolName).toBe(
             RectangleROITool.toolName
@@ -350,9 +348,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(rectangleAnnotations.length).toBe(1);
 
           const rectangleAnnotation = rectangleAnnotations[0];
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(rectangleAnnotation.metadata.toolName).toBe(
             RectangleROITool.toolName
           );
@@ -492,9 +488,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(rectangleAnnotations.length).toBe(1);
 
           const rectangleAnnotation = rectangleAnnotations[0];
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(rectangleAnnotation.metadata.toolName).toBe(
             RectangleROITool.toolName
           );
@@ -627,9 +621,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(rectangleAnnotations.length).toBe(1);
 
           const rectangleAnnotation = rectangleAnnotations[0];
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(rectangleAnnotation.metadata.toolName).toBe(
             RectangleROITool.toolName
           );
@@ -979,9 +971,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(rectangleAnnotations.length).toBe(1);
 
           const rectangleAnnotation = rectangleAnnotations[0];
-          expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(rectangleAnnotation.metadata.toolName).toBe(
             RectangleROITool.toolName
           );

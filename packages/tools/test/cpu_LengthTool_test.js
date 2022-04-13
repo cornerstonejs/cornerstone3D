@@ -142,9 +142,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
 
@@ -251,9 +249,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
         expect(lengthAnnotation.highlighted).toBe(false);
@@ -394,9 +390,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
         expect(lengthAnnotation.highlighted).toBe(false);
@@ -529,9 +523,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
 

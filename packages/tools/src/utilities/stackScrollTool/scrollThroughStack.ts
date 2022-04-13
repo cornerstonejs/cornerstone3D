@@ -1,16 +1,12 @@
 import {
-  getEnabledElement,
   StackViewport,
+  Types,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import clip from '../clip';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
-import {
-  MouseDragEventType,
-  MouseWheelEventType,
-} from '../../types/EventTypes';
 
 /**
  * Scroll the stack defined by the event (`evt`)
@@ -20,18 +16,16 @@ import {
  * @param evt - The event corresponding to an interaction with a
  * specific viewport.
  * @param deltaFrames - The number of frames to jump through.
- * @param volumeId - The `volumeId` of the volume to scroll through
+ * @param targetId - The targetId used for scrolling.
  * @param invert - inversion of the scrolling
  * on the viewport.
  */
 export default function scrollThroughStack(
-  evt: MouseWheelEventType | MouseDragEventType,
+  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  targetId: string,
   deltaFrames: number,
-  volumeId: string,
   invert = false
 ): void {
-  const { element } = evt.detail;
-  const { viewport } = getEnabledElement(element);
   const { type: viewportType } = viewport;
   const camera = viewport.getCamera();
   const { focalPoint, viewPlaneNormal, position } = camera;
@@ -46,6 +40,14 @@ export default function scrollThroughStack(
 
     viewport.setImageIdIndex(newImageIdIndex);
   } else if (viewport instanceof VolumeViewport) {
+    if (!targetId.startsWith('volumeId')) {
+      throw new Error(
+        `scrollThroughStack: targetId must start with 'volumeId' if viewport is a VolumeViewport`
+      );
+    }
+
+    const volumeId = targetId.split('volumeId:')[1];
+
     // If volumeId is specified, scroll through that specific volume
     const { spacingInNormalDirection, imageVolume } =
       csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);

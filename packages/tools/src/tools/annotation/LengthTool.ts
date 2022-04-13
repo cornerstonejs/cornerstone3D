@@ -142,36 +142,22 @@ class LengthTool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    // TODO: what do we do here? this feels wrong
-    let referencedImageId;
-    if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
-    } else {
-      const volumeId = this.getTargetId(viewport);
-      const imageVolume = cache.getVolume(volumeId);
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal,
-        viewUp
-      );
-    }
-
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
 
     const annotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
+        toolName: LengthTool.toolName,
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: LengthTool.toolName,
       },
       data: {
         handles: {
@@ -698,10 +684,7 @@ class LengthTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const { image } = this.getTargetIdViewportAndImage(
-        targetId,
-        renderingEngine
-      );
+      const image = this.getTargetIdImage(targetId, renderingEngine);
 
       const { imageData, dimensions } = image;
 
