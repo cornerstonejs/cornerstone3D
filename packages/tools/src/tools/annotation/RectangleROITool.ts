@@ -145,8 +145,12 @@ export default class RectangleROITool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const { referencedImageId, referencedSeriesInstanceUID } =
-      this.getReferencedIds(viewport, worldPos, viewPlaneNormal, viewUp);
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
 
     const annotation = {
       invalidated: true,
@@ -157,7 +161,6 @@ export default class RectangleROITool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        referencedSeriesInstanceUID,
       },
       data: {
         label: '',

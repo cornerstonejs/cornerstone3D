@@ -20,7 +20,7 @@ export default function getViewportIdsWithToolToRender(
   requireSameOrientation = true
 ): string[] {
   const enabledElement = getEnabledElement(element);
-  const { renderingEngine, FrameOfReferenceUID, viewportId } = enabledElement;
+  const { renderingEngine, FrameOfReferenceUID } = enabledElement;
 
   let viewports = renderingEngine.getViewports();
 
@@ -40,14 +40,6 @@ export default function getViewportIdsWithToolToRender(
   }
 
   const viewportIds = viewports.map((vp) => vp.id);
-
-  // make sure the original viewport that is used for interaction is at
-  // the beginning of the list. If not,
-  const index = viewportIds.indexOf(viewportId);
-  if (index > -1) {
-    viewportIds.splice(index, 1);
-    viewportIds.unshift(viewportId);
-  }
 
   return viewportIds;
 }

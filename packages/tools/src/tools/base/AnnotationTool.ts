@@ -360,29 +360,18 @@ abstract class AnnotationTool extends BaseTool {
     data.handles.activeHandleIndex = null;
   }
 
-  protected getReferencedIds(
+  protected getReferencedImageId(
     viewport: Types.IStackViewport | Types.IVolumeViewport,
     worldPos: Types.Point3,
     viewPlaneNormal: Types.Point3,
     viewUp: Types.Point3
-  ): {
-    referencedImageId?: string | undefined;
-    referencedSeriesInstanceUID?: string | undefined;
-  } {
+  ): string {
     const targetId = this.getTargetId(viewport);
 
-    let referencedImageId, referencedSeriesInstanceUID;
+    let referencedImageId;
 
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
-      const generalSeriesModule = metaData.get(
-        'generalSeriesModule',
-        referencedImageId
-      );
-
-      if (generalSeriesModule) {
-        referencedSeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
-      }
     } else {
       const volumeId = targetId.split('volumeId:')[1];
       const imageVolume = cache.getVolume(volumeId);
@@ -393,11 +382,9 @@ abstract class AnnotationTool extends BaseTool {
         viewPlaneNormal,
         viewUp
       );
-
-      referencedSeriesInstanceUID = imageVolume.metadata.SeriesInstanceUID;
     }
 
-    return { referencedImageId, referencedSeriesInstanceUID };
+    return referencedImageId;
   }
 
   /**

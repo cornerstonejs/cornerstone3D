@@ -5,7 +5,6 @@ import type { VOI } from './voi';
  * {@link https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.3.html#table_C.7-11c}
  */
 type Metadata = {
-  SeriesInstanceUID: string;
   /** Number of bits allocated for each pixel sample. Each sample shall have the same number of bits allocated */
   BitsAllocated: number;
   /** Number of bits stored for each pixel sample */

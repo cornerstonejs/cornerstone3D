@@ -941,7 +941,6 @@ interface IVolumeViewport extends IViewport {
 
 // @public
 type Metadata = {
-    SeriesInstanceUID: string;
     BitsAllocated: number;
     BitsStored: number;
     SamplesPerPixel: number;

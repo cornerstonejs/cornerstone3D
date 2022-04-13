@@ -61,7 +61,6 @@ type Annotation = {
         viewUp?: Types_2.Point3;
         FrameOfReferenceUID: string;
         toolName: string;
-        referencedSeriesInstanceUID?: string;
         referencedImageId?: string;
         volumeId?: string;
     };
@@ -191,10 +190,7 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     getLinkedTextBoxStyle(settings: Settings, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
-    protected getReferencedIds(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): {
-        referencedImageId?: string | undefined;
-        referencedSeriesInstanceUID?: string | undefined;
-    };
+    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
     getStyle(settings: Settings, property: string, annotation?: Annotation): unknown;
     // (undocumented)
@@ -2222,7 +2218,6 @@ declare namespace math {
 
 // @public
 type Metadata = {
-    SeriesInstanceUID: string;
     BitsAllocated: number;
     BitsStored: number;
     SamplesPerPixel: number;

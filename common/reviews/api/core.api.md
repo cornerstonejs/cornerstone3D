@@ -1307,7 +1307,6 @@ function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Ty
 
 // @public (undocumented)
 type Metadata = {
-    SeriesInstanceUID: string;
     BitsAllocated: number;
     BitsStored: number;
     SamplesPerPixel: number;

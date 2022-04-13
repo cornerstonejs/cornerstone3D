@@ -144,8 +144,12 @@ export default class BidirectionalTool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const { referencedImageId, referencedSeriesInstanceUID } =
-      this.getReferencedIds(viewport, worldPos, viewPlaneNormal, viewUp);
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
 
     const annotation: BidirectionalAnnotation = {
       highlighted: true,
@@ -156,7 +160,6 @@ export default class BidirectionalTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        referencedSeriesInstanceUID,
       },
       data: {
         handles: {
