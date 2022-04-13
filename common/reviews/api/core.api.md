@@ -1296,6 +1296,9 @@ function loadAndCacheImages(imageIds: Array<string>, options?: ImageLoaderOption
 function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
+function loadImageToCanvas(canvas: HTMLCanvasElement, imageId: string, requestType?: RequestType, priority?: number): Promise<string>;
+
+// @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
@@ -1446,7 +1449,7 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-export function renderToCanvas(canvas: HTMLCanvasElement, imageId: string, requestType?: RequestType, priority?: number): Promise<string>;
+function renderToCanvas(canvas: HTMLCanvasElement, image: IImage): void;
 
 // @public (undocumented)
 enum RequestType {
@@ -1722,7 +1725,9 @@ declare namespace utilities {
         getVolumeViewportsContainingSameVolumes,
         getVolumeViewportsContainingVolumeId,
         transformWorldToIndex,
-        prefetchStack
+        prefetchStack,
+        loadImageToCanvas,
+        renderToCanvas
     }
 }
 export { utilities }
