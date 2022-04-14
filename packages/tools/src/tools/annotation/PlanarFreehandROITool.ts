@@ -3,13 +3,14 @@ import {
   getEnabledElement,
   cache,
   StackViewport,
+  VolumeViewport,
   Settings,
   triggerEvent,
   eventTarget,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { vec2 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
@@ -87,16 +88,24 @@ class PlanarFreehandROITool extends AnnotationTool {
   public touchDragCallback: any;
   public mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
-  private drawData?: {
-    canvasPoints: number[];
-    handleIndex: number;
+  private commonData?: {
     annotation: Types.Annotation;
     viewportIdsToRender: string[];
+    spacing: Types.Point2;
+    xDir: Types.Point3;
+    yDir: Types.Point3;
   };
+  private drawData?: {
+    handleIndex: number;
+    canvasPoints: Types.Point2[];
+  } | null;
   private editData?: {
     annotation: Types.Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
+    spacing: Types.Point2;
+    xDir: Types.Point3;
+    yDir: Types.Point3;
   } | null;
   isDrawing: boolean = false;
   isEditing: boolean = false;
@@ -108,6 +117,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        subPixelResolution: 2,
       },
     }
   ) {
@@ -202,13 +212,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     Settings.getObjectSettings(annotation, PlanarFreehandROITool);
     addAnnotation(element, annotation);
 
-    this.drawData = {
-      canvasPoints: [canvasPos],
-      handleIndex: 0,
-      annotation,
-      viewportIdsToRender,
-    };
-    this.activateDraw(element);
+    this.activateDraw(evt, annotation, viewportIdsToRender);
 
     evt.preventDefault();
 
@@ -347,68 +351,207 @@ class PlanarFreehandROITool extends AnnotationTool {
   ) => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
     const canvasPos = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
+    const { renderingEngine, viewport } = enabledElement;
 
-    const { canvasPoints, handleIndex, viewportIdsToRender } = this.drawData;
+    const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
+    const { handleIndex, canvasPoints } = this.drawData;
 
-    const lastCanvasPoint = canvasPoints[handleIndex];
+    const lastCanvasPoint = canvasPoints[canvasPoints.length - 1];
+    const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
 
-    if (
-      lastCanvasPoint[0] === canvasPos[0] &&
-      lastCanvasPoint[0] === canvasPos[0]
-    ) {
-      // Haven't changed point, don't render
+    const worldPosDiff = vec3.create();
+
+    vec3.subtract(worldPosDiff, worldPos, lastWorldPoint);
+
+    const xDist = Math.abs(vec3.dot(worldPosDiff, xDir));
+    const yDist = Math.abs(vec3.dot(worldPosDiff, yDir));
+
+    // Get pixel spacing in the direction.
+    // Check that we have moved at least one voxel in each direction.
+
+    if (xDist <= spacing[0] && yDist <= spacing[1]) {
+      // Haven't changed world point enough, don't render
       return;
     }
 
-    canvasPoints.push(canvasPos);
-    this.drawData.handleIndex = handleIndex + 1;
+    if (this.checkIfCrossedDuringCreate(evt)) {
+      this.applyCreateOnCross(evt);
+    } else {
+      const numPointsAdded = this.addCanvasPointsToArray(
+        evt,
+        canvasPoints,
+        canvasPos
+      );
 
-    this.checkIfCrossedDuringCreate(evt);
+      this.drawData.handleIndex = handleIndex + numPointsAdded;
+    }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  private checkIfCrossedDuringCreate(evt) {
-    const { canvasPoints } = this.drawData;
-    const pointsLessLastTwo = canvasPoints.slice(0, -2);
+  /**
+   * Adds one or more points to the array at a resolution defined by the underlying image.
+   */
+  private addCanvasPointsToArray = (
+    evt,
+    canvasPoints,
+    newCanvasPoint
+  ): number => {
+    const { xDir, yDir, spacing } = this.commonData;
 
-    const secondTolastPoint = canvasPoints[canvasPoints.length - 2];
-    const lastPoint = canvasPoints[canvasPoints.length - 1];
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const lastWorldPos = viewport.canvasToWorld(
+      canvasPoints[canvasPoints.length - 1]
+    );
+    const newWorldPos = viewport.canvasToWorld(newCanvasPoint);
+
+    const worldPosDiff = vec3.create();
+
+    vec3.subtract(worldPosDiff, newWorldPos, lastWorldPos);
+
+    const xDist = Math.abs(vec3.dot(worldPosDiff, xDir));
+    const yDist = Math.abs(vec3.dot(worldPosDiff, yDir));
+
+    const numPointsToAdd = Math.max(
+      Math.floor(xDist / spacing[0]),
+      Math.floor(yDist / spacing[0])
+    );
+
+    if (numPointsToAdd > 1) {
+      const lastCanvasPoint = canvasPoints[canvasPoints.length - 1];
+
+      const canvasDist = vec2.dist(lastCanvasPoint, newCanvasPoint);
+
+      const canvasDir = vec2.create();
+
+      vec2.subtract(canvasDir, newCanvasPoint, lastCanvasPoint);
+
+      vec2.set(canvasDir, canvasDir[0] / canvasDist, canvasDir[1] / canvasDist);
+
+      const distPerPoint = canvasDist / numPointsToAdd;
+
+      for (let i = 1; i <= numPointsToAdd; i++) {
+        canvasPoints.push([
+          lastCanvasPoint[0] + distPerPoint * canvasDir[0] * i,
+          lastCanvasPoint[1] + distPerPoint * canvasDir[1] * i,
+        ]);
+      }
+    } else {
+      canvasPoints.push(newCanvasPoint);
+    }
+
+    return numPointsToAdd;
+  };
+
+  private getSpacingAndXYDirections = (viewport) => {
+    let spacing;
+    let xDir;
+    let yDir;
+
+    if (viewport instanceof StackViewport) {
+      // Check XY directions
+      const imageData = viewport.getImageData();
+
+      xDir = imageData.direction.slice(0, 3);
+      yDir = imageData.direction.slice(3, 6);
+
+      spacing = imageData.spacing;
+    } else {
+      // Check volume directions
+      // TODO
+    }
+
+    const subPixelResolution = this.configuration.subPixelResolution;
+
+    const subPixelSpacing = [
+      spacing[0] / subPixelResolution,
+      spacing[1] / subPixelResolution,
+    ];
+
+    return { spacing: subPixelSpacing, xDir, yDir };
+  };
+
+  private checkIfCrossedDuringCreate = (evt): boolean => {
+    // Note as we super sample the added points, we need to check the whole last mouse move, not the points
+    const eventDetail = evt.detail;
+    const { currentPoints, lastPoints } = eventDetail;
+    const canvasPos = currentPoints.canvas;
+    const lastCanvasPoint = lastPoints.canvas;
+
+    const { canvasPoints } = this.drawData;
+    const pointsLessLastOne = canvasPoints.slice(0, -1);
 
     const lineSegment = polyline.getFirstIntersectionWithPolyline(
-      pointsLessLastTwo,
-      secondTolastPoint,
-      lastPoint,
+      pointsLessLastOne,
+      canvasPos,
+      lastCanvasPoint,
       false
     );
 
-    if (!lineSegment) {
-      return;
+    return !!lineSegment;
+  };
+
+  private applyCreateOnCross = (evt) => {
+    // Remove the crossed points
+    const { canvasPoints } = this.drawData;
+
+    while (true) {
+      canvasPoints.pop();
+
+      const pointsLessLastTwo = canvasPoints.slice(0, -2);
+      const secondTolastPoint = canvasPoints[canvasPoints.length - 2];
+      const lastPoint = canvasPoints[canvasPoints.length - 1];
+
+      const stillCrosses = !!polyline.getFirstIntersectionWithPolyline(
+        pointsLessLastTwo,
+        secondTolastPoint,
+        lastPoint,
+        false
+      );
+
+      if (!stillCrosses) {
+        break;
+      }
     }
 
-    debugger;
+    // Complete contour
+    this.completeDrawContour(evt);
 
-    this.applyCreateOnCross(evt, lineSegment[1]);
-  }
-
-  private applyCreateOnCross = (evt, lineSegment) => {
-    // TODO
+    // TODO -> Start an edit immediately
   };
 
   private mouseUpDrawCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
+    this.completeDrawContour(evt);
+  };
+
+  private completeDrawContour = (
+    evt:
+      | EventTypes.MouseUpEventType
+      | EventTypes.MouseClickEventType
+      | EventTypes.MouseDragEventType
+  ) => {
+    this.removeCrossedLinesOnCompleteDraw();
+    const { canvasPoints } = this.drawData;
+    const { annotation, viewportIdsToRender } = this.commonData;
     const eventDetail = evt.detail;
-    const { currentPoints, element } = eventDetail;
+    const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
     // Convert annotation to world coordinates
 
-    const { canvasPoints, annotation, viewportIdsToRender } = this.drawData;
+    this.addCanvasPointsToArray(evt, canvasPoints, canvasPoints[0]);
+    // Remove last point which will be a duplicate now.
+    canvasPoints.pop();
 
     // TODO -> This is really expensive and won't scale! What should we do here?
     // It would be best if we could get the transformation matrix and then just
@@ -421,10 +564,34 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     this.isDrawing = false;
     this.drawData = undefined;
+    this.commonData = undefined;
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     this.deactivateDraw(element);
+  };
+
+  private removeCrossedLinesOnCompleteDraw = () => {
+    const { canvasPoints } = this.drawData;
+    const numPoints = canvasPoints.length;
+
+    const endToStart = [canvasPoints[0], canvasPoints[numPoints - 1]];
+    const canvasPointsMinusEnds = canvasPoints.slice(0, -1).slice(1);
+
+    const lineSegment = polyline.getFirstIntersectionWithPolyline(
+      canvasPointsMinusEnds,
+      endToStart[0],
+      endToStart[1],
+      false
+    );
+
+    if (lineSegment) {
+      // TODO -> Could check which area is bigger and take that one,
+      // then check there are no crosses again (iteratively?)
+      const indexToRemoveUpTo = lineSegment[1];
+
+      this.drawData.canvasPoints = canvasPoints.splice(0, indexToRemoveUpTo);
+    }
   };
   // ================================== //
 
@@ -469,7 +636,33 @@ class PlanarFreehandROITool extends AnnotationTool {
     resetElementCursor(element);
   };
 
-  private activateDraw = (element: HTMLDivElement) => {
+  private activateDraw = (
+    evt: EventTypes.MouseDownActivateEventType,
+    annotation: Types.Annotation,
+    viewportIdsToRender: string[]
+  ) => {
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
+    const canvasPos = currentPoints.canvas;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const { spacing, xDir, yDir } = this.getSpacingAndXYDirections(viewport);
+
+    this.drawData = {
+      canvasPoints: [canvasPos],
+      handleIndex: 0,
+    };
+
+    this.commonData = {
+      annotation,
+      viewportIdsToRender,
+      spacing,
+      xDir,
+      yDir,
+    };
+
     state.isInteractingWithTool = true;
 
     element.addEventListener(Events.MOUSE_UP, this.mouseUpDrawCallback);
@@ -531,9 +724,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       return;
     }
 
-    const activeAnnotationUID = isDrawing
-      ? this.drawData.annotation.annotationUID
-      : this.editData.annotation.annotationUID;
+    const activeAnnotationUID = this.commonData.annotation.annotationUID;
 
     annotations.forEach((annotation) => {
       if (annotation.annotationUID === activeAnnotationUID) {
