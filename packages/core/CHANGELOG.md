@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.5.0...@cornerstonejs/core@0.6.0) (2022-04-14)
+
+
+### Features
+
+* add scrollToSlice for element ([#76](https://github.com/cornerstonejs/cornerstone3D-beta/issues/76)) ([c43fe8f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c43fe8f955930a70be60015f2f6bc1d5bf9fffbb))
+
+
+
+
+
 # [0.5.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.4.6...@cornerstonejs/core@0.5.0) (2022-04-13)
 
 
