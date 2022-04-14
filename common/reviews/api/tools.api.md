@@ -2888,6 +2888,9 @@ type ScalingParameters = {
 function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, deltaFrames: number, invert?: boolean): void;
 
 // @public (undocumented)
+function scrollToSlice(element: HTMLDivElement, metadata: Metadata_2): Promise<string>;
+
+// @public (undocumented)
 type Segmentation = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
@@ -3496,7 +3499,8 @@ declare namespace utilities {
         pointInShapeCallback,
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
-        getAnnotationNearPointOnEnabledElement
+        getAnnotationNearPointOnEnabledElement,
+        scrollToSlice
     }
 }
 export { utilities }
