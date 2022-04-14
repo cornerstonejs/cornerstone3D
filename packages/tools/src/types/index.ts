@@ -20,6 +20,7 @@ import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
 import type InteractionTypes from './InteractionTypes';
 import type { ToolProps, PublicToolProps } from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
+import type JumpToSliceOptions from './JumpToSliceOptions';
 import type {
   Color,
   ColorLUT,
@@ -41,6 +42,7 @@ export type {
   FrameOfReferenceSpecificAnnotations,
   AnnotationState,
   ToolSpecificAnnotationTypes,
+  JumpToSliceOptions,
   // Geometry
   PlanarBoundingBox,
   ToolProps,

@@ -21,7 +21,10 @@ import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests';
 
-import getEnabledElement, { getEnabledElementByIds } from './getEnabledElement';
+import getEnabledElement, {
+  getEnabledElementByIds,
+  getEnabledElements,
+} from './getEnabledElement';
 import * as metaData from './metaData';
 import {
   init,
@@ -70,6 +73,7 @@ export {
   getRenderingEngines,
   getEnabledElement,
   getEnabledElementByIds,
+  getEnabledElements,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,

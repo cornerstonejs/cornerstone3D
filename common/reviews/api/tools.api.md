@@ -2045,6 +2045,14 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
+function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<string>;
+
+// @public (undocumented)
+type JumpToSliceOptions = {
+    imageIdIndex?: number;
+};
+
+// @public (undocumented)
 enum KeyboardBindings {
     // (undocumented)
     Alt = 17,
@@ -3444,6 +3452,7 @@ declare namespace Types {
         FrameOfReferenceSpecificAnnotations,
         AnnotationState,
         ToolSpecificAnnotationTypes,
+        JumpToSliceOptions,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,
@@ -3496,7 +3505,8 @@ declare namespace utilities {
         pointInShapeCallback,
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
-        getAnnotationNearPointOnEnabledElement
+        getAnnotationNearPointOnEnabledElement,
+        jumpToSlice
     }
 }
 export { utilities }

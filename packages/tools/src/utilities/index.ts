@@ -10,6 +10,7 @@ import throttle from './throttle';
 import isObject from './isObject';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
+import jumpToSlice from './viewport/jumpToSlice';
 
 import pointInShapeCallback from './pointInShapeCallback';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
@@ -43,4 +44,5 @@ export {
   pointInSurroundingSphereCallback,
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
+  jumpToSlice,
 };

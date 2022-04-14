@@ -499,6 +499,9 @@ export function getEnabledElement(element: HTMLDivElement | undefined): IEnabled
 export function getEnabledElementByIds(viewportId: string, renderingEngineId: string): IEnabledElement;
 
 // @public (undocumented)
+export function getEnabledElements(): IEnabledElement[];
+
+// @public (undocumented)
 function getMetaData(type: string, imageId: string): any;
 
 // @public (undocumented)
