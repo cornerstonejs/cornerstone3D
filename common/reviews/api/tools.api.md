@@ -2045,6 +2045,14 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
+function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<string>;
+
+// @public (undocumented)
+type JumpToSliceOptions = {
+    imageIdIndex?: number;
+};
+
+// @public (undocumented)
 enum KeyboardBindings {
     // (undocumented)
     Alt = 17,
@@ -2888,9 +2896,6 @@ type ScalingParameters = {
 function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, deltaFrames: number, invert?: boolean): void;
 
 // @public (undocumented)
-function scrollToSlice(element: HTMLDivElement, metadata: Metadata_2): Promise<string>;
-
-// @public (undocumented)
 type Segmentation = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
@@ -3447,6 +3452,7 @@ declare namespace Types {
         FrameOfReferenceSpecificAnnotations,
         AnnotationState,
         ToolSpecificAnnotationTypes,
+        JumpToSliceOptions,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,
@@ -3500,7 +3506,7 @@ declare namespace utilities {
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
-        scrollToSlice
+        jumpToSlice
     }
 }
 export { utilities }
