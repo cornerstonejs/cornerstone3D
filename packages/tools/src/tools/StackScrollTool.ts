@@ -1,4 +1,4 @@
-import { getEnabledElementByIds } from '@cornerstonejs/core';
+import { getEnabledElementByIds, VolumeViewport } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { scrollThroughStack } from '../utilities/stackScrollTool';
 import { PublicToolProps, ToolProps, EventTypes } from '../types';
@@ -9,6 +9,7 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
  */
 export default class StackScrollTool extends BaseTool {
   static toolName = 'StackScroll';
+  previousDirection: number;
   touchDragCallback: () => void;
   mouseDragCallback: () => void;
 
@@ -22,6 +23,7 @@ export default class StackScrollTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+    this.previousDirection = 1;
 
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
@@ -34,6 +36,21 @@ export default class StackScrollTool extends BaseTool {
     const targetId = this.getTargetId(viewport);
     const { invert } = this.configuration;
 
-    scrollThroughStack(viewport, targetId, deltaFrames, invert);
+    let volumeId;
+    if (viewport instanceof VolumeViewport) {
+      volumeId = targetId.split('volumeId:')[1];
+    }
+
+    // We need this check since the deltaFrames can be 0 when the user is
+    // scrolling very slowly so in that case we use the previous direction
+    let direction;
+    if (deltaFrames === 0) {
+      direction = this.previousDirection;
+    } else {
+      direction = deltaFrames > 0 ? 1 : -1;
+      this.previousDirection = direction;
+    }
+
+    scrollThroughStack(viewport, { direction, invert, volumeId });
   }
 }

@@ -1,5 +1,6 @@
 import { getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import JumpToSliceOptions from '../../types/JumpToSliceOptions';
+import clip from '../clip';
 
 /**
  * It uses the imageIdIndex in the Options to scroll to the slice that is intended.
@@ -33,7 +34,10 @@ function jumpToSlice(
     throw new Error('Cannot scroll to slice on a non-stack viewport yet');
   }
 
-  return viewport.setImageIdIndex(imageIdIndex);
+  const numberOfFrames = viewport.getImageIds().length;
+  const newImageIdIndex = clip(imageIdIndex, 0, numberOfFrames - 1);
+
+  return viewport.setImageIdIndex(newImageIdIndex);
 }
 
 export default jumpToSlice;

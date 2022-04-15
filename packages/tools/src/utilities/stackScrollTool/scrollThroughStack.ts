@@ -8,28 +8,29 @@ import clip from '../clip';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 
+type ScrollOptions = {
+  direction: number;
+  invert: boolean;
+  volumeId?: string;
+};
+
 /**
- * Scroll the stack defined by the event (`evt`)
- * and volume with `volumeId` `deltaFrames number of frames`.
- * Frames are defined as increasing in the view direction.
- *
- * @param evt - The event corresponding to an interaction with a
- * specific viewport.
- * @param deltaFrames - The number of frames to jump through.
- * @param targetId - The targetId used for scrolling.
- * @param invert - inversion of the scrolling
- * on the viewport.
+ * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
+ * to determine the slice to scroll to. For Stack Viewport, it scrolls in the 1 or -1
+ * direction, for Volume Viewport, it uses the camera and focal point to determine the
+ * slice to scroll to based on the spacings.
+ * @param viewport - The viewport in which to scroll
+ * @param options - Options to use for scrolling, including direction, invert, and volumeId
+ * @returns
  */
 export default function scrollThroughStack(
   viewport: Types.IStackViewport | Types.IVolumeViewport,
-  targetId: string,
-  deltaFrames: number,
-  invert = false
+  options: ScrollOptions
 ): void {
   const { type: viewportType } = viewport;
-  const camera = viewport.getCamera();
-  const { focalPoint, viewPlaneNormal, position } = camera;
-  const delta = invert ? -deltaFrames : deltaFrames;
+  const { volumeId, direction, invert } = options;
+
+  const delta = invert ? -direction : direction;
 
   if (viewport instanceof StackViewport) {
     // stack viewport
@@ -40,15 +41,8 @@ export default function scrollThroughStack(
 
     viewport.setImageIdIndex(newImageIdIndex);
   } else if (viewport instanceof VolumeViewport) {
-    if (!targetId.startsWith('volumeId')) {
-      throw new Error(
-        `scrollThroughStack: targetId must start with 'volumeId' if viewport is a VolumeViewport`
-      );
-    }
-
-    const volumeId = targetId.split('volumeId:')[1];
-
-    // If volumeId is specified, scroll through that specific volume
+    const camera = viewport.getCamera();
+    const { focalPoint, viewPlaneNormal, position } = camera;
     const { spacingInNormalDirection, imageVolume } =
       csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
 
