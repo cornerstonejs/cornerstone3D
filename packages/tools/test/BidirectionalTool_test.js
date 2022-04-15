@@ -151,8 +151,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -257,8 +257,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -373,8 +373,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -518,8 +518,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -690,8 +690,8 @@ describe('Cornerstone Tools: ', () => {
         expect(handles[1]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -914,8 +914,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       }, 100);

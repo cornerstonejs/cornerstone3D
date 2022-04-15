@@ -140,8 +140,8 @@ describe('Probe Tool: ', () => {
           expect(data[targets[0]].value).toBe(255);
 
           annotation.state.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
+            probeAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -244,12 +244,12 @@ describe('Probe Tool: ', () => {
 
           //
           annotation.state.removeAnnotation(
-            element,
-            firstProbeAnnotation.annotationUID
+            firstProbeAnnotation.annotationUID,
+            element
           );
           annotation.state.removeAnnotation(
-            element,
-            secondProbeAnnotation.annotationUID
+            secondProbeAnnotation.annotationUID,
+            element
           );
 
           done();
@@ -356,8 +356,8 @@ describe('Probe Tool: ', () => {
           expect(data[targets[0]].value).toBe(255);
 
           annotation.state.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
+            probeAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -439,8 +439,8 @@ describe('Probe Tool: ', () => {
           expect(data[targets[0]].value).toBe(0);
 
           annotation.state.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
+            probeAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -519,8 +519,8 @@ describe('Probe Tool: ', () => {
           expect(data[targets[0]].value).toBe(255);
 
           annotation.state.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
+            probeAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -616,8 +616,8 @@ describe('Probe Tool: ', () => {
           expect(handles[0]).toEqual(p2);
 
           annotation.state.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
+            probeAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -843,8 +843,8 @@ describe('Probe Tool: ', () => {
           expect(handles[0]).toEqual(p2);
 
           annotation.state.removeAnnotation(
-            element,
-            probeAnnotation.annotationUID
+            probeAnnotation.annotationUID,
+            element
           );
           done();
         }, 100);

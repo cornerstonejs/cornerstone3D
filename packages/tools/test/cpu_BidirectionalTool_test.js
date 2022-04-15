@@ -155,8 +155,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -265,8 +265,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -410,8 +410,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -582,8 +582,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(handles[1]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -806,8 +806,8 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       }, 100);

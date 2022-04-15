@@ -97,25 +97,22 @@ function addAnnotation(element: HTMLDivElement, annotation: Annotation): void {
  * @param annotationUID - The unique identifier for the annotation.
  */
 function removeAnnotation(
-  element: HTMLDivElement,
-  annotationUID: string
+  annotationUID: string,
+  element?: HTMLDivElement
 ): void {
-  const annotationManager = getViewportSpecificAnnotationManager(element);
+  let annotationManager = getDefaultAnnotationManager();
+  if (element) {
+    annotationManager = getViewportSpecificAnnotationManager(element);
+  }
 
   const annotation = annotationManager.getAnnotation(annotationUID);
   annotationManager.removeAnnotation(annotationUID);
 
   // trigger annotation removed
-  const enabledElement = getEnabledElement(element);
-  const { renderingEngine } = enabledElement;
-  const { viewportId } = enabledElement;
-
   const eventType = Events.ANNOTATION_REMOVED;
 
   const eventDetail: AnnotationRemovedEventDetail = {
     annotation,
-    viewportId,
-    renderingEngineId: renderingEngine.id,
   };
 
   triggerEvent(eventTarget, eventType, eventDetail);

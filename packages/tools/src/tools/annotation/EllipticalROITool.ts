@@ -428,7 +428,7 @@ export default class EllipticalROITool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(element, annotation.annotationUID);
+      removeAnnotation(annotation.annotationUID, element);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
