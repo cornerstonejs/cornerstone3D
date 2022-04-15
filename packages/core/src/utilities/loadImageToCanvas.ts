@@ -32,7 +32,8 @@ export default function loadImageToCanvas(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     function successCallback(image: IImage, imageId: string) {
-      renderToCanvas(canvas, image);
+      const { modality } = metaData.get('generalSeriesModule', imageId) || {};
+      renderToCanvas(canvas, image, modality);
       resolve(imageId);
     }
 
@@ -44,10 +45,10 @@ export default function loadImageToCanvas(
     function sendRequest(imageId, imageIdIndex, options) {
       return loadAndCacheImage(imageId, options).then(
         (image) => {
-          successCallback.call(this, image, imageIdIndex, imageId);
+          successCallback.call(this, image, imageId, imageIdIndex);
         },
         (error) => {
-          errorCallback.call(this, error, imageIdIndex, imageId);
+          errorCallback.call(this, error, imageId);
         }
       );
     }
@@ -77,7 +78,7 @@ export default function loadImageToCanvas(
     };
 
     imageLoadPoolManager.addRequest(
-      sendRequest.bind(null, imageId, options),
+      sendRequest.bind(null, imageId, null, options),
       requestType,
       { imageId },
       priority
