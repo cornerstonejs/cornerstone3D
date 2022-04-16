@@ -27,7 +27,7 @@ _Architectural goals include:_
 - Leverage modern DICOM standards but avoid legacy parts
 - Support straightforward integration with multiple JavaScript deployment targets (browser, node, etc) and frameworks.
 
-_Parts of DICOM that dcmjs will focus on:_
+_Parts of DICOM that dcmjs *will* focus on:_
 
 - Enhanced Multiframe Images
 - Segmentation Objects
@@ -38,6 +38,7 @@ _Parts of DICOM that dcmjs *will not* focus on:_
 
 - DIMSE (legacy networking like C-STORE, C-FIND, C-MOVE, etc).  See the [dcmjs-dimse project](https://github.com/PantelisGeorgiadis/dcmjs-dimse) for that.
 - Physical Media (optical disks).  See [this FAQ](https://www.dclunie.com/medical-image-faq/html/index.html) if you need to work with those.
+- Image processing.  See [dcmjs-imaging](https://github.com/PantelisGeorgiadis/dcmjs-imaging) for this.
 
 # Usage
 
