@@ -129,8 +129,6 @@ type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEve
 
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
-    viewportId: string;
-    renderingEngineId: string;
     annotation: Annotation;
 };
 
@@ -888,13 +886,6 @@ const _default: {
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
-};
-
-// @public (undocumented)
-const _default_2: {
-    snapFocalPointToSlice: typeof snapFocalPointToSlice;
-    getSliceRange: typeof getSliceRange;
-    scrollThroughStack: typeof scrollThroughStack;
 };
 
 // @public (undocumented)
@@ -1769,7 +1760,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
+    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
@@ -1808,7 +1799,7 @@ interface IStackViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -2033,7 +2024,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThickness(slabThickness: number): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
@@ -2852,7 +2843,7 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
-function removeAnnotation(element: HTMLDivElement, annotationUID: string): void;
+function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
 
 // @public (undocumented)
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
@@ -2893,7 +2884,7 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, deltaFrames: number, invert?: boolean): void;
+function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, options: ScrollOptions_2): void;
 
 // @public (undocumented)
 type Segmentation = {
@@ -3185,6 +3176,8 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     mouseDragCallback: () => void;
     // (undocumented)
+    previousDirection: number;
+    // (undocumented)
     static toolName: string;
     // (undocumented)
     touchDragCallback: () => void;
@@ -3194,8 +3187,7 @@ declare namespace stackScrollTool {
     export {
         snapFocalPointToSlice,
         getSliceRange,
-        scrollThroughStack,
-        _default_2 as default
+        scrollThroughStack
     }
 }
 

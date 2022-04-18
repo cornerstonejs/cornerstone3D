@@ -1019,7 +1019,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
+    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
@@ -1069,7 +1069,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     modality: string;
     // (undocumented)
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1279,7 +1279,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setSlabThickness(slabThickness: number): void;
     // (undocumented)
@@ -1450,13 +1450,13 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
+    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
     // (undocumented)
     setViewports(publicViewportInputEntries: Array<PublicViewportInput>): void;
 }
 
 // @public (undocumented)
-function renderToCanvas(canvas: HTMLCanvasElement, image: IImage): void;
+function renderToCanvas(canvas: HTMLCanvasElement, image: IImage, modality?: string): void;
 
 // @public (undocumented)
 enum RequestType {
@@ -1587,7 +1587,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     removeAllActors(): void;
     // (undocumented)
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1816,7 +1816,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    protected resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)
@@ -1975,7 +1975,7 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setSlabThickness(slabThickness: number): void;
     // (undocumented)
