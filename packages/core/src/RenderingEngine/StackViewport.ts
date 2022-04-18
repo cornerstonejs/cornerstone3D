@@ -1602,30 +1602,28 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  public resetCamera(resetPanZoomForViewPlane = true): boolean {
+  public resetCamera(resetPan = true, resetZoom = true): boolean {
     if (this.useCPURendering) {
-      this.resetCameraCPU(resetPanZoomForViewPlane);
+      this.resetCameraCPU(resetPan, resetZoom);
     } else {
-      this.resetCameraGPU();
+      this.resetCameraGPU(resetPan, resetZoom);
     }
 
     return true;
   }
 
-  private resetCameraCPU(resetPanZoomForViewPlane: boolean) {
+  private resetCameraCPU(resetPan, resetZoom) {
     const { image } = this._cpuFallbackEnabledElement;
 
     if (!image) {
       return;
     }
 
-    resetCamera(this._cpuFallbackEnabledElement, resetPanZoomForViewPlane);
+    resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
   }
 
-  private resetCameraGPU() {
-    // Todo: this doesn't work for resetPanZoomForViewPlane = true
-    const resetPanZoomForViewPlane = false;
-    super.resetCamera(resetPanZoomForViewPlane);
+  private resetCameraGPU(resetPan, resetZoom) {
+    super.resetCamera(resetPan, resetZoom);
   }
 
   /**

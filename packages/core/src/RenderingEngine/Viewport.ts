@@ -487,13 +487,14 @@ class Viewport implements IViewport {
 
   /**
    * Resets the camera based on the rendering volume(s) bounds. If
-   * resetPanZoomForViewPlane is false (default behavior), it places
-   * the focal point at the center of the volume (or slice); otherwise,
-   * only the camera zoom and camera Pan is reset for the current view.
-   * @param resetPanZoomForViewPlane - if true, it renders the center of the volume instead
+   * resetPan and resetZoom are true it places the focal point at the center of
+   * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
+   * is reset for the current view.
+   * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
+   * @param resetZoom - If true, the camera zoom is reset to the default zoom
    * @returns boolean
    */
-  protected resetCamera(resetPanZoomForViewPlane = false): boolean {
+  protected resetCamera(resetPan = true, resetZoom = true): boolean {
     const renderer = this.getRenderer();
     const previousCamera = _cloneDeep(this.getCamera());
 
@@ -580,7 +581,7 @@ class Viewport implements IViewport {
 
     let focalPointToSet = focalPoint;
 
-    if (resetPanZoomForViewPlane && imageData) {
+    if (!resetPan && imageData) {
       focalPointToSet = this._getFocalPointForViewPlaneReset(imageData);
     }
 
@@ -597,7 +598,9 @@ class Viewport implements IViewport {
 
     renderer.resetCameraClippingRange(bounds);
 
-    activeCamera.setParallelScale(parallelScale);
+    if (resetZoom) {
+      activeCamera.setParallelScale(parallelScale);
+    }
 
     // update reasonable world to physical values
     activeCamera.setPhysicalScale(radius);
