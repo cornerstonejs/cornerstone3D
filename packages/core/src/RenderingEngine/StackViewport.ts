@@ -102,6 +102,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Viewport Properties
   private voiRange: VOIRange;
+  private initialVOIRange: VOIRange;
   private invert = false;
   private interpolationType: InterpolationType;
   private rotation = 0;
@@ -597,7 +598,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiApplied = false;
 
     this.setProperties({
-      voiRange: undefined,
+      voiRange: this.initialVOIRange,
       rotation: 0,
       interpolationType: InterpolationType.LINEAR,
       invert: false,
@@ -1610,8 +1611,9 @@ class StackViewport extends Viewport implements IStackViewport {
     const voiRange =
       typeof windowCenter === 'number' && typeof windowWidth === 'number'
         ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
-        : (undefined as VOIRange);
+        : undefined;
 
+    this.initialVOIRange = voiRange;
     this.setProperties({ voiRange });
 
     // Saving position of camera on render, to cache the panning
