@@ -130,7 +130,7 @@ type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEve
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
     annotation: Annotation;
-    FrameOfReferenceUID: string;
+    annotationManagerUID: string;
 };
 
 // @public (undocumented)
