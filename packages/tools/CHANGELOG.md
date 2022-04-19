@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.9.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.0...@cornerstonejs/tools@0.9.1) (2022-04-19)
+
+
+### Bug Fixes
+
+* jumpToSlice and scaling of images in renderToCanvas ([#78](https://github.com/cornerstonejs/cornerstone3D-beta/issues/78)) ([bbebf7f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/bbebf7fbad28e670333783cd669e571ec2ae7358))
+
+
+
+
+
 # [0.9.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.8.0...@cornerstonejs/tools@0.9.0) (2022-04-14)
 
 
