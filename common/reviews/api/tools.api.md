@@ -130,6 +130,7 @@ type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEve
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
     annotation: Annotation;
+    FrameOfReferenceUID: string;
 };
 
 // @public (undocumented)
@@ -2884,6 +2885,13 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
+type ScrollOptions_2 = {
+    direction: number;
+    invert: boolean;
+    volumeId?: string;
+};
+
+// @public (undocumented)
 function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, options: ScrollOptions_2): void;
 
 // @public (undocumented)
@@ -3471,7 +3479,8 @@ declare namespace Types {
         ColorLUT,
         LabelmapTypes,
         SVGCursorDescriptor,
-        SVGPoint_2 as SVGPoint
+        SVGPoint_2 as SVGPoint,
+        ScrollOptions_2 as ScrollOptions
     }
 }
 export { Types }

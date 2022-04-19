@@ -21,6 +21,7 @@ import type InteractionTypes from './InteractionTypes';
 import type { ToolProps, PublicToolProps } from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type JumpToSliceOptions from './JumpToSliceOptions';
+import type ScrollOptions from './ScrollOptions';
 import type {
   Color,
   ColorLUT,
@@ -76,4 +77,6 @@ export type {
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,
+  // Scroll
+  ScrollOptions,
 };

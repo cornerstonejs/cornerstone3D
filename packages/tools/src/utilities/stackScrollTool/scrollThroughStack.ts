@@ -7,12 +7,7 @@ import {
 import clip from '../clip';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
-
-type ScrollOptions = {
-  direction: number;
-  invert: boolean;
-  volumeId?: string;
-};
+import { ScrollOptions } from '../../types';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided

@@ -113,6 +113,7 @@ function removeAnnotation(
 
   const eventDetail: AnnotationRemovedEventDetail = {
     annotation,
+    FrameOfReferenceUID: annotationManager.uid,
   };
 
   triggerEvent(eventTarget, eventType, eventDetail);

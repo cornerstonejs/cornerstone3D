@@ -51,6 +51,8 @@ type AnnotationModifiedEventDetail = {
 type AnnotationRemovedEventDetail = {
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
+  /** FrameOfReferenceUID */
+  FrameOfReferenceUID: string;
 };
 
 /**
