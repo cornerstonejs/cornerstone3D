@@ -1,6 +1,6 @@
 type ScrollOptions = {
   direction: number;
-  invert: boolean;
+  invert?: boolean;
   volumeId?: string;
 };
 

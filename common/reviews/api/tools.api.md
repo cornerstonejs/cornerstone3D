@@ -2887,7 +2887,7 @@ type ScalingParameters = {
 // @public (undocumented)
 type ScrollOptions_2 = {
     direction: number;
-    invert: boolean;
+    invert?: boolean;
     volumeId?: string;
 };
 
