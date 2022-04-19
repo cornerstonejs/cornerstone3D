@@ -150,8 +150,8 @@ describe('EllipticalROITool (CPU):', () => {
         expect(data[targets[0]].mean).toBe(255);
 
         annotation.state.removeAnnotation(
-          element,
-          ellipseAnnotation.annotationUID
+          ellipseAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -326,8 +326,8 @@ describe('EllipticalROITool (CPU):', () => {
         expect(data[targets[0]].mean).toBe(255);
 
         annotation.state.removeAnnotation(
-          element,
-          ellipseAnnotation.annotationUID
+          ellipseAnnotation.annotationUID,
+          element
         );
         done();
       }, 100);

@@ -184,7 +184,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
     if (annotations.length) {
       // If found, it will override it by removing the annotation and adding it later
-      removeAnnotation(element, annotations[0].annotationUID);
+      removeAnnotation(annotations[0].annotationUID, element);
     }
 
     const annotation = {

@@ -298,12 +298,12 @@ class RenderingEngine implements IRenderingEngine {
    * This is left as an app level concern as one might want to debounce the changes, or the like.
    *
    * @param immediate - Whether all of the viewports should be rendered immediately.
-   * @param resetPanZoomForViewPlane - Whether each viewport gets centered (reset pan) and
+   * @param resetPan - Whether the viewport should reset its pan.
+   * @param resetZoom - Whether the viewport should reset its zoom.
    * its zoom gets reset upon resize.
    */
-  public resize(immediate = true, resetPanZoomForViewPlane = true): void {
+  public resize(immediate = true, resetPan = true, resetZoom = true): void {
     this._throwIfDestroyed();
-
     // 1. Get the viewports' canvases
     const viewports = this._getViewportsAsArray();
 
@@ -320,14 +320,16 @@ class RenderingEngine implements IRenderingEngine {
 
     this._resizeVTKViewports(
       vtkDrivenViewports,
-      immediate,
-      resetPanZoomForViewPlane
+      resetPan,
+      resetZoom,
+      immediate
     );
 
     this._resizeUsingCustomResizeHandler(
       customRenderingViewports,
-      immediate,
-      resetPanZoomForViewPlane
+      resetPan,
+      resetZoom,
+      immediate
     );
   }
 
@@ -526,8 +528,9 @@ class RenderingEngine implements IRenderingEngine {
 
   private _resizeUsingCustomResizeHandler(
     customRenderingViewports: StackViewport[],
-    immediate = true,
-    resetPanZoomForViewPlane = true
+    resetPan = true,
+    resetZoom = true,
+    immediate = true
   ) {
     // 1. If viewport has a custom resize method, call it here.
     customRenderingViewports.forEach((vp) => {
@@ -536,7 +539,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     customRenderingViewports.forEach((vp) => {
-      vp.resetCamera(resetPanZoomForViewPlane);
+      vp.resetCamera(resetPan, resetZoom);
     });
 
     // 2. If render is immediate: Render all
@@ -547,7 +550,8 @@ class RenderingEngine implements IRenderingEngine {
 
   private _resizeVTKViewports(
     vtkDrivenViewports: Array<IStackViewport | IVolumeViewport>,
-    resetPanZoomForViewPlane = true,
+    resetPan = true,
+    resetZoom = true,
     immediate = true
   ) {
     const canvasesDrivenByVtkJs = vtkDrivenViewports.map((vp) => vp.canvas);
@@ -567,7 +571,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      vp.resetCamera(resetPanZoomForViewPlane);
+      vp.resetCamera(resetPan, resetZoom);
     });
 
     // 4. If render is immediate: Render all

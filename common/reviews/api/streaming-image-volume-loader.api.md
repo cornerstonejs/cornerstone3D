@@ -743,7 +743,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPanZoomForViewPlane?: boolean): void;
+    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
@@ -770,7 +770,7 @@ interface IStackViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -928,7 +928,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThickness(slabThickness: number): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,

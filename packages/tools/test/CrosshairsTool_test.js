@@ -185,8 +185,8 @@ describe('Cornerstone Tools: ', () => {
           expect(p).toBeCloseTo(imageCenterWorld[i], 3);
         });
         annotation.state.removeAnnotation(
-          element1,
-          crosshairAnnotation.annotationUID
+          crosshairAnnotation.annotationUID,
+          element1
         );
       });
 
@@ -277,8 +277,8 @@ describe('Cornerstone Tools: ', () => {
           expect(p).toBeCloseTo(p1[i], 3);
           expect(p).toBeCloseTo(axialCanvasToolCenter[i], 3);
           annotation.state.removeAnnotation(
-            element1,
-            crosshairAnnotation.annotationUID
+            crosshairAnnotation.annotationUID,
+            element1
           );
         });
       });
@@ -499,8 +499,8 @@ describe('Cornerstone Tools: ', () => {
               // Can successfully move the tool center in all viewports
               expect(p).toBeCloseTo(worldCoord2[i], 3);
               annotation.state.removeAnnotation(
-                element1,
-                crosshairAnnotation.annotationUID
+                crosshairAnnotation.annotationUID,
+                element1
               );
             });
           });
