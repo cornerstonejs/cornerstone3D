@@ -54,8 +54,21 @@ import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
+import { VoiModifiedEventDetail } from '../types/EventTypes';
 
 const EPSILON = 1; // Slice Thickness
+
+interface ImagePixelModule {
+  bitsAllocated: number;
+  bitsStored: number;
+  samplesPerPixel: number;
+  highBit: number;
+  photometricInterpretation: string;
+  pixelRepresentation: string;
+  windowWidth: number;
+  windowCenter: number;
+  modality: string;
+}
 
 interface ImageDataMetaData {
   bitsAllocated: number;
@@ -66,7 +79,7 @@ interface ImageDataMetaData {
   spacing: Point3;
   numVoxels: number;
   imagePlaneModule: unknown;
-  imagePixelModule: unknown;
+  imagePixelModule: ImagePixelModule;
 }
 
 // TODO This needs to be exposed as its published to consumers.
@@ -830,7 +843,7 @@ class StackViewport extends Viewport implements IStackViewport {
       };
 
       const { lower, upper } = windowLevelUtil.toLowHighRange(wwToUse, wcToUse);
-      this.voiRange = { lower, upper };
+      voiRange = { lower, upper };
     } else {
       const { lower, upper } = voiRange;
       const { windowCenter, windowWidth } = windowLevelUtil.toWindowLevel(
@@ -847,10 +860,16 @@ class StackViewport extends Viewport implements IStackViewport {
 
       viewport.voi.windowWidth = windowWidth;
       viewport.voi.windowCenter = windowCenter;
-      this.voiRange = voiRange;
     }
 
     this.voiApplied = true;
+    this.voiRange = voiRange;
+    const eventDetail: VoiModifiedEventDetail = {
+      viewportId: this.id,
+      range: voiRange,
+    };
+
+    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
   }
 
   private setVOIGPU(voiRange: VOIRange): void {
@@ -866,13 +885,20 @@ class StackViewport extends Viewport implements IStackViewport {
       const imageData = volumeActor.getMapper().getInputData();
       const range = imageData.getPointData().getScalars().getRange();
       tfunc.setRange(range[0], range[1]);
-      this.voiRange = { lower: range[0], upper: range[1] };
+      voiRange = { lower: range[0], upper: range[1] };
     } else {
       const { lower, upper } = voiRange;
       tfunc.setRange(lower, upper);
-      this.voiRange = voiRange;
     }
+
     this.voiApplied = true;
+    this.voiRange = voiRange;
+    const eventDetail: VoiModifiedEventDetail = {
+      viewportId: this.id,
+      range: voiRange,
+    };
+
+    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
   }
 
   /**
@@ -1028,16 +1054,15 @@ class StackViewport extends Viewport implements IStackViewport {
    *
    * @param image - cornerstone Image object
    */
-  private _createVTKImageData(image: IImage): void {
-    const {
-      origin,
-      direction,
-      dimensions,
-      spacing,
-      bitsAllocated,
-      numComps,
-      numVoxels,
-    } = this._getImageDataMetadata(image);
+  private _createVTKImageData({
+    origin,
+    direction,
+    dimensions,
+    spacing,
+    bitsAllocated,
+    numComps,
+    numVoxels,
+  }): void {
     let pixelArray;
     switch (bitsAllocated) {
       case 8:
@@ -1091,6 +1116,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.rotationCache = 0;
     this.flipVertical = false;
     this.flipHorizontal = false;
+    this.voiApplied = false;
 
     this._resetProperties();
 
@@ -1531,9 +1557,28 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
+    const {
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      bitsAllocated,
+      numComps,
+      numVoxels,
+      imagePixelModule,
+    } = this._getImageDataMetadata(image);
+
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
-    this._createVTKImageData(image);
+    this._createVTKImageData({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      bitsAllocated,
+      numComps,
+      numVoxels,
+    });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
     // Image's pixel data
@@ -1545,7 +1590,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.setActors([{ uid: this.id, volumeActor: stackActor }]);
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
-    const direction = this._imageData.getDirection() as Float32Array;
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);
 
     this.setCameraNoEvent({ viewUp, viewPlaneNormal });
@@ -1562,7 +1606,13 @@ class StackViewport extends Viewport implements IStackViewport {
     activeCamera.setFreezeFocalPoint(true);
 
     // set voi for the first time
-    this.setProperties();
+    const { windowCenter, windowWidth } = imagePixelModule;
+    const voiRange =
+      typeof windowCenter === 'number' && typeof windowWidth === 'number'
+        ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
+        : (undefined as VOIRange);
+
+    this.setProperties({ voiRange });
 
     // Saving position of camera on render, to cache the panning
     const { position } = this.getCamera();
