@@ -109,7 +109,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
       annotationToolsWithMoveableHandles
     ) as ToolsWithMoveableHandles;
 
-    toggleAnnotationSelection(annotation, isMultiSelect);
+    toggleAnnotationSelection(annotation.annotationUID, isMultiSelect);
     tool.handleSelectedCallback(evt, annotation, handle, 'Mouse');
 
     return;
@@ -131,7 +131,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
       moveableAnnotationTools
     );
 
-    toggleAnnotationSelection(annotation, isMultiSelect);
+    toggleAnnotationSelection(annotation.annotationUID, isMultiSelect);
     tool.toolSelectedCallback(evt, annotation, 'Mouse');
 
     return;
@@ -170,24 +170,24 @@ function getAnnotationForSelection(
 
 /**
  * If the annotation is selected, deselect it. If it's not selected, select it
- * @param annotation - The Annotation object that we
+ * @param annotationUID - The AnnotationUID that we
  * want to toggle the selection of.
  * @param isMultiSelect - If true, the annotation. will be deselected if it is
  * already selected, or deselected if it is selected.
  */
 function toggleAnnotationSelection(
-  annotation: Annotation,
+  annotationUID: string,
   isMultiSelect = false
 ): void {
   if (isMultiSelect) {
-    if (isAnnotationSelected(annotation)) {
-      setAnnotationSelected(annotation, false);
+    if (isAnnotationSelected(annotationUID)) {
+      setAnnotationSelected(annotationUID, false);
     } else {
       const preserveSelected = true;
-      setAnnotationSelected(annotation, true, preserveSelected);
+      setAnnotationSelected(annotationUID, true, preserveSelected);
     }
   } else {
     const preserveSelected = false;
-    setAnnotationSelected(annotation, true, preserveSelected);
+    setAnnotationSelected(annotationUID, true, preserveSelected);
   }
 }

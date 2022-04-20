@@ -106,15 +106,22 @@ let upperThreshold = 500;
 addButtonToToolbar({
   title: 'Execute threshold',
   onClick: () => {
-    const selectedAnnotations = selection.getAnnotationsSelectedByToolName(
+    const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
       RectangleROIThresholdTool.toolName
-    ) as Array<cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation>;
+    ) as Array<string>;
 
-    if (!selectedAnnotations) {
+    if (!selectedAnnotationUIDs) {
       throw new Error('No annotation selected ');
     }
 
-    const annotation = selectedAnnotations[0];
+    const annotationUID = selectedAnnotationUIDs[0];
+    const annotation = cornerstoneTools.annotation.state.getAnnotation(
+      annotationUID
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation;
+
+    if (!annotation) {
+      return;
+    }
 
     const { metadata } = annotation; // assuming they are all overlayed on the same toolGroup
     const viewport = metadata.enabledElement.viewport as Types.IVolumeViewport;

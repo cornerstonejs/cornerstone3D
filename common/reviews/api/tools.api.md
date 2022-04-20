@@ -151,9 +151,9 @@ type Annotations = Array<Annotation>;
 
 // @public (undocumented)
 type AnnotationSelectionChangeEventDetail = {
-    added: Array<Annotation>;
-    removed: Array<Annotation>;
-    selection: Array<Annotation>;
+    added: Array<string>;
+    removed: Array<string>;
+    selection: Array<string>;
 };
 
 // @public (undocumented)
@@ -890,7 +890,7 @@ const _default: {
 };
 
 // @public (undocumented)
-function deselectAnnotation(annotation?: Annotation): void;
+function deselectAnnotation(annotationUID?: string): void;
 
 // @public (undocumented)
 export function destroy(): void;
@@ -1285,19 +1285,16 @@ function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabled
 function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
 
 // @public (undocumented)
-function getAnnotationSelected(annotationUID: string): Annotation;
-
-// @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
 
 // @public (undocumented)
 function getAnnotationsLockedCount(): number;
 
 // @public (undocumented)
-function getAnnotationsSelected(): Array<Annotation>;
+function getAnnotationsSelected(): Array<string>;
 
 // @public (undocumented)
-function getAnnotationsSelectedByToolName(toolName: string): Array<Annotation>;
+function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
@@ -1770,7 +1767,7 @@ interface IRenderingEngine {
 function isAnnotationLocked(annotation: Annotation): boolean;
 
 // @public (undocumented)
-function isAnnotationSelected(annotation: Annotation): boolean;
+function isAnnotationSelected(annotationUID: string): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3042,7 +3039,6 @@ declare namespace selection {
     export {
         setAnnotationSelected,
         getAnnotationsSelected,
-        getAnnotationSelected,
         getAnnotationsSelectedByToolName,
         getAnnotationsSelectedCount,
         deselectAnnotation,
@@ -3060,7 +3056,7 @@ function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): vo
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 
 // @public (undocumented)
-function setAnnotationSelected(annotation: Annotation, selected?: boolean, preserveSelected?: boolean): void;
+function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
 function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
