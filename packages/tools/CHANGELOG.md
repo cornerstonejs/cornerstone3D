@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.9.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.1...@cornerstonejs/tools@0.9.2) (2022-04-20)
+
+
+### Bug Fixes
+
+* windowLevel event trigger and initial voi range ([#81](https://github.com/cornerstonejs/cornerstone3D-beta/issues/81)) ([38307d4](https://github.com/cornerstonejs/cornerstone3D-beta/commit/38307d40cec60f2b3b8497abda8aa4fa657fc179))
+
+
+
+
+
 ## [0.9.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.0...@cornerstonejs/tools@0.9.1) (2022-04-19)
 
 
