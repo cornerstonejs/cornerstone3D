@@ -8,7 +8,7 @@ import { RequestPoolManager } from './requestPoolManager';
  *
  * Retrieval (usually) === XHR requests
  */
-const imageRetrievalPoolManager = new RequestPoolManager();
+const imageRetrievalPoolManager = new RequestPoolManager('imageRetrievalPool');
 
 imageRetrievalPoolManager.maxNumRequests = {
   interaction: 200,

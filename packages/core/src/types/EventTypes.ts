@@ -150,6 +150,18 @@ type VolumeCacheVolumeAddedEventDetail = {
 };
 
 /**
+ * PRE_STACK_NEW_IMAGE Event's data
+ */
+type PreStackNewImageEventDetail = {
+  /** the image imageId */
+  imageId: string;
+  /** unique id for the viewport */
+  viewportId: string;
+  /** unique id for the renderingEngine */
+  renderingEngineId: string;
+};
+
+/**
  * STACK_NEW_IMAGE Event's data
  */
 type StackNewImageEventDetail = {
@@ -273,6 +285,11 @@ type VolumeCacheVolumeRemovedEvent =
 type StackNewImageEvent = CustomEventType<StackNewImageEventDetail>;
 
 /**
+ * START_NEW_IMAGE
+ */
+type PreStackNewImageEvent = CustomEventType<PreStackNewImageEventDetail>;
+
+/**
  * IMAGE_SPACING_CALIBRATED
  */
 type ImageSpacingCalibratedEvent =
@@ -314,6 +331,8 @@ export type {
   VolumeCacheVolumeRemovedEventDetail,
   StackNewImageEvent,
   StackNewImageEventDetail,
+  PreStackNewImageEvent,
+  PreStackNewImageEventDetail,
   ImageSpacingCalibratedEvent,
   ImageSpacingCalibratedEventDetail,
   ImageLoadProgressEvent,

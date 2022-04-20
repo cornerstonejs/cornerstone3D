@@ -1228,20 +1228,20 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageId - string representing the imageId
    * @param imageIdIndex - index of the imageId in the imageId list
    */
-  private async _loadImage(
+  private async _loadAndDisplayImage(
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
     if (this.useCPURendering) {
-      await this._loadImageCPU(imageId, imageIdIndex);
+      await this._loadAndDisplayImageCPU(imageId, imageIdIndex);
     } else {
-      await this._loadImageGPU(imageId, imageIdIndex);
+      await this._loadAndDisplayImageGPU(imageId, imageIdIndex);
     }
 
     return imageId;
   }
 
-  private _loadImageCPU(
+  private _loadAndDisplayImageCPU(
     imageId: string,
     imageIdIndex: number
   ): Promise<string> {
@@ -1388,7 +1388,7 @@ class StackViewport extends Viewport implements IStackViewport {
     });
   }
 
-  private _loadImageGPU(imageId: string, imageIdIndex: number) {
+  private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
     return new Promise((resolve, reject) => {
       // 1. Load the image using the Image Loader
       function successCallback(image, imageIdIndex, imageId) {
@@ -1475,6 +1475,13 @@ class StackViewport extends Viewport implements IStackViewport {
           scalingParameters,
         },
       };
+
+      const eventDetail: EventTypes.PreStackNewImageEventDetail = {
+        imageId,
+        viewportId: this.id,
+        renderingEngineId: this.renderingEngineId,
+      };
+      triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
       imageLoadPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),
@@ -1643,7 +1650,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
 
-    const imageId = await this._loadImage(
+    const imageId = await this._loadAndDisplayImage(
       this.imageIds[imageIdIndex],
       imageIdIndex
     );
@@ -1708,7 +1715,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public calibrateSpacing(imageId: string): void {
     const imageIdIndex = this.getImageIds().indexOf(imageId);
     this.stackInvalidated = true;
-    this._loadImage(imageId, imageIdIndex);
+    this._loadAndDisplayImage(imageId, imageIdIndex);
   }
 
   /**

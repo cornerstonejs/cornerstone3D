@@ -27,7 +27,7 @@ import renderToCanvas from './renderToCanvas';
 export default function loadImageToCanvas(
   canvas: HTMLCanvasElement,
   imageId: string,
-  requestType = RequestType.Interaction,
+  requestType = RequestType.Thumbnail,
   priority = -5
 ): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -66,6 +66,8 @@ export default function loadImageToCanvas(
       suvbw: suvFactor.suvbw,
     };
 
+    // IMPORTANT: Request type should be passed if not the 'interaction'
+    // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
         type: 'Float32Array',
@@ -75,6 +77,7 @@ export default function loadImageToCanvas(
       preScale: {
         scalingParameters,
       },
+      requestType,
     };
 
     imageLoadPoolManager.addRequest(
