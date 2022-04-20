@@ -117,6 +117,8 @@ class PlanarFreehandROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        allowOpenContours: true,
+        closeContourProximity: 10,
         subPixelResolution: 2,
       },
     }
@@ -530,7 +532,19 @@ class PlanarFreehandROITool extends AnnotationTool {
   private mouseUpDrawCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
-    this.completeDrawContour(evt);
+    const { allowOpenContours } = this.configuration;
+    const { canvasPoints } = this.drawData;
+    const firstPoint = canvasPoints[0];
+    const lastPoint = canvasPoints[canvasPoints.length - 1];
+
+    if (
+      allowOpenContours &&
+      !this.pointsAreWithinCloseContourProximity(firstPoint, lastPoint)
+    ) {
+      this.completeDrawOpenContour(evt);
+    } else {
+      this.completeDrawContour(evt);
+    }
   };
 
   private completeDrawContour = (
@@ -561,6 +575,39 @@ class PlanarFreehandROITool extends AnnotationTool {
     );
 
     annotation.data.handles.points = worldPoints;
+    annotation.data.isOpenContour = false;
+
+    this.isDrawing = false;
+    this.drawData = undefined;
+    this.commonData = undefined;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    this.deactivateDraw(element);
+  };
+
+  private completeDrawOpenContour = (
+    evt:
+      | EventTypes.MouseUpEventType
+      | EventTypes.MouseClickEventType
+      | EventTypes.MouseDragEventType
+  ) => {
+    const { canvasPoints } = this.drawData;
+    const { annotation, viewportIdsToRender } = this.commonData;
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
+
+    // TODO -> This is really expensive and won't scale! What should we do here?
+    // It would be best if we could get the transformation matrix and then just
+    // apply this to the points, but its still 16 multiplications per point.
+    const worldPoints = canvasPoints.map((canvasPoint) =>
+      viewport.canvasToWorld(canvasPoint)
+    );
+
+    annotation.data.handles.points = worldPoints;
+    annotation.data.isOpenContour = true;
 
     this.isDrawing = false;
     this.drawData = undefined;
@@ -752,6 +799,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     svgDrawingHelper,
     annotation
   ) => {
+    const { allowOpenContours } = this.configuration;
     // const { viewport } = enabledElement;
     // const { element } = viewport;
     // const targetId = this.getTargetId(viewport);
@@ -772,17 +820,52 @@ class PlanarFreehandROITool extends AnnotationTool {
       width: lineWidth === undefined ? undefined : <number>lineWidth,
     };
 
-    const polylineUID = '1';
-
     drawPolylineSvg(
       svgDrawingHelper,
       PlanarFreehandROITool.toolName,
       annotation.annotationUID,
-      polylineUID,
+      '1',
       canvasPoints,
       options
     );
+
+    if (allowOpenContours) {
+      const firstPoint = canvasPoints[0];
+      const lastPoint = canvasPoints[canvasPoints.length - 1];
+
+      // Check if start and end are within close proximity
+      if (this.pointsAreWithinCloseContourProximity(firstPoint, lastPoint)) {
+        // Preview join last points
+
+        drawPolylineSvg(
+          svgDrawingHelper,
+          PlanarFreehandROITool.toolName,
+          annotation.annotationUID,
+          '2',
+          [lastPoint, firstPoint],
+          options
+        );
+      } else {
+        // Draw start point
+        const handleGroupUID = '0';
+
+        drawHandlesSvg(
+          svgDrawingHelper,
+          PlanarFreehandROITool.toolName,
+          annotation.annotationUID,
+          handleGroupUID,
+          [firstPoint],
+          { color, handleRadius: 2 }
+        );
+      }
+    }
   };
+
+  private pointsAreWithinCloseContourProximity(point1, point2): boolean {
+    const { closeContourProximity } = this.configuration;
+
+    return vec2.dist(point1, point2) < closeContourProximity;
+  }
 
   private renderContourBeingEdited = (
     enabledElement,
@@ -791,6 +874,18 @@ class PlanarFreehandROITool extends AnnotationTool {
   ) => {};
 
   private renderContour = (enabledElement, svgDrawingHelper, annotation) => {
+    if (annotation.data.isOpenContour) {
+      this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+    } else {
+      this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
+    }
+  };
+
+  private renderClosedContour = (
+    enabledElement,
+    svgDrawingHelper,
+    annotation
+  ) => {
     const { viewport } = enabledElement;
 
     const settings = Settings.getObjectSettings(
@@ -825,6 +920,61 @@ class PlanarFreehandROITool extends AnnotationTool {
       polylineUID,
       canvasPoints,
       options
+    );
+  };
+
+  private renderOpenContour = (
+    enabledElement,
+    svgDrawingHelper,
+    annotation
+  ) => {
+    const { viewport } = enabledElement;
+
+    const settings = Settings.getObjectSettings(
+      annotation,
+      PlanarFreehandROITool
+    );
+
+    // Todo -> Its unfortunate that we have to do this for each annotation,
+    // Even if its unchanged. Perhaps we should cache canvas points per element
+    // on the tool? That feels very weird also as we'd need to manage it/clean
+    // them up.
+    const canvasPoints = annotation.data.handles.points.map((worldPos) =>
+      viewport.worldToCanvas(worldPos)
+    );
+
+    const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
+    const color = this.getStyle(settings, 'color', annotation);
+
+    const options = {
+      color: color === undefined ? undefined : <string>color,
+      width: lineWidth === undefined ? undefined : <number>lineWidth,
+      connectLastToFirst: false,
+    };
+
+    const polylineUID = '1';
+
+    drawPolylineSvg(
+      svgDrawingHelper,
+      PlanarFreehandROITool.toolName,
+      annotation.annotationUID,
+      polylineUID,
+      canvasPoints,
+      options
+    );
+
+    // Draw start point
+    const handleGroupUID = '0';
+    const firstPoint = canvasPoints[0];
+    const lastPoint = canvasPoints[canvasPoints.length - 1];
+
+    drawHandlesSvg(
+      svgDrawingHelper,
+      PlanarFreehandROITool.toolName,
+      annotation.annotationUID,
+      handleGroupUID,
+      [firstPoint, lastPoint],
+      { color, handleRadius: 2 }
     );
   };
 }
