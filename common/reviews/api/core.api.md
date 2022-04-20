@@ -1876,8 +1876,8 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;
 // @public (undocumented)
 type VoiModifiedEventDetail = {
     viewportId: string;
-    volumeId: string;
     range: VOIRange;
+    volumeId?: string;
 };
 
 // @public (undocumented)

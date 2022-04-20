@@ -30,10 +30,10 @@ type CameraModifiedEventDetail = {
 type VoiModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
-  /** Unique ID for the volume in the cache */
-  volumeId: string;
   /** new VOI range */
   range: VOIRange;
+  /** Unique ID for the volume in the cache */
+  volumeId?: string;
 };
 
 /**
