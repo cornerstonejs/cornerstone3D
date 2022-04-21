@@ -3,11 +3,9 @@ import { AnnotationTool } from '../base';
 import {
   getEnabledElement,
   Settings,
-  StackViewport,
   VolumeViewport,
   eventTarget,
   triggerEvent,
-  cache,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -169,7 +167,7 @@ export default class EllipticalROITool extends AnnotationTool {
       highlighted: true,
       invalidated: true,
       metadata: {
-        toolName: EllipticalROITool.toolName,
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
@@ -207,7 +205,7 @@ export default class EllipticalROITool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      EllipticalROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -305,7 +303,7 @@ export default class EllipticalROITool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      EllipticalROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -371,7 +369,7 @@ export default class EllipticalROITool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      EllipticalROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -692,7 +690,7 @@ export default class EllipticalROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, EllipticalROITool.toolName);
+    let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -812,7 +810,7 @@ export default class EllipticalROITool extends AnnotationTool {
         const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
-          EllipticalROITool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -825,7 +823,7 @@ export default class EllipticalROITool extends AnnotationTool {
       const ellipseUID = '0';
       drawEllipseSvg(
         svgDrawingHelper,
-        EllipticalROITool.toolName,
+        this.getToolName(),
         annotationUID,
         ellipseUID,
         canvasCorners[0],
@@ -859,7 +857,7 @@ export default class EllipticalROITool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        EllipticalROITool.toolName,
+        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,

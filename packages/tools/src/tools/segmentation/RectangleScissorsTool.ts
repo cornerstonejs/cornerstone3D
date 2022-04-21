@@ -132,7 +132,7 @@ export default class RectangleScissorsTool extends BaseTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
-        toolName: RectangleScissorsTool.toolName,
+        toolName: this.getToolName(),
         segmentColor,
       },
       data: {
@@ -153,7 +153,7 @@ export default class RectangleScissorsTool extends BaseTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleScissorsTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -369,7 +369,7 @@ export default class RectangleScissorsTool extends BaseTool {
     const rectangleUID = '0';
     drawRectSvg(
       svgDrawingHelper,
-      RectangleScissorsTool.toolName,
+      this.getToolName(),
       annotationUID,
       rectangleUID,
       canvasCoordinates[0],

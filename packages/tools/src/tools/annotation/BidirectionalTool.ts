@@ -2,10 +2,8 @@ import { vec2, vec3 } from 'gl-matrix';
 import {
   Settings,
   getEnabledElement,
-  StackViewport,
   triggerEvent,
   eventTarget,
-  cache,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -155,7 +153,7 @@ export default class BidirectionalTool extends AnnotationTool {
       highlighted: true,
       invalidated: true,
       metadata: {
-        toolName: BidirectionalTool.toolName,
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
@@ -195,7 +193,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      BidirectionalTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -310,7 +308,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      BidirectionalTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -364,7 +362,7 @@ export default class BidirectionalTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      BidirectionalTool.toolName
+      this.getToolName()
     );
 
     hideElementCursor(element);
@@ -938,10 +936,7 @@ export default class BidirectionalTool extends AnnotationTool {
   ): void => {
     const { viewport } = enabledElement;
     const { element } = viewport;
-    let annotations = getAnnotations(
-      viewport.element,
-      BidirectionalTool.toolName
-    );
+    let annotations = getAnnotations(viewport.element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -1011,7 +1006,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          BidirectionalTool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -1024,7 +1019,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const lineUID = '0';
       drawLineSvg(
         svgDrawingHelper,
-        BidirectionalTool.toolName,
+        this.getToolName(),
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -1039,7 +1034,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const secondLineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
-        BidirectionalTool.toolName,
+        this.getToolName(),
         annotationUID,
         secondLineUID,
         canvasCoordinates[2],
@@ -1072,7 +1067,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        BidirectionalTool.toolName,
+        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,
