@@ -126,6 +126,7 @@ class StackViewport extends Viewport implements IStackViewport {
   // TODO: These should not be here and will be nuked
   public modality: string; // this is needed for tools
   public scaling: Scaling;
+  private scalingCache: { [key: string]: ScalingParameters } = {};
 
   /**
    * Constructor for the StackViewport class
@@ -367,11 +368,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // todo: some tools rely on the modality
     this.modality = modality;
-    // Compute the image size and spacing given the meta data we already have available.
-    // const metaDataMap = new Map()
-    // imageIds.forEach((imageId) => {
-    //   metaDataMap.set(imageId, metaData.get('imagePlaneModule', imageId))
-    // })
 
     let imagePlaneModule = metaData.get('imagePlaneModule', imageId);
 
@@ -1269,6 +1265,7 @@ class StackViewport extends Viewport implements IStackViewport {
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
         const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
+        image.isPreScaled = this._isImagePreScaled(imageId);
 
         const viewport = getDefaultViewport(
           this.canvas,
@@ -1361,6 +1358,8 @@ class StackViewport extends Viewport implements IStackViewport {
         suvbw: suvFactor.suvbw,
       };
 
+      this.scalingCache[imageId] = scalingParameters;
+
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
       const type = 'Float32Array';
@@ -1410,7 +1409,6 @@ class StackViewport extends Viewport implements IStackViewport {
         };
 
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
-
         this._updateActorToDisplayImageId(image);
 
         // Trigger the image to be drawn on the next animation frame
@@ -1458,6 +1456,8 @@ class StackViewport extends Viewport implements IStackViewport {
         suvbw: suvFactor.suvbw,
       };
 
+      this.scalingCache[imageId] = scalingParameters;
+
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
       const type = 'Float32Array';
@@ -1490,6 +1490,36 @@ class StackViewport extends Viewport implements IStackViewport {
         priority
       );
     });
+  }
+
+  /**
+   * Checks if the requests has been sent to the imageLoadPoolManager
+   * with preScaling options; therefore, the images have been pre-scaled.
+   * Note: this is more isTheImageThatWasRequestedGonnaBePreScaled, but since
+   * we are using the same image metadata for adding request options and later
+   * checking them, we can assume if the scalingParameters are present, the image is pre-scaled
+   * @param imageId  - imageId of the image
+   * @returns boolean
+   */
+  private _isImagePreScaled(imageId) {
+    const scalingParameters = this.scalingCache[imageId];
+
+    if (!scalingParameters) {
+      return false;
+    }
+
+    const { modality, rescaleIntercept, rescaleSlope, suvbw } =
+      scalingParameters;
+
+    if (rescaleSlope !== undefined && rescaleIntercept !== undefined) {
+      if (modality === 'PT') {
+        return suvbw !== undefined;
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -1615,10 +1645,16 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // set voi for the first time
     const { windowCenter, windowWidth } = imagePixelModule;
-    const voiRange =
+    let voiRange =
       typeof windowCenter === 'number' && typeof windowWidth === 'number'
         ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
         : undefined;
+
+    // check if the image is already prescaled
+    const isPreScaled = this._isImagePreScaled(image.imageId);
+    if (imagePixelModule.modality === 'PT' && isPreScaled) {
+      voiRange = { lower: 0, upper: 5 };
+    }
 
     this.initialVOIRange = voiRange;
     this.setProperties({ voiRange });

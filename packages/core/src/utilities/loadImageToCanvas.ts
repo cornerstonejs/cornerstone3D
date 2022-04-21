@@ -33,6 +33,8 @@ export default function loadImageToCanvas(
   return new Promise((resolve, reject) => {
     function successCallback(image: IImage, imageId: string) {
       const { modality } = metaData.get('generalSeriesModule', imageId) || {};
+
+      image.isPreScaled = isImagePreScaled(image);
       renderToCanvas(canvas, image, modality);
       resolve(imageId);
     }
@@ -87,4 +89,31 @@ export default function loadImageToCanvas(
       priority
     );
   });
+}
+
+// Note: this is more isTheImageThatWasRequestedGonnaBePreScaled, but since
+// we are using the same image metadata for adding request options and later
+// checking them, we can assume if the scalingParameters
+// are present, the image is pre-scaled
+function isImagePreScaled(image) {
+  const { imageId } = image;
+
+  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+  const suvFactor = metaData.get('scalingModule', imageId) || {};
+
+  const generalSeriesModule =
+    metaData.get('generalSeriesModule', imageId) || {};
+
+  if (
+    modalityLutModule.rescaleSlope !== undefined &&
+    modalityLutModule.rescaleIntercept !== undefined
+  ) {
+    if (generalSeriesModule.modality === 'PT') {
+      return suvFactor.suvbw !== undefined;
+    }
+
+    return true;
+  }
+
+  return false;
 }

@@ -34,7 +34,12 @@ export default function (
 
   let voi;
 
-  if (image.windowWidth && image.windowCenter) {
+  if (modality === 'PT' && image.isPreScaled) {
+    voi = {
+      windowWidth: 5,
+      windowCenter: 2.5,
+    };
+  } else if (image.windowWidth && image.windowCenter) {
     voi = {
       windowWidth: Array.isArray(image.windowWidth)
         ? image.windowWidth[0]
@@ -42,11 +47,6 @@ export default function (
       windowCenter: Array.isArray(image.windowCenter)
         ? image.windowCenter[0]
         : image.windowCenter,
-    };
-  } else if (modality === 'PT') {
-    voi = {
-      windowWidth: 5,
-      windowCenter: 2.5,
     };
   }
 

@@ -1175,6 +1175,8 @@ declare namespace EventTypes {
         VolumeCacheVolumeRemovedEventDetail,
         StackNewImageEvent,
         StackNewImageEventDetail,
+        PreStackNewImageEvent,
+        PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
@@ -1334,6 +1336,9 @@ function getGlobalRepresentationConfig(representationType: SegmentationRepresent
 
 // @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
+function getOrientationString(vector: Types_2.Point3): string;
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
@@ -1500,6 +1505,7 @@ interface IImage {
     imageId: string;
     intercept: number;
     invert: boolean;
+    isPreScaled?: boolean;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -1703,6 +1709,9 @@ type InteractionTypes = 'Mouse';
 
 // @public (undocumented)
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
+
+// @public (undocumented)
+function invertOrientationString(orientationString: string): string;
 
 // @public (undocumented)
 type IPoints = {
@@ -2392,6 +2401,13 @@ type Orientation = {
     viewUp: Point3;
 };
 
+declare namespace orientation_2 {
+    export {
+        getOrientationString,
+        invertOrientationString
+    }
+}
+
 // @public (undocumented)
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -2443,6 +2459,16 @@ function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, po
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
+
+// @public
+type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
+
+// @public
+type PreStackNewImageEventDetail = {
+    imageId: string;
+    viewportId: string;
+    renderingEngineId: string;
+};
 
 // @public (undocumented)
 interface ProbeAnnotation extends Annotation {
@@ -3494,6 +3520,7 @@ declare namespace utilities {
         debounce,
         deepmerge as deepMerge,
         throttle,
+        orientation_2 as orientation,
         isObject,
         triggerEvent,
         calibrateImageSpacing,
