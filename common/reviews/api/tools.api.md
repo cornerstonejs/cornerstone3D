@@ -355,6 +355,7 @@ type CameraModifiedEventDetail = {
     element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -1465,6 +1466,8 @@ interface ICachedVolume {
 // @public
 interface ICamera {
     clippingRange?: Point2;
+    flipHorizontal?: boolean;
+    flipVertical?: boolean;
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
@@ -1818,8 +1821,6 @@ interface IStackViewport extends IViewport {
         invert,
         interpolationType,
         rotation,
-        flipHorizontal,
-        flipVertical,
     }: StackViewportProperties): void;
     setStack(
     imageIds: Array<string>,
@@ -3227,8 +3228,6 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
-    flipHorizontal?: boolean;
-    flipVertical?: boolean;
 };
 
 declare namespace state {

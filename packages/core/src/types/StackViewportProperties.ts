@@ -13,10 +13,6 @@ type StackViewportProperties = {
   interpolationType?: InterpolationType;
   /** image rotation */
   rotation?: number;
-  /** flip horizontal flag */
-  flipHorizontal?: boolean;
-  /** flip vertical flag */
-  flipVertical?: boolean;
 };
 
 export default StackViewportProperties;

@@ -105,14 +105,12 @@ class StackViewport extends Viewport implements IStackViewport {
   private initialVOIRange: VOIRange;
   private invert = false;
   private interpolationType: InterpolationType;
-  private rotation = 0;
 
   // Helpers
   private _imageData: vtkImageDataType;
   private cameraPosOnRender: Point3;
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
   private panCache: Point3;
-  private shouldFlip = false;
   private voiApplied = false;
   private rotationCache = 0;
   private _publishCalibratedEvent = false;
@@ -487,21 +485,16 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
-   * and flipHorizontal/Vertical.
    * @param voiRange - Sets the lower and upper voi
    * @param invert - Inverts the colors
    * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
    * @param rotation - image rotation in degrees
-   * @param flipHorizontal - flips the image horizontally
-   * @param flipVertical - flips the image vertically
    */
   public setProperties({
     voiRange,
     invert,
     interpolationType,
     rotation,
-    flipHorizontal,
-    flipVertical,
   }: StackViewportProperties = {}): void {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi
@@ -522,13 +515,6 @@ class StackViewport extends Viewport implements IStackViewport {
         this.setRotation(this.rotationCache, rotation);
       }
     }
-
-    if (
-      typeof flipHorizontal !== 'undefined' ||
-      typeof flipVertical !== 'undefined'
-    ) {
-      this.setFlipDirection({ flipHorizontal, flipVertical });
-    }
   }
 
   /**
@@ -541,8 +527,6 @@ class StackViewport extends Viewport implements IStackViewport {
       rotation: this.rotationCache,
       interpolationType: this.interpolationType,
       invert: this.invert,
-      flipHorizontal: this.flipHorizontal,
-      flipVertical: this.flipVertical,
     };
   };
 
@@ -598,8 +582,6 @@ class StackViewport extends Viewport implements IStackViewport {
       rotation: 0,
       interpolationType: InterpolationType.LINEAR,
       invert: false,
-      flipHorizontal: false,
-      flipVertical: false,
     });
   }
 
@@ -609,20 +591,33 @@ class StackViewport extends Viewport implements IStackViewport {
       rotation: this.rotation,
       interpolationType: this.interpolationType,
       invert: this.invert,
-      flipHorizontal: this.flipHorizontal,
-      flipVertical: this.flipVertical,
     });
   }
 
   private getCameraCPU(): Partial<ICamera> {
     const { metadata, viewport } = this._cpuFallbackEnabledElement;
-
     const { direction } = metadata;
 
     // focalPoint and position of CPU camera is just a placeholder since
     // tools need focalPoint to be defined
     const viewPlaneNormal = direction.slice(6, 9).map((x) => -x);
-    const viewUp = direction.slice(3, 6).map((x) => -x);
+    let viewUp = direction.slice(3, 6).map((x) => -x);
+
+    // If camera is rotated, we need the correct rotated viewUp along the
+    // viewPlaneNormal vector
+    if (this.rotation) {
+      const rotationMatrix = mat4.fromRotation(
+        mat4.create(),
+        (this.rotation * Math.PI) / 180,
+        viewPlaneNormal
+      );
+      viewUp = vec3.transformMat4(
+        vec3.create(),
+        viewUp,
+        rotationMatrix
+      ) as Float32Array;
+    }
+
     return {
       parallelProjection: true,
       focalPoint: [0, 0, 0],
@@ -641,7 +636,8 @@ class StackViewport extends Viewport implements IStackViewport {
     const { viewport } = this._cpuFallbackEnabledElement;
     const previousCamera = this.getCameraCPU();
 
-    const { focalPoint, viewUp, parallelScale } = cameraInterface;
+    const { focalPoint, viewUp, parallelScale, flipHorizontal, flipVertical } =
+      cameraInterface;
 
     if (focalPoint) {
       const focalPointCanvas = this.worldToCanvasCPU(
@@ -677,31 +673,29 @@ class StackViewport extends Viewport implements IStackViewport {
       viewport.scale += diff; // parallelScale; //viewport.scale < 0.1 ? 0.1 : viewport.scale;
     }
 
+    if (flipHorizontal || flipVertical) {
+      this.setFlipCPU({ flipHorizontal, flipVertical });
+    }
+
     const updatedCamera = {
       ...previousCamera,
       focalPoint,
       viewUp,
       parallelScale,
+      flipHorizontal,
+      flipVertical,
     };
 
-    const eventDetail = {
+    const eventDetail: EventTypes.CameraModifiedEventDetail = {
       previousCamera,
       camera: updatedCamera,
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
+      rotation: this.rotation,
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-  }
-
-  private setFlipDirection(flipDirection: FlipDirection): void {
-    if (this.useCPURendering) {
-      this.setFlipCPU(flipDirection);
-    } else {
-      super.flip(flipDirection);
-    }
-    this.shouldFlip = false;
   }
 
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
@@ -724,12 +718,27 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setRotation(rotationCache: number, rotation: number): void {
+    const previousCamera = this.getCamera();
+
     if (this.useCPURendering) {
       this.setRotationCPU(rotationCache, rotation);
-      return;
+    } else {
+      this.setRotationGPU(rotationCache, rotation);
     }
 
-    this.setRotationGPU(rotationCache, rotation);
+    // New camera after rotation
+    const camera = this.getCamera();
+
+    const eventDetail: EventTypes.CameraModifiedEventDetail = {
+      previousCamera,
+      camera,
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      rotation: this.rotation,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
   }
 
   private setInterpolationType(interpolationType: InterpolationType): void {
@@ -1705,6 +1714,8 @@ class StackViewport extends Viewport implements IStackViewport {
       this.resetCameraGPU(resetPan, resetZoom);
     }
 
+    this.rotation = 0;
+    this.rotationCache = 0;
     return true;
   }
 

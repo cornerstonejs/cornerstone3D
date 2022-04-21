@@ -6,7 +6,7 @@ import Orientation from './Orientation';
 type ViewportInputOptions = {
   /** background color */
   background?: [number, number, number];
-  /** orientation of the viewport - Axial, Coronal, Sagittal */
+  /** orientation of the viewport - e.g., Axial, Coronal, Sagittal, or custom oblique with sliceNormal and viewUp */
   orientation?: Orientation;
   /** whether the events should be suppressed and not fired*/
   suppressEvents?: boolean;

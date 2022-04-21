@@ -24,6 +24,10 @@ interface ICamera {
   viewUp?: Point3;
   /** Camera Slab Thickness */
   slabThickness?: number;
+  /** flip Horizontal */
+  flipHorizontal?: boolean;
+  /** flip Vertical */
+  flipVertical?: boolean;
 }
 
 export default ICamera;

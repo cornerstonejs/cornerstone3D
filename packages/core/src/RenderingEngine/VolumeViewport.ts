@@ -331,20 +331,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
-   * Currently only returning the flip direction of the viewport, Todo: should
-   * be like StackViewport to be able to return and also set other properties
-   * such as voi, invert, etc.
-   *
-   * @returns FlipDirection of the viewport
-   */
-  public getProperties = (): FlipDirection => {
-    return {
-      flipHorizontal: this.flipHorizontal,
-      flipVertical: this.flipVertical,
-    };
-  };
-
-  /**
    * Attaches the volume actors to the viewport.
    *
    * @param volumeActorEntries - The volume actors to add the viewport.

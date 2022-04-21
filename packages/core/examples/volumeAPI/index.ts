@@ -89,9 +89,8 @@ addButtonToToolbar({
     );
 
     // Flip the viewport horizontally
-    const { flipHorizontal } = viewport.getProperties();
-
-    viewport.flip({ flipHorizontal: !flipHorizontal });
+    const { flipHorizontal } = viewport.getCamera();
+    viewport.setCamera({ flipHorizontal: !flipHorizontal });
 
     viewport.render();
   },
@@ -109,9 +108,9 @@ addButtonToToolbar({
     );
 
     // Flip the viewport vertically
-    const { flipVertical } = viewport.getProperties();
+    const { flipVertical } = viewport.getCamera();
 
-    viewport.flip({ flipVertical: !flipVertical });
+    viewport.setCamera({ flipVertical: !flipVertical });
 
     viewport.render();
   },

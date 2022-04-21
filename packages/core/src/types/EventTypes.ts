@@ -1,3 +1,5 @@
+import type { mat4 } from 'gl-matrix';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type CustomEventType from '../types/CustomEventType';
 import type ICachedImage from './ICachedImage';
 import type ICachedVolume from './ICachedVolume';
@@ -5,8 +7,6 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-import type { mat4 } from 'gl-matrix';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -22,6 +22,8 @@ type CameraModifiedEventDetail = {
   viewportId: string;
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
+  /** Rotation Optional */
+  rotation?: number;
 };
 
 /**
