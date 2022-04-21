@@ -70,7 +70,8 @@ type RequestPool = {
  * maximum number of concurrent requests can be set by calling `setMaxConcurrentRequests`.
  */
 class RequestPoolManager {
-  private id = 'requestPoolManager';
+  private id: string;
+  private awake: boolean;
   private requestPool: RequestPool;
   private numRequests = {
     interaction: 0,
@@ -102,6 +103,7 @@ class RequestPoolManager {
     };
 
     this.grabDelay = 5;
+    this.awake = false;
 
     this.numRequests = {
       interaction: 0,
@@ -159,7 +161,15 @@ class RequestPoolManager {
     // Adding the request to the correct priority group of the request type
     this.requestPool[type][priority].push(requestDetails);
 
-    this.startGrabbing();
+    // Wake up
+    if (!this.awake) {
+      this.awake = true;
+      this.startGrabbing();
+    } else if (type === RequestType.Interaction) {
+      // Todo: this is a hack for interaction right now, we should separate
+      // the grabbing from the adding requests
+      this.startGrabbing();
+    }
   }
 
   /**
@@ -197,7 +207,7 @@ class RequestPoolManager {
     this.requestPool[type] = { 0: [] };
   }
 
-  sendRequests(type) {
+  private sendRequests(type) {
     const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
 
     for (let i = 0; i < requestsToSend; i++) {
@@ -206,6 +216,7 @@ class RequestPoolManager {
         return false;
       } else if (requestDetails) {
         this.numRequests[type]++;
+        this.awake = true;
 
         requestDetails.requestFn().finally(() => {
           this.numRequests[type]--;
@@ -217,7 +228,7 @@ class RequestPoolManager {
     return true;
   }
 
-  getNextRequest(type): RequestDetailsInterface | null {
+  private getNextRequest(type): RequestDetailsInterface | null {
     const interactionPriorities = this.getSortedPriorityGroups(type);
     for (const priority of interactionPriorities) {
       if (this.requestPool[type][priority].length) {
@@ -229,12 +240,30 @@ class RequestPoolManager {
   }
 
   protected startGrabbing(): void {
-    this.sendRequests('interaction');
-    this.sendRequests('thumbnail');
-    this.sendRequests('prefetch');
+    const hasRemainingInteractionRequests = this.sendRequests(
+      RequestType.Interaction
+    );
+    const hasRemainingThumbnailRequests = this.sendRequests(
+      RequestType.Thumbnail
+    );
+    const hasRemainingPrefetchRequests = this.sendRequests(
+      RequestType.Prefetch
+    );
+
+    if (
+      !hasRemainingInteractionRequests &&
+      !hasRemainingThumbnailRequests &&
+      !hasRemainingPrefetchRequests
+    ) {
+      this.awake = false;
+    }
   }
 
   protected startAgain(): void {
+    if (!this.awake) {
+      return;
+    }
+
     if (this.grabDelay !== undefined) {
       this.timeoutHandle = window.setTimeout(() => {
         this.startGrabbing();
