@@ -47,7 +47,6 @@ import {
   InteractionTypes,
   Annotation,
 } from '../../types';
-import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -96,13 +95,13 @@ class PlanarFreehandROITool extends AnnotationTool {
     yDir: Types.Point3;
   };
   private drawData?: {
-    handleIndex: number;
+    polylineIndex: number;
     canvasPoints: Types.Point2[];
   } | null;
   private editData?: {
     annotation: Types.Annotation;
     viewportIdsToRender: string[];
-    handleIndex?: number;
+    polylineIndex?: number;
     spacing: Types.Point2;
     xDir: Types.Point3;
     yDir: Types.Point3;
@@ -143,7 +142,7 @@ class PlanarFreehandROITool extends AnnotationTool {
    */
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): LengthAnnotation => {
+  ): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -193,7 +192,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       },
       data: {
         handles: {
-          points: [<Types.Point3>[...worldPos]],
+          points: [], // TODO -> Handle points for open contours
           activeHandleIndex: null,
           textBox: {
             hasMoved: false,
@@ -206,6 +205,7 @@ class PlanarFreehandROITool extends AnnotationTool {
             },
           },
         },
+        polyline: [<Types.Point3>[...worldPos]],
         label: '',
         cachedStats: {},
       },
@@ -222,16 +222,6 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     return annotation;
   };
-
-  getHandleNearImagePoint(
-    element: HTMLDivElement,
-    annotation: Annotation,
-    canvasCoords: Types.Point2,
-    proximity: number
-  ): ToolHandle | undefined {
-    // We do not want handle selection for this tool
-    return false;
-  }
 
   /**
    * It returns if the canvas point is near the provided length annotation in the provided
@@ -253,7 +243,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const points = annotation.data.handles.points;
+    const points = annotation.data.polyline;
 
     // NOTE: It is implemented this way so that we do not double calculate
     // points when number crunching adjacent line segments.
@@ -275,6 +265,11 @@ class PlanarFreehandROITool extends AnnotationTool {
       }
 
       previousPoint = p2;
+    }
+
+    if (annotation.data.isOpenContour) {
+      // Contour is open, don't check last point to first point.
+      return false;
     }
 
     // check last point to first point
@@ -336,15 +331,45 @@ class PlanarFreehandROITool extends AnnotationTool {
     return distance;
   };
 
+  /**
+   * Executes the callback for when mouse has selected a handle (anchor point) of
+   * the bidirectional tool or when the text box has been selected.
+   *
+   * @param evt - EventTypes.MouseDownEventType
+   * @param annotation - Bidirectional annotation
+   * @param handle - Handle index or selected textBox information
+   * @param interactionType - interaction type (mouse, touch)
+   */
+  handleSelectedCallback = (
+    evt: EventTypes.MouseDownEventType,
+    annotation: Annotation,
+    handle: ToolHandle,
+    interactionType = 'mouse'
+  ): void => {
+    debugger;
+    // TODO -> Edit open contour by dragging point
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    this.activateOpenContourEndEdit(element);
+  };
+
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: LengthAnnotation,
+    annotation: Annotation,
     interactionType: InteractionTypes
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    this.activateEdit(element);
+    if (annotation.data.isOpenContour) {
+      this.activateOpenContourEdit(element);
+    } else {
+      this.activateClosedContourEdit(element);
+    }
+
+    // TODO -> Activate edit of closed contour
+    // TODO -> Activate edit of open contour
   };
 
   // ========== Drawing loop ========== //
@@ -359,7 +384,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     const { renderingEngine, viewport } = enabledElement;
 
     const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-    const { handleIndex, canvasPoints } = this.drawData;
+    const { polylineIndex, canvasPoints } = this.drawData;
 
     const lastCanvasPoint = canvasPoints[canvasPoints.length - 1];
     const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
@@ -388,7 +413,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         canvasPos
       );
 
-      this.drawData.handleIndex = handleIndex + numPointsAdded;
+      this.drawData.polylineIndex = polylineIndex + numPointsAdded;
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -574,7 +599,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       viewport.canvasToWorld(canvasPoint)
     );
 
-    annotation.data.handles.points = worldPoints;
+    annotation.data.polyline = worldPoints;
     annotation.data.isOpenContour = false;
 
     this.isDrawing = false;
@@ -606,8 +631,13 @@ class PlanarFreehandROITool extends AnnotationTool {
       viewport.canvasToWorld(canvasPoint)
     );
 
-    annotation.data.handles.points = worldPoints;
+    annotation.data.polyline = worldPoints;
     annotation.data.isOpenContour = true;
+    // The first and land points as handles
+    annotation.data.handles.points = [
+      worldPoints[0],
+      worldPoints[worldPoints.length - 1],
+    ];
 
     this.isDrawing = false;
     this.drawData = undefined;
@@ -642,43 +672,170 @@ class PlanarFreehandROITool extends AnnotationTool {
   };
   // ================================== //
 
-  // ============ Edit loop =========== //
-  private mouseDragEditCallback = (
+  // ============ Closed Contour Edit loop =========== //
+  private mouseDragClosedContourEditCallback = (
     evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
   ) => {
-    console.log('TODO -> Contour editing');
+    console.log('TODO -> Closed Contour editing');
   };
 
-  private mouseUpEditCallback = (
+  private mouseUpClosedContourEditCallback = (
     evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
   ) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    this.deactivateEdit(element);
+    this.deactivateClosedContourEdit(element);
   };
+
+  // ===========  Open Contour Edit Loop =============== //
+  private mouseDragOpenContourEditCallback = (
+    evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  ) => {
+    console.log('TODO -> Open Contour editing');
+  };
+
+  private mouseUpOpenContourEditCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    this.deactivateOpenContourEdit(element);
+  };
+
+  // ===========  Open Contour Edit End Loop =============== //
+  private mouseDragOpenContourEndEditCallback = (
+    evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  ) => {
+    console.log('TODO -> Open Contour editing');
+  };
+
+  private mouseUpOpenContourEndEditCallback = (
+    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  ) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    this.deactivateOpenContourEndEdit(element);
+  };
+
   // ================================== //
 
   cancel = (element: HTMLDivElement) => {
     // TODO CANCEL
   };
 
-  private activateEdit = (element: HTMLDivElement) => {
+  private activateClosedContourEdit = (element: HTMLDivElement) => {
     state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this.mouseUpEditCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this.mouseDragEditCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this.mouseUpEditCallback);
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this.mouseUpClosedContourEditCallback
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this.mouseDragClosedContourEditCallback
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this.mouseUpClosedContourEditCallback
+    );
 
     hideElementCursor(element);
   };
 
-  private deactivateEdit = (element: HTMLDivElement) => {
+  private deactivateClosedContourEdit = (element: HTMLDivElement) => {
     state.isInteractingWithTool = false;
 
-    element.removeEventListener(Events.MOUSE_UP, this.mouseUpEditCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this.mouseDragEditCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this.mouseUpEditCallback);
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this.mouseUpClosedContourEditCallback
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this.mouseDragClosedContourEditCallback
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this.mouseUpClosedContourEditCallback
+    );
+
+    resetElementCursor(element);
+  };
+
+  private activateOpenContourEdit = (element: HTMLDivElement) => {
+    state.isInteractingWithTool = true;
+
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this.mouseUpOpenContourEditCallback
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this.mouseDragOpenContourEditCallback
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this.mouseUpOpenContourEditCallback
+    );
+
+    hideElementCursor(element);
+  };
+
+  private deactivateOpenContourEdit = (element: HTMLDivElement) => {
+    state.isInteractingWithTool = false;
+
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this.mouseUpOpenContourEditCallback
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this.mouseDragOpenContourEditCallback
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this.mouseUpOpenContourEditCallback
+    );
+
+    resetElementCursor(element);
+  };
+
+  private activateOpenContourEndEdit = (element: HTMLDivElement) => {
+    state.isInteractingWithTool = true;
+
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this.mouseUpOpenContourEndEditCallback
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this.mouseDragOpenContourEndEditCallback
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this.mouseUpOpenContourEndEditCallback
+    );
+
+    hideElementCursor(element);
+  };
+
+  private deactivateOpenContourEndEdit = (element: HTMLDivElement) => {
+    state.isInteractingWithTool = false;
+
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this.mouseUpOpenContourEndEditCallback
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this.mouseDragOpenContourEndEditCallback
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this.mouseUpOpenContourEndEditCallback
+    );
 
     resetElementCursor(element);
   };
@@ -699,7 +856,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     this.drawData = {
       canvasPoints: [canvasPos],
-      handleIndex: 0,
+      polylineIndex: 0,
     };
 
     this.commonData = {
@@ -897,7 +1054,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     // Even if its unchanged. Perhaps we should cache canvas points per element
     // on the tool? That feels very weird also as we'd need to manage it/clean
     // them up.
-    const canvasPoints = annotation.data.handles.points.map((worldPos) =>
+    const canvasPoints = annotation.data.polyline.map((worldPos) =>
       viewport.worldToCanvas(worldPos)
     );
 
@@ -939,7 +1096,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     // Even if its unchanged. Perhaps we should cache canvas points per element
     // on the tool? That feels very weird also as we'd need to manage it/clean
     // them up.
-    const canvasPoints = annotation.data.handles.points.map((worldPos) =>
+    const canvasPoints = annotation.data.polyline.map((worldPos) =>
       viewport.worldToCanvas(worldPos)
     );
 
@@ -963,19 +1120,28 @@ class PlanarFreehandROITool extends AnnotationTool {
       options
     );
 
-    // Draw start point
-    const handleGroupUID = '0';
-    const firstPoint = canvasPoints[0];
-    const lastPoint = canvasPoints[canvasPoints.length - 1];
+    const activeHandleIndex = annotation.data.handles.activeHandleIndex;
 
-    drawHandlesSvg(
-      svgDrawingHelper,
-      PlanarFreehandROITool.toolName,
-      annotation.annotationUID,
-      handleGroupUID,
-      [firstPoint, lastPoint],
-      { color, handleRadius: 2 }
-    );
+    if (activeHandleIndex !== null) {
+      // Draw highlighted points
+      const handleGroupUID = '0';
+
+      // We already mapped all the points, so don't do the mapping again.
+      // The activeHandleIndex can only be one of two points.
+      let indexOfCanvasPoints =
+        activeHandleIndex === 0 ? 0 : canvasPoints.length - 1;
+
+      const handlePoint = canvasPoints[indexOfCanvasPoints];
+
+      drawHandlesSvg(
+        svgDrawingHelper,
+        PlanarFreehandROITool.toolName,
+        annotation.annotationUID,
+        handleGroupUID,
+        [handlePoint],
+        { color }
+      );
+    }
   };
 }
 
