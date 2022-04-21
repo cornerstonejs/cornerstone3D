@@ -15,7 +15,7 @@ There are various APIs for selecting and deselecting annotations along with get/
 import { annotations } from '@cornerstonejs/tools';
 
 // selection of an annotation
-annotations.selection.setAnnotationSelected(annotation);
+annotations.selection.setAnnotationSelected(annotationUID);
 
 // get all the selected annotations
 annotations.selection.getAnnotationsSelected();

@@ -59,12 +59,12 @@ type AnnotationRemovedEventDetail = {
  * The data that is passed to the event handler when an annotation selection status changes.
  */
 type AnnotationSelectionChangeEventDetail = {
-  /** Annotation added to the selection */
-  added: Array<Annotation>;
-  /** Annotation removed from the selection */
-  removed: Array<Annotation>;
+  /** AnnotationUID added to the selection */
+  added: Array<string>;
+  /** AnnotationUID removed from the selection */
+  removed: Array<string>;
   /** Updated selection */
-  selection: Array<Annotation>;
+  selection: Array<string>;
 };
 
 /**

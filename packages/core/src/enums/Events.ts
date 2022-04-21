@@ -125,6 +125,13 @@ enum Events {
    */
   STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
   /**
+   * Triggers on the element when a new image is about to be set on the stackViewport, pre display
+   *
+   * Make use of {@link EventTypes.PreStackNewImageEvent | PreStackNewImage Event Type } for typing your event listeners for PRE_STACK_NEW_IMAGE event,
+   * and see what event detail is included in {@link EventTypes.PreStackNewImageEventDetail | PreStackNewImage Event Detail }
+   */
+  PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
+  /**
    * Triggers on the element when the viewport's image has calibrated its pixel spacings
    *
    * Make use of {@link EventTypes.ImageSpacingCalibratedEvent | ImageSpacingCalibrated Event Type } for typing your event listeners for IMAGE_SPACING_CALIBRATED event,

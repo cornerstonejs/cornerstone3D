@@ -428,6 +428,8 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_VOLUME_MODIFIED = "CORNERSTONE_IMAGE_VOLUME_MODIFIED",
     // (undocumented)
+    PRE_STACK_NEW_IMAGE = "CORNERSTONE_PRE_STACK_NEW_IMAGE",
+    // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
     // (undocumented)
     VOI_MODIFIED = "CORNERSTONE_VOI_MODIFIED",
@@ -476,6 +478,8 @@ declare namespace EventTypes {
         VolumeCacheVolumeRemovedEventDetail,
         StackNewImageEvent,
         StackNewImageEventDetail,
+        PreStackNewImageEvent,
+        PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
@@ -664,6 +668,8 @@ interface IImage {
     intercept: number;
     // (undocumented)
     invert: boolean;
+    // (undocumented)
+    isPreScaled?: boolean;
     // (undocumented)
     maxPixelValue: number;
     // (undocumented)
@@ -1375,6 +1381,16 @@ type Point4 = [number, number, number, number];
 
 // @public (undocumented)
 function prefetchStack(imageIds: string[], requestType?: RequestType, priority?: number): void;
+
+// @public (undocumented)
+type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
+
+// @public (undocumented)
+type PreStackNewImageEventDetail = {
+    imageId: string;
+    viewportId: string;
+    renderingEngineId: string;
+};
 
 // @public (undocumented)
 type PTScaling = {

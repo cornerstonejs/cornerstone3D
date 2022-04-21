@@ -31,12 +31,15 @@ function prefetchStack(
     );
   }
 
+  // IMPORTANT: Request type should be passed if not the 'interaction'
+  // highest priority will be used for the request type in the imageRetrievalPool
   const options = {
     targetBuffer: {
       type: 'Float32Array',
       offset: null,
       length: null,
     },
+    requestType,
   };
 
   imageIds.forEach((imageId, imageIdIndex) => {

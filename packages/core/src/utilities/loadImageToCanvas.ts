@@ -27,12 +27,14 @@ import renderToCanvas from './renderToCanvas';
 export default function loadImageToCanvas(
   canvas: HTMLCanvasElement,
   imageId: string,
-  requestType = RequestType.Interaction,
+  requestType = RequestType.Thumbnail,
   priority = -5
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     function successCallback(image: IImage, imageId: string) {
       const { modality } = metaData.get('generalSeriesModule', imageId) || {};
+
+      image.isPreScaled = isImagePreScaled(image);
       renderToCanvas(canvas, image, modality);
       resolve(imageId);
     }
@@ -66,6 +68,8 @@ export default function loadImageToCanvas(
       suvbw: suvFactor.suvbw,
     };
 
+    // IMPORTANT: Request type should be passed if not the 'interaction'
+    // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
         type: 'Float32Array',
@@ -75,6 +79,7 @@ export default function loadImageToCanvas(
       preScale: {
         scalingParameters,
       },
+      requestType,
     };
 
     imageLoadPoolManager.addRequest(
@@ -84,4 +89,31 @@ export default function loadImageToCanvas(
       priority
     );
   });
+}
+
+// Note: this is more isTheImageThatWasRequestedGonnaBePreScaled, but since
+// we are using the same image metadata for adding request options and later
+// checking them, we can assume if the scalingParameters
+// are present, the image is pre-scaled
+function isImagePreScaled(image) {
+  const { imageId } = image;
+
+  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+  const suvFactor = metaData.get('scalingModule', imageId) || {};
+
+  const generalSeriesModule =
+    metaData.get('generalSeriesModule', imageId) || {};
+
+  if (
+    modalityLutModule.rescaleSlope !== undefined &&
+    modalityLutModule.rescaleIntercept !== undefined
+  ) {
+    if (generalSeriesModule.modality === 'PT') {
+      return suvFactor.suvbw !== undefined;
+    }
+
+    return true;
+  }
+
+  return false;
 }

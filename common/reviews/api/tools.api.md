@@ -151,9 +151,9 @@ type Annotations = Array<Annotation>;
 
 // @public (undocumented)
 type AnnotationSelectionChangeEventDetail = {
-    added: Array<Annotation>;
-    removed: Array<Annotation>;
-    selection: Array<Annotation>;
+    added: Array<string>;
+    removed: Array<string>;
+    selection: Array<string>;
 };
 
 // @public (undocumented)
@@ -890,7 +890,7 @@ const _default: {
 };
 
 // @public (undocumented)
-function deselectAnnotation(annotation?: Annotation): void;
+function deselectAnnotation(annotationUID?: string): void;
 
 // @public (undocumented)
 export function destroy(): void;
@@ -1175,6 +1175,8 @@ declare namespace EventTypes {
         VolumeCacheVolumeRemovedEventDetail,
         StackNewImageEvent,
         StackNewImageEventDetail,
+        PreStackNewImageEvent,
+        PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
@@ -1285,19 +1287,16 @@ function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabled
 function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
 
 // @public (undocumented)
-function getAnnotationSelected(annotationUID: string): Annotation;
-
-// @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
 
 // @public (undocumented)
 function getAnnotationsLockedCount(): number;
 
 // @public (undocumented)
-function getAnnotationsSelected(): Array<Annotation>;
+function getAnnotationsSelected(): Array<string>;
 
 // @public (undocumented)
-function getAnnotationsSelectedByToolName(toolName: string): Array<Annotation>;
+function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
@@ -1337,6 +1336,9 @@ function getGlobalRepresentationConfig(representationType: SegmentationRepresent
 
 // @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
+function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
@@ -1503,6 +1505,7 @@ interface IImage {
     imageId: string;
     intercept: number;
     invert: boolean;
+    isPreScaled?: boolean;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -1708,6 +1711,9 @@ type InteractionTypes = 'Mouse';
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
 
 // @public (undocumented)
+function invertOrientationStringLPS(orientationString: string): string;
+
+// @public (undocumented)
 type IPoints = {
     page: Types_2.Point2;
     client: Types_2.Point2;
@@ -1770,7 +1776,7 @@ interface IRenderingEngine {
 function isAnnotationLocked(annotation: Annotation): boolean;
 
 // @public (undocumented)
-function isAnnotationSelected(annotation: Annotation): boolean;
+function isAnnotationSelected(annotationUID: string): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -2395,6 +2401,13 @@ type Orientation = {
     viewUp: Point3;
 };
 
+declare namespace orientation_2 {
+    export {
+        getOrientationStringLPS,
+        invertOrientationStringLPS
+    }
+}
+
 // @public (undocumented)
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -2446,6 +2459,16 @@ function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, po
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
+
+// @public
+type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
+
+// @public
+type PreStackNewImageEventDetail = {
+    imageId: string;
+    viewportId: string;
+    renderingEngineId: string;
+};
 
 // @public (undocumented)
 interface ProbeAnnotation extends Annotation {
@@ -3042,7 +3065,6 @@ declare namespace selection {
     export {
         setAnnotationSelected,
         getAnnotationsSelected,
-        getAnnotationSelected,
         getAnnotationsSelectedByToolName,
         getAnnotationsSelectedCount,
         deselectAnnotation,
@@ -3060,7 +3082,7 @@ function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): vo
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 
 // @public (undocumented)
-function setAnnotationSelected(annotation: Annotation, selected?: boolean, preserveSelected?: boolean): void;
+function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
 function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
@@ -3498,6 +3520,7 @@ declare namespace utilities {
         debounce,
         deepmerge as deepMerge,
         throttle,
+        orientation_2 as orientation,
         isObject,
         triggerEvent,
         calibrateImageSpacing,

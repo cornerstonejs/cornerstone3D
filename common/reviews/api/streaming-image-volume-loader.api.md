@@ -355,6 +355,7 @@ enum Events {
     IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
     IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+    PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
@@ -398,6 +399,8 @@ declare namespace EventTypes {
         VolumeCacheVolumeRemovedEventDetail,
         StackNewImageEvent,
         StackNewImageEventDetail,
+        PreStackNewImageEvent,
+        PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
@@ -506,6 +509,7 @@ interface IImage {
     imageId: string;
     intercept: number;
     invert: boolean;
+    isPreScaled?: boolean;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -973,6 +977,16 @@ type Point3 = [number, number, number];
 
 // @public
 type Point4 = [number, number, number, number];
+
+// @public
+type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
+
+// @public
+type PreStackNewImageEventDetail = {
+    imageId: string;
+    viewportId: string;
+    renderingEngineId: string;
+};
 
 // @public (undocumented)
 type PTScaling = {
