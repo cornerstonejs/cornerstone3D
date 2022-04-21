@@ -138,8 +138,16 @@ addButtonToToolbar({
         segmentationRepresentationByUID
       );
 
+    const annotations = selectedAnnotationUIDs.map((annotationUID) => {
+      const annotation = cornerstoneTools.annotation.state.getAnnotation(
+        annotationUID
+      ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation;
+
+      return annotation;
+    });
+
     csToolsUtils.segmentation.thresholdVolumeByRange(
-      selectedAnnotations,
+      annotations,
       [referenceVolume],
       segmentationRepresentation,
       {

@@ -75,10 +75,14 @@ function randomIntFromInterval(min, max) {
 addButtonToToolbar({
   title: 'Lock Selected Annotation',
   onClick: () => {
-    const annotations = selection.getAnnotationsSelected();
+    const annotationUIDs = selection.getAnnotationsSelected();
 
-    if (annotations && annotations.length) {
-      const annotation = annotations[0];
+    if (annotationUIDs && annotationUIDs.length) {
+      const annotationUID = annotationUIDs[0];
+      const annotation =
+        defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
+          annotationUID
+        );
 
       locking.setAnnotationLocked(annotation, true);
       selection.deselectAnnotation();
@@ -112,13 +116,7 @@ addButtonToToolbar({
 
     const annotationUID = annotationState[randomIndex].annotationUID;
 
-    // Get actual annotation
-    const annotation =
-      defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
-        annotationUID
-      );
-
-    selection.setAnnotationSelected(annotation, true);
+    selection.setAnnotationSelected(annotationUID, true);
   },
 });
 

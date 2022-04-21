@@ -1,6 +1,6 @@
 import { state } from '../../store';
 import { ToolModes } from '../../enums';
-import { Annotation, EventTypes } from '../../types';
+import { EventTypes } from '../../types';
 import {
   ToolAnnotationPair,
   ToolsWithMoveableHandles,
