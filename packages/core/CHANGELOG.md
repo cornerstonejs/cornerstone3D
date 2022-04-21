@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.6.2...@cornerstonejs/core@0.6.3) (2022-04-21)
+
+
+### Bug Fixes
+
+* selection API, requestPoolManager and VOI and Scaling ([#82](https://github.com/cornerstonejs/cornerstone3D-beta/issues/82)) ([bedd8dd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/bedd8ddfa356c2d52a6e72f74c7cb3bb660a86ef))
+
+
+
+
+
 ## [0.6.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.6.1...@cornerstonejs/core@0.6.2) (2022-04-20)
 
 
