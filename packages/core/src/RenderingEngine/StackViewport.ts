@@ -1275,7 +1275,7 @@ class StackViewport extends Viewport implements IStackViewport {
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
         const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
-        image.isPreScaled = this._isImagePreScaled(imageId);
+        image.isPreScaled = this.isImagePreScaled(imageId);
 
         const viewport = getDefaultViewport(
           this.canvas,
@@ -1511,7 +1511,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageId  - imageId of the image
    * @returns boolean
    */
-  private _isImagePreScaled(imageId) {
+  public isImagePreScaled(imageId: string): boolean {
     const scalingParameters = this.scalingCache[imageId];
 
     if (!scalingParameters) {
@@ -1661,7 +1661,7 @@ class StackViewport extends Viewport implements IStackViewport {
         : undefined;
 
     // check if the image is already prescaled
-    const isPreScaled = this._isImagePreScaled(image.imageId);
+    const isPreScaled = this.isImagePreScaled(image.imageId);
     if (imagePixelModule.modality === 'PT' && isPreScaled) {
       voiRange = { lower: 0, upper: 5 };
     }
