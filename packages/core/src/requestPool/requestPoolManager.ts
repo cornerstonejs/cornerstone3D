@@ -1,4 +1,5 @@
 import RequestType from '../enums/RequestType';
+import { uuidv4 } from '../utilities';
 
 type AdditionalDetails = {
   imageId?: string;
@@ -92,9 +93,7 @@ class RequestPoolManager {
    * is set to 6.
    */
   constructor(id?: string) {
-    if (id) {
-      this.id = id;
-    }
+    this.id = id ? id : uuidv4();
 
     this.requestPool = {
       interaction: { 0: [] },

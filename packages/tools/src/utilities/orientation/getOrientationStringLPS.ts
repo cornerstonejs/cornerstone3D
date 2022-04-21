@@ -7,7 +7,7 @@ import { Types } from '@cornerstonejs/core';
  * @param vector - Input array
  * @returns The orientation in the patient coordinate system.
  */
-export default function getOrientationString(vector: Types.Point3): string {
+export default function getOrientationStringLPS(vector: Types.Point3): string {
   // Thanks to David Clunie
   // https://sites.google.com/site/dicomnotes/
 

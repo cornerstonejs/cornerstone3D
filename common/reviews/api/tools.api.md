@@ -1338,7 +1338,7 @@ function getGlobalRepresentationConfig(representationType: SegmentationRepresent
 function getLockedSegments(segmentationId: string): number[] | [];
 
 // @public (undocumented)
-function getOrientationString(vector: Types_2.Point3): string;
+function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
@@ -1711,7 +1711,7 @@ type InteractionTypes = 'Mouse';
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
 
 // @public (undocumented)
-function invertOrientationString(orientationString: string): string;
+function invertOrientationStringLPS(orientationString: string): string;
 
 // @public (undocumented)
 type IPoints = {
@@ -2403,8 +2403,8 @@ type Orientation = {
 
 declare namespace orientation_2 {
     export {
-        getOrientationString,
-        invertOrientationString
+        getOrientationStringLPS,
+        invertOrientationStringLPS
     }
 }
 

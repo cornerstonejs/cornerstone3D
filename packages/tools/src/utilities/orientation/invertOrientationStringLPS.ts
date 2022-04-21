@@ -5,7 +5,7 @@
  * @param orientationString - The orientation.
  * @returns The inverted orientationString.
  */
-export default function invertOrientationString(
+export default function invertOrientationStringLPS(
   orientationString: string
 ): string {
   let inverted = orientationString.replace('H', 'f');

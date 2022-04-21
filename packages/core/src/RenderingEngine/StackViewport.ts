@@ -126,7 +126,7 @@ class StackViewport extends Viewport implements IStackViewport {
   // TODO: These should not be here and will be nuked
   public modality: string; // this is needed for tools
   public scaling: Scaling;
-  private scalingCache: { [key: string]: ScalingParameters } = {};
+  private scalingCache: Record<string, ScalingParameters> = {};
 
   /**
    * Constructor for the StackViewport class
@@ -1110,6 +1110,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
     this.stackInvalidated = true;
+    this.scalingCache = {};
     this.rotationCache = 0;
     this.flipVertical = false;
     this.flipHorizontal = false;

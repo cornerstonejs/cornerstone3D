@@ -1,4 +1,4 @@
-import getOrientationString from './getOrientationString';
-import invertOrientationString from './invertOrientationString';
+import getOrientationStringLPS from './getOrientationStringLPS';
+import invertOrientationStringLPS from './invertOrientationStringLPS';
 
-export { getOrientationString, invertOrientationString };
+export { getOrientationStringLPS, invertOrientationStringLPS };
