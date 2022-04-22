@@ -1078,6 +1078,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
+    isImagePreScaled(imageId: string): boolean;
+    // (undocumented)
     modality: string;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
@@ -1603,6 +1605,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
+    // (undocumented)
+    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     // (undocumented)

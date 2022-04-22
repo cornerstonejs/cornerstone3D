@@ -1807,6 +1807,7 @@ interface IStackViewport extends IViewport {
     getRenderer(): any;
     hasImageId: (imageId: string) => boolean;
     hasImageURI: (imageURI: string) => boolean;
+    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
