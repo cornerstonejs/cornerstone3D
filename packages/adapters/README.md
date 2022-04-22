@@ -5,7 +5,7 @@
 
 <hr />
 
-[![CircleCI](https://circleci.com/gh/dcmjs-org/dcmjs.svg?style=svg)](https://circleci.com/gh/dcmjs-org/dcmjs)
+[![CI](https://github.com/dcmjs-org/dcmjs/actions/workflows/publish-package.yml/badge.svg)](https://github.com/dcmjs-org/dcmjs/actions?query=workflow:publish-package)
 
 **Note: this code is a work-in-progress and should not be used for production or clinical purposes**
 
@@ -36,9 +36,9 @@ _Parts of DICOM that dcmjs *will* focus on:_
 
 _Parts of DICOM that dcmjs *will not* focus on:_
 
-- DIMSE (legacy networking like C-STORE, C-FIND, C-MOVE, etc).  See the [dcmjs-dimse project](https://github.com/PantelisGeorgiadis/dcmjs-dimse) for that.
-- Physical Media (optical disks).  See [this FAQ](https://www.dclunie.com/medical-image-faq/html/index.html) if you need to work with those.
-- Image processing.  See [dcmjs-imaging](https://github.com/PantelisGeorgiadis/dcmjs-imaging) for this.
+- DIMSE (legacy networking like C-STORE, C-FIND, C-MOVE, etc). See the [dcmjs-dimse project](https://github.com/PantelisGeorgiadis/dcmjs-dimse) for that.
+- Physical Media (optical disks). See [this FAQ](https://www.dclunie.com/medical-image-faq/html/index.html) if you need to work with those.
+- Image processing. See [dcmjs-imaging](https://github.com/PantelisGeorgiadis/dcmjs-imaging) for this.
 
 # Usage
 
@@ -102,6 +102,16 @@ Note: a new package version will be published only if the commit comes from a PR
 Use this repository's issues page to report any bugs. Please follow [SSCCE](http://sscce.org/) guidelines when submitting issues.
 
 Use github pull requests to make contributions.
+
+## Unit Tests
+
+Tests are written using the [Jest](https://jestjs.io) testing framework and live in the `test/` folder. Test file names must end with `.test.js`.
+
+Pull requests should either update existing tests or add new tests in order to ensure good test coverage of the changes being made.
+
+To run all tests use `npm run test`. To only run specific tests use Jest's [`.only`](https://www.testim.io/blog/unit-testing-best-practices/) feature. If you're using VS Code, an extension such as [`firsttris.vscode-jest-runner`](https://marketplace.visualstudio.com/items?itemName=firsttris.vscode-jest-runner) can be used to step through specific tests in the debugger.
+
+Read all about unit testing best practices [here](https://www.testim.io/blog/unit-testing-best-practices/).
 
 # Status
 

@@ -1,0 +1,37 @@
+name: Publish package to NPM
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish-package:
+    runs-on: ubuntu-20.04
+    environment: publish
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+
+      - name: Install packages
+        uses: bahmutov/npm-install@v1
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Run build
+        run: npm run build
+
+      - name: Semantic release
+        uses: cycjimmy/semantic-release-action@v3
+        with:
+          semantic_version: 19.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
