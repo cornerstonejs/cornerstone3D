@@ -64,11 +64,11 @@ function getRenderCanvas(
 
   const { viewport } = enabledElement;
 
-  // If modality is 'PT' the resulting scaled image is floatting point, and
-  // we cannot create a lut for it (cannot have float indices). Therefore,
+  // If modality is 'PT' and the image is scaled then the results are floating points,
+  // and we cannot create a lut for it (cannot have float indices). Therefore,
   // we use a mapping function to get the voiLUT from the values by applying
   // the windowLevel and windowWidth.
-  if (viewport.modality === 'PT') {
+  if (viewport.modality === 'PT' && image.isPreScaled) {
     const { windowWidth, windowCenter } = viewport.voi;
     const minimum = windowCenter - windowWidth / 2;
     const maximum = windowCenter + windowWidth / 2;
