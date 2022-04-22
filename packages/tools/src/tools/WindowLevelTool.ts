@@ -53,6 +53,7 @@ export default class WindowLevelTool extends BaseTool {
       newRange,
       viewportsContainingVolumeUID;
     let useDynamicRange = false;
+    let isPreScaled = false;
 
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
@@ -67,17 +68,20 @@ export default class WindowLevelTool extends BaseTool {
       [lower, upper] = rgbTransferFunction.getRange();
       modality = cache.getVolume(volumeId).metadata.Modality;
       useDynamicRange = true;
-    } else {
+    } else if (viewport instanceof StackViewport) {
       const properties = viewport.getProperties();
-      modality = (viewport as Types.IStackViewport).modality;
+      modality = viewport.modality;
       ({ lower, upper } = properties.voiRange);
+      isPreScaled = viewport.isImagePreScaled(viewport.getCurrentImageId());
+    } else {
+      throw new Error('Viewport is not a valid type');
     }
 
     // If modality is PT, treat it special to not include the canvas delta in
     // the x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculate using the volume min and max.
-    if (modality === PT) {
+    if (modality === PT && isPreScaled) {
       newRange = this.getPTNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         lower,

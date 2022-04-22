@@ -1,8 +1,6 @@
 import { Events } from '../../enums';
 import {
   getEnabledElement,
-  cache,
-  StackViewport,
   Settings,
   triggerEvent,
   eventTarget,
@@ -153,7 +151,7 @@ class LengthTool extends AnnotationTool {
       highlighted: true,
       invalidated: true,
       metadata: {
-        toolName: LengthTool.toolName,
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
@@ -186,7 +184,7 @@ class LengthTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      LengthTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -266,7 +264,7 @@ class LengthTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      LengthTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -311,7 +309,7 @@ class LengthTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      LengthTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -513,7 +511,7 @@ class LengthTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, LengthTool.toolName);
+    let annotations = getAnnotations(element, this.getToolName());
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
@@ -561,7 +559,7 @@ class LengthTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          LengthTool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           canvasCoordinates,
@@ -576,7 +574,7 @@ class LengthTool extends AnnotationTool {
       const lineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
-        LengthTool.toolName,
+        this.getToolName(),
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -625,7 +623,7 @@ class LengthTool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        LengthTool.toolName,
+        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,

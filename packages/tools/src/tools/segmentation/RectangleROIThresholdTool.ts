@@ -106,7 +106,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleROIThresholdTool.toolName,
+        toolName: this.getToolName(),
         volumeId,
       },
       data: {
@@ -137,7 +137,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROIThresholdTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -171,10 +171,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
   ): void => {
     const { viewport, renderingEngineId } = enabledElement;
     const { element } = viewport;
-    let annotations = getAnnotations(
-      element,
-      RectangleROIThresholdTool.toolName
-    );
+    let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -239,7 +236,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleROIThresholdTool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -252,7 +249,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
-        RectangleROIThresholdTool.toolName,
+        this.getToolName(),
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],

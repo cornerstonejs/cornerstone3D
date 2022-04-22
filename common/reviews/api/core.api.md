@@ -51,6 +51,7 @@ type CameraModifiedEventDetail = {
     element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -606,6 +607,10 @@ interface ICamera {
     // (undocumented)
     clippingRange?: Point2;
     // (undocumented)
+    flipHorizontal?: boolean;
+    // (undocumented)
+    flipVertical?: boolean;
+    // (undocumented)
     focalPoint?: Point3;
     // (undocumented)
     parallelProjection?: boolean;
@@ -1073,6 +1078,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
+    isImagePreScaled(imageId: string): boolean;
+    // (undocumented)
     modality: string;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
@@ -1089,7 +1096,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, flipHorizontal, flipVertical, }: StackViewportProperties): void;
+    setProperties({ voiRange, invert, interpolationType, rotation, }: StackViewportProperties): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
@@ -1599,6 +1606,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
+    isImagePreScaled(imageId: string): boolean;
+    // (undocumented)
     modality: string;
     // (undocumented)
     removeAllActors(): void;
@@ -1619,7 +1628,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, flipHorizontal, flipVertical, }?: StackViewportProperties): void;
+    setProperties({ voiRange, invert, interpolationType, rotation, }?: StackViewportProperties): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
@@ -1636,8 +1645,6 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
-    flipHorizontal?: boolean;
-    flipVertical?: boolean;
 };
 
 // @public (undocumented)
@@ -1838,6 +1845,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     resize: () => void;
     // (undocumented)
+    protected rotation: number;
+    // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
     setCamera(cameraInterface: ICamera): void;
@@ -1984,8 +1993,6 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     getImageData(): IImageData | undefined;
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
-    // (undocumented)
-    getProperties: () => FlipDirection;
     // (undocumented)
     getSlabThickness(): number;
     // (undocumented)

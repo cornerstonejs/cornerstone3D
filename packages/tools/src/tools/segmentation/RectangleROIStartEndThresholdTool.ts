@@ -136,7 +136,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleROIStartEndThresholdTool.toolName,
+        toolName: this.getToolName(),
         volumeId,
         spacingInNormal,
       },
@@ -179,7 +179,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROIStartEndThresholdTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -302,7 +302,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
   ): void => {
     const annotations = getAnnotations(
       enabledElement.viewport.element,
-      RectangleROIStartEndThresholdTool.toolName
+      this.getToolName()
     );
 
     if (!annotations?.length) {
@@ -384,7 +384,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleROIStartEndThresholdTool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -403,7 +403,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
-        RectangleROIStartEndThresholdTool.toolName,
+        this.getToolName(),
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],

@@ -128,7 +128,7 @@ export default class BrushTool extends BaseTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
-        toolName: BrushTool.toolName,
+        toolName: this.getToolName(),
         segmentColor,
       },
       data: {
@@ -241,7 +241,7 @@ export default class BrushTool extends BaseTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
-        toolName: BrushTool.toolName,
+        toolName: this.getToolName(),
         segmentColor,
       },
       data: {
@@ -459,7 +459,7 @@ export default class BrushTool extends BaseTool {
     const circleUID = '0';
     drawCircleSvg(
       svgDrawingHelper,
-      BrushTool.toolName,
+      this.getToolName(),
       annotationUID,
       circleUID,
       center as Types.Point2,

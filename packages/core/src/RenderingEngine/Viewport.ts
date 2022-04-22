@@ -17,6 +17,7 @@ import type {
   Point2,
   Point3,
   FlipDirection,
+  EventTypes,
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
@@ -43,6 +44,7 @@ class Viewport implements IViewport {
   readonly type: ViewportType;
   protected flipHorizontal = false;
   protected flipVertical = false;
+  protected rotation = 0;
 
   /** sx of viewport on the offscreen canvas */
   sx: number;
@@ -620,6 +622,10 @@ class Viewport implements IViewport {
       renderer,
     };
 
+    if (this.flipHorizontal || this.flipVertical) {
+      this.flip({ flipHorizontal: false, flipVertical: false });
+    }
+
     // Here to let parallel/distributed compositing intercept
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
@@ -733,6 +739,8 @@ class Viewport implements IViewport {
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
       slabThickness,
+      flipHorizontal: this.flipHorizontal,
+      flipVertical: this.flipVertical,
     };
   }
 
@@ -753,7 +761,13 @@ class Viewport implements IViewport {
       parallelScale,
       viewAngle,
       slabThickness,
+      flipHorizontal,
+      flipVertical,
     } = cameraInterface;
+
+    if (flipHorizontal !== undefined || flipVertical !== undefined) {
+      this.flip({ flipHorizontal, flipVertical });
+    }
 
     if (viewUp !== undefined) {
       vtkCamera.setViewUp(viewUp);
@@ -792,13 +806,13 @@ class Viewport implements IViewport {
     }
 
     if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
-      const eventDetail = {
+      const eventDetail: EventTypes.CameraModifiedEventDetail = {
         previousCamera,
         camera: updatedCamera,
-        canvas: this.canvas,
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
+        rotation: this.rotation,
       };
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);

@@ -4,8 +4,6 @@ import { vec2 } from 'gl-matrix';
 import {
   getEnabledElement,
   Settings,
-  cache,
-  StackViewport,
   VolumeViewport,
   triggerEvent,
   eventTarget,
@@ -154,7 +152,7 @@ export default class ProbeTool extends AnnotationTool {
       invalidated: true,
       highlighted: true,
       metadata: {
-        toolName: ProbeTool.toolName,
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
@@ -174,7 +172,7 @@ export default class ProbeTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      ProbeTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -238,7 +236,7 @@ export default class ProbeTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      ProbeTool.toolName
+      this.getToolName()
     );
 
     // Find viewports to render on drag.
@@ -377,7 +375,7 @@ export default class ProbeTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, ProbeTool.toolName);
+    let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -461,7 +459,7 @@ export default class ProbeTool extends AnnotationTool {
 
       drawHandlesSvg(
         svgDrawingHelper,
-        ProbeTool.toolName,
+        this.getToolName(),
         annotationUID,
         handleGroupUID,
         [canvasCoordinates],
@@ -478,7 +476,7 @@ export default class ProbeTool extends AnnotationTool {
         const textUID = '0';
         drawTextBoxSvg(
           svgDrawingHelper,
-          ProbeTool.toolName,
+          this.getToolName(),
           annotationUID,
           textUID,
           textLines,

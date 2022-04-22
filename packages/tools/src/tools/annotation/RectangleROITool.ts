@@ -2,9 +2,7 @@ import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
-  cache,
   Settings,
-  StackViewport,
   VolumeViewport,
   triggerEvent,
   eventTarget,
@@ -69,15 +67,15 @@ const { transformWorldToIndex } = csUtils;
  * or similar methods.
  *
  * ```js
- * cornerstoneTools.addTool(RectangleROIAnnotation)
+ * cornerstoneTools.addTool(RectangleROITool)
  *
  * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
- * toolGroup.addTool(RectangleROIAnnotation.toolName)
+ * toolGroup.addTool(RectangleROITool.toolName)
  *
  * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
- * toolGroup.setToolActive(RectangleROIAnnotation.toolName, {
+ * toolGroup.setToolActive(RectangleROITool.toolName, {
  *   bindings: [
  *    {
  *       mouseButton: MouseBindings.Primary, // Left Click
@@ -156,7 +154,7 @@ export default class RectangleROITool extends AnnotationTool {
       invalidated: true,
       highlighted: true,
       metadata: {
-        toolName: RectangleROITool.toolName,
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
@@ -194,7 +192,7 @@ export default class RectangleROITool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -274,7 +272,7 @@ export default class RectangleROITool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -319,7 +317,7 @@ export default class RectangleROITool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -590,7 +588,7 @@ export default class RectangleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, RectangleROITool.toolName);
+    let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -705,7 +703,7 @@ export default class RectangleROITool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleROITool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -718,7 +716,7 @@ export default class RectangleROITool extends AnnotationTool {
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
-        RectangleROITool.toolName,
+        this.getToolName(),
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],
@@ -749,7 +747,7 @@ export default class RectangleROITool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        RectangleROITool.toolName,
+        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,

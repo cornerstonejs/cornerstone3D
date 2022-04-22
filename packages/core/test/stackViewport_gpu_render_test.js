@@ -933,8 +933,9 @@ describe('renderingCore -- Stack', () => {
         vp.setStack([imageId], 0).then(() => {
           vp.setProperties({
             interpolationType: InterpolationType.NEAREST,
-            flipHorizontal: true,
           });
+
+          vp.setCamera({ flipHorizontal: true });
 
           vp.render();
         });
@@ -966,8 +967,9 @@ describe('renderingCore -- Stack', () => {
           vp.setProperties({
             interpolationType: InterpolationType.NEAREST,
             rotation: 90,
-            flipHorizontal: true,
           });
+
+          vp.setCamera({ flipHorizontal: true });
 
           vp.render();
         });
