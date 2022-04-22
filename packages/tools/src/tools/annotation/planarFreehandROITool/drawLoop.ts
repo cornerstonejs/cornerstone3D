@@ -5,16 +5,9 @@ import {
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import { Events } from '../../../enums';
-import {
-  EventTypes,
-  ToolHandle,
-  PublicToolProps,
-  ToolProps,
-  InteractionTypes,
-  Annotation,
-} from '../../types';
+import { EventTypes } from '../../types';
 import { state } from '../../../store';
-import { vec2, vec3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { polyline } from '../../../utilities/math';
 

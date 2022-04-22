@@ -81,24 +81,30 @@ class PlanarFreehandROITool extends AnnotationTool {
     canvasPoints: Types.Point2[];
   } | null;
   private closedContourEditData?: {
-    polylineIndex?: number;
+    prevCanvasPoints: Types.Point2[];
+    editCanvasPoints: Types.Point2[];
+    startCrossingPoint?: Types.Point2;
+    endCrossingPoint?: Types.Point2;
+    startEditCrossPoint?: Types.Point2;
+    editIndex: number;
   } | null;
   private openContourEditData?: {
     polylineIndex?: number;
   } | null;
-  private openContourEndEditData?: {
-    handleIndex: number;
-    polylineIndex?: number;
-  } | null;
   isDrawing: boolean = false;
-  isEditing: boolean = false;
+  isEditingClosed: boolean = false;
+  isEditingOpen: boolean = false;
 
   private activateDraw: (
     evt: EventTypes.MouseDownActivateEventType,
     annotation: Types.Annotation,
     viewportIdsToRender: string[]
   ) => void;
-  private activateClosedContourEdit: (element: HTMLDivElement) => void;
+  private activateClosedContourEdit: (
+    evt: EventTypes.MouseDownActivateEventType,
+    annotation: Types.Annotation,
+    viewportIdsToRender: string[]
+  ) => void;
   private activateOpenContourEdit: (element: HTMLDivElement) => void;
   private activateOpenContourEndEdit: (
     evt: EventTypes.MouseDownActivateEventType,
@@ -116,7 +122,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     svgDrawingHelper: any,
     annotation: Annotation
   ) => void;
-  private renderContourBeingEdited: (
+  private renderClosedContourBeingEdited: (
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: any,
+    annotation: Annotation
+  ) => void;
+  private renderOpenContourBeingEdited: (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any,
     annotation: Annotation
@@ -266,10 +277,15 @@ class PlanarFreehandROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
     if (annotation.data.isOpenContour) {
       this.activateOpenContourEdit(element);
     } else {
-      this.activateClosedContourEdit(element);
+      this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
     }
   };
 
@@ -366,9 +382,10 @@ class PlanarFreehandROITool extends AnnotationTool {
     }
 
     const isDrawing = this.isDrawing;
-    const isEditing = this.isEditing;
+    const isEditingOpen = this.isEditingOpen;
+    const isEditingClosed = this.isEditingClosed;
 
-    if (!(isDrawing || isEditing)) {
+    if (!(isDrawing || isEditingOpen || isEditingClosed)) {
       annotations.forEach((annotation) =>
         this.renderContour(enabledElement, svgDrawingHelper, annotation)
       );
@@ -386,11 +403,21 @@ class PlanarFreehandROITool extends AnnotationTool {
             svgDrawingHelper,
             annotation
           );
-        } else {
-          this.renderContourBeingEdited(
+        } else if (isEditingClosed) {
+          this.renderClosedContourBeingEdited(
             enabledElement,
             svgDrawingHelper,
             annotation
+          );
+        } else if (isEditingOpen) {
+          this.renderOpenContourBeingEdited(
+            enabledElement,
+            svgDrawingHelper,
+            annotation
+          );
+        } else {
+          throw new Error(
+            `Unknown ${this.getToolName()} annotation rendering state`
           );
         }
       } else {

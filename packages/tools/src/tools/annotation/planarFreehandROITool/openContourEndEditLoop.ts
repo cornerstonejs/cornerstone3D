@@ -18,8 +18,7 @@ function activateOpenContourEndEdit(
   this.isDrawing = true;
 
   const eventDetail = evt.detail;
-  const { currentPoints, element } = eventDetail;
-  const canvasPos = currentPoints.canvas;
+  const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
@@ -37,8 +36,6 @@ function activateOpenContourEndEdit(
     canvasPoints.reverse();
   }
 
-  debugger;
-
   this.drawData = {
     canvasPoints: canvasPoints,
     polylineIndex: canvasPoints.length - 1,
@@ -52,8 +49,6 @@ function activateOpenContourEndEdit(
     yDir,
   };
 
-  debugger;
-
   state.isInteractingWithTool = true;
 
   // Jump into drawing loop.
@@ -64,49 +59,9 @@ function activateOpenContourEndEdit(
   hideElementCursor(element);
 }
 
-// function deactivateOpenContourEndEdit(element: HTMLDivElement) {
-//   state.isInteractingWithTool = false;
-
-//   element.removeEventListener(
-//     Events.MOUSE_UP,
-//     this.mouseUpOpenContourEndEditCallback
-//   );
-//   element.removeEventListener(
-//     Events.MOUSE_DRAG,
-//     this.mouseDragOpenContourEndEditCallback
-//   );
-//   element.removeEventListener(
-//     Events.MOUSE_CLICK,
-//     this.mouseUpOpenContourEndEditCallback
-//   );
-
-//   resetElementCursor(element);
-// }
-
-// function mouseDragOpenContourEndEditCallback(
-//   evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
-// ) {
-//   console.log('TODO_JAMES -> Open Contour End editing');
-// }
-
-// function mouseUpOpenContourEndEditCallback(
-//   evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-// ) {
-//   const eventDetail = evt.detail;
-//   const { element } = eventDetail;
-
-//   this.deactivateOpenContourEndEdit(element);
-// }
-
 function registerOpenContourEndEditLoop(toolInstance) {
   toolInstance.activateOpenContourEndEdit =
     activateOpenContourEndEdit.bind(toolInstance);
-  // toolInstance.deactivateOpenContourEndEdit =
-  //   deactivateOpenContourEndEdit.bind(toolInstance);
-  // toolInstance.mouseDragOpenContourEndEditCallback =
-  //   mouseDragOpenContourEndEditCallback.bind(toolInstance);
-  // toolInstance.mouseUpOpenContourEndEditCallback =
-  //   mouseUpOpenContourEndEditCallback.bind(toolInstance);
 }
 
 export default registerOpenContourEndEditLoop;

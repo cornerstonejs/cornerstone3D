@@ -1,4 +1,5 @@
 import { vec2 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Orientation algoritm to determine if two lines cross.
@@ -16,7 +17,12 @@ import { vec2 } from 'gl-matrix';
  * @param {boolean} [closed=true] Whether to treat the set of points as a closed contour (i.e last point joined onto first).
  * @returns {number[]} An array of the indicies that define the line in points.
  */
-function getFirstIntersectionWithPolyline(points, p1, q1, closed = true) {
+function getFirstIntersectionWithPolyline(
+  points,
+  p1,
+  q1,
+  closed = true
+): Types.Point2 | undefined {
   let initialI;
   let j;
 
@@ -56,7 +62,12 @@ function getFirstIntersectionWithPolyline(points, p1, q1, closed = true) {
  * @param {string} [closed=true] Whether to treat the set of points as a closed contour (i.e last point joined onto first).
  * @returns {number[]} An array of the indicies that define the line in points.
  */
-function getClosestIntersectionWithPolyline(points, p1, q1, closed = true) {
+function getClosestIntersectionWithPolyline(
+  points,
+  p1,
+  q1,
+  closed = true
+): Types.Point2 | undefined {
   let initialI;
   let j;
 
@@ -100,7 +111,7 @@ function getClosestIntersectionWithPolyline(points, p1, q1, closed = true) {
       (intersectionPoints[0][1] + intersectionPoints[1][1]) / 2,
     ];
 
-    distances.push(vec2.distance(midpoint, p1));
+    distances.push(vec2.distance(<vec2>midpoint, p1));
   });
 
   const minDistance = Math.min(...distances);
