@@ -218,18 +218,46 @@ function mouseDragClosedContourEditCallback(
         this.closedContourEditData.startEditCrossPoint = [index, index + 1];
       }
     }
-
-    // Check if new point crosses.
-
-    // TODO_JAMES -> If not crossing:
-
-    // -- If not -> Wait for a cross naturally.
-    // This is to allow the user to edit when clicking just past the line, but within interaction distance.
   }
 
   // TODO_JAMES -> Check if we have finished an edit and start a new one.
 
+  this.findLineToSnapTo();
+
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+}
+
+function findLineToSnapTo() {
+  const { editCanvasPoints, prevCanvasPoints, startEditCrossPoint } =
+    this.closedContourEditData;
+
+  // find closest point.
+  let closest = {
+    value: Infinity,
+    index: null,
+  };
+
+  if (
+    !startEditCrossPoint // Haven't crossed line yet
+  ) {
+    this.closedContourEditData.snapIndex = undefined;
+  }
+
+  const lastEditCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
+
+  for (let i = 0; i < prevCanvasPoints.length; i++) {
+    const prevCanvasPoint = prevCanvasPoints[i];
+    const distance = vec2.distance(prevCanvasPoint, lastEditCanvasPoint);
+
+    if (distance < closest.value) {
+      closest.value = distance;
+      closest.index = i;
+    }
+  }
+
+  this.closedContourEditData.snapIndex = closest.index;
+
+  console.log(this.closedContourEditData.snapIndex);
 }
 
 function mouseUpClosedContourEditCallback(
@@ -252,6 +280,7 @@ function registerClosedContourEditLoop(toolInstance) {
     mouseDragClosedContourEditCallback.bind(toolInstance);
   toolInstance.mouseUpClosedContourEditCallback =
     mouseUpClosedContourEditCallback.bind(toolInstance);
+  toolInstance.findLineToSnapTo = findLineToSnapTo.bind(toolInstance);
 }
 
 export default registerClosedContourEditLoop;

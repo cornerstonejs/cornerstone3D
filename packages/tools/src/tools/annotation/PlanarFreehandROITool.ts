@@ -87,6 +87,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     endCrossingPoint?: Types.Point2;
     startEditCrossPoint?: Types.Point2;
     editIndex: number;
+    snapIndex?: number;
   } | null;
   private openContourEditData?: {
     polylineIndex?: number;
