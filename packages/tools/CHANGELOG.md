@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.9.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.3...@cornerstonejs/tools@0.9.4) (2022-04-22)
+
+
+### Bug Fixes
+
+* Camera events for flip and rotation changes ([#83](https://github.com/cornerstonejs/cornerstone3D-beta/issues/83)) ([82115ec](https://github.com/cornerstonejs/cornerstone3D-beta/commit/82115ec00bd924fb942473d04052473408b84eb7))
+
+
+
+
+
 ## [0.9.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.2...@cornerstonejs/tools@0.9.3) (2022-04-21)
 
 
