@@ -41,6 +41,7 @@ import {
 import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
+  AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
   MouseDragEventType,
   MouseMoveEventType,
@@ -484,6 +485,16 @@ export default class BidirectionalTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
 
     this.editData = null;
     this.isDrawing = false;

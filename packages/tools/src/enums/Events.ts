@@ -10,13 +10,21 @@ enum Events {
   ///////////////////////////////////////
 
   /**
-   * Triggers on the eventTarget when a new annotation is added.
+   * Triggers on the eventTarget when a new annotation is added to the state.
    *
    * Make use of {@link EventTypes.AnnotationAddedEventType | Annotation Added Event Type  }
    * for typing your event listeners for this annotation added event, and see what event
    * detail is included in {@link EventTypes.AnnotationAddedEventDetail | Annotation Added Event Detail}.
    */
   ANNOTATION_ADDED = 'CORNERSTONE_TOOLS_ANNOTATION_ADDED',
+
+  /**
+   * Triggers on the eventTarget when a new annotation is completed its drawing
+   * Make use of {@link EventTypes.AnnotationCompletedEventType | Annotation Completed Event Type }
+   * for typing your event listeners for this annotation completed event, and see what event
+   * detail is included in {@link EventTypes.AnnotationCompletedEventDetail | Annotation Completed Event Detail}.
+   */
+  ANNOTATION_COMPLETED = 'CORNERSTONE_TOOLS_ANNOTATION_COMPLETED',
 
   /**
    * Triggers on the eventTarget when an annotation is modified (e.g. a handle is modified).
