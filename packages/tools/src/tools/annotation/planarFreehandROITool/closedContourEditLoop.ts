@@ -355,8 +355,6 @@ function mouseUpClosedContourEditCallback(
 
   console.log(this.closedContourEditData);
 
-  debugger;
-
   const eventDetail = evt.detail;
   const { element } = eventDetail;
 

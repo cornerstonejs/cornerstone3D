@@ -6,6 +6,7 @@ import getSpacingAndXYDirections from './getSpacingAndXYDirections';
 import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourProximity';
 import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
+import calculateAreaOfPoints from './calculateAreaOfPoints';
 
 export {
   getFirstIntersectionWithPolyline,
@@ -14,4 +15,5 @@ export {
   pointsAreWithinCloseContourProximity,
   addCanvasPointsToArray,
   pointCanProjectOnLine,
+  calculateAreaOfPoints,
 };
