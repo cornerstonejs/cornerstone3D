@@ -210,6 +210,16 @@ function renderClosedContourBeingEdited(
 
   const { editCanvasPoints } = this.closedContourEditData;
 
+  const snapIndex = this.closedContourEditData.snapIndex;
+
+  let editPointToRender = editCanvasPoints;
+
+  if (snapIndex !== undefined) {
+    const snapPointCanvas = canvasPoints[snapIndex];
+
+    editPointToRender = [...editCanvasPoints, snapPointCanvas];
+  }
+
   const polylineUID2 = '2';
 
   drawPolylineSvg(
@@ -217,7 +227,7 @@ function renderClosedContourBeingEdited(
     this.getToolName(),
     annotation.annotationUID,
     polylineUID2,
-    editCanvasPoints,
+    editPointToRender,
     { color: 'crimson', width: options.width }
   );
 }

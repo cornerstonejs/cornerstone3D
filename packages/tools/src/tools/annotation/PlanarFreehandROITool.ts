@@ -85,7 +85,6 @@ class PlanarFreehandROITool extends AnnotationTool {
     editCanvasPoints: Types.Point2[];
     startCrossingPoint?: Types.Point2;
     endCrossingPoint?: Types.Point2;
-    startEditCrossPoint?: Types.Point2;
     editIndex: number;
     snapIndex?: number;
   } | null;
