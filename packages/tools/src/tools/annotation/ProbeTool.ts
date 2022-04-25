@@ -96,7 +96,7 @@ export default class ProbeTool extends AnnotationTool {
   editData: {
     annotation: any;
     viewportIdsToRender: string[];
-    newAnnotation: boolean;
+    newAnnotation?: boolean;
   } | null;
   eventDispatchDetail: {
     viewportId: string;
