@@ -34,6 +34,15 @@ type AnnotationAddedEventDetail = {
 };
 
 /**
+ * The data that is passed to the event handler when a new annotation is completed
+ * drawing on the viewport.
+ */
+type AnnotationCompletedEventDetail = {
+  /** The annotation that is being added to the annotations manager. */
+  annotation: Annotation;
+};
+
+/**
  * The data that is passed to the event handler when an annotation is modified.
  */
 type AnnotationModifiedEventDetail = {
@@ -301,6 +310,12 @@ type AnnotationAddedEventType =
   Types.CustomEventType<AnnotationAddedEventDetail>;
 
 /**
+ * The AnnotationCompleted event type
+ */
+type AnnotationCompletedEventType =
+  Types.CustomEventType<AnnotationCompletedEventDetail>;
+
+/**
  * The AnnotationModified event type
  */
 type AnnotationModifiedEventType =
@@ -417,6 +432,8 @@ export {
   NormalizedMouseEventType,
   AnnotationAddedEventDetail,
   AnnotationAddedEventType,
+  AnnotationCompletedEventDetail,
+  AnnotationCompletedEventType,
   AnnotationModifiedEventDetail,
   AnnotationModifiedEventType,
   AnnotationRemovedEventDetail,

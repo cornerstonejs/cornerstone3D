@@ -29,7 +29,10 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import {
+  AnnotationCompletedEventDetail,
+  AnnotationModifiedEventDetail,
+} from '../../types/EventTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
@@ -90,7 +93,11 @@ export default class ProbeTool extends AnnotationTool {
 
   touchDragCallback: any;
   mouseDragCallback: any;
-  editData: { annotation: any; viewportIdsToRender: string[] } | null;
+  editData: {
+    annotation: any;
+    viewportIdsToRender: string[];
+    newAnnotation?: boolean;
+  } | null;
   eventDispatchDetail: {
     viewportId: string;
     renderingEngineId: string;
@@ -177,6 +184,7 @@ export default class ProbeTool extends AnnotationTool {
 
     this.editData = {
       annotation,
+      newAnnotation: true,
       viewportIdsToRender,
     };
     this._activateModify(element);
@@ -264,7 +272,7 @@ export default class ProbeTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender } = this.editData;
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
 
     annotation.highlighted = false;
 
@@ -292,6 +300,16 @@ export default class ProbeTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
   };
 
   _mouseDragCallback = (evt) => {
@@ -319,7 +337,7 @@ export default class ProbeTool extends AnnotationTool {
       this._deactivateModify(element);
       resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -332,6 +350,16 @@ export default class ProbeTool extends AnnotationTool {
         renderingEngine,
         viewportIdsToRender
       );
+
+      if (newAnnotation) {
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+      }
 
       this.editData = null;
       return annotation.annotationUID;

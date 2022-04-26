@@ -46,6 +46,7 @@ import {
 import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
+  AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
   MouseDragEventType,
   MouseMoveEventType,
@@ -430,6 +431,16 @@ export default class EllipticalROITool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
   };
 
   _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
@@ -604,7 +615,7 @@ export default class EllipticalROITool extends AnnotationTool {
       this._deactivateModify(element);
       resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -617,6 +628,16 @@ export default class EllipticalROITool extends AnnotationTool {
         renderingEngine,
         viewportIdsToRender
       );
+
+      if (newAnnotation) {
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+      }
 
       this.editData = null;
       return annotation.annotationUID;

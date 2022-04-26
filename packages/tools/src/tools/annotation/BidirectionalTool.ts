@@ -41,6 +41,7 @@ import {
 import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
+  AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
   MouseDragEventType,
   MouseMoveEventType,
@@ -485,6 +486,16 @@ export default class BidirectionalTool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
+
     this.editData = null;
     this.isDrawing = false;
   };
@@ -851,7 +862,7 @@ export default class BidirectionalTool extends AnnotationTool {
       this._deactivateModify(element);
       resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -864,6 +875,16 @@ export default class BidirectionalTool extends AnnotationTool {
         renderingEngine,
         viewportIdsToRender
       );
+
+      if (newAnnotation) {
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+      }
 
       this.editData = null;
       return annotation.annotationUID;

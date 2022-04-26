@@ -105,6 +105,14 @@ type AnnotationAddedEventDetail = {
 type AnnotationAddedEventType = Types_2.CustomEventType<AnnotationAddedEventDetail>;
 
 // @public (undocumented)
+type AnnotationCompletedEventDetail = {
+    annotation: Annotation;
+};
+
+// @public (undocumented)
+type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedEventDetail>;
+
+// @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
 
 // @public (undocumented)
@@ -1103,6 +1111,8 @@ enum Events {
     // (undocumented)
     ANNOTATION_ADDED = "CORNERSTONE_TOOLS_ANNOTATION_ADDED",
     // (undocumented)
+    ANNOTATION_COMPLETED = "CORNERSTONE_TOOLS_ANNOTATION_COMPLETED",
+    // (undocumented)
     ANNOTATION_LOCK_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE",
     // (undocumented)
     ANNOTATION_MODIFIED = "CORNERSTONE_TOOLS_ANNOTATION_MODIFIED",
@@ -1191,6 +1201,8 @@ declare namespace EventTypes_2 {
         NormalizedMouseEventType,
         AnnotationAddedEventDetail,
         AnnotationAddedEventType,
+        AnnotationCompletedEventDetail,
+        AnnotationCompletedEventType,
         AnnotationModifiedEventDetail,
         AnnotationModifiedEventType,
         AnnotationRemovedEventDetail,
@@ -2507,6 +2519,7 @@ export class ProbeTool extends AnnotationTool {
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
+        newAnnotation?: boolean;
     } | null;
     // (undocumented)
     eventDispatchDetail: {
