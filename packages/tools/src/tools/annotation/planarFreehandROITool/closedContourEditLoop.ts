@@ -14,7 +14,7 @@ import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnn
 const {
   getSpacingAndXYDirections,
   addCanvasPointsToArray,
-  getFirstIntersectionWithPolyline,
+  calculateAreaOfPoints,
 } = polyline;
 
 function activateClosedContourEdit(
@@ -37,7 +37,7 @@ function activateClosedContourEdit(
     this.configuration.subPixelResolution
   );
 
-  this.closedContourEditData = {
+  this.editData = {
     prevCanvasPoints,
     editCanvasPoints: [canvasPos],
     startCrossingPoint: undefined,
@@ -101,8 +101,7 @@ function mouseDragClosedContourEditCallback(
   const { renderingEngine, viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-  const { editIndex, editCanvasPoints, startCrossingPoint } =
-    this.closedContourEditData;
+  const { editIndex, editCanvasPoints, startCrossingPoint } = this.editData;
 
   const lastCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
@@ -131,234 +130,225 @@ function mouseDragClosedContourEditCallback(
 
   const currentEditIndex = editIndex + numPointsAdded;
 
-  this.closedContourEditData.editIndex = currentEditIndex;
+  this.editData.editIndex = currentEditIndex;
 
   if (!startCrossingPoint && editCanvasPoints.length > 1) {
-    this.checkForFirstCrossing(evt);
+    this.checkForFirstCrossing(evt, true);
   }
 
   this.findSnapIndex();
 
-  if (startCrossingPoint) {
-    this.checkForSecondCrossing(evt);
+  this.editData.fusedCanvasPoints = this.fuseEditPointsWithClosedContour(evt);
+
+  if (startCrossingPoint && this.checkForSecondCrossing(evt, true)) {
+    this.finishEditClosedOnSecondCrossing(evt);
   }
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 }
 
-// TODO_JAMES -> Check if we have finished an edit and start a new one.
-function checkForSecondCrossing(evt) {
+function finishEditClosedOnSecondCrossing(evt) {
   const eventDetail = evt.detail;
-  const { currentPoints, lastPoints } = eventDetail;
-  const canvasPos = currentPoints.canvas;
-  const lastCanvasPoint = lastPoints.canvas;
-  const { prevCanvasPoints, editCanvasPoints } = this.closedContourEditData;
+  const { element } = eventDetail;
+  const enabledElement = getEnabledElement(element);
+  const { viewport, renderingEngine } = enabledElement;
 
-  const crossedLineSegment = getFirstIntersectionWithPolyline(
-    prevCanvasPoints,
-    canvasPos,
-    lastCanvasPoint,
-    true
+  const { annotation, viewportIdsToRender } = this.commonData;
+  const { fusedCanvasPoints, editCanvasPoints } = this.editData;
+
+  const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
+    viewport.canvasToWorld(canvasPoint)
   );
 
-  if (!crossedLineSegment) {
-    return;
-  }
+  annotation.data.polyline = worldPoints;
+  annotation.data.isOpenContour = false;
 
-  this.closedContourEditData.endCrossingPoint = crossedLineSegment;
+  const lastEditCanvasPoint = editCanvasPoints.pop();
 
-  // Remove points up until just before the crossing
-  for (let i = editCanvasPoints.length - 1; i > 0; i--) {
-    const lastLine = [editCanvasPoints[i], editCanvasPoints[i - 1]];
-
-    const didCrossLine = !!getFirstIntersectionWithPolyline(
-      prevCanvasPoints,
-      lastLine[0],
-      lastLine[1],
-      true
-    );
-
-    // Remove last element
-    editCanvasPoints.pop();
-
-    if (didCrossLine) {
-      break;
-    }
-  }
-
-  this.finishEditOnSecondCrossing(evt);
-}
-
-function finishEditOnSecondCrossing(evt) {
-  console.log(
-    'TODO_JAMES => On second crossing complete edit using first crossing + second crossing'
-  );
-
-  console.log(this.closedContourEditData);
-
-  debugger;
-}
-
-// Check if this mouse move crossed the contour
-function checkForFirstCrossing(evt) {
-  const eventDetail = evt.detail;
-  const { element, currentPoints, lastPoints } = eventDetail;
-  const canvasPos = currentPoints.canvas;
-  const lastCanvasPoint = lastPoints.canvas;
-  const { editCanvasPoints, prevCanvasPoints } = this.closedContourEditData;
-
-  const crossedLineSegment = getFirstIntersectionWithPolyline(
-    prevCanvasPoints,
-    canvasPos,
-    lastCanvasPoint,
-    true
-  );
-
-  if (crossedLineSegment) {
-    this.closedContourEditData.startCrossingPoint = crossedLineSegment;
-
-    // On the first crossing, remove the first lines prior to the crossing
-    this.removePointsUpUntilFirstCrossing();
-  } else if (editCanvasPoints.length >= 2) {
-    // -- Check if already crossing.
-    // -- Check if extending a line back 6 (Proximity) canvas pixels would cross a line.
-    // -- If so -> Extend line back that distance.
-
-    // Extend point back 6 canvas pixels from first point.
-    const dir = vec2.create();
-
-    vec2.subtract(dir, editCanvasPoints[1], editCanvasPoints[0]);
-
-    vec2.normalize(dir, dir);
-
-    const proximity = 6;
-
-    const extendedPoint = [
-      editCanvasPoints[0][0] - dir[0] * proximity,
-      editCanvasPoints[0][1] - dir[1] * proximity,
-    ];
-
-    const crossedLineSegmentFromExtendedPoint =
-      getFirstIntersectionWithPolyline(
-        prevCanvasPoints,
-        extendedPoint,
-        editCanvasPoints[0],
-        true
-      );
-
-    if (crossedLineSegmentFromExtendedPoint) {
-      // Add points.
-      const pointsToPrepend = [extendedPoint];
-
-      addCanvasPointsToArray(
-        element,
-        pointsToPrepend,
-        editCanvasPoints[0],
-        this.commonData
-      );
-
-      const numPointsPrepended = pointsToPrepend.length;
-
-      let index = 0;
-
-      for (let i = 0; i < numPointsPrepended - 1; i++) {
-        const crossedLineSegment = getFirstIntersectionWithPolyline(
-          prevCanvasPoints,
-          pointsToPrepend[i],
-          pointsToPrepend[i + 1],
-          true
-        );
-
-        if (crossedLineSegment) {
-          index = i;
-          break;
-        }
-      }
-
-      editCanvasPoints.unshift(...pointsToPrepend);
-
-      // On the first crossing, remove the first lines prior to the crossing
-      this.removePointsUpUntilFirstCrossing();
-
-      this.closedContourEditData.editIndex = editCanvasPoints.length - 1;
-      this.closedContourEditData.startCrossingPoint =
-        crossedLineSegmentFromExtendedPoint;
-    }
-  }
-}
-
-function removePointsUpUntilFirstCrossing() {
-  const { editCanvasPoints, prevCanvasPoints } = this.closedContourEditData;
-  let numPointsToRemove = 0;
-
-  for (let i = 0; i < editCanvasPoints.length - 1; i++) {
-    const firstLine = [editCanvasPoints[i], editCanvasPoints[i + 1]];
-
-    const didCrossLine = !!getFirstIntersectionWithPolyline(
-      prevCanvasPoints,
-      firstLine[0],
-      firstLine[1],
-      true
-    );
-
-    // Remove last element
-    numPointsToRemove++;
-
-    if (didCrossLine) {
-      break;
-    }
-  }
-
-  // Remove the points
-  editCanvasPoints.splice(0, numPointsToRemove);
-
-  this.closedContourEditData.editIndex = editCanvasPoints.length - 1;
-}
-
-function findSnapIndex() {
-  const { editCanvasPoints, prevCanvasPoints, startCrossingPoint } =
-    this.closedContourEditData;
-
-  // find closest point.
-  let closest = {
-    value: Infinity,
-    index: null,
+  this.editData = {
+    prevCanvasPoints: fusedCanvasPoints,
+    editCanvasPoints: [lastEditCanvasPoint],
+    startCrossingPoint: undefined,
+    endCrossingPoint: undefined,
+    editIndex: 0,
   };
 
-  if (
-    !startCrossingPoint // Haven't crossed line yet
-  ) {
-    this.closedContourEditData.snapIndex = undefined;
+  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+}
+
+function fuseEditPointsWithClosedContour(evt) {
+  const { prevCanvasPoints, editCanvasPoints, startCrossingPoint, snapIndex } =
+    this.editData;
+
+  if (startCrossingPoint === undefined || snapIndex === undefined) {
+    return undefined;
   }
 
-  const lastEditCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
+  const eventDetail = evt.detail;
+  const { element } = eventDetail;
 
-  for (let i = 0; i < prevCanvasPoints.length; i++) {
-    const prevCanvasPoint = prevCanvasPoints[i];
-    const distance = vec2.distance(prevCanvasPoint, lastEditCanvasPoint);
+  // Augment the editCanvasPoints array, between the end of edit and the snap index.
+  const augmentedEditCanvasPoints = [...editCanvasPoints];
 
-    if (distance < closest.value) {
-      closest.value = distance;
-      closest.index = i;
+  addCanvasPointsToArray(
+    element,
+    augmentedEditCanvasPoints,
+    prevCanvasPoints[snapIndex],
+    this.commonData
+  );
+
+  if (augmentedEditCanvasPoints.length > editCanvasPoints.length) {
+    // If any points added, remove the last point, which will be a clone of the snapIndex
+    augmentedEditCanvasPoints.pop();
+  }
+
+  // Calculate the distances between the first and last edit points and the origin of the
+  // Contour with the snap point. These will be used to see which way around the edit array should be
+  // Placed within the preview.
+
+  const startCrossingIndex = startCrossingPoint[0];
+  let lowIndex;
+  let highIndex;
+
+  if (startCrossingIndex > snapIndex) {
+    lowIndex = snapIndex;
+    highIndex = startCrossingIndex;
+  } else {
+    lowIndex = startCrossingIndex;
+    highIndex = snapIndex;
+  }
+
+  const distanceBetweenLowAndFirstPoint = vec2.distance(
+    prevCanvasPoints[lowIndex],
+    augmentedEditCanvasPoints[0]
+  );
+
+  const distanceBetweenLowAndLastPoint = vec2.distance(
+    prevCanvasPoints[lowIndex],
+    augmentedEditCanvasPoints[augmentedEditCanvasPoints.length - 1]
+  );
+
+  const distanceBetweenHighAndFirstPoint = vec2.distance(
+    prevCanvasPoints[highIndex],
+    augmentedEditCanvasPoints[0]
+  );
+
+  const distanceBetweenHighAndLastPoint = vec2.distance(
+    prevCanvasPoints[highIndex],
+    augmentedEditCanvasPoints[augmentedEditCanvasPoints.length - 1]
+  );
+
+  // Generate two possible contours that could be intepretted from the edit:
+  //
+  // pointSet1 => 0 -> low -> edit -> high - max.
+  // pointSet2 => low -> high -> edit
+  //
+  // Depending on the placement of the edit and the origin, either of these could be the intended edit.
+  // We'll choose the one with the largest area, as edits are considered to be changes to the original area with
+  // A relative change of much less than unity.
+
+  // Point Set 1
+  let pointSet1 = [];
+
+  // Add points from the orignal contour origin up to the low index.
+  for (let i = 0; i < lowIndex; i++) {
+    const canvasPoint = prevCanvasPoints[i];
+
+    pointSet1.push([canvasPoint[0], canvasPoint[1]]);
+  }
+
+  // Check which orientation of the edit line minimizes the distance between the
+  // origial contour low/high points and the start/end nodes of the edit line.
+
+  let inPlaceDistance =
+    distanceBetweenLowAndFirstPoint + distanceBetweenHighAndLastPoint;
+
+  let reverseDistance =
+    distanceBetweenLowAndLastPoint + distanceBetweenHighAndFirstPoint;
+
+  if (inPlaceDistance < reverseDistance) {
+    for (let i = 0; i < augmentedEditCanvasPoints.length; i++) {
+      const canvasPoint = augmentedEditCanvasPoints[i];
+
+      pointSet1.push([canvasPoint[0], canvasPoint[1]]);
+    }
+  } else {
+    for (let i = augmentedEditCanvasPoints.length - 1; i >= 0; i--) {
+      const canvasPoint = augmentedEditCanvasPoints[i];
+
+      pointSet1.push([canvasPoint[0], canvasPoint[1]]);
     }
   }
 
-  this.closedContourEditData.snapIndex = closest.index;
+  // Add points from the orignal contour's high index up to to its end point.
+  for (let i = highIndex; i < prevCanvasPoints.length; i++) {
+    const canvasPoint = prevCanvasPoints[i];
+
+    pointSet1.push([canvasPoint[0], canvasPoint[1]]);
+  }
+
+  // Point Set 2
+  let pointSet2 = [];
+
+  for (let i = lowIndex; i < highIndex; i++) {
+    const canvasPoint = prevCanvasPoints[i];
+
+    pointSet2.push([canvasPoint[0], canvasPoint[1]]);
+  }
+
+  inPlaceDistance =
+    distanceBetweenHighAndFirstPoint + distanceBetweenLowAndLastPoint;
+
+  reverseDistance =
+    distanceBetweenHighAndLastPoint + distanceBetweenLowAndFirstPoint;
+
+  if (inPlaceDistance < reverseDistance) {
+    for (let i = 0; i < augmentedEditCanvasPoints.length; i++) {
+      const canvasPoint = augmentedEditCanvasPoints[i];
+
+      pointSet2.push([canvasPoint[0], canvasPoint[1]]);
+    }
+  } else {
+    for (let i = augmentedEditCanvasPoints.length - 1; i >= 0; i--) {
+      const canvasPoint = augmentedEditCanvasPoints[i];
+
+      pointSet2.push([canvasPoint[0], canvasPoint[1]]);
+    }
+  }
+
+  const areaPointSet1 = calculateAreaOfPoints(pointSet1);
+  const areaPointSet2 = calculateAreaOfPoints(pointSet2);
+
+  const pointsToRender = areaPointSet1 > areaPointSet2 ? pointSet1 : pointSet2;
+
+  return pointsToRender;
 }
 
 function mouseUpClosedContourEditCallback(
   evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
 ) {
-  console.log(
-    'TODO_JAMES => On mouse up complete edit using first crossing + snap index'
-  );
-
-  console.log(this.closedContourEditData);
-
   const eventDetail = evt.detail;
   const { element } = eventDetail;
+  const enabledElement = getEnabledElement(element);
+  const { viewport, renderingEngine } = enabledElement;
+
+  const { annotation, viewportIdsToRender } = this.commonData;
+  const { fusedCanvasPoints } = this.editData;
+
+  if (fusedCanvasPoints) {
+    const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
+      viewport.canvasToWorld(canvasPoint)
+    );
+
+    annotation.data.polyline = worldPoints;
+    annotation.data.isOpenContour = false;
+  }
 
   this.isEditingClosed = false;
+  this.editData = undefined;
+  this.commonData = undefined;
+
+  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
   this.deactivateClosedContourEdit(element);
 }
@@ -372,14 +362,10 @@ function registerClosedContourEditLoop(toolInstance) {
     mouseDragClosedContourEditCallback.bind(toolInstance);
   toolInstance.mouseUpClosedContourEditCallback =
     mouseUpClosedContourEditCallback.bind(toolInstance);
-  toolInstance.findSnapIndex = findSnapIndex.bind(toolInstance);
-  toolInstance.checkForFirstCrossing = checkForFirstCrossing.bind(toolInstance);
-  toolInstance.checkForSecondCrossing =
-    checkForSecondCrossing.bind(toolInstance);
-  toolInstance.finishEditOnSecondCrossing =
-    finishEditOnSecondCrossing.bind(toolInstance);
-  toolInstance.removePointsUpUntilFirstCrossing =
-    removePointsUpUntilFirstCrossing.bind(toolInstance);
+  toolInstance.finishEditClosedOnSecondCrossing =
+    finishEditClosedOnSecondCrossing.bind(toolInstance);
+  toolInstance.fuseEditPointsWithClosedContour =
+    fuseEditPointsWithClosedContour.bind(toolInstance);
 }
 
 export default registerClosedContourEditLoop;

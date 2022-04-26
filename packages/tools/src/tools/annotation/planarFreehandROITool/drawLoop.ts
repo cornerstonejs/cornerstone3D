@@ -162,7 +162,7 @@ function completeDrawContour(
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  // TODO -> This is really expensive and won't scale! What should we do here?
+  // Note: -> This is pretty expensive and may note scale well with hundreds of contours.
   // It would be best if we could get the transformation matrix and then just
   // apply this to the points, but its still 16 multiplications per point.
   const worldPoints = canvasPoints.map((canvasPoint) =>

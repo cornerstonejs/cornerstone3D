@@ -16,6 +16,7 @@ import { polyline } from '../../utilities/math';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import registerDrawLoop from './planarFreehandROITool/drawLoop';
+import registerEditLoopCommon from './planarFreehandROITool/editLoopCommon';
 import registerClosedContourEditLoop from './planarFreehandROITool/closedContourEditLoop';
 import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
@@ -80,16 +81,14 @@ class PlanarFreehandROITool extends AnnotationTool {
     polylineIndex: number;
     canvasPoints: Types.Point2[];
   } | null;
-  private closedContourEditData?: {
+  private editData?: {
     prevCanvasPoints: Types.Point2[];
     editCanvasPoints: Types.Point2[];
+    fusedCanvasPoints: Types.Point2[];
     startCrossingPoint?: Types.Point2;
     endCrossingPoint?: Types.Point2;
     editIndex: number;
     snapIndex?: number;
-  } | null;
-  private openContourEditData?: {
-    polylineIndex?: number;
   } | null;
   isDrawing: boolean = false;
   isEditingClosed: boolean = false;
@@ -105,7 +104,11 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotation: Types.Annotation,
     viewportIdsToRender: string[]
   ) => void;
-  private activateOpenContourEdit: (element: HTMLDivElement) => void;
+  private activateOpenContourEdit: (
+    evt: EventTypes.MouseDownActivateEventType,
+    annotation: Types.Annotation,
+    viewportIdsToRender: string[]
+  ) => void;
   private activateOpenContourEndEdit: (
     evt: EventTypes.MouseDownActivateEventType,
     annotation: Types.Annotation,
@@ -149,6 +152,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     super(toolProps, defaultToolProps);
 
     registerDrawLoop(this);
+    registerEditLoopCommon(this);
     registerClosedContourEditLoop(this);
     registerOpenContourEditLoop(this);
     registerOpenContourEndEditLoop(this);
@@ -283,7 +287,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     );
 
     if (annotation.data.isOpenContour) {
-      this.activateOpenContourEdit(element);
+      this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
     } else {
       this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
     }

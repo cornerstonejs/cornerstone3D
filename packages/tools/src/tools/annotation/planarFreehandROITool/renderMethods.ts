@@ -3,11 +3,9 @@ import {
   drawPolyline as drawPolylineSvg,
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
-import { Settings, utilities as csUtils } from '@cornerstonejs/core';
-import { vec2 } from 'gl-matrix';
+import { Settings } from '@cornerstonejs/core';
 
-const { pointsAreWithinCloseContourProximity, calculateAreaOfPoints } =
-  polyline;
+const { pointsAreWithinCloseContourProximity } = polyline;
 
 function renderContour(enabledElement, svgDrawingHelper, annotation) {
   if (annotation.data.isOpenContour) {
@@ -173,12 +171,107 @@ function renderContourBeingDrawn(enabledElement, svgDrawingHelper, annotation) {
 
 const renderDebugContours = false;
 
+function renderDebugOpenContoursDuringEdit(
+  enabledElement,
+  svgDrawingHelper,
+  annotation
+) {
+  const { prevCanvasPoints, editCanvasPoints, snapIndex } = this.editData;
+
+  const debugLineDash = '1,5';
+  const debugColor = 'dodgerblue';
+  const debugEditColor = 'crimson';
+
+  if (snapIndex) {
+    const polylineUID1 = '100';
+
+    drawPolylineSvg(
+      svgDrawingHelper,
+      this.getToolName(),
+      annotation.annotationUID,
+      polylineUID1,
+      editCanvasPoints,
+      {
+        color: debugEditColor,
+        width: 3,
+        lineDash: debugLineDash,
+      }
+    );
+
+    const snapLine = [
+      editCanvasPoints[editCanvasPoints.length - 1],
+      prevCanvasPoints[snapIndex],
+    ];
+
+    const polylineUID2 = '101';
+
+    drawPolylineSvg(
+      svgDrawingHelper,
+      this.getToolName(),
+      annotation.annotationUID,
+      polylineUID2,
+      snapLine,
+      {
+        color: debugEditColor,
+        width: 3,
+        lineDash: debugLineDash,
+      }
+    );
+  }
+
+  const polylineUID3 = '102';
+
+  drawPolylineSvg(
+    svgDrawingHelper,
+    this.getToolName(),
+    annotation.annotationUID,
+    polylineUID3,
+    prevCanvasPoints,
+    {
+      color: debugColor,
+      width: 3,
+      lineDash: debugLineDash,
+    }
+  );
+
+  const handleGroupUID = 'h100';
+
+  // Draw the origin handle
+  drawHandlesSvg(
+    svgDrawingHelper,
+    this.getToolName(),
+    annotation.annotationUID,
+    handleGroupUID,
+    [prevCanvasPoints[0]],
+    {
+      color: debugColor,
+    }
+  );
+
+  const handleGroupUID2 = 'h101';
+
+  // Draw another handle that indicates the direction
+
+  const guideHandleIndex = Math.floor(prevCanvasPoints.length / 10);
+  drawHandlesSvg(
+    svgDrawingHelper,
+    this.getToolName(),
+    annotation.annotationUID,
+    handleGroupUID2,
+    [prevCanvasPoints[guideHandleIndex]],
+    {
+      color: debugColor,
+      handleRadius: 2,
+    }
+  );
+}
+
 function renderDebugClosedContoursDuringEdit(
   enabledElement,
   svgDrawingHelper,
   annotation
 ) {
-  const { prevCanvasPoints } = this.closedContourEditData;
+  const { prevCanvasPoints } = this.editData;
 
   const debugLineDash = '1,5';
   const debugColor = 'dodgerblue';
@@ -228,8 +321,6 @@ function renderDebugClosedContoursDuringEdit(
       handleRadius: 2,
     }
   );
-
-  const snapIndex = this.closedContourEditData.snapIndex;
 }
 
 function renderClosedContourBeingEdited(
@@ -237,10 +328,9 @@ function renderClosedContourBeingEdited(
   svgDrawingHelper,
   annotation
 ) {
-  const { prevCanvasPoints, editCanvasPoints, startCrossingPoint, snapIndex } =
-    this.closedContourEditData;
+  const { fusedCanvasPoints } = this.editData;
 
-  if (startCrossingPoint === undefined || snapIndex === undefined) {
+  if (fusedCanvasPoints === undefined) {
     // No edit to render yet, render closed contour.
     this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
 
@@ -254,8 +344,6 @@ function renderClosedContourBeingEdited(
       annotation
     );
   }
-
-  const pointsToRender = this.fuseEditPointsWithContour();
 
   const settings = Settings.getObjectSettings(annotation, this.getToolName());
 
@@ -275,138 +363,9 @@ function renderClosedContourBeingEdited(
     this.getToolName(),
     annotation.annotationUID,
     polylineUIDToRender,
-    pointsToRender,
+    fusedCanvasPoints,
     options
   );
-}
-
-function fuseEditPointsWithContour() {
-  const { prevCanvasPoints, editCanvasPoints, startCrossingPoint, snapIndex } =
-    this.closedContourEditData;
-
-  // Calculate the distances between the first and last edit points and the origin of the
-  // Contour with the snap point. These will be used to see which way around the edit array should be
-  // Placed within the preview.
-
-  const startCrossingIndex = startCrossingPoint[0];
-  let lowIndex;
-  let highIndex;
-
-  if (startCrossingIndex > snapIndex) {
-    lowIndex = snapIndex;
-    highIndex = startCrossingIndex;
-  } else {
-    lowIndex = startCrossingIndex;
-    highIndex = snapIndex;
-  }
-
-  const distanceBetweenLowAndFirstPoint = vec2.distance(
-    prevCanvasPoints[lowIndex],
-    editCanvasPoints[0]
-  );
-
-  const distanceBetweenLowAndLastPoint = vec2.distance(
-    prevCanvasPoints[lowIndex],
-    editCanvasPoints[editCanvasPoints.length - 1]
-  );
-
-  const distanceBetweenHighAndFirstPoint = vec2.distance(
-    prevCanvasPoints[highIndex],
-    editCanvasPoints[0]
-  );
-
-  const distanceBetweenHighAndLastPoint = vec2.distance(
-    prevCanvasPoints[highIndex],
-    editCanvasPoints[editCanvasPoints.length - 1]
-  );
-
-  // Generate two possible contours that could be intepretted from the edit:
-  //
-  // pointSet1 => 0 -> low -> edit -> high - max.
-  // pointSet2 => low -> high -> edit
-  //
-  // Depending on the placement of the edit and the origin, either of these could be the intended edit.
-  // We'll choose the one with the largest area, as edits are considered to be changes to the original area with
-  // A relative change of much less than unity.
-
-  // Point Set 1
-  let pointSet1 = [];
-
-  // Add points from the orignal contour origin up to the low index.
-  for (let i = 0; i < lowIndex; i++) {
-    const canvasPoint = prevCanvasPoints[i];
-
-    pointSet1.push([canvasPoint[0], canvasPoint[1]]);
-  }
-
-  // Check which orientation of the edit line minimizes the distance between the
-  // origial contour low/high points and the start/end nodes of the edit line.
-
-  let inPlaceDistance =
-    distanceBetweenLowAndFirstPoint + distanceBetweenHighAndLastPoint;
-
-  let reverseDistance =
-    distanceBetweenLowAndLastPoint + distanceBetweenHighAndFirstPoint;
-
-  if (inPlaceDistance < reverseDistance) {
-    for (let i = 0; i < editCanvasPoints.length; i++) {
-      const canvasPoint = editCanvasPoints[i];
-
-      pointSet1.push([canvasPoint[0], canvasPoint[1]]);
-    }
-  } else {
-    for (let i = editCanvasPoints.length - 1; i >= 0; i--) {
-      const canvasPoint = editCanvasPoints[i];
-
-      pointSet1.push([canvasPoint[0], canvasPoint[1]]);
-    }
-  }
-
-  // Add points from the orignal contour's high index up to to its end point.
-  for (let i = highIndex; i < prevCanvasPoints.length; i++) {
-    const canvasPoint = prevCanvasPoints[i];
-
-    pointSet1.push([canvasPoint[0], canvasPoint[1]]);
-  }
-
-  // Point Set 2
-  let pointSet2 = [];
-
-  for (let i = lowIndex; i < highIndex; i++) {
-    const canvasPoint = prevCanvasPoints[i];
-
-    pointSet2.push([canvasPoint[0], canvasPoint[1]]);
-  }
-
-  inPlaceDistance =
-    distanceBetweenHighAndFirstPoint + distanceBetweenLowAndLastPoint;
-
-  reverseDistance =
-    distanceBetweenHighAndLastPoint + distanceBetweenLowAndFirstPoint;
-
-  if (inPlaceDistance < reverseDistance) {
-    for (let i = 0; i < editCanvasPoints.length; i++) {
-      const canvasPoint = editCanvasPoints[i];
-
-      pointSet2.push([canvasPoint[0], canvasPoint[1]]);
-    }
-  } else {
-    for (let i = editCanvasPoints.length - 1; i >= 0; i--) {
-      const canvasPoint = editCanvasPoints[i];
-
-      pointSet2.push([canvasPoint[0], canvasPoint[1]]);
-    }
-  }
-
-  const areaPointSet1 = calculateAreaOfPoints(pointSet1);
-  const areaPointSet2 = calculateAreaOfPoints(pointSet2);
-
-  const pointsToRender = areaPointSet1 > areaPointSet2 ? pointSet1 : pointSet2;
-
-  // Return points to render
-
-  // TODO -> Just return points to render once we fixed this
-  return pointsToRender;
 }
 
 function renderOpenContourBeingEdited(
@@ -414,10 +373,44 @@ function renderOpenContourBeingEdited(
   svgDrawingHelper,
   annotation
 ) {
-  // TODO_JAMES
-  console.log('TODO_JAMES => renderOpenContourBeingEdited');
+  const { fusedCanvasPoints } = this.editData;
 
-  console.log();
+  if (fusedCanvasPoints === undefined) {
+    // No edit to render yet, render closed contour.
+    this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+
+    return;
+  }
+
+  if (renderDebugContours) {
+    this.renderDebugOpenContoursDuringEdit(
+      enabledElement,
+      svgDrawingHelper,
+      annotation
+    );
+  }
+
+  const settings = Settings.getObjectSettings(annotation, this.getToolName());
+
+  const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
+  const color = this.getStyle(settings, 'color', annotation);
+
+  const options = {
+    color: color === undefined ? undefined : <string>color,
+    width: lineWidth === undefined ? undefined : <number>lineWidth,
+    connectLastToFirst: false,
+  };
+
+  const polylineUIDToRender = 'preview-1';
+
+  drawPolylineSvg(
+    svgDrawingHelper,
+    this.getToolName(),
+    annotation.annotationUID,
+    polylineUIDToRender,
+    fusedCanvasPoints,
+    options
+  );
 }
 
 function registerRenderMethods(toolInstance) {
@@ -432,12 +425,12 @@ function registerRenderMethods(toolInstance) {
     renderClosedContourBeingEdited.bind(toolInstance);
   toolInstance.renderOpenContourBeingEdited =
     renderOpenContourBeingEdited.bind(toolInstance);
-  toolInstance.fuseEditPointsWithContour =
-    fuseEditPointsWithContour.bind(toolInstance);
 
   // DEBUG
   toolInstance.renderDebugClosedContoursDuringEdit =
     renderDebugClosedContoursDuringEdit.bind(toolInstance);
+  toolInstance.renderDebugOpenContoursDuringEdit =
+    renderDebugOpenContoursDuringEdit.bind(toolInstance);
 }
 
 export default registerRenderMethods;
