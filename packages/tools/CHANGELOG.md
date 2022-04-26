@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.10.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.4...@cornerstonejs/tools@0.10.0) (2022-04-26)
+
+
+### Features
+
+* Add annotation completed event  ([#84](https://github.com/cornerstonejs/cornerstone3D-beta/issues/84)) ([cd574da](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cd574da73403e3030a5bc414778e08536fb77381))
+
+
+
+
+
 ## [0.9.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.3...@cornerstonejs/tools@0.9.4) (2022-04-22)
 
 
