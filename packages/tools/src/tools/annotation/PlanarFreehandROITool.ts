@@ -81,7 +81,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     polylineIndex: number;
     canvasPoints: Types.Point2[];
   } | null;
-  private editData?: {
+  private commonEditData?: {
     prevCanvasPoints: Types.Point2[];
     editCanvasPoints: Types.Point2[];
     fusedCanvasPoints: Types.Point2[];
@@ -89,6 +89,10 @@ class PlanarFreehandROITool extends AnnotationTool {
     endCrossingPoint?: Types.Point2;
     editIndex: number;
     snapIndex?: number;
+  } | null;
+  private openContourEditData?: {
+    overwriteEnd: boolean;
+    overwriteStart: boolean;
   } | null;
   isDrawing: boolean = false;
   isEditingClosed: boolean = false;

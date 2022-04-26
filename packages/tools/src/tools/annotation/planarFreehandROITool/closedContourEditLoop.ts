@@ -37,7 +37,7 @@ function activateClosedContourEdit(
     this.configuration.subPixelResolution
   );
 
-  this.editData = {
+  this.commonEditData = {
     prevCanvasPoints,
     editCanvasPoints: [canvasPos],
     startCrossingPoint: undefined,
@@ -101,7 +101,8 @@ function mouseDragClosedContourEditCallback(
   const { renderingEngine, viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-  const { editIndex, editCanvasPoints, startCrossingPoint } = this.editData;
+  const { editIndex, editCanvasPoints, startCrossingPoint } =
+    this.commonEditData;
 
   const lastCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
@@ -130,7 +131,7 @@ function mouseDragClosedContourEditCallback(
 
   const currentEditIndex = editIndex + numPointsAdded;
 
-  this.editData.editIndex = currentEditIndex;
+  this.commonEditData.editIndex = currentEditIndex;
 
   if (!startCrossingPoint && editCanvasPoints.length > 1) {
     this.checkForFirstCrossing(evt, true);
@@ -138,7 +139,8 @@ function mouseDragClosedContourEditCallback(
 
   this.findSnapIndex();
 
-  this.editData.fusedCanvasPoints = this.fuseEditPointsWithClosedContour(evt);
+  this.commonEditData.fusedCanvasPoints =
+    this.fuseEditPointsWithClosedContour(evt);
 
   if (startCrossingPoint && this.checkForSecondCrossing(evt, true)) {
     this.finishEditClosedOnSecondCrossing(evt);
@@ -154,7 +156,7 @@ function finishEditClosedOnSecondCrossing(evt) {
   const { viewport, renderingEngine } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
-  const { fusedCanvasPoints, editCanvasPoints } = this.editData;
+  const { fusedCanvasPoints, editCanvasPoints } = this.commonEditData;
 
   const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
     viewport.canvasToWorld(canvasPoint)
@@ -165,7 +167,7 @@ function finishEditClosedOnSecondCrossing(evt) {
 
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
-  this.editData = {
+  this.commonEditData = {
     prevCanvasPoints: fusedCanvasPoints,
     editCanvasPoints: [lastEditCanvasPoint],
     startCrossingPoint: undefined,
@@ -178,7 +180,7 @@ function finishEditClosedOnSecondCrossing(evt) {
 
 function fuseEditPointsWithClosedContour(evt) {
   const { prevCanvasPoints, editCanvasPoints, startCrossingPoint, snapIndex } =
-    this.editData;
+    this.commonEditData;
 
   if (startCrossingPoint === undefined || snapIndex === undefined) {
     return undefined;
@@ -333,7 +335,7 @@ function mouseUpClosedContourEditCallback(
   const { viewport, renderingEngine } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
-  const { fusedCanvasPoints } = this.editData;
+  const { fusedCanvasPoints } = this.commonEditData;
 
   if (fusedCanvasPoints) {
     const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
@@ -345,7 +347,7 @@ function mouseUpClosedContourEditCallback(
   }
 
   this.isEditingClosed = false;
-  this.editData = undefined;
+  this.commonEditData = undefined;
   this.commonData = undefined;
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);

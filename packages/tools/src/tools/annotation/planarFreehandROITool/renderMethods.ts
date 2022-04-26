@@ -176,7 +176,7 @@ function renderDebugOpenContoursDuringEdit(
   svgDrawingHelper,
   annotation
 ) {
-  const { prevCanvasPoints, editCanvasPoints, snapIndex } = this.editData;
+  const { prevCanvasPoints, editCanvasPoints, snapIndex } = this.commonEditData;
 
   const debugLineDash = '1,5';
   const debugColor = 'dodgerblue';
@@ -271,7 +271,7 @@ function renderDebugClosedContoursDuringEdit(
   svgDrawingHelper,
   annotation
 ) {
-  const { prevCanvasPoints } = this.editData;
+  const { prevCanvasPoints } = this.commonEditData;
 
   const debugLineDash = '1,5';
   const debugColor = 'dodgerblue';
@@ -328,7 +328,7 @@ function renderClosedContourBeingEdited(
   svgDrawingHelper,
   annotation
 ) {
-  const { fusedCanvasPoints } = this.editData;
+  const { fusedCanvasPoints } = this.commonEditData;
 
   if (fusedCanvasPoints === undefined) {
     // No edit to render yet, render closed contour.
@@ -373,7 +373,7 @@ function renderOpenContourBeingEdited(
   svgDrawingHelper,
   annotation
 ) {
-  const { fusedCanvasPoints } = this.editData;
+  const { fusedCanvasPoints } = this.commonEditData;
 
   if (fusedCanvasPoints === undefined) {
     // No edit to render yet, render closed contour.
