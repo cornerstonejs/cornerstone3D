@@ -444,7 +444,7 @@ class LengthTool extends AnnotationTool {
       this._deactivateModify(element);
       resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -457,6 +457,16 @@ class LengthTool extends AnnotationTool {
         renderingEngine,
         viewportIdsToRender
       );
+
+      if (newAnnotation) {
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+      }
 
       this.editData = null;
       return annotation.annotationUID;
