@@ -1005,6 +1005,9 @@ class StackViewport extends Viewport implements IStackViewport {
     const yVoxels = image.rows;
 
     // Note: For rendering purposes, we use the EPSILON as the z spacing.
+    // This is purely for internal implementation logic since we are still
+    // technically rendering 3D objects with vtk.js, but the abstracted intention
+    //  of the stack viewport is to render 2D images
     const zSpacing = EPSILON;
     const zVoxels = 1;
 
