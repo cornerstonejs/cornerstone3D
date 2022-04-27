@@ -168,9 +168,13 @@ function findSnapIndex() {
 
   const lastEditCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
 
+  const distanceIndexPairs = [];
+
   for (let i = 0; i < prevCanvasPoints.length; i++) {
     const prevCanvasPoint = prevCanvasPoints[i];
     const distance = vec2.distance(prevCanvasPoint, lastEditCanvasPoint);
+
+    distanceIndexPairs.push({ distance, index: i });
 
     if (distance < closest.value) {
       closest.value = distance;
@@ -178,7 +182,37 @@ function findSnapIndex() {
     }
   }
 
-  this.commonEditData.snapIndex = closest.index;
+  distanceIndexPairs.sort((a, b) => a.distance - b.distance);
+
+  // Search through from shortest distance and check which snap line doesn't
+  // Cross the edit line, in most cases the snap index will just be the first one.
+
+  const editCanvasPointsLessLastOne = editCanvasPoints.slice(0, -1);
+
+  for (let i = 0; i < distanceIndexPairs.length; i++) {
+    const { index } = distanceIndexPairs[i];
+    const snapCanvasPosition = prevCanvasPoints[index];
+    const lastEditCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
+
+    const crossedLineSegment = getFirstIntersectionWithPolyline(
+      editCanvasPointsLessLastOne,
+      snapCanvasPosition,
+      lastEditCanvasPoint,
+      false // The edit line is not a closed contour
+    );
+
+    if (!crossedLineSegment) {
+      this.commonEditData.snapIndex = index;
+
+      return;
+    }
+  }
+
+  console.log(
+    'TODO_JAMES -> We have an issue here => We cannot assign a snap index, and need to think how we resolve this common case'
+  );
+
+  debugger;
 }
 
 function registerEditLoopCommon(toolInstance) {
