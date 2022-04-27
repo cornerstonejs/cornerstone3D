@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.7.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.6.4...@cornerstonejs/core@0.7.0) (2022-04-27)
+
+
+### Features
+
+* Add worldToImage and imageToWorld utilities ([#85](https://github.com/cornerstonejs/cornerstone3D-beta/issues/85)) ([54e1b7f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/54e1b7f718f9d23b4c9f98ebc02c523100c1ddb0))
+
+
+
+
+
 ## [0.6.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.6.3...@cornerstonejs/core@0.6.4) (2022-04-22)
 
 
