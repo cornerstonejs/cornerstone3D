@@ -220,9 +220,7 @@ function fuseEditPointsForOpenContourEndEdit(evt) {
   // last point being the current mouse position
 
   if (snapIndex === 0) {
-    // TODO -> if snapIndex === 0:
     // end -> crossingpoint -> edit
-
     // Add points from the end of the previous contour, to the crossing point.
     for (let i = prevCanvasPoints.length - 1; i >= startCrossingIndex; i--) {
       const canvasPoint = prevCanvasPoints[i];
@@ -231,45 +229,14 @@ function fuseEditPointsForOpenContourEndEdit(evt) {
     }
   } else {
     // start -> crossingpoint -> edit
-
     // Add points from the orignal contour origin up to the low index.
     for (let i = 0; i < startCrossingIndex; i++) {
       const canvasPoint = prevCanvasPoints[i];
 
       newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
     }
-
-    // const distanceBetweenCrossingIndexAndFirstPoint = vec2.distance(
-    //   prevCanvasPoints[startCrossingIndex],
-    //   editCanvasPoints[0]
-    // );
-
-    // const distanceBetweenCrossingIndexAndLastPoint = vec2.distance(
-    //   prevCanvasPoints[startCrossingIndex],
-    //   editCanvasPoints[editCanvasPoints.length - 1]
-    // );
-
-    // if (
-    //   distanceBetweenCrossingIndexAndFirstPoint <
-    //   distanceBetweenCrossingIndexAndLastPoint
-    // ) {
-    //   // In order
-    //   for (let i = 0; i < editCanvasPoints.length; i++) {
-    //     const canvasPoint = editCanvasPoints[i];
-
-    //     newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
-    //   }
-    // } else {
-    //   // reverse
-    //   for (let i = editCanvasPoints.length - 1; i >= 0; i--) {
-    //     const canvasPoint = editCanvasPoints[i];
-
-    //     newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
-    //   }
-    // }
   }
 
-  // TODO_JAMES -> This is the same as below, refactor
   const distanceBetweenCrossingIndexAndFirstPoint = vec2.distance(
     prevCanvasPoints[startCrossingIndex],
     editCanvasPoints[0]
