@@ -918,7 +918,7 @@ type ImageSpacingCalibratedEventDetail = {
 };
 
 // @public (undocumented)
-function imageToWorldCoords(imageCoords: Point2, options: Options_2): Point3 | undefined;
+function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | undefined;
 
 // @public (undocumented)
 export class ImageVolume implements IImageVolume {
@@ -2024,7 +2024,7 @@ declare namespace windowLevel {
 }
 
 // @public (undocumented)
-function worldToImageCoords(worldCoords: Point3, options: Options): Point2 | undefined;
+function worldToImageCoords(imageId: string, worldCoords: Point3): Point2 | undefined;
 
 // (No @packageDocumentation comment for this package)
 
