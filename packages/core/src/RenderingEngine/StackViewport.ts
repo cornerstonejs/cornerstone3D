@@ -1004,7 +1004,8 @@ class StackViewport extends Viewport implements IStackViewport {
     const xVoxels = image.columns;
     const yVoxels = image.rows;
 
-    const zSpacing = image.sliceThickness || EPSILON;
+    const zSpacing = imagePlaneModule.sliceThickness || EPSILON;
+
     const zVoxels = 1;
 
     const numComps =

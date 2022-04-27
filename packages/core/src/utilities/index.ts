@@ -22,6 +22,7 @@ import prefetchStack from './prefetchStack';
 import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvas from './renderToCanvas';
 import worldToImageCoords from './worldToImageCoords';
+import imageToWorldCoords from './imageToWorldCoords';
 
 // name spaces
 import * as planar from './planar';
@@ -54,4 +55,5 @@ export {
   loadImageToCanvas,
   renderToCanvas,
   worldToImageCoords,
+  imageToWorldCoords,
 };
