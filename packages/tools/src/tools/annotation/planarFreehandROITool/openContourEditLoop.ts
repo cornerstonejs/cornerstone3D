@@ -48,11 +48,6 @@ function activateOpenContourEdit(
     yDir,
   };
 
-  this.openContourEditData = {
-    overwriteStart: false,
-    overwriteEnd: false,
-  };
-
   state.isInteractingWithTool = true;
 
   element.addEventListener(
@@ -139,13 +134,13 @@ function mouseDragOpenContourEditCallback(
 
   this.findSnapIndex();
 
-  this.checkIfShouldOverwriteAnEnd(evt);
-
   this.commonEditData.fusedCanvasPoints =
     this.fuseEditPointsWithOpenContour(evt);
 
   if (startCrossingPoint && this.checkForSecondCrossing(evt, false)) {
     this.finishEditOpenOnSecondCrossing(evt);
+  } else {
+    this.checkIfShouldOverwriteAnEnd(evt);
   }
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -153,19 +148,14 @@ function mouseDragOpenContourEditCallback(
 
 function checkIfShouldOverwriteAnEnd(evt) {
   const eventDetail = evt.detail;
-  const { currentPoints, lastPoints } = eventDetail;
+  const { element, currentPoints, lastPoints } = eventDetail;
+  const enabledElement = getEnabledElement(element);
+  const { viewport } = enabledElement;
   const canvasPos = currentPoints.canvas;
   const lastCanvasPos = lastPoints.canvas;
 
-  const { snapIndex, prevCanvasPoints, editCanvasPoints, startCrossingPoint } =
-    this.commonEditData;
-
-  const { overwriteStart, overwriteEnd } = this.openContourEditData;
-
-  if (overwriteStart || overwriteEnd) {
-    // Already triggered overwrite.
-    return;
-  }
+  const { snapIndex, prevCanvasPoints } = this.commonEditData;
+  const { annotation, viewportIdsToRender } = this.commonData;
 
   if (snapIndex !== 0 && snapIndex !== prevCanvasPoints.length - 1) {
     // Edit not started, or not snapping to final index
@@ -190,10 +180,126 @@ function checkIfShouldOverwriteAnEnd(evt) {
 
   const theta = Math.acos(aDotb / (magA * magB));
 
-  if (theta < Math.PI / 2) {
-    debugger;
-    // TODO_JAMES ->  jump to a normal line edit now.
+  if (theta > Math.PI / 2) {
+    return;
   }
+
+  const fusedCanvasPoints = this.fuseEditPointsForOpenContourEndEdit(evt);
+
+  const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
+    viewport.canvasToWorld(canvasPoint)
+  );
+
+  annotation.data.polyline = worldPoints;
+  annotation.data.isOpenContour = true;
+  // Note: Contours generate from fusedCanvasPoints will be in the direction
+  // with the last point being the current mouse position
+  annotation.data.handles.points = [
+    worldPoints[0],
+    worldPoints[worldPoints.length - 1],
+  ];
+  annotation.data.handles.activeHandleIndex = 1;
+
+  this.isEditingOpen = false;
+  this.commonEditData = undefined;
+  this.commonData = undefined;
+
+  // Jump to a normal line edit now.
+  this.deactivateOpenContourEdit(element);
+  this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender);
+}
+
+function fuseEditPointsForOpenContourEndEdit(evt) {
+  const { snapIndex, prevCanvasPoints, editCanvasPoints, startCrossingPoint } =
+    this.commonEditData;
+  const startCrossingIndex = startCrossingPoint[0];
+
+  const newCanvasPoints = [];
+
+  // Note: Generated contours will both be in the direction with the
+  // last point being the current mouse position
+
+  if (snapIndex === 0) {
+    // TODO -> if snapIndex === 0:
+    // end -> crossingpoint -> edit
+
+    // Add points from the end of the previous contour, to the crossing point.
+    for (let i = prevCanvasPoints.length - 1; i >= startCrossingIndex; i--) {
+      const canvasPoint = prevCanvasPoints[i];
+
+      newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
+    }
+  } else {
+    // start -> crossingpoint -> edit
+
+    // Add points from the orignal contour origin up to the low index.
+    for (let i = 0; i < startCrossingIndex; i++) {
+      const canvasPoint = prevCanvasPoints[i];
+
+      newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
+    }
+
+    // const distanceBetweenCrossingIndexAndFirstPoint = vec2.distance(
+    //   prevCanvasPoints[startCrossingIndex],
+    //   editCanvasPoints[0]
+    // );
+
+    // const distanceBetweenCrossingIndexAndLastPoint = vec2.distance(
+    //   prevCanvasPoints[startCrossingIndex],
+    //   editCanvasPoints[editCanvasPoints.length - 1]
+    // );
+
+    // if (
+    //   distanceBetweenCrossingIndexAndFirstPoint <
+    //   distanceBetweenCrossingIndexAndLastPoint
+    // ) {
+    //   // In order
+    //   for (let i = 0; i < editCanvasPoints.length; i++) {
+    //     const canvasPoint = editCanvasPoints[i];
+
+    //     newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
+    //   }
+    // } else {
+    //   // reverse
+    //   for (let i = editCanvasPoints.length - 1; i >= 0; i--) {
+    //     const canvasPoint = editCanvasPoints[i];
+
+    //     newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
+    //   }
+    // }
+  }
+
+  // TODO_JAMES -> This is the same as below, refactor
+  const distanceBetweenCrossingIndexAndFirstPoint = vec2.distance(
+    prevCanvasPoints[startCrossingIndex],
+    editCanvasPoints[0]
+  );
+
+  const distanceBetweenCrossingIndexAndLastPoint = vec2.distance(
+    prevCanvasPoints[startCrossingIndex],
+    editCanvasPoints[editCanvasPoints.length - 1]
+  );
+
+  if (
+    distanceBetweenCrossingIndexAndFirstPoint <
+    distanceBetweenCrossingIndexAndLastPoint
+  ) {
+    // In order
+    for (let i = 0; i < editCanvasPoints.length; i++) {
+      const canvasPoint = editCanvasPoints[i];
+
+      newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
+    }
+  } else {
+    // reverse
+    for (let i = editCanvasPoints.length - 1; i >= 0; i--) {
+      const canvasPoint = editCanvasPoints[i];
+
+      newCanvasPoints.push([canvasPoint[0], canvasPoint[1]]);
+    }
+  }
+
+  return newCanvasPoints;
 }
 
 function fuseEditPointsWithOpenContour(evt) {
@@ -325,6 +431,10 @@ function finishEditOpenOnSecondCrossing(evt) {
 
   annotation.data.polyline = worldPoints;
   annotation.data.isOpenContour = true;
+  annotation.data.handles.points = [
+    worldPoints[0],
+    worldPoints[worldPoints.length - 1],
+  ];
 
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
@@ -357,6 +467,10 @@ function mouseUpOpenContourEditCallback(
 
     annotation.data.polyline = worldPoints;
     annotation.data.isOpenContour = true;
+    annotation.data.handles.points = [
+      worldPoints[0],
+      worldPoints[worldPoints.length - 1],
+    ];
   }
 
   this.isEditingOpen = false;
@@ -383,6 +497,8 @@ function registerOpenContourEditLoop(toolInstance) {
     finishEditOpenOnSecondCrossing.bind(toolInstance);
   toolInstance.checkIfShouldOverwriteAnEnd =
     checkIfShouldOverwriteAnEnd.bind(toolInstance);
+  toolInstance.fuseEditPointsForOpenContourEndEdit =
+    fuseEditPointsForOpenContourEndEdit.bind(toolInstance);
 }
 
 export default registerOpenContourEditLoop;
