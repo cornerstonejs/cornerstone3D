@@ -144,6 +144,13 @@ function checkForSecondCrossing(evt, isClosedContour) {
 }
 
 function findSnapIndex() {
+  // TODO_JAMES -> If you snap line crosses your edit line, you should try to find a new snap index instead.
+  // For closed contours try left and right of the current point until you find a match?
+  // Or sort points by distance and try and find the correct one.
+  // --> TODO_JAMES -> What to do if one cannot be found???
+  // TODO_JAMES -> Cornerstone3D events
+  // TODO_JAMES -> Edit issues when scrolling over annotatons.
+
   const { editCanvasPoints, prevCanvasPoints, startCrossingPoint } =
     this.commonEditData;
 

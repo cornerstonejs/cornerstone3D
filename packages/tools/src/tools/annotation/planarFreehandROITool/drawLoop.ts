@@ -99,8 +99,10 @@ function mouseDragDrawCallback(
     return;
   }
 
-  if (this.checkIfCrossedDuringCreate(evt)) {
-    this.applyCreateOnCross(evt);
+  const crossingPoint = this.findCrossDuringCreate(evt);
+
+  if (crossingPoint) {
+    this.applyCreateOnCross(evt, crossingPoint);
   } else {
     const numPointsAdded = addCanvasPointsToArray(
       element,
@@ -196,8 +198,6 @@ function removeCrossedLinesOnCompleteDraw() {
   );
 
   if (lineSegment) {
-    // TODO -> Could check which area is bigger and take that one,
-    // then check there are no crosses again (iteratively?)
     const indexToRemoveUpTo = lineSegment[1];
 
     this.drawData.canvasPoints = canvasPoints.splice(0, indexToRemoveUpTo);
@@ -241,7 +241,7 @@ function completeDrawOpenContour(
   this.deactivateDraw(element);
 }
 
-function checkIfCrossedDuringCreate(evt): boolean {
+function findCrossDuringCreate(evt): boolean {
   // Note as we super sample the added points, we need to check the whole last mouse move, not the points
   const eventDetail = evt.detail;
   const { currentPoints, lastPoints } = eventDetail;
@@ -258,37 +258,38 @@ function checkIfCrossedDuringCreate(evt): boolean {
     false
   );
 
-  return !!lineSegment;
+  return lineSegment;
 }
 
-function applyCreateOnCross(evt) {
+function applyCreateOnCross(evt, crossingPoint) {
+  const eventDetail = evt.detail;
+  const { element } = eventDetail;
   // Remove the crossed points
   const { canvasPoints } = this.drawData;
+  const { annotation, viewportIdsToRender } = this.commonData;
 
-  while (true) {
-    canvasPoints.pop();
+  const crossingIndex = crossingPoint[0];
 
-    const pointsLessLastTwo = canvasPoints.slice(0, -2);
-    const secondTolastPoint = canvasPoints[canvasPoints.length - 2];
-    const lastPoint = canvasPoints[canvasPoints.length - 1];
+  // Add points between the end point and crossing point
+  addCanvasPointsToArray(
+    element,
+    canvasPoints,
+    canvasPoints[crossingIndex],
+    this.commonData
+  );
+  // Remove last point which will be a duplicate now.
+  canvasPoints.pop();
 
-    const stillCrosses = !!getFirstIntersectionWithPolyline(
-      pointsLessLastTwo,
-      secondTolastPoint,
-      lastPoint,
-      false
-    );
+  // Remove points up to just before the crossing index
 
-    if (!stillCrosses) {
-      break;
-    }
+  for (let i = 0; i < crossingIndex; i++) {
+    canvasPoints.shift();
   }
 
   // Complete contour
   this.completeDrawContour(evt);
 
-  // TODO -> Start an edit immediately
-  console.log('TODO START AN EDIT');
+  this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
 }
 
 function registerDrawLoop(toolInstance) {
@@ -296,8 +297,7 @@ function registerDrawLoop(toolInstance) {
   toolInstance.deactivateDraw = deactivateDraw.bind(toolInstance);
 
   toolInstance.applyCreateOnCross = applyCreateOnCross.bind(toolInstance);
-  toolInstance.checkIfCrossedDuringCreate =
-    checkIfCrossedDuringCreate.bind(toolInstance);
+  toolInstance.findCrossDuringCreate = findCrossDuringCreate.bind(toolInstance);
   toolInstance.completeDrawOpenContour =
     completeDrawOpenContour.bind(toolInstance);
   toolInstance.removeCrossedLinesOnCompleteDraw =

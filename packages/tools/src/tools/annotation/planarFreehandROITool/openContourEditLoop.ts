@@ -270,16 +270,6 @@ function fuseEditPointsForOpenContourEndEdit(evt) {
 }
 
 function fuseEditPointsWithOpenContour(evt) {
-  // TODO - If the snapIndex is the first or last contour and the angle to that
-  // point is less than 90 degrees from the last line segment -> cement contour and swap to a draw:
-  // new contour, either:
-  // - If snapIndex === end
-  // -- start -> edit
-  // - if snapIndex == start
-  // -- end -> edit
-  // On mouse up, just end edit (or draw from draw loop)
-  // On line cross, start a new open edit.
-
   const { prevCanvasPoints, editCanvasPoints, startCrossingPoint, snapIndex } =
     this.commonEditData;
 
