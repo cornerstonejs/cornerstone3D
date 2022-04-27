@@ -918,6 +918,9 @@ type ImageSpacingCalibratedEventDetail = {
 };
 
 // @public (undocumented)
+function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | undefined;
+
+// @public (undocumented)
 export class ImageVolume implements IImageVolume {
     constructor(props: IVolume);
     // (undocumented)
@@ -1761,7 +1764,9 @@ declare namespace utilities {
         transformWorldToIndex,
         prefetchStack,
         loadImageToCanvas,
-        renderToCanvas
+        renderToCanvas,
+        worldToImageCoords,
+        imageToWorldCoords
     }
 }
 export { utilities }
@@ -2017,6 +2022,9 @@ declare namespace windowLevel {
         toLowHighRange
     }
 }
+
+// @public (undocumented)
+function worldToImageCoords(imageId: string, worldCoords: Point3): Point2 | undefined;
 
 // (No @packageDocumentation comment for this package)
 
