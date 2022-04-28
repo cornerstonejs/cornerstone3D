@@ -1,11 +1,11 @@
 import {
   getEnabledElement,
-  cache,
-  StackViewport,
+  triggerEvent,
+  eventTarget,
   Settings,
-  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { Events } from '../../enums';
 
 import { AnnotationTool } from '../base';
 import {
@@ -21,6 +21,11 @@ import registerClosedContourEditLoop from './planarFreehandROITool/closedContour
 import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
 import registerRenderMethods from './planarFreehandROITool/renderMethods';
+
+import {
+  AnnotationCompletedEventDetail,
+  AnnotationModifiedEventDetail,
+} from '../../types/EventTypes';
 
 import {
   EventTypes,
@@ -149,7 +154,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         preventHandleOutsideImage: false,
         allowOpenContours: true,
         closeContourProximity: 10,
-        subPixelResolution: 2,
+        subPixelResolution: 5,
       },
     }
   ) {
@@ -350,6 +355,29 @@ class PlanarFreehandROITool extends AnnotationTool {
     // TODO CANCEL
   };
 
+  triggerAnnotationModified = (annotation, enabledElement) => {
+    const { viewportId, renderingEngineId } = enabledElement;
+    // Dispatching annotation modified
+    const eventType = Events.ANNOTATION_MODIFIED;
+
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
+      viewportId,
+      renderingEngineId,
+    };
+    triggerEvent(eventTarget, eventType, eventDetail);
+  };
+
+  triggerAnnotationCompleted = (annotation) => {
+    const eventType = Events.ANNOTATION_COMPLETED;
+
+    const eventDetail: AnnotationCompletedEventDetail = {
+      annotation,
+    };
+
+    triggerEvent(eventTarget, eventType, eventDetail);
+  };
+
   /**
    * it is used to draw the length annotation in each
    * request animation frame. It calculates the updated cached statistics if
@@ -366,8 +394,6 @@ class PlanarFreehandROITool extends AnnotationTool {
     const { element } = viewport;
 
     let annotations = getAnnotations(element, this.getToolName());
-
-    console.log(annotations);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

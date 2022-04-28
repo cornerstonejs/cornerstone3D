@@ -168,6 +168,8 @@ function openContourEditOverwriteEnd(evt) {
   ];
   annotation.data.handles.activeHandleIndex = 1;
 
+  this.triggerAnnotationModified(annotation, enabledElement);
+
   this.isEditingOpen = false;
   this.commonEditData = undefined;
   this.commonData = undefined;
@@ -360,10 +362,10 @@ function fuseEditPointsWithOpenContour(evt) {
   // Check which orientation of the edit line minimizes the distance between the
   // origial contour low/high points and the start/end nodes of the edit line.
 
-  let inPlaceDistance =
+  const inPlaceDistance =
     distanceBetweenLowAndFirstPoint + distanceBetweenHighAndLastPoint;
 
-  let reverseDistance =
+  const reverseDistance =
     distanceBetweenLowAndLastPoint + distanceBetweenHighAndFirstPoint;
 
   if (inPlaceDistance < reverseDistance) {
@@ -410,6 +412,8 @@ function finishEditOpenOnSecondCrossing(evt) {
     worldPoints[worldPoints.length - 1],
   ];
 
+  this.triggerAnnotationModified(annotation, enabledElement);
+
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
   this.commonEditData = {
@@ -445,6 +449,8 @@ function mouseUpOpenContourEditCallback(
       worldPoints[0],
       worldPoints[worldPoints.length - 1],
     ];
+
+    this.triggerAnnotationModified(annotation, enabledElement);
   }
 
   this.isEditingOpen = false;

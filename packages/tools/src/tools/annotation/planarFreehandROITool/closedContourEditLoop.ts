@@ -149,7 +149,6 @@ function mouseDragClosedContourEditCallback(
     this.fuseEditPointsWithClosedContour(evt);
 
   if (startCrossingPoint && this.checkForSecondCrossing(evt, true)) {
-    console.log('Cross start new edit');
     this.finishEditAndStartNewEdit(evt);
   }
 
@@ -171,6 +170,8 @@ function finishEditAndStartNewEdit(evt) {
 
   annotation.data.polyline = worldPoints;
   annotation.data.isOpenContour = false;
+
+  this.triggerAnnotationModified(annotation, enabledElement);
 
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
@@ -258,7 +259,7 @@ function fuseEditPointsWithClosedContour(evt) {
   // A relative change of much less than unity.
 
   // Point Set 1
-  let pointSet1 = [];
+  const pointSet1 = [];
 
   // Add points from the orignal contour origin up to the low index.
   for (let i = 0; i < lowIndex; i++) {
@@ -298,7 +299,7 @@ function fuseEditPointsWithClosedContour(evt) {
   }
 
   // Point Set 2
-  let pointSet2 = [];
+  const pointSet2 = [];
 
   for (let i = lowIndex; i < highIndex; i++) {
     const canvasPoint = prevCanvasPoints[i];
@@ -352,6 +353,8 @@ function mouseUpClosedContourEditCallback(
 
     annotation.data.polyline = worldPoints;
     annotation.data.isOpenContour = false;
+
+    this.triggerAnnotationModified(annotation, enabledElement);
   }
 
   this.isEditingClosed = false;

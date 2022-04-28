@@ -5,7 +5,7 @@ import {
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import { Events } from '../../../enums';
-import { EventTypes } from '../../types';
+import { EventTypes } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
@@ -174,6 +174,8 @@ function completeDrawContour(
   annotation.data.polyline = worldPoints;
   annotation.data.isOpenContour = false;
 
+  this.triggerAnnotationCompleted(annotation);
+
   this.isDrawing = false;
   this.drawData = undefined;
   this.commonData = undefined;
@@ -231,6 +233,8 @@ function completeDrawOpenContour(
     worldPoints[0],
     worldPoints[worldPoints.length - 1],
   ];
+
+  this.triggerAnnotationCompleted(annotation);
 
   this.isDrawing = false;
   this.drawData = undefined;
