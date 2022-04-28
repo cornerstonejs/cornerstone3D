@@ -137,19 +137,26 @@ function mouseDragClosedContourEditCallback(
     this.checkForFirstCrossing(evt, true);
   }
 
-  this.findSnapIndex();
+  this.commonEditData.snapIndex = this.findSnapIndex();
+
+  if (this.commonEditData.snapIndex === -1) {
+    console.log('Stuck start new edit');
+    this.finishEditAndStartNewEdit(evt);
+    return;
+  }
 
   this.commonEditData.fusedCanvasPoints =
     this.fuseEditPointsWithClosedContour(evt);
 
   if (startCrossingPoint && this.checkForSecondCrossing(evt, true)) {
-    this.finishEditClosedOnSecondCrossing(evt);
+    console.log('Cross start new edit');
+    this.finishEditAndStartNewEdit(evt);
   }
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 }
 
-function finishEditClosedOnSecondCrossing(evt) {
+function finishEditAndStartNewEdit(evt) {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
@@ -173,6 +180,7 @@ function finishEditClosedOnSecondCrossing(evt) {
     startCrossingPoint: undefined,
     endCrossingPoint: undefined,
     editIndex: 0,
+    snapIndex: undefined,
   };
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -364,8 +372,8 @@ function registerClosedContourEditLoop(toolInstance) {
     mouseDragClosedContourEditCallback.bind(toolInstance);
   toolInstance.mouseUpClosedContourEditCallback =
     mouseUpClosedContourEditCallback.bind(toolInstance);
-  toolInstance.finishEditClosedOnSecondCrossing =
-    finishEditClosedOnSecondCrossing.bind(toolInstance);
+  toolInstance.finishEditAndStartNewEdit =
+    finishEditAndStartNewEdit.bind(toolInstance);
   toolInstance.fuseEditPointsWithClosedContour =
     fuseEditPointsWithClosedContour.bind(toolInstance);
 }

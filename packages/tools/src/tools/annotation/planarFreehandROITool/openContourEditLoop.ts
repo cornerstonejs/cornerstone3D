@@ -132,58 +132,26 @@ function mouseDragOpenContourEditCallback(
     this.checkForFirstCrossing(evt, false);
   }
 
-  this.findSnapIndex();
+  this.commonEditData.snapIndex = this.findSnapIndex();
 
   this.commonEditData.fusedCanvasPoints =
     this.fuseEditPointsWithOpenContour(evt);
 
   if (startCrossingPoint && this.checkForSecondCrossing(evt, false)) {
     this.finishEditOpenOnSecondCrossing(evt);
-  } else {
-    this.checkIfShouldOverwriteAnEnd(evt);
+  } else if (this.checkIfShouldOverwriteAnEnd(evt)) {
+    this.openContourEditOverwriteEnd(evt);
   }
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 }
 
-function checkIfShouldOverwriteAnEnd(evt) {
+function openContourEditOverwriteEnd(evt) {
   const eventDetail = evt.detail;
-  const { element, currentPoints, lastPoints } = eventDetail;
+  const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
-  const canvasPos = currentPoints.canvas;
-  const lastCanvasPos = lastPoints.canvas;
-
-  const { snapIndex, prevCanvasPoints } = this.commonEditData;
   const { annotation, viewportIdsToRender } = this.commonData;
-
-  if (snapIndex !== 0 && snapIndex !== prevCanvasPoints.length - 1) {
-    // Edit not started, or not snapping to final index
-    return;
-  }
-
-  // Work out the angle between the last mouse move and
-  // And the current point to the snapped point.
-  const p1 = canvasPos;
-  const p2 = lastCanvasPos;
-  const p3 = prevCanvasPoints[snapIndex];
-
-  const a = vec2.create();
-  const b = vec2.create();
-
-  vec2.set(a, p1[0] - p2[0], p1[1] - p2[1]);
-  vec2.set(b, p1[0] - p3[0], p1[1] - p3[1]);
-
-  const aDotb = vec2.dot(a, b);
-  const magA = Math.sqrt(a[0] * a[0] + a[1] * a[1]);
-  const magB = Math.sqrt(b[0] * b[0] + b[1] * b[1]);
-
-  const theta = Math.acos(aDotb / (magA * magB));
-
-  if (theta > Math.PI / 2) {
-    return;
-  }
-
   const fusedCanvasPoints = this.fuseEditPointsForOpenContourEndEdit(evt);
 
   const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
@@ -207,6 +175,55 @@ function checkIfShouldOverwriteAnEnd(evt) {
   // Jump to a normal line edit now.
   this.deactivateOpenContourEdit(element);
   this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender);
+}
+
+function checkIfShouldOverwriteAnEnd(evt) {
+  const eventDetail = evt.detail;
+  const { currentPoints, lastPoints } = eventDetail;
+  const canvasPos = currentPoints.canvas;
+  const lastCanvasPos = lastPoints.canvas;
+
+  const { snapIndex, prevCanvasPoints, startCrossingPoint } =
+    this.commonEditData;
+
+  if (startCrossingPoint === undefined || snapIndex === undefined) {
+    // Edit not started
+    return false;
+  }
+
+  // No snap index can be found, so contour is being edited away from line.
+  if (snapIndex === -1) {
+    return true;
+  }
+
+  if (snapIndex !== 0 && snapIndex !== prevCanvasPoints.length - 1) {
+    // Not snapping to final index
+    return false;
+  }
+
+  // Work out the angle between the last mouse move and
+  // And the current point to the snapped point.
+  const p1 = canvasPos;
+  const p2 = lastCanvasPos;
+  const p3 = prevCanvasPoints[snapIndex];
+
+  const a = vec2.create();
+  const b = vec2.create();
+
+  vec2.set(a, p1[0] - p2[0], p1[1] - p2[1]);
+  vec2.set(b, p1[0] - p3[0], p1[1] - p3[1]);
+
+  const aDotb = vec2.dot(a, b);
+  const magA = Math.sqrt(a[0] * a[0] + a[1] * a[1]);
+  const magB = Math.sqrt(b[0] * b[0] + b[1] * b[1]);
+
+  const theta = Math.acos(aDotb / (magA * magB));
+
+  if (theta < Math.PI / 2) {
+    return true;
+  }
+
+  return false;
 }
 
 function fuseEditPointsForOpenContourEndEdit(evt) {
@@ -456,6 +473,8 @@ function registerOpenContourEditLoop(toolInstance) {
     checkIfShouldOverwriteAnEnd.bind(toolInstance);
   toolInstance.fuseEditPointsForOpenContourEndEdit =
     fuseEditPointsForOpenContourEndEdit.bind(toolInstance);
+  toolInstance.openContourEditOverwriteEnd =
+    openContourEditOverwriteEnd.bind(toolInstance);
 }
 
 export default registerOpenContourEditLoop;

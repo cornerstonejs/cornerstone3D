@@ -163,7 +163,7 @@ function findSnapIndex() {
   if (
     !startCrossingPoint // Haven't crossed line yet
   ) {
-    this.commonEditData.snapIndex = undefined;
+    return;
   }
 
   const lastEditCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
@@ -186,7 +186,6 @@ function findSnapIndex() {
 
   // Search through from shortest distance and check which snap line doesn't
   // Cross the edit line, in most cases the snap index will just be the first one.
-
   const editCanvasPointsLessLastOne = editCanvasPoints.slice(0, -1);
 
   for (let i = 0; i < distanceIndexPairs.length; i++) {
@@ -202,17 +201,12 @@ function findSnapIndex() {
     );
 
     if (!crossedLineSegment) {
-      this.commonEditData.snapIndex = index;
-
-      return;
+      return index;
     }
   }
 
-  console.log(
-    'TODO_JAMES -> We have an issue here => We cannot assign a snap index, and need to think how we resolve this common case'
-  );
-
-  debugger;
+  // If none didn't cross, this means we should start a new edit. Use -1 to signify this.
+  return -1;
 }
 
 function registerEditLoopCommon(toolInstance) {
