@@ -40,8 +40,7 @@ function activateClosedContourEdit(
   this.commonEditData = {
     prevCanvasPoints,
     editCanvasPoints: [canvasPos],
-    startCrossingPoint: undefined,
-    endCrossingPoint: undefined,
+    startCrossingIndex: undefined,
     editIndex: 0,
   };
 
@@ -101,7 +100,7 @@ function mouseDragClosedContourEditCallback(
   const { renderingEngine, viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-  const { editIndex, editCanvasPoints, startCrossingPoint } =
+  const { editIndex, editCanvasPoints, startCrossingIndex } =
     this.commonEditData;
 
   const lastCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
@@ -133,7 +132,7 @@ function mouseDragClosedContourEditCallback(
 
   this.commonEditData.editIndex = currentEditIndex;
 
-  if (!startCrossingPoint && editCanvasPoints.length > 1) {
+  if (startCrossingIndex === undefined && editCanvasPoints.length > 1) {
     this.checkForFirstCrossing(evt, true);
   }
 
@@ -148,7 +147,10 @@ function mouseDragClosedContourEditCallback(
   this.commonEditData.fusedCanvasPoints =
     this.fuseEditPointsWithClosedContour(evt);
 
-  if (startCrossingPoint && this.checkForSecondCrossing(evt, true)) {
+  if (
+    startCrossingIndex !== undefined &&
+    this.checkForSecondCrossing(evt, true)
+  ) {
     this.finishEditAndStartNewEdit(evt);
   }
 
@@ -178,8 +180,7 @@ function finishEditAndStartNewEdit(evt) {
   this.commonEditData = {
     prevCanvasPoints: fusedCanvasPoints,
     editCanvasPoints: [lastEditCanvasPoint],
-    startCrossingPoint: undefined,
-    endCrossingPoint: undefined,
+    startCrossingIndex: undefined,
     editIndex: 0,
     snapIndex: undefined,
   };
@@ -188,10 +189,10 @@ function finishEditAndStartNewEdit(evt) {
 }
 
 function fuseEditPointsWithClosedContour(evt) {
-  const { prevCanvasPoints, editCanvasPoints, startCrossingPoint, snapIndex } =
+  const { prevCanvasPoints, editCanvasPoints, startCrossingIndex, snapIndex } =
     this.commonEditData;
 
-  if (startCrossingPoint === undefined || snapIndex === undefined) {
+  if (startCrossingIndex === undefined || snapIndex === undefined) {
     return undefined;
   }
 
@@ -216,8 +217,6 @@ function fuseEditPointsWithClosedContour(evt) {
   // Calculate the distances between the first and last edit points and the origin of the
   // Contour with the snap point. These will be used to see which way around the edit array should be
   // Placed within the preview.
-
-  const startCrossingIndex = startCrossingPoint[0];
   let lowIndex;
   let highIndex;
 

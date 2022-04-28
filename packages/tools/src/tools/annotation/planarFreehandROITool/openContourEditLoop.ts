@@ -35,8 +35,7 @@ function activateOpenContourEdit(
   this.commonEditData = {
     prevCanvasPoints,
     editCanvasPoints: [canvasPos],
-    startCrossingPoint: undefined,
-    endCrossingPoint: undefined,
+    startCrossingIndex: undefined,
     editIndex: 0,
   };
 
@@ -96,7 +95,7 @@ function mouseDragOpenContourEditCallback(
   const { renderingEngine, viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-  const { editIndex, editCanvasPoints, startCrossingPoint } =
+  const { editIndex, editCanvasPoints, startCrossingIndex } =
     this.commonEditData;
 
   const lastCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
@@ -128,7 +127,7 @@ function mouseDragOpenContourEditCallback(
 
   this.commonEditData.editIndex = currentEditIndex;
 
-  if (!startCrossingPoint && editCanvasPoints.length > 1) {
+  if (startCrossingIndex === undefined && editCanvasPoints.length > 1) {
     this.checkForFirstCrossing(evt, false);
   }
 
@@ -137,7 +136,10 @@ function mouseDragOpenContourEditCallback(
   this.commonEditData.fusedCanvasPoints =
     this.fuseEditPointsWithOpenContour(evt);
 
-  if (startCrossingPoint && this.checkForSecondCrossing(evt, false)) {
+  if (
+    startCrossingIndex !== undefined &&
+    this.checkForSecondCrossing(evt, false)
+  ) {
     this.finishEditOpenOnSecondCrossing(evt);
   } else if (this.checkIfShouldOverwriteAnEnd(evt)) {
     this.openContourEditOverwriteEnd(evt);
@@ -185,10 +187,10 @@ function checkIfShouldOverwriteAnEnd(evt) {
   const canvasPos = currentPoints.canvas;
   const lastCanvasPos = lastPoints.canvas;
 
-  const { snapIndex, prevCanvasPoints, startCrossingPoint } =
+  const { snapIndex, prevCanvasPoints, startCrossingIndex } =
     this.commonEditData;
 
-  if (startCrossingPoint === undefined || snapIndex === undefined) {
+  if (startCrossingIndex === undefined || snapIndex === undefined) {
     // Edit not started
     return false;
   }
@@ -229,9 +231,8 @@ function checkIfShouldOverwriteAnEnd(evt) {
 }
 
 function fuseEditPointsForOpenContourEndEdit(evt) {
-  const { snapIndex, prevCanvasPoints, editCanvasPoints, startCrossingPoint } =
+  const { snapIndex, prevCanvasPoints, editCanvasPoints, startCrossingIndex } =
     this.commonEditData;
-  const startCrossingIndex = startCrossingPoint[0];
 
   const newCanvasPoints = [];
 
@@ -289,10 +290,10 @@ function fuseEditPointsForOpenContourEndEdit(evt) {
 }
 
 function fuseEditPointsWithOpenContour(evt) {
-  const { prevCanvasPoints, editCanvasPoints, startCrossingPoint, snapIndex } =
+  const { prevCanvasPoints, editCanvasPoints, startCrossingIndex, snapIndex } =
     this.commonEditData;
 
-  if (startCrossingPoint === undefined || snapIndex === undefined) {
+  if (startCrossingIndex === undefined || snapIndex === undefined) {
     return undefined;
   }
 
@@ -318,7 +319,6 @@ function fuseEditPointsWithOpenContour(evt) {
   // Contour with the snap point. These will be used to see which way around the edit array should be
   // Placed within the preview.
 
-  const startCrossingIndex = startCrossingPoint[0];
   let lowIndex;
   let highIndex;
 
@@ -419,8 +419,7 @@ function finishEditOpenOnSecondCrossing(evt) {
   this.commonEditData = {
     prevCanvasPoints: fusedCanvasPoints,
     editCanvasPoints: [lastEditCanvasPoint],
-    startCrossingPoint: undefined,
-    endCrossingPoint: undefined,
+    startCrossingIndex: undefined,
     editIndex: 0,
   };
 

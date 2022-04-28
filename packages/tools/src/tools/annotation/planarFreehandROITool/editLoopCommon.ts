@@ -19,7 +19,7 @@ function checkForFirstCrossing(evt, isClosedContour) {
   );
 
   if (crossedLineSegment) {
-    this.commonEditData.startCrossingPoint = crossedLineSegment;
+    this.commonEditData.startCrossingIndex = crossedLineSegment[0];
 
     // On the first crossing, remove the first lines prior to the crossing
     this.removePointsUpUntilFirstCrossing(isClosedContour);
@@ -46,18 +46,12 @@ function checkForFirstCrossing(evt, isClosedContour) {
       distanceIndexPairs[1],
     ];
 
-    // TODO_JAMES -> Chaneg startCrossingPoint to cross index as we always grab that anyway.
     const lowestIndex = Math.min(
       twoClosestDistanceIndexPairs[0].index,
       twoClosestDistanceIndexPairs[1].index
     );
 
-    const highestIndex = Math.max(
-      twoClosestDistanceIndexPairs[0].index,
-      twoClosestDistanceIndexPairs[1].index
-    );
-
-    this.commonEditData.startCrossingPoint = [lowestIndex, highestIndex];
+    this.commonEditData.startCrossingIndex = lowestIndex;
   } else if (editCanvasPoints.length >= 2) {
     // -- Check if already crossing.
     // -- Check if extending a line back 6 (Proximity) canvas pixels would cross a line.
@@ -102,8 +96,8 @@ function checkForFirstCrossing(evt, isClosedContour) {
       this.removePointsUpUntilFirstCrossing(isClosedContour);
 
       this.commonEditData.editIndex = editCanvasPoints.length - 1;
-      this.commonEditData.startCrossingPoint =
-        crossedLineSegmentFromExtendedPoint;
+      this.commonEditData.startCrossingIndex =
+        crossedLineSegmentFromExtendedPoint[0];
     }
   }
 }
@@ -154,8 +148,6 @@ function checkForSecondCrossing(evt, isClosedContour) {
     return false;
   }
 
-  this.commonEditData.endCrossingPoint = crossedLineSegment;
-
   // Remove points up until just before the crossing
   for (let i = editCanvasPoints.length - 1; i > 0; i--) {
     const lastLine = [editCanvasPoints[i], editCanvasPoints[i - 1]];
@@ -179,11 +171,11 @@ function checkForSecondCrossing(evt, isClosedContour) {
 }
 
 function findSnapIndex() {
-  const { editCanvasPoints, prevCanvasPoints, startCrossingPoint } =
+  const { editCanvasPoints, prevCanvasPoints, startCrossingIndex } =
     this.commonEditData;
 
   if (
-    !startCrossingPoint // Haven't crossed line yet
+    startCrossingIndex === undefined // Haven't crossed line yet
   ) {
     return;
   }
