@@ -65,7 +65,7 @@ const { pointCanProjectOnLine } = polyline;
  */
 
 class PlanarFreehandROITool extends AnnotationTool {
-  static toolName: string = 'PlanarFreehandROI';
+  static toolName = 'PlanarFreehandROI';
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -94,9 +94,9 @@ class PlanarFreehandROITool extends AnnotationTool {
     overwriteEnd: boolean;
     overwriteStart: boolean;
   } | null;
-  isDrawing: boolean = false;
-  isEditingClosed: boolean = false;
-  isEditingOpen: boolean = false;
+  isDrawing = false;
+  isEditingClosed = false;
+  isEditingOpen = false;
 
   private activateDraw: (
     evt: EventTypes.MouseDownActivateEventType,
@@ -183,25 +183,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId;
-    if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
-    } else {
-      const volumeId = this.getTargetId(viewport);
-      const imageVolume = cache.getVolume(volumeId);
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal,
-        viewUp
-      );
-    }
-
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -327,7 +314,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       const p1 = previousPoint;
       const p2 = viewport.worldToCanvas(points[i]);
 
-      let distance = pointCanProjectOnLine(canvasCoords, p1, p2, proximity);
+      const distance = pointCanProjectOnLine(canvasCoords, p1, p2, proximity);
 
       if (distance) {
         return true;
@@ -345,7 +332,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     const pStart = viewport.worldToCanvas(points[0]);
     const pEnd = viewport.worldToCanvas(points[points.length - 1]);
 
-    let distance = pointCanProjectOnLine(canvasCoords, pStart, pEnd, proximity);
+    const distance = pointCanProjectOnLine(
+      canvasCoords,
+      pStart,
+      pEnd,
+      proximity
+    );
 
     if (distance) {
       return true;
@@ -374,6 +366,8 @@ class PlanarFreehandROITool extends AnnotationTool {
     const { element } = viewport;
 
     let annotations = getAnnotations(element, this.getToolName());
+
+    console.log(annotations);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
