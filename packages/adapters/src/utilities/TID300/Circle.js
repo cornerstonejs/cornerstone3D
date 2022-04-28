@@ -12,9 +12,8 @@ function expandPoints(points) {
     const allPoints = [];
 
     points.forEach(point => {
-        allPoints.push(point[0]);
-        allPoints.push(point[1]);
-        allPoints.push(point[2]);
+        allPoints.push(point.x);
+        allPoints.push(point.y);
     });
 
     return allPoints;
