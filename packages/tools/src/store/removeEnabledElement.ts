@@ -100,7 +100,7 @@ const _removeAllToolsForElement = function (element) {
   const toolsWithData = filterToolsWithAnnotationsForElement(element, tools);
   toolsWithData.forEach(({ annotations }) => {
     annotations.forEach((annotation) => {
-      removeAnnotation(element, annotation.annotationUID);
+      removeAnnotation(annotation.annotationUID, element);
     });
   });
 };

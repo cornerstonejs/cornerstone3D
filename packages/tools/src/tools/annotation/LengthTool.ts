@@ -1,8 +1,6 @@
 import { Events } from '../../enums';
 import {
   getEnabledElement,
-  cache,
-  StackViewport,
   Settings,
   triggerEvent,
   eventTarget,
@@ -29,7 +27,10 @@ import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import {
+  AnnotationCompletedEventDetail,
+  AnnotationModifiedEventDetail,
+} from '../../types/EventTypes';
 
 import {
   resetElementCursor,
@@ -142,36 +143,22 @@ class LengthTool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    // TODO: what do we do here? this feels wrong
-    let referencedImageId;
-    if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
-    } else {
-      const volumeId = this.getTargetId(viewport);
-      const imageVolume = cache.getVolume(volumeId);
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal,
-        viewUp
-      );
-    }
-
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
 
     const annotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: LengthTool.toolName,
       },
       data: {
         handles: {
@@ -200,7 +187,7 @@ class LengthTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      LengthTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -280,7 +267,7 @@ class LengthTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      LengthTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -325,7 +312,7 @@ class LengthTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      LengthTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -376,10 +363,20 @@ class LengthTool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(element, annotation.annotationUID);
+      removeAnnotation(annotation.annotationUID, element);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
 
     this.editData = null;
     this.isDrawing = false;
@@ -447,7 +444,7 @@ class LengthTool extends AnnotationTool {
       this._deactivateModify(element);
       resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -460,6 +457,16 @@ class LengthTool extends AnnotationTool {
         renderingEngine,
         viewportIdsToRender
       );
+
+      if (newAnnotation) {
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+      }
 
       this.editData = null;
       return annotation.annotationUID;
@@ -527,7 +534,7 @@ class LengthTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, LengthTool.toolName);
+    let annotations = getAnnotations(element, this.getToolName());
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
@@ -575,7 +582,7 @@ class LengthTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          LengthTool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           canvasCoordinates,
@@ -590,7 +597,7 @@ class LengthTool extends AnnotationTool {
       const lineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
-        LengthTool.toolName,
+        this.getToolName(),
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -639,7 +646,7 @@ class LengthTool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        LengthTool.toolName,
+        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,
@@ -698,10 +705,7 @@ class LengthTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const { image } = this.getTargetIdViewportAndImage(
-        targetId,
-        renderingEngine
-      );
+      const image = this.getTargetIdImage(targetId, renderingEngine);
 
       const { imageData, dimensions } = image;
 

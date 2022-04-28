@@ -10,6 +10,7 @@ import throttle from './throttle';
 import isObject from './isObject';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
+import jumpToSlice from './viewport/jumpToSlice';
 
 import pointInShapeCallback from './pointInShapeCallback';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
@@ -21,6 +22,7 @@ import * as math from './math';
 import * as planar from './planar';
 import * as stackScrollTool from './stackScrollTool';
 import * as viewportFilters from './viewportFilters';
+import * as orientation from './orientation';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -34,6 +36,7 @@ export {
   debounce,
   deepMerge,
   throttle,
+  orientation,
   isObject,
   triggerEvent,
   calibrateImageSpacing,
@@ -43,4 +46,5 @@ export {
   pointInSurroundingSphereCallback,
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
+  jumpToSlice,
 };

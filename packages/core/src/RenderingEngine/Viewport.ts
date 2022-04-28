@@ -17,6 +17,7 @@ import type {
   Point2,
   Point3,
   FlipDirection,
+  EventTypes,
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
@@ -43,6 +44,7 @@ class Viewport implements IViewport {
   readonly type: ViewportType;
   protected flipHorizontal = false;
   protected flipVertical = false;
+  protected rotation = 0;
 
   /** sx of viewport on the offscreen canvas */
   sx: number;
@@ -487,13 +489,14 @@ class Viewport implements IViewport {
 
   /**
    * Resets the camera based on the rendering volume(s) bounds. If
-   * resetPanZoomForViewPlane is false (default behavior), it places
-   * the focal point at the center of the volume (or slice); otherwise,
-   * only the camera zoom and camera Pan is reset for the current view.
-   * @param resetPanZoomForViewPlane - if true, it renders the center of the volume instead
+   * resetPan and resetZoom are true it places the focal point at the center of
+   * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
+   * is reset for the current view.
+   * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
+   * @param resetZoom - If true, the camera zoom is reset to the default zoom
    * @returns boolean
    */
-  protected resetCamera(resetPanZoomForViewPlane = false): boolean {
+  protected resetCamera(resetPan = true, resetZoom = true): boolean {
     const renderer = this.getRenderer();
     const previousCamera = _cloneDeep(this.getCamera());
 
@@ -580,7 +583,7 @@ class Viewport implements IViewport {
 
     let focalPointToSet = focalPoint;
 
-    if (resetPanZoomForViewPlane && imageData) {
+    if (!resetPan && imageData) {
       focalPointToSet = this._getFocalPointForViewPlaneReset(imageData);
     }
 
@@ -597,7 +600,9 @@ class Viewport implements IViewport {
 
     renderer.resetCameraClippingRange(bounds);
 
-    activeCamera.setParallelScale(parallelScale);
+    if (resetZoom) {
+      activeCamera.setParallelScale(parallelScale);
+    }
 
     // update reasonable world to physical values
     activeCamera.setPhysicalScale(radius);
@@ -616,6 +621,10 @@ class Viewport implements IViewport {
       type: 'ResetCameraEvent',
       renderer,
     };
+
+    if (this.flipHorizontal || this.flipVertical) {
+      this.flip({ flipHorizontal: false, flipVertical: false });
+    }
 
     // Here to let parallel/distributed compositing intercept
     // and do the right thing.
@@ -730,6 +739,8 @@ class Viewport implements IViewport {
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
       slabThickness,
+      flipHorizontal: this.flipHorizontal,
+      flipVertical: this.flipVertical,
     };
   }
 
@@ -750,7 +761,13 @@ class Viewport implements IViewport {
       parallelScale,
       viewAngle,
       slabThickness,
+      flipHorizontal,
+      flipVertical,
     } = cameraInterface;
+
+    if (flipHorizontal !== undefined || flipVertical !== undefined) {
+      this.flip({ flipHorizontal, flipVertical });
+    }
 
     if (viewUp !== undefined) {
       vtkCamera.setViewUp(viewUp);
@@ -789,13 +806,13 @@ class Viewport implements IViewport {
     }
 
     if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
-      const eventDetail = {
+      const eventDetail: EventTypes.CameraModifiedEventDetail = {
         previousCamera,
         camera: updatedCamera,
-        canvas: this.canvas,
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
+        rotation: this.rotation,
       };
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);

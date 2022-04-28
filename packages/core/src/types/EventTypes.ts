@@ -1,3 +1,5 @@
+import type { mat4 } from 'gl-matrix';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type CustomEventType from '../types/CustomEventType';
 import type ICachedImage from './ICachedImage';
 import type ICachedVolume from './ICachedVolume';
@@ -5,8 +7,6 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-import type { mat4 } from 'gl-matrix';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -22,6 +22,8 @@ type CameraModifiedEventDetail = {
   viewportId: string;
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
+  /** Rotation Optional */
+  rotation?: number;
 };
 
 /**
@@ -30,10 +32,10 @@ type CameraModifiedEventDetail = {
 type VoiModifiedEventDetail = {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
-  /** Unique ID for the volume in the cache */
-  volumeId: string;
   /** new VOI range */
   range: VOIRange;
+  /** Unique ID for the volume in the cache */
+  volumeId?: string;
 };
 
 /**
@@ -147,6 +149,18 @@ type VolumeCacheVolumeRemovedEventDetail = {
 type VolumeCacheVolumeAddedEventDetail = {
   /** the added volume */
   volume: ICachedVolume;
+};
+
+/**
+ * PRE_STACK_NEW_IMAGE Event's data
+ */
+type PreStackNewImageEventDetail = {
+  /** the image imageId */
+  imageId: string;
+  /** unique id for the viewport */
+  viewportId: string;
+  /** unique id for the renderingEngine */
+  renderingEngineId: string;
 };
 
 /**
@@ -273,6 +287,11 @@ type VolumeCacheVolumeRemovedEvent =
 type StackNewImageEvent = CustomEventType<StackNewImageEventDetail>;
 
 /**
+ * START_NEW_IMAGE
+ */
+type PreStackNewImageEvent = CustomEventType<PreStackNewImageEventDetail>;
+
+/**
  * IMAGE_SPACING_CALIBRATED
  */
 type ImageSpacingCalibratedEvent =
@@ -314,6 +333,8 @@ export type {
   VolumeCacheVolumeRemovedEventDetail,
   StackNewImageEvent,
   StackNewImageEventDetail,
+  PreStackNewImageEvent,
+  PreStackNewImageEventDetail,
   ImageSpacingCalibratedEvent,
   ImageSpacingCalibratedEventDetail,
   ImageLoadProgressEvent,

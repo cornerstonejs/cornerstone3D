@@ -28,15 +28,12 @@ export default interface IStackViewport extends IViewport {
   /**
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
-   * and flipHorizontal/Vertical.
    */
   setProperties({
     voiRange,
     invert,
     interpolationType,
     rotation,
-    flipHorizontal,
-    flipVertical,
   }: StackViewportProperties): void;
   /**
    * Retrieve the viewport properties
@@ -60,6 +57,14 @@ export default interface IStackViewport extends IViewport {
    * Returns the list of image Ids for the current viewport
    */
   getImageIds: () => string[];
+  /**
+   * Returns true if the viewport contains the imageId
+   */
+  hasImageId: (imageId: string) => boolean;
+  /**
+   * Returns true if the viewport contains the imageURI
+   */
+  hasImageURI: (imageURI: string) => boolean;
   /**
    * Returns the currently rendered imageId
    */
@@ -105,7 +110,7 @@ export default interface IStackViewport extends IViewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+  resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
   /**
    * Loads the image based on the provided imageIdIndex. It is an Async function which
    * returns a promise that resolves to the imageId.
@@ -131,4 +136,8 @@ export default interface IStackViewport extends IViewport {
    * It sets the colormap to the default colormap.
    */
   unsetColormap(): void;
+  /**
+   * Checks if the imageId is preScaled when loaded
+   */
+  isImagePreScaled(imageId: string): boolean;
 }

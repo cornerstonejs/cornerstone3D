@@ -3,6 +3,126 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.10.0...@cornerstonejs/tools@0.10.1) (2022-04-27)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
+# [0.10.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.4...@cornerstonejs/tools@0.10.0) (2022-04-26)
+
+
+### Features
+
+* Add annotation completed event  ([#84](https://github.com/cornerstonejs/cornerstone3D-beta/issues/84)) ([cd574da](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cd574da73403e3030a5bc414778e08536fb77381))
+
+
+
+
+
+## [0.9.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.3...@cornerstonejs/tools@0.9.4) (2022-04-22)
+
+
+### Bug Fixes
+
+* Camera events for flip and rotation changes ([#83](https://github.com/cornerstonejs/cornerstone3D-beta/issues/83)) ([82115ec](https://github.com/cornerstonejs/cornerstone3D-beta/commit/82115ec00bd924fb942473d04052473408b84eb7))
+
+
+
+
+
+## [0.9.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.2...@cornerstonejs/tools@0.9.3) (2022-04-21)
+
+
+### Bug Fixes
+
+* selection API, requestPoolManager and VOI and Scaling ([#82](https://github.com/cornerstonejs/cornerstone3D-beta/issues/82)) ([bedd8dd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/bedd8ddfa356c2d52a6e72f74c7cb3bb660a86ef))
+
+
+
+
+
+## [0.9.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.1...@cornerstonejs/tools@0.9.2) (2022-04-20)
+
+
+### Bug Fixes
+
+* windowLevel event trigger and initial voi range ([#81](https://github.com/cornerstonejs/cornerstone3D-beta/issues/81)) ([38307d4](https://github.com/cornerstonejs/cornerstone3D-beta/commit/38307d40cec60f2b3b8497abda8aa4fa657fc179))
+
+
+
+
+
+## [0.9.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.9.0...@cornerstonejs/tools@0.9.1) (2022-04-19)
+
+
+### Bug Fixes
+
+* jumpToSlice and scaling of images in renderToCanvas ([#78](https://github.com/cornerstonejs/cornerstone3D-beta/issues/78)) ([bbebf7f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/bbebf7fbad28e670333783cd669e571ec2ae7358))
+
+
+
+
+
+# [0.9.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.8.0...@cornerstonejs/tools@0.9.0) (2022-04-14)
+
+
+### Features
+
+* add scrollToSlice for element ([#76](https://github.com/cornerstonejs/cornerstone3D-beta/issues/76)) ([c43fe8f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c43fe8f955930a70be60015f2f6bc1d5bf9fffbb))
+
+
+
+
+
+# [0.8.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.12...@cornerstonejs/tools@0.8.0) (2022-04-13)
+
+
+### Features
+
+* cachedStats to store imageId and volumeId ([#75](https://github.com/cornerstonejs/cornerstone3D-beta/issues/75)) ([a2404c4](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a2404c4f1cb15a3935ba3af58fa7fc556716458c))
+
+
+
+
+
+## [0.7.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.11...@cornerstonejs/tools@0.7.12) (2022-04-13)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
+## [0.7.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.10...@cornerstonejs/tools@0.7.11) (2022-04-12)
+
+
+### Bug Fixes
+
+* Remove resemblejs from dependencies, add detect-gpu, clonedeep, CWIL ([#73](https://github.com/cornerstonejs/cornerstone3D-beta/issues/73)) ([db65d50](https://github.com/cornerstonejs/cornerstone3D-beta/commit/db65d50a5c7488f323ab2424cf9d750055b2e6d5))
+
+
+
+
+
+## [0.7.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.9...@cornerstonejs/tools@0.7.10) (2022-04-12)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
+## [0.7.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.8...@cornerstonejs/tools@0.7.9) (2022-04-11)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
 ## [0.7.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.7.7...@cornerstonejs/tools@0.7.8) (2022-04-04)
 
 

@@ -105,6 +105,14 @@ type AnnotationAddedEventDetail = {
 type AnnotationAddedEventType = Types_2.CustomEventType<AnnotationAddedEventDetail>;
 
 // @public (undocumented)
+type AnnotationCompletedEventDetail = {
+    annotation: Annotation;
+};
+
+// @public (undocumented)
+type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedEventDetail>;
+
+// @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
 
 // @public (undocumented)
@@ -129,9 +137,8 @@ type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEve
 
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
-    viewportId: string;
-    renderingEngineId: string;
     annotation: Annotation;
+    annotationManagerUID: string;
 };
 
 // @public (undocumented)
@@ -152,9 +159,9 @@ type Annotations = Array<Annotation>;
 
 // @public (undocumented)
 type AnnotationSelectionChangeEventDetail = {
-    added: Array<Annotation>;
-    removed: Array<Annotation>;
-    selection: Array<Annotation>;
+    added: Array<string>;
+    removed: Array<string>;
+    selection: Array<string>;
 };
 
 // @public (undocumented)
@@ -190,6 +197,8 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     getLinkedTextBoxStyle(settings: Settings, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
+    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
+    // (undocumented)
     getStyle(settings: Settings, property: string, annotation?: Annotation): unknown;
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
@@ -217,10 +226,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
-    protected getTargetIdViewportAndImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): {
-        viewport: Types_2.IViewport;
-        image: Types_2.IImageData;
-    };
+    protected getTargetIdImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): Types_2.IImageData | Types_2.CPUIImageData | Types_2.IImageVolume;
     // (undocumented)
     getToolName(): string;
     // (undocumented)
@@ -357,6 +363,7 @@ type CameraModifiedEventDetail = {
     element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -892,14 +899,7 @@ const _default: {
 };
 
 // @public (undocumented)
-const _default_2: {
-    snapFocalPointToSlice: typeof snapFocalPointToSlice;
-    getSliceRange: typeof getSliceRange;
-    scrollThroughStack: typeof scrollThroughStack;
-};
-
-// @public (undocumented)
-function deselectAnnotation(annotation?: Annotation): void;
+function deselectAnnotation(annotationUID?: string): void;
 
 // @public (undocumented)
 export function destroy(): void;
@@ -1111,6 +1111,8 @@ enum Events {
     // (undocumented)
     ANNOTATION_ADDED = "CORNERSTONE_TOOLS_ANNOTATION_ADDED",
     // (undocumented)
+    ANNOTATION_COMPLETED = "CORNERSTONE_TOOLS_ANNOTATION_COMPLETED",
+    // (undocumented)
     ANNOTATION_LOCK_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE",
     // (undocumented)
     ANNOTATION_MODIFIED = "CORNERSTONE_TOOLS_ANNOTATION_MODIFIED",
@@ -1184,6 +1186,8 @@ declare namespace EventTypes {
         VolumeCacheVolumeRemovedEventDetail,
         StackNewImageEvent,
         StackNewImageEventDetail,
+        PreStackNewImageEvent,
+        PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
@@ -1197,6 +1201,8 @@ declare namespace EventTypes_2 {
         NormalizedMouseEventType,
         AnnotationAddedEventDetail,
         AnnotationAddedEventType,
+        AnnotationCompletedEventDetail,
+        AnnotationCompletedEventType,
         AnnotationModifiedEventDetail,
         AnnotationModifiedEventType,
         AnnotationRemovedEventDetail,
@@ -1294,19 +1300,16 @@ function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabled
 function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
 
 // @public (undocumented)
-function getAnnotationSelected(annotationUID: string): Annotation;
-
-// @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
 
 // @public (undocumented)
 function getAnnotationsLockedCount(): number;
 
 // @public (undocumented)
-function getAnnotationsSelected(): Array<Annotation>;
+function getAnnotationsSelected(): Array<string>;
 
 // @public (undocumented)
-function getAnnotationsSelectedByToolName(toolName: string): Array<Annotation>;
+function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
@@ -1346,6 +1349,9 @@ function getGlobalRepresentationConfig(representationType: SegmentationRepresent
 
 // @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
+function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
@@ -1472,6 +1478,8 @@ interface ICachedVolume {
 // @public
 interface ICamera {
     clippingRange?: Point2;
+    flipHorizontal?: boolean;
+    flipVertical?: boolean;
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
@@ -1512,6 +1520,7 @@ interface IImage {
     imageId: string;
     intercept: number;
     invert: boolean;
+    isPreScaled?: boolean;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -1717,6 +1726,9 @@ type InteractionTypes = 'Mouse';
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
 
 // @public (undocumented)
+function invertOrientationStringLPS(orientationString: string): string;
+
+// @public (undocumented)
 type IPoints = {
     page: Types_2.Point2;
     client: Types_2.Point2;
@@ -1770,7 +1782,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(): void;
+    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
@@ -1779,7 +1791,7 @@ interface IRenderingEngine {
 function isAnnotationLocked(annotation: Annotation): boolean;
 
 // @public (undocumented)
-function isAnnotationSelected(annotation: Annotation): boolean;
+function isAnnotationSelected(annotationUID: string): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -1805,9 +1817,12 @@ interface IStackViewport extends IViewport {
     getImageIds: () => string[];
     getProperties: () => StackViewportProperties;
     getRenderer(): any;
+    hasImageId: (imageId: string) => boolean;
+    hasImageURI: (imageURI: string) => boolean;
+    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -1819,8 +1834,6 @@ interface IStackViewport extends IViewport {
         invert,
         interpolationType,
         rotation,
-        flipHorizontal,
-        flipVertical,
     }: StackViewportProperties): void;
     setStack(
     imageIds: Array<string>,
@@ -2032,7 +2045,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThickness(slabThickness: number): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
@@ -2042,6 +2055,14 @@ interface IVolumeViewport extends IViewport {
     useCPURendering: boolean;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
+
+// @public (undocumented)
+function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<string>;
+
+// @public (undocumented)
+type JumpToSliceOptions = {
+    imageIdIndex?: number;
+};
 
 // @public (undocumented)
 enum KeyboardBindings {
@@ -2394,6 +2415,13 @@ type Orientation = {
     viewUp: Point3;
 };
 
+declare namespace orientation_2 {
+    export {
+        getOrientationStringLPS,
+        invertOrientationStringLPS
+    }
+}
+
 // @public (undocumented)
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -2446,6 +2474,16 @@ function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, po
 // @public (undocumented)
 function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
 
+// @public
+type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
+
+// @public
+type PreStackNewImageEventDetail = {
+    imageId: string;
+    viewportId: string;
+    renderingEngineId: string;
+};
+
 // @public (undocumented)
 interface ProbeAnnotation extends Annotation {
     // (undocumented)
@@ -2481,6 +2519,7 @@ export class ProbeTool extends AnnotationTool {
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
+        newAnnotation?: boolean;
     } | null;
     // (undocumented)
     eventDispatchDetail: {
@@ -2843,7 +2882,7 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
-function removeAnnotation(element: HTMLDivElement, annotationUID: string): void;
+function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
 
 // @public (undocumented)
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
@@ -2884,7 +2923,14 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-function scrollThroughStack(evt: MouseWheelEventType | MouseDragEventType, deltaFrames: number, volumeId: string, invert?: boolean): void;
+type ScrollOptions_2 = {
+    direction: number;
+    invert?: boolean;
+    volumeId?: string;
+};
+
+// @public (undocumented)
+function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, options: ScrollOptions_2): void;
 
 // @public (undocumented)
 type Segmentation = {
@@ -3034,7 +3080,6 @@ declare namespace selection {
     export {
         setAnnotationSelected,
         getAnnotationsSelected,
-        getAnnotationSelected,
         getAnnotationsSelectedByToolName,
         getAnnotationsSelectedCount,
         deselectAnnotation,
@@ -3052,7 +3097,7 @@ function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): vo
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 
 // @public (undocumented)
-function setAnnotationSelected(annotation: Annotation, selected?: boolean, preserveSelected?: boolean): void;
+function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
 function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
@@ -3176,6 +3221,8 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     mouseDragCallback: () => void;
     // (undocumented)
+    previousDirection: number;
+    // (undocumented)
     static toolName: string;
     // (undocumented)
     touchDragCallback: () => void;
@@ -3185,8 +3232,7 @@ declare namespace stackScrollTool {
     export {
         snapFocalPointToSlice,
         getSliceRange,
-        scrollThroughStack,
-        _default_2 as default
+        scrollThroughStack
     }
 }
 
@@ -3196,8 +3242,6 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
-    flipHorizontal?: boolean;
-    flipVertical?: boolean;
 };
 
 declare namespace state {
@@ -3443,6 +3487,7 @@ declare namespace Types {
         FrameOfReferenceSpecificAnnotations,
         AnnotationState,
         ToolSpecificAnnotationTypes,
+        JumpToSliceOptions,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,
@@ -3469,7 +3514,8 @@ declare namespace Types {
         ColorLUT,
         LabelmapTypes,
         SVGCursorDescriptor,
-        SVGPoint_2 as SVGPoint
+        SVGPoint_2 as SVGPoint,
+        ScrollOptions_2 as ScrollOptions
     }
 }
 export { Types }
@@ -3487,6 +3533,7 @@ declare namespace utilities {
         debounce,
         deepmerge as deepMerge,
         throttle,
+        orientation_2 as orientation,
         isObject,
         triggerEvent,
         calibrateImageSpacing,
@@ -3495,7 +3542,8 @@ declare namespace utilities {
         pointInShapeCallback,
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
-        getAnnotationNearPointOnEnabledElement
+        getAnnotationNearPointOnEnabledElement,
+        jumpToSlice
     }
 }
 export { utilities }
@@ -3541,8 +3589,8 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;
 // @public
 type VoiModifiedEventDetail = {
     viewportId: string;
-    volumeId: string;
     range: VOIRange;
+    volumeId?: string;
 };
 
 // @public (undocumented)

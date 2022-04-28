@@ -129,9 +129,7 @@ describe('Ellipse Tool: ', () => {
           expect(ellipseAnnotations.length).toBe(1);
 
           const ellipseAnnotation = ellipseAnnotations[0];
-          expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
             EllipticalROITool.toolName
@@ -146,8 +144,8 @@ describe('Ellipse Tool: ', () => {
           expect(data[targets[0]].mean).toBe(255);
 
           annotation.state.removeAnnotation(
-            element,
-            ellipseAnnotation.annotationUID
+            ellipseAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -251,8 +249,8 @@ describe('Ellipse Tool: ', () => {
           expect(data[targets[0]].stdDev).toBe(0);
 
           annotation.state.removeAnnotation(
-            element,
-            ellipseAnnotation.annotationUID
+            ellipseAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -452,9 +450,7 @@ describe('Ellipse Tool: ', () => {
           expect(ellipseAnnotations.length).toBe(1);
 
           const ellipseAnnotation = ellipseAnnotations[0];
-          expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
             EllipticalROITool.toolName
@@ -470,8 +466,8 @@ describe('Ellipse Tool: ', () => {
           expect(data[targets[0]].mean).toBe(255);
 
           annotation.state.removeAnnotation(
-            element,
-            ellipseAnnotation.annotationUID
+            ellipseAnnotation.annotationUID,
+            element
           );
           done();
         }, 100);

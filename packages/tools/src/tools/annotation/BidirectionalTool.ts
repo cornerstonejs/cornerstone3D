@@ -2,10 +2,8 @@ import { vec2, vec3 } from 'gl-matrix';
 import {
   Settings,
   getEnabledElement,
-  StackViewport,
   triggerEvent,
   eventTarget,
-  cache,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -43,6 +41,7 @@ import {
 import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
+  AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
   MouseDragEventType,
   MouseMoveEventType,
@@ -144,34 +143,21 @@ export default class BidirectionalTool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId;
-    if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
-    } else {
-      const volumeId = this.getTargetId(viewport);
-      const imageVolume = cache.getVolume(volumeId);
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal,
-        viewUp
-      );
-    }
-
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
 
     const annotation: BidirectionalAnnotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        toolName: BidirectionalTool.toolName,
         referencedImageId,
       },
       data: {
@@ -208,7 +194,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      BidirectionalTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -323,7 +309,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      BidirectionalTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -377,7 +363,7 @@ export default class BidirectionalTool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      BidirectionalTool.toolName
+      this.getToolName()
     );
 
     hideElementCursor(element);
@@ -495,10 +481,20 @@ export default class BidirectionalTool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(element, annotation.annotationUID);
+      removeAnnotation(annotation.annotationUID, element);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
 
     this.editData = null;
     this.isDrawing = false;
@@ -866,7 +862,7 @@ export default class BidirectionalTool extends AnnotationTool {
       this._deactivateModify(element);
       resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -879,6 +875,16 @@ export default class BidirectionalTool extends AnnotationTool {
         renderingEngine,
         viewportIdsToRender
       );
+
+      if (newAnnotation) {
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+      }
 
       this.editData = null;
       return annotation.annotationUID;
@@ -951,10 +957,7 @@ export default class BidirectionalTool extends AnnotationTool {
   ): void => {
     const { viewport } = enabledElement;
     const { element } = viewport;
-    let annotations = getAnnotations(
-      viewport.element,
-      BidirectionalTool.toolName
-    );
+    let annotations = getAnnotations(viewport.element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -1024,7 +1027,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          BidirectionalTool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -1037,7 +1040,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const lineUID = '0';
       drawLineSvg(
         svgDrawingHelper,
-        BidirectionalTool.toolName,
+        this.getToolName(),
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -1052,7 +1055,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const secondLineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
-        BidirectionalTool.toolName,
+        this.getToolName(),
         annotationUID,
         secondLineUID,
         canvasCoordinates[2],
@@ -1085,7 +1088,7 @@ export default class BidirectionalTool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        BidirectionalTool.toolName,
+        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,
@@ -1190,10 +1193,7 @@ export default class BidirectionalTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const { image } = this.getTargetIdViewportAndImage(
-        targetId,
-        renderingEngine
-      );
+      const image = this.getTargetIdImage(targetId, renderingEngine);
 
       const { imageData, dimensions } = image;
 

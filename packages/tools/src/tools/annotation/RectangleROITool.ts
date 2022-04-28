@@ -2,9 +2,7 @@ import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
-  cache,
   Settings,
-  StackViewport,
   VolumeViewport,
   triggerEvent,
   eventTarget,
@@ -46,7 +44,10 @@ import {
   InteractionTypes,
 } from '../../types';
 import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import {
+  AnnotationCompletedEventDetail,
+  AnnotationModifiedEventDetail,
+} from '../../types/EventTypes';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -69,15 +70,15 @@ const { transformWorldToIndex } = csUtils;
  * or similar methods.
  *
  * ```js
- * cornerstoneTools.addTool(RectangleROIAnnotation)
+ * cornerstoneTools.addTool(RectangleROITool)
  *
  * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
- * toolGroup.addTool(RectangleROIAnnotation.toolName)
+ * toolGroup.addTool(RectangleROITool.toolName)
  *
  * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
- * toolGroup.setToolActive(RectangleROIAnnotation.toolName, {
+ * toolGroup.setToolActive(RectangleROITool.toolName, {
  *   bindings: [
  *    {
  *       mouseButton: MouseBindings.Primary, // Left Click
@@ -145,35 +146,22 @@ export default class RectangleROITool extends AnnotationTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId;
-    if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
-    } else {
-      const volumeId = this.getTargetId(viewport);
-      const imageVolume = cache.getVolume(volumeId);
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal,
-        viewUp
-      );
-    }
-
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
-    }
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
 
     const annotation = {
       invalidated: true,
       highlighted: true,
       metadata: {
+        toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleROITool.toolName,
       },
       data: {
         label: '',
@@ -207,7 +195,7 @@ export default class RectangleROITool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -287,7 +275,7 @@ export default class RectangleROITool extends AnnotationTool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -332,7 +320,7 @@ export default class RectangleROITool extends AnnotationTool {
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROITool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -385,10 +373,20 @@ export default class RectangleROITool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(element, annotation.annotationUID);
+      removeAnnotation(annotation.annotationUID, element);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    if (newAnnotation) {
+      const eventType = Events.ANNOTATION_COMPLETED;
+
+      const eventDetail: AnnotationCompletedEventDetail = {
+        annotation,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
   };
 
   _mouseDragCallback = (
@@ -511,7 +509,7 @@ export default class RectangleROITool extends AnnotationTool {
       this._deactivateModify(element);
       resetElementCursor(element);
 
-      const { annotation, viewportIdsToRender } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
 
       const { data } = annotation;
 
@@ -525,6 +523,16 @@ export default class RectangleROITool extends AnnotationTool {
         renderingEngine,
         viewportIdsToRender
       );
+
+      if (newAnnotation) {
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+      }
 
       this.editData = null;
       return annotation.annotationUID;
@@ -603,7 +611,7 @@ export default class RectangleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, RectangleROITool.toolName);
+    let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -670,23 +678,29 @@ export default class RectangleROITool extends AnnotationTool {
         if (viewport instanceof VolumeViewport) {
           const { referencedImageId } = annotation.metadata;
 
-          // todo: this is not efficient, but necessary
           // invalidate all the relevant stackViewports if they are not
           // at the referencedImageId
-          const viewports = renderingEngine.getViewports();
-          viewports.forEach((vp) => {
-            const stackTargetId = this.getTargetId(vp);
-            // only delete the cachedStats for the stackedViewports if the tool
-            // is dragged inside the volume and the stackViewports are not at the
-            // referencedImageId for the tool
-            if (
-              vp instanceof StackViewport &&
-              !vp.getCurrentImageId().includes(referencedImageId) &&
-              data.cachedStats[stackTargetId]
-            ) {
-              delete data.cachedStats[stackTargetId];
+          for (const targetId in data.cachedStats) {
+            if (targetId.startsWith('imageId')) {
+              const viewports = renderingEngine.getStackViewports();
+
+              const invalidatedStack = viewports.find((vp) => {
+                // The stack viewport that contains the imageId but is not
+                // showing it currently
+                const referencedImageURI =
+                  csUtils.imageIdToURI(referencedImageId);
+                const hasImageURI = vp.hasImageURI(referencedImageURI);
+                const currentImageURI = csUtils.imageIdToURI(
+                  vp.getCurrentImageId()
+                );
+                return hasImageURI && currentImageURI !== referencedImageURI;
+              });
+
+              if (invalidatedStack) {
+                delete data.cachedStats[targetId];
+              }
             }
-          });
+          }
         }
       }
 
@@ -712,7 +726,7 @@ export default class RectangleROITool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleROITool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -725,7 +739,7 @@ export default class RectangleROITool extends AnnotationTool {
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
-        RectangleROITool.toolName,
+        this.getToolName(),
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],
@@ -756,7 +770,7 @@ export default class RectangleROITool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        RectangleROITool.toolName,
+        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,
@@ -870,10 +884,7 @@ export default class RectangleROITool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const { image } = this.getTargetIdViewportAndImage(
-        targetId,
-        renderingEngine
-      );
+      const image = this.getTargetIdImage(targetId, renderingEngine);
 
       const { dimensions, scalarData, imageData, metadata } = image;
 

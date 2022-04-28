@@ -134,9 +134,7 @@ describe('ProbeTool (CPU):', () => {
         expect(probeAnnotations.length).toBe(1);
 
         const probeAnnotation = probeAnnotations[0];
-        expect(probeAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(probeAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName);
         expect(probeAnnotation.invalidated).toBe(false);
 
@@ -148,8 +146,8 @@ describe('ProbeTool (CPU):', () => {
         expect(data[targets[0]].value).toBe(255);
 
         annotation.state.removeAnnotation(
-          element,
-          probeAnnotation.annotationUID
+          probeAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -221,9 +219,7 @@ describe('ProbeTool (CPU):', () => {
         expect(probeAnnotations.length).toBe(2);
 
         const firstProbeAnnotation = probeAnnotations[0];
-        expect(firstProbeAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(firstProbeAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(firstProbeAnnotation.metadata.toolName).toBe(ProbeTool.toolName);
         expect(firstProbeAnnotation.invalidated).toBe(false);
 
@@ -250,12 +246,12 @@ describe('ProbeTool (CPU):', () => {
 
         //
         annotation.state.removeAnnotation(
-          element,
-          firstProbeAnnotation.annotationUID
+          firstProbeAnnotation.annotationUID,
+          element
         );
         annotation.state.removeAnnotation(
-          element,
-          secondProbeAnnotation.annotationUID
+          secondProbeAnnotation.annotationUID,
+          element
         );
 
         done();
@@ -350,9 +346,7 @@ describe('ProbeTool (CPU):', () => {
         expect(probeAnnotations.length).toBe(1);
 
         const probeAnnotation = probeAnnotations[0];
-        expect(probeAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(probeAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName);
         expect(probeAnnotation.invalidated).toBe(false);
 
@@ -364,8 +358,8 @@ describe('ProbeTool (CPU):', () => {
         expect(data[targets[0]].value).toBe(255);
 
         annotation.state.removeAnnotation(
-          element,
-          probeAnnotation.annotationUID
+          probeAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -435,9 +429,7 @@ describe('ProbeTool (CPU):', () => {
         expect(probeAnnotations.length).toBe(1);
 
         const probeAnnotation = probeAnnotations[0];
-        expect(probeAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(probeAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName);
         expect(probeAnnotation.invalidated).toBe(false);
 
@@ -449,8 +441,8 @@ describe('ProbeTool (CPU):', () => {
         expect(data[targets[0]].value).toBe(0);
 
         annotation.state.removeAnnotation(
-          element,
-          probeAnnotation.annotationUID
+          probeAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -522,9 +514,7 @@ describe('ProbeTool (CPU):', () => {
         expect(probeAnnotations.length).toBe(1);
 
         const probeAnnotation = probeAnnotations[0];
-        expect(probeAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(probeAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName);
         expect(probeAnnotation.invalidated).toBe(false);
 
@@ -542,8 +532,8 @@ describe('ProbeTool (CPU):', () => {
         expect(handles[0][2]).toEqual(p2[2]);
 
         annotation.state.removeAnnotation(
-          element,
-          probeAnnotation.annotationUID
+          probeAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -714,9 +704,7 @@ describe('ProbeTool (CPU):', () => {
         expect(probeAnnotations.length).toBe(1);
 
         const probeAnnotation = probeAnnotations[0];
-        expect(probeAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(probeAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(probeAnnotation.metadata.toolName).toBe(ProbeTool.toolName);
         expect(probeAnnotation.invalidated).toBe(false);
         expect(probeAnnotation.highlighted).toBe(false);
@@ -735,8 +723,8 @@ describe('ProbeTool (CPU):', () => {
         expect(handles[0][2]).toEqual(p2[2]);
 
         annotation.state.removeAnnotation(
-          element,
-          probeAnnotation.annotationUID
+          probeAnnotation.annotationUID,
+          element
         );
         done();
       }, 100);

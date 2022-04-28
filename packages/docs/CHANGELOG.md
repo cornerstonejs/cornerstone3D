@@ -3,6 +3,116 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.23](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.22...docs@0.2.23) (2022-04-27)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.22](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.21...docs@0.2.22) (2022-04-26)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.21](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.20...docs@0.2.21) (2022-04-22)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.20](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.19...docs@0.2.20) (2022-04-21)
+
+
+### Bug Fixes
+
+* selection API, requestPoolManager and VOI and Scaling ([#82](https://github.com/cornerstonejs/cornerstone3D-beta/issues/82)) ([bedd8dd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/bedd8ddfa356c2d52a6e72f74c7cb3bb660a86ef))
+
+
+
+
+
+## [0.2.19](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.18...docs@0.2.19) (2022-04-20)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.18](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.17...docs@0.2.18) (2022-04-19)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.17](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.16...docs@0.2.17) (2022-04-14)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.16](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.15...docs@0.2.16) (2022-04-13)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.15](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.14...docs@0.2.15) (2022-04-13)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.14](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.13...docs@0.2.14) (2022-04-12)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.13](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.12...docs@0.2.13) (2022-04-12)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.11...docs@0.2.12) (2022-04-11)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.2.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.10...docs@0.2.11) (2022-04-11)
+
+
+### Bug Fixes
+
+* extract IRenderingEngine type, docs: add documentation search ([#70](https://github.com/cornerstonejs/cornerstone3D-beta/issues/70)) ([6a705a8](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6a705a8f3cb9e8463c0ab6fe4d59dd3bb8bf5ef2))
+
+
+
+
+
 ## [0.2.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.2.9...docs@0.2.10) (2022-04-04)
 
 **Note:** Version bump only for package docs

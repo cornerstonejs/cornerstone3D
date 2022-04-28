@@ -141,9 +141,7 @@ describe('LengthTool:', () => {
           expect(lengthAnnotations.length).toBe(1);
 
           const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
           expect(lengthAnnotation.invalidated).toBe(false);
 
@@ -153,8 +151,8 @@ describe('LengthTool:', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
           annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
+            lengthAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -260,8 +258,8 @@ describe('LengthTool:', () => {
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
           annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
+            lengthAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -362,9 +360,7 @@ describe('LengthTool:', () => {
           expect(lengthAnnotations.length).toBe(1);
 
           const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
           expect(lengthAnnotation.invalidated).toBe(false);
           expect(lengthAnnotation.highlighted).toBe(false);
@@ -376,8 +372,8 @@ describe('LengthTool:', () => {
           expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
           annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
+            lengthAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -505,9 +501,7 @@ describe('LengthTool:', () => {
           expect(lengthAnnotations.length).toBe(1);
 
           const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
           expect(lengthAnnotation.invalidated).toBe(false);
           expect(lengthAnnotation.highlighted).toBe(false);
@@ -519,8 +513,8 @@ describe('LengthTool:', () => {
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
           annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
+            lengthAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -640,9 +634,7 @@ describe('LengthTool:', () => {
           expect(lengthAnnotations.length).toBe(1);
 
           const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
           expect(lengthAnnotation.invalidated).toBe(false);
 
@@ -693,8 +685,8 @@ describe('LengthTool:', () => {
           expect(handles[1]).toEqual(afterMoveSecondHandle);
 
           annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
+            lengthAnnotation.annotationUID,
+            element
           );
           done();
         });
@@ -838,9 +830,7 @@ describe('LengthTool:', () => {
           expect(lengthAnnotations.length).toBe(1);
 
           const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
           expect(lengthAnnotation.invalidated).toBe(false);
 
@@ -850,8 +840,8 @@ describe('LengthTool:', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
           annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
+            lengthAnnotation.annotationUID,
+            element
           );
 
           const annotationsAfterRemove = annotation.state.getAnnotations(
@@ -1058,9 +1048,7 @@ describe('LengthTool:', () => {
           expect(lengthAnnotations.length).toBe(1);
 
           const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(
-            imageId1.split(':')[1]
-          );
+          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
           expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
           expect(lengthAnnotation.invalidated).toBe(false);
           expect(lengthAnnotation.data.handles.activeHandleIndex).toBe(null);
@@ -1072,8 +1060,8 @@ describe('LengthTool:', () => {
 
           expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
           annotation.state.removeAnnotation(
-            element,
-            lengthAnnotation.annotationUID
+            lengthAnnotation.annotationUID,
+            element
           );
           done();
         }, 100);
@@ -1163,7 +1151,7 @@ describe('LengthTool:', () => {
 
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2))
 
-        annotation.state.removeAnnotation(element, lengthAnnotation.annotationUID)
+        annotation.state.removeAnnotation(lengthAnnotation.annotationUID, element)
         done()
       }
 

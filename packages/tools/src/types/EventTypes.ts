@@ -34,6 +34,15 @@ type AnnotationAddedEventDetail = {
 };
 
 /**
+ * The data that is passed to the event handler when a new annotation is completed
+ * drawing on the viewport.
+ */
+type AnnotationCompletedEventDetail = {
+  /** The annotation that is being added to the annotations manager. */
+  annotation: Annotation;
+};
+
+/**
  * The data that is passed to the event handler when an annotation is modified.
  */
 type AnnotationModifiedEventDetail = {
@@ -49,24 +58,22 @@ type AnnotationModifiedEventDetail = {
  * The data that is passed to the event handler when an annotation is completed drawing.
  */
 type AnnotationRemovedEventDetail = {
-  /** unique id of the viewport */
-  viewportId: string;
-  /** unique id of the rendering engine */
-  renderingEngineId: string;
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
+  /** annotationManagerUID */
+  annotationManagerUID: string;
 };
 
 /**
  * The data that is passed to the event handler when an annotation selection status changes.
  */
 type AnnotationSelectionChangeEventDetail = {
-  /** Annotation added to the selection */
-  added: Array<Annotation>;
-  /** Annotation removed from the selection */
-  removed: Array<Annotation>;
+  /** AnnotationUID added to the selection */
+  added: Array<string>;
+  /** AnnotationUID removed from the selection */
+  removed: Array<string>;
   /** Updated selection */
-  selection: Array<Annotation>;
+  selection: Array<string>;
 };
 
 /**
@@ -303,6 +310,12 @@ type AnnotationAddedEventType =
   Types.CustomEventType<AnnotationAddedEventDetail>;
 
 /**
+ * The AnnotationCompleted event type
+ */
+type AnnotationCompletedEventType =
+  Types.CustomEventType<AnnotationCompletedEventDetail>;
+
+/**
  * The AnnotationModified event type
  */
 type AnnotationModifiedEventType =
@@ -419,6 +432,8 @@ export {
   NormalizedMouseEventType,
   AnnotationAddedEventDetail,
   AnnotationAddedEventType,
+  AnnotationCompletedEventDetail,
+  AnnotationCompletedEventType,
   AnnotationModifiedEventDetail,
   AnnotationModifiedEventType,
   AnnotationRemovedEventDetail,

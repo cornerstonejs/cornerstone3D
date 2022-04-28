@@ -142,9 +142,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
 
@@ -154,8 +152,8 @@ describe('Length Tool (CPU):', () => {
 
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
         annotation.state.removeAnnotation(
-          element,
-          lengthAnnotation.annotationUID
+          lengthAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -251,9 +249,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
         expect(lengthAnnotation.highlighted).toBe(false);
@@ -265,8 +261,8 @@ describe('Length Tool (CPU):', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          lengthAnnotation.annotationUID
+          lengthAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -394,9 +390,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
         expect(lengthAnnotation.highlighted).toBe(false);
@@ -408,8 +402,8 @@ describe('Length Tool (CPU):', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          lengthAnnotation.annotationUID
+          lengthAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -529,9 +523,7 @@ describe('Length Tool (CPU):', () => {
         expect(lengthAnnotations.length).toBe(1);
 
         const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
         expect(lengthAnnotation.invalidated).toBe(false);
 
@@ -579,8 +571,8 @@ describe('Length Tool (CPU):', () => {
         expect(handles[1]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          element,
-          lengthAnnotation.annotationUID
+          lengthAnnotation.annotationUID,
+          element
         );
         done();
       });

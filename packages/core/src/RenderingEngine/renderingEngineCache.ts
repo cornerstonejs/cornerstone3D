@@ -1,4 +1,4 @@
-import type { IRenderingEngine } from './RenderingEngine';
+import type { IRenderingEngine } from '../types';
 
 const cache = {};
 

@@ -4,8 +4,6 @@ const webpack = require('webpack');
 const BundleAnalyzerPlugin =
   require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const CopyPlugin = require('copy-webpack-plugin');
-//
 const PROJECT_ROOT = path.join(__dirname, '../');
 const SRC_PATH = path.join(PROJECT_ROOT, './src');
 const NODE_ENV = process.env.NODE_ENV;
@@ -44,6 +42,10 @@ module.exports = (env, argv, { DIST_DIR }) => {
     resolve: {
       modules: [path.resolve(PROJECT_ROOT, './node_modules'), SRC_PATH],
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
+      alias: {
+        'cornerstone-wado-image-loader':
+          'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+      },
       fallback: {
         fs: false,
         path: require.resolve('path-browserify'),
@@ -68,15 +70,7 @@ module.exports = (env, argv, { DIST_DIR }) => {
       // Show build progress
       new webpack.ProgressPlugin(),
       // Clear dist between builds
-      new CleanWebpackPlugin(),
-      new CopyPlugin({
-        patterns: [
-          {
-            from: '../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import/',
-            to: DIST_DIR,
-          },
-        ],
-      }),
+      new CleanWebpackPlugin()
     ],
   };
 

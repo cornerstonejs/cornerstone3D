@@ -1,4 +1,6 @@
-import getRenderingEngine from './RenderingEngine/getRenderingEngine';
+import getRenderingEngine, {
+  getRenderingEngines,
+} from './RenderingEngine/getRenderingEngine';
 import { IEnabledElement } from './types';
 
 /**
@@ -80,4 +82,24 @@ export function getEnabledElementByIds(
     renderingEngineId,
     FrameOfReferenceUID,
   };
+}
+
+/**
+ * Get all the enabled elements from all the rendering engines
+ * @returns An array of enabled elements.
+ */
+export function getEnabledElements(): IEnabledElement[] {
+  const enabledElements = [];
+
+  const renderingEngines = getRenderingEngines();
+
+  renderingEngines.forEach((renderingEngine) => {
+    const viewports = renderingEngine.getViewports();
+
+    viewports.forEach(({ element }) => {
+      enabledElements.push(getEnabledElement(element));
+    });
+  });
+
+  return enabledElements;
 }

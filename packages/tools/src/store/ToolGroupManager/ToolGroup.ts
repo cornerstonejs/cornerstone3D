@@ -128,6 +128,10 @@ export default class ToolGroup implements IToolGroup {
       viewportId,
       renderingEngineId: renderingEngineUIDToUse,
     });
+
+    // Handle the newly added viewport's mouse cursor
+    const activeToolName = this.getActivePrimaryMouseButtonTool();
+    this.setViewportsCursorByToolName(activeToolName);
   }
 
   /**

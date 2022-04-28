@@ -33,6 +33,7 @@ type CameraModifiedEventDetail = {
     element: HTMLDivElement;
     viewportId: string;
     renderingEngineId: string;
+    rotation?: number;
 };
 
 // @public (undocumented)
@@ -355,6 +356,7 @@ enum Events {
     IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
     IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+    PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
@@ -398,6 +400,8 @@ declare namespace EventTypes {
         VolumeCacheVolumeRemovedEventDetail,
         StackNewImageEvent,
         StackNewImageEventDetail,
+        PreStackNewImageEvent,
+        PreStackNewImageEventDetail,
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
@@ -466,6 +470,8 @@ interface ICachedVolume {
 // @public
 interface ICamera {
     clippingRange?: Point2;
+    flipHorizontal?: boolean;
+    flipVertical?: boolean;
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
@@ -506,6 +512,7 @@ interface IImage {
     imageId: string;
     intercept: number;
     invert: boolean;
+    isPreScaled?: boolean;
     // (undocumented)
     maxPixelValue: number;
     minPixelValue: number;
@@ -743,7 +750,7 @@ interface IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(): void;
+    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
@@ -766,9 +773,12 @@ interface IStackViewport extends IViewport {
     getImageIds: () => string[];
     getProperties: () => StackViewportProperties;
     getRenderer(): any;
+    hasImageId: (imageId: string) => boolean;
+    hasImageURI: (imageURI: string) => boolean;
+    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -780,8 +790,6 @@ interface IStackViewport extends IViewport {
         invert,
         interpolationType,
         rotation,
-        flipHorizontal,
-        flipVertical,
     }: StackViewportProperties): void;
     setStack(
     imageIds: Array<string>,
@@ -926,7 +934,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPanZoomForViewPlane?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThickness(slabThickness: number): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
@@ -971,6 +979,16 @@ type Point3 = [number, number, number];
 
 // @public
 type Point4 = [number, number, number, number];
+
+// @public
+type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
+
+// @public
+type PreStackNewImageEventDetail = {
+    imageId: string;
+    viewportId: string;
+    renderingEngineId: string;
+};
 
 // @public (undocumented)
 type PTScaling = {
@@ -1031,8 +1049,6 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
-    flipHorizontal?: boolean;
-    flipVertical?: boolean;
 };
 
 // @public (undocumented)
@@ -1108,8 +1124,8 @@ type VoiModifiedEvent = CustomEvent_2<VoiModifiedEventDetail>;
 // @public
 type VoiModifiedEventDetail = {
     viewportId: string;
-    volumeId: string;
     range: VOIRange;
+    volumeId?: string;
 };
 
 // @public (undocumented)

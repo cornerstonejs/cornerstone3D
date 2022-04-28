@@ -79,12 +79,13 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
+    const targetId = this.getTargetId(viewport);
     let referencedImageId, volumeId;
+
     if (viewport instanceof StackViewport) {
-      referencedImageId =
-        viewport.getCurrentImageId && viewport.getCurrentImageId();
+      referencedImageId = targetId.split('imageId:')[1];
     } else {
-      volumeId = this.getTargetId(viewport);
+      volumeId = targetId.split('volumeId:')[1];
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -92,11 +93,6 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
         viewPlaneNormal,
         viewUp
       );
-    }
-
-    if (referencedImageId) {
-      const colonIndex = referencedImageId.indexOf(':');
-      referencedImageId = referencedImageId.substring(colonIndex + 1);
     }
 
     // Todo: how not to store enabledElement on the annotation, segmentationModule needs the element to
@@ -110,7 +106,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId,
-        toolName: RectangleROIThresholdTool.toolName,
+        toolName: this.getToolName(),
         volumeId,
       },
       data: {
@@ -141,7 +137,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
-      RectangleROIThresholdTool.toolName
+      this.getToolName()
     );
 
     this.editData = {
@@ -175,10 +171,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
   ): void => {
     const { viewport, renderingEngineId } = enabledElement;
     const { element } = viewport;
-    let annotations = getAnnotations(
-      element,
-      RectangleROIThresholdTool.toolName
-    );
+    let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
       return;
@@ -243,7 +236,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          RectangleROIThresholdTool.toolName,
+          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -256,7 +249,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
-        RectangleROIThresholdTool.toolName,
+        this.getToolName(),
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],

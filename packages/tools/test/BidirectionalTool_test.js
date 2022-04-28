@@ -151,8 +151,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -257,8 +257,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -359,7 +359,7 @@ describe('Cornerstone Tools: ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
+          imageId1
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -373,8 +373,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -504,7 +504,7 @@ describe('Cornerstone Tools: ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
+          imageId1
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -518,8 +518,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -639,7 +639,7 @@ describe('Cornerstone Tools: ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
+          imageId1
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -690,8 +690,8 @@ describe('Cornerstone Tools: ', () => {
         expect(handles[1]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -899,7 +899,7 @@ describe('Cornerstone Tools: ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
+          imageId1
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -914,8 +914,8 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          element,
-          bidirectionalAnnotation.annotationUID
+          bidirectionalAnnotation.annotationUID,
+          element
         );
         done();
       }, 100);

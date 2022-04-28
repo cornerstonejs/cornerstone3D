@@ -30,6 +30,6 @@ export default function mouseDownActivate(
 
   if (activeTool.addNewAnnotation) {
     const annotation = activeTool.addNewAnnotation(evt, 'mouse');
-    setAnnotationSelected(annotation);
+    setAnnotationSelected(annotation.annotationUID);
   }
 }

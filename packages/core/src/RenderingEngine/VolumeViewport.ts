@@ -272,12 +272,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
   /**
    * Reset the camera for the volume viewport
-   * @param resetPanZoomForViewPlane - only reset Pan and Zoom, if true,
-   * it renders the center of the volume instead
-   * viewport to the middle of the volume
    */
-  public resetCamera(resetPanZoomForViewPlane = false): boolean {
-    return super.resetCamera(resetPanZoomForViewPlane);
+  public resetCamera(resetPan = true, resetZoom = true): boolean {
+    return super.resetCamera(resetPan, resetZoom);
   }
 
   public getFrameOfReferenceUID = (): string => {
@@ -332,20 +329,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       scaling: undefined,
     };
   }
-
-  /**
-   * Currently only returning the flip direction of the viewport, Todo: should
-   * be like StackViewport to be able to return and also set other properties
-   * such as voi, invert, etc.
-   *
-   * @returns FlipDirection of the viewport
-   */
-  public getProperties = (): FlipDirection => {
-    return {
-      flipHorizontal: this.flipHorizontal,
-      flipVertical: this.flipVertical,
-    };
-  };
 
   /**
    * Attaches the volume actors to the viewport.

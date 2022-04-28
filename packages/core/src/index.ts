@@ -7,7 +7,6 @@ import {
   createVolumeMapper,
   getOrCreateCanvas,
 } from './RenderingEngine';
-import { renderToCanvas } from './RenderingEngine';
 import RenderingEngine from './RenderingEngine';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
@@ -22,7 +21,10 @@ import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests';
 
-import getEnabledElement, { getEnabledElementByIds } from './getEnabledElement';
+import getEnabledElement, {
+  getEnabledElementByIds,
+  getEnabledElements,
+} from './getEnabledElement';
 import * as metaData from './metaData';
 import {
   init,
@@ -71,10 +73,10 @@ export {
   getRenderingEngines,
   getEnabledElement,
   getEnabledElementByIds,
+  getEnabledElements,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
-  renderToCanvas,
   // cache
   cache,
   // event helpers

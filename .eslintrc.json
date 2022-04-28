@@ -6,9 +6,6 @@
   "root": true,
   "parser": "@typescript-eslint/parser",
 
-  // eslint-plugin-react
-  // - react
-  //
   // eslint-plugin-prettier
   // - prettier
   //
@@ -19,7 +16,6 @@
   // eslint-plugin-import
   // - import
   "plugins": [
-    "react",
     "@typescript-eslint",
     "import",
     "eslint-plugin-tsdoc",
@@ -45,8 +41,6 @@
   // -
   "extends": [
     "eslint:recommended",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended",
     "plugin:@typescript-eslint/recommended",
     // sets up the plugin AND eslint-config-prettier
     "plugin:prettier/recommended"

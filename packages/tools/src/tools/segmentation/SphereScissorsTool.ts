@@ -124,7 +124,7 @@ export default class SphereScissorsTool extends BaseTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
         referencedImageId: '',
-        toolName: SphereScissorsTool.toolName,
+        toolName: this.getToolName(),
         segmentColor,
       },
       data: {
@@ -343,7 +343,7 @@ export default class SphereScissorsTool extends BaseTool {
     const circleUID = '0';
     drawCircleSvg(
       svgDrawingHelper,
-      SphereScissorsTool.toolName,
+      this.getToolName(),
       annotationUID,
       circleUID,
       center as Types.Point2,

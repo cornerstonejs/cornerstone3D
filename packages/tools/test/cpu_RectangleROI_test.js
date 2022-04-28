@@ -133,9 +133,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(rectangleAnnotations.length).toBe(1);
 
         const rectangleAnnotation = rectangleAnnotations[0];
-        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
 
         expect(rectangleAnnotation.metadata.toolName).toBe(
           RectangleROITool.toolName
@@ -150,8 +148,8 @@ describe('RectangleROITool (CPU):', () => {
         expect(data[targets[0]].mean).toBe(255);
 
         annotation.state.removeAnnotation(
-          element,
-          rectangleAnnotation.annotationUID
+          rectangleAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -241,9 +239,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(rectangleAnnotations.length).toBe(1);
 
         const rectangleAnnotation = rectangleAnnotations[0];
-        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(rectangleAnnotation.metadata.toolName).toBe(
           RectangleROITool.toolName
         );
@@ -257,8 +253,8 @@ describe('RectangleROITool (CPU):', () => {
         expect(data[targets[0]].stdDev).toBe(0);
 
         annotation.state.removeAnnotation(
-          element,
-          rectangleAnnotation.annotationUID
+          rectangleAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -383,9 +379,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(rectangleAnnotations.length).toBe(1);
 
         const rectangleAnnotation = rectangleAnnotations[0];
-        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(rectangleAnnotation.metadata.toolName).toBe(
           RectangleROITool.toolName
         );
@@ -399,8 +393,8 @@ describe('RectangleROITool (CPU):', () => {
         expect(data[targets[0]].stdDev).toBe(0);
 
         annotation.state.removeAnnotation(
-          element,
-          rectangleAnnotation.annotationUID
+          rectangleAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -518,9 +512,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(rectangleAnnotations.length).toBe(1);
 
         const rectangleAnnotation = rectangleAnnotations[0];
-        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(rectangleAnnotation.metadata.toolName).toBe(
           RectangleROITool.toolName
         );
@@ -571,8 +563,8 @@ describe('RectangleROITool (CPU):', () => {
         expect(handles[3]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          element,
-          rectangleAnnotation.annotationUID
+          rectangleAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -832,9 +824,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(rectangleAnnotations.length).toBe(1);
 
         const rectangleAnnotation = rectangleAnnotations[0];
-        expect(rectangleAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(rectangleAnnotation.metadata.referencedImageId).toBe(imageId1);
         expect(rectangleAnnotation.metadata.toolName).toBe(
           RectangleROITool.toolName
         );
@@ -885,8 +875,8 @@ describe('RectangleROITool (CPU):', () => {
         expect(handles[3]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          element,
-          rectangleAnnotation.annotationUID
+          rectangleAnnotation.annotationUID,
+          element
         );
         done();
       }, 100);

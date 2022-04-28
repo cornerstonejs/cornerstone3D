@@ -31,7 +31,7 @@ import { RequestPoolManager } from './requestPoolManager';
  * )
  * ```
  */
-const imageLoadPoolManager = new RequestPoolManager();
+const imageLoadPoolManager = new RequestPoolManager('imageLoadPool');
 
 imageLoadPoolManager.maxNumRequests = {
   interaction: 1000,

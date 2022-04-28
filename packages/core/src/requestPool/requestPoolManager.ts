@@ -1,4 +1,5 @@
 import RequestType from '../enums/RequestType';
+import { uuidv4 } from '../utilities';
 
 type AdditionalDetails = {
   imageId?: string;
@@ -69,8 +70,9 @@ type RequestPool = {
  * maximum number of concurrent requests can be set by calling `setMaxConcurrentRequests`.
  */
 class RequestPoolManager {
-  private requestPool: RequestPool;
+  private id: string;
   private awake: boolean;
+  private requestPool: RequestPool;
   private numRequests = {
     interaction: 0,
     thumbnail: 0,
@@ -91,15 +93,17 @@ class RequestPoolManager {
    * of the request types, is created. Maximum number of requests of each type
    * is set to 6.
    */
-  constructor() {
+  constructor(id?: string) {
+    this.id = id ? id : uuidv4();
+
     this.requestPool = {
       interaction: { 0: [] },
       thumbnail: { 0: [] },
       prefetch: { 0: [] },
     };
 
-    this.awake = false;
     this.grabDelay = 5;
+    this.awake = false;
 
     this.numRequests = {
       interaction: 0,
@@ -161,6 +165,10 @@ class RequestPoolManager {
     if (!this.awake) {
       this.awake = true;
       this.startGrabbing();
+    } else if (type === RequestType.Interaction) {
+      // Todo: this is a hack for interaction right now, we should separate
+      // the grabbing from the adding requests
+      this.startGrabbing();
     }
   }
 
@@ -199,44 +207,55 @@ class RequestPoolManager {
     this.requestPool[type] = { 0: [] };
   }
 
-  protected sendRequest({ requestFn, type }: RequestDetailsInterface): void {
-    // Increment the number of current requests of this type
-    this.numRequests[type]++;
-    this.awake = true;
+  private sendRequests(type) {
+    const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
 
-    requestFn().finally(() => {
-      this.numRequests[type]--;
+    for (let i = 0; i < requestsToSend; i++) {
+      const requestDetails = this.getNextRequest(type);
+      if (requestDetails === null) {
+        return false;
+      } else if (requestDetails) {
+        this.numRequests[type]++;
+        this.awake = true;
 
-      this.startAgain();
-    });
+        requestDetails.requestFn().finally(() => {
+          this.numRequests[type]--;
+          this.startAgain();
+        });
+      }
+    }
+
+    return true;
+  }
+
+  private getNextRequest(type): RequestDetailsInterface | null {
+    const interactionPriorities = this.getSortedPriorityGroups(type);
+    for (const priority of interactionPriorities) {
+      if (this.requestPool[type][priority].length) {
+        return this.requestPool[type][priority].shift();
+      }
+    }
+
+    return null;
   }
 
   protected startGrabbing(): void {
-    // TODO: This is the reason things aren't going as fast as expected
-    // const maxSimultaneousRequests = getMaxSimultaneousRequests()
-    // this.maxNumRequests = {
-    //   interaction: Math.max(maxSimultaneousRequests, 1),
-    //   thumbnail: Math.max(maxSimultaneousRequests - 2, 1),
-    //   prefetch: Math.max(maxSimultaneousRequests - 1, 1),
-    // }
+    const hasRemainingInteractionRequests = this.sendRequests(
+      RequestType.Interaction
+    );
+    const hasRemainingThumbnailRequests = this.sendRequests(
+      RequestType.Thumbnail
+    );
+    const hasRemainingPrefetchRequests = this.sendRequests(
+      RequestType.Prefetch
+    );
 
-    const maxRequests =
-      this.maxNumRequests.interaction +
-      this.maxNumRequests.thumbnail +
-      this.maxNumRequests.prefetch;
-    const currentRequests =
-      this.numRequests.interaction +
-      this.numRequests.thumbnail +
-      this.numRequests.prefetch;
-
-    const requestsToSend = maxRequests - currentRequests;
-    for (let i = 0; i < requestsToSend; i++) {
-      const requestDetails = this.getNextRequest();
-      if (requestDetails === false) {
-        break;
-      } else if (requestDetails) {
-        this.sendRequest(requestDetails);
-      }
+    if (
+      !hasRemainingInteractionRequests &&
+      !hasRemainingThumbnailRequests &&
+      !hasRemainingPrefetchRequests
+    ) {
+      this.awake = false;
     }
   }
 
@@ -260,45 +279,6 @@ class RequestPoolManager {
       .filter((priority) => this.requestPool[type][priority].length)
       .sort();
     return priorities;
-  }
-
-  protected getNextRequest(): RequestDetailsInterface | false {
-    const interactionPriorities = this.getSortedPriorityGroups('interaction');
-    for (const priority of interactionPriorities) {
-      if (
-        this.requestPool.interaction[priority].length &&
-        this.numRequests.interaction < this.maxNumRequests.interaction
-      ) {
-        return this.requestPool.interaction[priority].shift();
-      }
-    }
-    const thumbnailPriorities = this.getSortedPriorityGroups('thumbnail');
-    for (const priority of thumbnailPriorities) {
-      if (
-        this.requestPool.thumbnail[priority].length &&
-        this.numRequests.thumbnail < this.maxNumRequests.thumbnail
-      ) {
-        return this.requestPool.thumbnail[priority].shift();
-      }
-    }
-    const prefetchPriorities = this.getSortedPriorityGroups('prefetch');
-    for (const priority of prefetchPriorities) {
-      if (
-        this.requestPool.prefetch[priority].length &&
-        this.numRequests.prefetch < this.maxNumRequests.prefetch
-      ) {
-        return this.requestPool.prefetch[priority].shift();
-      }
-    }
-
-    if (
-      !interactionPriorities.length &&
-      !thumbnailPriorities.length &&
-      !prefetchPriorities.length
-    ) {
-      this.awake = false;
-    }
-    return false;
   }
 
   /**

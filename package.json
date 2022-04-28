@@ -31,11 +31,6 @@
     "lint-staged": "lint-staged",
     "lint": "eslint --quiet -c .eslintrc.json packages/**/src"
   },
-  "dependencies": {
-    "classnames": "^2.3.0",
-    "lodash.clonedeep": "4.5.0",
-    "lodash.isequal": "^4.5.0"
-  },
   "devDependencies": {
     "@babel/core": "^7.16.12",
     "@babel/plugin-external-helpers": "^7.16.7",

@@ -135,9 +135,7 @@ describe('EllipticalROITool (CPU):', () => {
         expect(ellipseAnnotations.length).toBe(1);
 
         const ellipseAnnotation = ellipseAnnotations[0];
-        expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
 
         expect(ellipseAnnotation.metadata.toolName).toBe(
           EllipticalROITool.toolName
@@ -152,8 +150,8 @@ describe('EllipticalROITool (CPU):', () => {
         expect(data[targets[0]].mean).toBe(255);
 
         annotation.state.removeAnnotation(
-          element,
-          ellipseAnnotation.annotationUID
+          ellipseAnnotation.annotationUID,
+          element
         );
         done();
       });
@@ -312,9 +310,7 @@ describe('EllipticalROITool (CPU):', () => {
         expect(ellipseAnnotations.length).toBe(1);
 
         const ellipseAnnotation = ellipseAnnotations[0];
-        expect(ellipseAnnotation.metadata.referencedImageId).toBe(
-          imageId1.split(':')[1]
-        );
+        expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
 
         expect(ellipseAnnotation.metadata.toolName).toBe(
           EllipticalROITool.toolName
@@ -330,8 +326,8 @@ describe('EllipticalROITool (CPU):', () => {
         expect(data[targets[0]].mean).toBe(255);
 
         annotation.state.removeAnnotation(
-          element,
-          ellipseAnnotation.annotationUID
+          ellipseAnnotation.annotationUID,
+          element
         );
         done();
       }, 100);

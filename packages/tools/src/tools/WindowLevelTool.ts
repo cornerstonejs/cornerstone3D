@@ -53,9 +53,11 @@ export default class WindowLevelTool extends BaseTool {
       newRange,
       viewportsContainingVolumeUID;
     let useDynamicRange = false;
+    let isPreScaled = false;
 
     if (viewport instanceof VolumeViewport) {
-      volumeId = this.getTargetId(viewport as Types.IVolumeViewport);
+      const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
+      volumeId = targetId.split('volumeId:')[1];
       ({ volumeActor } = viewport.getActor(volumeId));
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
       viewportsContainingVolumeUID =
@@ -66,17 +68,20 @@ export default class WindowLevelTool extends BaseTool {
       [lower, upper] = rgbTransferFunction.getRange();
       modality = cache.getVolume(volumeId).metadata.Modality;
       useDynamicRange = true;
-    } else {
+    } else if (viewport instanceof StackViewport) {
       const properties = viewport.getProperties();
-      modality = (viewport as Types.IStackViewport).modality;
+      modality = viewport.modality;
       ({ lower, upper } = properties.voiRange);
+      isPreScaled = viewport.isImagePreScaled(viewport.getCurrentImageId());
+    } else {
+      throw new Error('Viewport is not a valid type');
     }
 
     // If modality is PT, treat it special to not include the canvas delta in
     // the x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculate using the volume min and max.
-    if (modality === PT) {
+    if (modality === PT && isPreScaled) {
       newRange = this.getPTNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
         lower,
@@ -99,8 +104,6 @@ export default class WindowLevelTool extends BaseTool {
       range: newRange,
     };
 
-    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail);
-
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
         voiRange: newRange,
@@ -110,6 +113,9 @@ export default class WindowLevelTool extends BaseTool {
       return;
     }
 
+    // Only trigger event for volume since the stack event is triggered inside
+    // the stackViewport, Todo: we need the setProperties API on the volume viewport
+    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail);
     rgbTransferFunction.setRange(newRange.lower, newRange.upper);
 
     viewportsContainingVolumeUID.forEach((vp) => {

@@ -114,10 +114,6 @@ abstract class BaseTool implements IBaseTool {
    * or the first actorUID in the viewport if not.
    */
   private getTargetVolumeId(viewport: Types.IViewport): string | undefined {
-    if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('getTargetVolumeId: viewport must be a VolumeViewport');
-    }
-
     if (this.configuration.volumeId) {
       return this.configuration.volumeId;
     }
@@ -143,24 +139,25 @@ abstract class BaseTool implements IBaseTool {
    * @param renderingEngine - The rendering engine
    * @returns The viewport and image data for the target.
    */
-  protected getTargetIdViewportAndImage(
+  protected getTargetIdImage(
     targetId: string,
     renderingEngine: Types.IRenderingEngine
-  ): {
-    viewport: Types.IViewport;
-    image: Types.IImageData;
-  } {
-    let image, viewport;
-    if (targetId.startsWith('stackTarget')) {
-      const coloneIndex = targetId.indexOf(':');
-      const viewportId = targetId.substring(coloneIndex + 1);
-      viewport = renderingEngine.getViewport(viewportId);
-      image = viewport.getImageData();
+  ): Types.IImageData | Types.CPUIImageData | Types.IImageVolume {
+    if (targetId.startsWith('imageId:')) {
+      const imageId = targetId.split('imageId:')[1];
+      const viewports = renderingEngine.getStackViewports();
+      const viewport = viewports.find((viewport) =>
+        viewport.hasImageId(imageId)
+      );
+      return viewport.getImageData();
+    } else if (targetId.startsWith('volumeId:')) {
+      const volumeId = targetId.split('volumeId:')[1];
+      return cache.getVolume(volumeId);
     } else {
-      image = cache.getVolume(targetId);
+      throw new Error(
+        'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'
+      );
     }
-
-    return { image, viewport };
   }
 
   /**
@@ -175,9 +172,9 @@ abstract class BaseTool implements IBaseTool {
    */
   protected getTargetId(viewport: Types.IViewport): string | undefined {
     if (viewport instanceof StackViewport) {
-      return `stackTarget:${viewport.id}`;
+      return `imageId:${viewport.getCurrentImageId()}`;
     } else if (viewport instanceof VolumeViewport) {
-      return this.getTargetVolumeId(viewport);
+      return `volumeId:${this.getTargetVolumeId(viewport)}`;
     } else {
       throw new Error(
         'getTargetId: viewport must be a StackViewport or VolumeViewport'

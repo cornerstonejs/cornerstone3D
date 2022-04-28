@@ -9,6 +9,8 @@ interface IImage {
   /** Image Id */
   imageId: string;
   sharedCacheKey?: string;
+  /** Whether the image is Pre-scaled during loading */
+  isPreScaled?: boolean;
   /** minimum pixel value of the image */
   minPixelValue: number;
   /* maximum pixel value of the image */
