@@ -455,8 +455,6 @@ function insertPixelDataPerpendicular(
     console.log(`corners:`);
     console.log(corners);
 
-    debugger;
-
     const indexToWorld = mat4.create();
 
     const ippFirstFrame = firstImagePlaneModule.imagePositionPatient;

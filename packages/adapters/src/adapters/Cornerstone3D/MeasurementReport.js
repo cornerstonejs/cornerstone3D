@@ -27,9 +27,13 @@ function getTID300ContentItem(
     tool,
     toolType,
     ReferencedSOPSequence,
-    toolClass
+    toolClass,
+    worldToImageCoords
 ) {
-    const args = toolClass.getTID300RepresentationArguments(tool);
+    const args = toolClass.getTID300RepresentationArguments(
+        tool,
+        worldToImageCoords
+    );
     args.ReferencedSOPSequence = ReferencedSOPSequence;
 
     const TID300Measurement = new toolClass.TID300Representation(args);
@@ -37,7 +41,12 @@ function getTID300ContentItem(
     return TID300Measurement;
 }
 
-function getMeasurementGroup(toolType, toolData, ReferencedSOPSequence) {
+function getMeasurementGroup(
+    toolType,
+    toolData,
+    ReferencedSOPSequence,
+    worldToImageCoords
+) {
     const toolTypeData = toolData[toolType];
     const toolClass =
         MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE[toolType];
@@ -57,7 +66,8 @@ function getMeasurementGroup(toolType, toolData, ReferencedSOPSequence) {
             tool,
             toolType,
             ReferencedSOPSequence,
-            toolClass
+            toolClass,
+            worldToImageCoords
         );
     });
 
@@ -123,10 +133,14 @@ export default class MeasurementReport {
         };
     }
 
-    static generateReport(toolState, metadataProvider, options) {
+    static generateReport(
+        toolState,
+        metadataProvider,
+        worldToImageCoords,
+        options
+    ) {
         // ToolState for array of imageIDs to a Report
         // Assume Cornerstone metadata provider has access to Study / Series / Sop Instance UID
-
         let allMeasurementGroups = [];
         const firstImageId = Object.keys(toolState)[0];
         if (!firstImageId) {
@@ -138,17 +152,12 @@ export default class MeasurementReport {
         Warning - Missing attribute or value that would be needed to build DICOMDIR - Study Date
         Warning - Missing attribute or value that would be needed to build DICOMDIR - Study Time
         Warning - Missing attribute or value that would be needed to build DICOMDIR - Study ID
-         */
+        */
         const generalSeriesModule = metadataProvider.get(
             "generalSeriesModule",
             firstImageId
         );
-
         //const sopCommonModule = metadataProvider.get('sopCommonModule', firstImageId);
-
-        // NOTE: We are getting the Series and Study UIDs from the first imageId of the toolState
-        // which means that if the toolState is for multiple series, the report will have the incorrect
-        // SeriesInstanceUIDs
         const { studyInstanceUID, seriesInstanceUID } = generalSeriesModule;
 
         // Loop through each image in the toolData
@@ -179,7 +188,8 @@ export default class MeasurementReport {
                 const group = getMeasurementGroup(
                     toolType,
                     toolData,
-                    ReferencedSOPSequence
+                    ReferencedSOPSequence,
+                    worldToImageCoords
                 );
                 if (group) {
                     measurementGroups.push(group);
@@ -256,7 +266,12 @@ export default class MeasurementReport {
      * @param {function} hooks.getToolClass Function to map dataset to a tool class
      * @returns
      */
-    static generateToolState(dataset, hooks = {}) {
+    static generateToolState(
+        dataset,
+        imageIds,
+        imageToWorldCoords,
+        hooks = {}
+    ) {
         // For now, bail out if the dataset is not a TID1500 SR with length measurements
         if (dataset.ContentTemplateSequence.TemplateIdentifier !== "1500") {
             throw new Error(
@@ -291,7 +306,9 @@ export default class MeasurementReport {
             measurementData[key] = [];
         });
 
-        measurementGroups.forEach(measurementGroup => {
+        measurementGroups.forEach((measurementGroup, index) => {
+            const imageId = imageIds[index];
+
             const measurementGroupContentSequence = toArray(
                 measurementGroup.ContentSequence
             );
@@ -318,7 +335,9 @@ export default class MeasurementReport {
 
             if (toolClass) {
                 const measurement = toolClass.getMeasurementData(
-                    measurementGroup
+                    measurementGroup,
+                    imageId,
+                    imageToWorldCoords
                 );
 
                 console.log(`=== ${toolClass.toolType} ===`);
