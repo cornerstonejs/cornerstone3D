@@ -154,7 +154,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         preventHandleOutsideImage: false,
         allowOpenContours: true,
         closeContourProximity: 10,
-        subPixelResolution: 5,
+        subPixelResolution: 4,
       },
     }
   ) {

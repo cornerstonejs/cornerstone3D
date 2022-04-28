@@ -23,6 +23,41 @@ function checkForFirstCrossing(evt, isClosedContour) {
 
     // On the first crossing, remove the first lines prior to the crossing
     this.removePointsUpUntilFirstCrossing(isClosedContour);
+  } else if (editCanvasPoints.length > 6) {
+    // At this point, likely we are drawing along the line, we are past the proximity for grabbing.
+    // Search for nearest line segment to the start of the edit.
+    // Set the crossing index to the lower index of the segment.
+
+    const firstEditCanvasPoint = editCanvasPoints[0];
+
+    const distanceIndexPairs = [];
+
+    for (let i = 0; i < prevCanvasPoints.length; i++) {
+      const prevCanvasPoint = prevCanvasPoints[i];
+      const distance = vec2.distance(prevCanvasPoint, firstEditCanvasPoint);
+
+      distanceIndexPairs.push({ distance, index: i });
+    }
+
+    distanceIndexPairs.sort((a, b) => a.distance - b.distance);
+
+    const twoClosestDistanceIndexPairs = [
+      distanceIndexPairs[0],
+      distanceIndexPairs[1],
+    ];
+
+    // TODO_JAMES -> Chaneg startCrossingPoint to cross index as we always grab that anyway.
+    const lowestIndex = Math.min(
+      twoClosestDistanceIndexPairs[0].index,
+      twoClosestDistanceIndexPairs[1].index
+    );
+
+    const highestIndex = Math.max(
+      twoClosestDistanceIndexPairs[0].index,
+      twoClosestDistanceIndexPairs[1].index
+    );
+
+    this.commonEditData.startCrossingPoint = [lowestIndex, highestIndex];
   } else if (editCanvasPoints.length >= 2) {
     // -- Check if already crossing.
     // -- Check if extending a line back 6 (Proximity) canvas pixels would cross a line.
@@ -144,21 +179,8 @@ function checkForSecondCrossing(evt, isClosedContour) {
 }
 
 function findSnapIndex() {
-  // TODO_JAMES -> If you snap line crosses your edit line, you should try to find a new snap index instead.
-  // For closed contours try left and right of the current point until you find a match?
-  // Or sort points by distance and try and find the correct one.
-  // --> TODO_JAMES -> What to do if one cannot be found???
-  // TODO_JAMES -> Cornerstone3D events
-  // TODO_JAMES -> Edit issues when scrolling over annotatons.
-
   const { editCanvasPoints, prevCanvasPoints, startCrossingPoint } =
     this.commonEditData;
-
-  // find closest point.
-  let closest = {
-    value: Infinity,
-    index: null,
-  };
 
   if (
     !startCrossingPoint // Haven't crossed line yet
@@ -175,11 +197,6 @@ function findSnapIndex() {
     const distance = vec2.distance(prevCanvasPoint, lastEditCanvasPoint);
 
     distanceIndexPairs.push({ distance, index: i });
-
-    if (distance < closest.value) {
-      closest.value = distance;
-      closest.index = i;
-    }
   }
 
   distanceIndexPairs.sort((a, b) => a.distance - b.distance);
