@@ -1534,11 +1534,15 @@ export class Settings {
     // (undocumented)
     get(key: string): unknown;
     // (undocumented)
+    static getCustomSettings(subject: unknown): Settings;
+    // (undocumented)
     static getDefaultSettings(subfield?: any): Settings | any;
     // (undocumented)
     static getObjectSettings(subject: unknown, from?: unknown): Settings;
     // (undocumented)
     static getRuntimeSettings(): Settings;
+    // (undocumented)
+    hasOwn(key: string): unknown;
     // (undocumented)
     import(root: Record<string, unknown>): void;
     // (undocumented)

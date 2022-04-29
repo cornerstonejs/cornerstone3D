@@ -402,8 +402,27 @@ abstract class AnnotationTool extends BaseTool {
     property: string,
     annotation?: Annotation
   ): unknown {
+    // Since we would like to have a toolGroup settings and cornerstone core Settings
+    // is a general settings (with no concept of toolGroups), we just check
+    // if the toolGroup setting exists in the custom settings.
+    // We check here if the requested property directly exists on the
+    // Object settings (passed in as argument) if not AND toolGroup settings has that
+    // property we use that. Otherwise, since toolGroup settings is a custom settings
+    // with no fallback to runtime and default settings, if the toolGroupSettings don't
+    // have that property we fallback to the Object Setting since it has the prototype chain
+    // which includes the Runtime and then Default and there is ALWAYS a value in
+    // default for the property.
+    // The order for taking the styles is Annotation Object Setting > ToolGroup Setting > Runtime Setting > Default Settings
+    const toolGroupSettings = Settings.getCustomSettings(this.toolGroupId);
+    const toolStyleProperty = `tool.style.${property}`;
+    const settingsToUse =
+      toolGroupSettings.hasOwn(toolStyleProperty) &&
+      !settings.hasOwn(toolStyleProperty)
+        ? toolGroupSettings
+        : settings;
+
     return getStyleProperty(
-      settings,
+      settingsToUse,
       property,
       getState(annotation),
       this.mode
