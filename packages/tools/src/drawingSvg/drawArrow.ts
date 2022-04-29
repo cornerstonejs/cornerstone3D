@@ -3,7 +3,6 @@ import drawLine from './drawLine';
 
 export default function drawArrow(
   svgDrawingHelper: any,
-  toolName: string,
   annotationUID: string,
   arrowUID: string,
   start: Types.Point2,
@@ -26,7 +25,7 @@ export default function drawArrow(
   );
 
   // The line itself
-  drawLine(svgDrawingHelper, toolName, annotationUID, arrowUID, start, end, {
+  drawLine(svgDrawingHelper, annotationUID, arrowUID, start, end, {
     color,
     width,
     lineWidth,
@@ -56,7 +55,6 @@ export default function drawArrow(
 
   drawLine(
     svgDrawingHelper,
-    toolName,
     annotationUID,
     '2',
     firstLine.start,
@@ -71,7 +69,6 @@ export default function drawArrow(
 
   drawLine(
     svgDrawingHelper,
-    toolName,
     annotationUID,
     '3',
     secondLine.start,

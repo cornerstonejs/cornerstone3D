@@ -7,7 +7,6 @@ import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 
 function drawCircle(
   svgDrawingHelper: any,
-  toolName: string,
   annotationUID: string,
   circleUID: string,
   center: Types.Point2,
@@ -29,7 +28,7 @@ function drawCircle(
 
   // variable for the namespace
   const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(toolName, annotationUID, 'circle', circleUID);
+  const svgNodeHash = _getHash(annotationUID, 'circle', circleUID);
   const existingCircleElement = svgDrawingHelper._getSvgNode(svgNodeHash);
 
   const attributes = {

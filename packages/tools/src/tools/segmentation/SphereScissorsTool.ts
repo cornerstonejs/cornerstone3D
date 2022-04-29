@@ -343,7 +343,6 @@ export default class SphereScissorsTool extends BaseTool {
     const circleUID = '0';
     drawCircleSvg(
       svgDrawingHelper,
-      this.getToolName(),
       annotationUID,
       circleUID,
       center as Types.Point2,

@@ -582,7 +582,6 @@ class LengthTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           handleGroupUID,
           canvasCoordinates,
@@ -597,7 +596,6 @@ class LengthTool extends AnnotationTool {
       const lineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -646,7 +644,6 @@ class LengthTool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,

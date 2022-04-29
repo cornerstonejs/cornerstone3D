@@ -726,7 +726,6 @@ export default class RectangleROITool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -739,7 +738,6 @@ export default class RectangleROITool extends AnnotationTool {
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],
@@ -770,7 +768,6 @@ export default class RectangleROITool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,

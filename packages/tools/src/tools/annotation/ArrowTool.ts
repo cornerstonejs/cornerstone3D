@@ -601,7 +601,6 @@ class ArrowTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           handleGroupUID,
           canvasCoordinates,
@@ -617,7 +616,6 @@ class ArrowTool extends AnnotationTool {
       if (this.configuration.arrowFirst) {
         drawArrowSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           arrowUID,
           canvasCoordinates[1],
@@ -630,7 +628,6 @@ class ArrowTool extends AnnotationTool {
       } else {
         drawArrowSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           arrowUID,
           canvasCoordinates[0],
@@ -667,7 +664,6 @@ class ArrowTool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         textBoxUID,
         [text],

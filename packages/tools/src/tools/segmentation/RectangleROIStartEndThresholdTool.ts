@@ -384,7 +384,6 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -403,7 +402,6 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         rectangleUID,
         canvasCoordinates[0],
