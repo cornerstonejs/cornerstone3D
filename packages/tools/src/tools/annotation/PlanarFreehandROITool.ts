@@ -32,10 +32,7 @@ import {
   InteractionTypes,
 } from '../../types';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import {
-  PlanarFreehandROIDrawData,
-  PlanarFreehandROICommonEditData,
-} from './planarFreehandROITool/planarFreehandROIInternalTypes';
+import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
 const { pointCanProjectOnLine } = polyline;
 
@@ -75,15 +72,7 @@ class PlanarFreehandROITool extends AnnotationTool {
   public touchDragCallback: any;
   public mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
-  private commonData?: {
-    annotation: PlanarFreehandROIAnnotation;
-    viewportIdsToRender: string[];
-    spacing: Types.Point2;
-    xDir: Types.Point3;
-    yDir: Types.Point3;
-  };
-  private drawData?: PlanarFreehandROIDrawData;
-  private commonEditData?: PlanarFreehandROICommonEditData;
+  private commonData?: PlanarFreehandROICommonData;
   isDrawing = false;
   isEditingClosed = false;
   isEditingOpen = false;

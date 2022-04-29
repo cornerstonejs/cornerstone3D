@@ -1,15 +1,16 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec2, vec3 } from 'gl-matrix';
+import { PlanarFreehandROICommonData } from './planarFreehandROIInternalTypes';
 
 /**
  * Adds one or more points to the array at a resolution defined by the underlying image.
  */
 const addCanvasPointsToArray = (
-  element,
-  canvasPoints,
-  newCanvasPoint,
-  commonData
+  element: HTMLDivElement,
+  canvasPoints: Types.Point2[],
+  newCanvasPoint: Types.Point2,
+  commonData: PlanarFreehandROICommonData
 ): number => {
   const { xDir, yDir, spacing } = commonData;
   const enabledElement = getEnabledElement(element);

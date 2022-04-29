@@ -1,7 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
+
 /**
- * calculateAreaOfPoints - Calculates the area of an array of points using the shoelace algorithm.
+ * cCalculates the area of an array of `Point2` points using the shoelace algorithm.
  */
-export default function calculateAreaOfPoints(points) {
+export default function calculateAreaOfPoints(points: Types.Point2): number {
   // Shoelace algorithm.
   const n = points.length;
   let area = 0.0;

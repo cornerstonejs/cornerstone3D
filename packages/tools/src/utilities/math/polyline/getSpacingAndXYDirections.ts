@@ -1,9 +1,18 @@
-import { StackViewport } from '@cornerstonejs/core';
+import { StackViewport, VolumeViewport } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 
 const EPSILON = 1e-3;
 
-const getSpacingAndXYDirections = (viewport, subPixelResolution) => {
+/**
+ * Gets the desired spacing for points in the polyline for the
+ * `PlanarFreehandROITool` in the x and y canvas directions, as well as
+ * returning these canvas directions in world space.
+ */
+const getSpacingAndXYDirections = (
+  viewport: StackViewport | VolumeViewport,
+  subPixelResolution: number
+): { spacing: Types.Point2; xDir: Types.Point3; yDir: Types.Point3 } => {
   let spacing;
   let xDir;
   let yDir;
@@ -17,7 +26,6 @@ const getSpacingAndXYDirections = (viewport, subPixelResolution) => {
 
     spacing = imageData.spacing;
   } else {
-    // TODO_JAMES
     // Check volume directions
     const imageVolume = viewport.getDefaultActor();
     const { direction, spacing: volumeSpacing } = imageVolume;

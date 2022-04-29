@@ -1,13 +1,21 @@
+import type { Types } from '@cornerstonejs/core';
 import { vec2 } from 'gl-matrix';
 
-const pointCanProjectOnLine = (p, p1, p2, proximity) => {
+/**
+ * Returns `true` if the point `p` can project onto point (`p1`, `p2`), and if
+ * this projected point is less than `proximity` units away.
+ */
+const pointCanProjectOnLine = (
+  p: Types.Point2,
+  p1: Types.Point2,
+  p2: Types.Point2,
+  proximity: number
+): number | false => {
   // Perfom checks in order of computational complexity.
-  const p1p = [p[0] - p1[0], p[1] - p1[1]]; // { x: p.x - p1.x, y: p.y - p1.y };
-  const p1p2 = [p2[0] - p1[0], p2[1] - p1[1]]; //{ x: p2.x - p1.x, y: p2.y - p1.y };
+  const p1p = [p[0] - p1[0], p[1] - p1[1]];
+  const p1p2 = [p2[0] - p1[0], p2[1] - p1[1]];
 
   const dot = p1p[0] * p1p2[0] + p1p[1] * p1p2[1];
-
-  // const dot = p1p.x * p1p2.x + p1p.y * p1p2.y;
 
   // Dot product needs to be positive to be a candidate for projection onto line segment.
   if (dot < 0) {

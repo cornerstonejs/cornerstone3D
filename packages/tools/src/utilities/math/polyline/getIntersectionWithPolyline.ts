@@ -7,20 +7,13 @@ import type { Types } from '@cornerstonejs/core';
  */
 
 /**
- * Checks whether the line (p1,q1) intersects any of the other lines in the polygon, return the first value.
- * @private
- * @function getFirstIntersectionWithPolyline
- *
- * @param {Object[]} points Data object associated with the tool.
- * @param {Object} p1 Coordinates of the start of the line.
- * @param {Object} q1 Coordinates of the end of the line.
- * @param {boolean} [closed=true] Whether to treat the set of points as a closed contour (i.e last point joined onto first).
- * @returns {number[]} An array of the indicies that define the line in points.
+ * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the
+ * `points`, and returns the first value.
  */
 function getFirstIntersectionWithPolyline(
-  points,
-  p1,
-  q1,
+  points: Types.Point2[],
+  p1: Types.Point2,
+  q1: Types.Point2,
   closed = true
 ): Types.Point2 | undefined {
   let initialI;
@@ -47,25 +40,13 @@ function getFirstIntersectionWithPolyline(
 }
 
 /**
- * Orientation algoritm to determine if two lines cross.
- * Credit and details: geeksforgeeks.org/check-if-two-given-line-segments-intersect/
- */
-
-/**
- * Checks whether the line (p1,q1) intersects any of the other lines in the polygon, returns the closest value.
- * @private
- * @function getClosestIntersectionWithPolyline
- *
- * @param {Object[]} points Data object associated with the tool.
- * @param {Object} p1 Coordinates of the start of the line.
- * @param {Object} q1 Coordinates of the end of the line.
- * @param {string} [closed=true] Whether to treat the set of points as a closed contour (i.e last point joined onto first).
- * @returns {number[]} An array of the indicies that define the line in points.
+ * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the
+ * `points`, and returns the closest value.
  */
 function getClosestIntersectionWithPolyline(
-  points,
-  p1,
-  q1,
+  points: Types.Point2[],
+  p1: Types.Point2,
+  q1: Types.Point2,
   closed = true
 ): Types.Point2 | undefined {
   let initialI;
@@ -97,7 +78,6 @@ function getClosestIntersectionWithPolyline(
   }
 
   // Find intersection closest to the start point
-
   const distances = [];
 
   intersections.forEach((intersection) => {
@@ -124,17 +104,14 @@ function getClosestIntersectionWithPolyline(
 }
 
 /**
- * Checks whether the line (p1,q1) intersects the line (p2,q2) via an orientation algorithm.
- * @private
- * @function doesIntersect
- *
- * @param {Object} p1 Coordinates of the start of the line 1.
- * @param {Object} q1 Coordinates of the end of the line 1.
- * @param {Object} p2 Coordinates of the start of the line 2.
- * @param {Object} q2 Coordinates of the end of the line 2.
- * @returns {boolean} Whether lines (p1,q1) and (p2,q2) intersect.
+ * Checks whether the line (`p1`,`q1`) intersects the line (`p2`,`q2`) via an orientation algorithm.
  */
-function doesIntersect(p1, q1, p2, q2) {
+function doesIntersect(
+  p1: Types.Point2,
+  q1: Types.Point2,
+  p2: Types.Point2,
+  q2: Types.Point2
+): boolean {
   let result = false;
 
   const orient = [
@@ -168,16 +145,14 @@ function doesIntersect(p1, q1, p2, q2) {
 }
 
 /**
- * Checks the orientation of 3 points.
- * @private
- * @function orientation
- *
- * @param {Object} p First point.
- * @param {Object} q Second point.
- * @param {Object} r Third point.
- * @returns {number} - 0: Colinear, 1: Clockwise, 2: Anticlockwise
+ * Checks the orientation of 3 points, returns a 0, 1 or 2 based on
+ * the orientation of the points.
  */
-function orientation(p, q, r) {
+function orientation(
+  p: Types.Point2,
+  q: Types.Point2,
+  r: Types.Point2
+): number {
   const orientationValue =
     (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
 
@@ -189,16 +164,9 @@ function orientation(p, q, r) {
 }
 
 /**
- * Checks if point q lines on the segment (p,r).
- * @private
- * @function onSegment
- *
- * @param {Object} p Point p.
- * @param {Object} q Point q.
- * @param {Object} r Point r.
- * @returns {boolean} - If q lies on line segment (p,r).
+ * Checks if point `q` lines on the segment (`p`,`r`).
  */
-function onSegment(p, q, r) {
+function onSegment(p: Types.Point2, q: Types.Point2, r: Types.Point2): boolean {
   if (
     q[0] <= Math.max(p[0], r[0]) &&
     q[0] >= Math.min(p[0], r[0]) &&
