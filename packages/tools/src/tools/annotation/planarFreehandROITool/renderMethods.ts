@@ -4,10 +4,19 @@ import {
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
 import { Settings } from '@cornerstonejs/core';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { Types } from '@cornerstonejs/core';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 
-function renderContour(enabledElement, svgDrawingHelper, annotation) {
+/**
+ * Renders a `PlanarFreehandROIAnnotation` that is not currently being drawn or edited.
+ */
+function renderContour(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: any,
+  annotation: PlanarFreehandROIAnnotation
+): void {
   if (annotation.data.isOpenContour) {
     this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
   } else {
@@ -15,7 +24,14 @@ function renderContour(enabledElement, svgDrawingHelper, annotation) {
   }
 }
 
-function renderClosedContour(enabledElement, svgDrawingHelper, annotation) {
+/**
+ * Renders an closed `PlanarFreehandROIAnnotation` annotation.
+ */
+function renderClosedContour(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: any,
+  annotation: PlanarFreehandROIAnnotation
+): void {
   const { viewport } = enabledElement;
 
   const settings = Settings.getObjectSettings(annotation, this.getToolName());
@@ -50,15 +66,22 @@ function renderClosedContour(enabledElement, svgDrawingHelper, annotation) {
   );
 }
 
-function renderOpenContour(enabledElement, svgDrawingHelper, annotation) {
+/**
+ * Renders an open `PlanarFreehandROIAnnotation` annotation.
+ */
+function renderOpenContour(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: any,
+  annotation: PlanarFreehandROIAnnotation
+): void {
   const { viewport } = enabledElement;
-
   const settings = Settings.getObjectSettings(annotation, this.getToolName());
 
-  // Todo -> Its unfortunate that we have to do this for each annotation,
-  // Even if its unchanged. Perhaps we should cache canvas points per element
-  // on the tool? That feels very weird also as we'd need to manage it/clean
-  // them up.
+  // Its unfortunate that we have to do this for each annotation,
+  // Even if its unchanged. In the future we could cache the canvas points per
+  // element on the tool? That feels very weird also as we'd need to manage
+  // it/clean them up. Its a pre-optimisation for now and we can tackle it if it
+  // becomes a problem.
   const canvasPoints = annotation.data.polyline.map((worldPos) =>
     viewport.worldToCanvas(worldPos)
   );
@@ -91,7 +114,7 @@ function renderOpenContour(enabledElement, svgDrawingHelper, annotation) {
 
     // We already mapped all the points, so don't do the mapping again.
     // The activeHandleIndex can only be one of two points.
-    let indexOfCanvasPoints =
+    const indexOfCanvasPoints =
       activeHandleIndex === 0 ? 0 : canvasPoints.length - 1;
 
     const handlePoint = canvasPoints[indexOfCanvasPoints];
@@ -107,7 +130,15 @@ function renderOpenContour(enabledElement, svgDrawingHelper, annotation) {
   }
 }
 
-function renderContourBeingDrawn(enabledElement, svgDrawingHelper, annotation) {
+/**
+ * Renders a new `PlanarFreehandROIAnnotation` annotation during
+ * creation/drawing.
+ */
+function renderContourBeingDrawn(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: any,
+  annotation: PlanarFreehandROIAnnotation
+): void {
   const { allowOpenContours } = this.configuration;
   const settings = Settings.getObjectSettings(annotation, this.getToolName());
 
@@ -169,165 +200,14 @@ function renderContourBeingDrawn(enabledElement, svgDrawingHelper, annotation) {
   }
 }
 
-const renderDebugContours = false;
-
-function renderDebugOpenContoursDuringEdit(
-  enabledElement,
-  svgDrawingHelper,
-  annotation
-) {
-  const { prevCanvasPoints, editCanvasPoints, snapIndex } = this.commonEditData;
-
-  const debugLineDash = '1,5';
-  const debugColor = 'dodgerblue';
-  const debugEditColor = 'crimson';
-
-  if (snapIndex) {
-    const polylineUID1 = '100';
-
-    drawPolylineSvg(
-      svgDrawingHelper,
-      this.getToolName(),
-      annotation.annotationUID,
-      polylineUID1,
-      editCanvasPoints,
-      {
-        color: debugEditColor,
-        width: 3,
-        lineDash: debugLineDash,
-      }
-    );
-
-    const snapLine = [
-      editCanvasPoints[editCanvasPoints.length - 1],
-      prevCanvasPoints[snapIndex],
-    ];
-
-    const polylineUID2 = '101';
-
-    drawPolylineSvg(
-      svgDrawingHelper,
-      this.getToolName(),
-      annotation.annotationUID,
-      polylineUID2,
-      snapLine,
-      {
-        color: debugEditColor,
-        width: 3,
-        lineDash: debugLineDash,
-      }
-    );
-  }
-
-  const polylineUID3 = '102';
-
-  drawPolylineSvg(
-    svgDrawingHelper,
-    this.getToolName(),
-    annotation.annotationUID,
-    polylineUID3,
-    prevCanvasPoints,
-    {
-      color: debugColor,
-      width: 3,
-      lineDash: debugLineDash,
-    }
-  );
-
-  const handleGroupUID = 'h100';
-
-  // Draw the origin handle
-  drawHandlesSvg(
-    svgDrawingHelper,
-    this.getToolName(),
-    annotation.annotationUID,
-    handleGroupUID,
-    [prevCanvasPoints[0]],
-    {
-      color: debugColor,
-    }
-  );
-
-  const handleGroupUID2 = 'h101';
-
-  // Draw another handle that indicates the direction
-
-  const guideHandleIndex = Math.floor(prevCanvasPoints.length / 10);
-  drawHandlesSvg(
-    svgDrawingHelper,
-    this.getToolName(),
-    annotation.annotationUID,
-    handleGroupUID2,
-    [prevCanvasPoints[guideHandleIndex]],
-    {
-      color: debugColor,
-      handleRadius: 2,
-    }
-  );
-}
-
-function renderDebugClosedContoursDuringEdit(
-  enabledElement,
-  svgDrawingHelper,
-  annotation
-) {
-  const { prevCanvasPoints } = this.commonEditData;
-
-  const debugLineDash = '1,5';
-  const debugColor = 'dodgerblue';
-
-  const polylineUID = '100';
-
-  drawPolylineSvg(
-    svgDrawingHelper,
-    this.getToolName(),
-    annotation.annotationUID,
-    polylineUID,
-    prevCanvasPoints,
-    {
-      color: debugColor,
-      width: 3,
-      lineDash: debugLineDash,
-    }
-  );
-
-  const handleGroupUID = 'h100';
-
-  // Draw the origin handle
-  drawHandlesSvg(
-    svgDrawingHelper,
-    this.getToolName(),
-    annotation.annotationUID,
-    handleGroupUID,
-    [prevCanvasPoints[0]],
-    {
-      color: debugColor,
-    }
-  );
-
-  const handleGroupUID2 = 'h101';
-
-  // Draw another handle that indicates the direction
-
-  const guideHandleIndex = Math.floor(prevCanvasPoints.length / 10);
-  drawHandlesSvg(
-    svgDrawingHelper,
-    this.getToolName(),
-    annotation.annotationUID,
-    handleGroupUID2,
-    [prevCanvasPoints[guideHandleIndex]],
-    {
-      color: debugColor,
-      handleRadius: 2,
-    }
-  );
-}
-
+/**
+ * Renders a closed `PlanarFreehandROIAnnotation` being edited.
+ */
 function renderClosedContourBeingEdited(
   enabledElement,
   svgDrawingHelper,
   annotation
-) {
+): void {
   const { fusedCanvasPoints } = this.commonEditData;
 
   if (fusedCanvasPoints === undefined) {
@@ -335,14 +215,6 @@ function renderClosedContourBeingEdited(
     this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
 
     return;
-  }
-
-  if (renderDebugContours) {
-    this.renderDebugClosedContoursDuringEdit(
-      enabledElement,
-      svgDrawingHelper,
-      annotation
-    );
   }
 
   const settings = Settings.getObjectSettings(annotation, this.getToolName());
@@ -368,11 +240,14 @@ function renderClosedContourBeingEdited(
   );
 }
 
+/**
+ * Renders an open `PlanarFreehandROIAnnotation` being edited.
+ */
 function renderOpenContourBeingEdited(
-  enabledElement,
-  svgDrawingHelper,
-  annotation
-) {
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: any,
+  annotation: PlanarFreehandROIAnnotation
+): void {
   const { fusedCanvasPoints } = this.commonEditData;
 
   if (fusedCanvasPoints === undefined) {
@@ -380,14 +255,6 @@ function renderOpenContourBeingEdited(
     this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
 
     return;
-  }
-
-  if (renderDebugContours) {
-    this.renderDebugOpenContoursDuringEdit(
-      enabledElement,
-      svgDrawingHelper,
-      annotation
-    );
   }
 
   const settings = Settings.getObjectSettings(annotation, this.getToolName());
@@ -413,6 +280,9 @@ function renderOpenContourBeingEdited(
   );
 }
 
+/**
+ * Registers the render methods of various contour states to the tool instance.
+ */
 function registerRenderMethods(toolInstance) {
   toolInstance.renderContour = renderContour.bind(toolInstance);
   toolInstance.renderClosedContour = renderClosedContour.bind(toolInstance);
@@ -425,12 +295,6 @@ function registerRenderMethods(toolInstance) {
     renderClosedContourBeingEdited.bind(toolInstance);
   toolInstance.renderOpenContourBeingEdited =
     renderOpenContourBeingEdited.bind(toolInstance);
-
-  // DEBUG
-  toolInstance.renderDebugClosedContoursDuringEdit =
-    renderDebugClosedContoursDuringEdit.bind(toolInstance);
-  toolInstance.renderDebugOpenContoursDuringEdit =
-    renderDebugOpenContoursDuringEdit.bind(toolInstance);
 }
 
 export default registerRenderMethods;

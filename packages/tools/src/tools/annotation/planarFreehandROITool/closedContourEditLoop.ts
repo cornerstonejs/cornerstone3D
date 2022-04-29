@@ -9,6 +9,7 @@ import {
 import { EventTypes } from '../../../types';
 import { polyline } from '../../../utilities/math';
 import { vec3, vec2 } from 'gl-matrix';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 const {
@@ -17,11 +18,14 @@ const {
   calculateAreaOfPoints,
 } = polyline;
 
+/**
+ * Activates the closed contour edit event loop.
+ */
 function activateClosedContourEdit(
   evt: EventTypes.MouseDownActivateEventType,
-  annotation: Types.Annotation,
+  annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
-) {
+): void {
   this.isEditingClosed = true;
 
   const eventDetail = evt.detail;
@@ -70,7 +74,10 @@ function activateClosedContourEdit(
   hideElementCursor(element);
 }
 
-function deactivateClosedContourEdit(element: HTMLDivElement) {
+/**
+ * Dectivates and cleans up the closed contour edit event loop.
+ */
+function deactivateClosedContourEdit(element: HTMLDivElement): void {
   state.isInteractingWithTool = false;
 
   element.removeEventListener(
@@ -89,9 +96,14 @@ function deactivateClosedContourEdit(element: HTMLDivElement) {
   resetElementCursor(element);
 }
 
+/**
+ * Adds points to the edit line and calculates the preview of the edit to render.
+ * Checks if an edit needs to be completed by crossing of lines, or by editing in
+ * a way that requires a new edit to keep the contour a simple polygon.
+ */
 function mouseDragClosedContourEditCallback(
   evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
-) {
+): Types.Point2[] {
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
   const worldPos = currentPoints.world;
@@ -113,9 +125,7 @@ function mouseDragClosedContourEditCallback(
   const xDist = Math.abs(vec3.dot(worldPosDiff, xDir));
   const yDist = Math.abs(vec3.dot(worldPosDiff, yDir));
 
-  // Get pixel spacing in the direction.
   // Check that we have moved at least one voxel in each direction.
-
   if (xDist <= spacing[0] && yDist <= spacing[1]) {
     // Haven't changed world point enough, don't render
     return;
@@ -133,13 +143,16 @@ function mouseDragClosedContourEditCallback(
   this.commonEditData.editIndex = currentEditIndex;
 
   if (startCrossingIndex === undefined && editCanvasPoints.length > 1) {
+    // If we haven't found the index of the first crossing yet,
+    // see if we can find it.
     this.checkForFirstCrossing(evt, true);
   }
 
   this.commonEditData.snapIndex = this.findSnapIndex();
 
   if (this.commonEditData.snapIndex === -1) {
-    console.log('Stuck start new edit');
+    // No point on the prevCanvasPoints for the editCanvasPoints line to
+    // snap to. Apply edit, and start a new edit as we've gone back on ourselves.
     this.finishEditAndStartNewEdit(evt);
     return;
   }
@@ -151,13 +164,20 @@ function mouseDragClosedContourEditCallback(
     startCrossingIndex !== undefined &&
     this.checkForSecondCrossing(evt, true)
   ) {
+    // Crossed a second time, apply edit, and start a new edit from the crossing.
+    this.removePointsAfterSecondCrossing(true);
     this.finishEditAndStartNewEdit(evt);
   }
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 }
 
-function finishEditAndStartNewEdit(evt) {
+/**
+ * Finish the current edit, and start a new one.
+ */
+function finishEditAndStartNewEdit(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
@@ -188,7 +208,26 @@ function finishEditAndStartNewEdit(evt) {
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 }
 
-function fuseEditPointsWithClosedContour(evt) {
+/**
+ * This method combines the contour before editing (prevCanvasPoints) with
+ * the current edit (editCanvasPoints), to produce a renderable preview of the
+ * edit. Upon finishing the contour, the preview generated here is written back
+ * into the contour state.
+ *
+ * @privateRemarks In this method we combine a few tricks to find the optimal
+ * contour:
+ * - As the contour is closed, our edit might stradle the boundary between the
+ * last and 0th point of the contour, e.g. a small edit might go from e.g. index
+ * 960 to index 4. We therefore calculate two possible contours, and find the
+ * one with the biggest area, which will define the actual edit the user desired.
+ * - As the contour and the edit can be drawn with different chiralities, we find if
+ * the edit line aligns better with the intended cross points in its current order
+ * or reversed. We do this by minimising the distance between its ends and the
+ * intended crossing points.
+ */
+function fuseEditPointsWithClosedContour(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+): Types.Point2 {
   const { prevCanvasPoints, editCanvasPoints, startCrossingIndex, snapIndex } =
     this.commonEditData;
 
@@ -334,9 +373,12 @@ function fuseEditPointsWithClosedContour(evt) {
   return pointsToRender;
 }
 
+/**
+ * Completes the edit of the closed contour when the mouse button is released.
+ */
 function mouseUpClosedContourEditCallback(
   evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-) {
+): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
@@ -365,7 +407,10 @@ function mouseUpClosedContourEditCallback(
   this.deactivateClosedContourEdit(element);
 }
 
-function registerClosedContourEditLoop(toolInstance) {
+/**
+ * Registers the closed contour edit loop to the tool instance.
+ */
+function registerClosedContourEditLoop(toolInstance): void {
   toolInstance.activateClosedContourEdit =
     activateClosedContourEdit.bind(toolInstance);
   toolInstance.deactivateClosedContourEdit =

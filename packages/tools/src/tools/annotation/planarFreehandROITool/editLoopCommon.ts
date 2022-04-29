@@ -1,10 +1,26 @@
 import { polyline } from '../../../utilities/math';
 import { vec2 } from 'gl-matrix';
+import { EventTypes } from '../../../types';
 
 const { addCanvasPointsToArray, getFirstIntersectionWithPolyline } = polyline;
 
-// Check if this mouse move crossed the contour
-function checkForFirstCrossing(evt, isClosedContour) {
+/**
+ * Check if the `editCanvasPoints` have crossed the `prevCanvasPoints` during
+ * an edit.
+ *
+ * @privateRemarks The following tricks are required to make the UX smooth and
+ * the editing not very picky on exactly where you click:
+ * - If we don't cross after 2 points, but projecting the line backwards the
+ * proximity distance means we cross, extend the line back.
+ * - If we travel the full proximity in canvas points but don't cross a line, we
+ * are likely drawing along the line, which is intutive to the user. At this point
+ * snap the start of the edit to the closest place on the `prevCanvasPoints`,
+ * so that the edit can be executed in-line.
+ */
+function checkForFirstCrossing(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType,
+  isClosedContour: boolean
+): void {
   const eventDetail = evt.detail;
   const { element, currentPoints, lastPoints } = eventDetail;
   const canvasPos = currentPoints.canvas;
@@ -53,15 +69,12 @@ function checkForFirstCrossing(evt, isClosedContour) {
 
     this.commonEditData.startCrossingIndex = lowestIndex;
   } else if (editCanvasPoints.length >= 2) {
-    // -- Check if already crossing.
-    // -- Check if extending a line back 6 (Proximity) canvas pixels would cross a line.
-    // -- If so -> Extend line back that distance.
+    // Check if extending a line back 6 (Proximity) canvas pixels would cross a line.
 
     // Extend point back 6 canvas pixels from first point.
     const dir = vec2.create();
 
     vec2.subtract(dir, editCanvasPoints[1], editCanvasPoints[0]);
-
     vec2.normalize(dir, dir);
 
     const proximity = 6;
@@ -92,7 +105,6 @@ function checkForFirstCrossing(evt, isClosedContour) {
 
       editCanvasPoints.unshift(...pointsToPrepend);
 
-      // On the first crossing, remove the first lines prior to the crossing
       this.removePointsUpUntilFirstCrossing(isClosedContour);
 
       this.commonEditData.editIndex = editCanvasPoints.length - 1;
@@ -102,7 +114,12 @@ function checkForFirstCrossing(evt, isClosedContour) {
   }
 }
 
-function removePointsUpUntilFirstCrossing(isClosedContour) {
+/**
+ * Removes the points from the `editCanvasPoints` up until the first crossing of
+ * the `prevCanvasPoints`. This is so we can just insert this line segment
+ * into the contour.
+ */
+function removePointsUpUntilFirstCrossing(isClosedContour: boolean): void {
   const { editCanvasPoints, prevCanvasPoints } = this.commonEditData;
   let numPointsToRemove = 0;
 
@@ -130,7 +147,14 @@ function removePointsUpUntilFirstCrossing(isClosedContour) {
   this.commonEditData.editIndex = editCanvasPoints.length - 1;
 }
 
-function checkForSecondCrossing(evt, isClosedContour) {
+/**
+ * Returns `true` if the `editCanvasPoints` crosses the `prevCanvasPoints` a
+ * second time.
+ */
+function checkForSecondCrossing(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType,
+  isClosedContour: boolean
+): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, lastPoints } = eventDetail;
   const canvasPos = currentPoints.canvas;
@@ -148,7 +172,18 @@ function checkForSecondCrossing(evt, isClosedContour) {
     return false;
   }
 
-  // Remove points up until just before the crossing
+  return true;
+}
+
+/**
+ * Removes the points from the `editCanvasPoints` after the second crossing of
+ * the `prevCanvasPoints`. This is so we can just insert this line segment
+ * into the contour.
+ */
+function removePointsAfterSecondCrossing(isClosedContour: boolean): void {
+  const { prevCanvasPoints, editCanvasPoints } = this.commonEditData;
+
+  // Remove points after the crossing
   for (let i = editCanvasPoints.length - 1; i > 0; i--) {
     const lastLine = [editCanvasPoints[i], editCanvasPoints[i - 1]];
 
@@ -166,11 +201,17 @@ function checkForSecondCrossing(evt, isClosedContour) {
       break;
     }
   }
-
-  return true;
 }
 
-function findSnapIndex() {
+/**
+ * During an edit, finds the index on the `prevCanvasPoints` that the
+ * `editCanvasPoints` should snap to to create one continuous contour.
+ *
+ * Returns the index, but returns -1 if there is no index on the
+ * `prevCanvasPoints` that can be snapped to with causing a crossing of the
+ * `editCanvasPoints`.
+ */
+function findSnapIndex(): number {
   const { editCanvasPoints, prevCanvasPoints, startCrossingIndex } =
     this.commonEditData;
 
@@ -214,10 +255,14 @@ function findSnapIndex() {
     }
   }
 
-  // If none didn't cross, this means we should start a new edit. Use -1 to signify this.
+  // If all of the lines caused a crossing, this means we should start a new edit.
+  // Use -1 to signify this.
   return -1;
 }
 
+/**
+ * Registers the contour drawing loop to the tool instance.
+ */
 function registerEditLoopCommon(toolInstance) {
   toolInstance.checkForFirstCrossing = checkForFirstCrossing.bind(toolInstance);
   toolInstance.removePointsUpUntilFirstCrossing =
@@ -225,6 +270,8 @@ function registerEditLoopCommon(toolInstance) {
   toolInstance.checkForSecondCrossing =
     checkForSecondCrossing.bind(toolInstance);
   toolInstance.findSnapIndex = findSnapIndex.bind(toolInstance);
+  toolInstance.removePointsAfterSecondCrossing =
+    removePointsAfterSecondCrossing.bind(toolInstance);
 }
 
 export default registerEditLoopCommon;

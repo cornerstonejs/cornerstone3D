@@ -173,3 +173,35 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     };
   };
 }
+
+export interface PlanarFreehandROIAnnotation extends Annotation {
+  metadata: {
+    cameraPosition?: Types.Point3;
+    cameraFocalPoint?: Types.Point3;
+    viewPlaneNormal?: Types.Point3;
+    viewUp?: Types.Point3;
+    annotationUID?: string;
+    FrameOfReferenceUID: string;
+    referencedImageId?: string;
+    toolName: string;
+  };
+  data: {
+    handles: {
+      points: Types.Point3;
+      activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    polyline: Types.Point3[];
+    label?: string;
+    isOpenContour?: boolean;
+  };
+}

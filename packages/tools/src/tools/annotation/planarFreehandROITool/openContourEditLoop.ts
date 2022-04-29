@@ -1,4 +1,5 @@
 import { getEnabledElement } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { state } from '../../../store';
 import { Events } from '../../../enums';
 import {
@@ -12,11 +13,14 @@ import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnn
 
 const { addCanvasPointsToArray, getSpacingAndXYDirections } = polyline;
 
+/**
+ * Activates the open contour edit event loop.
+ */
 function activateOpenContourEdit(
   evt: EventTypes.MouseDownActivateEventType,
   annotation: Types.Annotation,
   viewportIdsToRender: string[]
-) {
+): void {
   this.isEditingOpen = true;
 
   const eventDetail = evt.detail;
@@ -65,6 +69,9 @@ function activateOpenContourEdit(
   hideElementCursor(element);
 }
 
+/**
+ * Deactivates and cleans up the closed contour edit event loop.
+ */
 function deactivateOpenContourEdit(element: HTMLDivElement) {
   state.isInteractingWithTool = false;
 
@@ -84,9 +91,14 @@ function deactivateOpenContourEdit(element: HTMLDivElement) {
   resetElementCursor(element);
 }
 
+/**
+ * Adds points to the edit line and calculates the preview of the edit to render.
+ * Checks if an edit needs to be completed by crossing of lines, or by dragging
+ * the edit line past the end of the open contour.
+ */
 function mouseDragOpenContourEditCallback(
   evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
-) {
+): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
   const worldPos = currentPoints.world;
@@ -140,6 +152,7 @@ function mouseDragOpenContourEditCallback(
     startCrossingIndex !== undefined &&
     this.checkForSecondCrossing(evt, false)
   ) {
+    this.removePointsAfterSecondCrossing(false);
     this.finishEditOpenOnSecondCrossing(evt);
   } else if (this.checkIfShouldOverwriteAnEnd(evt)) {
     this.openContourEditOverwriteEnd(evt);
@@ -148,13 +161,19 @@ function mouseDragOpenContourEditCallback(
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 }
 
-function openContourEditOverwriteEnd(evt) {
+/**
+ * Overwrite the end of the contour with the edit, and then switch to the
+ * open contour end edit loop.
+ */
+function openContourEditOverwriteEnd(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
   const { annotation, viewportIdsToRender } = this.commonData;
-  const fusedCanvasPoints = this.fuseEditPointsForOpenContourEndEdit(evt);
+  const fusedCanvasPoints = this.fuseEditPointsForOpenContourEndEdit();
 
   const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
     viewport.canvasToWorld(canvasPoint)
@@ -181,7 +200,13 @@ function openContourEditOverwriteEnd(evt) {
   this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender);
 }
 
-function checkIfShouldOverwriteAnEnd(evt) {
+/**
+ * Checks if we are moving the `editCanvasPoints` past the end of one of the
+ * open contour's `prevCanvasPoint`s.
+ */
+function checkIfShouldOverwriteAnEnd(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, lastPoints } = eventDetail;
   const canvasPos = currentPoints.canvas;
@@ -230,7 +255,19 @@ function checkIfShouldOverwriteAnEnd(evt) {
   return false;
 }
 
-function fuseEditPointsForOpenContourEndEdit(evt) {
+/**
+ * This method combines the contour before editing (prevCanvasPoints) with
+ * the current edit (editCanvasPoints), to produce a single contour ready for
+ * end editing.
+ *
+ * @privateRemarks In this method we use the following trick to find the
+ * optimal contour:
+ * - As the contour and the edit can be drawn with different chiralities, we find if
+ * the edit line aligns better with the intended cross points in its current order
+ * or reversed. We do this by minimising the distance between its ends and the
+ * intended crossing points.
+ */
+function fuseEditPointsForOpenContourEndEdit(): Types.Point2[] {
   const { snapIndex, prevCanvasPoints, editCanvasPoints, startCrossingIndex } =
     this.commonEditData;
 
@@ -289,7 +326,22 @@ function fuseEditPointsForOpenContourEndEdit(evt) {
   return newCanvasPoints;
 }
 
-function fuseEditPointsWithOpenContour(evt) {
+/**
+ * This method combines the contour before editing (prevCanvasPoints) with
+ * the current edit (editCanvasPoints), to produce a renderable preview of the
+ * edit. Upon finishing the contour, the preview generated here is written back
+ * into the contour state.
+ *
+ * @privateRemarks In this method we use the following trick to find the
+ * optimal contour:
+ * - As the contour and the edit can be drawn with different chiralities, we find if
+ * the edit line aligns better with the intended cross points in its current order
+ * or reversed. We do this by minimising the distance between its ends and the
+ * intended crossing points.
+ */
+function fuseEditPointsWithOpenContour(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+): Types.Point2[] {
   const { prevCanvasPoints, editCanvasPoints, startCrossingIndex, snapIndex } =
     this.commonEditData;
 
@@ -392,7 +444,12 @@ function fuseEditPointsWithOpenContour(evt) {
   return pointsToRender;
 }
 
-function finishEditOpenOnSecondCrossing(evt) {
+/**
+ * On a second crossing, apply edit, and start a new edit from the crossing.
+ */
+function finishEditOpenOnSecondCrossing(
+  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
@@ -426,9 +483,12 @@ function finishEditOpenOnSecondCrossing(evt) {
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 }
 
+/**
+ * Completes the edit of the open contour when the mouse button is released.
+ */
 function mouseUpOpenContourEditCallback(
   evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-) {
+): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
@@ -461,6 +521,9 @@ function mouseUpOpenContourEditCallback(
   this.deactivateOpenContourEdit(element);
 }
 
+/**
+ * Registers the open contour edit loop to the tool instance.
+ */
 function registerOpenContourEditLoop(toolInstance) {
   toolInstance.activateOpenContourEdit =
     activateOpenContourEdit.bind(toolInstance);

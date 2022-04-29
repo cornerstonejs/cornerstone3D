@@ -3,6 +3,12 @@ import _getHash from './_getHash';
 import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 import _setAttributesIfNecessary from './_setAttributesIfNecessary';
 
+/**
+ * Draws an SVG polyline with the given points.
+ *
+ * The `connectLastToFirst` option, if true, draws a closed polyline, with the
+ * last point connected to the first.
+ */
 export default function drawPolyline(
   svgDrawingHelper: any,
   toolName: string,
@@ -43,8 +49,6 @@ export default function drawPolyline(
     polylineUID
   );
   const existingPolyLine = svgDrawingHelper._getSvgNode(svgNodeHash);
-
-  // const points = '60, 110 ';
 
   let pointsAttribute = '';
 

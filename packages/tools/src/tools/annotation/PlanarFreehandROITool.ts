@@ -6,7 +6,6 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-
 import { AnnotationTool } from '../base';
 import {
   addAnnotation,
@@ -21,28 +20,31 @@ import registerClosedContourEditLoop from './planarFreehandROITool/closedContour
 import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
 import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
 import registerRenderMethods from './planarFreehandROITool/renderMethods';
-
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
-
 import {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   InteractionTypes,
-  Annotation,
 } from '../../types';
+import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import {
+  PlanarFreehandROIDrawData,
+  PlanarFreehandROICommonEditData,
+} from './planarFreehandROITool/planarFreehandROIInternalTypes';
 
 const { pointCanProjectOnLine } = polyline;
 
 /**
- * PlanarFreehandROITool lets you draw annotations that measures the area of a arbitrarily drawn region.
- * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal).
+ * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
+ * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal),
+ * support for oblique views is possible, but not yet supported.
  *
- * The resulting annotation's data (statistics) and metadata (the
+ * The resulting annotation's data and metadata (the
  * state of the viewport while drawing was happening) will get added to the
  * ToolState manager and can be accessed from the ToolState by calling getAnnotations
  * or similar methods.
@@ -66,9 +68,7 @@ const { pointCanProjectOnLine } = polyline;
  * ```
  *
  * Read more in the Docs section of the website.
-
  */
-
 class PlanarFreehandROITool extends AnnotationTool {
   static toolName = 'PlanarFreehandROI';
 
@@ -76,72 +76,58 @@ class PlanarFreehandROITool extends AnnotationTool {
   public mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
   private commonData?: {
-    annotation: Types.Annotation;
+    annotation: PlanarFreehandROIAnnotation;
     viewportIdsToRender: string[];
     spacing: Types.Point2;
     xDir: Types.Point3;
     yDir: Types.Point3;
   };
-  private drawData?: {
-    polylineIndex: number;
-    canvasPoints: Types.Point2[];
-  } | null;
-  private commonEditData?: {
-    prevCanvasPoints: Types.Point2[];
-    editCanvasPoints: Types.Point2[];
-    fusedCanvasPoints: Types.Point2[];
-    startCrossingIndex?: Types.Point2;
-    editIndex: number;
-    snapIndex?: number;
-  } | null;
-  private openContourEditData?: {
-    overwriteEnd: boolean;
-    overwriteStart: boolean;
-  } | null;
+  private drawData?: PlanarFreehandROIDrawData;
+  private commonEditData?: PlanarFreehandROICommonEditData;
   isDrawing = false;
   isEditingClosed = false;
   isEditingOpen = false;
 
   private activateDraw: (
     evt: EventTypes.MouseDownActivateEventType,
-    annotation: Types.Annotation,
+    annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
   ) => void;
   private activateClosedContourEdit: (
     evt: EventTypes.MouseDownActivateEventType,
-    annotation: Types.Annotation,
+    annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
   ) => void;
   private activateOpenContourEdit: (
     evt: EventTypes.MouseDownActivateEventType,
-    annotation: Types.Annotation,
+    annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
   ) => void;
   private activateOpenContourEndEdit: (
     evt: EventTypes.MouseDownActivateEventType,
-    annotation: Types.Annotation,
+    annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
   ) => void;
 
   private renderContour: (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any,
-    annotation: Annotation
+    annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderContourBeingDrawn: (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any,
-    annotation: Annotation
+    annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderClosedContourBeingEdited: (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any,
-    annotation: Annotation
+    annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderOpenContourBeingEdited: (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any,
-    annotation: Annotation
+    annotation: PlanarFreehandROIAnnotation
   ) => void;
 
   constructor(
@@ -152,6 +138,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         allowOpenContours: true,
+        // Radius in canvas coordinates used to join contours.
         closeContourProximity: 10,
         subPixelResolution: 4,
       },
@@ -159,6 +146,8 @@ class PlanarFreehandROITool extends AnnotationTool {
   ) {
     super(toolProps, defaultToolProps);
 
+    // Register event loops and rendering logic, which are stored in different
+    // Files due to their complexity/size.
     registerDrawLoop(this);
     registerEditLoopCommon(this);
     registerClosedContourEditLoop(this);
@@ -168,22 +157,20 @@ class PlanarFreehandROITool extends AnnotationTool {
   }
 
   /**
-   * Based on the current position of the mouse and the current imageId to create
-   * a Length Annotation and stores it in the annotationManager
+   * Based on the current position of the mouse and the current image, creates
+   * a `PlanarFreehandROIAnnotation` and stores it in the annotationManager.
    *
-   * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
-   *
+   * @param evt - `EventTypes.NormalizedMouseEventType`
+   * @returns The `PlanarFreehandROIAnnotation` object.
    */
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): Annotation => {
+  ): PlanarFreehandROIAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
-
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
@@ -193,13 +180,12 @@ class PlanarFreehandROITool extends AnnotationTool {
       viewPlaneNormal,
       viewUp
     );
-
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
     );
 
-    const annotation = {
+    const annotation: PlanarFreehandROIAnnotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
@@ -226,9 +212,9 @@ class PlanarFreehandROITool extends AnnotationTool {
         },
         polyline: [<Types.Point3>[...worldPos]], // Polyline coordinates
         label: '',
-        cachedStats: {},
       },
     };
+
     // Ensure settings are initialized after annotation instantiation
     Settings.getObjectSettings(annotation, PlanarFreehandROITool);
     addAnnotation(element, annotation);
@@ -243,17 +229,17 @@ class PlanarFreehandROITool extends AnnotationTool {
   };
 
   /**
-   * Executes the callback for when mouse has selected a handle (anchor point) of
-   * the bidirectional tool or when the text box has been selected.
+   * Begins an edit of an open contour, when the mouse has selected a handle
+   * (end) of the open contour.
    *
-   * @param evt - EventTypes.MouseDownEventType
-   * @param annotation - Bidirectional annotation
-   * @param handle - Handle index or selected textBox information
+   * @param evt - `EventTypes.MouseDownEventType`
+   * @param annotation - `PlanarFreehandROIAnnotation` annotation.
+   * @param handle - The handle index, 0 for the start and 1 for the end.
    * @param interactionType - interaction type (mouse, touch)
    */
   handleSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: Annotation,
+    annotation: PlanarFreehandROIAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void => {
@@ -268,9 +254,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender);
   };
 
+  /**
+   * Edits the open or closed contour when the line is grabbed and dragged.
+   */
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: Annotation,
+    annotation: PlanarFreehandROIAnnotation,
     interactionType: InteractionTypes
   ): void => {
     const eventDetail = evt.detail;
@@ -289,19 +278,19 @@ class PlanarFreehandROITool extends AnnotationTool {
   };
 
   /**
-   * It returns if the canvas point is near the provided length annotation in the provided
-   * element or not. A proximity is passed to the function to determine the
+   * Returns if the canvas point is near the line of the given annotation in the
+   * provided element or not. A proximity is passed to the function to determine the
    * proximity of the point to the annotation in number of pixels.
    *
    * @param element - HTML Element
-   * @param annotation - Annotation
+   * @param annotation - The `PlanarFreehandROIAnnotation`.
    * @param canvasCoords - Canvas coordinates
    * @param proximity - Proximity to tool to consider
    * @returns Boolean, whether the canvas point is near tool
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: Annotation,
+    annotation: PlanarFreehandROIAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -350,11 +339,17 @@ class PlanarFreehandROITool extends AnnotationTool {
     return false;
   };
 
-  cancel = (element: HTMLDivElement) => {
+  cancel = (element: HTMLDivElement): void => {
     // TODO CANCEL
   };
 
-  triggerAnnotationModified = (annotation, enabledElement) => {
+  /**
+   * Triggers an annotation modified event.
+   */
+  triggerAnnotationModified = (
+    annotation: PlanarFreehandROIAnnotation,
+    enabledElement: Types.IEnabledElement
+  ): void => {
     const { viewportId, renderingEngineId } = enabledElement;
     // Dispatching annotation modified
     const eventType = Events.ANNOTATION_MODIFIED;
@@ -367,7 +362,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     triggerEvent(eventTarget, eventType, eventDetail);
   };
 
-  triggerAnnotationCompleted = (annotation) => {
+  /**
+   * Triggers an annotation completed event.
+   */
+  triggerAnnotationCompleted = (
+    annotation: PlanarFreehandROIAnnotation
+  ): void => {
     const eventType = Events.ANNOTATION_COMPLETED;
 
     const eventDetail: AnnotationCompletedEventDetail = {
@@ -378,9 +378,7 @@ class PlanarFreehandROITool extends AnnotationTool {
   };
 
   /**
-   * it is used to draw the length annotation in each
-   * request animation frame. It calculates the updated cached statistics if
-   * data is invalidated and cache it.
+   * Draws the `PlanarFreehandROIAnnotation`s at each request animation frame.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
@@ -392,7 +390,9 @@ class PlanarFreehandROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = <PlanarFreehandROIAnnotation[]>(
+      getAnnotations(element, this.getToolName())
+    );
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

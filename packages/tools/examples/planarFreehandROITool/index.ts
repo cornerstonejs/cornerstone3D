@@ -26,7 +26,7 @@ const { MouseBindings } = csToolsEnums;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Planar Freehand Annotation Tool',
-  'Here we demonstrate how to use the Planar Freehand Annotation Tool to draw 2D freehand ROIs'
+  'Here we demonstrate how to use the Planar Freehand Annotation Tool to draw 2D open and closed ROIs'
 );
 
 const content = document.getElementById('content');
@@ -36,14 +36,26 @@ const element = document.createElement('div');
 element.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
-element.style.width = '800px';
-element.style.height = '800px';
+element.style.width = '500px';
+element.style.height = '500px';
 
 content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-- Left click and drag to draw a contour
+Drawing:
+
+- Left click and drag to draw a contour.
+-- If you join the contour together it will be closed, otherwise releasing the mouse will create an open contour (freehand line)
+
+Editing:
+- Left click and drag on the line of an existing contour to edit it:
+-- Closed Contours:
+--- Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.
+-- Open Contours:
+--- Hover over an end and you will see a handle appear, drag this handle to pull out the polyline further. You can join this handle back round to the other end if you wish to close the contour (say you made a mistake making an open contour).
+--- Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.
+--- If You drag the line past the end of the of the open contour, the edit will snap to make your edit the new end, and allow you to continue drawing.
 `;
 
 content.append(instructions);

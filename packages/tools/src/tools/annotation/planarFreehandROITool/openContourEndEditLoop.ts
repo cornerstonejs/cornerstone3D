@@ -1,20 +1,21 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import { state } from '../../../store';
 import { Events } from '../../../enums';
-import {
-  resetElementCursor,
-  hideElementCursor,
-} from '../../../cursors/elementCursor';
+import { hideElementCursor } from '../../../cursors/elementCursor';
 import { EventTypes } from '../../../types';
 import { polyline } from '../../../utilities/math';
 
 const { getSpacingAndXYDirections } = polyline;
 
+/**
+ * Activates the open contour end edit. This actually just sets up the state so
+ * that the tool thinks we are mid draw, and then jumps into the drawing loop.
+ */
 function activateOpenContourEndEdit(
   evt: EventTypes.MouseDownActivateEventType,
   annotation: Types.Annotation,
   viewportIdsToRender: string[]
-) {
+): void {
   this.isDrawing = true;
 
   const eventDetail = evt.detail;
@@ -59,6 +60,9 @@ function activateOpenContourEndEdit(
   hideElementCursor(element);
 }
 
+/**
+ * Registers the open contour end edit loop to the tool instance.
+ */
 function registerOpenContourEndEditLoop(toolInstance) {
   toolInstance.activateOpenContourEndEdit =
     activateOpenContourEndEdit.bind(toolInstance);
