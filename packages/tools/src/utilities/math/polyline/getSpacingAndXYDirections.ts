@@ -1,4 +1,7 @@
 import { StackViewport } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
+
+const EPSILON = 1e-3;
 
 const getSpacingAndXYDirections = (viewport, subPixelResolution) => {
   let spacing;
@@ -14,8 +17,54 @@ const getSpacingAndXYDirections = (viewport, subPixelResolution) => {
 
     spacing = imageData.spacing;
   } else {
-    // Check volume directions
     // TODO_JAMES
+    // Check volume directions
+    const imageVolume = viewport.getDefaultActor();
+    const { direction, spacing: volumeSpacing } = imageVolume;
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+
+    // Calculate size of spacing vector in normal direction
+    const iVector = direction.slice(0, 3);
+    const jVector = direction.slice(3, 6);
+    const kVector = direction.slice(6, 9);
+
+    let viewRight = vec3.create(); // Get the X direction of the viewport
+
+    vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
+
+    viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
+
+    // Get X spacing
+    let xSpacing;
+    if (Math.abs(1 - vec3.dot(viewRight, iVector)) < EPSILON) {
+      xSpacing = volumeSpacing[0];
+      xDir = iVector;
+    } else if (Math.abs(1 - vec3.dot(viewRight, jVector)) < EPSILON) {
+      xSpacing = volumeSpacing[1];
+      xDir = jVector;
+    } else if (Math.abs(1 - vec3.dot(viewRight, kVector)) < EPSILON) {
+      xSpacing = volumeSpacing[2];
+      xDir = kVector;
+    } else {
+      throw new Error('No support yet for oblique plane planar contours');
+    }
+
+    // Get Y spacing
+    let ySpacing;
+    if (Math.abs(1 - vec3.dot(viewPlaneNormal, iVector)) < EPSILON) {
+      ySpacing = volumeSpacing[0];
+      yDir = iVector;
+    } else if (Math.abs(1 - vec3.dot(viewPlaneNormal, jVector)) < EPSILON) {
+      ySpacing = volumeSpacing[1];
+      yDir = jVector;
+    } else if (Math.abs(1 - vec3.dot(viewPlaneNormal, kVector)) < EPSILON) {
+      ySpacing = volumeSpacing[2];
+      yDir = kVector;
+    } else {
+      throw new Error('No support yet for oblique plane planar contours');
+    }
+
+    spacing = [xSpacing, ySpacing];
   }
 
   const subPixelSpacing = [
