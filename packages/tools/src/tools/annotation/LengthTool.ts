@@ -603,6 +603,7 @@ class LengthTool extends AnnotationTool {
         {
           color,
           width: lineWidth,
+          lineDash,
         }
       );
 
