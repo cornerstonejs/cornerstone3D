@@ -25,7 +25,7 @@ export default function filterToolsWithMoveableHandles(
 
   ToolAndAnnotations.forEach(({ tool, annotations }) => {
     for (const annotation of annotations) {
-      if (annotation.isLocked) {
+      if (annotation.isLocked || annotation.isHidden) {
         continue;
       }
 

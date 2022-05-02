@@ -15,6 +15,7 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
+import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import {
   drawLine as drawLineSvg,
@@ -978,6 +979,11 @@ export default class BidirectionalTool extends AnnotationTool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as BidirectionalAnnotation;
+
+      if (isAnnotationHidden(annotation)) {
+        continue;
+      }
+
       const settings = Settings.getObjectSettings(
         annotation,
         BidirectionalTool

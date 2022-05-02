@@ -16,6 +16,7 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
+import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import {
   drawEllipse as drawEllipseSvg,
@@ -732,6 +733,11 @@ export default class EllipticalROITool extends AnnotationTool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as EllipticalROIAnnotation;
+
+      if (isAnnotationHidden(annotation)) {
+        continue;
+      }
+
       const settings = Settings.getObjectSettings(
         annotation,
         EllipticalROITool

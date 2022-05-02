@@ -11,12 +11,15 @@
  *   The annotation has been selected by the user;
  * Locked:
  *   The annotation has been locked;
+ * Hidden:
+ *   The annotation is hidden;
  */
 enum AnnotationStyleStates {
   Default = '',
   Highlighted = 'Highlighted',
   Selected = 'Selected',
   Locked = 'Locked',
+  Hidden = 'Hidden',
 }
 
 export default AnnotationStyleStates;

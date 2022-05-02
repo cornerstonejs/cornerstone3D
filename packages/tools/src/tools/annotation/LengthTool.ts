@@ -15,6 +15,7 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
+import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
 
@@ -556,6 +557,11 @@ class LengthTool extends AnnotationTool {
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as LengthAnnotation;
+
+      if (isAnnotationHidden(annotation)) {
+        continue;
+      }
+
       const settings = Settings.getObjectSettings(annotation, LengthTool);
       const annotationUID = annotation.annotationUID;
       const data = annotation.data;
