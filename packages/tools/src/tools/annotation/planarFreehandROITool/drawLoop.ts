@@ -277,7 +277,7 @@ function completeDrawOpenContour(
  * index of the point just before the lines cross.
  */
 function findCrossingIndexDuringCreate(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  evt: EventTypes.MouseDragEventType
 ): number | undefined {
   // Note as we super sample the added points, we need to check the whole last mouse move, not the points
   const eventDetail = evt.detail;

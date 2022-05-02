@@ -2,7 +2,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import { state } from '../../../store';
 import { Events } from '../../../enums';
 import { hideElementCursor } from '../../../cursors/elementCursor';
-import { EventTypes } from '../../../types';
+import type { EventTypes, Annotation } from '../../../types';
 import { polyline } from '../../../utilities/math';
 
 const { getSpacingAndXYDirections } = polyline;
@@ -13,7 +13,7 @@ const { getSpacingAndXYDirections } = polyline;
  */
 function activateOpenContourEndEdit(
   evt: EventTypes.MouseDownActivateEventType,
-  annotation: Types.Annotation,
+  annotation: Annotation,
   viewportIdsToRender: string[]
 ): void {
   this.isDrawing = true;

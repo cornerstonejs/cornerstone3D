@@ -6,7 +6,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../../cursors/elementCursor';
-import { EventTypes } from '../../../types';
+import type { EventTypes, Annotation } from '../../../types';
 import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
@@ -18,7 +18,7 @@ const { addCanvasPointsToArray, getSpacingAndXYDirections } = polyline;
  */
 function activateOpenContourEdit(
   evt: EventTypes.MouseDownActivateEventType,
-  annotation: Types.Annotation,
+  annotation: Annotation,
   viewportIdsToRender: string[]
 ): void {
   this.isEditingOpen = true;
@@ -97,7 +97,7 @@ function deactivateOpenContourEdit(element: HTMLDivElement) {
  * the edit line past the end of the open contour.
  */
 function mouseDragOpenContourEditCallback(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  evt: EventTypes.MouseDragEventType
 ): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
@@ -205,7 +205,7 @@ function openContourEditOverwriteEnd(
  * open contour's `prevCanvasPoint`s.
  */
 function checkIfShouldOverwriteAnEnd(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  evt: EventTypes.MouseDragEventType
 ): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, lastPoints } = eventDetail;

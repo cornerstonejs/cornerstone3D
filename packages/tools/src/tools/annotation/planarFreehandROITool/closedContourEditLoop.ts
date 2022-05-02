@@ -102,7 +102,7 @@ function deactivateClosedContourEdit(element: HTMLDivElement): void {
  * a way that requires a new edit to keep the contour a simple polygon.
  */
 function mouseDragClosedContourEditCallback(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  evt: EventTypes.MouseDragEventType
 ): Types.Point2[] {
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
@@ -227,12 +227,12 @@ function finishEditAndStartNewEdit(
  */
 function fuseEditPointsWithClosedContour(
   evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
-): Types.Point2 {
+): Types.Point2[] {
   const { prevCanvasPoints, editCanvasPoints, startCrossingIndex, snapIndex } =
     this.commonEditData;
 
   if (startCrossingIndex === undefined || snapIndex === undefined) {
-    return undefined;
+    return;
   }
 
   const eventDetail = evt.detail;
@@ -287,7 +287,7 @@ function fuseEditPointsWithClosedContour(
     augmentedEditCanvasPoints[augmentedEditCanvasPoints.length - 1]
   );
 
-  // Generate two possible contours that could be intepretted from the edit:
+  // Generate two possible contours that could be intepreted from the edit:
   //
   // pointSet1 => 0 -> low -> edit -> high - max.
   // pointSet2 => low -> high -> edit
@@ -368,7 +368,8 @@ function fuseEditPointsWithClosedContour(
   const areaPointSet1 = calculateAreaOfPoints(pointSet1);
   const areaPointSet2 = calculateAreaOfPoints(pointSet2);
 
-  const pointsToRender = areaPointSet1 > areaPointSet2 ? pointSet1 : pointSet2;
+  const pointsToRender: Types.Point2[] =
+    areaPointSet1 > areaPointSet2 ? pointSet1 : pointSet2;
 
   return pointsToRender;
 }

@@ -10,7 +10,7 @@ const EPSILON = 1e-3;
  * returning these canvas directions in world space.
  */
 const getSpacingAndXYDirections = (
-  viewport: StackViewport | VolumeViewport,
+  viewport: Types.IStackViewport | Types.IVolumeViewport,
   subPixelResolution: number
 ): { spacing: Types.Point2; xDir: Types.Point3; yDir: Types.Point3 } => {
   let spacing;
@@ -27,8 +27,8 @@ const getSpacingAndXYDirections = (
     spacing = imageData.spacing;
   } else {
     // Check volume directions
-    const imageVolume = viewport.getDefaultActor();
-    const { direction, spacing: volumeSpacing } = imageVolume;
+    const imageData = viewport.getImageData();
+    const { direction, spacing: volumeSpacing } = imageData;
     const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
     // Calculate size of spacing vector in normal direction
@@ -75,7 +75,7 @@ const getSpacingAndXYDirections = (
     spacing = [xSpacing, ySpacing];
   }
 
-  const subPixelSpacing = [
+  const subPixelSpacing: Types.Point2 = [
     spacing[0] / subPixelResolution,
     spacing[1] / subPixelResolution,
   ];

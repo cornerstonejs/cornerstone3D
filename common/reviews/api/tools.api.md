@@ -28,6 +28,9 @@ type ActorEntry = {
 function addAnnotation(element: HTMLDivElement, annotation: Annotation): void;
 
 // @public (undocumented)
+const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
+
+// @public (undocumented)
 function addColorLUT(colorLUT: ColorLUT, index: number): void;
 
 // @public (undocumented)
@@ -80,6 +83,7 @@ type Annotation = {
             };
             [key: string]: any;
         };
+        [key: string]: any;
         cachedStats?: unknown;
     };
 };
@@ -349,6 +353,9 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     static toolName: string;
 }
+
+// @public (undocumented)
+function calculateAreaOfPoints(points: Types_2.Point2[]): number;
 
 // @public (undocumented)
 function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRenderingEngine, rowPixelSpacing: number, columnPixelSpacing: number): void;
@@ -944,6 +951,7 @@ declare namespace drawing {
         drawEllipse,
         drawHandles,
         drawLine,
+        drawPolyline,
         drawLinkedTextBox,
         drawRect,
         drawTextBox
@@ -962,6 +970,15 @@ function drawLine(svgDrawingHelper: any, toolName: string, annotationUID: string
 
 // @public (undocumented)
 function drawLinkedTextBox(svgDrawingHelper: Record<string, unknown>, toolName: string, annotationUID: string, textBoxUID: string, textLines: Array<string>, textBoxPosition: Types_2.Point2, annotationAnchorPoints: Array<Types_2.Point2>, textBox: unknown, options?: {}): SVGRect;
+
+// @public (undocumented)
+function drawPolyline(svgDrawingHelper: any, toolName: string, annotationUID: string, polylineUID: string, points: Types_2.Point2[], options: {
+    color?: string;
+    width?: number;
+    lineWidth?: number;
+    lineDash?: string;
+    connectLastToFirst?: boolean;
+}): void;
 
 // @public (undocumented)
 function drawRect(svgDrawingHelper: any, toolName: string, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
@@ -1321,6 +1338,12 @@ function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Type
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
+function getClosestIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
+    segment: Types_2.Point2;
+    distance: number;
+} | undefined;
+
+// @public (undocumented)
 function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): Color;
 
 // @public (undocumented)
@@ -1334,6 +1357,9 @@ function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapCon
 
 // @public (undocumented)
 function getDefaultSegmentationStateManager(): SegmentationStateManager;
+
+// @public (undocumented)
+function getFirstIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
 
 // @public (undocumented)
 function getFont(settings?: Settings, state?: AnnotationStyleStates, mode?: ToolModes): string;
@@ -1376,6 +1402,13 @@ function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_
     min: number;
     max: number;
     current: number;
+};
+
+// @public (undocumented)
+const getSpacingAndXYDirections: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, subPixelResolution: number) => {
+    spacing: Types_2.Point2;
+    xDir: Types_2.Point3;
+    yDir: Types_2.Point3;
 };
 
 // @public (undocumented)
@@ -2232,7 +2265,8 @@ declare namespace math {
         vec2,
         ellipse,
         lineSegment,
-        rectangle
+        rectangle,
+        polyline
     }
 }
 
@@ -2453,6 +2487,76 @@ type PlanarBoundingBox = {
     height: number;
 };
 
+// @public (undocumented)
+interface PlanarFreehandROIAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        polyline: Types_2.Point3[];
+        label?: string;
+        isOpenContour?: boolean;
+    };
+    // (undocumented)
+    metadata: {
+        cameraPosition?: Types_2.Point3;
+        cameraFocalPoint?: Types_2.Point3;
+        viewPlaneNormal?: Types_2.Point3;
+        viewUp?: Types_2.Point3;
+        annotationUID?: string;
+        FrameOfReferenceUID: string;
+        referencedImageId?: string;
+        toolName: string;
+    };
+}
+
+// @public (undocumented)
+export class PlanarFreehandROITool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => PlanarFreehandROIAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isEditingClosed: boolean;
+    // (undocumented)
+    isEditingOpen: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: PlanarFreehandROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: PlanarFreehandROIAnnotation, interactionType: InteractionTypes) => void;
+    // (undocumented)
+    touchDragCallback: any;
+    // (undocumented)
+    triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation) => void;
+    // (undocumented)
+    triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
+}
+
 // @public
 type Plane = [number, number, number, number];
 
@@ -2466,6 +2570,9 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
+const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => number | false;
+
+// @public (undocumented)
 function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
 
 // @public (undocumented)
@@ -2473,6 +2580,21 @@ function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, po
 
 // @public (undocumented)
 function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
+
+// @public (undocumented)
+const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
+
+declare namespace polyline {
+    export {
+        getFirstIntersectionWithPolyline,
+        getClosestIntersectionWithPolyline,
+        getSpacingAndXYDirections,
+        pointsAreWithinCloseContourProximity,
+        addCanvasPointsToArray,
+        pointCanProjectOnLine,
+        calculateAreaOfPoints
+    }
+}
 
 // @public
 type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
@@ -3430,7 +3552,8 @@ declare namespace ToolSpecificAnnotationTypes {
         EllipticalROIAnnotation,
         BidirectionalAnnotation,
         RectangleROIThresholdAnnotation,
-        RectangleROIStartEndThresholdAnnotation
+        RectangleROIStartEndThresholdAnnotation,
+        PlanarFreehandROIAnnotation
     }
 }
 

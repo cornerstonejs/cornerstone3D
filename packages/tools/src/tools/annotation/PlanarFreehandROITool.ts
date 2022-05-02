@@ -391,7 +391,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
-    );
+    ) as PlanarFreehandROIAnnotation[];
 
     if (!annotations?.length) {
       return;

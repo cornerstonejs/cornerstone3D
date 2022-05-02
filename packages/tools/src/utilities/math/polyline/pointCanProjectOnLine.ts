@@ -29,7 +29,7 @@ const pointCanProjectOnLine = (
     p1p2UnitVector[0] * projectionVectorMag,
     p1p2UnitVector[1] * projectionVectorMag,
   ];
-  const projectionPoint = <Type.Point2>[
+  const projectionPoint = <Types.Point2>[
     p1[0] + projectionVector[0],
     p1[1] + projectionVector[1],
   ];
