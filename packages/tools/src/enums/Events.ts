@@ -59,6 +59,14 @@ enum Events {
   ANNOTATION_LOCK_CHANGE = 'CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE',
 
   /**
+   * Triggers on the eventTarget when an annotation visible status is changed.
+   * Make use of {@link EventTypes.AnnotationVisibilityChangeEventType | Annotation Visible Change Event Type}
+   * for typing your event listeners for this annotation Hide change event, and see what
+   * event detail is included in {@link EventTypes.AnnotationVisibilityChangeEventDetail | Annotation Visible Change Event Detail}.
+   */
+  ANNOTATION_VISIBILITY_CHANGE = 'CORNERSTONE_TOOLS_ANNOTATION_VISIBILITY_CHANGE',
+
+  /**
    * Triggers on the eventTarget when an annotation is rendered.
    * Make use of {@link EventTypes.AnnotationRenderedEventType | Annotation Rendered Event Type}
    * for typing your event listeners for this annotation rendered event, and see what

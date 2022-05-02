@@ -16,7 +16,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
@@ -714,6 +714,10 @@ export default class RectangleROITool extends AnnotationTool {
       }
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&

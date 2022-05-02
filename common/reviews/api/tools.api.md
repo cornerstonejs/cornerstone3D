@@ -56,6 +56,7 @@ type Annotation = {
     annotationUID?: string;
     highlighted?: boolean;
     isLocked?: boolean;
+    isVisible?: boolean;
     invalidated?: boolean;
     metadata: {
         cameraPosition?: Types_2.Point3;
@@ -93,7 +94,8 @@ declare namespace annotation {
         config,
         locking,
         selection,
-        state
+        state,
+        visibility
     }
 }
 export { annotation }
@@ -233,6 +235,16 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     abstract toolSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes): void;
 }
+
+// @public (undocumented)
+type AnnotationVisibilityChangeEventDetail = {
+    lastHidden: Array<string>;
+    lastVisible: Array<string>;
+    hidden: Array<string>;
+};
+
+// @public (undocumented)
+type AnnotationVisibilityChangeEventType = Types_2.CustomEventType<AnnotationVisibilityChangeEventDetail>;
 
 // @public (undocumented)
 export class ArrowAnnotateTool extends AnnotationTool {
@@ -470,6 +482,9 @@ export function cancelActiveManipulations(element: HTMLDivElement): string | und
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
 
 // @public (undocumented)
+function checkAndDefineIsVisibleProperty(annotation: Annotation): void;
+
+// @public (undocumented)
 export class CircleScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -535,7 +550,7 @@ declare namespace config {
 declare namespace config_2 {
     export {
         color,
-        visibility,
+        visibility_2 as visibility,
         getGlobalConfig_2 as getGlobalConfig,
         getGlobalRepresentationConfig,
         getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
@@ -1261,6 +1276,8 @@ enum Events {
     // (undocumented)
     ANNOTATION_SELECTION_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_SELECTION_CHANGE",
     // (undocumented)
+    ANNOTATION_VISIBILITY_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_VISIBILITY_CHANGE",
+    // (undocumented)
     KEY_DOWN = "CORNERSTONE_TOOLS_KEY_DOWN",
     // (undocumented)
     KEY_UP = "CORNERSTONE_TOOLS_KEY_UP",
@@ -1350,7 +1367,9 @@ declare namespace EventTypes_2 {
         AnnotationRenderedEventDetail,
         AnnotationRenderedEventType,
         AnnotationLockChangeEventDetail,
+        AnnotationVisibilityChangeEventDetail,
         AnnotationLockChangeEventType,
+        AnnotationVisibilityChangeEventType,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
         SegmentationRepresentationModifiedEventType,
@@ -1451,6 +1470,12 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
+
+// @public (undocumented)
+function getAnnotationUIDsHidden(): Array<string>;
+
+// @public (undocumented)
+function getAnnotationUIDsHiddenCount(): number;
 
 // @public (undocumented)
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
@@ -1943,6 +1968,9 @@ function isAnnotationLocked(annotation: Annotation): boolean;
 
 // @public (undocumented)
 function isAnnotationSelected(annotationUID: string): boolean;
+
+// @public (undocumented)
+function isAnnotationVisible(annotationUID: string): boolean | undefined;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3340,6 +3368,12 @@ function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
+function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
+
+// @public (undocumented)
+function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
+
+// @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
@@ -3375,15 +3409,13 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
 
 // @public (undocumented)
+function setToolStyle(toolName: string, style: Record<string, unknown>): boolean;
 function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
     newFocalPoint: Types_2.Point3;
-    newPosition: Types_2.Point3;
 };
 
-// @public (undocumented)
 export class SphereScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
-    // (undocumented)
     _activateDraw: (element: any) => void;
     // (undocumented)
     _deactivateDraw: (element: any) => void;
@@ -3836,6 +3868,17 @@ type ViewportInputOptions = {
 };
 
 declare namespace visibility {
+    export {
+        setAnnotationVisibility,
+        getAnnotationUIDsHidden,
+        getAnnotationUIDsHiddenCount,
+        showAllAnnotations,
+        isAnnotationVisible,
+        checkAndDefineIsVisibleProperty
+    }
+}
+
+declare namespace visibility_2 {
     export {
         setSegmentationVisibility,
         getSegmentationVisibility

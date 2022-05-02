@@ -34,6 +34,10 @@ export default function filterAnnotationsForDisplay(
     // and we don't have a proper way to check distance either since a stack can be
     // composed of multiple unrelated images
     return annotations.filter((annotation) => {
+      if (!annotation.isVisible) {
+        return false;
+      }
+
       const imageId = annotation.metadata.referencedImageId;
       const colonIndex = imageId.indexOf(':');
       const referenceImageURI = imageId.substring(colonIndex + 1);
