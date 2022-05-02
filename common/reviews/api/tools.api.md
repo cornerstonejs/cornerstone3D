@@ -53,6 +53,7 @@ type Annotation = {
     annotationUID?: string;
     highlighted?: boolean;
     isLocked?: boolean;
+    isHidden?: boolean;
     invalidated?: boolean;
     metadata: {
         cameraPosition?: Types_2.Point3;
@@ -87,6 +88,7 @@ type Annotation = {
 declare namespace annotation {
     export {
         config,
+        hide,
         locking,
         selection,
         state
@@ -114,6 +116,16 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 
 // @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
+
+// @public (undocumented)
+type AnnotationHideChangeEventDetail = {
+    added: Array<Annotation>;
+    removed: Array<Annotation>;
+    hidden: Array<Annotation>;
+};
+
+// @public (undocumented)
+type AnnotationHideChangeEventType = Types_2.CustomEventType<AnnotationHideChangeEventDetail>;
 
 // @public (undocumented)
 type AnnotationLockChangeEventDetail = {
@@ -176,6 +188,8 @@ type AnnotationState = {
 enum AnnotationStyleStates {
     // (undocumented)
     Default = "",
+    // (undocumented)
+    Hidden = "Hidden",
     // (undocumented)
     Highlighted = "Highlighted",
     // (undocumented)
@@ -368,6 +382,9 @@ type CameraModifiedEventDetail = {
 
 // @public (undocumented)
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
+
+// @public (undocumented)
+function checkAndDefineIsHiddenProperty(annotation: Annotation): void;
 
 // @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
@@ -1113,6 +1130,8 @@ enum Events {
     // (undocumented)
     ANNOTATION_COMPLETED = "CORNERSTONE_TOOLS_ANNOTATION_COMPLETED",
     // (undocumented)
+    ANNOTATION_HIDE_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_HIDE_CHANGE",
+    // (undocumented)
     ANNOTATION_LOCK_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE",
     // (undocumented)
     ANNOTATION_MODIFIED = "CORNERSTONE_TOOLS_ANNOTATION_MODIFIED",
@@ -1212,7 +1231,9 @@ declare namespace EventTypes_2 {
         AnnotationRenderedEventDetail,
         AnnotationRenderedEventType,
         AnnotationLockChangeEventDetail,
+        AnnotationHideChangeEventDetail,
         AnnotationLockChangeEventType,
+        AnnotationHideChangeEventType,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
         SegmentationRepresentationModifiedEventType,
@@ -1298,6 +1319,12 @@ function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabled
 
 // @public (undocumented)
 function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
+
+// @public (undocumented)
+function getAnnotationsHidden(): Array<Annotation>;
+
+// @public (undocumented)
+function getAnnotationsHiddenCount(): number;
 
 // @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
@@ -1419,6 +1446,17 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
     worldWidth: number;
     worldHeight: number;
 };
+
+declare namespace hide {
+    export {
+        setAnnotationHidden,
+        getAnnotationsHidden,
+        getAnnotationsHiddenCount,
+        showAllAnnotations,
+        isAnnotationHidden,
+        checkAndDefineIsHiddenProperty
+    }
+}
 
 // @public (undocumented)
 function hideElementCursor(element: HTMLDivElement): void;
@@ -1786,6 +1824,9 @@ interface IRenderingEngine {
     // (undocumented)
     setViewports(viewports: Array<PublicViewportInput>): void;
 }
+
+// @public (undocumented)
+function isAnnotationHidden(annotation: Annotation): boolean;
 
 // @public (undocumented)
 function isAnnotationLocked(annotation: Annotation): boolean;
@@ -3094,6 +3135,9 @@ function setActiveSegmentationRepresentation(toolGroupId: string, segmentationRe
 function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): void;
 
 // @public (undocumented)
+function setAnnotationHidden(annotation: Annotation, hidden?: boolean): void;
+
+// @public (undocumented)
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 
 // @public (undocumented)
@@ -3142,6 +3186,9 @@ function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresent
 
 // @public (undocumented)
 function setToolStyle(toolName: string, style: Record<string, unknown>): boolean;
+
+// @public (undocumented)
+function showAllAnnotations(): void;
 
 // @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
