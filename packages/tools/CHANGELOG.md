@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.11.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.10.1...@cornerstonejs/tools@0.11.0) (2022-05-03)
+
+
+### Features
+
+* Add ArrowTool and remove toolName from drawing API ([#88](https://github.com/cornerstonejs/cornerstone3D-beta/issues/88)) ([217637c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/217637cb2a48ca6e73cea7d1781a4a83fc482e79))
+
+
+
+
+
 ## [0.10.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.10.0...@cornerstonejs/tools@0.10.1) (2022-04-27)
 
 **Note:** Version bump only for package @cornerstonejs/tools

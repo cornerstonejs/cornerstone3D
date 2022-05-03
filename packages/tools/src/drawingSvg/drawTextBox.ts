@@ -13,7 +13,6 @@ import _setAttributesIfNecessary from './_setAttributesIfNecessary';
  */
 function drawTextBox(
   svgDrawingHelper: Record<string, unknown>,
-  toolName: string,
   annotationUID: string,
   textUID: string,
   textLines: Array<string>,
@@ -36,7 +35,6 @@ function drawTextBox(
   // Draw each of the text lines on top of the background box
   const textGroupBoundingBox = _drawTextGroup(
     svgDrawingHelper,
-    toolName,
     annotationUID,
     textUID,
     textLines,
@@ -49,7 +47,6 @@ function drawTextBox(
 
 function _drawTextGroup(
   svgDrawingHelper: any,
-  toolName: any,
   annotationUID: string,
   textUID: string,
   textLines: Array<string>,
@@ -61,7 +58,7 @@ function _drawTextGroup(
   let textGroupBoundingBox;
   const [x, y] = [position[0] + padding, position[1] + padding];
   const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(toolName, annotationUID, 'text', textUID);
+  const svgNodeHash = _getHash(annotationUID, 'text', textUID);
   const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash);
 
   // Todo: right now textBox gets a re-render even if the textBox has not changed

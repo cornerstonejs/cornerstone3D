@@ -221,6 +221,82 @@ export abstract class AnnotationTool extends BaseTool {
 }
 
 // @public (undocumented)
+interface ArrowAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        text: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+    };
+}
+
+// @public (undocumented)
+export class ArrowTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => ArrowAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    doubleClickCallback: (evt: EventTypes_2.MouseUpEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: ArrowAnnotation, handle: ToolHandle, interactionType?: string): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: ArrowAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
+    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: ArrowAnnotation, interactionType: InteractionTypes) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 export abstract class BaseTool implements IBaseTool {
     constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
     // (undocumented)
@@ -936,13 +1012,16 @@ function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Poin
 function draw(element: HTMLDivElement, fn: (svgDrawingElement: any) => any): void;
 
 // @public (undocumented)
-function drawCircle(svgDrawingHelper: any, toolName: string, annotationUID: string, circleUID: string, center: Types_2.Point2, radius: number, options?: {}): void;
+function drawArrow(svgDrawingHelper: any, annotationUID: string, arrowUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
 
 // @public (undocumented)
-function drawEllipse(svgDrawingHelper: any, toolName: string, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}): void;
+function drawCircle(svgDrawingHelper: any, annotationUID: string, circleUID: string, center: Types_2.Point2, radius: number, options?: {}): void;
 
 // @public (undocumented)
-function drawHandles(svgDrawingHelper: any, toolName: string, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
+function drawEllipse(svgDrawingHelper: any, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}): void;
+
+// @public (undocumented)
+function drawHandles(svgDrawingHelper: any, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
 
 declare namespace drawing {
     export {
@@ -954,7 +1033,8 @@ declare namespace drawing {
         drawPolyline,
         drawLinkedTextBox,
         drawRect,
-        drawTextBox
+        drawTextBox,
+        drawArrow
     }
 }
 export { drawing }
@@ -966,10 +1046,10 @@ declare namespace drawing_2 {
 }
 
 // @public (undocumented)
-function drawLine(svgDrawingHelper: any, toolName: string, annotationUID: string, lineUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
+function drawLine(svgDrawingHelper: any, annotationUID: string, lineUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
 
 // @public (undocumented)
-function drawLinkedTextBox(svgDrawingHelper: Record<string, unknown>, toolName: string, annotationUID: string, textBoxUID: string, textLines: Array<string>, textBoxPosition: Types_2.Point2, annotationAnchorPoints: Array<Types_2.Point2>, textBox: unknown, options?: {}): SVGRect;
+function drawLinkedTextBox(svgDrawingHelper: Record<string, unknown>, annotationUID: string, textBoxUID: string, textLines: Array<string>, textBoxPosition: Types_2.Point2, annotationAnchorPoints: Array<Types_2.Point2>, textBox: unknown, options?: {}): SVGRect;
 
 // @public (undocumented)
 function drawPolyline(svgDrawingHelper: any, toolName: string, annotationUID: string, polylineUID: string, points: Types_2.Point2[], options: {
@@ -981,10 +1061,10 @@ function drawPolyline(svgDrawingHelper: any, toolName: string, annotationUID: st
 }): void;
 
 // @public (undocumented)
-function drawRect(svgDrawingHelper: any, toolName: string, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
+function drawRect(svgDrawingHelper: any, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
 
 // @public (undocumented)
-function drawTextBox(svgDrawingHelper: Record<string, unknown>, toolName: string, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
+function drawTextBox(svgDrawingHelper: Record<string, unknown>, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
 
 declare namespace elementCursor {
     export {
@@ -3554,6 +3634,7 @@ declare namespace ToolSpecificAnnotationTypes {
         RectangleROIThresholdAnnotation,
         RectangleROIStartEndThresholdAnnotation,
         PlanarFreehandROIAnnotation
+        ArrowAnnotation
     }
 }
 

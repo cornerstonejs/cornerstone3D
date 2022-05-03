@@ -73,7 +73,6 @@ function renderClosedContour(
 
   drawPolylineSvg(
     svgDrawingHelper,
-    this.getToolName(),
     annotation.annotationUID,
     polylineUID,
     canvasPoints,
@@ -100,7 +99,6 @@ function renderOpenContour(
 
   drawPolylineSvg(
     svgDrawingHelper,
-    this.getToolName(),
     annotation.annotationUID,
     polylineUID,
     canvasPoints,
@@ -151,7 +149,6 @@ function renderContourBeingDrawn(
 
   drawPolylineSvg(
     svgDrawingHelper,
-    this.getToolName(),
     annotation.annotationUID,
     '1',
     canvasPoints,
@@ -173,7 +170,6 @@ function renderContourBeingDrawn(
       // Preview join last points
       drawPolylineSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotation.annotationUID,
         '2',
         [lastPoint, firstPoint],
@@ -185,7 +181,6 @@ function renderContourBeingDrawn(
 
       drawHandlesSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotation.annotationUID,
         handleGroupUID,
         [firstPoint],
@@ -218,7 +213,6 @@ function renderClosedContourBeingEdited(
 
   drawPolylineSvg(
     svgDrawingHelper,
-    this.getToolName(),
     annotation.annotationUID,
     polylineUIDToRender,
     fusedCanvasPoints,
@@ -249,7 +243,6 @@ function renderOpenContourBeingEdited(
 
   drawPolylineSvg(
     svgDrawingHelper,
-    this.getToolName(),
     annotation.annotationUID,
     polylineUIDToRender,
     fusedCanvasPoints,

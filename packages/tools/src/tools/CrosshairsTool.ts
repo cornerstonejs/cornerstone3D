@@ -1079,7 +1079,6 @@ export default class CrosshairsTool extends AnnotationTool {
         lineUID = `${lineIndex}One`;
         drawLineSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           lineUID,
           line[1],
@@ -1093,7 +1092,6 @@ export default class CrosshairsTool extends AnnotationTool {
         lineUID = `${lineIndex}Two`;
         drawLineSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           lineUID,
           line[3],
@@ -1106,7 +1104,6 @@ export default class CrosshairsTool extends AnnotationTool {
       } else {
         drawLineSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           lineUID,
           line[2],
@@ -1186,7 +1183,6 @@ export default class CrosshairsTool extends AnnotationTool {
           let handleUID = `${lineIndex}One`;
           drawHandlesSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             handleUID,
             rotationHandles,
@@ -1199,7 +1195,6 @@ export default class CrosshairsTool extends AnnotationTool {
           handleUID = `${lineIndex}Two`;
           drawHandlesSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             handleUID,
             slabThicknessHandles,
@@ -1219,7 +1214,6 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw rotation handles inactive
           drawHandlesSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             handleUID,
             rotationHandles,
@@ -1239,7 +1233,6 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw slab thickness handles inactive
           drawHandlesSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             handleUID,
             slabThicknessHandles,
@@ -1254,7 +1247,6 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw all rotation handles as active
           drawHandlesSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             handleUID,
             rotationHandles,
@@ -1273,7 +1265,6 @@ export default class CrosshairsTool extends AnnotationTool {
           // draw only the slab thickness handles for the active viewport as active
           drawHandlesSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             lineUID,
             slabThicknessHandles,
@@ -1291,7 +1282,6 @@ export default class CrosshairsTool extends AnnotationTool {
           lineUID = `${lineIndex}STOne`;
           drawLineSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             lineUID,
             line[5],
@@ -1306,7 +1296,6 @@ export default class CrosshairsTool extends AnnotationTool {
           lineUID = `${lineIndex}STTwo`;
           drawLineSvg(
             svgDrawingHelper,
-            this.getToolName(),
             annotationUID,
             lineUID,
             line[7],
@@ -1336,7 +1325,6 @@ export default class CrosshairsTool extends AnnotationTool {
     const circleUID = '0';
     drawCircleSvg(
       svgDrawingHelper,
-      this.getToolName(),
       annotationUID,
       circleUID,
       referenceColorCoordinates,

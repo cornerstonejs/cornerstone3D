@@ -369,7 +369,6 @@ export default class RectangleScissorsTool extends BaseTool {
     const rectangleUID = '0';
     drawRectSvg(
       svgDrawingHelper,
-      this.getToolName(),
       annotationUID,
       rectangleUID,
       canvasCoordinates[0],

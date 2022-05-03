@@ -11,7 +11,6 @@ import _setAttributesIfNecessary from './_setAttributesIfNecessary';
  */
 export default function drawPolyline(
   svgDrawingHelper: any,
-  toolName: string,
   annotationUID: string,
   polylineUID: string,
   points: Types.Point2[],
@@ -42,12 +41,7 @@ export default function drawPolyline(
   const strokeWidth = lineWidth || width;
 
   const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(
-    toolName,
-    annotationUID,
-    'polyline',
-    polylineUID
-  );
+  const svgNodeHash = _getHash(annotationUID, 'polyline', polylineUID);
   const existingPolyLine = svgDrawingHelper._getSvgNode(svgNodeHash);
 
   let pointsAttribute = '';

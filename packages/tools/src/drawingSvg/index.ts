@@ -7,6 +7,7 @@ import drawPolyline from './drawPolyline';
 import drawLinkedTextBox from './drawLinkedTextBox';
 import drawRect from './drawRect';
 import drawTextBox from './drawTextBox';
+import drawArrow from './drawArrow';
 
 export {
   draw,
@@ -18,4 +19,5 @@ export {
   drawLinkedTextBox,
   drawRect,
   drawTextBox,
+  drawArrow,
 };

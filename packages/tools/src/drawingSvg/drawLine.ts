@@ -6,7 +6,6 @@ import _setAttributesIfNecessary from './_setAttributesIfNecessary';
 
 export default function drawLine(
   svgDrawingHelper: any,
-  toolName: string,
   annotationUID: string,
   lineUID: string,
   start: Types.Point2,
@@ -32,7 +31,7 @@ export default function drawLine(
   const strokeWidth = lineWidth || width;
 
   const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(toolName, annotationUID, 'line', lineUID);
+  const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
   const existingLine = svgDrawingHelper._getSvgNode(svgNodeHash);
 
   const attributes = {

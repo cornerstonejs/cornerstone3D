@@ -186,6 +186,14 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
     toolName: string;
   };
   data: {
+    polyline: Types.Point3[];
+    label?: string;
+    isOpenContour?: boolean;
+  };
+}
+export interface ArrowAnnotation extends Annotation {
+  data: {
+    text: string;
     handles: {
       points: Types.Point3[];
       activeHandleIndex: number | null;
@@ -200,8 +208,5 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
         };
       };
     };
-    polyline: Types.Point3[];
-    label?: string;
-    isOpenContour?: boolean;
   };
 }
