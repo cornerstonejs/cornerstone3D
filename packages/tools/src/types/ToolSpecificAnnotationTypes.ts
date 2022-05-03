@@ -187,7 +187,7 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
   };
   data: {
     handles: {
-      points: Types.Point3;
+      points: Types.Point3[];
       activeHandleIndex: number | null;
       textBox: {
         hasMoved: boolean;

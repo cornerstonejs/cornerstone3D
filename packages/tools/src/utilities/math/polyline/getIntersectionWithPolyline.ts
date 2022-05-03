@@ -48,7 +48,7 @@ function getClosestIntersectionWithPolyline(
   p1: Types.Point2,
   q1: Types.Point2,
   closed = true
-): Types.Point2 | undefined {
+): { segment: Types.Point2; distance: number } | undefined {
   let initialI;
   let j;
 

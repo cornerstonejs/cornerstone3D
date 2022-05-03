@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 /**
  * cCalculates the area of an array of `Point2` points using the shoelace algorithm.
  */
-export default function calculateAreaOfPoints(points: Types.Point2): number {
+export default function calculateAreaOfPoints(points: Types.Point2[]): number {
   // Shoelace algorithm.
   const n = points.length;
   let area = 0.0;

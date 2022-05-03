@@ -1,6 +1,7 @@
 import { polyline } from '../../../utilities/math';
 import { vec2 } from 'gl-matrix';
 import { EventTypes } from '../../../types';
+import { Types } from '@cornerstonejs/core';
 
 const { addCanvasPointsToArray, getFirstIntersectionWithPolyline } = polyline;
 
@@ -18,7 +19,7 @@ const { addCanvasPointsToArray, getFirstIntersectionWithPolyline } = polyline;
  * so that the edit can be executed in-line.
  */
 function checkForFirstCrossing(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType,
+  evt: EventTypes.MouseDragEventType,
   isClosedContour: boolean
 ): void {
   const eventDetail = evt.detail;
@@ -79,7 +80,7 @@ function checkForFirstCrossing(
 
     const proximity = 6;
 
-    const extendedPoint = [
+    const extendedPoint: Types.Point2 = [
       editCanvasPoints[0][0] - dir[0] * proximity,
       editCanvasPoints[0][1] - dir[1] * proximity,
     ];
@@ -152,14 +153,14 @@ function removePointsUpUntilFirstCrossing(isClosedContour: boolean): void {
  * second time.
  */
 function checkForSecondCrossing(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType,
+  evt: EventTypes.MouseDragEventType,
   isClosedContour: boolean
 ): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, lastPoints } = eventDetail;
   const canvasPos = currentPoints.canvas;
   const lastCanvasPoint = lastPoints.canvas;
-  const { prevCanvasPoints, editCanvasPoints } = this.commonEditData;
+  const { prevCanvasPoints } = this.commonEditData;
 
   const crossedLineSegment = getFirstIntersectionWithPolyline(
     prevCanvasPoints,
