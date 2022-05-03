@@ -14,7 +14,7 @@ const { addCanvasPointsToArray, getFirstIntersectionWithPolyline } = polyline;
  * - If we don't cross after 2 points, but projecting the line backwards the
  * proximity distance means we cross, extend the line back.
  * - If we travel the full proximity in canvas points but don't cross a line, we
- * are likely drawing along the line, which is intutive to the user. At this point
+ * are likely drawing along the line, which is intuitive to the user. At this point
  * snap the start of the edit to the closest place on the `prevCanvasPoints`,
  * so that the edit can be executed in-line.
  */

@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { state } from '../../../store';
 import { Events } from '../../../enums';
-import type { Types } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
