@@ -36,7 +36,7 @@ function activateOpenContourEdit(
     this.configuration.subPixelResolution
   );
 
-  this.commonEditData = {
+  this.editData = {
     prevCanvasPoints,
     editCanvasPoints: [canvasPos],
     startCrossingIndex: undefined,
@@ -107,8 +107,7 @@ function mouseDragOpenContourEditCallback(
   const { renderingEngine, viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-  const { editIndex, editCanvasPoints, startCrossingIndex } =
-    this.commonEditData;
+  const { editIndex, editCanvasPoints, startCrossingIndex } = this.editData;
 
   const lastCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
@@ -137,16 +136,15 @@ function mouseDragOpenContourEditCallback(
 
   const currentEditIndex = editIndex + numPointsAdded;
 
-  this.commonEditData.editIndex = currentEditIndex;
+  this.editData.editIndex = currentEditIndex;
 
   if (startCrossingIndex === undefined && editCanvasPoints.length > 1) {
     this.checkForFirstCrossing(evt, false);
   }
 
-  this.commonEditData.snapIndex = this.findSnapIndex();
+  this.editData.snapIndex = this.findSnapIndex();
 
-  this.commonEditData.fusedCanvasPoints =
-    this.fuseEditPointsWithOpenContour(evt);
+  this.editData.fusedCanvasPoints = this.fuseEditPointsWithOpenContour(evt);
 
   if (
     startCrossingIndex !== undefined &&
@@ -192,7 +190,7 @@ function openContourEditOverwriteEnd(
   this.triggerAnnotationModified(annotation, enabledElement);
 
   this.isEditingOpen = false;
-  this.commonEditData = undefined;
+  this.editData = undefined;
   this.commonData = undefined;
 
   // Jump to a normal line edit now.
@@ -212,8 +210,7 @@ function checkIfShouldOverwriteAnEnd(
   const canvasPos = currentPoints.canvas;
   const lastCanvasPos = lastPoints.canvas;
 
-  const { snapIndex, prevCanvasPoints, startCrossingIndex } =
-    this.commonEditData;
+  const { snapIndex, prevCanvasPoints, startCrossingIndex } = this.editData;
 
   if (startCrossingIndex === undefined || snapIndex === undefined) {
     // Edit not started
@@ -269,7 +266,7 @@ function checkIfShouldOverwriteAnEnd(
  */
 function fuseEditPointsForOpenContourEndEdit(): Types.Point2[] {
   const { snapIndex, prevCanvasPoints, editCanvasPoints, startCrossingIndex } =
-    this.commonEditData;
+    this.editData;
 
   const newCanvasPoints = [];
 
@@ -343,7 +340,7 @@ function fuseEditPointsWithOpenContour(
   evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
 ): Types.Point2[] {
   const { prevCanvasPoints, editCanvasPoints, startCrossingIndex, snapIndex } =
-    this.commonEditData;
+    this.editData;
 
   if (startCrossingIndex === undefined || snapIndex === undefined) {
     return undefined;
@@ -456,7 +453,7 @@ function finishEditOpenOnSecondCrossing(
   const { viewport, renderingEngine } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
-  const { fusedCanvasPoints, editCanvasPoints } = this.commonEditData;
+  const { fusedCanvasPoints, editCanvasPoints } = this.editData;
 
   const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
     viewport.canvasToWorld(canvasPoint)
@@ -473,7 +470,7 @@ function finishEditOpenOnSecondCrossing(
 
   const lastEditCanvasPoint = editCanvasPoints.pop();
 
-  this.commonEditData = {
+  this.editData = {
     prevCanvasPoints: fusedCanvasPoints,
     editCanvasPoints: [lastEditCanvasPoint],
     startCrossingIndex: undefined,
@@ -495,7 +492,7 @@ function mouseUpOpenContourEditCallback(
   const { viewport, renderingEngine } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
-  const { fusedCanvasPoints } = this.commonEditData;
+  const { fusedCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
     const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
@@ -513,7 +510,7 @@ function mouseUpOpenContourEditCallback(
   }
 
   this.isEditingOpen = false;
-  this.commonEditData = undefined;
+  this.editData = undefined;
   this.commonData = undefined;
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);

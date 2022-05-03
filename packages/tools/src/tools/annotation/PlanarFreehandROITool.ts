@@ -128,8 +128,11 @@ class PlanarFreehandROITool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         allowOpenContours: true,
-        // Radius in canvas coordinates used to join contours.
+        // Proximity in canvas coordinates used to join contours.
         closeContourProximity: 10,
+        // The proximity at which we fallback to the simplest grabbing logic for
+        // determining what index of the contour to start editing.
+        checkCanvasEditFallbackProximity: 6,
         // The relative distance that points should be dropped along the polyline
         // in units of the image pixel spacing. A value of 1 means that nodes must
         // be placed no closed than the image spacing appart. A value of 4 means that 4

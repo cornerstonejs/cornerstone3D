@@ -164,7 +164,7 @@ function orientation(
 }
 
 /**
- * Checks if point `q` lines on the segment (`p`,`r`).
+ * Checks if point `q` lies on the segment (`p`,`r`).
  */
 function onSegment(p: Types.Point2, q: Types.Point2, r: Types.Point2): boolean {
   if (

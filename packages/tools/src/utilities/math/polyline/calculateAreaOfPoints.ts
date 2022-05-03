@@ -1,7 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 
 /**
- * cCalculates the area of an array of `Point2` points using the shoelace algorithm.
+ * Calculates the area of an array of `Point2` points using the shoelace algorithm.
+ *
+ * The units of the area are in the same units as the points are in. E.g. if
+ * the points are in canvas, then the result is in canvas pixels ^2; If they are
+ * in mm, then the result is in mm^2; etc.
  */
 export default function calculateAreaOfPoints(points: Types.Point2[]): number {
   // Shoelace algorithm.

@@ -208,7 +208,7 @@ function renderClosedContourBeingEdited(
   svgDrawingHelper,
   annotation
 ): void {
-  const { fusedCanvasPoints } = this.commonEditData;
+  const { fusedCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints === undefined) {
     // No edit to render yet, render closed contour.
@@ -248,7 +248,7 @@ function renderOpenContourBeingEdited(
   svgDrawingHelper: any,
   annotation: PlanarFreehandROIAnnotation
 ): void {
-  const { fusedCanvasPoints } = this.commonEditData;
+  const { fusedCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints === undefined) {
     // No edit to render yet, render closed contour.

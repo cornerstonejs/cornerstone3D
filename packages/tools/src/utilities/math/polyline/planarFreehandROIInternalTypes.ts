@@ -8,12 +8,16 @@ type PlanarFreehandROIDrawData = {
   canvasPoints: Types.Point2[];
 };
 
-type PlanarFreehandROICommonEditData = {
+type PlanarFreehandROIEditData = {
   prevCanvasPoints: Types.Point2[];
   editCanvasPoints: Types.Point2[];
   fusedCanvasPoints: Types.Point2[];
   startCrossingIndex?: Types.Point2;
+  // The current index of the last node added to the (invisible) edit line being
+  // used to calculate the edit preview.
   editIndex: number;
+  // The index on the prevCanvasPoints that the edit line should snap to in the
+  // edit preview.
   snapIndex?: number;
 };
 
@@ -27,6 +31,6 @@ type PlanarFreehandROICommonData = {
 
 export {
   PlanarFreehandROIDrawData,
-  PlanarFreehandROICommonEditData,
+  PlanarFreehandROIEditData,
   PlanarFreehandROICommonData,
 };
