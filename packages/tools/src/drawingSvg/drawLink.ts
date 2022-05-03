@@ -9,7 +9,6 @@ import { PlanarBoundingBox } from '../types';
  */
 function drawLink(
   svgDrawingHelper: Record<string, unknown>,
-  toolName: string,
   annotationUID: string,
   linkUID: string,
   // Find closest point to approx. bounding box
@@ -44,7 +43,6 @@ function drawLink(
 
   drawLine(
     svgDrawingHelper,
-    toolName,
     annotationUID,
     `link-${linkUID}`,
     start,

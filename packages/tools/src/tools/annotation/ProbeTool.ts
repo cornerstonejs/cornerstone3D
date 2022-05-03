@@ -487,7 +487,6 @@ export default class ProbeTool extends AnnotationTool {
 
       drawHandlesSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         handleGroupUID,
         [canvasCoordinates],
@@ -504,7 +503,6 @@ export default class ProbeTool extends AnnotationTool {
         const textUID = '0';
         drawTextBoxSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           textUID,
           textLines,

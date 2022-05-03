@@ -9,7 +9,6 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { AnnotationTool } from '../base';
-import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
   getAnnotations,
@@ -20,17 +19,14 @@ import * as lineSegment from '../../utilities/math/line';
 
 import {
   drawHandles as drawHandlesSvg,
-  drawLine as drawLineSvg,
+  drawArrow as drawArrowSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
+import { AnnotationCompletedEventDetail } from '../../types/EventTypes';
 
 import {
   resetElementCursor,
@@ -45,47 +41,10 @@ import {
   ToolProps,
   InteractionTypes,
 } from '../../types';
-import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
-const { transformWorldToIndex } = csUtils;
-
-/**
- * LengthTool let you draw annotations that measures the length of two drawing
- * points on a slice. You can use the LengthTool in all imaging planes even in oblique
- * reconstructed planes. Note: annotation tools in cornerstone3DTools exists in the exact location
- * in the physical 3d space, as a result, by default, all annotations that are
- * drawing in the same frameOfReference will get shared between viewports that
- * are in the same frameOfReference.
- *
- * The resulting annotation's data (statistics) and metadata (the
- * state of the viewport while drawing was happening) will get added to the
- * ToolState manager and can be accessed from the ToolState by calling getAnnotations
- * or similar methods.
- *
- * ```js
- * cornerstoneTools.addTool(LengthTool)
- *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
- *
- * toolGroup.addTool(LengthTool.toolName)
- *
- * toolGroup.addViewport('viewportId', 'renderingEngineId')
- *
- * toolGroup.setToolActive(LengthTool.toolName, {
- *   bindings: [
- *    {
- *       mouseButton: MouseBindings.Primary, // Left Click
- *     },
- *   ],
- * })
- * ```
- *
- * Read more in the Docs section of the website.
-
- */
-
-class LengthTool extends AnnotationTool {
-  static toolName = 'Length';
+class ArrowTool extends AnnotationTool {
+  static toolName = 'Arrow';
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -107,17 +66,14 @@ class LengthTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
+        getTextCallback: () => prompt('Enter your annotation:'),
+        changeTextCallback: () => prompt('Enter your annotation:'),
         preventHandleOutsideImage: false,
+        arrowFirst: true,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
-
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStats,
-      100,
-      { trailing: true }
-    );
   }
 
   /**
@@ -130,7 +86,7 @@ class LengthTool extends AnnotationTool {
    */
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): LengthAnnotation => {
+  ): ArrowAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -161,6 +117,7 @@ class LengthTool extends AnnotationTool {
         referencedImageId,
       },
       data: {
+        text: '',
         handles: {
           points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
           activeHandleIndex: null,
@@ -176,12 +133,11 @@ class LengthTool extends AnnotationTool {
           },
         },
         label: '',
-        cachedStats: {},
       },
     };
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, LengthTool);
+    Settings.getObjectSettings(annotation, ArrowTool);
 
     addAnnotation(element, annotation);
 
@@ -220,7 +176,7 @@ class LengthTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: LengthAnnotation,
+    annotation: ArrowAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -257,7 +213,7 @@ class LengthTool extends AnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: LengthAnnotation,
+    annotation: ArrowAnnotation,
     interactionType: InteractionTypes
   ): void => {
     const eventDetail = evt.detail;
@@ -290,7 +246,7 @@ class LengthTool extends AnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.MouseDownEventType,
-    annotation: LengthAnnotation,
+    annotation: ArrowAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void {
@@ -366,9 +322,20 @@ class LengthTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID, element);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
     if (newAnnotation) {
+      const text = this.configuration.getTextCallback();
+      if (!text) {
+        removeAnnotation(annotation.annotationUID, element);
+        triggerAnnotationRenderForViewportIds(
+          renderingEngine,
+          viewportIdsToRender
+        );
+        this.editData = null;
+        this.isDrawing = false;
+        return;
+      }
+      annotation.data.text = text;
+
       const eventType = Events.ANNOTATION_COMPLETED;
 
       const eventDetail: AnnotationCompletedEventDetail = {
@@ -377,6 +344,8 @@ class LengthTool extends AnnotationTool {
 
       triggerEvent(eventTarget, eventType, eventDetail);
     }
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     this.editData = null;
     this.isDrawing = false;
@@ -434,6 +403,57 @@ class LengthTool extends AnnotationTool {
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
+
+  doubleClickCallback = (evt: EventTypes.MouseUpEventType) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    const { viewportId, renderingEngineId, renderingEngine } =
+      getEnabledElement(element);
+
+    let annotations = getAnnotations(element, this.getToolName());
+
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations
+    );
+
+    const clickedAnnotation = annotations.find((annotation) =>
+      this.isPointNearTool(
+        element,
+        annotation as ArrowAnnotation,
+        eventDetail.currentPoints.canvas,
+        6 // Todo: get from configuration
+      )
+    );
+
+    if (!clickedAnnotation) {
+      return;
+    }
+
+    const annotation = clickedAnnotation as ArrowAnnotation;
+
+    const text = this.configuration.changeTextCallback();
+    annotation.data.text = text;
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    // Dispatching annotation modified
+    const eventType = Events.ANNOTATION_MODIFIED;
+
+    triggerEvent(eventTarget, eventType, {
+      annotation,
+      viewportId,
+      renderingEngineId,
+    });
+
+    this.editData = null;
+    this.isDrawing = false;
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -550,16 +570,13 @@ class LengthTool extends AnnotationTool {
       return;
     }
 
-    const targetId = this.getTargetId(viewport);
-    const renderingEngine = viewport.getRenderingEngine();
-
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as LengthAnnotation;
-      const settings = Settings.getObjectSettings(annotation, LengthTool);
-      const annotationUID = annotation.annotationUID;
-      const data = annotation.data;
-      const { points, activeHandleIndex } = data.handles;
+      const annotation = annotations[i] as ArrowAnnotation;
+      const settings = Settings.getObjectSettings(annotation, ArrowTool);
+      const { annotationUID, data } = annotation;
+      const { handles, text } = data;
+      const { points, activeHandleIndex } = handles;
       const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
       const lineDash = this.getStyle(settings, 'lineDash', annotation);
       const color = this.getStyle(settings, 'color', annotation);
@@ -593,32 +610,30 @@ class LengthTool extends AnnotationTool {
         );
       }
 
-      const lineUID = '1';
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        canvasCoordinates[0],
-        canvasCoordinates[1],
-        {
-          color,
-          width: lineWidth,
-          lineDash,
-        }
-      );
-
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetId]) {
-        data.cachedStats[targetId] = {
-          length: null,
-        };
-
-        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
-      } else if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement
+      const arrowUID = '1';
+      if (this.configuration.arrowFirst) {
+        drawArrowSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arrowUID,
+          canvasCoordinates[1],
+          canvasCoordinates[0],
+          {
+            color,
+            width: lineWidth,
+          }
+        );
+      } else {
+        drawArrowSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arrowUID,
+          canvasCoordinates[0],
+          canvasCoordinates[1],
+          {
+            color,
+            width: lineWidth,
+          }
         );
       }
 
@@ -628,7 +643,9 @@ class LengthTool extends AnnotationTool {
         return;
       }
 
-      const textLines = this._getTextLines(data, targetId);
+      if (!text) {
+        continue;
+      }
 
       // Need to update to sync w/ annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
@@ -647,7 +664,7 @@ class LengthTool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         textBoxUID,
-        textLines,
+        [text],
         textBoxPosition,
         canvasCoordinates,
         {},
@@ -665,82 +682,6 @@ class LengthTool extends AnnotationTool {
     }
   };
 
-  // text line for the current active length annotation
-  _getTextLines(data, targetId) {
-    const cachedVolumeStats = data.cachedStats[targetId];
-    const { length } = cachedVolumeStats;
-
-    if (length === undefined) {
-      return;
-    }
-
-    // spaceBetweenSlices & pixelSpacing &
-    // magnitude in each direction? Otherwise, this is "px"?
-    const textLines = [`${length.toFixed(2)} mm`];
-
-    return textLines;
-  }
-
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
-  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
-    const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
-
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
-    const { cachedStats } = data;
-    const targetIds = Object.keys(cachedStats);
-
-    // TODO clean up, this doesn't need a length per volume, it has no stats derived from volumes.
-
-    for (let i = 0; i < targetIds.length; i++) {
-      const targetId = targetIds[i];
-
-      const image = this.getTargetIdImage(targetId, renderingEngine);
-
-      const { imageData, dimensions } = image;
-
-      const length = this._calculateLength(worldPos1, worldPos2);
-
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
-
-      this._isInsideVolume(index1, index2, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
-
-      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
-      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
-      // corner is off the canvas.
-
-      // todo: add insideVolume calculation, for removing tool if outside
-      cachedStats[targetId] = {
-        length,
-      };
-    }
-
-    annotation.invalidated = false;
-
-    // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
-
-    return cachedStats;
-  }
-
   _isInsideVolume(index1, index2, dimensions) {
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
@@ -749,4 +690,4 @@ class LengthTool extends AnnotationTool {
   }
 }
 
-export default LengthTool;
+export default ArrowTool;

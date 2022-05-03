@@ -6,7 +6,6 @@ import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 
 function drawEllipse(
   svgDrawingHelper: any,
-  toolName: string,
   annotationUID: string,
   ellipseUID: string,
   corner1: Types.Point2,
@@ -27,7 +26,7 @@ function drawEllipse(
   const strokeWidth = lineWidth || width;
 
   const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(toolName, annotationUID, 'ellipse', ellipseUID);
+  const svgNodeHash = _getHash(annotationUID, 'ellipse', ellipseUID);
   const existingEllipse = svgDrawingHelper._getSvgNode(svgNodeHash);
 
   const w = Math.abs(corner1[0] - corner2[0]);

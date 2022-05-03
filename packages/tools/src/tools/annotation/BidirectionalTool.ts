@@ -1027,7 +1027,6 @@ export default class BidirectionalTool extends AnnotationTool {
 
         drawHandlesSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -1040,7 +1039,6 @@ export default class BidirectionalTool extends AnnotationTool {
       const lineUID = '0';
       drawLineSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         lineUID,
         canvasCoordinates[0],
@@ -1055,7 +1053,6 @@ export default class BidirectionalTool extends AnnotationTool {
       const secondLineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         secondLineUID,
         canvasCoordinates[2],
@@ -1088,7 +1085,6 @@ export default class BidirectionalTool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,

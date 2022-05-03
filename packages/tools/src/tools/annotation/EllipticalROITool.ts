@@ -831,7 +831,6 @@ export default class EllipticalROITool extends AnnotationTool {
         const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
-          this.getToolName(),
           annotationUID,
           handleGroupUID,
           activeHandleCanvasCoords,
@@ -844,7 +843,6 @@ export default class EllipticalROITool extends AnnotationTool {
       const ellipseUID = '0';
       drawEllipseSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         ellipseUID,
         canvasCorners[0],
@@ -878,7 +876,6 @@ export default class EllipticalROITool extends AnnotationTool {
       const textBoxUID = '1';
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
-        this.getToolName(),
         annotationUID,
         textBoxUID,
         textLines,

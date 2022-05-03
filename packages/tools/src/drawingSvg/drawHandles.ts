@@ -6,7 +6,6 @@ import _setAttributesIfNecessary from './_setAttributesIfNecessary';
 
 function drawHandles(
   svgDrawingHelper: any,
-  toolName: string,
   annotationUID: string,
   handleGroupUID: string,
   handlePoints: Array<Types.Point2>,
@@ -33,7 +32,6 @@ function drawHandles(
     // variable for the namespace
     const svgns = 'http://www.w3.org/2000/svg';
     const svgNodeHash = _getHash(
-      toolName,
       annotationUID,
       'handle',
       `hg-${handleGroupUID}-index-${i}`
