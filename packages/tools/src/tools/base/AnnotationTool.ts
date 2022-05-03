@@ -13,7 +13,7 @@ import { vec4, vec2 } from 'gl-matrix';
 
 import BaseTool from './BaseTool';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { getViewportSpecificAnnotationManager } from '../../stateManagement/annotation/annotationState';
 import {
   Annotation,
@@ -166,7 +166,10 @@ abstract class AnnotationTool extends BaseTool {
 
     for (const annotation of filteredAnnotations) {
       // Do not do anything if the annotation is locked or hidden.
-      if (isAnnotationLocked(annotation) || isAnnotationHidden(annotation)) {
+      if (
+        isAnnotationLocked(annotation) ||
+        !isAnnotationVisible(annotation.annotationUID)
+      ) {
         continue;
       }
 

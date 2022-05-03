@@ -13,7 +13,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import {
   LengthTool,
-  BidirectionalTool,
+  RectangleROITool,
   ToolGroupManager,
   Enums as csToolsEnums,
   annotation,
@@ -28,8 +28,10 @@ console.warn(
 
 const { MouseBindings } = csToolsEnums;
 
-const { locking, selection } = annotation;
+const { locking, selection, hide, visibility } = annotation;
 const { ViewportType } = Enums;
+
+window.visibility = visibility;
 
 const defaultFrameOfReferenceSpecificAnnotationManager =
   annotation.state.getDefaultAnnotationManager();
@@ -94,6 +96,46 @@ addButtonToToolbar({
     }
   },
 });
+addButtonToToolbar({
+  title: 'Hide Selected Annotation',
+  onClick: () => {
+    const annotationUIDs = selection.getAnnotationsSelected();
+
+    if (annotationUIDs && annotationUIDs.length) {
+      const annotationUID = annotationUIDs[0];
+
+      visibility.setAnnotationVisibility(annotationUID, false);
+      selection.deselectAnnotation();
+
+      // Render the image to see it was selected
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      renderingEngine.renderViewports([viewportId]);
+    }
+  },
+});
+
+addButtonToToolbar({
+  title: 'Hide all Annotation',
+  onClick: () => {
+    visibility.hideAllAnnotations();
+    // Render the image to see it was selected
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    renderingEngine.renderViewports([viewportId]);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Show all Annotation',
+  onClick: () => {
+    visibility.showAllAnnotations();
+    // Render the image to see it was selected
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    renderingEngine.renderViewports([viewportId]);
+  },
+});
 
 addButtonToToolbar({
   title: 'Select Random Annotation',
@@ -129,7 +171,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   addTool(LengthTool);
-  addTool(BidirectionalTool);
+  addTool(RectangleROITool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -137,7 +179,7 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
+  toolGroup.addTool(RectangleROITool.toolName);
 
   // Set both tools passive to we can edit annotations
   toolGroup.setToolActive(LengthTool.toolName, {
@@ -147,7 +189,7 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolPassive(BidirectionalTool.toolName);
+  toolGroup.setToolPassive(RectangleROITool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

@@ -21,6 +21,7 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
@@ -368,6 +369,10 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       }
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&

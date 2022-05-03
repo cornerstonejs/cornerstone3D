@@ -12,7 +12,7 @@ import {
 } from '../../stateManagement/annotation/annotationSelection';
 
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 // Util
 import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableHandles';
@@ -165,7 +165,7 @@ function getAnnotationForSelection(
       toolsWithMovableHandles.find(
         (item) =>
           !isAnnotationLocked(item.annotation) &&
-          !isAnnotationHidden(item.annotation)
+          isAnnotationVisible(item.annotation.annotationUID)
       )) ||
     toolsWithMovableHandles[0]
   );

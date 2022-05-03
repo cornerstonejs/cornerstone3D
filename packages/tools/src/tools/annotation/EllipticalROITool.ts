@@ -16,8 +16,8 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
-import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
@@ -734,15 +734,12 @@ export default class EllipticalROITool extends AnnotationTool {
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as EllipticalROIAnnotation;
 
-      if (isAnnotationHidden(annotation)) {
-        continue;
-      }
+      const annotationUID = annotation.annotationUID;
 
       const settings = Settings.getObjectSettings(
         annotation,
         EllipticalROITool
       );
-      const annotationUID = annotation.annotationUID;
       const data = annotation.data;
 
       const { handles } = data;
@@ -823,6 +820,10 @@ export default class EllipticalROITool extends AnnotationTool {
       }
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&

@@ -53,7 +53,7 @@ type Annotation = {
     annotationUID?: string;
     highlighted?: boolean;
     isLocked?: boolean;
-    isHidden?: boolean;
+    isVisible?: boolean;
     invalidated?: boolean;
     metadata: {
         cameraPosition?: Types_2.Point3;
@@ -88,10 +88,10 @@ type Annotation = {
 declare namespace annotation {
     export {
         config,
-        hide,
         locking,
         selection,
-        state
+        state,
+        visibility
     }
 }
 export { annotation }
@@ -116,16 +116,6 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 
 // @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
-
-// @public (undocumented)
-type AnnotationHideChangeEventDetail = {
-    added: Array<Annotation>;
-    removed: Array<Annotation>;
-    hidden: Array<Annotation>;
-};
-
-// @public (undocumented)
-type AnnotationHideChangeEventType = Types_2.CustomEventType<AnnotationHideChangeEventDetail>;
 
 // @public (undocumented)
 type AnnotationLockChangeEventDetail = {
@@ -229,6 +219,17 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     abstract toolSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes): void;
 }
+
+// @public (undocumented)
+type AnnotationVisibilityChangeEventDetail = {
+    added: Array<string>;
+    removed: Array<string>;
+    hidden: Array<string>;
+    visible: Array<string>;
+};
+
+// @public (undocumented)
+type AnnotationVisibilityChangeEventType = Types_2.CustomEventType<AnnotationVisibilityChangeEventDetail>;
 
 // @public (undocumented)
 export abstract class BaseTool implements IBaseTool {
@@ -384,10 +385,10 @@ type CameraModifiedEventDetail = {
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
 
 // @public (undocumented)
-function checkAndDefineIsHiddenProperty(annotation: Annotation): void;
+function checkAndDefineIsLockedProperty(annotation: Annotation): void;
 
 // @public (undocumented)
-function checkAndDefineIsLockedProperty(annotation: Annotation): void;
+function checkAndDefineIsVisibleProperty(annotation: Annotation): void;
 
 // @public (undocumented)
 export class CircleScissorsTool extends BaseTool {
@@ -458,7 +459,7 @@ declare namespace config {
 declare namespace config_2 {
     export {
         color,
-        visibility,
+        visibility_2 as visibility,
         getGlobalConfig_2 as getGlobalConfig,
         getGlobalRepresentationConfig,
         getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
@@ -1130,8 +1131,6 @@ enum Events {
     // (undocumented)
     ANNOTATION_COMPLETED = "CORNERSTONE_TOOLS_ANNOTATION_COMPLETED",
     // (undocumented)
-    ANNOTATION_HIDE_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_HIDE_CHANGE",
-    // (undocumented)
     ANNOTATION_LOCK_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_LOCK_CHANGE",
     // (undocumented)
     ANNOTATION_MODIFIED = "CORNERSTONE_TOOLS_ANNOTATION_MODIFIED",
@@ -1141,6 +1140,8 @@ enum Events {
     ANNOTATION_RENDERED = "CORNERSTONE_TOOLS_ANNOTATION_RENDERED",
     // (undocumented)
     ANNOTATION_SELECTION_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_SELECTION_CHANGE",
+    // (undocumented)
+    ANNOTATION_VISIBILITY_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_VISIBILITY_CHANGE",
     // (undocumented)
     KEY_DOWN = "CORNERSTONE_TOOLS_KEY_DOWN",
     // (undocumented)
@@ -1231,9 +1232,9 @@ declare namespace EventTypes_2 {
         AnnotationRenderedEventDetail,
         AnnotationRenderedEventType,
         AnnotationLockChangeEventDetail,
-        AnnotationHideChangeEventDetail,
+        AnnotationVisibilityChangeEventDetail,
         AnnotationLockChangeEventType,
-        AnnotationHideChangeEventType,
+        AnnotationVisibilityChangeEventType,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
         SegmentationRepresentationModifiedEventType,
@@ -1321,12 +1322,6 @@ function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabled
 function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
 
 // @public (undocumented)
-function getAnnotationsHidden(): Array<Annotation>;
-
-// @public (undocumented)
-function getAnnotationsHiddenCount(): number;
-
-// @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
 
 // @public (undocumented)
@@ -1340,6 +1335,18 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
+
+// @public (undocumented)
+function getAnnotationUIDsHidden(): Array<string>;
+
+// @public (undocumented)
+function getAnnotationUIDsHiddenCount(): number;
+
+// @public (undocumented)
+function getAnnotationUIDsVisible(): Array<string>;
+
+// @public (undocumented)
+function getAnnotationUIDsVisibleCount(): number;
 
 // @public (undocumented)
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
@@ -1447,16 +1454,8 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
     worldHeight: number;
 };
 
-declare namespace hide {
-    export {
-        setAnnotationHidden,
-        getAnnotationsHidden,
-        getAnnotationsHiddenCount,
-        showAllAnnotations,
-        isAnnotationHidden,
-        checkAndDefineIsHiddenProperty
-    }
-}
+// @public (undocumented)
+function hideAllAnnotations(): void;
 
 // @public (undocumented)
 function hideElementCursor(element: HTMLDivElement): void;
@@ -1826,13 +1825,13 @@ interface IRenderingEngine {
 }
 
 // @public (undocumented)
-function isAnnotationHidden(annotation: Annotation): boolean;
-
-// @public (undocumented)
 function isAnnotationLocked(annotation: Annotation): boolean;
 
 // @public (undocumented)
 function isAnnotationSelected(annotationUID: string): boolean;
+
+// @public (undocumented)
+function isAnnotationVisible(annotationUID: string): boolean;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3135,9 +3134,6 @@ function setActiveSegmentationRepresentation(toolGroupId: string, segmentationRe
 function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): void;
 
 // @public (undocumented)
-function setAnnotationHidden(annotation: Annotation, hidden?: boolean): void;
-
-// @public (undocumented)
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 
 // @public (undocumented)
@@ -3145,6 +3141,9 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 
 // @public (undocumented)
 function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
+
+// @public (undocumented)
+function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
 
 // @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
@@ -3618,6 +3617,20 @@ type ViewportInputOptions = {
 };
 
 declare namespace visibility {
+    export {
+        setAnnotationVisibility,
+        getAnnotationUIDsHidden,
+        getAnnotationUIDsVisible,
+        getAnnotationUIDsHiddenCount,
+        getAnnotationUIDsVisibleCount,
+        showAllAnnotations,
+        hideAllAnnotations,
+        isAnnotationVisible,
+        checkAndDefineIsVisibleProperty
+    }
+}
+
+declare namespace visibility_2 {
     export {
         setSegmentationVisibility,
         getSegmentationVisibility

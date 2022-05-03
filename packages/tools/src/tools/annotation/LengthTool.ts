@@ -15,8 +15,8 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
-import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import * as lineSegment from '../../utilities/math/line';
 
 import {
@@ -558,12 +558,8 @@ class LengthTool extends AnnotationTool {
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as LengthAnnotation;
 
-      if (isAnnotationHidden(annotation)) {
-        continue;
-      }
-
-      const settings = Settings.getObjectSettings(annotation, LengthTool);
       const annotationUID = annotation.annotationUID;
+      const settings = Settings.getObjectSettings(annotation, LengthTool);
       const data = annotation.data;
       const { points, activeHandleIndex } = data.handles;
       const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
@@ -573,6 +569,10 @@ class LengthTool extends AnnotationTool {
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&

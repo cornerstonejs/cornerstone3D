@@ -17,7 +17,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
@@ -632,13 +632,8 @@ export default class RectangleROITool extends AnnotationTool {
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as RectangleROIAnnotation;
 
-      if (isAnnotationHidden(annotation)) {
-        continue;
-      }
-
-      const settings = Settings.getObjectSettings(annotation, RectangleROITool);
       const annotationUID = annotation.annotationUID;
-
+      const settings = Settings.getObjectSettings(annotation, RectangleROITool);
       const data = annotation.data;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
@@ -716,6 +711,10 @@ export default class RectangleROITool extends AnnotationTool {
       }
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&

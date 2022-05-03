@@ -88,16 +88,15 @@ type AnnotationLockChangeEventDetail = {
   locked: Array<Annotation>;
 };
 
-/**
- * The data that is passed to the event handler when an annotation hide status changes.
- */
-type AnnotationHideChangeEventDetail = {
-  // List of instances changed to hidden state by the last operation.
-  added: Array<Annotation>;
-  // List of instances removed from hidden state by the last operation.
-  removed: Array<Annotation>;
-  // Updated list of currently hidden instances
-  hidden: Array<Annotation>;
+type AnnotationVisibilityChangeEventDetail = {
+  // List of instances uids changed to visible state by the last operation.
+  added: Array<string>;
+  // List of instances uids removed from visible state by the last operation.
+  removed: Array<string>;
+  // Updated list of currently hidden instances uids
+  hidden: Array<string>;
+  // Updated list of currently visible instances uids
+  visible: Array<string>;
 };
 
 /**
@@ -358,10 +357,10 @@ type AnnotationLockChangeEventType =
   Types.CustomEventType<AnnotationLockChangeEventDetail>;
 
 /**
- * The AnnotationHideChange event type
+ * The AnnotationVisibilityChange event type
  */
-type AnnotationHideChangeEventType =
-  Types.CustomEventType<AnnotationHideChangeEventDetail>;
+type AnnotationVisibilityChangeEventType =
+  Types.CustomEventType<AnnotationVisibilityChangeEventDetail>;
 
 /**
  * Event for when SegmentationData is modified
@@ -461,9 +460,9 @@ export {
   AnnotationRenderedEventDetail,
   AnnotationRenderedEventType,
   AnnotationLockChangeEventDetail,
-  AnnotationHideChangeEventDetail,
+  AnnotationVisibilityChangeEventDetail,
   AnnotationLockChangeEventType,
-  AnnotationHideChangeEventType,
+  AnnotationVisibilityChangeEventType,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,
   SegmentationRepresentationModifiedEventType,

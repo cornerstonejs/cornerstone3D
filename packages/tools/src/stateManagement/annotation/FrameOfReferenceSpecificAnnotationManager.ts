@@ -9,7 +9,7 @@ import cloneDeep from 'lodash.clonedeep';
 import { Enums, eventTarget, Types, utilities } from '@cornerstonejs/core';
 
 import { checkAndDefineIsLockedProperty } from './annotationLocking';
-import { checkAndDefineIsHiddenProperty } from './annotationHide';
+import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 
 interface FilterInterface {
   FrameOfReferenceUID?: string;
@@ -180,7 +180,7 @@ export default class FrameOfReferenceSpecificAnnotationManager {
 
     toolSpecificAnnotations.push(annotation);
     checkAndDefineIsLockedProperty(annotation);
-    checkAndDefineIsHiddenProperty(annotation);
+    checkAndDefineIsVisibleProperty(annotation);
   };
 
   /**

@@ -15,8 +15,8 @@ import {
   getAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
-import { isAnnotationHidden } from '../../stateManagement/annotation/annotationHide';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
@@ -979,16 +979,12 @@ export default class BidirectionalTool extends AnnotationTool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as BidirectionalAnnotation;
-
-      if (isAnnotationHidden(annotation)) {
-        continue;
-      }
+      const annotationUID = annotation.annotationUID;
 
       const settings = Settings.getObjectSettings(
         annotation,
         BidirectionalTool
       );
-      const annotationUID = annotation.annotationUID;
       const data = annotation.data;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
@@ -1018,6 +1014,10 @@ export default class BidirectionalTool extends AnnotationTool {
       }
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&
