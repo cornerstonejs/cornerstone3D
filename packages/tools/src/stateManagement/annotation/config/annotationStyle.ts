@@ -4,7 +4,7 @@ import { ToolModes, AnnotationStyleStates } from '../../../enums';
 Settings.getDefaultSettings().set('tool.style', {
   color: 'rgb(255, 255, 0)',
   colorHighlighted: 'rgb(0, 255, 0)',
-  colorSelected: 'rgb(0, 255, 0)',
+  colorSelected: 'rgb(0, 220, 0)',
   colorLocked: 'rgb(255, 255, 0)',
   lineWidth: '1',
   lineDash: '',
