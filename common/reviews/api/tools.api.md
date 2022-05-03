@@ -221,29 +221,7 @@ export abstract class AnnotationTool extends BaseTool {
 }
 
 // @public (undocumented)
-interface ArrowAnnotation extends Annotation {
-    // (undocumented)
-    data: {
-        text: string;
-        handles: {
-            points: Types_2.Point3[];
-            activeHandleIndex: number | null;
-            textBox: {
-                hasMoved: boolean;
-                worldPosition: Types_2.Point3;
-                worldBoundingBox: {
-                    topLeft: Types_2.Point3;
-                    topRight: Types_2.Point3;
-                    bottomLeft: Types_2.Point3;
-                    bottomRight: Types_2.Point3;
-                };
-            };
-        };
-    };
-}
-
-// @public (undocumented)
-export class ArrowTool extends AnnotationTool {
+export class ArrowAnnotateTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: HTMLDivElement) => void;
@@ -294,6 +272,28 @@ export class ArrowTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: ArrowAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
     touchDragCallback: any;
+}
+
+// @public (undocumented)
+interface ArrowAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        text: string;
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+    };
 }
 
 // @public (undocumented)

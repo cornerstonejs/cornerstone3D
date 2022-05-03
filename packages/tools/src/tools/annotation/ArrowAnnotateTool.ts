@@ -43,8 +43,8 @@ import {
 } from '../../types';
 import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
-class ArrowTool extends AnnotationTool {
-  static toolName = 'Arrow';
+class ArrowAnnotateTool extends AnnotationTool {
+  static toolName = 'ArrowAnnotate';
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -137,7 +137,7 @@ class ArrowTool extends AnnotationTool {
     };
 
     // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, ArrowTool);
+    Settings.getObjectSettings(annotation, ArrowAnnotateTool);
 
     addAnnotation(element, annotation);
 
@@ -573,7 +573,10 @@ class ArrowTool extends AnnotationTool {
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as ArrowAnnotation;
-      const settings = Settings.getObjectSettings(annotation, ArrowTool);
+      const settings = Settings.getObjectSettings(
+        annotation,
+        ArrowAnnotateTool
+      );
       const { annotationUID, data } = annotation;
       const { handles, text } = data;
       const { points, activeHandleIndex } = handles;
@@ -690,4 +693,4 @@ class ArrowTool extends AnnotationTool {
   }
 }
 
-export default ArrowTool;
+export default ArrowAnnotateTool;
