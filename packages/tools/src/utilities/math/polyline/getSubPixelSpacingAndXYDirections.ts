@@ -8,8 +8,15 @@ const EPSILON = 1e-3;
  * Gets the desired spacing for points in the polyline for the
  * `PlanarFreehandROITool` in the x and y canvas directions, as well as
  * returning these canvas directions in world space.
+ *
+ * @param viewport - The Cornerstone3D `StackViewport` or `VolumeViewport`.
+ * @param subPixelResolution - The number to divide the image pixel spacing by
+ * to get the sub pixel spacing. E.g. `10` will return spacings 10x smaller than
+ * the native image spacing.
+ * @returns The spacings of the X and Y directions, and the 3D directions of the
+ * x and y directions.
  */
-const getSpacingAndXYDirections = (
+const getSubPixelSpacingAndXYDirections = (
   viewport: StackViewport | VolumeViewport,
   subPixelResolution: number
 ): { spacing: Types.Point2; xDir: Types.Point3; yDir: Types.Point3 } => {
@@ -83,4 +90,4 @@ const getSpacingAndXYDirections = (
   return { spacing: subPixelSpacing, xDir, yDir };
 };
 
-export default getSpacingAndXYDirections;
+export default getSubPixelSpacingAndXYDirections;

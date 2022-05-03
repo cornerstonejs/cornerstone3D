@@ -13,7 +13,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 const {
-  getSpacingAndXYDirections,
+  getSubPixelSpacingAndXYDirections,
   addCanvasPointsToArray,
   calculateAreaOfPoints,
 } = polyline;
@@ -36,7 +36,7 @@ function activateClosedContourEdit(
 
   const prevCanvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
 
-  const { spacing, xDir, yDir } = getSpacingAndXYDirections(
+  const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
     this.configuration.subPixelResolution
   );

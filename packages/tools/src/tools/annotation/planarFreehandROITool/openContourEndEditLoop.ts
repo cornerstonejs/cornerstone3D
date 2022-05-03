@@ -5,7 +5,7 @@ import { hideElementCursor } from '../../../cursors/elementCursor';
 import { EventTypes } from '../../../types';
 import { polyline } from '../../../utilities/math';
 
-const { getSpacingAndXYDirections } = polyline;
+const { getSubPixelSpacingAndXYDirections } = polyline;
 
 /**
  * Activates the open contour end edit. This actually just sets up the state so
@@ -23,7 +23,7 @@ function activateOpenContourEndEdit(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  const { spacing, xDir, yDir } = getSpacingAndXYDirections(
+  const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
     this.configuration.subPixelResolution
   );

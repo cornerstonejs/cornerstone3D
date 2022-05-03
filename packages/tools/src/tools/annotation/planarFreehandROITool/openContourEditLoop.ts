@@ -11,7 +11,7 @@ import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
-const { addCanvasPointsToArray, getSpacingAndXYDirections } = polyline;
+const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 
 /**
  * Activates the open contour edit event loop.
@@ -31,7 +31,7 @@ function activateOpenContourEdit(
 
   const prevCanvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
 
-  const { spacing, xDir, yDir } = getSpacingAndXYDirections(
+  const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
     this.configuration.subPixelResolution
   );

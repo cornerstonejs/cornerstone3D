@@ -16,7 +16,7 @@ const {
   addCanvasPointsToArray,
   pointsAreWithinCloseContourProximity,
   getFirstIntersectionWithPolyline,
-  getSpacingAndXYDirections,
+  getSubPixelSpacingAndXYDirections,
 } = polyline;
 
 /**
@@ -35,7 +35,7 @@ function activateDraw(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  const { spacing, xDir, yDir } = getSpacingAndXYDirections(
+  const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
     viewport,
     this.configuration.subPixelResolution
   );
