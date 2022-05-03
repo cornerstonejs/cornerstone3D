@@ -308,7 +308,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 
       const distance = pointCanProjectOnLine(canvasCoords, p1, p2, proximity);
 
-      if (distance) {
+      if (distance === true) {
         return true;
       }
 
@@ -331,7 +331,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       proximity
     );
 
-    if (distance) {
+    if (distance === true) {
       return true;
     }
 

@@ -10,7 +10,7 @@ const pointCanProjectOnLine = (
   p1: Types.Point2,
   p2: Types.Point2,
   proximity: number
-): number | false => {
+): boolean => {
   // Perfom checks in order of computational complexity.
   const p1p = [p[0] - p1[0], p[1] - p1[1]];
   const p1p2 = [p2[0] - p1[0], p2[1] - p1[1]];
@@ -23,6 +23,11 @@ const pointCanProjectOnLine = (
   }
 
   const p1p2Mag = Math.sqrt(p1p2[0] * p1p2[0] + p1p2[1] * p1p2[1]);
+
+  if (p1p2Mag === 0) {
+    return false;
+  }
+
   const projectionVectorMag = dot / p1p2Mag;
   const p1p2UnitVector = [p1p2[0] / p1p2Mag, p1p2[1] / p1p2Mag];
   const projectionVector = [
@@ -46,7 +51,7 @@ const pointCanProjectOnLine = (
     return false;
   }
 
-  return distance;
+  return true;
 };
 
 export default pointCanProjectOnLine;
