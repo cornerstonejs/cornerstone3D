@@ -120,7 +120,6 @@ function renderOpenContour(
 
     drawHandlesSvg(
       svgDrawingHelper,
-      this.getToolName(),
       annotation.annotationUID,
       handleGroupUID,
       [handlePoint],

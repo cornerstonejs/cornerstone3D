@@ -1052,7 +1052,7 @@ function drawLine(svgDrawingHelper: any, annotationUID: string, lineUID: string,
 function drawLinkedTextBox(svgDrawingHelper: Record<string, unknown>, annotationUID: string, textBoxUID: string, textLines: Array<string>, textBoxPosition: Types_2.Point2, annotationAnchorPoints: Array<Types_2.Point2>, textBox: unknown, options?: {}): SVGRect;
 
 // @public (undocumented)
-function drawPolyline(svgDrawingHelper: any, toolName: string, annotationUID: string, polylineUID: string, points: Types_2.Point2[], options: {
+function drawPolyline(svgDrawingHelper: any, annotationUID: string, polylineUID: string, points: Types_2.Point2[], options: {
     color?: string;
     width?: number;
     lineWidth?: number;
@@ -1485,17 +1485,17 @@ function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_
 };
 
 // @public (undocumented)
-const getSpacingAndXYDirections: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, subPixelResolution: number) => {
-    spacing: Types_2.Point2;
-    xDir: Types_2.Point3;
-    yDir: Types_2.Point3;
-};
-
-// @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
 
 // @public (undocumented)
 function getStyle(toolName?: string, annotation?: Record<string, unknown>): Settings;
+
+// @public (undocumented)
+const getSubPixelSpacingAndXYDirections: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, subPixelResolution: number) => {
+    spacing: Types_2.Point2;
+    xDir: Types_2.Point3;
+    yDir: Types_2.Point3;
+};
 
 // @public (undocumented)
 function getSynchronizer(synchronizerId: string): Synchronizer | void;
@@ -2571,6 +2571,9 @@ type PlanarBoundingBox = {
 interface PlanarFreehandROIAnnotation extends Annotation {
     // (undocumented)
     data: {
+        polyline: Types_2.Point3[];
+        label?: string;
+        isOpenContour?: boolean;
         handles: {
             points: Types_2.Point3[];
             activeHandleIndex: number | null;
@@ -2585,9 +2588,6 @@ interface PlanarFreehandROIAnnotation extends Annotation {
                 };
             };
         };
-        polyline: Types_2.Point3[];
-        label?: string;
-        isOpenContour?: boolean;
     };
     // (undocumented)
     metadata: {
@@ -2650,7 +2650,7 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
-const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => number | false;
+const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => boolean;
 
 // @public (undocumented)
 function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
@@ -2668,7 +2668,7 @@ declare namespace polyline {
     export {
         getFirstIntersectionWithPolyline,
         getClosestIntersectionWithPolyline,
-        getSpacingAndXYDirections,
+        getSubPixelSpacingAndXYDirections,
         pointsAreWithinCloseContourProximity,
         addCanvasPointsToArray,
         pointCanProjectOnLine,
@@ -3633,7 +3633,7 @@ declare namespace ToolSpecificAnnotationTypes {
         BidirectionalAnnotation,
         RectangleROIThresholdAnnotation,
         RectangleROIStartEndThresholdAnnotation,
-        PlanarFreehandROIAnnotation
+        PlanarFreehandROIAnnotation,
         ArrowAnnotation
     }
 }
