@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.12.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.11.0...@cornerstonejs/tools@0.12.0) (2022-05-03)
+
+
+### Features
+
+* Planar freehand roi tool ([#89](https://github.com/cornerstonejs/cornerstone3D-beta/issues/89)) ([0067339](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0067339e7cf7f6b26e8fd6342113d82eb6915409))
+
+
+
+
+
 # [0.11.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.10.1...@cornerstonejs/tools@0.11.0) (2022-05-03)
 
 
