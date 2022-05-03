@@ -335,11 +335,7 @@ class ArrowTool extends AnnotationTool {
         return;
       }
       annotation.data.text = text;
-    }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    if (newAnnotation) {
       const eventType = Events.ANNOTATION_COMPLETED;
 
       const eventDetail: AnnotationCompletedEventDetail = {
@@ -348,6 +344,8 @@ class ArrowTool extends AnnotationTool {
 
       triggerEvent(eventTarget, eventType, eventDetail);
     }
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     this.editData = null;
     this.isDrawing = false;
