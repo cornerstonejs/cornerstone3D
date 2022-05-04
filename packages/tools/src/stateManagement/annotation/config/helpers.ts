@@ -36,7 +36,7 @@ function getStyleProperty(
   StyleSpecifications: StyleSpecifications,
   state?: AnnotationStyleStates,
   mode?: ToolModes
-): unknown {
+): string {
   // `alternatives` is a list of property names with priority in ascending
   // order like: ['color', 'colorSelected', 'colorSelectedActive']
   // Thus, we attempt resolving property names in reverse order
