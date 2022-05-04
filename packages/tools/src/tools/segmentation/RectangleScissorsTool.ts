@@ -1,9 +1,4 @@
-import {
-  cache,
-  getEnabledElement,
-  Settings,
-  StackViewport,
-} from '@cornerstonejs/core';
+import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -147,9 +142,6 @@ export default class RectangleScissorsTool extends BaseTool {
         },
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleROITool);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -351,7 +343,6 @@ export default class RectangleScissorsTool extends BaseTool {
     const { annotation } = this.editData;
 
     // Todo: rectangle color based on segment index
-    const settings = Settings.getObjectSettings(annotation, RectangleROITool);
     const toolMetadata = annotation.metadata;
     const annotationUID = annotation.annotationUID;
 

@@ -1,5 +1,4 @@
 import { ToolModes, AnnotationStyleStates } from '../enums';
-import { getDefaultStyleProperty } from '../stateManagement/annotation/config/annotationStyle';
 import MouseCursor from './MouseCursor';
 import ImageMouseCursor from './ImageMouseCursor';
 import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor';
@@ -36,7 +35,7 @@ export default class SVGMouseCursor extends ImageMouseCursor {
     color?: string
   ): MouseCursor {
     if (!color) {
-      color = getDefaultStyleProperty(PROPERTY, STATE, MODE) as string;
+      color = 'green';
     }
     const urn = getCursorURN(name, pointer, color);
     let cursor = super.getDefinedCursor(urn);

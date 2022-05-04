@@ -15,6 +15,7 @@ import type {
 } from './ISetToolModeOptions';
 import type IToolGroup from './IToolGroup';
 import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes';
+import type * as AnnotationStyle from './AnnotationStyle';
 import type ToolHandle from './ToolHandle';
 import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
 import type InteractionTypes from './InteractionTypes';
@@ -42,6 +43,7 @@ export type {
   Annotations,
   FrameOfReferenceSpecificAnnotations,
   AnnotationState,
+  AnnotationStyle,
   ToolSpecificAnnotationTypes,
   JumpToSliceOptions,
   // Geometry

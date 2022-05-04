@@ -2,7 +2,6 @@ import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
-  Settings,
   VolumeViewport,
   eventTarget,
   triggerEvent,
@@ -53,6 +52,7 @@ import {
 } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
+import { StyleSpecifications } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -198,9 +198,6 @@ export default class EllipticalROITool extends AnnotationTool {
         cachedStats: {},
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, EllipticalROITool);
 
     addAnnotation(element, annotation);
 
@@ -730,21 +727,31 @@ export default class EllipticalROITool extends AnnotationTool {
 
     const renderingEngine = viewport.getRenderingEngine();
 
+    const styleSpecifications: StyleSpecifications = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as EllipticalROIAnnotation;
-      const settings = Settings.getObjectSettings(
-        annotation,
-        EllipticalROITool
-      );
-      const annotationUID = annotation.annotationUID;
-      const data = annotation.data;
-
+      const { annotationUID, data } = annotation;
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
+      styleSpecifications.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle(
+        'lineWidth',
+        styleSpecifications,
+        annotation
+      );
+      const lineDash = this.getStyle(
+        'lineDash',
+        styleSpecifications,
+        annotation
+      );
+      const color = this.getStyle('color', styleSpecifications, annotation);
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
@@ -774,7 +781,6 @@ export default class EllipticalROITool extends AnnotationTool {
           renderingEngine,
           enabledElement
         );
-
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
         // when scrolling to the related slice in which the tool were manipulated
@@ -882,7 +888,7 @@ export default class EllipticalROITool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifications, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;
@@ -901,15 +907,18 @@ export default class EllipticalROITool extends AnnotationTool {
     const { area, mean, stdDev, max, isEmptyArea, Modality } =
       cachedVolumeStats;
 
-    if (mean === undefined) {
-      return;
-    }
-
     const textLines = [];
 
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
       : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
+
+    textLines.push(areaLine);
+
+    if (!mean && !stdDev && !max) {
+      return textLines;
+    }
+
     let meanLine = `Mean: ${mean.toFixed(2)}`;
     let maxLine = `Max: ${max.toFixed(2)}`;
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
@@ -928,7 +937,6 @@ export default class EllipticalROITool extends AnnotationTool {
       stdDevLine += ' MO';
     }
 
-    textLines.push(areaLine);
     textLines.push(maxLine);
     textLines.push(meanLine);
     textLines.push(stdDevLine);

@@ -3,7 +3,6 @@ import { vec2 } from 'gl-matrix';
 
 import {
   getEnabledElement,
-  Settings,
   VolumeViewport,
   triggerEvent,
   eventTarget,
@@ -43,6 +42,7 @@ import {
   ToolProps,
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { StyleSpecifications } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -171,9 +171,6 @@ export default class ProbeTool extends AnnotationTool {
         cachedStats: {},
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, ProbeTool);
 
     addAnnotation(element, annotation);
 
@@ -421,14 +418,22 @@ export default class ProbeTool extends AnnotationTool {
     const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
+    const styleSpecifications: StyleSpecifications = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as ProbeAnnotation;
-      const settings = Settings.getObjectSettings(annotation, ProbeTool);
       const annotationUID = annotation.annotationUID;
       const data = annotation.data;
       const point = data.handles.points[0];
       const canvasCoordinates = viewport.worldToCanvas(point);
-      const color = this.getStyle(settings, 'color', annotation);
+
+      styleSpecifications.annotationUID = annotationUID;
+
+      const color = this.getStyle('color', styleSpecifications, annotation);
 
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
@@ -507,7 +512,7 @@ export default class ProbeTool extends AnnotationTool {
           textUID,
           textLines,
           [textCanvasCoordinates[0], textCanvasCoordinates[1]],
-          this.getLinkedTextBoxStyle(settings, annotation)
+          this.getLinkedTextBoxStyle(styleSpecifications, annotation)
         );
       }
     }

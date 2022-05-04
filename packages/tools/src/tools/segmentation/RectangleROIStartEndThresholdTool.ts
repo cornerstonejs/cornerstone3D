@@ -1,7 +1,6 @@
 import {
   getEnabledElement,
   cache,
-  Settings,
   StackViewport,
   metaData,
   triggerEvent,
@@ -27,6 +26,7 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
+import { StyleSpecifications } from '../../types/AnnotationStyle';
 
 /**
  * This tool is similar to the RectangleROIThresholdTool which
@@ -172,9 +172,6 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     // computed for later export
     this._computeProjectionPoints(annotation, imageVolume);
 
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleROIStartEndThresholdTool);
-
     addAnnotation(element, annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
@@ -318,25 +315,35 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     const { viewport } = enabledElement;
     const sliceIndex = viewport.getCurrentImageIdIndex();
 
+    const styleSpecifications: StyleSpecifications = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[
         i
       ] as RectangleROIStartEndThresholdAnnotation;
-      const settings = Settings.getObjectSettings(
-        annotation,
-        RectangleROIStartEndThresholdTool
-      );
-      const annotationUID = annotation.annotationUID;
-
-      const data = annotation.data;
+      const { annotationUID, data } = annotation;
       const { startSlice, endSlice } = data;
       const { points, activeHandleIndex } = data.handles;
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
 
+      styleSpecifications.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle(
+        'lineWidth',
+        styleSpecifications,
+        annotation
+      );
+      const lineDash = this.getStyle(
+        'lineDash',
+        styleSpecifications,
+        annotation
+      );
+      const color = this.getStyle('color', styleSpecifications, annotation);
       // range of slices to render based on the start and end slice, like
       // np.arange
 

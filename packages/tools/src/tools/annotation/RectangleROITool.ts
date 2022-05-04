@@ -2,7 +2,6 @@ import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
-  Settings,
   VolumeViewport,
   triggerEvent,
   eventTarget,
@@ -48,6 +47,7 @@ import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
+import { StyleSpecifications } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -187,9 +187,6 @@ export default class RectangleROITool extends AnnotationTool {
         cachedStats: {},
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleROITool);
 
     addAnnotation(element, annotation);
 
@@ -629,17 +626,31 @@ export default class RectangleROITool extends AnnotationTool {
     const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
+    const styleSpecifications: StyleSpecifications = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as RectangleROIAnnotation;
-      const settings = Settings.getObjectSettings(annotation, RectangleROITool);
-      const annotationUID = annotation.annotationUID;
-
-      const data = annotation.data;
+      const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
+
+      styleSpecifications.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle(
+        'lineWidth',
+        styleSpecifications,
+        annotation
+      );
+      const lineDash = this.getStyle(
+        'lineDash',
+        styleSpecifications,
+        annotation
+      );
+      const color = this.getStyle('color', styleSpecifications, annotation);
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
@@ -774,7 +785,7 @@ export default class RectangleROITool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifications, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;

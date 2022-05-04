@@ -1,7 +1,6 @@
 import { Events } from '../../enums';
 import {
   getEnabledElement,
-  Settings,
   triggerEvent,
   eventTarget,
   utilities as csUtils,
@@ -46,6 +45,7 @@ import {
   InteractionTypes,
 } from '../../types';
 import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { StyleSpecifications } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -179,9 +179,6 @@ class LengthTool extends AnnotationTool {
         cachedStats: {},
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, LengthTool);
 
     addAnnotation(element, annotation);
 
@@ -553,16 +550,31 @@ class LengthTool extends AnnotationTool {
     const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
+    const styleSpecifications: StyleSpecifications = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as LengthAnnotation;
-      const settings = Settings.getObjectSettings(annotation, LengthTool);
-      const annotationUID = annotation.annotationUID;
-      const data = annotation.data;
+      const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
+
+      styleSpecifications.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle(
+        'lineWidth',
+        styleSpecifications,
+        annotation
+      );
+      const lineDash = this.getStyle(
+        'lineDash',
+        styleSpecifications,
+        annotation
+      );
+      const color = this.getStyle('color', styleSpecifications, annotation);
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -651,7 +663,7 @@ class LengthTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifications, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;
