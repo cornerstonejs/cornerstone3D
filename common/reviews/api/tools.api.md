@@ -176,6 +176,20 @@ type AnnotationState = {
     [key: string]: FrameOfReferenceSpecificAnnotations;
 };
 
+declare namespace AnnotationStyle {
+    export {
+        AnnotationStyles,
+        ToolStyles,
+        ToolStyleConfig,
+        StyleSpecifications
+    }
+}
+
+// @public (undocumented)
+type AnnotationStyles = {
+    [key in `${Properties}${States}${Modes}`]: string;
+};
+
 // @public (undocumented)
 enum AnnotationStyleStates {
     // (undocumented)
@@ -199,11 +213,11 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    getLinkedTextBoxStyle(settings: Settings, annotation?: Annotation): Record<string, unknown>;
+    getLinkedTextBoxStyle(specifications: StyleSpecifications, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
-    getStyle(settings: Settings, property: string, annotation?: Annotation): unknown;
+    getStyle(property: string, specifications: StyleSpecifications, annotation?: Annotation): unknown;
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
     // (undocumented)
@@ -513,11 +527,8 @@ type ColorLUT = Array<Color>;
 declare namespace config {
     export {
         getState,
-        getStyle,
         getFont,
-        setAnnotationStyle,
-        setGlobalStyle,
-        setToolStyle
+        toolStyle as style
     }
 }
 
@@ -1442,7 +1453,7 @@ function getDefaultSegmentationStateManager(): SegmentationStateManager;
 function getFirstIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
 
 // @public (undocumented)
-function getFont(settings?: Settings, state?: AnnotationStyleStates, mode?: ToolModes): string;
+function getFont(styleSpecifications: StyleSpecifications, state?: AnnotationStyleStates, mode?: ToolModes): string;
 
 // @public (undocumented)
 function getGlobalConfig(): SegmentationRepresentationConfig;
@@ -1486,9 +1497,6 @@ function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
-
-// @public (undocumented)
-function getStyle(toolName?: string, annotation?: Record<string, unknown>): Settings;
 
 // @public (undocumented)
 const getSubPixelSpacingAndXYDirections: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, subPixelResolution: number) => {
@@ -3302,9 +3310,6 @@ function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
-function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
-
-// @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
@@ -3323,9 +3328,6 @@ function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig)
 function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
 
 // @public (undocumented)
-function setGlobalStyle(style: Record<string, unknown>): boolean;
-
-// @public (undocumented)
 function setSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string, visibility: boolean): void;
 
 // @public (undocumented)
@@ -3341,9 +3343,6 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 
 // @public (undocumented)
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
-
-// @public (undocumented)
-function setToolStyle(toolName: string, style: Record<string, unknown>): boolean;
 
 // @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
@@ -3476,6 +3475,14 @@ declare namespace state_2 {
         getColorLUT
     }
 }
+
+// @public (undocumented)
+type StyleSpecifications = {
+    viewportId?: string;
+    toolGroupId?: string;
+    toolName?: string;
+    annotationUID?: string;
+};
 
 // @public (undocumented)
 type SVGCursorDescriptor = {
@@ -3638,6 +3645,29 @@ declare namespace ToolSpecificAnnotationTypes {
     }
 }
 
+// @public (undocumented)
+const toolStyle: ToolStyle;
+
+// @public (undocumented)
+type ToolStyleConfig = {
+    annotations?: {
+        [annotationUID: string]: AnnotationStyles;
+    };
+    viewports?: {
+        [viewportId: string]: ToolStyles;
+    };
+    toolGroups?: {
+        [toolGroupId: string]: ToolStyles;
+    };
+    default: ToolStyles;
+};
+
+// @public (undocumented)
+type ToolStyles = {
+    [toolName: string]: AnnotationStyles;
+    global: AnnotationStyles;
+};
+
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];
 
@@ -3690,6 +3720,7 @@ declare namespace Types {
         Annotations,
         FrameOfReferenceSpecificAnnotations,
         AnnotationState,
+        AnnotationStyle,
         ToolSpecificAnnotationTypes,
         JumpToSliceOptions,
         PlanarBoundingBox,

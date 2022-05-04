@@ -48,7 +48,52 @@ class ToolStyle {
     this._initializeConfig(defaultConfig);
   }
 
-  setAnnotationToolStyles(annotationUID: string, styles: ToolStyles) {
+  /**
+   * It returns the annotation-specific tool styles for the annotation with the given UID
+   * @param annotationUID - The unique identifier of the annotation.
+   * @returns The annotation tool styles for the annotation with the given UID.
+   */
+  getAnnotationToolStyles(annotationUID: string): AnnotationStyles {
+    return this.config.annotations && this.config.annotations[annotationUID];
+  }
+
+  /**
+   * It returns the styles for a given viewport. It includes tool-specific and
+   * global styles (all tools in the viewport)
+   * @param viewportId - The id of the viewport
+   * @returns The viewport tool styles for the given viewport id.
+   */
+  getViewportToolStyles(viewportId: string): ToolStyles {
+    return this.config.viewports && this.config.viewports[viewportId];
+  }
+
+  /**
+   * It returns the tool style for the given toolGroup. It includes tool-specific and
+   * global styles (all tools in the toolGroup)
+   * @param toolGroupId - The id of the toolGroup.
+   * @returns The tool styles for the tool group with the given id.
+   */
+  getToolGroupToolStyles(toolGroupId: string): ToolStyles {
+    return this.config.toolGroups && this.config.toolGroups[toolGroupId];
+  }
+
+  /**
+   * It returns the default tool styles from the config file. It includes tool-specific and
+   * global styles (all tools in all tooLGroups)
+   * @returns The default tool styles.
+   */
+  getDefaultToolStyles(): ToolStyles {
+    return this.config.default;
+  }
+
+  /**
+   * It takes an annotationUID and a style object and sets the styles at
+   * the annotationLevel (highest priority in the hierarchy). The styles is an
+   * object with key value pairs.
+   * @param annotationUID - string - The unique identifier for the annotation.
+   * @param styles - ToolStyles
+   */
+  setAnnotationStyles(annotationUID: string, styles: AnnotationStyles) {
     let annotationSpecificStyles = this.config.annotations;
 
     if (!annotationSpecificStyles) {
@@ -70,6 +115,12 @@ class ToolStyle {
     annotationSpecificStyles[annotationUID] = styles;
   }
 
+  /**
+   * It takes a viewportId and a ToolStyles object, and adds the ToolStyles object
+   * at the viewport level (second highest priority in the hierarchy after the annotation level).
+   * @param viewportId - The id of the viewport
+   * @param styles - style object including tool-specific and/or global styles (All tools in the viewport)
+   */
   setViewportToolStyles(viewportId: string, styles: ToolStyles) {
     let viewportSpecificStyles = this.config.viewports;
 
@@ -89,6 +140,13 @@ class ToolStyle {
     viewportSpecificStyles[viewportId] = styles;
   }
 
+  /**
+   * It takes a toolGroupId and a ToolStyles object, and it adds the ToolStyles object
+   * at the toolGroup level (third highest priority in the hierarchy after the viewport level).
+   * @param toolGroupId - The id of the toolGroup
+   * @param styles - style object including tool-specific (in all viewports of the toolGroup) and/or
+   * global styles (All tools in the toolGroup for all viewports)
+   */
   setToolGroupToolStyles(toolGroupId: string, styles: ToolStyles) {
     let toolGroupSpecificStyles = this.config.toolGroups;
 
@@ -108,12 +166,27 @@ class ToolStyle {
     toolGroupSpecificStyles[toolGroupId] = styles;
   }
 
+  /**
+   * Sets the default tool styles for the editor. It overrides the default styles for all tools.
+   * @param styles - style object including tool-specific (a tool in all toolGroups) and/or
+   * global styles (All tools in all tooLGroups)
+   */
   setDefaultToolStyles(styles: ToolStyles) {
     this.config.default = styles;
   }
 
-  getStyleProperty(toolStyle: string, query: StyleSpecifications) {
-    const { annotationUID, viewportId, toolGroupId, toolName } = query;
+  /**
+   * It returns the value for a given style key, based on the provided specifications.
+   * It starts by looking at the annotation-specific styles, then at the viewport-specific styles,
+   * then at the toolGroup-specific styles, and finally at the default styles.
+   * @param styleKey - The key of the style.
+   * @param styleSpecifications - An object containing the specifications such as viewportId,
+   * toolGroupId, toolName and annotationUID which are used to get the style if the level of specificity is
+   * met
+   * @returns The value for the given style key.
+   */
+  getStyleProperty(toolStyle: string, specifications: StyleSpecifications) {
+    const { annotationUID, viewportId, toolGroupId, toolName } = specifications;
 
     return this._getToolStyle(
       toolStyle,
@@ -122,22 +195,6 @@ class ToolStyle {
       toolGroupId,
       toolName
     );
-  }
-
-  getAnnotationToolStyles(annotationUID: string) {
-    return this.config.annotations && this.config.annotations[annotationUID];
-  }
-
-  getViewportToolStyles(viewportId: string) {
-    return this.config.viewports && this.config.viewports[viewportId];
-  }
-
-  getToolGroupToolStyles(toolGroupId: string) {
-    return this.config.toolGroups && this.config.toolGroups[toolGroupId];
-  }
-
-  getDefaultToolStyles() {
-    return this.config.default;
   }
 
   private _getToolStyle(
@@ -152,13 +209,8 @@ class ToolStyle {
 
       if (styles) {
         // check first in the toolSpecific styles
-        if (styles[toolName] && styles[toolName][property]) {
-          return styles[toolName][property];
-        }
-
-        // check if we have the style in the annotation specific global styles
-        if (styles.global && styles.global[property]) {
-          return styles.global[property];
+        if (styles[property]) {
+          return styles[property];
         }
       }
     }
@@ -207,7 +259,7 @@ class ToolStyle {
     }
   }
 
-  _initializeConfig(config) {
+  private _initializeConfig(config) {
     const toolStyles = {};
     for (const name in config) {
       toolStyles[name] = config[name];

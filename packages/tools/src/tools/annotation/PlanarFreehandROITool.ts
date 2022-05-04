@@ -2,7 +2,6 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
-  Settings,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { Events } from '../../enums';
@@ -135,7 +134,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         checkCanvasEditFallbackProximity: 6,
         // The relative distance that points should be dropped along the polyline
         // in units of the image pixel spacing. A value of 1 means that nodes must
-        // be placed no closed than the image spacing appart. A value of 4 means that 4
+        // be placed no closed than the image spacing apart. A value of 4 means that 4
         // nodes should be placed within the space of one image pixel size. A higher
         // value gives more finese to the tool/smoother lines, but the value cannot
         // be infinite as the lines become very computationally expensive to draw.
@@ -214,8 +213,6 @@ class PlanarFreehandROITool extends AnnotationTool {
       },
     };
 
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, PlanarFreehandROITool);
     addAnnotation(element, annotation);
 
     this.activateDraw(evt, annotation, viewportIdsToRender);

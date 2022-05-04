@@ -22,7 +22,7 @@ export type ToolStyles = {
 
 export type ToolStyleConfig = {
   annotations?: {
-    [annotationUID: string]: ToolStyles;
+    [annotationUID: string]: AnnotationStyles;
   };
   viewports?: {
     [viewportId: string]: ToolStyles;
