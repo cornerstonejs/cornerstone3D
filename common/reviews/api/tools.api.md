@@ -1020,6 +1020,34 @@ function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
 
 // @public (undocumented)
+export class DragProbeTool extends ProbeTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        newAnnotation?: boolean;
+    } | null;
+    // (undocumented)
+    eventDispatchDetail: {
+        viewportId: string;
+        renderingEngineId: string;
+    };
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 function draw(element: HTMLDivElement, fn: (svgDrawingElement: any) => any): void;
 
 // @public (undocumented)
@@ -3665,7 +3693,7 @@ const toolStyle: ToolStyle;
 // @public (undocumented)
 type ToolStyleConfig = {
     [toolName: string]: AnnotationStyle_2;
-    global: AnnotationStyle_2;
+    global?: AnnotationStyle_2;
 };
 
 // @public
