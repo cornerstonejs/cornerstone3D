@@ -900,38 +900,50 @@ export default class EllipticalROITool extends AnnotationTool {
       cachedVolumeStats;
 
     const textLines = [];
+    let areaLine, meanLine, stdDevLine, maxLine;
 
-    const areaLine = isEmptyArea
-      ? `Area: Oblique not supported`
-      : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
-
-    textLines.push(areaLine);
-
-    if (!mean && !stdDev && !max) {
-      return textLines;
+    if (area) {
+      areaLine = isEmptyArea
+        ? `Area: Oblique not supported`
+        : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
     }
 
-    let meanLine = `Mean: ${mean.toFixed(2)}`;
-    let maxLine = `Max: ${max.toFixed(2)}`;
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
+    if (mean) {
+      meanLine = `Mean: ${mean.toFixed(2)}`;
+    }
 
+    if (max) {
+      maxLine = `Max: ${max.toFixed(2)}`;
+    }
+
+    if (stdDev) {
+      stdDevLine = `StdDev: ${stdDev.toFixed(2)}`;
+    }
+
+    let unit;
     if (Modality === 'PT') {
-      meanLine += ' SUV';
-      maxLine += ' SUV';
-      stdDevLine += ' SUV';
+      unit = 'SUV';
     } else if (Modality === 'CT') {
-      meanLine += ' HU';
-      maxLine += ' HU';
-      stdDevLine += ' HU';
+      unit = 'HU';
     } else {
-      meanLine += ' MO';
-      maxLine += ' MO';
-      stdDevLine += ' MO';
+      unit = 'MO';
     }
 
-    textLines.push(maxLine);
-    textLines.push(meanLine);
-    textLines.push(stdDevLine);
+    if (areaLine) {
+      textLines.push(areaLine);
+    }
+
+    if (meanLine) {
+      textLines.push(meanLine + ' ' + unit);
+    }
+
+    if (maxLine) {
+      textLines.push(maxLine + ' ' + unit);
+    }
+
+    if (stdDevLine) {
+      textLines.push(stdDevLine + ' ' + unit);
+    }
 
     return textLines;
   };

@@ -3,13 +3,13 @@ import { ToolModes, AnnotationStyleStates } from '../../../enums';
 import toolStyle from './ToolStyle';
 
 /**
- * Build a list of alternative property names in ascending order of priority
+ * Build a list of hierarchal property names in ascending order of priority
  * @param property - The base property name -- e.g., 'color'
  * @param state - An optional state to determine the final property name
  * @param mode - An optional mode to determine the final property name
- * @returns A list of alternative property names
+ * @returns A list of property names
  */
-function getStyleAlternatives(
+function getHierarchalPropertyStyles(
   property: string,
   state?: AnnotationStyleStates,
   mode?: ToolModes
@@ -37,10 +37,13 @@ function getStyleProperty(
   state?: AnnotationStyleStates,
   mode?: ToolModes
 ): string {
-  // `alternatives` is a list of property names with priority in ascending
-  // order like: ['color', 'colorSelected', 'colorSelectedActive']
+  // Hierarchal property styles is a list of property names with priority in ascending
+  // order like: ['color', 'colorSelected', 'colorSelectedActive'], if in the toolStyle
+  // config, the `colorSelectedActive` property is defined, it will be used, otherwise
+  // the `colorSelected` property will be used, and if that is not defined, the `color`
+  // property will be used. This is done to ensure that the most specific property is used.
   // Thus, we attempt resolving property names in reverse order
-  const alternatives = getStyleAlternatives(property, state, mode);
+  const alternatives = getHierarchalPropertyStyles(property, state, mode);
   for (let i = alternatives.length - 1; i >= 0; --i) {
     const style = toolStyle.getStyleProperty(alternatives[i], styleSpecifier);
     if (style !== undefined) {

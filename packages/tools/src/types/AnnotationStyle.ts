@@ -1,4 +1,3 @@
-// Todo: just use these from import
 type Modes = '' | 'Active' | 'Passive' | 'Enabled';
 type States = '' | 'Highlighted' | 'Selected' | 'Locked';
 
@@ -19,7 +18,7 @@ export type AnnotationStyle = {
 
 export type ToolStyleConfig = {
   [toolName: string]: AnnotationStyle;
-  global: AnnotationStyle;
+  global?: AnnotationStyle;
 };
 
 export type StyleConfig = {
