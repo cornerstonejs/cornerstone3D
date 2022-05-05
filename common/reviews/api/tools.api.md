@@ -179,8 +179,6 @@ enum AnnotationStyleStates {
     // (undocumented)
     Default = "",
     // (undocumented)
-    Hidden = "Hidden",
-    // (undocumented)
     Highlighted = "Highlighted",
     // (undocumented)
     Locked = "Locked",
@@ -222,10 +220,9 @@ export abstract class AnnotationTool extends BaseTool {
 
 // @public (undocumented)
 type AnnotationVisibilityChangeEventDetail = {
-    added: Array<string>;
-    removed: Array<string>;
+    lastHidden: Array<string>;
+    lastVisible: Array<string>;
     hidden: Array<string>;
-    visible: Array<string>;
 };
 
 // @public (undocumented)
@@ -1343,12 +1340,6 @@ function getAnnotationUIDsHidden(): Array<string>;
 function getAnnotationUIDsHiddenCount(): number;
 
 // @public (undocumented)
-function getAnnotationUIDsVisible(): Array<string>;
-
-// @public (undocumented)
-function getAnnotationUIDsVisibleCount(): number;
-
-// @public (undocumented)
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
@@ -1453,9 +1444,6 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
     worldWidth: number;
     worldHeight: number;
 };
-
-// @public (undocumented)
-function hideAllAnnotations(): void;
 
 // @public (undocumented)
 function hideElementCursor(element: HTMLDivElement): void;
@@ -1831,7 +1819,7 @@ function isAnnotationLocked(annotation: Annotation): boolean;
 function isAnnotationSelected(annotationUID: string): boolean;
 
 // @public (undocumented)
-function isAnnotationVisible(annotationUID: string): boolean;
+function isAnnotationVisible(annotationUID: string): boolean | undefined;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3620,11 +3608,8 @@ declare namespace visibility {
     export {
         setAnnotationVisibility,
         getAnnotationUIDsHidden,
-        getAnnotationUIDsVisible,
         getAnnotationUIDsHiddenCount,
-        getAnnotationUIDsVisibleCount,
         showAllAnnotations,
-        hideAllAnnotations,
         isAnnotationVisible,
         checkAndDefineIsVisibleProperty
     }

@@ -28,7 +28,7 @@ console.warn(
 
 const { MouseBindings } = csToolsEnums;
 
-const { locking, selection, hide, visibility } = annotation;
+const { locking, selection, visibility } = annotation;
 const { ViewportType } = Enums;
 
 window.visibility = visibility;
@@ -112,17 +112,6 @@ addButtonToToolbar({
 
       renderingEngine.renderViewports([viewportId]);
     }
-  },
-});
-
-addButtonToToolbar({
-  title: 'Hide all Annotation',
-  onClick: () => {
-    visibility.hideAllAnnotations();
-    // Render the image to see it was selected
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    renderingEngine.renderViewports([viewportId]);
   },
 });
 

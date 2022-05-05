@@ -89,14 +89,12 @@ type AnnotationLockChangeEventDetail = {
 };
 
 type AnnotationVisibilityChangeEventDetail = {
-  // List of instances uids changed to visible state by the last operation.
-  added: Array<string>;
-  // List of instances uids removed from visible state by the last operation.
-  removed: Array<string>;
+  // List of instances uids changed to NOT visible (hidden) state by the last operation.
+  lastHidden: Array<string>;
+  // List of instances uids removed from Hidden state by the last operation.
+  lastVisible: Array<string>;
   // Updated list of currently hidden instances uids
   hidden: Array<string>;
-  // Updated list of currently visible instances uids
-  visible: Array<string>;
 };
 
 /**

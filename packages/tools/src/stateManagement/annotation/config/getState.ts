@@ -1,7 +1,6 @@
 import { Annotation } from '../../../types';
 import { isAnnotationLocked } from '../annotationLocking';
 import { isAnnotationSelected } from '../annotationSelection';
-import { isAnnotationVisible } from '../annotationVisibility';
 import { AnnotationStyleStates } from '../../../enums';
 
 /**
@@ -12,9 +11,6 @@ import { AnnotationStyleStates } from '../../../enums';
  */
 function getState(annotation?: Annotation): AnnotationStyleStates {
   if (annotation) {
-    if (!isAnnotationVisible(annotation.annotationUID))
-      return AnnotationStyleStates.Hidden;
-
     if (annotation.data && annotation.highlighted)
       return AnnotationStyleStates.Highlighted;
     if (isAnnotationSelected(annotation.annotationUID))

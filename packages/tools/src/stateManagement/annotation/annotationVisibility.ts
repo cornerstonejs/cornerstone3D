@@ -1,13 +1,13 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
+import { getAnnotation } from './annotationState';
 import { Events } from '../../enums';
 import { Annotation } from '../../types';
 import { AnnotationVisibilityChangeEventDetail } from '../../types/EventTypes';
 
 /*
- * Constants
+ * It stores all hidden annotation uids.
  */
 const globalHiddenAnnotationUIDsSet: Set<string> = new Set();
-const globalVisibleAnnotationUIDsSet: Set<string> = new Set();
 
 /*
  * Interface (Public API)
@@ -16,21 +16,21 @@ const globalVisibleAnnotationUIDsSet: Set<string> = new Set();
 /**
  * Set the "visible" state of a given annotation instance.
  *
- * @triggers ANNOTATION_VISIBILITY_CHANGE
+ * @event ANNOTATION_VISIBILITY_CHANGE
  *
- * @param annotationUID - The annotation uid which will have
+ * @param {string} annotationUID - The annotation uid which will have
  * its visible state changed. An event will only be triggered if the visible state
  * of the given annotation instance changed.
- * @param visible - A boolean value indicating if the instance should
+ * @param {boolean} [visible=true] - A boolean value indicating if the instance should
  * be visible (true) or not (false)
  */
 function setAnnotationVisibility(annotationUID: string, visible = true): void {
   const detail = makeEventDetail();
   if (annotationUID) {
     if (visible) {
-      show(annotationUID, detail);
+      show(annotationUID, globalHiddenAnnotationUIDsSet, detail);
     } else {
-      hide(annotationUID, detail);
+      hide(annotationUID, globalHiddenAnnotationUIDsSet, detail);
     }
   }
   publish(detail);
@@ -42,23 +42,15 @@ function setAnnotationVisibility(annotationUID: string, visible = true): void {
  */
 function showAllAnnotations(): void {
   const detail = makeEventDetail();
-  runAnnotationUIDsSetOperation(detail, globalHiddenAnnotationUIDsSet, show);
+  globalHiddenAnnotationUIDsSet.forEach((annotationUID) => {
+    show(annotationUID, globalHiddenAnnotationUIDsSet, detail);
+  });
   publish(detail);
 }
 
 /**
- * Hide all annotations.
- *
- */
-function hideAllAnnotations(): void {
-  const detail = makeEventDetail();
-  runAnnotationUIDsSetOperation(detail, globalVisibleAnnotationUIDsSet, hide);
-  publish(detail);
-}
-
-/**
- * Returns an array of all the annotation that is currently hidden.
- * @returns An array of tool specific annotation UIDs.
+ * Returns an array of all the annotation uids that is currently hidden.
+ * @returns {string[]} An array of tool specific annotation UIDs.
  *
  */
 function getAnnotationUIDsHidden(): Array<string> {
@@ -66,27 +58,22 @@ function getAnnotationUIDsHidden(): Array<string> {
 }
 
 /**
- * Returns an array of all the annotation that is currently visible.
- * @returns An array of tool specific annotation UIDs.
- *
- */
-function getAnnotationUIDsVisible(): Array<string> {
-  return Array.from(globalVisibleAnnotationUIDsSet);
-}
-
-/**
- * Given an annotation UID, return true if it is visible.
+ * Given an annotation UID, return true if it is visible, false if hidden and undefined if does not exist.
  * @param annotationUID - The annotation uid to tell if is visible or not.
- * @returns A boolean value.
+ * @returns A boolean value or value if does not exist.
  */
-function isAnnotationVisible(annotationUID: string): boolean {
-  return globalVisibleAnnotationUIDsSet.has(annotationUID);
+function isAnnotationVisible(annotationUID: string): boolean | undefined {
+  const annotation = getAnnotation(annotationUID);
+
+  if (annotation) {
+    return !globalHiddenAnnotationUIDsSet.has(annotationUID);
+  }
 }
 
 /**
  * Get the number of hidden annotation objects in the global set of hidden annotation
- * objects.
- * @returns The number of hidden annotation objects.
+ * objects uids.
+ * @returns {number} The number of hidden annotation objects.
  *
  */
 function getAnnotationUIDsHiddenCount(): number {
@@ -94,19 +81,10 @@ function getAnnotationUIDsHiddenCount(): number {
 }
 
 /**
- * Get the number of visible annotation objects in the global set of visible annotation
- * objects.
- * @returns The number of visible annotation objects.
+ * It decorates given annotation with isVisible property.
+ * It properly initializes the isVisible on annotation(the property will be create if does not exist yet)
  *
- */
-function getAnnotationUIDsVisibleCount(): number {
-  return globalVisibleAnnotationUIDsSet.size;
-}
-
-/**
- * Properly initialize the isVisible on annotation.
- * It set up isVisible property (the property will be create if does not exist yet)
- * @param annotation - The annotation object to be checked.
+ * @param {Annotation} annotation - The annotation object to be checked.
  */
 function checkAndDefineIsVisibleProperty(annotation: Annotation): void {
   if (annotation) {
@@ -126,77 +104,39 @@ function checkAndDefineIsVisibleProperty(annotation: Annotation): void {
 /*
  * Private Helpers
  */
-
 function makeEventDetail(): AnnotationVisibilityChangeEventDetail {
   return Object.freeze({
-    added: [],
-    removed: [],
+    lastVisible: [],
+    lastHidden: [],
     hidden: [],
-    visible: [],
   });
-}
-
-function updateAnnotationUIDsSet(
-  annotationUID: string,
-  targetAnnotationUIDsSet: Set<string>,
-  otherAnnotationUIDsSet: Set<string>
-) {
-  if (targetAnnotationUIDsSet.has(annotationUID)) {
-    return false;
-  }
-  targetAnnotationUIDsSet.add(annotationUID);
-  otherAnnotationUIDsSet.delete(annotationUID);
-
-  return true;
 }
 
 function show(
   annotationUID: string,
+  annotationUIDsSet: Set<string>,
   detail: AnnotationVisibilityChangeEventDetail
 ): void {
-  if (
-    updateAnnotationUIDsSet(
-      annotationUID,
-      globalVisibleAnnotationUIDsSet,
-      globalHiddenAnnotationUIDsSet
-    )
-  ) {
-    detail.added.push(annotationUID);
+  if (annotationUIDsSet.delete(annotationUID)) {
+    detail.lastVisible.push(annotationUID);
   }
 }
 
 function hide(
   annotationUID: string,
+  annotationUIDsSet: Set<string>,
   detail: AnnotationVisibilityChangeEventDetail
 ): void {
-  if (
-    updateAnnotationUIDsSet(
-      annotationUID,
-      globalHiddenAnnotationUIDsSet,
-      globalVisibleAnnotationUIDsSet
-    )
-  ) {
-    detail.removed.push(annotationUID);
+  if (!annotationUIDsSet.has(annotationUID)) {
+    annotationUIDsSet.add(annotationUID);
+    detail.lastHidden.push(annotationUID);
   }
 }
 
-function runAnnotationUIDsSetOperation(
-  detail: AnnotationVisibilityChangeEventDetail,
-  annotationUIDsSet: Set<string>,
-  operation: (string, AnnotationVisibilityChangeEventDetail) => void
-): void {
-  annotationUIDsSet.forEach((annotationUID) => {
-    operation(annotationUID, detail);
-  });
-}
-
 function publish(detail: AnnotationVisibilityChangeEventDetail) {
-  if (detail.added.length > 0 || detail.removed.length > 0) {
+  if (detail.lastHidden.length > 0 || detail.lastVisible.length > 0) {
     globalHiddenAnnotationUIDsSet.forEach(
       (item) => void detail.hidden.push(item)
-    );
-    globalVisibleAnnotationUIDsSet.forEach(
-      (item) => void detail.visible.push(item)
     );
     triggerEvent(eventTarget, Events.ANNOTATION_VISIBILITY_CHANGE, detail);
   }
@@ -221,18 +161,11 @@ function getIsVisible() {
   return isAnnotationVisible((this as Annotation).annotationUID);
 }
 
-/*
- * Exports
- */
-
 export {
   setAnnotationVisibility,
   getAnnotationUIDsHidden,
-  getAnnotationUIDsVisible,
   getAnnotationUIDsHiddenCount,
-  getAnnotationUIDsVisibleCount,
   showAllAnnotations,
-  hideAllAnnotations,
   isAnnotationVisible,
   checkAndDefineIsVisibleProperty,
 };
