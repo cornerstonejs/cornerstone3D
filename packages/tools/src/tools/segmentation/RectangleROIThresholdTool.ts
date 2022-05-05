@@ -24,7 +24,7 @@ import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifications } from '../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,
@@ -183,7 +183,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       return;
     }
 
-    const styleSpecifications: StyleSpecifications = {
+    const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
@@ -195,19 +195,11 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      styleSpecifications.annotationUID = annotationUID;
+      styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle(
-        'lineWidth',
-        styleSpecifications,
-        annotation
-      );
-      const lineDash = this.getStyle(
-        'lineDash',
-        styleSpecifications,
-        annotation
-      );
-      const color = this.getStyle('color', styleSpecifications, annotation);
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {

@@ -23,7 +23,7 @@ import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { getState } from '../../stateManagement/annotation/config';
-import { StyleSpecifications } from '../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -391,7 +391,7 @@ abstract class AnnotationTool extends BaseTool {
    * annotation (selected, highlighted etc.) it returns the appropriate value
    * based on the central toolStyle settings for each level of specification.
    * @param property - The name of the style property to get.
-   * @param styleSpecifications - An object containing the specifications such as viewportId,
+   * @param styleSpecifier - An object containing the specifications such as viewportId,
    * toolGroupId, toolName and annotationUID which are used to get the style if the level of specificity is
    * met (hierarchy is checked from most specific to least specific which is
    * annotationLevel -> viewportLevel -> toolGroupLevel -> default.
@@ -401,7 +401,7 @@ abstract class AnnotationTool extends BaseTool {
    */
   public getStyle(
     property: string,
-    specifications: StyleSpecifications,
+    specifications: StyleSpecifier,
     annotation?: Annotation
   ): unknown {
     return getStyleProperty(
@@ -414,7 +414,7 @@ abstract class AnnotationTool extends BaseTool {
 
   /**
    * It returns the style for the text box
-   * @param styleSpecifications - An object containing the specifications such as viewportId,
+   * @param styleSpecifier - An object containing the specifications such as viewportId,
    * toolGroupId, toolName and annotationUID which are used to get the style if the level of specificity is
    * met (hierarchy is checked from most specific to least specific which is
    * annotationLevel -> viewportLevel -> toolGroupLevel -> default.
@@ -423,7 +423,7 @@ abstract class AnnotationTool extends BaseTool {
    * @returns An object of the style settings for the text box.
    */
   public getLinkedTextBoxStyle(
-    specifications: StyleSpecifications,
+    specifications: StyleSpecifier,
     annotation?: Annotation
   ): Record<string, unknown> {
     // Todo: this function can be used to set different styles for different toolMode

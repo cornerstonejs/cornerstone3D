@@ -1,10 +1,10 @@
 import { ToolModes, AnnotationStyleStates } from '../../../enums';
 import { getStyleProperty } from './helpers';
-import { StyleSpecifications } from '../../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../../types/AnnotationStyle';
 
 /**
  * getFont - Returns a font string of the form "{fontSize}px fontName" used by `canvas`.
- * @param styleSpecifications - An object containing the specifications such as viewportId,
+ * @param styleSpecifier - An object containing the specifications such as viewportId,
  * toolGroupId, toolName and annotationUID which are used to get the style if the level of specificity is
  * met (hierarchy is checked from most specific to least specific which is
  * annotationLevel -> viewportLevel -> toolGroupLevel -> default.
@@ -13,19 +13,19 @@ import { StyleSpecifications } from '../../../types/AnnotationStyle';
  * @returns The font string.
  */
 function getFont(
-  styleSpecifications: StyleSpecifications,
+  styleSpecifier: StyleSpecifier,
   state?: AnnotationStyleStates,
   mode?: ToolModes
 ): string {
   const fontSize = getStyleProperty(
     'textBoxFontSize',
-    styleSpecifications,
+    styleSpecifier,
     state,
     mode
   );
   const fontFamily = getStyleProperty(
     'textBoxFontFamily',
-    styleSpecifications,
+    styleSpecifier,
     state,
     mode
   );

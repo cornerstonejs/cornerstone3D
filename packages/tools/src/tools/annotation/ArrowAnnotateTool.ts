@@ -41,7 +41,7 @@ import {
   InteractionTypes,
 } from '../../types';
 import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifications } from '../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class ArrowAnnotateTool extends AnnotationTool {
   static toolName = 'ArrowAnnotate';
@@ -567,7 +567,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       return;
     }
 
-    const styleSpecifications: StyleSpecifications = {
+    const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
@@ -580,19 +580,11 @@ class ArrowAnnotateTool extends AnnotationTool {
       const { handles, text } = data;
       const { points, activeHandleIndex } = handles;
 
-      styleSpecifications.annotationUID = annotationUID;
+      styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle(
-        'lineWidth',
-        styleSpecifications,
-        annotation
-      );
-      const lineDash = this.getStyle(
-        'lineDash',
-        styleSpecifications,
-        annotation
-      );
-      const color = this.getStyle('color', styleSpecifications, annotation);
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -681,7 +673,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifications, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;

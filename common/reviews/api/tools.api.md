@@ -178,16 +178,16 @@ type AnnotationState = {
 
 declare namespace AnnotationStyle {
     export {
-        AnnotationStyles,
-        ToolStyles,
+        AnnotationStyle_2 as AnnotationStyle,
         ToolStyleConfig,
-        StyleSpecifications
+        StyleConfig,
+        StyleSpecifier
     }
 }
 
 // @public (undocumented)
-type AnnotationStyles = {
-    [key in `${Properties}${States}${Modes}`]: string;
+type AnnotationStyle_2 = {
+    [key in `${Properties}${States}${Modes}`]?: string;
 };
 
 // @public (undocumented)
@@ -213,11 +213,11 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    getLinkedTextBoxStyle(specifications: StyleSpecifications, annotation?: Annotation): Record<string, unknown>;
+    getLinkedTextBoxStyle(specifications: StyleSpecifier, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
-    getStyle(property: string, specifications: StyleSpecifications, annotation?: Annotation): unknown;
+    getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
     // (undocumented)
@@ -1453,7 +1453,7 @@ function getDefaultSegmentationStateManager(): SegmentationStateManager;
 function getFirstIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
 
 // @public (undocumented)
-function getFont(styleSpecifications: StyleSpecifications, state?: AnnotationStyleStates, mode?: ToolModes): string;
+function getFont(styleSpecifier: StyleSpecifier, state?: AnnotationStyleStates, mode?: ToolModes): string;
 
 // @public (undocumented)
 function getGlobalConfig(): SegmentationRepresentationConfig;
@@ -3477,7 +3477,21 @@ declare namespace state_2 {
 }
 
 // @public (undocumented)
-type StyleSpecifications = {
+type StyleConfig = {
+    annotations?: {
+        [annotationUID: string]: AnnotationStyle_2;
+    };
+    viewports?: {
+        [viewportId: string]: ToolStyleConfig;
+    };
+    toolGroups?: {
+        [toolGroupId: string]: ToolStyleConfig;
+    };
+    default: ToolStyleConfig;
+};
+
+// @public (undocumented)
+type StyleSpecifier = {
     viewportId?: string;
     toolGroupId?: string;
     toolName?: string;
@@ -3650,22 +3664,8 @@ const toolStyle: ToolStyle;
 
 // @public (undocumented)
 type ToolStyleConfig = {
-    annotations?: {
-        [annotationUID: string]: AnnotationStyles;
-    };
-    viewports?: {
-        [viewportId: string]: ToolStyles;
-    };
-    toolGroups?: {
-        [toolGroupId: string]: ToolStyles;
-    };
-    default: ToolStyles;
-};
-
-// @public (undocumented)
-type ToolStyles = {
-    [toolName: string]: AnnotationStyles;
-    global: AnnotationStyles;
+    [toolName: string]: AnnotationStyle_2;
+    global: AnnotationStyle_2;
 };
 
 // @public

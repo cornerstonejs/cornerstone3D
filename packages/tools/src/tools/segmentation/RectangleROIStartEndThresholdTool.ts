@@ -26,7 +26,7 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifications } from '../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * This tool is similar to the RectangleROIThresholdTool which
@@ -315,7 +315,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     const { viewport } = enabledElement;
     const sliceIndex = viewport.getCurrentImageIdIndex();
 
-    const styleSpecifications: StyleSpecifications = {
+    const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
@@ -331,19 +331,11 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      styleSpecifications.annotationUID = annotationUID;
+      styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle(
-        'lineWidth',
-        styleSpecifications,
-        annotation
-      );
-      const lineDash = this.getStyle(
-        'lineDash',
-        styleSpecifications,
-        annotation
-      );
-      const color = this.getStyle('color', styleSpecifications, annotation);
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
       // range of slices to render based on the start and end slice, like
       // np.arange
 

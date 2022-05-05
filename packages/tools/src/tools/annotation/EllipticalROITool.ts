@@ -52,7 +52,7 @@ import {
 } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
-import { StyleSpecifications } from '../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -727,7 +727,7 @@ export default class EllipticalROITool extends AnnotationTool {
 
     const renderingEngine = viewport.getRenderingEngine();
 
-    const styleSpecifications: StyleSpecifications = {
+    const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
@@ -739,19 +739,11 @@ export default class EllipticalROITool extends AnnotationTool {
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
-      styleSpecifications.annotationUID = annotationUID;
+      styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle(
-        'lineWidth',
-        styleSpecifications,
-        annotation
-      );
-      const lineDash = this.getStyle(
-        'lineDash',
-        styleSpecifications,
-        annotation
-      );
-      const color = this.getStyle('color', styleSpecifications, annotation);
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
@@ -888,7 +880,7 @@ export default class EllipticalROITool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifications, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;

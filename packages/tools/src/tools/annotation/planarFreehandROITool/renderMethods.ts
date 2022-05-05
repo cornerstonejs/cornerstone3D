@@ -5,7 +5,7 @@ import {
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifications } from '../../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../../types/AnnotationStyle';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 
@@ -19,16 +19,16 @@ function _getRenderingOptions(
   enabledElement: Types.IEnabledElement,
   annotation: PlanarFreehandROIAnnotation
 ): PlanarFreehandROIRenderOptions {
-  const styleSpecifications: StyleSpecifications = {
+  const styleSpecifier: StyleSpecifier = {
     toolGroupId: this.toolGroupId,
     toolName: this.getToolName(),
     viewportId: enabledElement.viewport.id,
     annotationUID: annotation.annotationUID,
   };
 
-  const lineWidth = this.getStyle('lineWidth', styleSpecifications, annotation);
-  const lineDash = this.getStyle('lineDash', styleSpecifications, annotation);
-  const color = this.getStyle('color', styleSpecifications, annotation);
+  const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+  const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+  const color = this.getStyle('color', styleSpecifier, annotation);
 
   const isOpenContour = annotation.data.isOpenContour;
 

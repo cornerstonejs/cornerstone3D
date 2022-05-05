@@ -42,7 +42,7 @@ import {
   ToolProps,
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifications } from '../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -418,7 +418,7 @@ export default class ProbeTool extends AnnotationTool {
     const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
-    const styleSpecifications: StyleSpecifications = {
+    const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
@@ -431,9 +431,9 @@ export default class ProbeTool extends AnnotationTool {
       const point = data.handles.points[0];
       const canvasCoordinates = viewport.worldToCanvas(point);
 
-      styleSpecifications.annotationUID = annotationUID;
+      styleSpecifier.annotationUID = annotationUID;
 
-      const color = this.getStyle('color', styleSpecifications, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
@@ -512,7 +512,7 @@ export default class ProbeTool extends AnnotationTool {
           textUID,
           textLines,
           [textCanvasCoordinates[0], textCanvasCoordinates[1]],
-          this.getLinkedTextBoxStyle(styleSpecifications, annotation)
+          this.getLinkedTextBoxStyle(styleSpecifier, annotation)
         );
       }
     }

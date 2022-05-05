@@ -46,7 +46,7 @@ import {
   MouseMoveEventType,
 } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifications } from '../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -973,7 +973,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const renderingEngine = viewport.getRenderingEngine();
 
-    const styleSpecifications: StyleSpecifications = {
+    const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
@@ -985,19 +985,11 @@ export default class BidirectionalTool extends AnnotationTool {
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      styleSpecifications.annotationUID = annotationUID;
+      styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle(
-        'lineWidth',
-        styleSpecifications,
-        annotation
-      );
-      const lineDash = this.getStyle(
-        'lineDash',
-        styleSpecifications,
-        annotation
-      );
-      const color = this.getStyle('color', styleSpecifications, annotation);
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
@@ -1100,7 +1092,7 @@ export default class BidirectionalTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(styleSpecifications, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;

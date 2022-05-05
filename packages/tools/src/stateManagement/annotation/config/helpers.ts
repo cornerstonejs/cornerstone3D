@@ -1,4 +1,4 @@
-import { StyleSpecifications } from '../../../types/AnnotationStyle';
+import { StyleSpecifier } from '../../../types/AnnotationStyle';
 import { ToolModes, AnnotationStyleStates } from '../../../enums';
 import toolStyle from './ToolStyle';
 
@@ -23,7 +23,7 @@ function getStyleAlternatives(
 /**
  * Get the value of a style property from the ToolStyle config
  * @param property - The name of the property to get.
- * @param styleSpecifications - An object containing the specifications such as viewportId,
+ * @param styleSpecifier - An object containing the specifications such as viewportId,
  * toolGroupId, toolName and annotationUID which are used to get the style if the level of specificity is
  * met (hierarchy is checked from most specific to least specific which is
  * annotationLevel -> viewportLevel -> toolGroupLevel -> default.
@@ -33,7 +33,7 @@ function getStyleAlternatives(
  */
 function getStyleProperty(
   property: string,
-  StyleSpecifications: StyleSpecifications,
+  styleSpecifier: StyleSpecifier,
   state?: AnnotationStyleStates,
   mode?: ToolModes
 ): string {
@@ -42,10 +42,7 @@ function getStyleProperty(
   // Thus, we attempt resolving property names in reverse order
   const alternatives = getStyleAlternatives(property, state, mode);
   for (let i = alternatives.length - 1; i >= 0; --i) {
-    const style = toolStyle.getStyleProperty(
-      alternatives[i],
-      StyleSpecifications
-    );
+    const style = toolStyle.getStyleProperty(alternatives[i], styleSpecifier);
     if (style !== undefined) {
       return style;
     }

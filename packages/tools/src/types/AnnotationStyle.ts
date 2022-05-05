@@ -1,5 +1,7 @@
+// Todo: just use these from import
 type Modes = '' | 'Active' | 'Passive' | 'Enabled';
 type States = '' | 'Highlighted' | 'Selected' | 'Locked';
+
 type Properties =
   | 'color'
   | 'lineWidth'
@@ -11,29 +13,29 @@ type Properties =
   | 'textBoxLinkLineWidth'
   | 'textBoxLinkLineDash';
 
-export type AnnotationStyles = {
-  [key in `${Properties}${States}${Modes}`]: string;
-};
-
-export type ToolStyles = {
-  [toolName: string]: AnnotationStyles;
-  global: AnnotationStyles;
+export type AnnotationStyle = {
+  [key in `${Properties}${States}${Modes}`]?: string;
 };
 
 export type ToolStyleConfig = {
-  annotations?: {
-    [annotationUID: string]: AnnotationStyles;
-  };
-  viewports?: {
-    [viewportId: string]: ToolStyles;
-  };
-  toolGroups?: {
-    [toolGroupId: string]: ToolStyles;
-  };
-  default: ToolStyles;
+  [toolName: string]: AnnotationStyle;
+  global: AnnotationStyle;
 };
 
-export type StyleSpecifications = {
+export type StyleConfig = {
+  annotations?: {
+    [annotationUID: string]: AnnotationStyle;
+  };
+  viewports?: {
+    [viewportId: string]: ToolStyleConfig;
+  };
+  toolGroups?: {
+    [toolGroupId: string]: ToolStyleConfig;
+  };
+  default: ToolStyleConfig;
+};
+
+export type StyleSpecifier = {
   viewportId?: string;
   toolGroupId?: string;
   toolName?: string;
