@@ -270,6 +270,7 @@ export default class MeasurementReport {
         dataset,
         imageIds,
         imageToWorldCoords,
+        metadata,
         hooks = {}
     ) {
         // For now, bail out if the dataset is not a TID1500 SR with length measurements
@@ -337,7 +338,8 @@ export default class MeasurementReport {
                 const measurement = toolClass.getMeasurementData(
                     measurementGroup,
                     imageId,
-                    imageToWorldCoords
+                    imageToWorldCoords,
+                    metadata
                 );
 
                 console.log(`=== ${toolClass.toolType} ===`);

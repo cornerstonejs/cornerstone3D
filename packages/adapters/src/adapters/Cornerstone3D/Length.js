@@ -5,6 +5,7 @@ import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 const LENGTH = "Length";
 const FINDING = "121071";
 const FINDING_SITE = "G-C0E3";
+const trackingIdentifierTextValue = "Cornerstone3DTools@^0.1.0:Length";
 
 class Length {
     constructor() {}
@@ -67,9 +68,8 @@ class Length {
 
         const point1 = { x: start[0], y: start[1] };
         const point2 = { x: end[0], y: end[1] };
-        const distance = cachedStats[Object.keys(cachedStats)[0]].length;
 
-        const trackingIdentifierTextValue = "cornerstone3DTools@^0.1.0:Length";
+        const distance = cachedStats[`imageId:${referencedImageId}`].length;
 
         return {
             point1,
