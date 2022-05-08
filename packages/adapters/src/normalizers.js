@@ -213,14 +213,13 @@ class ImageNormalizer extends Normalizer {
                 frameView.set(pixels);
             } catch (e) {
                 if (e instanceof RangeError) {
-                    log.error("Error inserting pixels in PixelData");
-                    log.error("frameSize", frameSize);
-                    log.error("NumberOfFrames", ds.NumberOfFrames);
-                    log.error("pair", pair);
-                    log.error(
-                        "dataset PixelData size",
-                        dataset.PixelData.length
-                    );
+                    const message =
+                        "Error inserting pixels in PixelData\n" +
+                        `frameSize ${frameSize}\n` +
+                        `NumberOfFrames ${ds.NumberOfFrames}\n` +
+                        `pair ${pair}\n` +
+                        `dataset PixelData size ${dataset.PixelData.length}`;
+                    log.error(message);
                 }
             }
             frame++;

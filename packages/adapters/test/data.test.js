@@ -14,6 +14,7 @@ const { https } = followRedirects;
 import datasetWithNullNumberVRs from "./mocks/null_number_vrs_dataset.json";
 import minimalDataset from "./mocks/minimal_fields_dataset.json";
 import arrayItem from "./arrayItem.json";
+import { rawTags } from "./rawTags";
 
 const { DicomMetaDictionary, DicomDict, DicomMessage, ReadBufferStream } = dcmjs.data;
 
@@ -172,7 +173,8 @@ it("test_json_1", () => {
         sequenceMetadata
     );
 
-    expect(naturalSequence.ProcedureCodeSequence).toMatchObject({ CodeValue: "IMG1332" });
+    // The match object needs to be done on the actual element, not the proxied value
+    expect(naturalSequence.ProcedureCodeSequence[0]).toMatchObject({ CodeValue: "IMG1332" });
 
     // tests that single element sequences have been converted
     // from arrays to values.
@@ -182,7 +184,7 @@ it("test_json_1", () => {
     expect(spacing).toEqual(0.12);
     expect(Array.isArray(naturalSequence.SharedFunctionalGroupsSequence)).toEqual(true);
 
-    expect(naturalSequence.ProcedureCodeSequence).toMatchObject({
+    expect(naturalSequence.ProcedureCodeSequence[0]).toMatchObject({
         CodingSchemeDesignator: "L",
         CodeMeaning: "MRI SHOULDER WITHOUT IV CONTRAST LEFT",
     });
@@ -233,6 +235,7 @@ it("test_multiframe_1", async () => {
         const dataset = DicomMetaDictionary.naturalizeDataset(
             dicomDict.dict
         );
+
         datasets.push(dataset);
     });
 
@@ -304,12 +307,23 @@ it("test_oneslice_seg", async () => {
     const dataset = DicomMetaDictionary.naturalizeDataset(
         dicomDict.dict
     );
+
     multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset(
         [dataset]
     );
     expect(dataset.NumberOfFrames).toEqual(1);
     expect(multiframe.NumberOfFrames).toEqual(1);
 });
+
+it("test_normalizer_smaller", () => {
+    const naturalizedTags = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+        rawTags
+    );
+
+    const rawTagsLen = JSON.stringify(rawTags).length;
+    const naturalizedTagsLen = JSON.stringify(naturalizedTags).length;
+    expect(naturalizedTagsLen).toBeLessThan(rawTagsLen);
+})
 
 it("test_multiframe_us", () => {
     const file = fs.readFileSync("test/cine-test.dcm");

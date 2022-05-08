@@ -6,13 +6,27 @@ const { addAccessors } = utilities;
 it("testAddAccessor", () => {
     const baseValue = { a: 1, b: 2 };
     const arrValue = [baseValue];
-    addAccessors(arrValue, baseValue);
-    expect(arrValue.a).toEqual(1);
+    const val = addAccessors(arrValue, baseValue);
+    expect(val.a).toEqual(1);
     baseValue.a = 3;
-    expect(arrValue.a).toEqual(3);
-    arrValue.b = 4;
+    expect(val.a).toEqual(3);
+    val.b = 4;
     expect(baseValue.b).toEqual(4);
+
+    // Check that we can iterate as an array
     const forArr = [];
-    arrValue.forEach(item => forArr.push(item));
+    val.forEach(item => forArr.push(item));
     expect(forArr.length).toEqual(1);
+    expect(forArr[0]).toEqual(baseValue);
+});
+
+it("testAddAccessor-adds_children", () => {
+    const baseValue = { a: 1, b: 2 };
+    const arrValue = [baseValue];
+    const val = addAccessors(arrValue, baseValue);
+    val.push({ a: "two" });
+    expect(val.length).toBe(2);
+    expect(val[1].a).toBe("two");
+    expect(val.a).toBe(1);
+    expect(val[0].a).toBe(1);
 });
