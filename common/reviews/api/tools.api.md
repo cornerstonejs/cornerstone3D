@@ -1472,12 +1472,6 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
-function getAnnotationUIDsHidden(): Array<string>;
-
-// @public (undocumented)
-function getAnnotationUIDsHiddenCount(): number;
-
-// @public (undocumented)
 function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
@@ -3368,9 +3362,6 @@ function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
-function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
-
-// @public (undocumented)
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
 
 // @public (undocumented)
@@ -3409,13 +3400,18 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
 
 // @public (undocumented)
-function setToolStyle(toolName: string, style: Record<string, unknown>): boolean;
+function showAllAnnotations(): void;
+
+// @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
     newFocalPoint: Types_2.Point3;
+    newPosition: Types_2.Point3;
 };
 
+// @public (undocumented)
 export class SphereScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
     _activateDraw: (element: any) => void;
     // (undocumented)
     _deactivateDraw: (element: any) => void;
@@ -3870,8 +3866,6 @@ type ViewportInputOptions = {
 declare namespace visibility {
     export {
         setAnnotationVisibility,
-        getAnnotationUIDsHidden,
-        getAnnotationUIDsHiddenCount,
         showAllAnnotations,
         isAnnotationVisible,
         checkAndDefineIsVisibleProperty

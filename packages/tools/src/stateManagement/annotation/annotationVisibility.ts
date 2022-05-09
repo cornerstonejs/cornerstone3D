@@ -49,15 +49,6 @@ function showAllAnnotations(): void {
 }
 
 /**
- * Returns an array of all the annotation uids that is currently hidden.
- * @returns An array of tool specific annotation UIDs.
- *
- */
-function getAnnotationUIDsHidden(): Array<string> {
-  return Array.from(globalHiddenAnnotationUIDsSet);
-}
-
-/**
  * Given an annotation UID, return true if it is visible, false if hidden and undefined if does not exist.
  * @param annotationUID - The annotation uid to tell if is visible or not.
  * @returns A boolean value or value if does not exist.
@@ -69,17 +60,6 @@ function isAnnotationVisible(annotationUID: string): boolean | undefined {
     return !globalHiddenAnnotationUIDsSet.has(annotationUID);
   }
 }
-
-/**
- * Get the number of hidden annotation objects in the global set of hidden annotation
- * objects uids.
- * @returns The number of hidden annotation objects.
- *
- */
-function getAnnotationUIDsHiddenCount(): number {
-  return globalHiddenAnnotationUIDsSet.size;
-}
-
 /**
  * It decorates given annotation with isVisible property.
  * It properly initializes the isVisible on annotation(the property will be create if does not exist yet)
@@ -163,8 +143,6 @@ function getIsVisible() {
 
 export {
   setAnnotationVisibility,
-  getAnnotationUIDsHidden,
-  getAnnotationUIDsHiddenCount,
   showAllAnnotations,
   isAnnotationVisible,
   checkAndDefineIsVisibleProperty,

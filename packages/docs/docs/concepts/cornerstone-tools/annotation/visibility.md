@@ -21,12 +21,6 @@ annotations.visibility.setAnnotationVisibility(annotationUID);
 // changing an annotation visibility to NOT be visible.
 annotations.visibility.setAnnotationVisibility(annotationUID, false);
 
-// get all the hidden annotations uids.
-annotations.visibility.getAnnotationUIDsHidden();
-
-// get the number of hidden annotations.
-annotations.visibility.getAnnotationUIDsHiddenCount();
-
 // show all annotation(hidden)
 annotations.visibility.showAllAnnotations();
 
