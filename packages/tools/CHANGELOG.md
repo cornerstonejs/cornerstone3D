@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.13.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.12.1...@cornerstonejs/tools@0.13.0) (2022-05-09)
+
+
+### Features
+
+* Add toolStyles configuration and DragProbe ([#93](https://github.com/cornerstonejs/cornerstone3D-beta/issues/93)) ([ba15be6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ba15be6d268b8c568bdf0e247e571f5ca29a26ad))
+
+
+
+
+
 ## [0.12.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.12.0...@cornerstonejs/tools@0.12.1) (2022-05-03)
 
 
