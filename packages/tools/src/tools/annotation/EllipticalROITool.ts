@@ -2,7 +2,6 @@ import { AnnotationTool } from '../base';
 
 import {
   getEnabledElement,
-  Settings,
   VolumeViewport,
   eventTarget,
   triggerEvent,
@@ -53,6 +52,7 @@ import {
 } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -198,9 +198,6 @@ export default class EllipticalROITool extends AnnotationTool {
         cachedStats: {},
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, EllipticalROITool);
 
     addAnnotation(element, annotation);
 
@@ -730,21 +727,23 @@ export default class EllipticalROITool extends AnnotationTool {
 
     const renderingEngine = viewport.getRenderingEngine();
 
+    const styleSpecifier: StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as EllipticalROIAnnotation;
-      const settings = Settings.getObjectSettings(
-        annotation,
-        EllipticalROITool
-      );
-      const annotationUID = annotation.annotationUID;
-      const data = annotation.data;
-
+      const { annotationUID, data } = annotation;
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
+      styleSpecifier.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
@@ -774,7 +773,6 @@ export default class EllipticalROITool extends AnnotationTool {
           renderingEngine,
           enabledElement
         );
-
         // If the invalidated data is as a result of volumeViewport manipulation
         // of the tools, we need to invalidate the related viewports data, so that
         // when scrolling to the related slice in which the tool were manipulated
@@ -882,7 +880,7 @@ export default class EllipticalROITool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;
@@ -901,37 +899,51 @@ export default class EllipticalROITool extends AnnotationTool {
     const { area, mean, stdDev, max, isEmptyArea, Modality } =
       cachedVolumeStats;
 
-    if (mean === undefined) {
-      return;
-    }
-
     const textLines = [];
+    let areaLine, meanLine, stdDevLine, maxLine;
 
-    const areaLine = isEmptyArea
-      ? `Area: Oblique not supported`
-      : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
-    let meanLine = `Mean: ${mean.toFixed(2)}`;
-    let maxLine = `Max: ${max.toFixed(2)}`;
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
-
-    if (Modality === 'PT') {
-      meanLine += ' SUV';
-      maxLine += ' SUV';
-      stdDevLine += ' SUV';
-    } else if (Modality === 'CT') {
-      meanLine += ' HU';
-      maxLine += ' HU';
-      stdDevLine += ' HU';
-    } else {
-      meanLine += ' MO';
-      maxLine += ' MO';
-      stdDevLine += ' MO';
+    if (area) {
+      areaLine = isEmptyArea
+        ? `Area: Oblique not supported`
+        : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
     }
 
-    textLines.push(areaLine);
-    textLines.push(maxLine);
-    textLines.push(meanLine);
-    textLines.push(stdDevLine);
+    if (mean) {
+      meanLine = `Mean: ${mean.toFixed(2)}`;
+    }
+
+    if (max) {
+      maxLine = `Max: ${max.toFixed(2)}`;
+    }
+
+    if (stdDev) {
+      stdDevLine = `StdDev: ${stdDev.toFixed(2)}`;
+    }
+
+    let unit;
+    if (Modality === 'PT') {
+      unit = 'SUV';
+    } else if (Modality === 'CT') {
+      unit = 'HU';
+    } else {
+      unit = 'MO';
+    }
+
+    if (areaLine) {
+      textLines.push(areaLine);
+    }
+
+    if (meanLine) {
+      textLines.push(meanLine + ' ' + unit);
+    }
+
+    if (maxLine) {
+      textLines.push(maxLine + ' ' + unit);
+    }
+
+    if (stdDevLine) {
+      textLines.push(stdDevLine + ' ' + unit);
+    }
 
     return textLines;
   };

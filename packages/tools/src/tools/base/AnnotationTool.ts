@@ -3,9 +3,7 @@ import {
   getEnabledElement,
   VolumeViewport,
   StackViewport,
-  Settings,
   cache,
-  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -23,8 +21,9 @@ import {
 } from '../../types';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
-import { getStyleProperty } from '../../stateManagement/annotation/config/annotationStyle';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { getState } from '../../stateManagement/annotation/config';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -388,23 +387,26 @@ abstract class AnnotationTool extends BaseTool {
   }
 
   /**
-   * It takes the settings (e.g., global, or runtime setting), the property (e.g., 'lineWidth'),
-   * and the annotation, and returns the value of the property
-   * of the property
-   * @param settings - The settings object for the tool.
+   * It takes the property (color, lineDash, etc.) and based on the state of the
+   * annotation (selected, highlighted etc.) it returns the appropriate value
+   * based on the central toolStyle settings for each level of specification.
    * @param property - The name of the style property to get.
+   * @param styleSpecifier - An object containing the specifications such as viewportId,
+   * toolGroupId, toolName and annotationUID which are used to get the style if the level of specificity is
+   * met (hierarchy is checked from most specific to least specific which is
+   * annotationLevel -> viewportLevel -> toolGroupLevel -> default.
    * @param annotation - The annotation for the tool that is
    * currently active.
    * @returns The value of the property.
    */
   public getStyle(
-    settings: Settings,
     property: string,
+    specifications: StyleSpecifier,
     annotation?: Annotation
   ): unknown {
     return getStyleProperty(
-      settings,
       property,
+      specifications,
       getState(annotation),
       this.mode
     );
@@ -412,25 +414,44 @@ abstract class AnnotationTool extends BaseTool {
 
   /**
    * It returns the style for the text box
-   * @param settings - The settings object for the tool.
+   * @param styleSpecifier - An object containing the specifications such as viewportId,
+   * toolGroupId, toolName and annotationUID which are used to get the style if the level of specificity is
+   * met (hierarchy is checked from most specific to least specific which is
+   * annotationLevel -> viewportLevel -> toolGroupLevel -> default.
    * @param annotation - The annotation for the tool that is
    * currently active.
    * @returns An object of the style settings for the text box.
    */
   public getLinkedTextBoxStyle(
-    settings: Settings,
+    specifications: StyleSpecifier,
     annotation?: Annotation
   ): Record<string, unknown> {
     // Todo: this function can be used to set different styles for different toolMode
     // for the textBox.
 
     return {
-      fontFamily: this.getStyle(settings, 'textBox.fontFamily', annotation),
-      fontSize: this.getStyle(settings, 'textBox.fontSize', annotation),
-      color: this.getStyle(settings, 'textBox.color', annotation),
-      background: this.getStyle(settings, 'textBox.background', annotation),
-      lineWidth: this.getStyle(settings, 'textBox.link.lineWidth', annotation),
-      lineDash: this.getStyle(settings, 'textBox.link.lineDash', annotation),
+      fontFamily: this.getStyle(
+        'textBoxFontFamily',
+        specifications,
+        annotation
+      ),
+      fontSize: this.getStyle('textBoxFontSize', specifications, annotation),
+      color: this.getStyle('textBoxColor', specifications, annotation),
+      background: this.getStyle(
+        'textBoxBackground',
+        specifications,
+        annotation
+      ),
+      lineWidth: this.getStyle(
+        'textBoxLinkLineWidth',
+        specifications,
+        annotation
+      ),
+      lineDash: this.getStyle(
+        'textBoxLinkLineDash',
+        specifications,
+        annotation
+      ),
     };
   }
 

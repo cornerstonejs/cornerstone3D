@@ -65,7 +65,6 @@ function _drawTextGroup(
   // and evenIf the attributes are not set again since they are the same.
   if (existingTextGroup) {
     // TODO: Iterate each node and update color? font-size?
-    // TODO: Does not support change in # of text lines
     const textElement = existingTextGroup.querySelector('text');
     const textSpans = Array.from(textElement.children) as Array<SVGElement>;
 
@@ -74,6 +73,19 @@ function _drawTextGroup(
       const text = textLines[i] || '';
 
       textSpanElement.textContent = text;
+    }
+
+    // if the textLines have changed size, we need to create textSpans for them
+    if (textLines.length > textSpans.length) {
+      for (let i = 0; i < textLines.length - textSpans.length; i++) {
+        const textLine = textLines[i + textSpans.length];
+        const textSpan = _createTextSpan(textLine);
+
+        textElement.appendChild(textSpan);
+      }
+
+      existingTextGroup.appendChild(textElement);
+      svgDrawingHelper._appendNode(existingTextGroup, svgNodeHash);
     }
 
     const textAttributes = {

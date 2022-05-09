@@ -1,7 +1,6 @@
 import { Events } from '../../enums';
 import {
   getEnabledElement,
-  Settings,
   triggerEvent,
   eventTarget,
   utilities as csUtils,
@@ -42,6 +41,7 @@ import {
   InteractionTypes,
 } from '../../types';
 import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class ArrowAnnotateTool extends AnnotationTool {
   static toolName = 'ArrowAnnotate';
@@ -135,9 +135,6 @@ class ArrowAnnotateTool extends AnnotationTool {
         label: '',
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, ArrowAnnotateTool);
 
     addAnnotation(element, annotation);
 
@@ -570,19 +567,24 @@ class ArrowAnnotateTool extends AnnotationTool {
       return;
     }
 
+    const styleSpecifier: StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as ArrowAnnotation;
-      const settings = Settings.getObjectSettings(
-        annotation,
-        ArrowAnnotateTool
-      );
       const { annotationUID, data } = annotation;
       const { handles, text } = data;
       const { points, activeHandleIndex } = handles;
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
+
+      styleSpecifier.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -607,7 +609,6 @@ class ArrowAnnotateTool extends AnnotationTool {
           canvasCoordinates,
           {
             color,
-            lineDash,
             lineWidth,
           }
         );
@@ -624,6 +625,7 @@ class ArrowAnnotateTool extends AnnotationTool {
           {
             color,
             width: lineWidth,
+            lineDash: lineDash,
           }
         );
       } else {
@@ -636,6 +638,7 @@ class ArrowAnnotateTool extends AnnotationTool {
           {
             color,
             width: lineWidth,
+            lineDash: lineDash,
           }
         );
       }
@@ -671,7 +674,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;

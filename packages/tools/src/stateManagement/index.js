@@ -1,9 +1,6 @@
 import FrameOfReferenceSpecificAnnotationManager, {
   defaultFrameOfReferenceSpecificAnnotationManager,
 } from './annotation/FrameOfReferenceSpecificAnnotationManager';
-import getStyle from './annotation/config/getStyle';
-import setGlobalStyle from './annotation/config/setGlobalStyle';
-import setToolStyle from './annotation/config/setToolStyle';
 import * as annotationLocking from './annotation/annotationLocking';
 import * as annotationSelection from './annotation/annotationSelection';
 
@@ -29,9 +26,6 @@ export {
   annotationSelection,
   getAnnotations,
   addAnnotation,
-  getStyle,
-  setGlobalStyle,
-  setToolStyle,
   removeAnnotation,
   getDefaultAnnotationManager,
   getViewportSpecificAnnotationManager,
