@@ -609,7 +609,6 @@ class ArrowAnnotateTool extends AnnotationTool {
           canvasCoordinates,
           {
             color,
-            lineDash,
             lineWidth,
           }
         );
@@ -626,6 +625,7 @@ class ArrowAnnotateTool extends AnnotationTool {
           {
             color,
             width: lineWidth,
+            lineDash: lineDash,
           }
         );
       } else {
@@ -638,6 +638,7 @@ class ArrowAnnotateTool extends AnnotationTool {
           {
             color,
             width: lineWidth,
+            lineDash: lineDash,
           }
         );
       }

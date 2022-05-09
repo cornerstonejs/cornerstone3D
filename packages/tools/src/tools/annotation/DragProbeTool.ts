@@ -44,7 +44,7 @@ export default class DragProbeTool extends ProbeTool {
     super(toolProps, defaultToolProps);
   }
 
-  addNewAnnotation = (
+  postMouseDownCallback = (
     evt: EventTypes.MouseDownActivateEventType
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
