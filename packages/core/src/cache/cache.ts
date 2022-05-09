@@ -741,5 +741,4 @@ class Cache implements ICache {
  */
 const cache = new Cache();
 export default cache;
-window.cache = cache;
 export { Cache }; // for documentation
