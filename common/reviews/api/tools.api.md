@@ -1023,8 +1023,6 @@ function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Poin
 export class DragProbeTool extends ProbeTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => ProbeAnnotation;
-    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -1041,6 +1039,8 @@ export class DragProbeTool extends ProbeTool {
     isHandleOutsideImage: boolean;
     // (undocumented)
     mouseDragCallback: any;
+    // (undocumented)
+    postMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => ProbeAnnotation;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
     // (undocumented)
