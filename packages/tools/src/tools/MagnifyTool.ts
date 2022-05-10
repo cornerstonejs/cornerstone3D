@@ -64,7 +64,17 @@ export default class MagnifyTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
+    if (!(viewport instanceof StackViewport)) {
+      throw new Error('MagnifyTool only works on StackViewports');
+    }
+
     const referencedImageId = this._getReferencedImageId(viewport);
+
+    if (!referencedImageId) {
+      throw new Error(
+        'MagnifyTool: No referenced image id found, reconstructed planes not supported yet'
+      );
+    }
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -99,6 +109,7 @@ export default class MagnifyTool extends BaseTool {
     } = this.editData;
     const { viewport } = enabledElement;
     const { element } = viewport;
+    const { voiRange } = viewport.getProperties();
 
     const { canvas: canvasPos, world: worldPos } = currentPoints;
 
@@ -117,7 +128,8 @@ export default class MagnifyTool extends BaseTool {
 
       magnifyToolElement = magnifyElement;
 
-      element.appendChild(magnifyElement);
+      const viewportElement = element.querySelector('.viewport-element');
+      viewportElement.appendChild(magnifyElement);
 
       const viewportInput = {
         viewportId: MAGNIFY_VIEWPORT_ID,
@@ -128,6 +140,7 @@ export default class MagnifyTool extends BaseTool {
       renderingEngine.enableElement(viewportInput);
     }
 
+    // Todo: use CSS transform instead of setting top and left for better performance
     magnifyToolElement.style.top = `${
       canvasPos[1] - this.configuration.magnifyHeight / 2
     }px`;
@@ -140,6 +153,9 @@ export default class MagnifyTool extends BaseTool {
     ) as Types.IStackViewport;
 
     magnifyViewport.setStack([referencedImageId]).then(() => {
+      // match the original viewport voi range
+      magnifyViewport.setProperties({ voiRange });
+
       // Use the original viewport for the base for parallelScale
       const { parallelScale } = viewport.getCamera();
 

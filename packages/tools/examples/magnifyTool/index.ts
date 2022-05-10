@@ -3,7 +3,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -13,12 +12,9 @@ console.warn(
 );
 
 const {
-  LengthTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  BidirectionalTool,
-  AngleTool,
+  MagnifyTool,
+  PanTool,
+  ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -28,8 +24,8 @@ const { MouseBindings } = csToolsEnums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Annotation Tools Stack',
-  'Annotation tools for a stack viewport'
+  'Magnify Tool',
+  'Magnify Tool to zoom in in part of the viewport (StackViewport only as of now)'
 );
 
 const content = document.getElementById('content');
@@ -52,38 +48,6 @@ content.append(instructions);
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
-const toolsNames = [
-  LengthTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-];
-let selectedToolName = toolsNames[0];
-
-addDropdownToToolbar({
-  options: { values: toolsNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
-
-    selectedToolName = <string>newSelectedToolName;
-  },
-});
-
 /**
  * Runs the demo
  */
@@ -92,41 +56,44 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
+  cornerstoneTools.addTool(MagnifyTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
+  toolGroup.addTool(MagnifyTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(MagnifyTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });
-  // We set all the other tools passive here, this means that any state is rendered, and editable
-  // But aren't actively being drawn (see the toolModes example for information)
-  toolGroup.setToolPassive(ProbeTool.toolName);
-  toolGroup.setToolPassive(RectangleROITool.toolName);
-  toolGroup.setToolPassive(EllipticalROITool.toolName);
-  toolGroup.setToolPassive(BidirectionalTool.toolName);
-  toolGroup.setToolPassive(AngleTool.toolName);
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, //
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -148,9 +115,6 @@ async function run() {
     viewportId,
     type: ViewportType.STACK,
     element,
-    defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
-    },
   };
 
   renderingEngine.enableElement(viewportInput);
