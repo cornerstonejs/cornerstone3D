@@ -524,7 +524,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
     // If the annotation is an open cardiac annotation, find the annotation vector.
     if (annotation.data.isOpenCardiacAnnotation) {
       annotation.data.openCardiacAnnotationVectorToPeak =
-        findOpenCardiacAnnotationVectorToPeak(canvasPoints, viewport);
+        findOpenCardiacAnnotationVectorToPeak(fusedCanvasPoints, viewport);
     }
 
     this.triggerAnnotationModified(annotation, enabledElement);

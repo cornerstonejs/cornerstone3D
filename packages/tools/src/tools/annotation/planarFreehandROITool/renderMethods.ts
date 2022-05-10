@@ -46,6 +46,8 @@ function renderContour(
   if (annotation.data.isOpenContour) {
     if (annotation.data.isOpenCardiacAnnotation) {
       if (!annotation.data.openCardiacAnnotationVectorToPeak) {
+        // Annotation just been set to be an open cardiac contour.
+        // calculate its peak vector here.
         annotation.data.openCardiacAnnotationVectorToPeak =
           findOpenCardiacAnnotationVectorToPeakOnRender(
             enabledElement,
@@ -53,8 +55,7 @@ function renderContour(
           );
       }
 
-      debugger;
-      this.renderOpenCardiacAnnotation(
+      this.renderOpenCardiacContour(
         enabledElement,
         svgDrawingHelper,
         annotation
@@ -146,13 +147,58 @@ function renderOpenContour(
   }
 }
 
-function renderOpenCardiacAnnotation(
+function renderOpenCardiacContour(
   enabledElement: Types.IEnabledElement,
   svgDrawingHelper: any,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   console.log('TODO_JAMES => Render open cardiac annotation');
-  debugger;
+
+  const { viewport } = enabledElement;
+  const { polyline, openCardiacAnnotationVectorToPeak } = annotation.data;
+
+  this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+
+  const firstCanvasPoint = viewport.worldToCanvas(polyline[0]);
+  const lastCanvasPoint = viewport.worldToCanvas(polyline[polyline.length - 1]);
+
+  const openCardiacAnnotationVectorToPeakCanvas = [
+    viewport.worldToCanvas(openCardiacAnnotationVectorToPeak[0]),
+    viewport.worldToCanvas(openCardiacAnnotationVectorToPeak[1]),
+  ];
+
+  const options = this._getRenderingOptions(annotation);
+
+  // Join first and last points
+  drawPolylineSvg(
+    svgDrawingHelper,
+    annotation.annotationUID,
+    'first-to-last',
+    [firstCanvasPoint, lastCanvasPoint],
+    {
+      color: options.color,
+      width: options.width,
+      connectLastToFirst: false,
+      lineDash: '2,2',
+    }
+  );
+
+  // Render midpoint to open contour surface line
+  drawPolylineSvg(
+    svgDrawingHelper,
+    annotation.annotationUID,
+    'midpoint-to-open-contour',
+    [
+      openCardiacAnnotationVectorToPeakCanvas[0],
+      openCardiacAnnotationVectorToPeakCanvas[1],
+    ],
+    {
+      color: options.color,
+      width: options.width,
+      connectLastToFirst: false,
+      lineDash: '2,2',
+    }
+  );
 }
 
 /**
@@ -283,8 +329,8 @@ function registerRenderMethods(toolInstance) {
   toolInstance.renderContour = renderContour.bind(toolInstance);
   toolInstance.renderClosedContour = renderClosedContour.bind(toolInstance);
   toolInstance.renderOpenContour = renderOpenContour.bind(toolInstance);
-  toolInstance.renderOpenCardiacAnnotation =
-    renderOpenCardiacAnnotation.bind(toolInstance);
+  toolInstance.renderOpenCardiacContour =
+    renderOpenCardiacContour.bind(toolInstance);
 
   toolInstance.renderContourBeingDrawn =
     renderContourBeingDrawn.bind(toolInstance);
