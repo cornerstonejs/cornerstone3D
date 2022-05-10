@@ -1,4 +1,10 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  volumeLoader,
+  CONSTANTS,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -21,7 +27,13 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 const { MouseBindings } = csToolsEnums;
+
+// Define a unique id for the volume
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -29,17 +41,29 @@ setTitleAndDescription(
   'Here we demonstrate how to use the Planar Freehand Annotation Tool to draw 2D open and closed ROIs'
 );
 
+const size = '500px';
 const content = document.getElementById('content');
-const element = document.createElement('div');
+const viewportGrid = document.createElement('div');
 
-// Disable right click context menu so we can have right click tools
-element.oncontextmenu = (e) => e.preventDefault();
+viewportGrid.style.display = 'flex';
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
 
-element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
 
-content.appendChild(element);
+// Disable right click context menu so we can have right click tool
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+
+content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
@@ -113,7 +137,7 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const stackImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
@@ -122,39 +146,75 @@ async function run() {
     type: 'STACK',
   });
 
+  // Define a stack containing a single image
+  const smallStackImageIds = [stackImageIds[0], stackImageIds[1]];
+
+  const volumeImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
+    type: 'VOLUME',
+  });
+
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  const viewportId = 'CT_STACK';
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element,
-    defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+  const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
+  const viewportInputArray = [
+    {
+      viewportId: viewportIds[0],
+      type: ViewportType.STACK,
+      element: element1,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
     },
-  };
+    {
+      viewportId: viewportIds[1],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: ORIENTATION.SAGITTAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  ];
 
-  renderingEngine.enableElement(viewportInput);
+  renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineId);
-
-  // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
+  viewportIds.forEach((viewportId) =>
+    toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0], imageIds[1]];
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds: volumeImageIds,
+  });
+
+  // Get the viewports that were just created
+  const stackViewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportIds[0])
+  );
+  const volumeViewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportIds[1])
+  );
 
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  stackViewport.setStack(smallStackImageIds);
+
+  // Set the volume to load
+  volume.load();
+
+  // Set the volume on the viewport
+  volumeViewport.setVolumes([{ volumeId }]);
 
   // Render the image
-  viewport.render();
+  renderingEngine.renderViewports(viewportIds);
 }
 
 run();

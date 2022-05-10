@@ -269,6 +269,46 @@ function findSnapIndex(): number {
 }
 
 /**
+ * Checks if the `editCanvasPoints` cross themselves. If they do, remove the
+ * region after the cross index, these removes isolated "island" loops that the
+ * user can draw which make closed contours no longer simple polygons, or open
+ * contours twisted.
+ */
+function checkAndRemoveCrossesOnEditLine(
+  evt: EventTypes.MouseDragEventType
+): number | undefined {
+  const eventDetail = evt.detail;
+  const { currentPoints, lastPoints } = eventDetail;
+  const canvasPos = currentPoints.canvas;
+  const lastCanvasPoint = lastPoints.canvas;
+
+  const { editCanvasPoints } = this.editData;
+
+  const editCanvasPointsLessLastOne = editCanvasPoints.slice(0, -2);
+
+  const crossedLineSegment = getFirstIntersectionWithPolyline(
+    editCanvasPointsLessLastOne,
+    canvasPos,
+    lastCanvasPoint,
+    false
+  );
+
+  if (!crossedLineSegment) {
+    return;
+  }
+
+  // We have found a crossing, remove points after the crossing, cutting off
+  // the "island" loop drawn.
+
+  const editIndexCrossed = crossedLineSegment[0];
+  const numPointsToRemove = editCanvasPoints.length - editIndexCrossed;
+
+  for (let i = 0; i < numPointsToRemove; i++) {
+    editCanvasPoints.pop();
+  }
+}
+
+/**
  * Registers the contour drawing loop to the tool instance.
  */
 function registerEditLoopCommon(toolInstance) {
@@ -280,6 +320,8 @@ function registerEditLoopCommon(toolInstance) {
   toolInstance.findSnapIndex = findSnapIndex.bind(toolInstance);
   toolInstance.removePointsAfterSecondCrossing =
     removePointsAfterSecondCrossing.bind(toolInstance);
+  toolInstance.checkAndRemoveCrossesOnEditLine =
+    checkAndRemoveCrossesOnEditLine.bind(toolInstance);
 }
 
 export default registerEditLoopCommon;

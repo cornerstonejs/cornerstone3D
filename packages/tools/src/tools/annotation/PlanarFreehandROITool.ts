@@ -3,8 +3,12 @@ import {
   triggerEvent,
   eventTarget,
   Settings,
+  StackViewport,
+  VolumeViewport,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 import { Events } from '../../enums';
 import { AnnotationTool } from '../base';
 import {
@@ -12,6 +16,7 @@ import {
   getAnnotations,
 } from '../../stateManagement/annotation/annotationState';
 import { polyline } from '../../utilities/math';
+import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import registerDrawLoop from './planarFreehandROITool/drawLoop';
@@ -27,6 +32,8 @@ import {
 import {
   EventTypes,
   ToolHandle,
+  Annotation,
+  Annotations,
   PublicToolProps,
   ToolProps,
   InteractionTypes,
@@ -98,6 +105,9 @@ class PlanarFreehandROITool extends AnnotationTool {
     annotation: PlanarFreehandROIAnnotation,
     viewportIdsToRender: string[]
   ) => void;
+  private cancelDrawing: (element: HTMLDivElement) => void;
+  private cancelClosedContourEdit: (element: HTMLDivElement) => void;
+  private cancelOpenContourEdit: (element: HTMLDivElement) => void;
 
   private renderContour: (
     enabledElement: Types.IEnabledElement,
@@ -339,7 +349,17 @@ class PlanarFreehandROITool extends AnnotationTool {
   };
 
   cancel = (element: HTMLDivElement): void => {
-    // TODO CANCEL
+    const isDrawing = this.isDrawing;
+    const isEditingOpen = this.isEditingOpen;
+    const isEditingClosed = this.isEditingClosed;
+
+    if (isDrawing) {
+      this.cancelDrawing(element);
+    } else if (isEditingOpen) {
+      this.cancelOpenContourEdit(element);
+    } else if (isEditingClosed) {
+      this.cancelClosedContourEdit(element);
+    }
   };
 
   /**
@@ -375,6 +395,101 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     triggerEvent(eventTarget, eventType, eventDetail);
   };
+
+  /**
+   * @override We need to override this method as the tool doesn't always have
+   * `handles`, which means `filterAnnotationsForDisplay` fails inside
+   * `filterAnnotationsWithinSlice`.
+   */
+  filterInteractableAnnotationsForElement(
+    element: HTMLDivElement,
+    annotations: Annotations
+  ): Annotations | undefined {
+    if (!annotations || !annotations.length) {
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    let annotationsToDisplay;
+
+    if (viewport instanceof StackViewport) {
+      // Use the default `filterAnnotationsForDisplay` utility, as the stack
+      // path doesn't require handles.
+      annotationsToDisplay = filterAnnotationsForDisplay(viewport, annotations);
+    } else if (viewport instanceof VolumeViewport) {
+      const camera = viewport.getCamera();
+
+      const { spacingInNormalDirection } =
+        csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera);
+
+      // Get data with same normal and within the same slice
+      annotationsToDisplay = this.filterAnnotationsWithinSlice(
+        annotations,
+        camera,
+        spacingInNormalDirection
+      );
+    } else {
+      throw new Error(`Viewport Type ${viewport.type} not supported`);
+    }
+
+    return annotationsToDisplay;
+  }
+
+  /**
+   * Altered version of the `utilities.planar.filterAnnotationsWithinSlice`,
+   * which uses the polyline position rather than the handle. As the polyline is
+   * always present.
+   */
+  private filterAnnotationsWithinSlice(
+    annotations: Annotations,
+    camera: Types.ICamera,
+    spacingInNormalDirection: number
+  ): Annotations {
+    const { viewPlaneNormal } = camera;
+    const annotationsWithSameNormal = annotations.filter((td: Annotation) => {
+      const annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+      return csUtils.isEqual(annotationViewPlaneNormal, viewPlaneNormal);
+    });
+
+    // No in plane annotations.
+    if (!annotationsWithSameNormal.length) {
+      return [];
+    }
+
+    // Annotation should be within the slice, which means that it should be between
+    // camera's focalPoint +/- spacingInNormalDirection.
+
+    const halfSpacingInNormalDirection = spacingInNormalDirection / 2;
+    const { focalPoint } = camera;
+
+    const annotationsWithinSlice = [];
+
+    for (const annotation of annotationsWithSameNormal) {
+      const data = annotation.data;
+      const point = data.polyline[0];
+
+      // A = point
+      // B = focal point
+      // P = normal
+
+      // B-A dot P  => Distance in the view direction.
+      // this should be less than half the slice distance.
+
+      const dir = vec3.create();
+
+      vec3.sub(dir, focalPoint, point);
+
+      const dot = vec3.dot(dir, viewPlaneNormal);
+
+      if (Math.abs(dot) < halfSpacingInNormalDirection) {
+        annotationsWithinSlice.push(annotation);
+      }
+    }
+
+    return annotationsWithinSlice;
+  }
 
   /**
    * Draws the `PlanarFreehandROIAnnotation`s at each request animation frame.

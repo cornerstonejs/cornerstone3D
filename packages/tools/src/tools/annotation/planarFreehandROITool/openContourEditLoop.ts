@@ -127,6 +127,12 @@ function mouseDragOpenContourEditCallback(
     return;
   }
 
+  if (startCrossingIndex !== undefined) {
+    // Edge case: If the edit line itself crosses, remove part of that edit line so we don't
+    // Get isolated regions.
+    this.checkAndRemoveCrossesOnEditLine(evt);
+  }
+
   const numPointsAdded = addCanvasPointsToArray(
     element,
     editCanvasPoints,
@@ -488,6 +494,14 @@ function mouseUpOpenContourEditCallback(
 ): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
+
+  this.completeOpenContourEdit(element);
+}
+
+/**
+ * Completes the edit of the open contour.
+ */
+function completeOpenContourEdit(element: HTMLDivElement) {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
@@ -519,6 +533,14 @@ function mouseUpOpenContourEditCallback(
 }
 
 /**
+ * Completes the edit on a cancel method call during the open
+ * contour edit loop.
+ */
+function cancelOpenContourEdit(element: HTMLDivElement) {
+  this.completeOpenContourEdit(element);
+}
+
+/**
  * Registers the open contour edit loop to the tool instance.
  */
 function registerOpenContourEditLoop(toolInstance) {
@@ -540,6 +562,9 @@ function registerOpenContourEditLoop(toolInstance) {
     fuseEditPointsForOpenContourEndEdit.bind(toolInstance);
   toolInstance.openContourEditOverwriteEnd =
     openContourEditOverwriteEnd.bind(toolInstance);
+  toolInstance.cancelOpenContourEdit = cancelOpenContourEdit.bind(toolInstance);
+  toolInstance.completeOpenContourEdit =
+    completeOpenContourEdit.bind(toolInstance);
 }
 
 export default registerOpenContourEditLoop;

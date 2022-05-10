@@ -130,6 +130,12 @@ function mouseDragClosedContourEditCallback(
     return;
   }
 
+  if (startCrossingIndex !== undefined) {
+    // Edge case: If the edit line itself crosses, remove part of that edit line so we don't
+    // Get isolated regions.
+    this.checkAndRemoveCrossesOnEditLine(evt);
+  }
+
   const numPointsAdded = addCanvasPointsToArray(
     element,
     editCanvasPoints,
@@ -380,6 +386,14 @@ function mouseUpClosedContourEditCallback(
 ): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
+
+  this.completeClosedContourEdit(element);
+}
+
+/**
+ * Completes the edit of the closed contour when the mouse button is released.
+ */
+function completeClosedContourEdit(element: HTMLDivElement) {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
@@ -407,6 +421,14 @@ function mouseUpClosedContourEditCallback(
 }
 
 /**
+ * Completes the edit on a cancel method call during the closed
+ * contour edit loop.
+ */
+function cancelClosedContourEdit(element: HTMLDivElement) {
+  this.completeClosedContourEdit(element);
+}
+
+/**
  * Registers the closed contour edit loop to the tool instance.
  */
 function registerClosedContourEditLoop(toolInstance): void {
@@ -422,6 +444,10 @@ function registerClosedContourEditLoop(toolInstance): void {
     finishEditAndStartNewEdit.bind(toolInstance);
   toolInstance.fuseEditPointsWithClosedContour =
     fuseEditPointsWithClosedContour.bind(toolInstance);
+  toolInstance.cancelClosedContourEdit =
+    cancelClosedContourEdit.bind(toolInstance);
+  toolInstance.completeClosedContourEdit =
+    completeClosedContourEdit.bind(toolInstance);
 }
 
 export default registerClosedContourEditLoop;
