@@ -45,6 +45,8 @@ import {
   RectangleROIStartEndThresholdTool,
   SegmentationDisplayTool,
   BrushTool,
+  AngleTool,
+  MagnifyTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -77,6 +79,8 @@ export {
   BidirectionalTool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
+  AngleTool,
+  MagnifyTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools

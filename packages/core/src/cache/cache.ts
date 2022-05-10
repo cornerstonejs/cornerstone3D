@@ -451,13 +451,19 @@ class Cache implements ICache {
    * @param imageId - Image ID
    * @returns cached image
    */
-  public getCachedImageBasedOnImageURI(imageId: string): any {
-    const imageIdToUse = imageIdToURI(imageId);
-    const imageIdsInCache = Array.from(this._imageCache.keys());
+  public getCachedImageBasedOnImageURI(
+    imageId: string
+  ): ICachedImage | undefined {
+    const imageURIToUse = imageIdToURI(imageId);
 
-    const foundImageId = imageIdsInCache.find(
-      (id) => id.indexOf(imageIdToUse) !== -1
-    );
+    const cachedImageIds = Array.from(this._imageCache.keys());
+    const foundImageId = cachedImageIds.find((imageId) => {
+      return imageIdToURI(imageId) === imageURIToUse;
+    });
+
+    if (!foundImageId) {
+      return;
+    }
 
     return this._imageCache.get(foundImageId);
   }
