@@ -8,7 +8,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import {
@@ -18,7 +17,6 @@ import {
   Enums as csToolsEnums,
   annotation,
   addTool,
-  Types as CSToolsTypes,
 } from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -30,16 +28,12 @@ const { MouseBindings } = csToolsEnums;
 
 const { selection, visibility } = annotation;
 const { ViewportType } = Enums;
-
-const defaultFrameOfReferenceSpecificAnnotationManager =
-  annotation.state.getDefaultAnnotationManager();
-
 const viewportId = 'CT_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Annotation Selection And Visibility',
-  'Here we demonstrate selection and changing visibility of annotations'
+  'Annotation Visibility',
+  'Here we demonstrate the changing visibility of annotations'
 );
 
 const content = document.getElementById('content');
@@ -59,7 +53,6 @@ instructions.innerText = `
   - Drawn annotations with the left mouse button.
   - Clicking "Hide Selected Annotation" will hide the selected annotation, preventing it from being used at all.
   - Clicking "Show all Annotations" will show all annotations (previously hidden).
-  - Clicking "Select Random Annotation" will select a random annotation on the viewport.
 `;
 
 content.append(instructions);
@@ -67,11 +60,6 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-
-function randomIntFromInterval(min, max) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
 
 addButtonToToolbar({
   title: 'Hide Selected Annotations',
@@ -82,11 +70,9 @@ addButtonToToolbar({
       const annotationUID = annotationUIDs[0];
 
       visibility.setAnnotationVisibility(annotationUID, false);
-      selection.deselectAnnotation();
 
-      // Render the image to see it was selected
+      // Render the image to see it was hidden
       const renderingEngine = getRenderingEngine(renderingEngineId);
-
       renderingEngine.renderViewports([viewportId]);
     }
   },
@@ -96,35 +82,8 @@ addButtonToToolbar({
   title: 'Show all Annotation',
   onClick: () => {
     visibility.showAllAnnotations();
-    // Render the image to see it was selected
     const renderingEngine = getRenderingEngine(renderingEngineId);
-
     renderingEngine.renderViewports([viewportId]);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Select Random Annotation',
-  onClick: () => {
-    // Note this is a deep clone of the state just for random selection
-    const annotationState = <CSToolsTypes.Annotations>(
-      defaultFrameOfReferenceSpecificAnnotationManager.saveAnnotations(
-        '1.3.6.1.4.1.14519.5.2.1.7009.2403.490913010608778852675014095313',
-        LengthTool.toolName
-      )
-    );
-
-    if (annotationState === undefined) {
-      return;
-    }
-
-    const maxAnnotationIndex = annotationState.length - 1;
-
-    const randomIndex = randomIntFromInterval(0, maxAnnotationIndex);
-
-    const annotationUID = annotationState[randomIndex].annotationUID;
-
-    selection.setAnnotationSelected(annotationUID, true);
   },
 });
 

@@ -3,6 +3,10 @@ import { getAnnotation } from './annotationState';
 import { Events } from '../../enums';
 import { Annotation } from '../../types';
 import { AnnotationVisibilityChangeEventDetail } from '../../types/EventTypes';
+import {
+  isAnnotationSelected,
+  deselectAnnotation,
+} from './annotationSelection';
 
 /*
  * It stores all hidden annotation uids.
@@ -108,6 +112,9 @@ function hide(
   detail: AnnotationVisibilityChangeEventDetail
 ): void {
   if (!annotationUIDsSet.has(annotationUID)) {
+    if (isAnnotationSelected(annotationUID)) {
+      deselectAnnotation(annotationUID);
+    }
     annotationUIDsSet.add(annotationUID);
     detail.lastHidden.push(annotationUID);
   }

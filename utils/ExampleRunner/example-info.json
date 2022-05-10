@@ -94,9 +94,9 @@
         "name": "Annotation Selection and Locking",
         "description": "Demonstrates how to toggle the Locked and Selected states for Annotations"
       },
-      "annotationSelectionAndVisibility": {
-        "name": "Annotation Selection and changing visibility",
-        "description": "Demonstrates how to toggle the Visibility and Selected states for Annotations"
+      "annotationVisibility": {
+        "name": "Annotation changing visibility",
+        "description": "Demonstrates how to toggle the Visibility state for Annotations"
       },
       "modifierKeys": {
         "name": "Binding Tools with Modifier Keys",
