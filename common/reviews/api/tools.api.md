@@ -2489,7 +2489,7 @@ export class MagnifyTool extends BaseTool {
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType) => void;
     // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => void;
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     static toolName: string;
 }

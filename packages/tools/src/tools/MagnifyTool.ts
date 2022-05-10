@@ -97,6 +97,8 @@ export default class MagnifyTool extends BaseTool {
     evt.preventDefault();
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    return true;
   };
 
   _createMagnificationViewport = () => {
