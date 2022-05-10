@@ -7,6 +7,7 @@ import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
+import MagnifyTool from './MagnifyTool';
 //
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
@@ -61,4 +62,5 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  MagnifyTool,
 };

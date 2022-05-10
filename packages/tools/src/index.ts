@@ -46,6 +46,7 @@ import {
   SegmentationDisplayTool,
   BrushTool,
   AngleTool,
+  MagnifyTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -79,6 +80,7 @@ export {
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   AngleTool,
+  MagnifyTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools

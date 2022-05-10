@@ -2461,6 +2461,39 @@ declare namespace locking {
     }
 }
 
+// @public (undocumented)
+export class MagnifyTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _bounds: any;
+    // (undocumented)
+    _createMagnificationViewport: () => void;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    editData: {
+        referencedImageId: string;
+        viewportIdsToRender: string[];
+        enabledElement: Types_2.IEnabledElement;
+        renderingEngine: Types_2.IRenderingEngine;
+        currentPoints: IPoints;
+    } | null;
+    // (undocumented)
+    _getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): string;
+    // (undocumented)
+    mouseDragCallback: () => void;
+    // (undocumented)
+    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    // (undocumented)
+    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => void;
+    // (undocumented)
+    static toolName: string;
+}
+
 declare namespace math {
     export {
         vec2,
