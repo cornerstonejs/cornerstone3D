@@ -5,6 +5,7 @@ import {
   drawPolyline as drawPolylineSvg,
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
+import { findOpenCardiacAnnotationVectorToPeakOnRender } from './findOpenCardiacAnnotationVectorToPeak';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
@@ -43,7 +44,24 @@ function renderContour(
   annotation: PlanarFreehandROIAnnotation
 ): void {
   if (annotation.data.isOpenContour) {
-    this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+    if (annotation.data.isOpenCardiacAnnotation) {
+      if (!annotation.data.openCardiacAnnotationVectorToPeak) {
+        annotation.data.openCardiacAnnotationVectorToPeak =
+          findOpenCardiacAnnotationVectorToPeakOnRender(
+            enabledElement,
+            annotation
+          );
+      }
+
+      debugger;
+      this.renderOpenCardiacAnnotation(
+        enabledElement,
+        svgDrawingHelper,
+        annotation
+      );
+    } else {
+      this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+    }
   } else {
     this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
   }
@@ -126,6 +144,15 @@ function renderOpenContour(
       { color: options.color }
     );
   }
+}
+
+function renderOpenCardiacAnnotation(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: any,
+  annotation: PlanarFreehandROIAnnotation
+): void {
+  console.log('TODO_JAMES => Render open cardiac annotation');
+  debugger;
 }
 
 /**
@@ -256,6 +283,8 @@ function registerRenderMethods(toolInstance) {
   toolInstance.renderContour = renderContour.bind(toolInstance);
   toolInstance.renderClosedContour = renderClosedContour.bind(toolInstance);
   toolInstance.renderOpenContour = renderOpenContour.bind(toolInstance);
+  toolInstance.renderOpenCardiacAnnotation =
+    renderOpenCardiacAnnotation.bind(toolInstance);
 
   toolInstance.renderContourBeingDrawn =
     renderContourBeingDrawn.bind(toolInstance);

@@ -10,6 +10,7 @@ import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import findOpenCardiacAnnotationVectorToPeak from './findOpenCardiacAnnotationVectorToPeak';
 import { polyline } from '../../../utilities/math';
 
 const {
@@ -248,6 +249,12 @@ function completeDrawOpenContour(element: HTMLDivElement): void {
     worldPoints[0],
     worldPoints[worldPoints.length - 1],
   ];
+
+  // If the annotation is an open cardiac annotation, find the annotation vector.
+  if (annotation.data.isOpenCardiacAnnotation) {
+    annotation.data.openCardiacAnnotationVectorToPeak =
+      findOpenCardiacAnnotationVectorToPeak(canvasPoints, viewport);
+  }
 
   this.triggerAnnotationCompleted(annotation);
 

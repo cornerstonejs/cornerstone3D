@@ -10,6 +10,7 @@ import type { EventTypes, Annotation } from '../../../types';
 import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import findOpenCardiacAnnotationVectorToPeak from './findOpenCardiacAnnotationVectorToPeak';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 
@@ -519,6 +520,12 @@ function completeOpenContourEdit(element: HTMLDivElement) {
       worldPoints[0],
       worldPoints[worldPoints.length - 1],
     ];
+
+    // If the annotation is an open cardiac annotation, find the annotation vector.
+    if (annotation.data.isOpenCardiacAnnotation) {
+      annotation.data.openCardiacAnnotationVectorToPeak =
+        findOpenCardiacAnnotationVectorToPeak(canvasPoints, viewport);
+    }
 
     this.triggerAnnotationModified(annotation, enabledElement);
   }

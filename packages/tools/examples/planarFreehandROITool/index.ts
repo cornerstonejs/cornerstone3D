@@ -4,11 +4,13 @@ import {
   Enums,
   volumeLoader,
   CONSTANTS,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -24,16 +26,22 @@ const {
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
+  annotation,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 const { MouseBindings } = csToolsEnums;
+const { selection } = annotation;
+const defaultFrameOfReferenceSpecificAnnotationManager =
+  annotation.state.getDefaultAnnotationManager();
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const renderingEngineId = 'myRenderingEngine';
+const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -83,6 +91,28 @@ Editing:
 `;
 
 content.append(instructions);
+
+addButtonToToolbar({
+  title: 'Set selected annotation as an open cardiac annotation',
+  onClick: () => {
+    const annotationUIDs = selection.getAnnotationsSelected();
+
+    if (annotationUIDs && annotationUIDs.length) {
+      const annotationUID = annotationUIDs[0];
+      const annotation =
+        defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
+          annotationUID
+        );
+
+      annotation.data.isOpenCardiacAnnotation = true;
+
+      // Render the image to see it was selected
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      renderingEngine.renderViewports(viewportIds);
+    }
+  },
+});
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -159,11 +189,9 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
-  const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
+  // Create a stack and a volume viewport
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
