@@ -24,12 +24,12 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "dependencies": {
-    "lodash.clonedeep": "4.5.0"
+    "lodash.clonedeep": "4.5.0",
+    "@cornerstonejs/core": "^0.8.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^0.3.0",
     "@kitware/vtk.js": "24.0.0",
-    "gl-matrix": "^3.3.0"
+    "gl-matrix": "^3.4.3"
   },
   "devDependencies": {
     "@cornerstonejs/core": "^0.8.0",

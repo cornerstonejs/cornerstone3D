@@ -24,11 +24,11 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "dependencies": {
+    "@cornerstonejs/core": "^0.8.0",
     "cornerstone-wado-image-loader": "^4.1.2"
   },
   "peerDependencies": {
-    "@cornerstonejs/calculate-suv": "1.0.2",
-    "@cornerstonejs/core": "^0.4.3"
+    "@cornerstonejs/calculate-suv": "1.0.2"
   },
   "devDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2",

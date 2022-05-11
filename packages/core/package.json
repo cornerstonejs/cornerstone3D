@@ -26,7 +26,6 @@
   },
   "peerDependencies": {
     "@kitware/vtk.js": "24.0.0",
-    "detect-gpu": "^4.0.7",
     "gl-matrix": "^3.4.3"
   },
   "dependencies": {
