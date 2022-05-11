@@ -69,7 +69,7 @@ export default function findOpenCardiacAnnotationVectorToPeak(
   // Make the line a bit longer to make sure it crosses in the most extreme case.
   const testCrossLength = diagonal * 1.1;
 
-  const testChord1 = [
+  const testChord1: Types.Point2[] = [
     [centerOfFirstToLast[0], centerOfFirstToLast[1]],
     [
       centerOfFirstToLast[0] + normalVector1[0] * testCrossLength,
@@ -77,7 +77,7 @@ export default function findOpenCardiacAnnotationVectorToPeak(
     ],
   ];
 
-  const testChord2 = [
+  const testChord2: Types.Point2[] = [
     [centerOfFirstToLast[0], centerOfFirstToLast[1]],
     [
       centerOfFirstToLast[0] + normalVector2[0] * testCrossLength,
