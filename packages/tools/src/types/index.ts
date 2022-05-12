@@ -23,6 +23,7 @@ import type { ToolProps, PublicToolProps } from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type JumpToSliceOptions from './JumpToSliceOptions';
 import type ScrollOptions from './ScrollOptions';
+import type * as CINETypes from './CINETypes';
 import type {
   Color,
   ColorLUT,
@@ -81,4 +82,6 @@ export type {
   SVGPoint,
   // Scroll
   ScrollOptions,
+  // CINE
+  CINETypes,
 };

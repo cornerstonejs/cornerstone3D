@@ -52,6 +52,9 @@ function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): vo
 export function addTool(ToolClass: any): void;
 
 // @public (undocumented)
+function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
+
+// @public (undocumented)
 interface AngleAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -551,6 +554,23 @@ export function cancelActiveManipulations(element: HTMLDivElement): string | und
 
 // @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
+
+declare namespace cine {
+    export {
+        playClip,
+        stopClip,
+        Events_2 as Events,
+        getToolState,
+        addToolState
+    }
+}
+
+declare namespace CINETypes {
+    export {
+        PlayClipOptions,
+        ToolData
+    }
+}
 
 // @public (undocumented)
 export class CircleScissorsTool extends BaseTool {
@@ -1375,6 +1395,14 @@ enum Events {
     SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED"
 }
 
+// @public (undocumented)
+enum Events_2 {
+    // (undocumented)
+    CLIP_STARTED = "CORNERSTONE_CINE_TOOL_STARTED",
+    // (undocumented)
+    CLIP_STOPPED = "CORNERSTONE_CINE_TOOL_STOPPED"
+}
+
 declare namespace EventTypes {
     export {
         CameraModifiedEventDetail,
@@ -1641,6 +1669,9 @@ function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresen
 
 // @public (undocumented)
 function getToolGroupsWithSegmentation(segmentationId: string): string[];
+
+// @public (undocumented)
+function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireSameOrientation?: boolean): string[];
@@ -2794,6 +2825,18 @@ export class PlanarFreehandROITool extends AnnotationTool {
 // @public
 type Plane = [number, number, number, number];
 
+// @public (undocumented)
+function playClip(element: HTMLDivElement, playClipOptions: CINETypes.PlayClipOptions): void;
+
+// @public (undocumented)
+type PlayClipOptions = {
+    framesPerSecond?: number;
+    frameTimeVector?: number[];
+    reverse?: boolean;
+    loop?: boolean;
+    frameTimeVectorSpeedMultiplier?: number;
+};
+
 // @public
 type Point2 = [number, number];
 
@@ -3623,6 +3666,9 @@ declare namespace state_2 {
 }
 
 // @public (undocumented)
+function stopClip(element: HTMLDivElement): void;
+
+// @public (undocumented)
 type StyleConfig = {
     annotations?: {
         [annotationUID: string]: AnnotationStyle_2;
@@ -3735,6 +3781,28 @@ function throttle(func: Function, wait?: number, options?: {
     leading?: boolean;
     trailing?: boolean;
 }): Function;
+
+// @public (undocumented)
+interface ToolData {
+    // (undocumented)
+    framesPerSecond: number;
+    // (undocumented)
+    frameTimeVector: number[] | undefined;
+    // (undocumented)
+    ignoreFrameTimeVector: boolean;
+    // (undocumented)
+    intervalId: number | undefined;
+    // (undocumented)
+    lastFrameTimeStamp: number | undefined;
+    // (undocumented)
+    loop: boolean;
+    // (undocumented)
+    reverse: boolean;
+    // (undocumented)
+    speed: number;
+    // (undocumented)
+    usingFrameTimeVector: boolean;
+}
 
 declare namespace ToolGroupManager {
     export {
@@ -3897,7 +3965,8 @@ declare namespace Types {
         LabelmapTypes,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint,
-        ScrollOptions_2 as ScrollOptions
+        ScrollOptions_2 as ScrollOptions,
+        CINETypes
     }
 }
 export { Types }
@@ -3925,7 +3994,8 @@ declare namespace utilities {
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
-        jumpToSlice
+        jumpToSlice,
+        cine
     }
 }
 export { utilities }

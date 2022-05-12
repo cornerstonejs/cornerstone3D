@@ -23,6 +23,7 @@ import * as planar from './planar';
 import * as stackScrollTool from './stackScrollTool';
 import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
+import * as cine from './cine';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -47,4 +48,5 @@ export {
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
   jumpToSlice,
+  cine,
 };
