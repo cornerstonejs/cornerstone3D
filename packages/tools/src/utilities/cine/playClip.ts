@@ -60,7 +60,7 @@ function playClip(
       frameTimeVector: playClipOptions.frameTimeVector ?? undefined,
       speed: playClipOptions.frameTimeVectorSpeedMultiplier ?? 1,
       reverse: playClipOptions.reverse ?? false,
-      loop: playClipOptions.loop ?? false,
+      loop: playClipOptions.loop ?? true,
     };
     addToolState(element, playClipData);
   } else {
