@@ -1,4 +1,3 @@
-import { Settings } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   drawHandles as drawHandlesSvg,
@@ -7,6 +6,7 @@ import {
 import { polyline } from '../../../utilities/math';
 import { findOpenCardiacAnnotationVectorToPeakOnRender } from './findOpenCardiacAnnotationVectorToPeak';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import { StyleSpecifier } from '../../../types/AnnotationStyle';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 
@@ -17,18 +17,26 @@ type PlanarFreehandROIRenderOptions = {
 };
 
 function _getRenderingOptions(
+  enabledElement: Types.IEnabledElement,
   annotation: PlanarFreehandROIAnnotation
 ): PlanarFreehandROIRenderOptions {
-  const settings = Settings.getObjectSettings(annotation, this.getToolName());
+  const styleSpecifier: StyleSpecifier = {
+    toolGroupId: this.toolGroupId,
+    toolName: this.getToolName(),
+    viewportId: enabledElement.viewport.id,
+    annotationUID: annotation.annotationUID,
+  };
 
-  const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-  const color = this.getStyle(settings, 'color', annotation);
+  const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+  const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+  const color = this.getStyle('color', styleSpecifier, annotation);
 
   const isOpenContour = annotation.data.isOpenContour;
 
   const options = {
     color: color === undefined ? undefined : <string>color,
     width: lineWidth === undefined ? undefined : <number>lineWidth,
+    lineDash: lineDash === undefined ? undefined : <number[]>lineDash,
     connectLastToFirst: !isOpenContour,
   };
 
@@ -77,7 +85,7 @@ function renderClosedContour(
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { viewport } = enabledElement;
-  const options = this._getRenderingOptions(annotation);
+  const options = this._getRenderingOptions(enabledElement, annotation);
 
   // Its unfortunate that we have to do this for each annotation,
   // Even if its unchanged. In the future we could cache the canvas points per
@@ -108,7 +116,7 @@ function renderOpenContour(
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { viewport } = enabledElement;
-  const options = this._getRenderingOptions(annotation);
+  const options = this._getRenderingOptions(enabledElement, annotation);
 
   const canvasPoints = annotation.data.polyline.map((worldPos) =>
     viewport.worldToCanvas(worldPos)
@@ -152,8 +160,6 @@ function renderOpenCardiacContour(
   svgDrawingHelper: any,
   annotation: PlanarFreehandROIAnnotation
 ): void {
-  console.log('TODO_JAMES => Render open cardiac annotation');
-
   const { viewport } = enabledElement;
   const { polyline, openCardiacAnnotationVectorToPeak } = annotation.data;
 
@@ -167,7 +173,7 @@ function renderOpenCardiacContour(
     viewport.worldToCanvas(openCardiacAnnotationVectorToPeak[1]),
   ];
 
-  const options = this._getRenderingOptions(annotation);
+  const options = this._getRenderingOptions(enabledElement, annotation);
 
   // Join first and last points
   drawPolylineSvg(
@@ -210,7 +216,7 @@ function renderContourBeingDrawn(
   svgDrawingHelper: any,
   annotation: PlanarFreehandROIAnnotation
 ): void {
-  const options = this._getRenderingOptions(annotation);
+  const options = this._getRenderingOptions(enabledElement, annotation);
 
   const { allowOpenContours } = this.configuration;
   const { canvasPoints } = this.drawData;
@@ -279,7 +285,7 @@ function renderClosedContourBeingEdited(
     return;
   }
 
-  const options = this._getRenderingOptions(annotation);
+  const options = this._getRenderingOptions(enabledElement, annotation);
 
   const polylineUIDToRender = 'preview-1';
 
@@ -309,7 +315,7 @@ function renderOpenContourBeingEdited(
     return;
   }
 
-  const options = this._getRenderingOptions(annotation);
+  const options = this._getRenderingOptions(enabledElement, annotation);
 
   const polylineUIDToRender = 'preview-1';
 

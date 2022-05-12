@@ -52,6 +52,89 @@ function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): vo
 export function addTool(ToolClass: any): void;
 
 // @public (undocumented)
+interface AngleAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+            activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
+        };
+        label: string;
+        cachedStats: {
+            [targetId: string]: {
+                angle: number;
+            };
+        };
+    };
+}
+
+// @public (undocumented)
+export class AngleTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => AngleAnnotation;
+    // (undocumented)
+    angleStartedNotYetCompleted: boolean;
+    // (undocumented)
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _getTextLines(data: any, targetId: any): string[];
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: AngleAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
+    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 type Annotation = {
     annotationUID?: string;
     highlighted?: boolean;
@@ -176,6 +259,20 @@ type AnnotationState = {
     [key: string]: FrameOfReferenceSpecificAnnotations;
 };
 
+declare namespace AnnotationStyle {
+    export {
+        AnnotationStyle_2 as AnnotationStyle,
+        ToolStyleConfig,
+        StyleConfig,
+        StyleSpecifier
+    }
+}
+
+// @public (undocumented)
+type AnnotationStyle_2 = {
+    [key in `${Properties}${States}${Modes}`]?: string;
+};
+
 // @public (undocumented)
 enum AnnotationStyleStates {
     // (undocumented)
@@ -199,11 +296,11 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    getLinkedTextBoxStyle(settings: Settings, annotation?: Annotation): Record<string, unknown>;
+    getLinkedTextBoxStyle(specifications: StyleSpecifier, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
-    getStyle(settings: Settings, property: string, annotation?: Annotation): unknown;
+    getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
     // (undocumented)
@@ -513,11 +610,8 @@ type ColorLUT = Array<Color>;
 declare namespace config {
     export {
         getState,
-        getStyle,
         getFont,
-        setAnnotationStyle,
-        setGlobalStyle,
-        setToolStyle
+        toolStyle as style
     }
 }
 
@@ -1009,6 +1103,36 @@ function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
 
 // @public (undocumented)
+export class DragProbeTool extends ProbeTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        newAnnotation?: boolean;
+    } | null;
+    // (undocumented)
+    eventDispatchDetail: {
+        viewportId: string;
+        renderingEngineId: string;
+    };
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    postMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => ProbeAnnotation;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 function draw(element: HTMLDivElement, fn: (svgDrawingElement: any) => any): void;
 
 // @public (undocumented)
@@ -1442,7 +1566,7 @@ function getDefaultSegmentationStateManager(): SegmentationStateManager;
 function getFirstIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
 
 // @public (undocumented)
-function getFont(settings?: Settings, state?: AnnotationStyleStates, mode?: ToolModes): string;
+function getFont(styleSpecifier: StyleSpecifier, state?: AnnotationStyleStates, mode?: ToolModes): string;
 
 // @public (undocumented)
 function getGlobalConfig(): SegmentationRepresentationConfig;
@@ -1486,9 +1610,6 @@ function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
-
-// @public (undocumented)
-function getStyle(toolName?: string, annotation?: Record<string, unknown>): Settings;
 
 // @public (undocumented)
 const getSubPixelSpacingAndXYDirections: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, subPixelResolution: number) => {
@@ -2338,6 +2459,39 @@ declare namespace locking {
         isAnnotationLocked,
         checkAndDefineIsLockedProperty
     }
+}
+
+// @public (undocumented)
+export class MagnifyTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _bounds: any;
+    // (undocumented)
+    _createMagnificationViewport: () => void;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    editData: {
+        referencedImageId: string;
+        viewportIdsToRender: string[];
+        enabledElement: Types_2.IEnabledElement;
+        renderingEngine: Types_2.IRenderingEngine;
+        currentPoints: IPoints;
+    } | null;
+    // (undocumented)
+    _getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): string;
+    // (undocumented)
+    mouseDragCallback: () => void;
+    // (undocumented)
+    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    // (undocumented)
+    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    static toolName: string;
 }
 
 declare namespace math {
@@ -3306,9 +3460,6 @@ function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
-function setAnnotationStyle(toolName: string, annotation: Record<string, unknown>, style: Record<string, unknown>): boolean;
-
-// @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
@@ -3327,9 +3478,6 @@ function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig)
 function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
 
 // @public (undocumented)
-function setGlobalStyle(style: Record<string, unknown>): boolean;
-
-// @public (undocumented)
 function setSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string, visibility: boolean): void;
 
 // @public (undocumented)
@@ -3345,9 +3493,6 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 
 // @public (undocumented)
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
-
-// @public (undocumented)
-function setToolStyle(toolName: string, style: Record<string, unknown>): boolean;
 
 // @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
@@ -3480,6 +3625,28 @@ declare namespace state_2 {
         getColorLUT
     }
 }
+
+// @public (undocumented)
+type StyleConfig = {
+    annotations?: {
+        [annotationUID: string]: AnnotationStyle_2;
+    };
+    viewports?: {
+        [viewportId: string]: ToolStyleConfig;
+    };
+    toolGroups?: {
+        [toolGroupId: string]: ToolStyleConfig;
+    };
+    default: ToolStyleConfig;
+};
+
+// @public (undocumented)
+type StyleSpecifier = {
+    viewportId?: string;
+    toolGroupId?: string;
+    toolName?: string;
+    annotationUID?: string;
+};
 
 // @public (undocumented)
 type SVGCursorDescriptor = {
@@ -3638,9 +3805,19 @@ declare namespace ToolSpecificAnnotationTypes {
         RectangleROIThresholdAnnotation,
         RectangleROIStartEndThresholdAnnotation,
         PlanarFreehandROIAnnotation,
-        ArrowAnnotation
+        ArrowAnnotation,
+        AngleAnnotation
     }
 }
+
+// @public (undocumented)
+const toolStyle: ToolStyle;
+
+// @public (undocumented)
+type ToolStyleConfig = {
+    [toolName: string]: AnnotationStyle_2;
+    global?: AnnotationStyle_2;
+};
 
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];
@@ -3694,6 +3871,7 @@ declare namespace Types {
         Annotations,
         FrameOfReferenceSpecificAnnotations,
         AnnotationState,
+        AnnotationStyle,
         ToolSpecificAnnotationTypes,
         JumpToSliceOptions,
         PlanarBoundingBox,

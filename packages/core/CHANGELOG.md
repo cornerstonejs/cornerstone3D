@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.8.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.8.0...@cornerstonejs/core@0.8.1) (2022-05-11)
+
+
+### Bug Fixes
+
+* Attempt to resolve incompatible peerDeps situation ([#98](https://github.com/cornerstonejs/cornerstone3D-beta/issues/98)) ([00f141b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/00f141bfa9f9a4b37c016d726a6d31f2330e2e44))
+
+
+
+
+
+# [0.8.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.7.0...@cornerstonejs/core@0.8.0) (2022-05-10)
+
+
+### Features
+
+* Add AngleTool and MagnifyTool ([#97](https://github.com/cornerstonejs/cornerstone3D-beta/issues/97)) ([2c4c800](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2c4c800c4b3ba92164f728865b904933a2539210))
+
+
+
+
+
 # [0.7.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.6.4...@cornerstonejs/core@0.7.0) (2022-04-27)
 
 

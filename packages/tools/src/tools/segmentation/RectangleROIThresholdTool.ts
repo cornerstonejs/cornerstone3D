@@ -1,7 +1,6 @@
 import {
   getEnabledElement,
   cache,
-  Settings,
   StackViewport,
   triggerEvent,
   eventTarget,
@@ -25,6 +24,7 @@ import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,
@@ -130,9 +130,6 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       },
     };
 
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, RectangleROIThresholdTool);
-
     addAnnotation(element, annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
@@ -186,20 +183,23 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       return;
     }
 
+    const styleSpecifier: StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as RectangleROIThresholdAnnotation;
-      const settings = Settings.getObjectSettings(
-        annotation,
-        RectangleROIThresholdTool
-      );
-      const annotationUID = annotation.annotationUID;
-
-      const data = annotation.data;
+      const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
+
+      styleSpecifier.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {

@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.26](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.2.25...@cornerstonejs/streaming-image-volume-loader@0.2.26) (2022-05-11)
+
+
+### Bug Fixes
+
+* Attempt to resolve incompatible peerDeps situation ([#98](https://github.com/cornerstonejs/cornerstone3D-beta/issues/98)) ([00f141b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/00f141bfa9f9a4b37c016d726a6d31f2330e2e44))
+
+
+
+
+
+## [0.2.25](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.2.24...@cornerstonejs/streaming-image-volume-loader@0.2.25) (2022-05-10)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
 ## [0.2.24](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.2.23...@cornerstonejs/streaming-image-volume-loader@0.2.24) (2022-04-27)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

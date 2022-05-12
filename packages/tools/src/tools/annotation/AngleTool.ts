@@ -3,7 +3,6 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
-  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -16,6 +15,7 @@ import {
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
+import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
 
 import {
   drawHandles as drawHandlesSvg,
@@ -44,51 +44,15 @@ import {
   ToolProps,
   InteractionTypes,
 } from '../../types';
-import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
-const { transformWorldToIndex } = csUtils;
-
-/**
- * LengthTool let you draw annotations that measures the length of two drawing
- * points on a slice. You can use the LengthTool in all imaging planes even in oblique
- * reconstructed planes. Note: annotation tools in cornerstone3DTools exists in the exact location
- * in the physical 3d space, as a result, by default, all annotations that are
- * drawing in the same frameOfReference will get shared between viewports that
- * are in the same frameOfReference.
- *
- * The resulting annotation's data (statistics) and metadata (the
- * state of the viewport while drawing was happening) will get added to the
- * ToolState manager and can be accessed from the ToolState by calling getAnnotations
- * or similar methods.
- *
- * ```js
- * cornerstoneTools.addTool(LengthTool)
- *
- * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
- *
- * toolGroup.addTool(LengthTool.toolName)
- *
- * toolGroup.addViewport('viewportId', 'renderingEngineId')
- *
- * toolGroup.setToolActive(LengthTool.toolName, {
- *   bindings: [
- *    {
- *       mouseButton: MouseBindings.Primary, // Left Click
- *     },
- *   ],
- * })
- * ```
- *
- * Read more in the Docs section of the website.
-
- */
-
-class LengthTool extends AnnotationTool {
-  static toolName = 'Length';
+class AngleTool extends AnnotationTool {
+  static toolName = 'Angle';
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
+  angleStartedNotYetCompleted: boolean;
   _throttledCalculateCachedStats: any;
   editData: {
     annotation: any;
@@ -130,7 +94,12 @@ class LengthTool extends AnnotationTool {
    */
   addNewAnnotation = (
     evt: EventTypes.MouseDownActivateEventType
-  ): LengthAnnotation => {
+  ): AngleAnnotation => {
+    if (this.angleStartedNotYetCompleted) {
+      return;
+    }
+
+    this.angleStartedNotYetCompleted = true;
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -217,18 +186,19 @@ class LengthTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: LengthAnnotation,
+    annotation: AngleAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { data } = annotation;
-    const [point1, point2] = data.handles.points;
+    const [point1, point2, point3] = data.handles.points;
     const canvasPoint1 = viewport.worldToCanvas(point1);
     const canvasPoint2 = viewport.worldToCanvas(point2);
+    const canvasPoint3 = viewport.worldToCanvas(point3);
 
-    const line = {
+    const line1 = {
       start: {
         x: canvasPoint1[0],
         y: canvasPoint1[1],
@@ -239,13 +209,30 @@ class LengthTool extends AnnotationTool {
       },
     };
 
+    const line2 = {
+      start: {
+        x: canvasPoint2[0],
+        y: canvasPoint2[1],
+      },
+      end: {
+        x: canvasPoint3[0],
+        y: canvasPoint3[1],
+      },
+    };
+
     const distanceToPoint = lineSegment.distanceToPoint(
-      [line.start.x, line.start.y],
-      [line.end.x, line.end.y],
+      [line1.start.x, line1.start.y],
+      [line1.end.x, line1.end.y],
       [canvasCoords[0], canvasCoords[1]]
     );
 
-    if (distanceToPoint <= proximity) {
+    const distanceToPoint2 = lineSegment.distanceToPoint(
+      [line2.start.x, line2.start.y],
+      [line2.end.x, line2.end.y],
+      [canvasCoords[0], canvasCoords[1]]
+    );
+
+    if (distanceToPoint <= proximity || distanceToPoint2 <= proximity) {
       return true;
     }
 
@@ -254,7 +241,7 @@ class LengthTool extends AnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.MouseDownEventType,
-    annotation: LengthAnnotation,
+    annotation: AngleAnnotation,
     interactionType: InteractionTypes
   ): void => {
     const eventDetail = evt.detail;
@@ -287,7 +274,7 @@ class LengthTool extends AnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.MouseDownEventType,
-    annotation: LengthAnnotation,
+    annotation: AngleAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
   ): void {
@@ -338,14 +325,23 @@ class LengthTool extends AnnotationTool {
 
     const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
       this.editData;
-    const { data } = annotation;
 
+    const { data } = annotation;
     if (newAnnotation && !hasMoved) {
       // when user starts the drawing by click, and moving the mouse, instead
       // of click and drag
       return;
     }
 
+    // If preventing new measurement means we are in the middle of an existing measurement
+    // we shouldn't deactivate modify or draw
+    if (this.angleStartedNotYetCompleted && data.handles.points.length === 2) {
+      // adds the last point to the measurement
+      this.editData.handleIndex = 2;
+      return;
+    }
+
+    this.angleStartedNotYetCompleted = false;
     annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 
@@ -558,7 +554,7 @@ class LengthTool extends AnnotationTool {
 
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as LengthAnnotation;
+      const annotation = annotations[i] as AngleAnnotation;
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
 
@@ -569,6 +565,21 @@ class LengthTool extends AnnotationTool {
       const color = this.getStyle('color', styleSpecifier, annotation);
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+
+      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
+      if (!data.cachedStats[targetId]) {
+        data.cachedStats[targetId] = {
+          angle: null,
+        };
+
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+      } else if (annotation.invalidated) {
+        this._throttledCalculateCachedStats(
+          annotation,
+          renderingEngine,
+          enabledElement
+        );
+      }
 
       let activeHandleCanvasCoords;
 
@@ -597,7 +608,7 @@ class LengthTool extends AnnotationTool {
         );
       }
 
-      const lineUID = '1';
+      let lineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
         annotationUID,
@@ -611,20 +622,25 @@ class LengthTool extends AnnotationTool {
         }
       );
 
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetId]) {
-        data.cachedStats[targetId] = {
-          length: null,
-        };
-
-        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
-      } else if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement
-        );
+      // Don't add textBox until annotation has 3 anchor points (actually 4 because of the center point)
+      if (canvasCoordinates.length !== 3) {
+        return;
       }
+
+      lineUID = '2';
+
+      drawLineSvg(
+        svgDrawingHelper,
+        annotationUID,
+        lineUID,
+        canvasCoordinates[1],
+        canvasCoordinates[2],
+        {
+          color,
+          width: lineWidth,
+          lineDash,
+        }
+      );
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
@@ -632,9 +648,12 @@ class LengthTool extends AnnotationTool {
         return;
       }
 
+      if (!data.cachedStats[targetId]?.angle) {
+        continue;
+      }
+
       const textLines = this._getTextLines(data, targetId);
 
-      // Need to update to sync w/ annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
         const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
 
@@ -672,61 +691,42 @@ class LengthTool extends AnnotationTool {
   // text line for the current active length annotation
   _getTextLines(data, targetId) {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { length } = cachedVolumeStats;
+    const { angle } = cachedVolumeStats;
 
-    if (length === undefined) {
+    if (angle === undefined) {
       return;
     }
 
-    // spaceBetweenSlices & pixelSpacing &
-    // magnitude in each direction? Otherwise, this is "px"?
-    const textLines = [`${length.toFixed(2)} mm`];
+    const textLines = [`${angle.toFixed(2)} ${String.fromCharCode(176)}`];
 
     return textLines;
-  }
-
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
 
+    // Until we have all three anchors bail out
+    if (data.handles.points.length !== 3) {
+      return;
+    }
+
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
+    const worldPos3 = data.handles.points[2];
+
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
-    // TODO clean up, this doesn't need a length per volume, it has no stats derived from volumes.
-
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
+      const angle = angleBetweenLines(
+        [worldPos1, worldPos2],
+        [worldPos2, worldPos3]
+      );
 
-      const image = this.getTargetIdImage(targetId, renderingEngine);
-
-      const { imageData, dimensions } = image;
-
-      const length = this._calculateLength(worldPos1, worldPos2);
-
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
-
-      this._isInsideVolume(index1, index2, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
-
-      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
-      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
-      // corner is off the canvas.
-
-      // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
-        length,
+        angle,
       };
     }
 
@@ -744,13 +744,6 @@ class LengthTool extends AnnotationTool {
 
     return cachedStats;
   }
-
-  _isInsideVolume(index1, index2, dimensions) {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions)
-    );
-  }
 }
 
-export default LengthTool;
+export default AngleTool;

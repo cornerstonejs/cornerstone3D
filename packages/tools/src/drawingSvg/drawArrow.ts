@@ -63,7 +63,6 @@ export default function drawArrow(
       color,
       width,
       lineWidth,
-      lineDash,
     }
   );
 
@@ -77,7 +76,6 @@ export default function drawArrow(
       color,
       width,
       lineWidth,
-      lineDash,
     }
   );
 }

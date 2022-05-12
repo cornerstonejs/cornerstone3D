@@ -88,6 +88,11 @@ Editing:
 --- Hover over an end and you will see a handle appear, drag this handle to pull out the polyline further. You can join this handle back round to the other end if you wish to close the contour (say you made a mistake making an open contour).
 --- Drag the line and a preview of the edit will be displayed. Release the mouse to complete the edit. You can cross the original contour multiple times in one drag to do a complicated edit in one movement.
 --- If You drag the line past the end of the of the open contour, the edit will snap to make your edit the new end, and allow you to continue drawing.
+
+Setting an open annotation to a cardiac ventricle annotation:
+- Draw an open contour as a horseshow shape.
+- With the open contour selected, click the 'Set selected annotation as an open cardiac annotation' button.
+- The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshow shall be calculated and displayed.
 `;
 
 content.append(instructions);

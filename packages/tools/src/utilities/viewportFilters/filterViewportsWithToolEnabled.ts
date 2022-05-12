@@ -29,6 +29,10 @@ export default function filterViewportsWithToolEnabled(
       viewport.renderingEngineId
     );
 
+    if (!toolGroup) {
+      continue;
+    }
+
     const hasTool = _toolGroupHasActiveEnabledOrPassiveTool(
       toolGroup,
       toolName

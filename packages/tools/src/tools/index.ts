@@ -7,14 +7,17 @@ import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
+import MagnifyTool from './MagnifyTool';
 //
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
 import ProbeTool from './annotation/ProbeTool';
+import DragProbeTool from './annotation/DragProbeTool';
 import RectangleROITool from './annotation/RectangleROITool';
 import EllipticalROITool from './annotation/EllipticalROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
+import AngleTool from './annotation/AngleTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -33,6 +36,7 @@ export {
   AnnotationTool,
   // Manipulation Tools
   PanTool,
+  DragProbeTool,
   WindowLevelTool,
   StackScrollTool,
   StackScrollMouseWheelTool,
@@ -48,6 +52,7 @@ export {
   EllipticalROITool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
+  AngleTool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools
@@ -57,4 +62,5 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  MagnifyTool,
 };

@@ -1,6 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
 import {
-  Settings,
   getEnabledElement,
   triggerEvent,
   eventTarget,
@@ -47,6 +46,7 @@ import {
   MouseMoveEventType,
 } from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -186,9 +186,6 @@ export default class BidirectionalTool extends AnnotationTool {
         cachedStats: {},
       },
     };
-
-    // Ensure settings are initialized after annotation instantiation
-    Settings.getObjectSettings(annotation, BidirectionalTool);
 
     addAnnotation(element, annotation);
 
@@ -976,19 +973,23 @@ export default class BidirectionalTool extends AnnotationTool {
 
     const renderingEngine = viewport.getRenderingEngine();
 
+    const styleSpecifier: StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as BidirectionalAnnotation;
-      const settings = Settings.getObjectSettings(
-        annotation,
-        BidirectionalTool
-      );
-      const annotationUID = annotation.annotationUID;
-      const data = annotation.data;
+      const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-      const lineWidth = this.getStyle(settings, 'lineWidth', annotation);
-      const lineDash = this.getStyle(settings, 'lineDash', annotation);
-      const color = this.getStyle(settings, 'color', annotation);
+
+      styleSpecifier.annotationUID = annotationUID;
+
+      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
+      const color = this.getStyle('color', styleSpecifier, annotation);
 
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
@@ -1091,7 +1092,7 @@ export default class BidirectionalTool extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        this.getLinkedTextBoxStyle(settings, annotation)
+        this.getLinkedTextBoxStyle(styleSpecifier, annotation)
       );
 
       const { x: left, y: top, width, height } = boundingBox;

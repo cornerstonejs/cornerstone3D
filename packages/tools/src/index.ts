@@ -23,6 +23,7 @@ import {
   BaseTool,
   AnnotationTool,
   PanTool,
+  DragProbeTool,
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
@@ -44,6 +45,8 @@ import {
   RectangleROIStartEndThresholdTool,
   SegmentationDisplayTool,
   BrushTool,
+  AngleTool,
+  MagnifyTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -60,6 +63,7 @@ export {
   AnnotationTool,
   // Manipulation Tools
   PanTool,
+  DragProbeTool,
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
@@ -75,6 +79,8 @@ export {
   BidirectionalTool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
+  AngleTool,
+  MagnifyTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
