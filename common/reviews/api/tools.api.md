@@ -52,6 +52,9 @@ function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): vo
 export function addTool(ToolClass: any): void;
 
 // @public (undocumented)
+function addToolState(element: HTMLDivElement, data: CINEToolData): void;
+
+// @public (undocumented)
 interface AngleAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -551,6 +554,16 @@ export function cancelActiveManipulations(element: HTMLDivElement): string | und
 
 // @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
+
+declare namespace cine {
+    export {
+        playClip,
+        stopClip,
+        Events_2 as Events,
+        getToolState,
+        addToolState
+    }
+}
 
 // @public (undocumented)
 export class CircleScissorsTool extends BaseTool {
@@ -1375,6 +1388,12 @@ enum Events {
     SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED"
 }
 
+// @public (undocumented)
+enum Events_2 {
+    // (undocumented)
+    CLIP_STOPPED = "CORNERSTONE_CINE_TOOL_STOPPED"
+}
+
 declare namespace EventTypes {
     export {
         CameraModifiedEventDetail,
@@ -1641,6 +1660,9 @@ function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresen
 
 // @public (undocumented)
 function getToolGroupsWithSegmentation(segmentationId: string): string[];
+
+// @public (undocumented)
+function getToolState(element: HTMLDivElement): CINEToolData | undefined;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireSameOrientation?: boolean): string[];
@@ -2794,6 +2816,9 @@ export class PlanarFreehandROITool extends AnnotationTool {
 // @public
 type Plane = [number, number, number, number];
 
+// @public (undocumented)
+function playClip(element: HTMLDivElement, framesPerSecond: number): void;
+
 // @public
 type Point2 = [number, number];
 
@@ -3623,6 +3648,9 @@ declare namespace state_2 {
 }
 
 // @public (undocumented)
+function stopClip(element: HTMLDivElement): void;
+
+// @public (undocumented)
 type StyleConfig = {
     annotations?: {
         [annotationUID: string]: AnnotationStyle_2;
@@ -3925,7 +3953,8 @@ declare namespace utilities {
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
-        jumpToSlice
+        jumpToSlice,
+        cine
     }
 }
 export { utilities }
