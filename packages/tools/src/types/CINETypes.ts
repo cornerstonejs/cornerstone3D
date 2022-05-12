@@ -3,6 +3,7 @@ type PlayClipOptions = {
   frameTimeVector?: number[];
   reverse?: boolean;
   loop?: boolean;
+  frameTimeVectorSpeedMultiplier?: number;
 };
 
 interface ToolData {
