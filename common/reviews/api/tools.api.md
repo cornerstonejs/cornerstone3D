@@ -52,7 +52,7 @@ function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): vo
 export function addTool(ToolClass: any): void;
 
 // @public (undocumented)
-function addToolState(element: HTMLDivElement, data: CINEToolData): void;
+function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void;
 
 // @public (undocumented)
 interface AngleAnnotation extends Annotation {
@@ -562,6 +562,13 @@ declare namespace cine {
         Events_2 as Events,
         getToolState,
         addToolState
+    }
+}
+
+declare namespace CINETypes {
+    export {
+        PlayClipOptions,
+        ToolData
     }
 }
 
@@ -1391,6 +1398,8 @@ enum Events {
 // @public (undocumented)
 enum Events_2 {
     // (undocumented)
+    CLIP_STARTED = "CORNERSTONE_CINE_TOOL_STARTED",
+    // (undocumented)
     CLIP_STOPPED = "CORNERSTONE_CINE_TOOL_STOPPED"
 }
 
@@ -1662,7 +1671,7 @@ function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresen
 function getToolGroupsWithSegmentation(segmentationId: string): string[];
 
 // @public (undocumented)
-function getToolState(element: HTMLDivElement): CINEToolData | undefined;
+function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireSameOrientation?: boolean): string[];
@@ -2817,7 +2826,15 @@ export class PlanarFreehandROITool extends AnnotationTool {
 type Plane = [number, number, number, number];
 
 // @public (undocumented)
-function playClip(element: HTMLDivElement, framesPerSecond: number): void;
+function playClip(element: HTMLDivElement, playClipOptions: CINETypes.PlayClipOptions): void;
+
+// @public (undocumented)
+type PlayClipOptions = {
+    framesPerSecond?: number;
+    frameTimeVector?: number[];
+    reverse?: boolean;
+    loop?: boolean;
+};
 
 // @public
 type Point2 = [number, number];
@@ -3764,6 +3781,28 @@ function throttle(func: Function, wait?: number, options?: {
     trailing?: boolean;
 }): Function;
 
+// @public (undocumented)
+interface ToolData {
+    // (undocumented)
+    framesPerSecond: number;
+    // (undocumented)
+    frameTimeVector: number[] | undefined;
+    // (undocumented)
+    ignoreFrameTimeVector: boolean;
+    // (undocumented)
+    intervalId: number | undefined;
+    // (undocumented)
+    lastFrameTimeStamp: number | undefined;
+    // (undocumented)
+    loop: boolean;
+    // (undocumented)
+    reverse: boolean;
+    // (undocumented)
+    speed: number;
+    // (undocumented)
+    usingFrameTimeVector: boolean;
+}
+
 declare namespace ToolGroupManager {
     export {
         createToolGroup,
@@ -3925,7 +3964,8 @@ declare namespace Types {
         LabelmapTypes,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint,
-        ScrollOptions_2 as ScrollOptions
+        ScrollOptions_2 as ScrollOptions,
+        CINETypes
     }
 }
 export { Types }

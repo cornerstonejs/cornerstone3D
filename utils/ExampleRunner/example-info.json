@@ -66,10 +66,6 @@
       }
     },
     "tools-basic": {
-      "basic": {
-        "name": "Basic Usage",
-        "description": "Demonstrates how to set up and use Tools with Cornerstone"
-      },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
         "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
@@ -97,6 +93,14 @@
       "modifierKeys": {
         "name": "Binding Tools with Modifier Keys",
         "description": "Demonstrates how to bind a tool to a keyboard and mouse combination (e.g. shift+click, ctrl+click)"
+      },
+      "magnifyTool": {
+        "name": "Magnify Tool",
+        "description": "Demonstrates the usage of the magnification tool"
+      },
+      "CINETool": {
+        "name": "CINE Tool",
+        "description": "Demonstrates the usage of the CINE tool"
       },
       "segmentationRendering": {
         "name": "Labelmap Segmentation Rendering",

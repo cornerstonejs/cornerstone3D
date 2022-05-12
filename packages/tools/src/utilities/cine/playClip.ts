@@ -5,6 +5,7 @@ import {
 } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState } from './state';
+import { CINETypes } from '../../types';
 
 const { triggerEvent } = utilities;
 
@@ -15,9 +16,12 @@ const { triggerEvent } = utilities;
  * @param element - HTML Element
  * @param framesPerSecond - Number of frames per second
  */
-function playClip(element: HTMLDivElement, framesPerSecond: number): void {
-  let playClipData;
+function playClip(
+  element: HTMLDivElement,
+  playClipOptions: CINETypes.PlayClipOptions
+): void {
   let playClipTimeouts;
+  let playClipIsTimeVarying;
 
   if (element === undefined) {
     throw new Error('playClip: element must not be undefined');
@@ -44,14 +48,13 @@ function playClip(element: HTMLDivElement, framesPerSecond: number): void {
     imageIds: viewport.getImageIds(),
   };
 
-  const playClipToolData = getToolState(element);
+  let playClipData = getToolState(element);
 
-  if (!playClipToolData) {
+  if (!playClipData) {
     playClipData = {
       intervalId: undefined,
       framesPerSecond: 30,
       lastFrameTimeStamp: undefined,
-      frameRate: 0,
       frameTimeVector: undefined,
       ignoreFrameTimeVector: false,
       usingFrameTimeVector: false,
@@ -61,14 +64,16 @@ function playClip(element: HTMLDivElement, framesPerSecond: number): void {
     };
     addToolState(element, playClipData);
   } else {
-    playClipData = playClipToolData;
     // Make sure the specified clip is not running before any property update
     _stopClipWithData(playClipData);
   }
 
   // If a framesPerSecond is specified and is valid, update the playClipData now
-  if (framesPerSecond < 0 || framesPerSecond > 0) {
-    playClipData.framesPerSecond = Number(framesPerSecond);
+  if (
+    playClipOptions.framesPerSecond < 0 ||
+    playClipOptions.framesPerSecond > 0
+  ) {
+    playClipData.framesPerSecond = Number(playClipOptions.framesPerSecond);
     playClipData.reverse = playClipData.framesPerSecond < 0;
     // If framesPerSecond is given, frameTimeVector will be ignored...
     playClipData.ignoreFrameTimeVector = true;
@@ -80,10 +85,13 @@ function playClip(element: HTMLDivElement, framesPerSecond: number): void {
     playClipData.frameTimeVector &&
     playClipData.frameTimeVector.length === stackData.imageIds.length
   ) {
-    playClipTimeouts = _getPlayClipTimeouts(
+    const { timeouts, isTimeVarying } = _getPlayClipTimeouts(
       playClipData.frameTimeVector,
       playClipData.speed
     );
+
+    playClipTimeouts = timeouts;
+    playClipIsTimeVarying = isTimeVarying;
   }
 
   // This function encapsulates the frame rendering logic...
@@ -134,24 +142,33 @@ function playClip(element: HTMLDivElement, framesPerSecond: number): void {
   if (
     playClipTimeouts &&
     playClipTimeouts.length > 0 &&
-    playClipTimeouts.isTimeVarying
+    playClipIsTimeVarying
   ) {
     playClipData.usingFrameTimeVector = true;
-    playClipData.intervalId = setTimeout(function playClipTimeoutHandler() {
-      playClipData.intervalId = setTimeout(
-        playClipTimeoutHandler,
-        playClipTimeouts[stackData.currentImageIdIndex]
-      );
-      playClipAction();
-    }, 0);
+    playClipData.intervalId = window.setTimeout(
+      function playClipTimeoutHandler() {
+        playClipData.intervalId = window.setTimeout(
+          playClipTimeoutHandler,
+          playClipTimeouts[stackData.currentImageIdIndex]
+        );
+        playClipAction();
+      },
+      0
+    );
   } else {
     // ... otherwise user setInterval implementation which is much more efficient.
     playClipData.usingFrameTimeVector = false;
-    playClipData.intervalId = setInterval(
+    playClipData.intervalId = window.setInterval(
       playClipAction,
       1000 / Math.abs(playClipData.framesPerSecond)
     );
   }
+
+  const eventDetail = {
+    element,
+  };
+
+  triggerEvent(element, CINE_EVENTS.CLIP_STARTED, eventDetail);
 }
 
 /**
@@ -187,8 +204,7 @@ function _getPlayClipTimeouts(vector: number[], speed: number) {
   const timeouts = [];
 
   // Initialize time varying to false
-  // @ts-ignore
-  timeouts.isTimeVarying = false;
+  let isTimeVarying = false;
 
   if (typeof speed !== 'number' || speed <= 0) {
     speed = 1;
@@ -203,16 +219,14 @@ function _getPlayClipTimeouts(vector: number[], speed: number) {
       // Use first item as a sample for comparison
       sample = delay;
     } else if (delay !== sample) {
-      // @ts-ignore
-      timeouts.isTimeVarying = true;
+      isTimeVarying = true;
     }
 
     sum += delay;
   }
 
   if (timeouts.length > 0) {
-    // @ts-ignore
-    if (timeouts.isTimeVarying) {
+    if (isTimeVarying) {
       // If it's a time varying vector, make the last item an average...
       // eslint-disable-next-line no-bitwise
       delay = (sum / timeouts.length) | 0;
@@ -223,7 +237,7 @@ function _getPlayClipTimeouts(vector: number[], speed: number) {
     timeouts.push(delay);
   }
 
-  return timeouts;
+  return { timeouts, isTimeVarying };
 }
 
 /**
