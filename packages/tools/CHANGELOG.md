@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.14.1...@cornerstonejs/tools@0.15.0) (2022-05-12)
+
+
+### Features
+
+* Add CINE tool via playClip ([#99](https://github.com/cornerstonejs/cornerstone3D-beta/issues/99)) ([916d783](https://github.com/cornerstonejs/cornerstone3D-beta/commit/916d783a56a7abc2a46c7477e2685ad436ad3637))
+
+
+
+
+
 ## [0.14.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.14.0...@cornerstonejs/tools@0.14.1) (2022-05-11)
 
 
