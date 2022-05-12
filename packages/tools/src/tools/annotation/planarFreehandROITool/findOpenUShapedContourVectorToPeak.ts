@@ -7,7 +7,7 @@ import { vec2 } from 'gl-matrix';
  * that joins the start and end of the open contour, to the surface of the
  * open contour.
  */
-export default function findOpenCardiacAnnotationVectorToPeak(
+export default function findOpenUShapedContourVectorToPeak(
   canvasPoints: Types.Point2[],
   viewport: Types.IStackViewport | Types.IVolumeViewport
 ): Types.Point3[] {
@@ -60,12 +60,12 @@ export default function findOpenCardiacAnnotationVectorToPeak(
   return toFurthestWorld;
 }
 
-export function findOpenCardiacAnnotationVectorToPeakOnRender(
+export function findOpenUShapedContourVectorToPeakOnRender(
   enabledElement: Types.IEnabledElement,
   annotation: PlanarFreehandROIAnnotation
 ): Types.Point3[] {
   const { viewport } = enabledElement;
   const canvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
 
-  return findOpenCardiacAnnotationVectorToPeak(canvasPoints, viewport);
+  return findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
 }

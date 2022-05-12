@@ -4,7 +4,7 @@ import {
   drawPolyline as drawPolylineSvg,
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
-import { findOpenCardiacAnnotationVectorToPeakOnRender } from './findOpenCardiacAnnotationVectorToPeak';
+import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../../types/AnnotationStyle';
 
@@ -51,28 +51,41 @@ function renderContour(
   svgDrawingHelper: any,
   annotation: PlanarFreehandROIAnnotation
 ): void {
+  // Check if the contour is an open contour
   if (annotation.data.isOpenContour) {
-    if (annotation.data.isOpenCardiacAnnotation) {
-      if (!annotation.data.openCardiacAnnotationVectorToPeak) {
-        // Annotation just been set to be an open cardiac contour.
-        // calculate its peak vector here.
-        annotation.data.openCardiacAnnotationVectorToPeak =
-          findOpenCardiacAnnotationVectorToPeakOnRender(
-            enabledElement,
-            annotation
-          );
-      }
+    // If its an open contour, check i its a U-shaped contour
+    if (annotation.data.isOpenUShapeContour) {
+      calculateUShapeContourVectorToPeakIfNotPresent(
+        enabledElement,
+        annotation
+      );
 
-      this.renderOpenCardiacContour(
+      this.renderOpenUShapedContour(
         enabledElement,
         svgDrawingHelper,
         annotation
       );
     } else {
+      // If not a U-shaped contour, render standard open contour.
       this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
     }
   } else {
     this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
+  }
+}
+
+/**
+ * If the open U-shaped contour does not have a peak.
+ */
+function calculateUShapeContourVectorToPeakIfNotPresent(
+  enabledElement: Types.IEnabledElement,
+  annotation: PlanarFreehandROIAnnotation
+): void {
+  if (!annotation.data.openUShapeContourVectorToPeak) {
+    // Annotation just been set to be an open U-shaped contour.
+    // calculate its peak vector here.
+    annotation.data.openUShapeContourVectorToPeak =
+      findOpenUShapedContourVectorToPeakOnRender(enabledElement, annotation);
   }
 }
 
@@ -155,22 +168,22 @@ function renderOpenContour(
   }
 }
 
-function renderOpenCardiacContour(
+function renderOpenUShapedContour(
   enabledElement: Types.IEnabledElement,
   svgDrawingHelper: any,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { viewport } = enabledElement;
-  const { polyline, openCardiacAnnotationVectorToPeak } = annotation.data;
+  const { polyline, openUShapeContourVectorToPeak } = annotation.data;
 
   this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
 
   const firstCanvasPoint = viewport.worldToCanvas(polyline[0]);
   const lastCanvasPoint = viewport.worldToCanvas(polyline[polyline.length - 1]);
 
-  const openCardiacAnnotationVectorToPeakCanvas = [
-    viewport.worldToCanvas(openCardiacAnnotationVectorToPeak[0]),
-    viewport.worldToCanvas(openCardiacAnnotationVectorToPeak[1]),
+  const openUShapeContourVectorToPeakCanvas = [
+    viewport.worldToCanvas(openUShapeContourVectorToPeak[0]),
+    viewport.worldToCanvas(openUShapeContourVectorToPeak[1]),
   ];
 
   const options = this._getRenderingOptions(enabledElement, annotation);
@@ -195,8 +208,8 @@ function renderOpenCardiacContour(
     annotation.annotationUID,
     'midpoint-to-open-contour',
     [
-      openCardiacAnnotationVectorToPeakCanvas[0],
-      openCardiacAnnotationVectorToPeakCanvas[1],
+      openUShapeContourVectorToPeakCanvas[0],
+      openUShapeContourVectorToPeakCanvas[1],
     ],
     {
       color: options.color,
@@ -335,8 +348,8 @@ function registerRenderMethods(toolInstance) {
   toolInstance.renderContour = renderContour.bind(toolInstance);
   toolInstance.renderClosedContour = renderClosedContour.bind(toolInstance);
   toolInstance.renderOpenContour = renderOpenContour.bind(toolInstance);
-  toolInstance.renderOpenCardiacContour =
-    renderOpenCardiacContour.bind(toolInstance);
+  toolInstance.renderOpenUShapedContour =
+    renderOpenUShapedContour.bind(toolInstance);
 
   toolInstance.renderContourBeingDrawn =
     renderContourBeingDrawn.bind(toolInstance);

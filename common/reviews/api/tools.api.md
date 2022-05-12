@@ -2728,8 +2728,8 @@ interface PlanarFreehandROIAnnotation extends Annotation {
         polyline: Types_2.Point3[];
         label?: string;
         isOpenContour?: boolean;
-        isOpenCardiacAnnotation?: boolean;
-        openCardiacAnnotationVectorToPeak?: Types_2.Point3[];
+        isOpenUShapeContour?: boolean;
+        openUShapeContourVectorToPeak?: Types_2.Point3[];
         handles: {
             points: Types_2.Point3[];
             activeHandleIndex: number | null;
