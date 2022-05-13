@@ -4,6 +4,7 @@ import {
   drawPolyline as drawPolylineSvg,
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
+import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../../types/AnnotationStyle';
 
@@ -50,10 +51,41 @@ function renderContour(
   svgDrawingHelper: any,
   annotation: PlanarFreehandROIAnnotation
 ): void {
+  // Check if the contour is an open contour
   if (annotation.data.isOpenContour) {
-    this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+    // If its an open contour, check i its a U-shaped contour
+    if (annotation.data.isOpenUShapeContour) {
+      calculateUShapeContourVectorToPeakIfNotPresent(
+        enabledElement,
+        annotation
+      );
+
+      this.renderOpenUShapedContour(
+        enabledElement,
+        svgDrawingHelper,
+        annotation
+      );
+    } else {
+      // If not a U-shaped contour, render standard open contour.
+      this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+    }
   } else {
     this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
+  }
+}
+
+/**
+ * If the open U-shaped contour does not have a peak.
+ */
+function calculateUShapeContourVectorToPeakIfNotPresent(
+  enabledElement: Types.IEnabledElement,
+  annotation: PlanarFreehandROIAnnotation
+): void {
+  if (!annotation.data.openUShapeContourVectorToPeak) {
+    // Annotation just been set to be an open U-shaped contour.
+    // calculate its peak vector here.
+    annotation.data.openUShapeContourVectorToPeak =
+      findOpenUShapedContourVectorToPeakOnRender(enabledElement, annotation);
   }
 }
 
@@ -134,6 +166,58 @@ function renderOpenContour(
       { color: options.color }
     );
   }
+}
+
+function renderOpenUShapedContour(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: any,
+  annotation: PlanarFreehandROIAnnotation
+): void {
+  const { viewport } = enabledElement;
+  const { polyline, openUShapeContourVectorToPeak } = annotation.data;
+
+  this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+
+  const firstCanvasPoint = viewport.worldToCanvas(polyline[0]);
+  const lastCanvasPoint = viewport.worldToCanvas(polyline[polyline.length - 1]);
+
+  const openUShapeContourVectorToPeakCanvas = [
+    viewport.worldToCanvas(openUShapeContourVectorToPeak[0]),
+    viewport.worldToCanvas(openUShapeContourVectorToPeak[1]),
+  ];
+
+  const options = this._getRenderingOptions(enabledElement, annotation);
+
+  // Join first and last points
+  drawPolylineSvg(
+    svgDrawingHelper,
+    annotation.annotationUID,
+    'first-to-last',
+    [firstCanvasPoint, lastCanvasPoint],
+    {
+      color: options.color,
+      width: options.width,
+      connectLastToFirst: false,
+      lineDash: '2,2',
+    }
+  );
+
+  // Render midpoint to open contour surface line
+  drawPolylineSvg(
+    svgDrawingHelper,
+    annotation.annotationUID,
+    'midpoint-to-open-contour',
+    [
+      openUShapeContourVectorToPeakCanvas[0],
+      openUShapeContourVectorToPeakCanvas[1],
+    ],
+    {
+      color: options.color,
+      width: options.width,
+      connectLastToFirst: false,
+      lineDash: '2,2',
+    }
+  );
 }
 
 /**
@@ -264,6 +348,8 @@ function registerRenderMethods(toolInstance) {
   toolInstance.renderContour = renderContour.bind(toolInstance);
   toolInstance.renderClosedContour = renderClosedContour.bind(toolInstance);
   toolInstance.renderOpenContour = renderOpenContour.bind(toolInstance);
+  toolInstance.renderOpenUShapedContour =
+    renderOpenUShapedContour.bind(toolInstance);
 
   toolInstance.renderContourBeingDrawn =
     renderContourBeingDrawn.bind(toolInstance);

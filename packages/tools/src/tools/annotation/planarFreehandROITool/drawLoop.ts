@@ -10,6 +10,7 @@ import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 
 const {
@@ -140,6 +141,8 @@ function mouseUpDrawCallback(
   const { canvasPoints } = this.drawData;
   const firstPoint = canvasPoints[0];
   const lastPoint = canvasPoints[canvasPoints.length - 1];
+  const eventDetail = evt.detail;
+  const { element } = eventDetail;
 
   if (
     allowOpenContours &&
@@ -149,26 +152,19 @@ function mouseUpDrawCallback(
       this.configuration.closeContourProximity
     )
   ) {
-    this.completeDrawOpenContour(evt);
+    this.completeDrawOpenContour(element);
   } else {
-    this.completeDrawClosedContour(evt);
+    this.completeDrawClosedContour(element);
   }
 }
 
 /**
  * Completes the contour being drawn, creating a closed contour annotation.
  */
-function completeDrawClosedContour(
-  evt:
-    | EventTypes.MouseUpEventType
-    | EventTypes.MouseClickEventType
-    | EventTypes.MouseDragEventType
-): void {
+function completeDrawClosedContour(element: HTMLDivElement): void {
   this.removeCrossedLinesOnCompleteDraw();
   const { canvasPoints } = this.drawData;
   const { annotation, viewportIdsToRender } = this.commonData;
-  const eventDetail = evt.detail;
-  const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
@@ -231,16 +227,9 @@ function removeCrossedLinesOnCompleteDraw(): void {
 /**
  * Completes the contour being drawn, creating an open contour annotation.
  */
-function completeDrawOpenContour(
-  evt:
-    | EventTypes.MouseUpEventType
-    | EventTypes.MouseClickEventType
-    | EventTypes.MouseDragEventType
-): void {
+function completeDrawOpenContour(element: HTMLDivElement): void {
   const { canvasPoints } = this.drawData;
   const { annotation, viewportIdsToRender } = this.commonData;
-  const eventDetail = evt.detail;
-  const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
@@ -260,6 +249,12 @@ function completeDrawOpenContour(
     worldPoints[0],
     worldPoints[worldPoints.length - 1],
   ];
+
+  // If the annotation is an open U-shaped annotation, find the annotation vector.
+  if (annotation.data.isOpenUShapeContour) {
+    annotation.data.openUShapeContourVectorToPeak =
+      findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
+  }
 
   this.triggerAnnotationCompleted(annotation);
 
@@ -332,8 +327,31 @@ function applyCreateOnCross(
     canvasPoints.shift();
   }
 
-  this.completeDrawClosedContour(evt);
+  this.completeDrawClosedContour(element);
   this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
+}
+
+/**
+ * Completes the contour on a cancel method call during the draw loop.
+ */
+function cancelDrawing(element: HTMLElement) {
+  const { allowOpenContours } = this.configuration;
+  const { canvasPoints } = this.drawData;
+  const firstPoint = canvasPoints[0];
+  const lastPoint = canvasPoints[canvasPoints.length - 1];
+
+  if (
+    allowOpenContours &&
+    !pointsAreWithinCloseContourProximity(
+      firstPoint,
+      lastPoint,
+      this.configuration.closeContourProximity
+    )
+  ) {
+    this.completeDrawOpenContour(element);
+  } else {
+    this.completeDrawClosedContour(element);
+  }
 }
 
 /**
@@ -354,6 +372,7 @@ function registerDrawLoop(toolInstance): void {
   toolInstance.mouseUpDrawCallback = mouseUpDrawCallback.bind(toolInstance);
   toolInstance.completeDrawClosedContour =
     completeDrawClosedContour.bind(toolInstance);
+  toolInstance.cancelDrawing = cancelDrawing.bind(toolInstance);
 }
 
 export default registerDrawLoop;

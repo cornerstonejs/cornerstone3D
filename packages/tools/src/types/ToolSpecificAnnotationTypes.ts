@@ -189,6 +189,9 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
     polyline: Types.Point3[];
     label?: string;
     isOpenContour?: boolean;
+    isOpenUShapeContour?: boolean;
+    // Present if isOpenUShapeContour is true:
+    openUShapeContourVectorToPeak?: Types.Point3[];
     handles: {
       points: Types.Point3[];
       activeHandleIndex: number | null;

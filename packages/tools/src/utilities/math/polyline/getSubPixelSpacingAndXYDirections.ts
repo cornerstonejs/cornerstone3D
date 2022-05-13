@@ -49,30 +49,38 @@ const getSubPixelSpacingAndXYDirections = (
 
     viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
 
+    const absViewRightDotI = Math.abs(vec3.dot(viewRight, iVector));
+    const absViewRightDotJ = Math.abs(vec3.dot(viewRight, jVector));
+    const absViewRightDotK = Math.abs(vec3.dot(viewRight, kVector));
+
     // Get X spacing
     let xSpacing;
-    if (Math.abs(1 - vec3.dot(viewRight, iVector)) < EPSILON) {
+    if (Math.abs(1 - absViewRightDotI) < EPSILON) {
       xSpacing = volumeSpacing[0];
       xDir = iVector;
-    } else if (Math.abs(1 - vec3.dot(viewRight, jVector)) < EPSILON) {
+    } else if (Math.abs(1 - absViewRightDotJ) < EPSILON) {
       xSpacing = volumeSpacing[1];
       xDir = jVector;
-    } else if (Math.abs(1 - vec3.dot(viewRight, kVector)) < EPSILON) {
+    } else if (Math.abs(1 - absViewRightDotK) < EPSILON) {
       xSpacing = volumeSpacing[2];
       xDir = kVector;
     } else {
       throw new Error('No support yet for oblique plane planar contours');
     }
 
+    const absViewPlaneNormalDotI = Math.abs(vec3.dot(viewPlaneNormal, iVector));
+    const absViewPlaneNormalDotJ = Math.abs(vec3.dot(viewPlaneNormal, jVector));
+    const absViewPlaneNormalDotK = Math.abs(vec3.dot(viewPlaneNormal, kVector));
+
     // Get Y spacing
     let ySpacing;
-    if (Math.abs(1 - vec3.dot(viewPlaneNormal, iVector)) < EPSILON) {
+    if (Math.abs(1 - absViewPlaneNormalDotI) < EPSILON) {
       ySpacing = volumeSpacing[0];
       yDir = iVector;
-    } else if (Math.abs(1 - vec3.dot(viewPlaneNormal, jVector)) < EPSILON) {
+    } else if (Math.abs(1 - absViewPlaneNormalDotJ) < EPSILON) {
       ySpacing = volumeSpacing[1];
       yDir = jVector;
-    } else if (Math.abs(1 - vec3.dot(viewPlaneNormal, kVector)) < EPSILON) {
+    } else if (Math.abs(1 - absViewPlaneNormalDotK) < EPSILON) {
       ySpacing = volumeSpacing[2];
       yDir = kVector;
     } else {

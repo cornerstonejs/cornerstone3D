@@ -8,7 +8,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import {

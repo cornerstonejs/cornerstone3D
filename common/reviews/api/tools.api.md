@@ -2759,6 +2759,8 @@ interface PlanarFreehandROIAnnotation extends Annotation {
         polyline: Types_2.Point3[];
         label?: string;
         isOpenContour?: boolean;
+        isOpenUShapeContour?: boolean;
+        openUShapeContourVectorToPeak?: Types_2.Point3[];
         handles: {
             points: Types_2.Point3[];
             activeHandleIndex: number | null;
@@ -2794,6 +2796,8 @@ export class PlanarFreehandROITool extends AnnotationTool {
     addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
+    // (undocumented)
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)

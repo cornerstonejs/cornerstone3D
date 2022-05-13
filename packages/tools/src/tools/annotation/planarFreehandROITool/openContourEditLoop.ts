@@ -10,6 +10,7 @@ import type { EventTypes, Annotation } from '../../../types';
 import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
+import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 
@@ -125,6 +126,12 @@ function mouseDragOpenContourEditCallback(
   if (xDist <= spacing[0] && yDist <= spacing[1]) {
     // Haven't changed world point enough, don't render
     return;
+  }
+
+  if (startCrossingIndex !== undefined) {
+    // Edge case: If the edit line itself crosses, remove part of that edit line so we don't
+    // Get isolated regions.
+    this.checkAndRemoveCrossesOnEditLine(evt);
   }
 
   const numPointsAdded = addCanvasPointsToArray(
@@ -488,6 +495,14 @@ function mouseUpOpenContourEditCallback(
 ): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
+
+  this.completeOpenContourEdit(element);
+}
+
+/**
+ * Completes the edit of the open contour.
+ */
+function completeOpenContourEdit(element: HTMLDivElement) {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
@@ -506,6 +521,12 @@ function mouseUpOpenContourEditCallback(
       worldPoints[worldPoints.length - 1],
     ];
 
+    // If the annotation is an open U-shaped annotation, find the annotation vector.
+    if (annotation.data.isOpenUShapeContour) {
+      annotation.data.openUShapeContourVectorToPeak =
+        findOpenUShapedContourVectorToPeak(fusedCanvasPoints, viewport);
+    }
+
     this.triggerAnnotationModified(annotation, enabledElement);
   }
 
@@ -516,6 +537,14 @@ function mouseUpOpenContourEditCallback(
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
   this.deactivateOpenContourEdit(element);
+}
+
+/**
+ * Completes the edit on a cancel method call during the open
+ * contour edit loop.
+ */
+function cancelOpenContourEdit(element: HTMLDivElement) {
+  this.completeOpenContourEdit(element);
 }
 
 /**
@@ -540,6 +569,9 @@ function registerOpenContourEditLoop(toolInstance) {
     fuseEditPointsForOpenContourEndEdit.bind(toolInstance);
   toolInstance.openContourEditOverwriteEnd =
     openContourEditOverwriteEnd.bind(toolInstance);
+  toolInstance.cancelOpenContourEdit = cancelOpenContourEdit.bind(toolInstance);
+  toolInstance.completeOpenContourEdit =
+    completeOpenContourEdit.bind(toolInstance);
 }
 
 export default registerOpenContourEditLoop;

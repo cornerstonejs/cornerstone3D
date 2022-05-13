@@ -35,6 +35,13 @@ export default function filterAnnotationsForDisplay(
     // composed of multiple unrelated images
     return annotations.filter((annotation) => {
       const imageId = annotation.metadata.referencedImageId;
+
+      if (imageId === undefined) {
+        // This annotation was not drawn on a non-coplanar reformat, and such does
+        // note have a referenced imageId.
+        return false;
+      }
+
       const colonIndex = imageId.indexOf(':');
       const referenceImageURI = imageId.substring(colonIndex + 1);
       return referenceImageURI === imageURI;
