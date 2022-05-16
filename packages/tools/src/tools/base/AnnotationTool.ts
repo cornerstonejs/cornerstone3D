@@ -11,6 +11,7 @@ import { vec4, vec2 } from 'gl-matrix';
 
 import BaseTool from './BaseTool';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { getViewportSpecificAnnotationManager } from '../../stateManagement/annotation/annotationState';
 import {
   Annotation,
@@ -163,8 +164,11 @@ abstract class AnnotationTool extends BaseTool {
     let annotationsNeedToBeRedrawn = false;
 
     for (const annotation of filteredAnnotations) {
-      // Do not do anything if the annotation is locked
-      if (isAnnotationLocked(annotation)) {
+      // Do not do anything if the annotation is locked or hidden.
+      if (
+        isAnnotationLocked(annotation) ||
+        !isAnnotationVisible(annotation.annotationUID)
+      ) {
         continue;
       }
 

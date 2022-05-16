@@ -90,6 +90,10 @@
         "name": "Annotation Selection and Locking",
         "description": "Demonstrates how to toggle the Locked and Selected states for Annotations"
       },
+      "annotationVisibility": {
+        "name": "Annotation changing visibility",
+        "description": "Demonstrates how to toggle the Visibility state for Annotations"
+      },
       "modifierKeys": {
         "name": "Binding Tools with Modifier Keys",
         "description": "Demonstrates how to bind a tool to a keyboard and mouse combination (e.g. shift+click, ctrl+click)"

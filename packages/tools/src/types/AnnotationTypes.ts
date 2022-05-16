@@ -7,6 +7,8 @@ type Annotation = {
   highlighted?: boolean;
   /** If the annotation is locked for manipulation */
   isLocked?: boolean;
+  /** If the annotation is visible for manipulation */
+  isVisible?: boolean;
   /** Has annotation data been invalidated (e.g., as a result of mouse interactions) */
   invalidated?: boolean;
   /** Metadata for annotation */

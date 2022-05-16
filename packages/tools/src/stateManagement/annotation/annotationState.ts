@@ -123,7 +123,7 @@ function removeAnnotation(
  * Get the Annotation object by its UID
  * @param annotationUID - The unique identifier of the annotation.
  * @param element - The element that the tool is being used on.
- * @returns A Annotation object.
+ * @returns A Annotation object
  */
 function getAnnotation(
   annotationUID: string,

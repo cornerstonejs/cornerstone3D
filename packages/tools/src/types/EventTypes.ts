@@ -88,6 +88,15 @@ type AnnotationLockChangeEventDetail = {
   locked: Array<Annotation>;
 };
 
+type AnnotationVisibilityChangeEventDetail = {
+  // List of instances uids changed to NOT visible (hidden) state by the last operation.
+  lastHidden: Array<string>;
+  // List of instances uids removed from Hidden state by the last operation.
+  lastVisible: Array<string>;
+  // Updated list of currently hidden instances uids
+  hidden: Array<string>;
+};
+
 /**
  * The data that is passed to the event handler when an annotation selection status changes.
  */
@@ -346,6 +355,12 @@ type AnnotationLockChangeEventType =
   Types.CustomEventType<AnnotationLockChangeEventDetail>;
 
 /**
+ * The AnnotationVisibilityChange event type
+ */
+type AnnotationVisibilityChangeEventType =
+  Types.CustomEventType<AnnotationVisibilityChangeEventDetail>;
+
+/**
  * Event for when SegmentationData is modified
  */
 type SegmentationDataModifiedEventType =
@@ -443,7 +458,9 @@ export {
   AnnotationRenderedEventDetail,
   AnnotationRenderedEventType,
   AnnotationLockChangeEventDetail,
+  AnnotationVisibilityChangeEventDetail,
   AnnotationLockChangeEventType,
+  AnnotationVisibilityChangeEventType,
   SegmentationDataModifiedEventType,
   SegmentationRepresentationModifiedEventDetail,
   SegmentationRepresentationModifiedEventType,

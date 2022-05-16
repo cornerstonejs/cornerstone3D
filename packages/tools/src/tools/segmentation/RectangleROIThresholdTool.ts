@@ -19,7 +19,7 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
@@ -221,6 +221,10 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       triggerEvent(eventTarget, eventType, eventDetail);
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&

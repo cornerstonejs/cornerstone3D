@@ -15,6 +15,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import * as lineSegment from '../../utilities/math/line';
 
 import {
@@ -572,6 +573,25 @@ class LengthTool extends AnnotationTool {
 
       let activeHandleCanvasCoords;
 
+      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
+      if (!data.cachedStats[targetId]) {
+        data.cachedStats[targetId] = {
+          length: null,
+        };
+
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+      } else if (annotation.invalidated) {
+        this._throttledCalculateCachedStats(
+          annotation,
+          renderingEngine,
+          enabledElement
+        );
+      }
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
+
       if (
         !isAnnotationLocked(annotation) &&
         !this.editData &&
@@ -610,21 +630,6 @@ class LengthTool extends AnnotationTool {
           lineDash,
         }
       );
-
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetId]) {
-        data.cachedStats[targetId] = {
-          length: null,
-        };
-
-        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
-      } else if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement
-        );
-      }
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
