@@ -24,14 +24,15 @@ export default class Circle extends TID300Measurement {
         const {
             points,
             ReferencedSOPSequence,
-            use3DSpatialCoordinates = false
+            use3DSpatialCoordinates = false,
+            perimeter,
+            area
         } = this.props;
 
         // Combine all lengths to save the perimeter
         // @ToDO The permiter has to be implemented
         // const reducer = (accumulator, currentValue) => accumulator + currentValue;
         // const perimeter = lengths.reduce(reducer);
-        const perimeter = {};
         const GraphicData = expandPoints(points);
 
         // TODO: Add Mean and STDev value of (modality?) pixels
@@ -84,7 +85,7 @@ export default class Circle extends TID300Measurement {
                         CodingSchemeVersion: "1.4",
                         CodeMeaning: "SquareMilliMeter"
                     },
-                    NumericValue: perimeter
+                    NumericValue: area
                 },
                 ContentSequence: {
                     RelationshipType: "INFERRED FROM",
