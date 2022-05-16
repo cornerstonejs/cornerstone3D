@@ -567,6 +567,9 @@ export function cancelActiveManipulations(element: HTMLDivElement): string | und
 // @public (undocumented)
 function checkAndDefineIsLockedProperty(annotation: Annotation): void;
 
+// @public (undocumented)
+function checkAndDefineIsVisibleProperty(annotation: Annotation): void;
+
 declare namespace cine {
     export {
         playClip,
@@ -583,9 +586,6 @@ declare namespace CINETypes {
         ToolData
     }
 }
-
-// @public (undocumented)
-function checkAndDefineIsVisibleProperty(annotation: Annotation): void;
 
 // @public (undocumented)
 export class CircleScissorsTool extends BaseTool {
