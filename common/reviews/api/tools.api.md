@@ -142,6 +142,7 @@ type Annotation = {
     annotationUID?: string;
     highlighted?: boolean;
     isLocked?: boolean;
+    isVisible?: boolean;
     invalidated?: boolean;
     metadata: {
         cameraPosition?: Types_2.Point3;
@@ -179,7 +180,8 @@ declare namespace annotation {
         config,
         locking,
         selection,
-        state
+        state,
+        visibility
     }
 }
 export { annotation }
@@ -319,6 +321,16 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     abstract toolSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes): void;
 }
+
+// @public (undocumented)
+type AnnotationVisibilityChangeEventDetail = {
+    lastHidden: Array<string>;
+    lastVisible: Array<string>;
+    hidden: Array<string>;
+};
+
+// @public (undocumented)
+type AnnotationVisibilityChangeEventType = Types_2.CustomEventType<AnnotationVisibilityChangeEventDetail>;
 
 // @public (undocumented)
 export class ArrowAnnotateTool extends AnnotationTool {
@@ -573,6 +585,9 @@ declare namespace CINETypes {
 }
 
 // @public (undocumented)
+function checkAndDefineIsVisibleProperty(annotation: Annotation): void;
+
+// @public (undocumented)
 export class CircleScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -638,7 +653,7 @@ declare namespace config {
 declare namespace config_2 {
     export {
         color,
-        visibility,
+        visibility_2 as visibility,
         getGlobalConfig_2 as getGlobalConfig,
         getGlobalRepresentationConfig,
         getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
@@ -1364,6 +1379,8 @@ enum Events {
     // (undocumented)
     ANNOTATION_SELECTION_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_SELECTION_CHANGE",
     // (undocumented)
+    ANNOTATION_VISIBILITY_CHANGE = "CORNERSTONE_TOOLS_ANNOTATION_VISIBILITY_CHANGE",
+    // (undocumented)
     KEY_DOWN = "CORNERSTONE_TOOLS_KEY_DOWN",
     // (undocumented)
     KEY_UP = "CORNERSTONE_TOOLS_KEY_UP",
@@ -1461,7 +1478,9 @@ declare namespace EventTypes_2 {
         AnnotationRenderedEventDetail,
         AnnotationRenderedEventType,
         AnnotationLockChangeEventDetail,
+        AnnotationVisibilityChangeEventDetail,
         AnnotationLockChangeEventType,
+        AnnotationVisibilityChangeEventType,
         SegmentationDataModifiedEventType,
         SegmentationRepresentationModifiedEventDetail,
         SegmentationRepresentationModifiedEventType,
@@ -2057,6 +2076,9 @@ function isAnnotationLocked(annotation: Annotation): boolean;
 
 // @public (undocumented)
 function isAnnotationSelected(annotationUID: string): boolean;
+
+// @public (undocumented)
+function isAnnotationVisible(annotationUID: string): boolean | undefined;
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -3503,6 +3525,9 @@ function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
+function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
+
+// @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
@@ -3536,6 +3561,9 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 
 // @public (undocumented)
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
+
+// @public (undocumented)
+function showAllAnnotations(): void;
 
 // @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
@@ -4027,6 +4055,15 @@ type ViewportInputOptions = {
 };
 
 declare namespace visibility {
+    export {
+        setAnnotationVisibility,
+        showAllAnnotations,
+        isAnnotationVisible,
+        checkAndDefineIsVisibleProperty
+    }
+}
+
+declare namespace visibility_2 {
     export {
         setSegmentationVisibility,
         getSegmentationVisibility

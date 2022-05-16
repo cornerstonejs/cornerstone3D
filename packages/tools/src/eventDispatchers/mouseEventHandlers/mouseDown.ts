@@ -12,6 +12,7 @@ import {
 } from '../../stateManagement/annotation/annotationSelection';
 
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 // Util
 import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableHandles';
@@ -151,7 +152,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
 }
 
 /**
- * If there are multiple annotation tools, return the first one that isn't locked.
+ * If there are multiple annotation tools, return the first one that isn't locked neither hidden.
  * If there's only one annotation tool, return it
  * @param annotationTools - An array of tools and annotation.
  * @returns The candidate for selection
@@ -162,7 +163,9 @@ function getAnnotationForSelection(
   return (
     (toolsWithMovableHandles.length > 1 &&
       toolsWithMovableHandles.find(
-        (item) => !isAnnotationLocked(item.annotation)
+        (item) =>
+          !isAnnotationLocked(item.annotation) &&
+          isAnnotationVisible(item.annotation.annotationUID)
       )) ||
     toolsWithMovableHandles[0]
   );

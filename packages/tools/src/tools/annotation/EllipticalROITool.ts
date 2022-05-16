@@ -16,6 +16,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
@@ -815,6 +816,10 @@ export default class EllipticalROITool extends AnnotationTool {
       }
 
       let activeHandleCanvasCoords;
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
 
       if (
         !isAnnotationLocked(annotation) &&
