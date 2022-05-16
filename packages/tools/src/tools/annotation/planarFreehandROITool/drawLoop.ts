@@ -12,6 +12,7 @@ import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnn
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
+import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
 
 const {
   addCanvasPointsToArray,
@@ -143,6 +144,39 @@ function mouseUpDrawCallback(
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;
   const { element } = eventDetail;
+  const { subPixelResolution } = this.configuration;
+
+  const minPoints = Math.max(
+    /**
+     * The number of points to span 3 voxels in length, this is a realistically
+     * smallest open contour one could reasonably define (2 voxels should probably be a line).
+     */
+    subPixelResolution * 3,
+    /**
+     * Minimum 3 points, there are other annotations for one point (probe)
+     * or 2 points (line), so this comes only from a mistake in practice.
+     */
+    3
+  );
+
+  if (canvasPoints.length < minPoints) {
+    // Remove annotation instead of completing it.
+    const { annotation, viewportIdsToRender } = this.commonData;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    removeAnnotation(annotation.annotationUID);
+
+    this.isDrawing = false;
+    this.drawData = undefined;
+    this.commonData = undefined;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    this.deactivateDraw(element);
+
+    return;
+  }
 
   if (
     allowOpenContours &&
