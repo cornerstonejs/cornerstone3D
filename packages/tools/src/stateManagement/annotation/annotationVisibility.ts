@@ -112,10 +112,10 @@ function hide(
   detail: AnnotationVisibilityChangeEventDetail
 ): void {
   if (!annotationUIDsSet.has(annotationUID)) {
+    annotationUIDsSet.add(annotationUID);
     if (isAnnotationSelected(annotationUID)) {
       deselectAnnotation(annotationUID);
     }
-    annotationUIDsSet.add(annotationUID);
     detail.lastHidden.push(annotationUID);
   }
 }
