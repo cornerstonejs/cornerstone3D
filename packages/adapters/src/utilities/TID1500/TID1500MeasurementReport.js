@@ -114,22 +114,40 @@ export default class TID1500MeasurementReport {
 
     validate() {}
 
-    contentItem(derivationSourceDataset, options = {}) {
+    contentItem(derivationSourceDatasetOrDatasets, options = {}) {
         if (options.PersonName) {
             this.PersonObserverName.PersonName = options.PersonName;
         }
 
+        // Note this is left in for compatibility with the Cornerstone Legacy adapter which only supports one series for now.
+        const derivationSourceDatasets = Array.isArray(
+            derivationSourceDatasetOrDatasets
+        )
+            ? derivationSourceDatasetOrDatasets
+            : [derivationSourceDatasetOrDatasets];
+
         // Add the Measurement Groups to the Measurement Report
-        this.addTID1501MeasurementGroups(derivationSourceDataset, options);
+        this.addTID1501MeasurementGroups(derivationSourceDatasets, options);
 
         return this.tid1500;
     }
 
-    addTID1501MeasurementGroups(derivationSourceDataset, options) {
+    addTID1501MeasurementGroups(derivationSourceDatasets, options = {}) {
         const {
             CurrentRequestedProcedureEvidenceSequence,
             ImageLibraryContentSequence
         } = this;
+
+        const { sopInstanceUIDsToSeriesInstanceUIDMap } = options;
+
+        if (
+            derivationSourceDatasets.length > 1 &&
+            sopInstanceUIDsToSeriesInstanceUIDMap === undefined
+        ) {
+            throw new Error(
+                `addTID1501MeasurementGroups provided with ${derivationSourceDatasets.length} derivationSourceDatasets, with no sopInstanceUIDsToSeriesInstanceUIDMap in options.`
+            );
+        }
 
         const { TID1501MeasurementGroups } = this.TIDIncludeGroups;
 
@@ -161,6 +179,27 @@ export default class TID1500MeasurementReport {
                         ReferencedSOPSequence: measurement.ReferencedSOPSequence
                     });
 
+                    let derivationSourceDataset;
+
+                    if (derivationSourceDatasets.length === 1) {
+                        // If there is only one derivationSourceDataset, use it.
+                        derivationSourceDataset[0];
+                    } else {
+                        const SeriesInstanceUID =
+                            sopInstanceUIDsToSeriesInstanceUIDMap[
+                                ReferencedSOPInstanceUID
+                            ];
+
+                        derivationSourceDataset = derivationSourceDatasets.find(
+                            dsd => dsd.SeriesInstanceUID === SeriesInstanceUID
+                        );
+                    }
+
+                    /**
+                     * Note: the VM of the ReferencedSeriesSequence and ReferencedSOPSequence are 1, so
+                     * it is correct that we have a full `CurrentRequestedProcedureEvidenceSequence`
+                     * item per `SOPInstanceUID`.
+                     */
                     CurrentRequestedProcedureEvidenceSequence.push({
                         StudyInstanceUID:
                             derivationSourceDataset.StudyInstanceUID,

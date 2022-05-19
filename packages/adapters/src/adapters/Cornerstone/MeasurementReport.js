@@ -238,6 +238,7 @@ export default class MeasurementReport {
         derivationSourceDataset._vrMap = _vrMap;
 
         const report = new StructuredReport([derivationSourceDataset]);
+
         const contentItem = MeasurementReport.contentItem(
             derivationSourceDataset
         );

@@ -1,16 +1,13 @@
 import MeasurementReport from "./MeasurementReport.js";
-import TID300Length from "../../utilities/TID300/Length.js";
+import TID300Point from "../../utilities/TID300/Point.js";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 
-const LENGTH = "Length";
-const FINDING = "121071";
-const FINDING_SITE = "G-C0E3";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${LENGTH}`;
+const PROBE = "Probe";
+const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${PROBE}`;
 
-class Length {
+class Probe {
     constructor() {}
 
-    // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -19,19 +16,19 @@ class Length {
     ) {
         const {
             defaultState,
-            NUMGroup,
             SCOORDGroup
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            Length.toolType
+            Probe.toolType
         );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
         const { GraphicData } = SCOORDGroup;
+
         const worldCoords = [];
         for (let i = 0; i < GraphicData.length; i += 2) {
             const point = imageToWorldCoords(referencedImageId, [
@@ -45,15 +42,10 @@ class Length {
 
         state.annotation.data = {
             handles: {
-                points: [worldCoords[0], worldCoords[1]],
-                activeHandleIndex: 0,
+                points: worldCoords,
+                activeHandleIndex: null,
                 textBox: {
                     hasMoved: false
-                }
-            },
-            cachedStats: {
-                [`imageId:${referencedImageId}`]: {
-                    length: NUMGroup.MeasuredValueSequence.NumericValue
                 }
             }
         };
@@ -62,40 +54,41 @@ class Length {
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
-        const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats, handles } = data;
-
+        const { data, metadata } = tool;
+        let { finding, findingSites } = tool;
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
             throw new Error(
-                "Length.getTID300RepresentationArguments: referencedImageId is not defined"
+                "Probe.getTID300RepresentationArguments: referencedImageId is not defined"
             );
         }
 
-        const start = worldToImageCoords(referencedImageId, handles.points[0]);
-        const end = worldToImageCoords(referencedImageId, handles.points[1]);
+        const { points } = data.handles;
 
-        const point1 = { x: start[0], y: start[1] };
-        const point2 = { x: end[0], y: end[1] };
+        const pointsImage = points.map(point => {
+            const pointImage = worldToImageCoords(referencedImageId, point);
+            return {
+                x: pointImage[0],
+                y: pointImage[1]
+            };
+        });
 
-        const distance = cachedStats[`imageId:${referencedImageId}`].length;
-
-        return {
-            point1,
-            point2,
-            distance,
+        const TID300RepresentationArguments = {
+            points: pointsImage,
             trackingIdentifierTextValue,
-            finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            finding
         };
+
+        return TID300RepresentationArguments;
     }
 }
 
-Length.toolType = LENGTH;
-Length.utilityToolType = LENGTH;
-Length.TID300Representation = TID300Length;
-Length.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
+Probe.toolType = PROBE;
+Probe.utilityToolType = PROBE;
+Probe.TID300Representation = TID300Point;
+Probe.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
     if (!TrackingIdentifier.includes(":")) {
         return false;
     }
@@ -106,9 +99,9 @@ Length.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
         return false;
     }
 
-    return toolType === LENGTH;
+    return toolType === PROBE;
 };
 
-MeasurementReport.registerTool(Length);
+MeasurementReport.registerTool(Probe);
 
-export default Length;
+export default Probe;

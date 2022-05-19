@@ -3,6 +3,8 @@ import Length from "./Length.js";
 import Bidirectional from "./Bidirectional.js";
 import EllipticalROI from "./EllipticalROI.js";
 import ArrowAnnotate from "./ArrowAnnotate.js";
+import Probe from "./Probe.js";
+import PlanarFreehandROI from "./PlanarFreehandROI.js";
 import CodeScheme from "./CodingScheme";
 
 const Cornerstone3D = {
@@ -10,6 +12,8 @@ const Cornerstone3D = {
     Bidirectional,
     EllipticalROI,
     ArrowAnnotate,
+    Probe,
+    PlanarFreehandROI,
     MeasurementReport,
     CodeScheme
 };

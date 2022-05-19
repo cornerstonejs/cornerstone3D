@@ -8,14 +8,14 @@ const FINDING = "121071";
 const FINDING_SITE = "G-C0E3";
 const EPSILON = 1e-4;
 
-const trackingIdentifierTextValue = "Cornerstone3DTools@^0.1.0:EllipticalROI";
+const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ELLIPTICALROI}`;
 
 class EllipticalROI {
     constructor() {}
 
     static getMeasurementData(
         MeasurementGroup,
-        imageId,
+        sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
         metadata
     ) {
@@ -23,7 +23,15 @@ class EllipticalROI {
             defaultState,
             NUMGroup,
             SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            EllipticalROI.toolType
+        );
+
+        const referencedImageId =
+            defaultState.annotation.metadata.referencedImageId;
 
         const { GraphicData } = SCOORDGroup;
 
@@ -33,7 +41,7 @@ class EllipticalROI {
         // in the image plane and then choose the correct points to use for the ellipse.
         const pointsWorld = [];
         for (let i = 0; i < GraphicData.length; i += 2) {
-            const worldPos = imageToWorldCoords(imageId, [
+            const worldPos = imageToWorldCoords(referencedImageId, [
                 GraphicData[i],
                 GraphicData[i + 1]
             ]);
@@ -56,7 +64,10 @@ class EllipticalROI {
         vec3.sub(minorAxisVec, minorAxisEnd, minorAxisStart);
         vec3.normalize(minorAxisVec, minorAxisVec);
 
-        const imagePlaneModule = metadata.get("imagePlaneModule", imageId);
+        const imagePlaneModule = metadata.get(
+            "imagePlaneModule",
+            referencedImageId
+        );
 
         if (!imagePlaneModule) {
             throw new Error("imageId does not have imagePlaneModule metadata");
@@ -99,24 +110,23 @@ class EllipticalROI {
             console.warn("OBLIQUE ELLIPSE NOT YET SUPPORTED");
         }
 
-        const state = {
-            ...defaultState,
-            toolType: EllipticalROI.toolType,
-            data: {
-                handles: {
-                    points: [...ellipsePoints],
-                    activeHandleIndex: 0,
-                    textBox: {
-                        hasMoved: false
-                    }
-                },
-                cachedStats: {
-                    [`imageId:${imageId}`]: {
-                        area: NUMGroup.MeasuredValueSequence.NumericValue
-                    }
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [...ellipsePoints],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {
+                [`imageId:${referencedImageId}`]: {
+                    area: NUMGroup.MeasuredValueSequence.NumericValue
                 }
             }
         };
+
         return state;
     }
 
@@ -180,9 +190,9 @@ EllipticalROI.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
         return false;
     }
 
-    const [cornerstone4Tag, toolType] = TrackingIdentifier.split(":");
+    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
 
-    if (cornerstone4Tag !== CORNERSTONE_3D_TAG) {
+    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
         return false;
     }
 

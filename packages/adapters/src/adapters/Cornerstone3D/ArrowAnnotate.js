@@ -4,44 +4,54 @@ import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import CodingScheme from "./CodingScheme";
 
 const ARROW_ANNOTATE = "ArrowAnnotate";
-const trackingIdentifierTextValue = "Cornerstone3DTools@^0.1.0:ArrowAnnotate";
+const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ARROW_ANNOTATE}`;
 
 const { codeValues, CodingSchemeDesignator } = CodingScheme;
 
 class ArrowAnnotate {
     constructor() {}
 
-    static getMeasurementData(MeasurementGroup, imageId, imageToWorldCoords) {
+    static getMeasurementData(
+        MeasurementGroup,
+        sopInstanceUIDToImageIdMap,
+        imageToWorldCoords,
+        metadata
+    ) {
         const {
             defaultState,
-            SCOORDGroup,
-            findingGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+            SCOORDGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            ArrowAnnotate.toolType
+        );
 
-        const text = findingGroup.ConceptCodeSequence.CodeMeaning;
+        const referencedImageId =
+            defaultState.annotation.metadata.referencedImageId;
+
+        const text = defaultState.metadata.label;
 
         const { GraphicData } = SCOORDGroup;
 
         const worldCoords = [];
         for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(imageId, [
+            const point = imageToWorldCoords(referencedImageId, [
                 GraphicData[i],
                 GraphicData[i + 1]
             ]);
             worldCoords.push(point);
         }
 
-        const state = {
-            ...defaultState,
-            toolType: ArrowAnnotate.toolType,
-            data: {
-                text,
-                handles: {
-                    points: [worldCoords[0], worldCoords[1]],
-                    activeHandleIndex: 0,
-                    textBox: {
-                        hasMoved: false
-                    }
+        const state = defaultState;
+
+        state.annotation.data = {
+            text,
+            handles: {
+                points: [worldCoords[0], worldCoords[1]],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
                 }
             }
         };
@@ -99,9 +109,9 @@ ArrowAnnotate.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
         return false;
     }
 
-    const [cornerstone4Tag, toolType] = TrackingIdentifier.split(":");
+    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
 
-    if (cornerstone4Tag !== CORNERSTONE_3D_TAG) {
+    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
         return false;
     }
 

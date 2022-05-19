@@ -3,6 +3,7 @@ import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
 import { StructuredReport } from "../../derivations/index.js";
 import TID1500MeasurementReport from "../../utilities/TID1500/TID1500MeasurementReport.js";
 import TID1501MeasurementGroup from "../../utilities/TID1500/TID1501MeasurementGroup.js";
+import Cornerstone3DCodingScheme from "./CodingScheme";
 
 import { toArray, codeMeaningEquals } from "../helpers.js";
 
@@ -77,7 +78,82 @@ function getMeasurementGroup(
 export default class MeasurementReport {
     constructor() {}
 
-    static getSetupMeasurementData(MeasurementGroup) {
+    static getCornerstoneLabelFromDefaultState(defaultState) {
+        const { findingSites = [], finding } = defaultState;
+
+        const cornersoneFreeTextCodingValue =
+            Cornerstone3DCodingScheme.codeValues.CORNERSTONEFREETEXT;
+
+        let freeTextLabel = findingSites.find(
+            fs => fs.CodeValue === cornersoneFreeTextCodingValue
+        );
+
+        if (freeTextLabel) {
+            return freeTextLabel.CodeMeaning;
+        }
+
+        if (finding && finding.CodeValue === cornersoneFreeTextCodingValue) {
+            return finding.CodeMeaning;
+        }
+    }
+
+    static generateDatasetMeta() {
+        // TODO: what is the correct metaheader
+        // http://dicom.nema.org/medical/Dicom/current/output/chtml/part10/chapter_7.html
+        // TODO: move meta creation to happen in derivations.js
+        const fileMetaInformationVersionArray = new Uint8Array(2);
+        fileMetaInformationVersionArray[1] = 1;
+
+        const _meta = {
+            FileMetaInformationVersion: {
+                Value: [fileMetaInformationVersionArray.buffer],
+                vr: "OB"
+            },
+            //MediaStorageSOPClassUID
+            //MediaStorageSOPInstanceUID: sopCommonModule.sopInstanceUID,
+            TransferSyntaxUID: {
+                Value: ["1.2.840.10008.1.2.1"],
+                vr: "UI"
+            },
+            ImplementationClassUID: {
+                Value: [DicomMetaDictionary.uid()], // TODO: could be git hash or other valid id
+                vr: "UI"
+            },
+            ImplementationVersionName: {
+                Value: ["dcmjs"],
+                vr: "SH"
+            }
+        };
+
+        return _meta;
+    }
+
+    static generateDerivationSourceDataset(
+        StudyInstanceUID,
+        SeriesInstanceUID
+    ) {
+        const _vrMap = {
+            PixelData: "OW"
+        };
+
+        const _meta = MeasurementReport.generateDatasetMeta();
+
+        const derivationSourceDataset = {
+            StudyInstanceUID,
+            SeriesInstanceUID,
+            _meta: _meta,
+            _vrMap: _vrMap
+        };
+
+        return derivationSourceDataset;
+    }
+
+    static getSetupMeasurementData(
+        MeasurementGroup,
+        sopInstanceUIDToImageIdMap,
+        metadata,
+        toolType
+    ) {
         const { ContentSequence } = MeasurementGroup;
 
         const contentSequenceArr = toArray(ContentSequence);
@@ -100,31 +176,43 @@ export default class MeasurementReport {
             ReferencedFrameNumber
         } = ReferencedSOPSequence;
 
+        const referencedImageId =
+            sopInstanceUIDToImageIdMap[ReferencedSOPInstanceUID];
+        const imagePlaneModule = metadata.get(
+            "imagePlaneModule",
+            referencedImageId
+        );
+
+        const finding = findingGroup
+            ? findingGroup.ConceptCodeSequence[0]
+            : undefined;
+        const findingSites = findingSiteGroups.map(fsg => {
+            return { ...fsg.ConceptCodeSequence[0] };
+        });
+
         const defaultState = {
-            sopInstanceUid: ReferencedSOPInstanceUID,
-            frameIndex: ReferencedFrameNumber || 1,
-            complete: true,
-            finding: findingGroup
-                ? findingGroup.ConceptCodeSequence
-                : undefined,
-            findingSites: findingSiteGroups.map(fsg => {
-                return { ...fsg.ConceptCodeSequence };
-            })
+            annotation: {
+                annotationUID: DicomMetaDictionary.uid(),
+                metadata: {
+                    toolName: toolType,
+                    referencedImageId,
+                    FrameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
+                    label: ""
+                }
+            },
+            finding,
+            findingSites
         };
         if (defaultState.finding) {
             defaultState.description = defaultState.finding.CodeMeaning;
         }
-        const findingSite =
-            defaultState.findingSites && defaultState.findingSites[0];
-        if (findingSite) {
-            defaultState.location =
-                (findingSite[0] && findingSite[0].CodeMeaning) ||
-                findingSite.CodeMeaning;
-        }
+
+        defaultState.annotation.metadata.label = MeasurementReport.getCornerstoneLabelFromDefaultState(
+            defaultState
+        );
+
         return {
             defaultState,
-            findingGroup,
-            findingSiteGroups,
             NUMGroup,
             SCOORDGroup,
             ReferencedSOPSequence,
@@ -142,10 +230,6 @@ export default class MeasurementReport {
         // ToolState for array of imageIDs to a Report
         // Assume Cornerstone metadata provider has access to Study / Series / Sop Instance UID
         let allMeasurementGroups = [];
-        const firstImageId = Object.keys(toolState)[0];
-        if (!firstImageId) {
-            throw new Error("No measurements provided.");
-        }
 
         /* Patient ID
         Warning - Missing attribute or value that would be needed to build DICOMDIR - Patient ID
@@ -153,12 +237,11 @@ export default class MeasurementReport {
         Warning - Missing attribute or value that would be needed to build DICOMDIR - Study Time
         Warning - Missing attribute or value that would be needed to build DICOMDIR - Study ID
         */
-        const generalSeriesModule = metadataProvider.get(
-            "generalSeriesModule",
-            firstImageId
-        );
-        //const sopCommonModule = metadataProvider.get('sopCommonModule', firstImageId);
-        const { studyInstanceUID, seriesInstanceUID } = generalSeriesModule;
+
+        const sopInstanceUIDsToSeriesInstanceUIDMap = {};
+        const derivationSourceDatasets = [];
+
+        const _meta = MeasurementReport.generateDatasetMeta();
 
         // Loop through each image in the toolData
         Object.keys(toolState).forEach(imageId => {
@@ -166,18 +249,42 @@ export default class MeasurementReport {
                 "sopCommonModule",
                 imageId
             );
+            const generalSeriesModule = metadataProvider.get(
+                "generalSeriesModule",
+                imageId
+            );
+
+            const { sopInstanceUID, sopClassUID } = sopCommonModule;
+            const { studyInstanceUID, seriesInstanceUID } = generalSeriesModule;
+
+            sopInstanceUIDsToSeriesInstanceUIDMap[
+                sopInstanceUID
+            ] = seriesInstanceUID;
+
+            if (
+                !derivationSourceDatasets.find(
+                    dsd => dsd.SeriesInstanceUID === seriesInstanceUID
+                )
+            ) {
+                // Entry not present for series, create one.
+                const derivationSourceDataset = MeasurementReport.generateDerivationSourceDataset(
+                    studyInstanceUID,
+                    seriesInstanceUID
+                );
+
+                derivationSourceDatasets.push(derivationSourceDataset);
+            }
+
             const frameNumber = metadataProvider.get("frameNumber", imageId);
             const toolData = toolState[imageId];
             const toolTypes = Object.keys(toolData);
 
             const ReferencedSOPSequence = {
-                ReferencedSOPClassUID: sopCommonModule.sopClassUID,
-                ReferencedSOPInstanceUID: sopCommonModule.sopInstanceUID
+                ReferencedSOPClassUID: sopClassUID,
+                ReferencedSOPInstanceUID: sopInstanceUID
             };
 
-            if (
-                Normalizer.isMultiframeSOPClassUID(sopCommonModule.sopClassUID)
-            ) {
+            if (Normalizer.isMultiframeSOPClassUID(sopClassUID)) {
                 ReferencedSOPSequence.ReferencedFrameNumber = frameNumber;
             }
 
@@ -201,55 +308,16 @@ export default class MeasurementReport {
             );
         });
 
-        const MeasurementReport = new TID1500MeasurementReport(
+        const tid1500MeasurementReport = new TID1500MeasurementReport(
             { TID1501MeasurementGroups: allMeasurementGroups },
             options
         );
 
-        // TODO: what is the correct metaheader
-        // http://dicom.nema.org/medical/Dicom/current/output/chtml/part10/chapter_7.html
-        // TODO: move meta creation to happen in derivations.js
-        const fileMetaInformationVersionArray = new Uint8Array(2);
-        fileMetaInformationVersionArray[1] = 1;
+        const report = new StructuredReport(derivationSourceDatasets);
 
-        const derivationSourceDataset = {
-            StudyInstanceUID: studyInstanceUID,
-            SeriesInstanceUID: seriesInstanceUID
-            //SOPInstanceUID: sopInstanceUID, // TODO: Necessary?
-            //SOPClassUID: sopClassUID,
-        };
-
-        const _meta = {
-            FileMetaInformationVersion: {
-                Value: [fileMetaInformationVersionArray.buffer],
-                vr: "OB"
-            },
-            //MediaStorageSOPClassUID
-            //MediaStorageSOPInstanceUID: sopCommonModule.sopInstanceUID,
-            TransferSyntaxUID: {
-                Value: ["1.2.840.10008.1.2.1"],
-                vr: "UI"
-            },
-            ImplementationClassUID: {
-                Value: [DicomMetaDictionary.uid()], // TODO: could be git hash or other valid id
-                vr: "UI"
-            },
-            ImplementationVersionName: {
-                Value: ["dcmjs"],
-                vr: "SH"
-            }
-        };
-
-        const _vrMap = {
-            PixelData: "OW"
-        };
-
-        derivationSourceDataset._meta = _meta;
-        derivationSourceDataset._vrMap = _vrMap;
-
-        const report = new StructuredReport([derivationSourceDataset]);
-        const contentItem = MeasurementReport.contentItem(
-            derivationSourceDataset
+        const contentItem = tid1500MeasurementReport.contentItem(
+            derivationSourceDatasets,
+            { sopInstanceUIDsToSeriesInstanceUIDMap }
         );
 
         // Merge the derived dataset with the content from the Measurement Report
@@ -268,7 +336,7 @@ export default class MeasurementReport {
      */
     static generateToolState(
         dataset,
-        imageIds,
+        sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
         metadata,
         hooks = {}
@@ -308,8 +376,6 @@ export default class MeasurementReport {
         });
 
         measurementGroups.forEach((measurementGroup, index) => {
-            const imageId = imageIds[index];
-
             const measurementGroupContentSequence = toArray(
                 measurementGroup.ContentSequence
             );
@@ -337,7 +403,7 @@ export default class MeasurementReport {
             if (toolClass) {
                 const measurement = toolClass.getMeasurementData(
                     measurementGroup,
-                    imageId,
+                    sopInstanceUIDToImageIdMap,
                     imageToWorldCoords,
                     metadata
                 );

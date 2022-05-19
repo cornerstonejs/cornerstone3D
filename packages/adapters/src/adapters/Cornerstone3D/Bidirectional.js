@@ -9,24 +9,27 @@ const LONG_AXIS = "Long Axis";
 const SHORT_AXIS = "Short Axis";
 const FINDING = "121071";
 const FINDING_SITE = "G-C0E3";
-const trackingIdentifierTextValue = "Cornerstone3DTools@^0.1.0:Bidirectional";
+const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${BIDIRECTIONAL}`;
 
 class Bidirectional {
     constructor() {}
 
-    static getMeasurementData(MeasurementGroup, imageId, imageToWorldCoords) {
+    static getMeasurementData(
+        MeasurementGroup,
+        sopInstanceUIDToImageIdMap,
+        imageToWorldCoords,
+        metadata
+    ) {
         const { defaultState } = MeasurementReport.getSetupMeasurementData(
-            MeasurementGroup
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            Bidirectional.toolType
         );
+
+        const referencedImageId =
+            defaultState.annotation.metadata.referencedImageId;
         const { ContentSequence } = MeasurementGroup;
-
-        const findingGroup = toArray(ContentSequence).find(
-            group => group.ConceptNameCodeSequence.CodeValue === FINDING
-        );
-
-        const findingSiteGroups = toArray(ContentSequence).filter(
-            group => group.ConceptNameCodeSequence.CodeValue === FINDING_SITE
-        );
 
         const longAxisNUMGroup = toArray(ContentSequence).find(
             group => group.ConceptNameCodeSequence.CodeMeaning === LONG_AXIS
@@ -49,7 +52,7 @@ class Bidirectional {
         [longAxisSCOORDGroup, shortAxisSCOORDGroup].forEach(group => {
             const { GraphicData } = group;
             for (let i = 0; i < GraphicData.length; i += 2) {
-                const point = imageToWorldCoords(imageId, [
+                const point = imageToWorldCoords(referencedImageId, [
                     GraphicData[i],
                     GraphicData[i + 1]
                 ]);
@@ -57,35 +60,25 @@ class Bidirectional {
             }
         });
 
-        const state = {
-            ...defaultState,
-            finding: findingGroup
-                ? findingGroup.ConceptCodeSequence
-                : undefined,
-            findingSites: findingSiteGroups.map(fsg => {
-                return { ...fsg.ConceptCodeSequence };
-            }),
-            toolType: Bidirectional.toolType,
-            data: {
-                handles: {
-                    points: [
-                        worldCoords[0],
-                        worldCoords[1],
-                        worldCoords[2],
-                        worldCoords[3]
-                    ],
-                    activeHandleIndex: 0,
-                    textBox: {
-                        hasMoved: false
-                    }
-                },
-                cachedStats: {
-                    [`imageId:${imageId}`]: {
-                        length:
-                            longAxisNUMGroup.MeasuredValueSequence.NumericValue,
-                        width:
-                            shortAxisNUMGroup.MeasuredValueSequence.NumericValue
-                    }
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [
+                    worldCoords[0],
+                    worldCoords[1],
+                    worldCoords[2],
+                    worldCoords[3]
+                ],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {
+                [`imageId:${referencedImageId}`]: {
+                    length: longAxisNUMGroup.MeasuredValueSequence.NumericValue,
+                    width: shortAxisNUMGroup.MeasuredValueSequence.NumericValue
                 }
             }
         };
@@ -189,9 +182,9 @@ Bidirectional.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
         return false;
     }
 
-    const [cornerstone4Tag, toolType] = TrackingIdentifier.split(":");
+    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
 
-    if (cornerstone4Tag !== CORNERSTONE_3D_TAG) {
+    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
         return false;
     }
 
