@@ -112,6 +112,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       Events.ELEMENT_DISABLED,
       (evt: EventTypes.ElementDisabledEvent) => {
         const { viewportId } = evt.detail;
+
+        if (viewportId !== this.id) {
+          return;
+        }
+
         resetVolumeNewImageState(viewportId);
         this.element.removeEventListener(
           Events.CAMERA_MODIFIED,
