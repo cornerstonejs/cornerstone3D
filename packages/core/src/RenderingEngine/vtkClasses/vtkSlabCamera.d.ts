@@ -102,12 +102,6 @@ export interface vtkSlabCamera extends VtkObject {
 
   /**
    *
-   * @defaultValue [0.01],
-   */
-  getSlabThickness(): number;
-
-  /**
-   *
    * @defaultValue
    */
   getSlabThicknessActive(): boolean;
@@ -416,12 +410,6 @@ export interface vtkSlabCamera extends VtkObject {
    * @param status -
    */
   setSlabThicknessActive(status: boolean): void;
-
-  /**
-   * Set the slab thickness
-   * @param status -
-   */
-  setSlabThickness(slabThickness: number): void;
 
   /**
    *

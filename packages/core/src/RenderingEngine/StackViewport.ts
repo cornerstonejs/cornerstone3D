@@ -158,8 +158,6 @@ class StackViewport extends Viewport implements IStackViewport {
       );
       camera.setViewUp(...viewUp);
       camera.setParallelProjection(true);
-      // @ts-ignore: vtkjs incorrect typing
-      camera.setFreezeFocalPoint(true);
     }
 
     this.imageIds = [];
@@ -1593,11 +1591,6 @@ class StackViewport extends Viewport implements IStackViewport {
       const { position } = this.getCamera();
       this.cameraPosOnRender = position;
 
-      // This is necessary to initialize the clipping range and it is not related
-      // to our custom slabThickness.
-      // activeCamera.setThicknessFromFocalPoint(0.1)
-      activeCamera.setFreezeFocalPoint(true);
-
       // We shouldn't restore the focalPoint, position and parallelScale after reset
       // if it is the first render or we have completely re-created the vtkImageData
       this._restoreCameraProps(cameraProps, previousCameraProps);
@@ -1651,11 +1644,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.resetCameraNoEvent();
 
     this.triggerCameraEvent(this.getCamera(), previousCameraProps);
-
-    // This is necessary to initialize the clipping range and it is not related
-    // to our custom slabThickness.
-    // activeCamera.setThicknessFromFocalPoint(0.1)
-    activeCamera.setFreezeFocalPoint(true);
 
     // set voi for the first time
     const { windowCenter, windowWidth } = imagePixelModule;

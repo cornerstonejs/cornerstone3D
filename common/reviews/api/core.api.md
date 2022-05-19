@@ -1824,7 +1824,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
-    protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
+    protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;;
     // (undocumented)
     readonly id: string;
     // (undocumented)

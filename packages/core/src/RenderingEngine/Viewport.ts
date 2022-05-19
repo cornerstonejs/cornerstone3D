@@ -1,6 +1,7 @@
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { vec3, mat4 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
@@ -501,7 +502,7 @@ class Viewport implements IViewport {
     const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds();
-    const focalPoint = [0, 0, 0];
+    const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 
     // Todo: remove this, this is just for tests passing
@@ -614,8 +615,39 @@ class Viewport implements IViewport {
       -focalPointToSet[2]
     );
 
-    // instead of setThicknessFromFocalPoint we should do it here
-    activeCamera.setClippingRange(distance, distance + 0.1);
+    activeCamera.setClippingRange(0.01, distance * 2);
+
+    const actors = this.getActors();
+    actors.forEach((actor) => {
+      const clipPlane1 = vtkPlane.newInstance();
+      const clipPlane2 = vtkPlane.newInstance();
+
+      const scaledDistance = <Point3>[
+        viewPlaneNormal[0],
+        viewPlaneNormal[1],
+        viewPlaneNormal[2],
+      ];
+      let slabThickness = 0.1;
+      if (actor.slabThickness) {
+        slabThickness = actor.slabThickness;
+      }
+      vtkMath.multiplyScalar(scaledDistance, slabThickness);
+      // we assume that the first two clipping plane of the mapper are always
+      // the 'camera' clipping
+      clipPlane1.setNormal(viewPlaneNormal);
+      const newOrigin1 = <Point3>[0, 0, 0];
+      vtkMath.subtract(focalPointToSet, scaledDistance, newOrigin1);
+      clipPlane1.setOrigin(newOrigin1);
+
+      clipPlane2.setNormal(vtkMath.multiplyScalar(viewPlaneNormal, -1));
+      const newOrigin2 = <Point3>[0, 0, 0];
+      vtkMath.add(focalPointToSet, scaledDistance, newOrigin2);
+      clipPlane2.setOrigin(newOrigin2);
+
+      const mapper = actor.volumeActor.getMapper();
+      mapper.addClippingPlane(clipPlane1);
+      mapper.addClippingPlane(clipPlane2);
+    });
 
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
@@ -630,19 +662,7 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
-      const eventDetail = {
-        previousCamera: previousCamera,
-        camera: this.getCamera(),
-        canvas: this.canvas,
-        element: this.element,
-        viewportId: this.id,
-        renderingEngineId: this.renderingEngineId,
-      };
-
-      // For crosshairs to adapt to new viewport size
-      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-    }
+    this.triggerCameraModifiedEvent(previousCamera, this.getCamera());
 
     return true;
   }
@@ -676,12 +696,13 @@ class Viewport implements IViewport {
       z += point_z;
     });
 
-    // Set the focal point on the average of the intersection points
-    return [
+    const newFocalPoint = <Point3>[
       x / intersections.length,
       y / intersections.length,
       z / intersections.length,
     ];
+    // Set the focal point on the average of the intersection points
+    return newFocalPoint;
   }
 
   /**
@@ -710,35 +731,14 @@ class Viewport implements IViewport {
   public getCamera(): ICamera {
     const vtkCamera = this.getVtkActiveCamera();
 
-    // TODO: Make sure these are deep copies.
-    let slabThickness;
-    // Narrowing down the type for typescript
-    if ('getSlabThickness' in vtkCamera) {
-      slabThickness = vtkCamera.getSlabThickness();
-    }
-
     return {
       viewUp: <Point3>vtkCamera.getViewUp(),
       viewPlaneNormal: <Point3>vtkCamera.getViewPlaneNormal(),
-      clippingRange: <Point2>vtkCamera.getClippingRange(),
-      // TODO: I'm really not sure about this, it requires a calculation, and
-      // how useful is this without the renderer context?
-      // Lets add it back if we find we need it.
-      //compositeProjectionMatrix: vtkCamera.getCompositeProjectionMatrix(),
-      //
-      //
-      // Compensating for the flipped viewport. Since our method for flipping is
-      // flipping the actor matrix itself, the focal point won't change; therefore,
-      // we need to accommodate for this required change elsewhere
-      // vec3.sub(dir, viewport.applyFlipTx(focalPoint), point)
       position: <Point3>this.applyFlipTx(vtkCamera.getPosition() as Point3),
       focalPoint: <Point3>this.applyFlipTx(vtkCamera.getFocalPoint() as Point3),
-      // position: <Point3>vtkCamera.getPosition(),
-      // focalPoint: <Point3>vtkCamera.getFocalPoint(),
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
-      slabThickness,
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
     };
@@ -755,12 +755,10 @@ class Viewport implements IViewport {
     const {
       viewUp,
       viewPlaneNormal,
-      clippingRange,
       position,
       focalPoint,
       parallelScale,
       viewAngle,
-      slabThickness,
       flipHorizontal,
       flipVertical,
     } = cameraInterface;
@@ -781,10 +779,6 @@ class Viewport implements IViewport {
       );
     }
 
-    if (clippingRange !== undefined) {
-      vtkCamera.setClippingRange(clippingRange);
-    }
-
     if (position !== undefined) {
       vtkCamera.setPosition(...this.applyFlipTx(position));
     }
@@ -801,10 +795,21 @@ class Viewport implements IViewport {
       vtkCamera.setViewAngle(viewAngle);
     }
 
-    if (slabThickness !== undefined && 'setSlabThickness' in vtkCamera) {
-      vtkCamera.setSlabThickness(slabThickness);
-    }
+    // update clippingPlanes
+    this.updateActorsClippingPlanesOnCameraModified(updatedCamera);
 
+    this.triggerCameraModifiedEvent(previousCamera, updatedCamera);
+  }
+
+  /**
+   * Trigger camera modified event
+   * @param cameraInterface - ICamera
+   * @param cameraInterface - ICamera
+   */
+  public triggerCameraModifiedEvent(
+    previousCamera: ICamera,
+    updatedCamera: ICamera
+  ): void {
     if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
       const eventDetail: EventTypes.CameraModifiedEventDetail = {
         previousCamera,
@@ -817,12 +822,47 @@ class Viewport implements IViewport {
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     }
+  }
 
-    if (this.type == ViewportType.PERSPECTIVE) {
-      const renderer = this.getRenderer();
+  /**
+   * Updates the actors clipping planes orientation from the camera properties
+   * @param updatedCamera - ICamera
+   */
+  public updateActorsClippingPlanesOnCameraModified(
+    updatedCamera: ICamera
+  ): void {
+    const actors = this.getActors();
+    actors.forEach((actor) => {
+      const mapper = actor.volumeActor.getMapper();
+      const vtkPlanes = mapper.getClippingPlanes();
+      if (vtkPlanes.length > 1) {
+        // we assume that the first two clipping plane of the mapper are always
+        // the 'camera' clipping
 
-      renderer.resetCameraClippingRange();
-    }
+        const viewPlaneNormal = updatedCamera.viewPlaneNormal;
+        const focalPoint = updatedCamera.focalPoint;
+        const scaledDistance = <Point3>[
+          viewPlaneNormal[0],
+          viewPlaneNormal[1],
+          viewPlaneNormal[2],
+        ];
+        let slabThickness = 0.1;
+        if (actor.slabThickness) {
+          slabThickness = actor.slabThickness;
+        }
+        vtkMath.multiplyScalar(scaledDistance, slabThickness);
+
+        vtkPlanes[0].setNormal(viewPlaneNormal);
+        const newOrigin1 = <Point3>[0, 0, 0];
+        vtkMath.subtract(focalPoint, scaledDistance, newOrigin1);
+        vtkPlanes[0].setOrigin(newOrigin1);
+
+        vtkPlanes[1].setNormal(vtkMath.multiplyScalar(viewPlaneNormal, -1));
+        const newOrigin2 = <Point3>[0, 0, 0];
+        vtkMath.add(focalPoint, scaledDistance, newOrigin2);
+        vtkPlanes[1].setOrigin(newOrigin2);
+      }
+    });
   }
 
   private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {

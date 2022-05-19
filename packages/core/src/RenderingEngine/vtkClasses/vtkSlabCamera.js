@@ -31,7 +31,9 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 function vtkSlabCamera(publicAPI, model) {
   model.classHierarchy.push('vtkSlabCamera');
 
-  const tmpMatrix = mat4.create();
+  // Set up private variables and methods
+  const tmpMatrix = mat4.identity(new Float64Array(16));
+  const tmpvec1 = new Float64Array(3);
 
   /**
    * getProjectionMatrix - A fork of vtkCamera's getProjectionMatrix method.
@@ -55,16 +57,19 @@ function vtkSlabCamera(publicAPI, model) {
 
     mat4.identity(tmpMatrix);
 
-    let cRange0 = model.clippingRange[0];
-    let cRange1 = model.clippingRange[1];
-
+    // these values are used for coordinates transformation
+    let cRange0 = model.distance - 0.1;
+    let cRange1 = model.distance + 0.1;
     if (model.slabThicknessActive) {
-      const cameraMidpoint =
-        (model.clippingRange[1] + model.clippingRange[0]) * 0.5;
-      cRange0 = cameraMidpoint - model.slabThickness;
-      cRange1 = cameraMidpoint + model.slabThickness;
+      // these values are used for rendering
+      // NOTE: the actual slab thickness clipping is done with clipping planes,
+      // but here we still need to have these values here, otherwise
+      // the rendering will be clipped before the clipping planes.
+      // The clipping range is set in the Viewports (in resetCamera) and have values:
+      // [0.01, model.distance * 2]
+      cRange0 = model.clippingRange[0];
+      cRange1 = model.clippingRange[1];
     }
-
     const cWidth = cRange1 - cRange0;
     const cRange = [
       cRange0 + ((nearz + 1) * cWidth) / 2.0,
@@ -127,8 +132,7 @@ function vtkSlabCamera(publicAPI, model) {
 // ----------------------------------------------------------------------------
 
 const DEFAULT_VALUES = {
-  slabThickness: null,
-  slabThicknessActive: false,
+  slabThicknessActive: true,
 };
 
 export function extend(publicAPI, model, initialValues = {}) {
@@ -136,7 +140,7 @@ export function extend(publicAPI, model, initialValues = {}) {
 
   vtkCamera.extend(publicAPI, model, initialValues);
 
-  macro.setGet(publicAPI, model, ['slabThickness', 'slabThicknessActive']);
+  macro.setGet(publicAPI, model, ['slabThicknessActive']);
 
   // Object methods
   vtkSlabCamera(publicAPI, model);

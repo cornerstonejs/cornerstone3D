@@ -409,8 +409,6 @@ viewport: {
 camera: {
   viewUp,
     viewPlaneNormal,
-    clippingRange,
-    projectionMatrix,
     position,
     focalPoint,
     orthogonalOrPerspective,

@@ -75,7 +75,9 @@ export default class ZoomTool extends BaseTool {
     const { viewport } = enabledElement;
     const size = [element.clientWidth, element.clientHeight];
 
-    const range = camera.clippingRange;
+    // To Do: clipping planes?
+    //const range = camera.clippingRange;
+    const range = 1;
     const zoomScale = 1.5 * (range[1] / size[1]);
 
     const { position, focalPoint, viewPlaneNormal } = camera;
