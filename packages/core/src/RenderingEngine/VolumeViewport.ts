@@ -3,7 +3,10 @@ import { vec3 } from 'gl-matrix';
 import cache from '../cache';
 import ViewportType from '../enums/ViewportType';
 import Viewport from './Viewport';
-import { createVolumeActor, volumeNewImageEventDispatcher } from './helpers';
+import { createVolumeActor } from './helpers';
+import volumeNewImageEventDispatcher, {
+  resetVolumeNewImageState,
+} from './helpers/volumeNewImageEventDispatcher';
 import { loadVolume } from '../volumeLoader';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
@@ -23,6 +26,7 @@ import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { MINIMUM_SLAB_THICKNESS } from '../constants';
 import { Events } from '../enums';
+import eventTarget from '../eventTarget';
 
 const EPSILON = 1e-3;
 
@@ -85,16 +89,34 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   private initializeVolumeNewImageEventDispatcher(): void {
+    const volumeNewImageHandler = (cameraEvent) => {
+      const viewportImageData = this.getImageData();
+
+      if (!viewportImageData) {
+        return;
+      }
+
+      volumeNewImageEventDispatcher(cameraEvent);
+    };
+
+    this.element.removeEventListener(
+      Events.CAMERA_MODIFIED,
+      volumeNewImageHandler
+    );
     this.element.addEventListener(
       Events.CAMERA_MODIFIED,
-      (cameraEvent: EventTypes.CameraModifiedEvent) => {
-        const viewportImageData = this.getImageData();
+      volumeNewImageHandler
+    );
 
-        if (!viewportImageData) {
-          return;
-        }
-
-        volumeNewImageEventDispatcher(cameraEvent, viewportImageData);
+    eventTarget.addEventListener(
+      Events.ELEMENT_DISABLED,
+      (evt: EventTypes.ElementDisabledEvent) => {
+        const { viewportId } = evt.detail;
+        resetVolumeNewImageState(viewportId);
+        this.element.removeEventListener(
+          Events.CAMERA_MODIFIED,
+          volumeNewImageHandler
+        );
       }
     );
   }

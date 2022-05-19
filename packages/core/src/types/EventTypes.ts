@@ -185,8 +185,9 @@ type StackNewImageEventDetail = {
  * VOLUME_NEW_IMAGE Event's data
  */
 type VolumeNewImageEventDetail = {
-  imageData: vtkImageData;
+  /** image index */
   imageIndex: number;
+  /** number of slices */
   numberOfSlices: number;
   /** unique id for the viewport */
   viewportId: string;

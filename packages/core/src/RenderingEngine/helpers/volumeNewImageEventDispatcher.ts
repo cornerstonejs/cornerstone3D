@@ -2,7 +2,7 @@ import {
   getImageSliceDataForVolumeViewport,
   triggerEvent,
 } from '../../utilities';
-import { EventTypes, IImageData } from '../../types';
+import { EventTypes } from '../../types';
 import { Events } from '../../enums';
 import { getRenderingEngine } from '../getRenderingEngine';
 import VolumeViewport from '../VolumeViewport';
@@ -11,6 +11,12 @@ import VolumeViewport from '../VolumeViewport';
 type VolumeImageState = Record<string, number>;
 
 const state: VolumeImageState = {};
+
+export function resetVolumeNewImageState(viewportId: string): void {
+  if (state[viewportId]) {
+    delete state[viewportId];
+  }
+}
 
 /**
  * It captures the camera modified event and with the camera focal point and viewPlaneNomad
@@ -23,15 +29,16 @@ const state: VolumeImageState = {};
  * @param viewportImageData - The image data of the viewport
  */
 function volumeNewImageEventDispatcher(
-  cameraEvent: EventTypes.CameraModifiedEvent,
-  viewportImageData: IImageData
+  cameraEvent: EventTypes.CameraModifiedEvent
 ): void {
   const { renderingEngineId, viewportId } = cameraEvent.detail;
   const renderingEngine = getRenderingEngine(renderingEngineId);
   const viewport = renderingEngine.getViewport(viewportId);
 
   if (!(viewport instanceof VolumeViewport)) {
-    return;
+    throw new Error(
+      `volumeNewImageEventDispatcher: viewport is not a VolumeViewport`
+    );
   }
 
   if (!state[viewport.id]) {
@@ -52,7 +59,6 @@ function volumeNewImageEventDispatcher(
     viewportId,
     renderingEngineId,
     numberOfSlices,
-    imageData: viewportImageData.imageData,
   };
 
   triggerEvent(viewport.element, Events.VOLUME_NEW_IMAGE, eventDetail);

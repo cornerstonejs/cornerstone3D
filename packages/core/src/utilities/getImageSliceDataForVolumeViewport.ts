@@ -34,12 +34,18 @@ function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): {
   const { min, max, current } = sliceRange;
 
   // calculate number of steps from min to max with current normal spacing in direction
-  const numberOfSlices = Math.floor((max - min) / spacingInNormalDirection + 1);
+  const numberOfSlices = Math.round((max - min) / spacingInNormalDirection) + 1;
 
   // calculate the imageIndex based on min, max, current
-  const imageIndex = Math.round(
-    ((current - min) / (max - min)) * numberOfSlices
-  );
+  let imageIndex = ((current - min) / (max - min)) * numberOfSlices;
+  imageIndex = Math.floor(imageIndex);
+
+  // Clamp imageIndex
+  if (imageIndex > numberOfSlices - 1) {
+    imageIndex = numberOfSlices - 1;
+  } else if (imageIndex < 0) {
+    imageIndex = 0;
+  }
 
   return {
     numberOfSlices,

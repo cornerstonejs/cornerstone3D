@@ -3576,12 +3576,6 @@ function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresent
 function showAllAnnotations(): void;
 
 // @public (undocumented)
-function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
-    newFocalPoint: Types_2.Point3;
-    newPosition: Types_2.Point3;
-};
-
-// @public (undocumented)
 export class SphereScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -3663,7 +3657,6 @@ export class StackScrollTool extends BaseTool {
 
 declare namespace stackScrollTool {
     export {
-        snapFocalPointToSlice,
         scrollThroughStack
     }
 }
@@ -3771,6 +3764,8 @@ export class Synchronizer {
     getTargetViewports(): Array<Types_2.IViewportId>;
     // (undocumented)
     hasSourceViewport(renderingEngineId: string, viewportId: string): boolean;
+    // (undocumented)
+    hasTargetViewport(renderingEngineId: string, viewportId: string): boolean;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -4161,7 +4156,6 @@ type VolumeNewImageEvent = CustomEvent_2<VolumeNewImageEventDetail>;
 
 // @public
 type VolumeNewImageEventDetail = {
-    imageData: vtkImageData;
     imageIndex: number;
     numberOfSlices: number;
     viewportId: string;

@@ -221,7 +221,9 @@ class RenderingEngine implements IRenderingEngine {
     }
 
     // 8. Resize the offScreen canvas to accommodate for the new size (after removal)
-    // Note: Resize should not reset pan and zoom in disableElement
+    // Note: Resize should not reset pan and zoom when disabling an element.
+    // This is because we are only resizing the offscreen canvas to deal with the element
+    // which was removed, and do not wish to alter the current state of any other currently enabled element
     const immediate = true;
     const resetPan = false;
     const resetZoom = false;

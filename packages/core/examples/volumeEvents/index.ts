@@ -72,7 +72,7 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1;
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED } = Enums.Events;
+const { IMAGE_RENDERED, CAMERA_MODIFIED, VOLUME_NEW_IMAGE } = Enums.Events;
 
 element.addEventListener(
   IMAGE_RENDERED,
@@ -86,6 +86,21 @@ element.addEventListener(
   CAMERA_MODIFIED,
   (evt: Types.EventTypes.CameraModifiedEvent) => {
     updateLastEvents(eventNumber, CAMERA_MODIFIED, JSON.stringify(evt.detail));
+    eventNumber++;
+  }
+);
+
+element.addEventListener(
+  VOLUME_NEW_IMAGE,
+  (evt: Types.EventTypes.VolumeNewImageEvent) => {
+    const { imageIndex, renderingEngineId, viewportId } = evt.detail;
+    const detail = {
+      imageIndex,
+      renderingEngineId,
+      viewportId,
+    };
+
+    updateLastEvents(eventNumber, VOLUME_NEW_IMAGE, JSON.stringify(detail));
     eventNumber++;
   }
 );

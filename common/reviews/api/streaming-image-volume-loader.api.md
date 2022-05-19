@@ -1215,7 +1215,6 @@ type VolumeNewImageEvent = CustomEvent_2<VolumeNewImageEventDetail>;
 
 // @public
 type VolumeNewImageEventDetail = {
-    imageData: vtkImageData;
     imageIndex: number;
     numberOfSlices: number;
     viewportId: string;
