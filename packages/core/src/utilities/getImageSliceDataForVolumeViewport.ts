@@ -1,4 +1,4 @@
-import { IVolumeViewport } from '../types';
+import { ImageSliceData, IVolumeViewport } from '../types';
 import getSliceRange from './getSliceRange';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 
@@ -8,10 +8,9 @@ import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInN
  * @param viewport - volume viewport
  * @returns An object with two properties: numberOfSlices and imageIndex.
  */
-function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): {
-  numberOfSlices: number;
-  imageIndex: number;
-} {
+function getImageSliceDataForVolumeViewport(
+  viewport: IVolumeViewport
+): ImageSliceData {
   const camera = viewport.getCamera();
 
   const { spacingInNormalDirection, imageVolume } =

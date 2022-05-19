@@ -1368,7 +1368,8 @@ declare namespace Enums {
         ToolModes,
         AnnotationStyleStates,
         Events,
-        SegmentationRepresentations
+        SegmentationRepresentations,
+        JumpPresets
     }
 }
 export { Enums }
@@ -1976,6 +1977,12 @@ type ImageRenderedEventDetail = {
     suppressEvents?: boolean;
 };
 
+// @public (undocumented)
+type ImageSliceData = {
+    numberOfSlices: number;
+    imageIndex: number;
+};
+
 // @public
 type ImageSpacingCalibratedEvent =
 CustomEvent_2<ImageSpacingCalibratedEventDetail>;
@@ -2354,11 +2361,22 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
+enum JumpPresets {
+    // (undocumented)
+    First = "first",
+    // (undocumented)
+    Last = "last",
+    // (undocumented)
+    Middle = "middle"
+}
+
+// @public (undocumented)
 function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<void>;
 
 // @public (undocumented)
 type JumpToSliceOptions = {
     imageIndex?: number;
+    preset?: JumpPresets;
 };
 
 // @public (undocumented)

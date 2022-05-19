@@ -369,7 +369,7 @@ function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preven
 function createUint8SharedArray(length: number): Uint8Array;
 
 // @public (undocumented)
-export function createVolumeActor(props: createVolumeActorInterface): Promise<VolumeActor>;
+export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string): Promise<VolumeActor>;
 
 // @public (undocumented)
 export function createVolumeMapper(imageData: any, vtkOpenGLTexture: any): any;
@@ -524,10 +524,7 @@ export function getEnabledElementByIds(viewportId: string, renderingEngineId: st
 export function getEnabledElements(): IEnabledElement[];
 
 // @public (undocumented)
-function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): {
-    numberOfSlices: number;
-    imageIndex: number;
-};
+function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): ImageSliceData;
 
 // @public (undocumented)
 function getMetaData(type: string, imageId: string): any;
@@ -923,6 +920,12 @@ type ImageRenderedEventDetail = {
 
 // @public (undocumented)
 export const imageRetrievalPoolManager: RequestPoolManager;
+
+// @public (undocumented)
+type ImageSliceData = {
+    numberOfSlices: number;
+    imageIndex: number;
+};
 
 // @public (undocumented)
 type ImageSpacingCalibratedEvent = CustomEvent_2<ImageSpacingCalibratedEventDetail>;
@@ -1772,7 +1775,8 @@ declare namespace Types {
         CPUFallbackLUT,
         CPUFallbackRenderingTools,
         CustomEvent_2 as CustomEventType,
-        ActorSliceRange
+        ActorSliceRange,
+        ImageSliceData
     }
 }
 export { Types }

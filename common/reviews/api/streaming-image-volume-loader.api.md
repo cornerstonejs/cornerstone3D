@@ -685,6 +685,12 @@ type ImageRenderedEventDetail = {
     suppressEvents?: boolean;
 };
 
+// @public (undocumented)
+type ImageSliceData = {
+    numberOfSlices: number;
+    imageIndex: number;
+};
+
 // @public
 type ImageSpacingCalibratedEvent =
 CustomEvent_2<ImageSpacingCalibratedEventDetail>;

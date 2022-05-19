@@ -55,6 +55,7 @@ import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput';
 import type * as EventTypes from './EventTypes';
 import type IRenderingEngine from './IRenderingEngine';
 import type ActorSliceRange from './ActorSliceRange';
+import type ImageSliceData from './ImageSliceData';
 
 export type {
   ICamera,
@@ -116,4 +117,5 @@ export type {
   //
   CustomEventType,
   ActorSliceRange,
+  ImageSliceData,
 };
