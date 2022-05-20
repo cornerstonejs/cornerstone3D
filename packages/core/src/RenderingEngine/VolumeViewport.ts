@@ -273,25 +273,28 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     actors.forEach((actor) => {
       // we assume that the first two clipping plane of the mapper are always
       // the 'camera' clipping
-      const clipPlane1 = vtkPlane.newInstance();
-      const clipPlane2 = vtkPlane.newInstance();
-      const vtkPlanes = [clipPlane1, clipPlane2];
-
-      let slabThickness = MINIMUM_SLAB_THICKNESS;
-      if (actor.slabThickness) {
-        slabThickness = actor.slabThickness;
-      }
-
-      this.setOrietantionToClippingPlanes(
-        vtkPlanes,
-        slabThickness,
-        viewPlaneNormal,
-        focalPoint
-      );
-
       const mapper = actor.volumeActor.getMapper();
-      mapper.addClippingPlane(clipPlane1);
-      mapper.addClippingPlane(clipPlane2);
+      const vtkPlanes = mapper.getClippingPlanes();
+      if (vtkPlanes.length === 0) {
+        const clipPlane1 = vtkPlane.newInstance();
+        const clipPlane2 = vtkPlane.newInstance();
+        const newVtkPlanes = [clipPlane1, clipPlane2];
+
+        let slabThickness = MINIMUM_SLAB_THICKNESS;
+        if (actor.slabThickness) {
+          slabThickness = actor.slabThickness;
+        }
+
+        this.setOrietantionToClippingPlanes(
+          newVtkPlanes,
+          slabThickness,
+          viewPlaneNormal,
+          focalPoint
+        );
+
+        mapper.addClippingPlane(clipPlane1);
+        mapper.addClippingPlane(clipPlane2);
+      }
     });
 
     return distance;
