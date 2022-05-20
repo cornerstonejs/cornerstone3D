@@ -63,7 +63,7 @@ function vtkSlabCamera(publicAPI, model) {
     if (model.slabThicknessActive) {
       // these values are used for rendering
       // NOTE: the actual slab thickness clipping is done with clipping planes,
-      // but here we still need to have these values here, otherwise
+      // but here we still need to set the cRange to the clippingRange, otherwise
       // the rendering will be clipped before the clipping planes.
       cRange0 = model.clippingRange[0];
       cRange1 = model.clippingRange[1];
