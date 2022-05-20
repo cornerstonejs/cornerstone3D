@@ -615,39 +615,7 @@ class Viewport implements IViewport {
       -focalPointToSet[2]
     );
 
-    activeCamera.setClippingRange(0.01, distance * 2);
-
-    const actors = this.getActors();
-    actors.forEach((actor) => {
-      const clipPlane1 = vtkPlane.newInstance();
-      const clipPlane2 = vtkPlane.newInstance();
-
-      const scaledDistance = <Point3>[
-        viewPlaneNormal[0],
-        viewPlaneNormal[1],
-        viewPlaneNormal[2],
-      ];
-      let slabThickness = 0.1;
-      if (actor.slabThickness) {
-        slabThickness = actor.slabThickness;
-      }
-      vtkMath.multiplyScalar(scaledDistance, slabThickness);
-      // we assume that the first two clipping plane of the mapper are always
-      // the 'camera' clipping
-      clipPlane1.setNormal(viewPlaneNormal);
-      const newOrigin1 = <Point3>[0, 0, 0];
-      vtkMath.subtract(focalPointToSet, scaledDistance, newOrigin1);
-      clipPlane1.setOrigin(newOrigin1);
-
-      clipPlane2.setNormal(vtkMath.multiplyScalar(viewPlaneNormal, -1));
-      const newOrigin2 = <Point3>[0, 0, 0];
-      vtkMath.add(focalPointToSet, scaledDistance, newOrigin2);
-      clipPlane2.setOrigin(newOrigin2);
-
-      const mapper = actor.volumeActor.getMapper();
-      mapper.addClippingPlane(clipPlane1);
-      mapper.addClippingPlane(clipPlane2);
-    });
+    activeCamera.setClippingRange(distance - 0.1, distance + 0.1);
 
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
