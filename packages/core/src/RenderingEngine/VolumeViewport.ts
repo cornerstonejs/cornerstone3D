@@ -89,7 +89,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   private initializeVolumeNewImageEventDispatcher(): void {
-    const volumeNewImageHandler = (cameraEvent) => {
+    function volumeNewImageHandler(cameraEvent) {
       const viewportImageData = this.getImageData();
 
       if (!viewportImageData) {
@@ -97,32 +97,39 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       }
 
       volumeNewImageEventDispatcher(cameraEvent);
-    };
+    }
+
+    function volumeNewImageCleanUp(evt) {
+      eventTarget.removeEventListener(
+        Events.ELEMENT_DISABLED,
+        volumeNewImageCleanUp
+      );
+
+      const { viewportId } = evt.detail;
+
+      if (viewportId !== this.id) {
+        return;
+      }
+
+      resetVolumeNewImageState(viewportId);
+      this.element.removeEventListener(
+        Events.CAMERA_MODIFIED,
+        volumeNewImageHandler
+      );
+    }
 
     this.element.removeEventListener(
       Events.CAMERA_MODIFIED,
-      volumeNewImageHandler
+      volumeNewImageHandler.bind(this)
     );
     this.element.addEventListener(
       Events.CAMERA_MODIFIED,
-      volumeNewImageHandler
+      volumeNewImageHandler.bind(this)
     );
 
     eventTarget.addEventListener(
       Events.ELEMENT_DISABLED,
-      (evt: EventTypes.ElementDisabledEvent) => {
-        const { viewportId } = evt.detail;
-
-        if (viewportId !== this.id) {
-          return;
-        }
-
-        resetVolumeNewImageState(viewportId);
-        this.element.removeEventListener(
-          Events.CAMERA_MODIFIED,
-          volumeNewImageHandler
-        );
-      }
+      volumeNewImageCleanUp.bind(this)
     );
   }
 

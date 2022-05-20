@@ -8,6 +8,7 @@ import debounce from './debounce';
 import deepMerge from './deepMerge';
 import throttle from './throttle';
 import isObject from './isObject';
+import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import jumpToSlice from './viewport/jumpToSlice';
@@ -49,4 +50,5 @@ export {
   getAnnotationNearPointOnEnabledElement,
   jumpToSlice,
   cine,
+  clip,
 };
