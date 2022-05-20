@@ -183,7 +183,7 @@ export default class TID1500MeasurementReport {
 
                     if (derivationSourceDatasets.length === 1) {
                         // If there is only one derivationSourceDataset, use it.
-                        derivationSourceDataset[0];
+                        derivationSourceDataset = derivationSourceDatasets[0];
                     } else {
                         const SeriesInstanceUID =
                             sopInstanceUIDsToSeriesInstanceUIDMap[
