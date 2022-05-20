@@ -65,8 +65,6 @@ function vtkSlabCamera(publicAPI, model) {
       // NOTE: the actual slab thickness clipping is done with clipping planes,
       // but here we still need to have these values here, otherwise
       // the rendering will be clipped before the clipping planes.
-      // The clipping range is set in the Viewports (in resetCamera) and have values:
-      // [0.01, model.distance * 2]
       cRange0 = model.clippingRange[0];
       cRange1 = model.clippingRange[1];
     }
