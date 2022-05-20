@@ -23,6 +23,7 @@ import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 
 const EPSILON = 1e-3;
+const MINIMUM_SLAB_THICKNESS = 1e-2;
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -260,47 +261,40 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  public resetCamera(resetPan = true, resetZoom = true): boolean {
-    const success = super.resetCamera(resetPan, resetZoom);
+  public resetCamera(resetPan = true, resetZoom = true): number {
+    const distance = super.resetCamera(resetPan, resetZoom);
 
     const activeCamera = this.getVtkActiveCamera();
-    activeCamera.setClippingRange(0.01, activeCamera.getDistance() * 2);
+    activeCamera.setClippingRange(0.01, distance * 2);
 
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
     const actors = this.getActors();
     actors.forEach((actor) => {
+      // we assume that the first two clipping plane of the mapper are always
+      // the 'camera' clipping
       const clipPlane1 = vtkPlane.newInstance();
       const clipPlane2 = vtkPlane.newInstance();
+      const vtkPlanes = [clipPlane1, clipPlane2];
 
-      const scaledDistance = <Point3>[
-        viewPlaneNormal[0],
-        viewPlaneNormal[1],
-        viewPlaneNormal[2],
-      ];
-      let slabThickness = 0.1;
+      let slabThickness = MINIMUM_SLAB_THICKNESS;
       if (actor.slabThickness) {
         slabThickness = actor.slabThickness;
       }
-      vtkMath.multiplyScalar(scaledDistance, slabThickness);
-      // we assume that the first two clipping plane of the mapper are always
-      // the 'camera' clipping
-      clipPlane1.setNormal(viewPlaneNormal);
-      const newOrigin1 = <Point3>[0, 0, 0];
-      vtkMath.subtract(focalPoint, scaledDistance, newOrigin1);
-      clipPlane1.setOrigin(newOrigin1);
 
-      clipPlane2.setNormal(vtkMath.multiplyScalar(viewPlaneNormal, -1));
-      const newOrigin2 = <Point3>[0, 0, 0];
-      vtkMath.add(focalPoint, scaledDistance, newOrigin2);
-      clipPlane2.setOrigin(newOrigin2);
+      this.setOrietantionToClippingPlanes(
+        vtkPlanes,
+        slabThickness,
+        viewPlaneNormal,
+        focalPoint
+      );
 
       const mapper = actor.volumeActor.getMapper();
       mapper.addClippingPlane(clipPlane1);
       mapper.addClippingPlane(clipPlane2);
     });
 
-    return success;
+    return distance;
   }
 
   public getFrameOfReferenceUID = (): string => {
@@ -320,7 +314,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     const currentCamera = this.getCamera();
     this.updateActorsClippingPlanesOnCameraModified(currentCamera);
-    this.triggerCameraModifiedEvent(currentCamera, currentCamera);
+    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
   }
 
   /**
@@ -330,7 +324,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public getSlabThickness(): number {
     const actors = this.getActors();
-    let slabThickness = 0.1;
+    let slabThickness = MINIMUM_SLAB_THICKNESS;
     actors.forEach((actor) => {
       if (actor.slabThickness > slabThickness) {
         slabThickness = actor.slabThickness;

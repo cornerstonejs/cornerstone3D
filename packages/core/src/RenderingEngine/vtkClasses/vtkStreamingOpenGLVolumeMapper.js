@@ -248,10 +248,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     const cam = model.openGLCamera.getRenderable();
     const crange = cam.getClippingRange();
     // NOTE: the actual slab thickness clipping is done with clipping planes,
-    // but here we still need to have these values here, otherwise
-    // the rendering will be clipped before the clipping planes.
-    // The clipping range is set in the Viewports (in resetCamera) and
-    // have values: [0.01, model.distance * 2]
+    // but here we still need to set the cam uniform to the clipping range.
 
     program.setUniformf('camThick', crange[1] - crange[0]);
     program.setUniformf('camNear', crange[0]);

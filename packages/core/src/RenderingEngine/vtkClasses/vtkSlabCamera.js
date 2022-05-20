@@ -58,8 +58,8 @@ function vtkSlabCamera(publicAPI, model) {
     mat4.identity(tmpMatrix);
 
     // these values are used for coordinates transformation
-    let cRange0 = model.distance - 0.1;
-    let cRange1 = model.distance + 0.1;
+    let cRange0 = model.distance - 0.001;
+    let cRange1 = model.distance + 0.001;
     if (model.slabThicknessActive) {
       // these values are used for rendering
       // NOTE: the actual slab thickness clipping is done with clipping planes,

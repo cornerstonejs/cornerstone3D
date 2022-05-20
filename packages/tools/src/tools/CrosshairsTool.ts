@@ -96,6 +96,7 @@ const OPERATION = {
 };
 
 const EPSILON = 1e-3;
+const MINIMUM_SLAB_THICKNESS = 1e-2;
 
 /**
  * CrosshairsTool is a tool that provides reference lines between different viewports
@@ -2126,7 +2127,7 @@ export default class CrosshairsTool extends AnnotationTool {
             );
 
             if (near) {
-              otherViewport.setSlabThickness(0.1);
+              otherViewport.setSlabThickness(MINIMUM_SLAB_THICKNESS);
             } else {
               otherViewport.setSlabThickness(slabThicknessValue);
             }
