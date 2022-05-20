@@ -1366,6 +1366,7 @@ type Metadata = {
     PhotometricInterpretation: string;
     PixelRepresentation: number;
     Modality: string;
+    SeriesInstanceUID: string;
     ImageOrientationPatient: Array<number>;
     PixelSpacing: Array<number>;
     FrameOfReferenceUID: string;
