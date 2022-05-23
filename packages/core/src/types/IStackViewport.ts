@@ -110,7 +110,7 @@ export default interface IStackViewport extends IViewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+  resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
   /**
    * Loads the image based on the provided imageIdIndex. It is an Async function which
    * returns a promise that resolves to the imageId.

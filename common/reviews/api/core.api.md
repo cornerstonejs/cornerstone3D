@@ -1085,7 +1085,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     modality: string;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1295,7 +1295,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     setSlabThickness(slabThickness: number): void;
     // (undocumented)
@@ -1615,7 +1615,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     removeAllActors(): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1844,7 +1844,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)
@@ -2003,7 +2003,7 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     setSlabThickness(slabThickness: number): void;
     // (undocumented)
