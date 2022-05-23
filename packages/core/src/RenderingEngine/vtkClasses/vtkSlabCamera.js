@@ -6,24 +6,11 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 /**
  * vtkSlabCamera - A dervied class of the core vtkCamera class
  *
- * This class adds a slabThickness parameter. The difference between this and
- * the regular thickness parameter is that the set method will not modify the
- * vtk camera range parameters.
- *
- * NOTE1: there is a 1:1 correspondence between a camera and a viewport.
- *
- * NOTE2: while the thickness is a property unique to the viewport/camera, the
- * blendMode is a property of a volume (which can be shared over multiple viewports)
- * and one viewport can have multiple volumes.
- *
- * NOTE3: In the case of thickness > 0.1, this customization is needed to
- * distinguish cases different BlendMode in the mapper shader. In fact, the same
- * shader is called over multiple volumes which can have different blend modes.
- * For example, if the blend mode is different from COMPOSITE and we
- * are rendering thin layers, the camera parameters in the shaders are derived
- * from the new slabThickness (which does not affect the vtk camera
- * clipping/range parameters).
- *
+ * This customization is necesssary because when we do coordinate transformations
+ * we need to set the cRange between [d, d + 0.1],
+ * where d is distance between the camera position and the focal point.
+ * While when we render we set to the clippingRange [0.01, d * 2],
+ * where d is the calculated from the bounds of all the actors.
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
@@ -58,8 +45,8 @@ function vtkSlabCamera(publicAPI, model) {
     mat4.identity(tmpMatrix);
 
     // these values are used for coordinates transformation
-    let cRange0 = model.distance - 0.001;
-    let cRange1 = model.distance + 0.001;
+    let cRange0 = model.distance;
+    let cRange1 = model.distance + 0.1;
     if (model.slabThicknessActive) {
       // these values are used for rendering
       // NOTE: the actual slab thickness clipping is done with clipping planes,
