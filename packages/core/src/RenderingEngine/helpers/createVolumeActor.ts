@@ -49,7 +49,11 @@ async function createVolumeActor(
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
-  await setDefaultVolumeVOI(volumeActor, imageVolume);
+  // If the volume is composed of imageIds, we can apply a default VOI based
+  // on either the metadata or the min/max of the middle slice.
+  if (imageVolume.imageIds) {
+    await setDefaultVolumeVOI(volumeActor, imageVolume);
+  }
 
   if (callback) {
     callback({ volumeActor, volumeId });

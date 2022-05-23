@@ -43,11 +43,16 @@ const AXIAL = 'AXIAL';
 const SAGITTAL = 'SAGITTAL';
 const CORONAL = 'CORONAL';
 
-function createViewport(renderingEngine, orientation) {
+function createViewport(
+  renderingEngine,
+  orientation,
+  width = 1000,
+  height = 1000
+) {
   const element = document.createElement('div');
 
-  element.style.width = '1000px';
-  element.style.height = '1000px';
+  element.style.width = `${width}px`;
+  element.style.height = `${height}px`;
   document.body.appendChild(element);
 
   renderingEngine.setViewports([
@@ -96,8 +101,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -193,8 +196,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, SAGITTAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -292,8 +293,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
 
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -392,8 +391,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -433,8 +430,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -479,8 +474,6 @@ describe('Volume Viewport GPU -- ', () => {
       const vp = this.renderingEngine.getViewport(viewportId);
       const canvas = vp.getCanvas();
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -518,8 +511,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -559,8 +550,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -598,8 +587,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -667,8 +654,6 @@ describe('Volume Viewport GPU -- ', () => {
       const element = createViewport(this.renderingEngine, CORONAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1';
       const vp = this.renderingEngine.getViewport(viewportId);
 

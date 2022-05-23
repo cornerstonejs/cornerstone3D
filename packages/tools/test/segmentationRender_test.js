@@ -120,7 +120,6 @@ describe('Segmentation Render -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId1);
@@ -185,7 +184,6 @@ describe('Segmentation Render -- ', () => {
       this.DOMElements.push(el2);
       this.DOMElements.push(el3);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
@@ -272,7 +270,6 @@ describe('Segmentation Render -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, viewportId1);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const segVolumeId =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_50_50_6';
@@ -359,7 +356,6 @@ describe('Segmentation Render -- ', () => {
         },
       };
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
