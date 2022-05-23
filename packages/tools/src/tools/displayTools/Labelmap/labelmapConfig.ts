@@ -6,8 +6,8 @@ const defaultLabelmapConfig: LabelmapConfig = {
   outlineWidthInactive: 2,
   renderFill: true,
   renderFillInactive: true,
-  fillAlpha: 0.2,
-  fillAlphaInactive: 0.1,
+  fillAlpha: 0.9,
+  fillAlphaInactive: 0.85,
   // Todo: not supported yet
   // outlineAlpha: 0.7,
   // outlineAlphaInactive: 0.35,
