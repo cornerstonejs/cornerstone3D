@@ -617,7 +617,7 @@ class Viewport implements IViewport {
       -focalPointToSet[2]
     );
 
-    activeCamera.setClippingRange(distance - 0.1, distance + 0.1);
+    activeCamera.setClippingRange(distance, distance + 0.1);
 
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
