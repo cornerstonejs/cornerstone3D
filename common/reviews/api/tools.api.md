@@ -3329,6 +3329,9 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
+function removeAllAnnotations(element?: HTMLDivElement): void;
+
+// @public (undocumented)
 function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
 
 // @public (undocumented)
@@ -3686,6 +3689,7 @@ declare namespace state {
         addAnnotation,
         getAnnotation,
         removeAnnotation,
+        removeAllAnnotations,
         getViewportSpecificAnnotationManager,
         getDefaultAnnotationManager
     }

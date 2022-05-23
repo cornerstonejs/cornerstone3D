@@ -184,46 +184,6 @@ export default class FrameOfReferenceSpecificAnnotationManager {
   };
 
   /**
-   * Removes an instance of `Annotation` from the `annotations`.
-   *
-   * @param annotation - The annotation to remove.
-   */
-  // removeAnnotation = (annotation: Annotation): void => {
-  //   const { metadata } = annotation
-  //   const { FrameOfReferenceUID, toolName, annotationUID } = metadata
-  //   const annotations = this.annotations
-
-  //   const frameOfReferenceSpecificAnnotations = annotations[FrameOfReferenceUID]
-
-  //   if (!frameOfReferenceSpecificAnnotations) {
-  //     throw new Error(
-  //       `frameOfReferenceSpecificAnnotations with FrameOfReferenceUID ${FrameOfReferenceUID} does not exist.`
-  //     )
-  //   }
-
-  //   const toolSpecificAnnotations = frameOfReferenceSpecificAnnotations[toolName]
-  //   if (!toolSpecificAnnotations) {
-  //     throw new Error(
-  //       `toolSpecificAnnotations for toolName ${toolName} on FrameOfReferenceUID ${FrameOfReferenceUID} does not exist.`
-  //     )
-  //   }
-
-  //   const index = toolSpecificAnnotations.findIndex(
-  //     (annotation) => annotation.metadata.annotationUID === annotationUID
-  //   )
-
-  //   toolSpecificAnnotations.splice(index, 1)
-
-  //   // remove tool specific annotations if no annotation is left
-  //   if (!toolSpecificAnnotations.length) {
-  //     delete frameOfReferenceSpecificAnnotations[toolName]
-  //   }
-
-  //   // Make sure it is not held in the global set of locked instances
-  //   setAnnotationLocked(annotation, false)
-  // }
-
-  /**
    * Given the unique identified for the some `annotation`, removes the `annotation`
    * from the `annotations`. Searches are more efficient if either/both of
    * the `FrameOfReferenceUID` and the `toolName` are given by the `filter`.
@@ -336,6 +296,10 @@ export default class FrameOfReferenceSpecificAnnotationManager {
 
       this.annotations = <AnnotationState>cloneDeep(state);
     }
+  };
+
+  removeAllAnnotations = (): void => {
+    this.annotations = {};
   };
 
   /**

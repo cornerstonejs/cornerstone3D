@@ -1367,14 +1367,19 @@ class StackViewport extends Viewport implements IStackViewport {
       const generalSeriesModule =
         metaData.get('generalSeriesModule', imageId) || {};
 
-      const scalingParameters: ScalingParameters = {
-        rescaleSlope: modalityLutModule.rescaleSlope,
-        rescaleIntercept: modalityLutModule.rescaleIntercept,
-        modality: generalSeriesModule.modality,
-        suvbw: suvFactor.suvbw,
-      };
+      const { modality } = generalSeriesModule;
 
-      this.scalingCache[imageId] = scalingParameters;
+      let scalingParameters;
+      if (modality === 'PT' && suvFactor.suvbw) {
+        scalingParameters = {
+          rescaleSlope: modalityLutModule.rescaleSlope,
+          rescaleIntercept: modalityLutModule.rescaleIntercept,
+          suvbw: suvFactor.suvbw,
+          modality,
+        };
+
+        this.scalingCache[imageId] = scalingParameters;
+      }
 
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
@@ -1466,14 +1471,19 @@ class StackViewport extends Viewport implements IStackViewport {
       const generalSeriesModule =
         metaData.get('generalSeriesModule', imageId) || {};
 
-      const scalingParameters: ScalingParameters = {
-        rescaleSlope: modalityLutModule.rescaleSlope,
-        rescaleIntercept: modalityLutModule.rescaleIntercept,
-        modality: generalSeriesModule.modality,
-        suvbw: suvFactor.suvbw,
-      };
+      const { modality } = generalSeriesModule;
 
-      this.scalingCache[imageId] = scalingParameters;
+      let scalingParameters;
+      if (modality === 'PT' && suvFactor.suvbw) {
+        scalingParameters = {
+          rescaleSlope: modalityLutModule.rescaleSlope,
+          rescaleIntercept: modalityLutModule.rescaleIntercept,
+          suvbw: suvFactor.suvbw,
+          modality,
+        };
+
+        this.scalingCache[imageId] = scalingParameters;
+      }
 
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
@@ -1482,6 +1492,7 @@ class StackViewport extends Viewport implements IStackViewport {
       const priority = -5;
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
+
       const options = {
         targetBuffer: {
           type,
