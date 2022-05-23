@@ -99,10 +99,10 @@ class PlanarFreehandROI {
 
         if (!isOpenContour) {
             // Need to repeat the first point at the end of to have an explicitly closed contour.
-            const lastPoint = points[points.length - 1];
+            const firstPoint = points[0];
 
             // Explicitly expand to avoid ciruclar references.
-            points.push([lastPoint[0], lastPoint[1]]);
+            points.push([firstPoint[0], firstPoint[1]]);
         }
 
         const area = 0; // TODO -> The tool doesn't have these stats yet.
