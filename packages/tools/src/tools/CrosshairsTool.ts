@@ -44,7 +44,9 @@ import { isAnnotationLocked } from '../stateManagement/annotation/annotationLock
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { MouseDragEventType } from '../types/EventTypes';
 import { render } from 'react-dom';
+import { CONSTANTS } from '@cornerstonejs/core';
 
+const { MINIMUM_SLAB_THICKNESS } = CONSTANTS;
 const { liangBarksyClip } = math.vec2;
 
 // TODO: nested config is weird
@@ -96,7 +98,6 @@ const OPERATION = {
 };
 
 const EPSILON = 1e-3;
-const MINIMUM_SLAB_THICKNESS = 1e-2;
 
 /**
  * CrosshairsTool is a tool that provides reference lines between different viewports
@@ -2117,7 +2118,10 @@ export default class CrosshairsTool extends AnnotationTool {
             }
 
             slabThicknessValue = Math.abs(slabThicknessValue);
-            slabThicknessValue = Math.max(0.1, slabThicknessValue);
+            slabThicknessValue = Math.max(
+              MINIMUM_SLAB_THICKNESS,
+              slabThicknessValue
+            );
 
             const near = this._pointNearReferenceLine(
               viewportAnnotation,

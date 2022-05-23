@@ -5,7 +5,6 @@ import ViewportType from '../enums/ViewportType';
 import Viewport from './Viewport';
 import { createVolumeActor } from './helpers';
 import { loadVolume } from '../volumeLoader';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
@@ -21,9 +20,10 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
+import { CONSTANTS } from '@cornerstonejs/core';
 
+const { MINIMUM_SLAB_THICKNESS } = CONSTANTS;
 const EPSILON = 1e-3;
-const MINIMUM_SLAB_THICKNESS = 1e-2;
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -151,7 +151,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, visibility, actorUID } = volumeInputArray[i];
+      const { volumeId, visibility, actorUID, slabThickness } =
+        volumeInputArray[i];
       const volumeActor = await createVolumeActor(volumeInputArray[i]);
 
       if (visibility === false) {
@@ -164,12 +165,15 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
       const uid = actorUID || volumeId;
-      volumeActors.push({ uid, volumeActor });
+      volumeActors.push({ uid, volumeActor, slabThickness });
     }
 
     this.addActors(volumeActors);
 
     if (immediate) {
+      // set the clipping planes
+      this.resetCamera(false, false);
+      // render
       this.render();
     }
   }

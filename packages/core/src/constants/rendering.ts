@@ -1,0 +1,3 @@
+const MINIMUM_SLAB_THICKNESS = 1e-1;
+
+export default MINIMUM_SLAB_THICKNESS;

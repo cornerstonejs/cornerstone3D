@@ -116,11 +116,13 @@ addButtonToToolbar({
     } else {
       // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
       // If it was in a different frame of reference, you would need to register it first.
+      const slabThickness = 0.1;
       viewport.addVolumes(
         [
           {
             volumeId: ptVolumeId,
             callback: setPetColorMapTransferFunctionForVolumeActor,
+            slabThickness,
           },
         ],
         true
