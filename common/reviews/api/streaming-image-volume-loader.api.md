@@ -469,14 +469,12 @@ interface ICachedVolume {
 
 // @public
 interface ICamera {
-    clippingRange?: Point2;
     flipHorizontal?: boolean;
     flipVertical?: boolean;
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
     position?: Point3;
-    slabThickness?: number;
     viewAngle?: number;
     viewPlaneNormal?: Point3;
     viewUp?: Point3;

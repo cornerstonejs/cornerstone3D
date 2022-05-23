@@ -9,6 +9,7 @@ import { vec3 } from 'gl-matrix';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VtkObject } from '@kitware/vtk.js/interfaces';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
@@ -69,7 +70,8 @@ const colormapsData: CPUFallbackColormapsData;
 declare namespace CONSTANTS {
     export {
         ORIENTATION,
-        colormapsData as CPU_COLORMAPS
+        colormapsData as CPU_COLORMAPS,
+        MINIMUM_SLAB_THICKNESS
     }
 }
 export { CONSTANTS }
@@ -605,8 +607,6 @@ interface ICachedVolume {
 // @public (undocumented)
 interface ICamera {
     // (undocumented)
-    clippingRange?: Point2;
-    // (undocumented)
     flipHorizontal?: boolean;
     // (undocumented)
     flipVertical?: boolean;
@@ -618,8 +618,6 @@ interface ICamera {
     parallelScale?: number;
     // (undocumented)
     position?: Point3;
-    // (undocumented)
-    slabThickness?: number;
     // (undocumented)
     viewAngle?: number;
     // (undocumented)
@@ -1358,6 +1356,9 @@ const metadataProvider: {
 };
 
 // @public (undocumented)
+const MINIMUM_SLAB_THICKNESS = 0.05;
+
+// @public (undocumented)
 const ORIENTATION: Record<string, Orientation>;
 
 // @public (undocumented)
@@ -1790,6 +1791,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
+    checkAndTriggerCameraModifiedEvent(previousCamera: ICamera, updatedCamera: ICamera): void;
+    // (undocumented)
     customRenderViewportToCanvas: () => unknown;
     // (undocumented)
     readonly defaultOptions: any;
@@ -1824,7 +1827,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
-    protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;;
+    protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
     readonly id: string;
     // (undocumented)
@@ -1860,6 +1863,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
+    setOrietantionToClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
+    // (undocumented)
     sHeight: number;
     // (undocumented)
     readonly suppressEvents: boolean;
@@ -1871,6 +1876,8 @@ export class Viewport implements IViewport {
     sy: number;
     // (undocumented)
     readonly type: ViewportType;
+    // (undocumented)
+    updateActorsClippingPlanesOnCameraModified(updatedCamera: ICamera): void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)

@@ -1004,7 +1004,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     filterInteractableAnnotationsForElement: (element: any, annotations: any) => any;
     // (undocumented)
-    _filterLinkedViewportWithSameOrientationAndScene: (enabledElement: any, annotations: any) => any;
+    _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
@@ -1761,14 +1761,12 @@ interface ICachedVolume {
 
 // @public
 interface ICamera {
-    clippingRange?: Point2;
     flipHorizontal?: boolean;
     flipVertical?: boolean;
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
     position?: Point3;
-    slabThickness?: number;
     viewAngle?: number;
     viewPlaneNormal?: Point3;
     viewUp?: Point3;
