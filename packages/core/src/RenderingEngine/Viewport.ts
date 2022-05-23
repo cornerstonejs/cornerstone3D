@@ -22,9 +22,7 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { CONSTANTS } from '@cornerstonejs/core';
-
-const { MINIMUM_SLAB_THICKNESS } = CONSTANTS;
+import { MINIMUM_SLAB_THICKNESS } from '../constants';
 
 /**
  * An object representing a single viewport, which is a camera

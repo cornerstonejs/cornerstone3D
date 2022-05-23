@@ -105,7 +105,7 @@ async function run() {
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: ORIENTATION.AXIAL,
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };

@@ -20,9 +20,7 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { CONSTANTS } from '@cornerstonejs/core';
-
-const { MINIMUM_SLAB_THICKNESS } = CONSTANTS;
+import { MINIMUM_SLAB_THICKNESS } from '../constants';
 const EPSILON = 1e-3;
 
 /**
@@ -391,14 +389,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
-    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
-    const slabThicknessActive = vtkCamera.getSlabThicknessActive();
-    // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
-    // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used
-    // in the volumeMapper (where we need our custom getProjectionMatrix) and in the coordinates transformations
-    // (where we don't need our custom getProjectionMatrix)
-    vtkCamera.setSlabThicknessActive(false);
-
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
@@ -417,8 +407,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       renderer
     );
 
-    vtkCamera.setSlabThicknessActive(slabThicknessActive);
-
     worldCoord = this.applyFlipTx(worldCoord);
     return worldCoord;
   };
@@ -432,14 +420,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
-    const slabThicknessActive = vtkCamera.getSlabThicknessActive();
-    // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
-    // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used
-    // in the volumeMapper (where we need our custom getProjectionMatrix) and in the coordinates transformations
-    // (where we don't need our custom getProjectionMatrix)
-    vtkCamera.setSlabThicknessActive(false);
-
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
@@ -458,8 +438,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       displayCoord[0] - this.sx,
       displayCoord[1] - this.sy,
     ];
-
-    vtkCamera.setSlabThicknessActive(slabThicknessActive);
 
     return canvasCoord;
   };

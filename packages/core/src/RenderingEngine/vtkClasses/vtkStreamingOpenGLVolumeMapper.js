@@ -435,6 +435,10 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     }
 
     mat4.invert(model.projectionToView, keyMats.vcpc);
+
+    // cornerstone3D customization: to allow slabthickness in both directions
+    model.projectionToView[10] = model.projectionToView[14];
+
     program.setUniformMatrix('PCVCMatrix', model.projectionToView);
 
     // handle lighting values

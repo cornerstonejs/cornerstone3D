@@ -24,10 +24,8 @@ function vtkSlabCamera(publicAPI, model) {
 
   /**
    * getProjectionMatrix - A fork of vtkCamera's getProjectionMatrix method.
-   * This fork performs most of the same actions, but if slabThicknessActive is
-   * true, then it uses the value of slabThickness for calculating the actual
-   * clipping range for the Z-buffer values that map to the near and far
-   * clipping planes.
+   * This fork performs most of the same actions, but define crange around
+   * model.distance.
    */
   publicAPI.getProjectionMatrix = (aspect, nearz, farz) => {
     const result = mat4.create();
@@ -44,17 +42,8 @@ function vtkSlabCamera(publicAPI, model) {
 
     mat4.identity(tmpMatrix);
 
-    // these values are used for coordinates transformation
-    let cRange0 = model.distance;
-    let cRange1 = model.distance + 0.1;
-    if (model.slabThicknessActive) {
-      // these values are used for rendering
-      // NOTE: the actual slab thickness clipping is done with clipping planes,
-      // but here we still need to set the cRange to the clippingRange, otherwise
-      // the rendering will be clipped before the clipping planes.
-      cRange0 = model.clippingRange[0];
-      cRange1 = model.clippingRange[1];
-    }
+    const cRange0 = model.distance;
+    const cRange1 = model.distance + 0.1;
     const cWidth = cRange1 - cRange0;
     const cRange = [
       cRange0 + ((nearz + 1) * cWidth) / 2.0,
@@ -116,16 +105,8 @@ function vtkSlabCamera(publicAPI, model) {
 
 // ----------------------------------------------------------------------------
 
-const DEFAULT_VALUES = {
-  slabThicknessActive: true,
-};
-
 export function extend(publicAPI, model, initialValues = {}) {
-  Object.assign(model, DEFAULT_VALUES, initialValues);
-
   vtkCamera.extend(publicAPI, model, initialValues);
-
-  macro.setGet(publicAPI, model, ['slabThicknessActive']);
 
   // Object methods
   vtkSlabCamera(publicAPI, model);
