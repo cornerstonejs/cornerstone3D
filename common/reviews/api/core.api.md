@@ -791,6 +791,8 @@ interface IImageVolume {
     // (undocumented)
     imageIds?: Array<string>;
     // (undocumented)
+    isPrescaled: boolean;
+    // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)
     metadata: Metadata;
@@ -956,6 +958,8 @@ export class ImageVolume implements IImageVolume {
     imageData?: any;
     // (undocumented)
     imageIds?: Array<string>;
+    // (undocumented)
+    isPrescaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)

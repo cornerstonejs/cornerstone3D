@@ -545,6 +545,7 @@ export default class StreamingImageVolume extends ImageVolume {
     }
 
     this.scaling = { PET: petScaling };
+    this.isPrescaled = true;
   }
 
   private _removeFromCache() {

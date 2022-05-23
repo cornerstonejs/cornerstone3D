@@ -61,12 +61,19 @@ export default function loadImageToCanvas(
     const generalSeriesModule =
       metaData.get('generalSeriesModule', imageId) || {};
 
+    const { modality } = generalSeriesModule;
+
     const scalingParameters = {
       rescaleSlope: modalityLutModule.rescaleSlope,
       rescaleIntercept: modalityLutModule.rescaleIntercept,
-      modality: generalSeriesModule.modality,
       suvbw: suvFactor.suvbw,
+      modality,
     };
+
+    let scalingParametersToUse;
+    if (modality === 'PT' && suvFactor.suvbw !== undefined) {
+      scalingParametersToUse = scalingParameters;
+    }
 
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
@@ -77,7 +84,7 @@ export default function loadImageToCanvas(
         length: null,
       },
       preScale: {
-        scalingParameters,
+        scalingParameters: scalingParametersToUse,
       },
       requestType,
     };

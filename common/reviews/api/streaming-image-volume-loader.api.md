@@ -597,6 +597,7 @@ interface IImageVolume {
     direction: Float32Array;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
+    isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;

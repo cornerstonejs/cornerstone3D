@@ -640,6 +640,9 @@ export class CircleScissorsTool extends BaseTool {
 function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
+function clip_2(val: number, low: number, high: number): number;
+
+// @public (undocumented)
 type Color = [number, number, number, number];
 
 declare namespace color {
@@ -1368,8 +1371,7 @@ declare namespace Enums {
         ToolModes,
         AnnotationStyleStates,
         Events,
-        SegmentationRepresentations,
-        JumpPresets
+        SegmentationRepresentations
     }
 }
 export { Enums }
@@ -1880,6 +1882,7 @@ interface IImageVolume {
     direction: Float32Array;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
+    isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
@@ -2361,22 +2364,11 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-enum JumpPresets {
-    // (undocumented)
-    First = "first",
-    // (undocumented)
-    Last = "last",
-    // (undocumented)
-    Middle = "middle"
-}
-
-// @public (undocumented)
 function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<void>;
 
 // @public (undocumented)
 type JumpToSliceOptions = {
-    imageIndex?: number;
-    preset?: JumpPresets;
+    imageIndex: number;
 };
 
 // @public (undocumented)
@@ -4051,7 +4043,8 @@ declare namespace utilities {
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
-        cine
+        cine,
+        clip_2 as clip
     }
 }
 export { utilities }

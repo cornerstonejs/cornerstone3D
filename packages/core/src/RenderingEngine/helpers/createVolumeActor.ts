@@ -7,6 +7,7 @@ import createVolumeMapper from './createVolumeMapper';
 import BlendModes from '../../enums/BlendModes';
 import { triggerEvent } from '../../utilities';
 import { Events } from '../../enums';
+import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 
 interface createVolumeActorInterface {
   volumeId: string;
@@ -48,45 +49,36 @@ async function createVolumeActor(
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
-  const voiRange = volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .getRange()
-    .slice();
+  await setDefaultVolumeVOI(volumeActor, imageVolume);
 
   if (callback) {
     callback({ volumeActor, volumeId });
   }
 
-  triggerVOIModifiedIfNecessary(element, viewportId, volumeActor, voiRange);
+  triggerVOIModified(element, viewportId, volumeActor);
 
   return volumeActor;
 }
 
-const triggerVOIModifiedIfNecessary = (
+function triggerVOIModified(
   element: HTMLDivElement,
   viewportId: string,
-  volumeActor: VolumeActor,
-  voiRange: [number, number]
-) => {
-  const newVoiRange = volumeActor
+  volumeActor: VolumeActor
+) {
+  const voiRange = volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
     .getRange();
 
-  if (newVoiRange[0] === voiRange[0] && newVoiRange[1] === voiRange[1]) {
-    return;
-  }
-
   const voiModifiedEventDetail: VoiModifiedEventDetail = {
     viewportId,
     range: {
-      lower: newVoiRange[0],
-      upper: newVoiRange[1],
+      lower: voiRange[0],
+      upper: voiRange[1],
     },
   };
 
   triggerEvent(element, Events.VOI_MODIFIED, voiModifiedEventDetail);
-};
+}
 
 export default createVolumeActor;

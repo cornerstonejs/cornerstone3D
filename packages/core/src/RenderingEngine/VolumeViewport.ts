@@ -100,16 +100,16 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     function volumeNewImageCleanUp(evt) {
-      eventTarget.removeEventListener(
-        Events.ELEMENT_DISABLED,
-        volumeNewImageCleanUp
-      );
-
       const { viewportId } = evt.detail;
 
       if (viewportId !== this.id) {
         return;
       }
+
+      eventTarget.removeEventListener(
+        Events.ELEMENT_DISABLED,
+        volumeNewImageCleanUp
+      );
 
       resetVolumeNewImageState(viewportId);
       this.element.removeEventListener(
