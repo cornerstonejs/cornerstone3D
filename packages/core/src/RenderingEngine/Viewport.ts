@@ -377,6 +377,9 @@ class Viewport implements IViewport {
    */
   public addActors(actors: Array<ActorEntry>): void {
     actors.forEach((actor) => this.addActor(actor));
+
+    // set the clipping planes for the actors
+    this.resetCamera(false, false);
   }
 
   /**

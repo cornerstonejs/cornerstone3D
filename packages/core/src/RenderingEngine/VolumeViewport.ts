@@ -169,8 +169,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     this.addActors(volumeActors);
 
     if (immediate) {
-      // set the clipping planes
-      this.resetCamera(false, false);
       // render
       this.render();
     }
