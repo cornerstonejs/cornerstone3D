@@ -106,6 +106,8 @@ class ArrowAnnotateTool extends AnnotationTool {
       viewUp
     );
 
+    const { arrowFirst } = this.configuration;
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -121,6 +123,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         handles: {
           points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
           activeHandleIndex: null,
+          arrowFirst,
           textBox: {
             hasMoved: false,
             worldPosition: <Types.Point3>[0, 0, 0],

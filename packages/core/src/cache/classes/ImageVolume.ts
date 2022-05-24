@@ -17,6 +17,8 @@ export class ImageVolume implements IImageVolume {
   origin: Point3;
   /** volume scalar data  */
   scalarData: Float32Array | Uint8Array;
+  /** Whether preScaling has been performed on the volume */
+  isPrescaled = false;
   /** volume scaling parameters if it contains scaled data */
   scaling?: {
     PET?: {

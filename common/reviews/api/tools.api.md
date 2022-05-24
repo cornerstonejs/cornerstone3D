@@ -25,6 +25,16 @@ type ActorEntry = {
     slabThickness?: number;
 };
 
+// @public
+type ActorSliceRange = {
+    actor: VolumeActor;
+    viewPlaneNormal: Point3;
+    focalPoint: Point3;
+    min: number;
+    max: number;
+    current: number;
+};
+
 // @public (undocumented)
 function addAnnotation(element: HTMLDivElement, annotation: Annotation): void;
 
@@ -394,6 +404,7 @@ interface ArrowAnnotation extends Annotation {
         text: string;
         handles: {
             points: Types_2.Point3[];
+            arrowFirst: boolean;
             activeHandleIndex: number | null;
             textBox: {
                 hasMoved: boolean;
@@ -628,6 +639,9 @@ export class CircleScissorsTool extends BaseTool {
 
 // @public (undocumented)
 function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
+
+// @public (undocumented)
+function clip_2(val: number, low: number, high: number): number;
 
 // @public (undocumented)
 type Color = [number, number, number, number];
@@ -1458,7 +1472,9 @@ declare namespace EventTypes {
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
-        ImageLoadProgressEventDetail
+        ImageLoadProgressEventDetail,
+        VolumeNewImageEvent,
+        VolumeNewImageEventDetail
     }
 }
 
@@ -1648,13 +1664,6 @@ function getSegmentations(): Segmentation[] | [];
 
 // @public (undocumented)
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
-
-// @public (undocumented)
-function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
-    min: number;
-    max: number;
-    current: number;
-};
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
@@ -1874,6 +1883,7 @@ interface IImageVolume {
     direction: Float32Array;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
+    isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
@@ -1969,6 +1979,12 @@ type ImageRenderedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     suppressEvents?: boolean;
+};
+
+// @public (undocumented)
+type ImageSliceData = {
+    numberOfSlices: number;
+    imageIndex: number;
 };
 
 // @public
@@ -2349,11 +2365,11 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<string>;
+function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<void>;
 
 // @public (undocumented)
 type JumpToSliceOptions = {
-    imageIdIndex?: number;
+    imageIndex: number;
 };
 
 // @public (undocumented)
@@ -2571,6 +2587,7 @@ type Metadata = {
     PhotometricInterpretation: string;
     PixelRepresentation: number;
     Modality: string;
+    SeriesInstanceUID: string;
     ImageOrientationPatient: Array<number>;
     PixelSpacing: Array<number>;
     FrameOfReferenceUID: string;
@@ -2910,6 +2927,7 @@ type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
 // @public
 type PreStackNewImageEventDetail = {
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -3312,6 +3330,9 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
+function removeAllAnnotations(element?: HTMLDivElement): void;
+
+// @public (undocumented)
 function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
 
 // @public (undocumented)
@@ -3354,8 +3375,7 @@ type ScalingParameters = {
 
 // @public (undocumented)
 type ScrollOptions_2 = {
-    direction: number;
-    invert?: boolean;
+    delta: number;
     volumeId?: string;
 };
 
@@ -3571,12 +3591,6 @@ function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresent
 function showAllAnnotations(): void;
 
 // @public (undocumented)
-function snapFocalPointToSlice(focalPoint: Types_2.Point3, position: Types_2.Point3, scrollRange: any, viewPlaneNormal: Types_2.Point3, spacingInNormalDirection: number, deltaFrames: number): {
-    newFocalPoint: Types_2.Point3;
-    newPosition: Types_2.Point3;
-};
-
-// @public (undocumented)
 export class SphereScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -3622,6 +3636,7 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 type StackNewImageEventDetail = {
     image: IImage;
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -3657,8 +3672,6 @@ export class StackScrollTool extends BaseTool {
 
 declare namespace stackScrollTool {
     export {
-        snapFocalPointToSlice,
-        getSliceRange,
         scrollThroughStack
     }
 }
@@ -3677,6 +3690,7 @@ declare namespace state {
         addAnnotation,
         getAnnotation,
         removeAnnotation,
+        removeAllAnnotations,
         getViewportSpecificAnnotationManager,
         getDefaultAnnotationManager
     }
@@ -3766,6 +3780,8 @@ export class Synchronizer {
     getTargetViewports(): Array<Types_2.IViewportId>;
     // (undocumented)
     hasSourceViewport(renderingEngineId: string, viewportId: string): boolean;
+    // (undocumented)
+    hasTargetViewport(renderingEngineId: string, viewportId: string): boolean;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -4032,7 +4048,8 @@ declare namespace utilities {
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
-        cine
+        cine,
+        clip_2 as clip
     }
 }
 export { utilities }
@@ -4149,6 +4166,17 @@ options?: Record<string, any>
     promise: Promise<Record<string, any>>;
     cancelFn?: () => void | undefined;
     decache?: () => void | undefined;
+};
+
+// @public
+type VolumeNewImageEvent = CustomEvent_2<VolumeNewImageEventDetail>;
+
+// @public
+type VolumeNewImageEventDetail = {
+    imageIndex: number;
+    numberOfSlices: number;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)

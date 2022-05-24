@@ -11,7 +11,7 @@ const { BlendMode } = vtkConstants;
  */
 enum BlendModes {
   /** composite blending - suitable for compositing multiple images */
-  COMPOSITE = BlendMode.COMPOSITE,
+  COMPOSITE = BlendMode.COMPOSITE_BLEND,
   /** maximum intensity projection */
   MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
   /** minimum intensity projection */

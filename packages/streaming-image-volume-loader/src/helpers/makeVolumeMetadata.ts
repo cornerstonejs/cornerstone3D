@@ -51,7 +51,10 @@ export default function makeVolumeMetadata(
     });
   }
 
-  const { modality } = metaData.get('generalSeriesModule', imageId0);
+  const { modality, seriesInstanceUID } = metaData.get(
+    'generalSeriesModule',
+    imageId0
+  );
 
   const {
     imageOrientationPatient,
@@ -78,5 +81,6 @@ export default function makeVolumeMetadata(
     Rows: rows,
     // This is a reshaped object and not a dicom tag:
     voiLut,
+    SeriesInstanceUID: seriesInstanceUID,
   };
 }

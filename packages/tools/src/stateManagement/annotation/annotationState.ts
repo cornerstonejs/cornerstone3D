@@ -135,11 +135,26 @@ function getAnnotation(
   return annotation;
 }
 
+/**
+ * It removes all annotations from the default annotation manager
+ * @param element - Optional element to get the annotation manager from, if not
+ * specified it will use the default annotation manager.
+ */
+function removeAllAnnotations(element?: HTMLDivElement): void {
+  let annotationManager = getDefaultAnnotationManager();
+  if (element) {
+    annotationManager = getViewportSpecificAnnotationManager(element);
+  }
+
+  annotationManager.removeAllAnnotations();
+}
+
 export {
   getAnnotations,
   addAnnotation,
   getAnnotation,
   removeAnnotation,
+  removeAllAnnotations,
   getViewportSpecificAnnotationManager,
   getDefaultAnnotationManager,
 };

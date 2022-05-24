@@ -398,7 +398,7 @@ class Viewport implements IViewport {
   /**
    * Add a list of actors (actor entries) to the viewport
    * @param resetCameraPanAndZoom - force reset pan and zoom of the camera,
-   *        default vaule is false.
+   *        default value is false.
    * @param actors - An array of ActorEntry objects.
    */
   public addActors(

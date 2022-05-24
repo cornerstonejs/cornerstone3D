@@ -124,7 +124,6 @@ describe('Segmentation Index Controller --', () => {
       const element = createViewport(this.renderingEngine, AXIAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
@@ -262,7 +261,6 @@ describe('Segmentation Index Controller --', () => {
       const element = createViewport(this.renderingEngine, AXIAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
@@ -428,7 +426,6 @@ describe('Segmentation Index Controller --', () => {
       const element = createViewport(this.renderingEngine, AXIAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 

@@ -138,7 +138,6 @@ describe('Segmentation Tools --', () => {
       this.DOMElements.push(element2);
       this.DOMElements.push(element3);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
       const vp2 = this.renderingEngine.getViewport(viewportId2);

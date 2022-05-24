@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2",
-    "@cornerstonejs/core": "^0.8.0",
+    "@cornerstonejs/core": "^0.9.0",
     "cornerstone-wado-image-loader": "^4.1.2"
   },
   "contributors": [

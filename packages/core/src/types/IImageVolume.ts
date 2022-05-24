@@ -18,6 +18,8 @@ interface IImageVolume {
   origin: Point3;
   /** volume scalar data */
   scalarData: any;
+  /** Whether preScaling has been performed on the volume */
+  isPrescaled: boolean;
   /** volume scaling metadata */
   scaling?: {
     PET?: {

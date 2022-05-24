@@ -32,7 +32,7 @@
     "gl-matrix": "^3.4.3"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "^0.8.0",
+    "@cornerstonejs/core": "^0.9.0",
     "@cornerstonejs/streaming-image-volume-loader": "^0.2.27",
     "@kitware/vtk.js": "24.0.0"
   },

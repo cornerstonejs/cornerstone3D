@@ -72,7 +72,7 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1;
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.Events;
+const { IMAGE_RENDERED, CAMERA_MODIFIED, VOLUME_NEW_IMAGE } = Enums.Events;
 
 element.addEventListener(
   IMAGE_RENDERED,
@@ -91,21 +91,20 @@ element.addEventListener(
 );
 
 element.addEventListener(
-  STACK_NEW_IMAGE,
-  (evt: Types.EventTypes.StackNewImageEvent) => {
-    // Remove the image since then we serialise a bunch of pixeldata to the screen.
-    const { imageId, renderingEngineId, viewportId } = evt.detail;
+  VOLUME_NEW_IMAGE,
+  (evt: Types.EventTypes.VolumeNewImageEvent) => {
+    const { imageIndex, renderingEngineId, viewportId } = evt.detail;
     const detail = {
-      imageId,
+      imageIndex,
       renderingEngineId,
       viewportId,
-      image: 'cornerstoneImageObject',
     };
 
-    updateLastEvents(eventNumber, STACK_NEW_IMAGE, JSON.stringify(detail));
+    updateLastEvents(eventNumber, VOLUME_NEW_IMAGE, JSON.stringify(detail));
     eventNumber++;
   }
 );
+
 // ============================= //
 
 // TODO -> Maybe some of these implementations should be pushed down to some API
