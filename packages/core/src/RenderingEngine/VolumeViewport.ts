@@ -150,10 +150,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     for (let i = 0; i < volumeInputArray.length; i++) {
       const { volumeId, visibility, actorUID, slabThickness } =
         volumeInputArray[i];
-      const volumeActor = await createVolumeActor(volumeInputArray[i]);
+      const actor = await createVolumeActor(volumeInputArray[i]);
 
       if (visibility === false) {
-        volumeActor.setVisibility(false);
+        actor.setVisibility(false);
       }
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -162,7 +162,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
       const uid = actorUID || volumeId;
-      volumeActors.push({ uid, volumeActor, slabThickness });
+      volumeActors.push({ uid, actor, slabThickness });
     }
 
     this.addActors(volumeActors);

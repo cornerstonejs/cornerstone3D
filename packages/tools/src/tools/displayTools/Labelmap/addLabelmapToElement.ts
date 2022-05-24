@@ -36,7 +36,6 @@ async function addLabelmapToElement(
       {
         volumeId,
         actorUID: segmentationRepresentationUID,
-        //blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         visibility,
       },
     ],
