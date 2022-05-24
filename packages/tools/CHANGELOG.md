@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.17.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.16.0...@cornerstonejs/tools@0.17.0) (2022-05-24)
+
+
+### Features
+
+* Add VOLUME_NEW_IMAGE event and Add jumpToSlice and default VOI for volume viewport ([#104](https://github.com/cornerstonejs/cornerstone3D-beta/issues/104)) ([d36a23a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d36a23a4eaf5bafcc8dddc0ab796065098df616a))
+
+
+
+
+
 # [0.16.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.15.4...@cornerstonejs/tools@0.16.0) (2022-05-24)
 
 

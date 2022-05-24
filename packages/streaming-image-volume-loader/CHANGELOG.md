@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.3.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.2.27...@cornerstonejs/streaming-image-volume-loader@0.3.0) (2022-05-24)
+
+
+### Features
+
+* Add VOLUME_NEW_IMAGE event and Add jumpToSlice and default VOI for volume viewport ([#104](https://github.com/cornerstonejs/cornerstone3D-beta/issues/104)) ([d36a23a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d36a23a4eaf5bafcc8dddc0ab796065098df616a))
+
+
+
+
+
 ## [0.2.27](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.2.26...@cornerstonejs/streaming-image-volume-loader@0.2.27) (2022-05-24)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
