@@ -2225,9 +2225,9 @@ interface IViewport {
     defaultOptions: any;
     element: HTMLDivElement;
     getActor(actorUID: string): ActorEntry;
-    getActorbyIndex(index: number): ActorEntry;
+    getActorByIndex(index: number): ActorEntry;
     getActors(): Array<ActorEntry>;
-    getActorUIDbyIndex(index: number): string;
+    getActorUIDByIndex(index: number): string;
     getCamera(): ICamera;
     getCanvas(): HTMLCanvasElement;
     // (undocumented)

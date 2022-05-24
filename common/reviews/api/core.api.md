@@ -1151,11 +1151,11 @@ interface IViewport {
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
     // (undocumented)
-    getActorbyIndex(index: number): ActorEntry;
+    getActorByIndex(index: number): ActorEntry;
     // (undocumented)
     getActors(): Array<ActorEntry>;
     // (undocumented)
-    getActorUIDbyIndex(index: number): string;
+    getActorUIDByIndex(index: number): string;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
@@ -1816,11 +1816,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
     // (undocumented)
-    getActorbyIndex(index: number): ActorEntry;
+    getActorByIndex(index: number): ActorEntry;
     // (undocumented)
     getActors(): Array<ActorEntry>;
     // (undocumented)
-    getActorUIDbyIndex(index: number): string;
+    getActorUIDByIndex(index: number): string;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)

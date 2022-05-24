@@ -342,7 +342,7 @@ class Viewport implements IViewport {
    * @param index - array index.
    * @returns actorUID
    */
-  public getActorUIDbyIndex(index: number): string {
+  public getActorUIDByIndex(index: number): string {
     const actor = this.getActors()[index];
     if (actor) {
       return actor.uid;
@@ -354,7 +354,7 @@ class Viewport implements IViewport {
    * @param index - array index.
    * @returns actorUID
    */
-  public getActorbyIndex(index: number): ActorEntry {
+  public getActorByIndex(index: number): ActorEntry {
     return this.getActors()[index];
   }
 
