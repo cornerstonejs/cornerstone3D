@@ -379,7 +379,7 @@ class Viewport implements IViewport {
     actors.forEach((actor) => this.addActor(actor));
 
     // set the clipping planes for the actors
-    this.resetCamera(true, true);
+    this.resetCamera();
   }
 
   /**

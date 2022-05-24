@@ -370,11 +370,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @param volumeActorEntries - The volume actors to add the viewport.
    *
-   * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */
   private _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
     this.setActors(volumeActorEntries);
-    this.resetCamera();
   }
 
   /**
