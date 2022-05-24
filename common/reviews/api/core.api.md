@@ -1792,7 +1792,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
-    addActors(actors: Array<ActorEntry>): void;
+    addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
     protected applyFlipTx: (worldPos: Point3) => Point3;
     // (undocumented)

@@ -284,6 +284,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
+
     const actors = this.getActors();
     actors.forEach((actor) => {
       // we assume that the first two clipping plane of the mapper are always

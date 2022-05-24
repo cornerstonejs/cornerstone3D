@@ -364,7 +364,10 @@ class Viewport implements IViewport {
    */
   public setActors(actors: Array<ActorEntry>): void {
     this.removeAllActors();
-    this.addActors(actors);
+    const resetCameraPanAndZoom = true;
+    // when we set the actor we need to reset the camera to iinitialize the
+    // camera focal point wiith the bounds of the actors.
+    this.addActors(actors, resetCameraPanAndZoom);
   }
 
   /**
@@ -394,13 +397,18 @@ class Viewport implements IViewport {
 
   /**
    * Add a list of actors (actor entries) to the viewport
+   * @param resetCameraPanAndZoom - force reset pan and zoom of the camera,
+   *        default vaule is false.
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors(actors: Array<ActorEntry>): void {
+  public addActors(
+    actors: Array<ActorEntry>,
+    resetCameraPanAndZoom = false
+  ): void {
     actors.forEach((actor) => this.addActor(actor));
 
     // set the clipping planes for the actors
-    this.resetCamera();
+    this.resetCamera(resetCameraPanAndZoom, resetCameraPanAndZoom);
   }
 
   /**
@@ -610,7 +618,7 @@ class Viewport implements IViewport {
     let focalPointToSet = focalPoint;
 
     if (!resetPan && imageData) {
-      focalPointToSet = this._getFocalPointForViewPlaneReset(imageData);
+      focalPointToSet = previousCamera.focalPoint;
     }
 
     activeCamera.setFocalPoint(
@@ -694,6 +702,7 @@ class Viewport implements IViewport {
       y / intersections.length,
       z / intersections.length,
     ];
+
     // Set the focal point on the average of the intersection points
     return newFocalPoint;
   }
@@ -788,6 +797,7 @@ class Viewport implements IViewport {
       vtkCamera.setViewAngle(viewAngle);
     }
 
+    console.info(this.worldToCanvas(<Point3>vtkCamera.getFocalPoint()));
     // update clippingPlanes
     this.updateActorsClippingPlanesOnCameraModified(updatedCamera);
 
