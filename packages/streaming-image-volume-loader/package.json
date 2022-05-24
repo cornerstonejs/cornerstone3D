@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/streaming-image-volume-loader",
-  "version": "0.2.26",
+  "version": "0.2.27",
   "description": "",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -24,7 +24,7 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.8.1",
+    "@cornerstonejs/core": "^0.9.0",
     "cornerstone-wado-image-loader": "^4.1.2"
   },
   "peerDependencies": {

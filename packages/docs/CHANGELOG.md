@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.3.7...docs@0.4.0) (2022-05-24)
+
+
+### Features
+
+* Add Clipping planes for rendering ([#110](https://github.com/cornerstonejs/cornerstone3D-beta/issues/110)) ([1a6e4c7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1a6e4c742a3b89a88b46fd98d6cbeca5c95918aa))
+
+
+
+
+
 ## [0.3.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.3.6...docs@0.3.7) (2022-05-16)
 
 **Note:** Version bump only for package docs
