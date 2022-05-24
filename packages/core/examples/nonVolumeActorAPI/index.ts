@@ -18,9 +18,10 @@ import {
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
-import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
-import vtkSphereSource from 'vtk.js/Sources/Filters/Sources/SphereSource';
-import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import { VolumeActor } from 'core/src/types';
 
 // This is for debugging purposes
 console.warn(
@@ -71,7 +72,8 @@ addButtonToToolbar({
     const actor = viewport.getActor(volumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    actor.volumeActor
+    const volumeActor = actor.actor as unknown as VolumeActor;
+    volumeActor
       .getProperty()
       .getRGBTransferFunction(0)
       .setMappingRange(-1500, 2500);
@@ -131,8 +133,8 @@ addButtonToToolbar({
 
     // Get the volume actor from the viewport
     const actor = viewport.getActor(volumeId);
-
-    const rgbTransferFunction = actor.volumeActor
+    const volumeActor = actor.actor as unknown as VolumeActor;
+    const rgbTransferFunction = volumeActor
       .getProperty()
       .getRGBTransferFunction(0);
 
@@ -334,14 +336,14 @@ async function run() {
     },
   ]);
 
-  const sphereSource = vtkSphereSource.newInstance();
+  /*const sphereSource = vtkSphereSource.newInstance();
   const actor = vtkActor.newInstance();
   const mapper = vtkMapper.newInstance();
 
   actor.getProperty().setEdgeVisibility(true);
 
   mapper.setInputConnection(sphereSource.getOutputPort());
-  actor.setMapper(mapper);
+  actor.setMapper(mapper);*/
 
   // To Do: add actor to viewport
 

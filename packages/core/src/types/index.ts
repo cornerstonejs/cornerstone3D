@@ -12,7 +12,7 @@ import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
 import type { IViewport, PublicViewportInput } from './IViewport';
-import type { VolumeActor, ActorEntry } from './IActor';
+import type { VolumeActor, Actor, ActorEntry } from './IActor';
 import type { IImageLoadObject, IVolumeLoadObject } from './ILoadObject';
 import type Metadata from './Metadata';
 import type Orientation from './Orientation';
@@ -82,6 +82,7 @@ export type {
   StackViewportProperties,
   PublicViewportInput,
   VolumeActor,
+  Actor,
   ActorEntry,
   IImageLoadObject,
   IVolumeLoadObject,

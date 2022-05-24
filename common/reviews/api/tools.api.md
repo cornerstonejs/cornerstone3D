@@ -5,10 +5,11 @@
 ```ts
 
 import type { mat4 } from 'gl-matrix';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
     export {
@@ -17,10 +18,13 @@ declare namespace activeSegmentation {
     }
 }
 
+// @public (undocumented)
+type Actor = vtkActor;
+
 // @public
 type ActorEntry = {
     uid: string;
-    volumeActor: VolumeActor;
+    actor: Actor;
     slabThickness?: number;
 };
 
@@ -4090,7 +4094,7 @@ type VOIRange = {
     lower: number;
 };
 
-// @public
+// @public (undocumented)
 type VolumeActor = vtkVolume;
 
 // @public

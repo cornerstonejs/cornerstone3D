@@ -5,13 +5,17 @@
 ```ts
 
 import type { mat4 } from 'gl-matrix';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
+// @public (undocumented)
+type Actor = vtkActor;
 
 // @public
 type ActorEntry = {
     uid: string;
-    volumeActor: VolumeActor;
+    actor: Actor;
     slabThickness?: number;
 };
 
@@ -1132,7 +1136,7 @@ type VOIRange = {
     lower: number;
 };
 
-// @public
+// @public (undocumented)
 type VolumeActor = vtkVolume;
 
 // @public

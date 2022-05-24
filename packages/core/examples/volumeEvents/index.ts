@@ -14,6 +14,7 @@ import {
   camera as cameraHelpers,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { VolumeActor } from 'core/src/types';
 
 // This is for debugging purposes
 console.warn(
@@ -126,7 +127,8 @@ addButtonToToolbar({
     const actor = viewport.getActor(volumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    actor.volumeActor
+    const volumeActor = actor.actor as unknown as VolumeActor;
+    volumeActor
       .getProperty()
       .getRGBTransferFunction(0)
       .setMappingRange(-1500, 2500);

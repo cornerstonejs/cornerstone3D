@@ -36,6 +36,7 @@ import {
   CPUFallbackColormapData,
   EventTypes,
   IStackViewport,
+  VolumeActor,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -207,21 +208,21 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   private getImageDataGPU(): IImageData | undefined {
-    const actor = this.getDefaultActor();
+    const defaultActor = this.getDefaultActor();
 
-    if (!actor) {
+    if (!defaultActor) {
       return;
     }
 
-    const { volumeActor } = actor;
-    const vtkImageData = volumeActor.getMapper().getInputData();
+    const { actor } = defaultActor;
+    const vtkImageData = actor.getMapper().getInputData();
     return {
       dimensions: vtkImageData.getDimensions(),
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
       scalarData: vtkImageData.getPointData().getScalars().getData(),
-      imageData: volumeActor.getMapper().getInputData(),
+      imageData: actor.getMapper().getInputData(),
       metadata: { Modality: this.modality },
       scaling: this.scaling,
     };
@@ -779,14 +780,14 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setInterpolationTypeGPU(interpolationType: InterpolationType): void {
-    const actor = this.getDefaultActor();
+    const defaultActor = this.getDefaultActor();
 
-    if (!actor) {
+    if (!defaultActor) {
       return;
     }
 
-    const { volumeActor } = actor;
-    const volumeProperty = volumeActor.getProperty();
+    const { actor } = defaultActor;
+    const volumeProperty = actor.getProperty();
 
     // @ts-ignore
     volumeProperty.setInterpolationType(interpolationType);
@@ -817,13 +818,14 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setInvertColorGPU(invert: boolean): void {
-    const actor = this.getDefaultActor();
+    const defaultActor = this.getDefaultActor();
 
-    if (!actor) {
+    if (!defaultActor) {
       return;
     }
 
-    const { volumeActor } = actor;
+    const { actor } = defaultActor;
+    const volumeActor = actor as unknown as VolumeActor;
     const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
     if ((!this.invert && invert) || (this.invert && !invert)) {
@@ -880,12 +882,13 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setVOIGPU(voiRange: VOIRange): void {
-    const actor = this.getDefaultActor();
-    if (!actor) {
+    const defaultActor = this.getDefaultActor();
+    if (!defaultActor) {
       return;
     }
 
-    const { volumeActor } = actor;
+    const { actor } = defaultActor;
+    const volumeActor = actor as unknown as VolumeActor;
     const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
     if (typeof voiRange === 'undefined') {
@@ -1639,9 +1642,10 @@ class StackViewport extends Viewport implements IStackViewport {
     this._updateVTKImageDataFromCornerstoneImage(image);
 
     // Create a VTK Volume actor to display the vtkImageData object
-    const stackActor = this.createActorMapper(this._imageData);
-
-    this.setActors([{ uid: this.id, volumeActor: stackActor }]);
+    const actor = this.createActorMapper(this._imageData);
+    const actors = [];
+    actors.push({ uid: this.id, actor });
+    this.setActors(actors);
     // Adjusting the camera based on slice axis. this is required if stack
     // contains various image orientations (axial ct, sagittal xray)
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);

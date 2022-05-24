@@ -51,7 +51,7 @@ export default function scrollThroughStack(
       console.warn('No actor found for with actorUID of', imageVolume.volumeId);
     }
 
-    const { volumeActor } = actor;
+    const volumeActor = actor.actor as unknown as Types.VolumeActor;
     const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
 
     const { newFocalPoint, newPosition } = snapFocalPointToSlice(

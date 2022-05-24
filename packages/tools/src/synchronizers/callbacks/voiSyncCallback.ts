@@ -36,7 +36,8 @@ export default function voiSyncCallback(
     const actor = tViewport.getActor(volumeId);
 
     if (actor) {
-      actor.volumeActor
+      const volumeActor = actor.actor as unknown as Types.VolumeActor;
+      volumeActor
         .getProperty()
         .getRGBTransferFunction(0)
         .setRange(range.lower, range.upper);

@@ -218,7 +218,8 @@ function _setLabelmapColorAndOpacity(
 
   const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
   const numColors = Math.min(256, colorLUT.length);
-  const { volumeActor, uid } = actor;
+  const { uid } = actor;
+  const volumeActor = actor.actor as unknown as Types.VolumeActor;
 
   const { needColorUpdate, needOpacityUpdate } = _needsTransferFunctionUpdate(
     viewportId,

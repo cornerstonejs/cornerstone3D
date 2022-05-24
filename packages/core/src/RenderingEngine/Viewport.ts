@@ -175,8 +175,8 @@ class Viewport implements IViewport {
       return worldPos;
     }
 
-    const volumeActor = actor.volumeActor;
-    const mat = volumeActor.getMatrix();
+    const vtkActor = actor.actor;
+    const mat = vtkActor.getMatrix();
 
     const newPos = vec3.create();
     const matT = mat4.create();
@@ -284,9 +284,9 @@ class Viewport implements IViewport {
     const actors = this.getActors();
 
     actors.forEach((actor) => {
-      const volumeActor = actor.volumeActor;
+      const vtkActor = actor.actor;
 
-      const mat = volumeActor.getUserMatrix();
+      const mat = vtkActor.getUserMatrix();
 
       if (flipHTx) {
         mat4.multiply(mat, mat, flipHTx.getMatrix());
@@ -296,7 +296,7 @@ class Viewport implements IViewport {
         mat4.multiply(mat, mat, flipVTx.getMatrix());
       }
 
-      volumeActor.setUserMatrix(mat);
+      vtkActor.setUserMatrix(mat);
 
       this.getRenderingEngine().render();
     });
@@ -308,7 +308,7 @@ class Viewport implements IViewport {
     const actor = this.getDefaultActor();
 
     if (actor) {
-      return actor.volumeActor.getMapper().getInputData();
+      return actor.actor.getMapper().getInputData();
     }
   }
 
@@ -357,7 +357,7 @@ class Viewport implements IViewport {
       return;
     }
     const renderer = this.getRenderer();
-    renderer.removeViewProp(actor.volumeActor); // removeActor not implemented in vtk?
+    renderer.removeViewProp(actor.actor); // removeActor not implemented in vtk?
     this._actors.delete(actorUID);
   }
 
@@ -383,15 +383,15 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Add an actor to the viewport including its id, its volumeActor and slabThickness
+   * Add an actor to the viewport including its id, its actor and slabThickness
    * if defined
    * @param actorEntry - ActorEntry
    * @param actorEntry.uid - The unique identifier for the actor.
-   * @param actorEntry.volumeActor - The volume actor.
+   * @param actorEntry.actor - The volume actor.
    * @param actorEntry.slabThickness - The slab thickness.
    */
   public addActor(actorEntry: ActorEntry): void {
-    const { uid: actorUID, volumeActor } = actorEntry;
+    const { uid: actorUID, actor } = actorEntry;
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
@@ -401,18 +401,18 @@ class Viewport implements IViewport {
       return;
     }
 
-    if (!actorUID || !volumeActor) {
-      throw new Error('Actors should have uid and vtk volumeActor properties');
+    if (!actorUID || !actor) {
+      throw new Error('Actors should have uid and vtk Actor properties');
     }
 
-    const actor = this.getActor(actorUID);
-    if (actor) {
+    const actorCheck = this.getActor(actorUID);
+    if (actorCheck) {
       console.warn(`Actor ${actorUID} already exists for this viewport`);
       return;
     }
 
     const renderer = this.getRenderer();
-    renderer.addActor(volumeActor);
+    renderer.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
   }
 
@@ -805,7 +805,7 @@ class Viewport implements IViewport {
   ): void {
     const actors = this.getActors();
     actors.forEach((actor) => {
-      const mapper = actor.volumeActor.getMapper();
+      const mapper = actor.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
       let slabThickness = MINIMUM_SLAB_THICKNESS;

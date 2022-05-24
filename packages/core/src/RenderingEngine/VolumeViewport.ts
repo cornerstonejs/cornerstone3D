@@ -7,7 +7,6 @@ import { createVolumeActor } from './helpers';
 import { loadVolume } from '../volumeLoader';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { getShouldUseCPURendering } from '../init';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import type {
@@ -111,7 +110,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
       const { volumeId, slabThickness, actorUID } = volumeInputArray[i];
-      const volumeActor = await createVolumeActor(volumeInputArray[i]);
+      const actor = await createVolumeActor(volumeInputArray[i]);
 
       // We cannot use only volumeId since then we cannot have for instance more
       // than one representation of the same volume (since actors would have the
@@ -119,7 +118,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
       const uid = actorUID || volumeId;
-      volumeActors.push({ uid, volumeActor, slabThickness });
+      volumeActors.push({ uid, actor, slabThickness });
     }
 
     this._setVolumeActors(volumeActors);
@@ -225,8 +224,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @returns The intensity value of the voxel at the given point.
    */
   public getIntensityFromWorld(point: Point3): number {
-    const { volumeActor, uid } = this.getDefaultActor();
-    const imageData = volumeActor.getMapper().getInputData();
+    const { actor, uid } = this.getDefaultActor();
+    const imageData = actor.getMapper().getInputData();
 
     const volume = cache.getVolume(uid);
     const { dimensions } = volume;
@@ -270,10 +269,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
     const actors = this.getActors();
+
     actors.forEach((actor) => {
       // we assume that the first two clipping plane of the mapper are always
       // the 'camera' clipping
-      const mapper = actor.volumeActor.getMapper();
+      const mapper = actor.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
       if (vtkPlanes.length === 0) {
         const clipPlane1 = vtkPlane.newInstance();
@@ -345,21 +345,21 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
    */
   public getImageData(): IImageData | undefined {
-    const actor = this.getDefaultActor();
+    const defaultActor = this.getDefaultActor();
 
-    if (!actor) {
+    if (!defaultActor) {
       return;
     }
 
-    const { volumeActor } = actor;
-    const vtkImageData = volumeActor.getMapper().getInputData();
+    const { actor } = defaultActor;
+    const vtkImageData = actor.getMapper().getInputData();
     return {
       dimensions: vtkImageData.getDimensions(),
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
       scalarData: vtkImageData.getPointData().getScalars().getData(),
-      imageData: volumeActor.getMapper().getInputData(),
+      imageData: actor.getMapper().getInputData(),
       metadata: undefined,
       scaling: undefined,
     };
