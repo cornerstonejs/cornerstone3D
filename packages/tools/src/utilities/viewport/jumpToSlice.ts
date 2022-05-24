@@ -32,8 +32,8 @@ async function jumpToSlice(
   if (viewport instanceof StackViewport) {
     currentImageIndex = viewport.getCurrentImageIdIndex();
   } else if (viewport instanceof VolumeViewport) {
-    const { imageIndex } = csUtils.getImageSliceDataForVolumeViewport(viewport);
-    currentImageIndex = imageIndex;
+    const imageSliceData = csUtils.getImageSliceDataForVolumeViewport(viewport);
+    currentImageIndex = imageSliceData.imageIndex;
   } else {
     throw new Error('Unsupported viewport type');
   }

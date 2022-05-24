@@ -157,9 +157,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, slabThickness, actorUID, slabThicknessEnabled } =
+      const { volumeId, actorUID, slabThickness, slabThicknessEnabled } =
         volumeInputArray[i];
-      const volumeActor = await createVolumeActor(volumeInputArray[i]);
+      const volumeActor = await createVolumeActor(
+        volumeInputArray[i],
+        this.element,
+        this.id
+      );
 
       // We cannot use only volumeId since then we cannot have for instance more
       // than one representation of the same volume (since actors would have the
@@ -209,7 +213,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         slabThickness,
         slabThicknessEnabled,
       } = volumeInputArray[i];
-      const volumeActor = await createVolumeActor(volumeInputArray[i]);
+      const volumeActor = await createVolumeActor(
+        volumeInputArray[i],
+        this.element,
+        this.id
+      );
 
       if (visibility === false) {
         volumeActor.setVisibility(false);

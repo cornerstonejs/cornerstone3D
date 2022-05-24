@@ -1,9 +1,12 @@
-import { VolumeActor } from './../../types/IActor';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
+import { VolumeActor } from './../../types/IActor';
+import { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../volumeLoader';
-//@ts-ignore
 import createVolumeMapper from './createVolumeMapper';
 import BlendModes from '../../enums/BlendModes';
+import { triggerEvent } from '../../utilities';
+import { Events } from '../../enums';
 
 interface createVolumeActorInterface {
   volumeId: string;
@@ -20,7 +23,9 @@ interface createVolumeActorInterface {
  * @returns A promise that resolves to a VolumeActor.
  */
 async function createVolumeActor(
-  props: createVolumeActorInterface
+  props: createVolumeActorInterface,
+  element: HTMLDivElement,
+  viewportId: string
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -43,11 +48,45 @@ async function createVolumeActor(
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
+  const voiRange = volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
+    .getRange()
+    .slice();
+
   if (callback) {
     callback({ volumeActor, volumeId });
   }
 
+  triggerVOIModifiedIfNecessary(element, viewportId, volumeActor, voiRange);
+
   return volumeActor;
 }
+
+const triggerVOIModifiedIfNecessary = (
+  element: HTMLDivElement,
+  viewportId: string,
+  volumeActor: VolumeActor,
+  voiRange: [number, number]
+) => {
+  const newVoiRange = volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
+    .getRange();
+
+  if (newVoiRange[0] === voiRange[0] && newVoiRange[1] === voiRange[1]) {
+    return;
+  }
+
+  const voiModifiedEventDetail: VoiModifiedEventDetail = {
+    viewportId,
+    range: {
+      lower: newVoiRange[0],
+      upper: newVoiRange[1],
+    },
+  };
+
+  triggerEvent(element, Events.VOI_MODIFIED, voiModifiedEventDetail);
+};
 
 export default createVolumeActor;

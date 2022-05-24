@@ -29,7 +29,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   const { viewPlaneNormal } = camera;
   const volumeActors = viewport.getActors();
 
-  if (!volumeActors && !volumeActors.length) {
+  if (!volumeActors || !volumeActors.length) {
     return { spacingInNormalDirection: null, imageVolume: null };
   }
   const numVolumeActors = volumeActors.length;
