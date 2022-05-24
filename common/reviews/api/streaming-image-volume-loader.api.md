@@ -12,6 +12,7 @@ import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 type ActorEntry = {
     uid: string;
     volumeActor: VolumeActor;
+    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -900,6 +901,9 @@ interface IVolumeInput {
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     slabThickness?: number;
+    // actorUID for segmentations, since two segmentations with the same volumeId
+    // can have different representations
+    slabThicknessEnabled?: boolean;
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     visibility?: boolean;

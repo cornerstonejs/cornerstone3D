@@ -16,6 +16,7 @@ import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 type ActorEntry = {
     uid: string;
     volumeActor: VolumeActor;
+    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -1254,6 +1255,8 @@ interface IVolumeInput {
     callback?: VolumeInputCallback;
     // (undocumented)
     slabThickness?: number;
+    // (undocumented)
+    slabThicknessEnabled?: boolean;
     // (undocumented)
     visibility?: boolean;
     // (undocumented)

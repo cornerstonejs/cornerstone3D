@@ -830,7 +830,7 @@ class Viewport implements IViewport {
       const vtkPlanes = mapper.getClippingPlanes();
 
       let slabThickness = MINIMUM_SLAB_THICKNESS;
-      if (actor.slabThickness) {
+      if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
         slabThickness = actor.slabThickness;
       }
 

@@ -110,7 +110,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, slabThickness, actorUID } = volumeInputArray[i];
+      const { volumeId, slabThickness, actorUID, slabThicknessEnabled } =
+        volumeInputArray[i];
       const volumeActor = await createVolumeActor(volumeInputArray[i]);
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -119,7 +120,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
       const uid = actorUID || volumeId;
-      volumeActors.push({ uid, volumeActor, slabThickness });
+      volumeActors.push({
+        uid,
+        volumeActor,
+        slabThickness,
+        slabThicknessEnabled,
+      });
     }
 
     this._setVolumeActors(volumeActors);
@@ -149,8 +155,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, visibility, actorUID, slabThickness } =
-        volumeInputArray[i];
+      const {
+        volumeId,
+        visibility,
+        actorUID,
+        slabThickness,
+        slabThicknessEnabled,
+      } = volumeInputArray[i];
       const volumeActor = await createVolumeActor(volumeInputArray[i]);
 
       if (visibility === false) {
@@ -163,7 +174,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
       const uid = actorUID || volumeId;
-      volumeActors.push({ uid, volumeActor, slabThickness });
+      volumeActors.push({
+        uid,
+        volumeActor,
+        slabThickness,
+        slabThicknessEnabled,
+      });
     }
 
     this.addActors(volumeActors);
@@ -281,7 +297,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         const newVtkPlanes = [clipPlane1, clipPlane2];
 
         let slabThickness = MINIMUM_SLAB_THICKNESS;
-        if (actor.slabThickness) {
+        if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
           slabThickness = actor.slabThickness;
         }
 
@@ -311,9 +327,19 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public setSlabThicknessForAllActors(slabThickness: number): void {
     const actors = this.getActors();
+    let updateClippingPlanes = false;
     actors.forEach((actor) => {
+      if (actor.slabThicknessEnabled === false) {
+        return;
+      }
+
       actor.slabThickness = slabThickness;
+      updateClippingPlanes = true;
     });
+
+    if (updateClippingPlanes === false) {
+      return;
+    }
 
     const currentCamera = this.getCamera();
     this.updateActorsClippingPlanesOnCameraModified(currentCamera);
@@ -331,6 +357,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     slabThickness: number
   ): void {
     const actor = this.getActor(actorUID);
+
+    if (actor.slabThicknessEnabled === false) {
+      return;
+    }
+
     actor.slabThickness = slabThickness;
 
     const currentCamera = this.getCamera();
@@ -347,6 +378,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const actors = this.getActors();
     let slabThickness = MINIMUM_SLAB_THICKNESS;
     actors.forEach((actor) => {
+      if (actor.slabThicknessEnabled === false) {
+        return;
+      }
+
       if (actor.slabThickness > slabThickness) {
         slabThickness = actor.slabThickness;
       }

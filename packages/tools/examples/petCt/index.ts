@@ -657,6 +657,7 @@ async function setUpDisplay() {
       {
         volumeId: ptVolumeId,
         callback: setPetColorMapTransferFunctionForVolumeActor,
+        slabThicknessEnabled: false,
       },
     ],
     [

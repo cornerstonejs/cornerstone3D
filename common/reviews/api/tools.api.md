@@ -21,6 +21,7 @@ declare namespace activeSegmentation {
 type ActorEntry = {
     uid: string;
     volumeActor: VolumeActor;
+    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -985,8 +986,6 @@ export class CrosshairsTool extends AnnotationTool {
     _applyDeltaShiftToSelectedViewportCameras(renderingEngine: any, viewportsAnnotationsToUpdate: any, delta: any): void;
     // (undocumented)
     _applyDeltaShiftToViewportCamera(renderingEngine: Types_2.IRenderingEngine, annotation: any, delta: any): void;
-    // (undocumented)
-    _applySlabThicknessToOnlyFirstActor: false;
     // (undocumented)
     _areViewportIdArraysEqual: (viewportIdArrayOne: any, viewportIdArrayTwo: any) => boolean;
     // (undocumented)
@@ -2300,6 +2299,9 @@ interface IVolumeInput {
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     slabThickness?: number;
+    // actorUID for segmentations, since two segmentations with the same volumeId
+    // can have different representations
+    slabThicknessEnabled?: boolean;
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
     visibility?: boolean;
