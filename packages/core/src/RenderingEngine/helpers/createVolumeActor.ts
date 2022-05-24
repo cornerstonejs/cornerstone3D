@@ -60,6 +60,12 @@ async function createVolumeActor(
       }
       triggerVOIModified(element, viewportId, volumeActor);
     });
+  } else {
+    if (callback) {
+      callback({ volumeActor, volumeId });
+    }
+
+    triggerVOIModified(element, viewportId, volumeActor);
   }
 
   return volumeActor;
