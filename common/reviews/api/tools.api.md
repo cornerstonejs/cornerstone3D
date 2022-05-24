@@ -404,6 +404,7 @@ interface ArrowAnnotation extends Annotation {
         text: string;
         handles: {
             points: Types_2.Point3[];
+            arrowFirst: boolean;
             activeHandleIndex: number | null;
             textBox: {
                 hasMoved: boolean;
