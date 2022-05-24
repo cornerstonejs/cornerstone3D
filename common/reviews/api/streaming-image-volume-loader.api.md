@@ -826,7 +826,9 @@ interface IViewport {
     defaultOptions: any;
     element: HTMLDivElement;
     getActor(actorUID: string): ActorEntry;
+    getActorbyIndex(index: number): ActorEntry;
     getActors(): Array<ActorEntry>;
+    getActorUIDbyIndex(index: number): string;
     getCamera(): ICamera;
     getCanvas(): HTMLCanvasElement;
     // (undocumented)
@@ -933,7 +935,8 @@ interface IVolumeViewport extends IViewport {
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
-    setSlabThickness(slabThickness: number): void;
+    setSlabThicknessForActor(actorUID: string, slabThickness: number): void;
+    setSlabThicknessForAllActors(slabThickness: number): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
     immediate?: boolean

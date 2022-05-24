@@ -305,11 +305,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   };
 
   /**
-   * Sets the slab thickness to all the actors.
+   * Sets the slab thickness to all the actors in the viewport.
    *
    * @param slabThickness - The slab thickness to set.
    */
-  public setSlabThickness(slabThickness: number): void {
+  public setSlabThicknessForAllActors(slabThickness: number): void {
     const actors = this.getActors();
     actors.forEach((actor) => {
       actor.slabThickness = slabThickness;
@@ -321,7 +321,25 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
-   * Gets the largest slab thickness from all actors.
+   * Sets the slab thickness to a specific actor in the viewport.
+   *
+   * @param actorUID - The unique ID of the actor.
+   * @param slabThickness - The slab thickness to set.
+   */
+  public setSlabThicknessForActor(
+    actorUID: string,
+    slabThickness: number
+  ): void {
+    const actor = this.getActor(actorUID);
+    actor.slabThickness = slabThickness;
+
+    const currentCamera = this.getCamera();
+    this.updateActorsClippingPlanesOnCameraModified(currentCamera);
+    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
+  }
+
+  /**
+   * Gets the largest slab thickness from all actors in the viewport.
    *
    * @returns slabThickness - The slab thickness.
    */
@@ -370,11 +388,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @param volumeActorEntries - The volume actors to add the viewport.
    *
-   * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */
   private _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
     this.setActors(volumeActorEntries);
-    this.resetCamera();
   }
 
   /**

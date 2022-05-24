@@ -338,6 +338,27 @@ class Viewport implements IViewport {
   }
 
   /**
+   * Get an actor by its UID
+   * @param index - array index.
+   * @returns actorUID
+   */
+  public getActorUIDbyIndex(index: number): string {
+    const actor = this.getActors()[index];
+    if (actor) {
+      return actor.uid;
+    }
+  }
+
+  /**
+   * Get an actor by its UID
+   * @param index - array index.
+   * @returns actorUID
+   */
+  public getActorbyIndex(index: number): ActorEntry {
+    return this.getActors()[index];
+  }
+
+  /**
    * It removes all actors from the viewport and then adds the actors from the array.
    * @param actors - An array of ActorEntry objects.
    */
@@ -379,7 +400,7 @@ class Viewport implements IViewport {
     actors.forEach((actor) => this.addActor(actor));
 
     // set the clipping planes for the actors
-    this.resetCamera(true, true);
+    this.resetCamera();
   }
 
   /**

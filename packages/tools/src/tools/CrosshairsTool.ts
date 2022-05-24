@@ -113,10 +113,14 @@ export default class CrosshairsTool extends AnnotationTool {
 
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
+
+  _applySlabThicknessToOnlyFirstActor: false;
+
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
+
   editData: {
     annotation: any;
   } | null;
@@ -154,6 +158,9 @@ export default class CrosshairsTool extends AnnotationTool {
     this._getReferenceLineSlabThicknessControlsOn =
       toolProps.configuration?.getReferenceLineSlabThicknessControlsOn ||
       defaultReferenceLineSlabThicknessControlsOn;
+
+    this._applySlabThicknessToOnlyFirstActor =
+      toolProps.configuration?.applySlabThicknessToOnlyFirstActor;
   }
 
   /**
@@ -2131,10 +2138,20 @@ export default class CrosshairsTool extends AnnotationTool {
             );
 
             if (near) {
-              otherViewport.setSlabThickness(MINIMUM_SLAB_THICKNESS);
-            } else {
-              otherViewport.setSlabThickness(slabThicknessValue);
+              slabThicknessValue = MINIMUM_SLAB_THICKNESS;
             }
+
+            if (this._applySlabThicknessToOnlyFirstActor) {
+              // We set the slab thickness only for first Actor
+              const firstActorUID = otherViewport.getActorUIDbyIndex(0);
+              otherViewport.setSlabThicknessForActor(
+                firstActorUID,
+                slabThicknessValue
+              );
+            } else {
+              otherViewport.setSlabThicknessForAllActors(slabThicknessValue);
+            }
+
             viewportsIds.push(otherViewport.id);
           }
         }

@@ -986,6 +986,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _applyDeltaShiftToViewportCamera(renderingEngine: Types_2.IRenderingEngine, annotation: any, delta: any): void;
     // (undocumented)
+    _applySlabThicknessToOnlyFirstActor: false;
+    // (undocumented)
     _areViewportIdArraysEqual: (viewportIdArrayOne: any, viewportIdArrayTwo: any) => boolean;
     // (undocumented)
     _autoPanViewportIfNecessary(viewportId: string, renderingEngine: Types_2.IRenderingEngine): void;
@@ -2224,7 +2226,9 @@ interface IViewport {
     defaultOptions: any;
     element: HTMLDivElement;
     getActor(actorUID: string): ActorEntry;
+    getActorbyIndex(index: number): ActorEntry;
     getActors(): Array<ActorEntry>;
+    getActorUIDbyIndex(index: number): string;
     getCamera(): ICamera;
     getCanvas(): HTMLCanvasElement;
     // (undocumented)
@@ -2331,7 +2335,8 @@ interface IVolumeViewport extends IViewport {
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
-    setSlabThickness(slabThickness: number): void;
+    setSlabThicknessForActor(actorUID: string, slabThickness: number): void;
+    setSlabThicknessForAllActors(slabThickness: number): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
     immediate?: boolean

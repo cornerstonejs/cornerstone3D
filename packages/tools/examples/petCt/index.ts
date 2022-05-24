@@ -332,6 +332,7 @@ function setUpToolGroups() {
       getReferenceLineControllable,
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
+      applySlabThicknessToOnlyFirstActor: true,
     });
   });
 

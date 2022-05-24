@@ -76,9 +76,13 @@ export default interface IVolumeViewport extends IViewport {
    */
   resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
   /**
-   * Sets the slab thickness option in the `Viewport`'s `options`.
+   * Sets the slab thickness for all the actors in the viewport.
    */
-  setSlabThickness(slabThickness: number): void;
+  setSlabThicknessForAllActors(slabThickness: number): void;
+  /**
+   * Sets the slab thickness for a specific actor in the viewport.
+   */
+  setSlabThicknessForActor(actorUID: string, slabThickness: number): void;
   /**
    * Gets the slab thickness option in the `Viewport`'s `options`.
    */
