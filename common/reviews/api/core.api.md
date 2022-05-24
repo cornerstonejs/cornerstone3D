@@ -1881,7 +1881,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
-    setOrientationToClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
+    setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
     // (undocumented)
     sHeight: number;
     // (undocumented)
@@ -1962,7 +1962,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 
 // @public (undocumented)
 type VolumeInputCallback = (params: {
-    volumeActor: VolumeActor;
+    actor: actor;
     volumeId: string;
 }) => unknown;
 

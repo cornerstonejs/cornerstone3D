@@ -842,7 +842,7 @@ class Viewport implements IViewport {
         slabThickness = actor.slabThickness;
       }
 
-      this.setOrientationToClippingPlanes(
+      this.setOrientationOfClippingPlanes(
         vtkPlanes,
         slabThickness,
         updatedCamera.viewPlaneNormal,
@@ -851,7 +851,7 @@ class Viewport implements IViewport {
     });
   }
 
-  public setOrientationToClippingPlanes(
+  public setOrientationOfClippingPlanes(
     vtkPlanes: Array<vtkPlane>,
     slabThickness: number,
     viewPlaneNormal: Point3,

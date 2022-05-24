@@ -301,7 +301,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
           slabThickness = actor.slabThickness;
         }
 
-        this.setOrientationToClippingPlanes(
+        this.setOrientationOfClippingPlanes(
           newVtkPlanes,
           slabThickness,
           viewPlaneNormal,

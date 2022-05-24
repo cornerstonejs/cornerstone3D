@@ -1166,7 +1166,7 @@ type VolumeCacheVolumeRemovedEventDetail = {
 
 // @public
 type VolumeInputCallback = (params: {
-    volumeActor: VolumeActor;
+    actor: actor;
     volumeId: string;
 }) => unknown;
 
