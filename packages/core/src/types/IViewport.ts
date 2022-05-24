@@ -47,6 +47,10 @@ interface IViewport {
   getActors(): Array<ActorEntry>;
   /** returns specific actor by its uid */
   getActor(actorUID: string): ActorEntry;
+  /** returns specific actor uid by array index */
+  getActorUIDByIndex(index: number): string;
+  /** returns specific actor by array index */
+  getActorByIndex(index: number): ActorEntry;
   /** set and overwrite actors in a viewport */
   setActors(actors: Array<ActorEntry>): void;
   /** add actors to the list of actors */

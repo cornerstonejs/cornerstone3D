@@ -338,12 +338,36 @@ class Viewport implements IViewport {
   }
 
   /**
+   * Get an actor UID by its index
+   * @param index - array index.
+   * @returns actorUID
+   */
+  public getActorUIDByIndex(index: number): string {
+    const actor = this.getActors()[index];
+    if (actor) {
+      return actor.uid;
+    }
+  }
+
+  /**
+   * Get an actor by its index
+   * @param index - array index.
+   * @returns actorUID
+   */
+  public getActorByIndex(index: number): ActorEntry {
+    return this.getActors()[index];
+  }
+
+  /**
    * It removes all actors from the viewport and then adds the actors from the array.
    * @param actors - An array of ActorEntry objects.
    */
   public setActors(actors: Array<ActorEntry>): void {
     this.removeAllActors();
-    this.addActors(actors);
+    const resetCameraPanAndZoom = true;
+    // when we set the actor we need to reset the camera to iinitialize the
+    // camera focal point wiith the bounds of the actors.
+    this.addActors(actors, resetCameraPanAndZoom);
   }
 
   /**
@@ -373,13 +397,18 @@ class Viewport implements IViewport {
 
   /**
    * Add a list of actors (actor entries) to the viewport
+   * @param resetCameraPanAndZoom - force reset pan and zoom of the camera,
+   *        default vaule is false.
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors(actors: Array<ActorEntry>): void {
+  public addActors(
+    actors: Array<ActorEntry>,
+    resetCameraPanAndZoom = false
+  ): void {
     actors.forEach((actor) => this.addActor(actor));
 
     // set the clipping planes for the actors
-    this.resetCamera();
+    this.resetCamera(resetCameraPanAndZoom, resetCameraPanAndZoom);
   }
 
   /**
@@ -506,7 +535,6 @@ class Viewport implements IViewport {
     const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds();
-
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 
@@ -590,7 +618,7 @@ class Viewport implements IViewport {
     let focalPointToSet = focalPoint;
 
     if (!resetPan && imageData) {
-      focalPointToSet = this._getFocalPointForViewPlaneReset(imageData);
+      focalPointToSet = previousCamera.focalPoint;
     }
 
     activeCamera.setFocalPoint(
@@ -810,11 +838,11 @@ class Viewport implements IViewport {
       const vtkPlanes = mapper.getClippingPlanes();
 
       let slabThickness = MINIMUM_SLAB_THICKNESS;
-      if (actor.slabThickness) {
+      if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
         slabThickness = actor.slabThickness;
       }
 
-      this.setOrietantionToClippingPlanes(
+      this.setOrientationToClippingPlanes(
         vtkPlanes,
         slabThickness,
         updatedCamera.viewPlaneNormal,
@@ -823,7 +851,7 @@ class Viewport implements IViewport {
     });
   }
 
-  public setOrietantionToClippingPlanes(
+  public setOrientationToClippingPlanes(
     vtkPlanes: Array<vtkPlane>,
     slabThickness: number,
     viewPlaneNormal: Point3,

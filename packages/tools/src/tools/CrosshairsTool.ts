@@ -2131,10 +2131,13 @@ export default class CrosshairsTool extends AnnotationTool {
             );
 
             if (near) {
-              otherViewport.setSlabThickness(MINIMUM_SLAB_THICKNESS);
-            } else {
-              otherViewport.setSlabThickness(slabThicknessValue);
+              slabThicknessValue = MINIMUM_SLAB_THICKNESS;
             }
+
+            otherViewport.setSlabThicknessForAllVolumeActors(
+              slabThicknessValue
+            );
+
             viewportsIds.push(otherViewport.id);
           }
         }

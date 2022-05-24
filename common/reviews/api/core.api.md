@@ -1154,7 +1154,11 @@ interface IViewport {
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
     // (undocumented)
+    getActorByIndex(index: number): ActorEntry;
+    // (undocumented)
     getActors(): Array<ActorEntry>;
+    // (undocumented)
+    getActorUIDByIndex(index: number): string;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
@@ -1255,6 +1259,8 @@ interface IVolumeInput {
     // (undocumented)
     slabThickness?: number;
     // (undocumented)
+    slabThicknessEnabled?: boolean;
+    // (undocumented)
     visibility?: boolean;
     // (undocumented)
     volumeId: string;
@@ -1299,7 +1305,9 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
-    setSlabThickness(slabThickness: number): void;
+    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
+    // (undocumented)
+    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)
@@ -1788,7 +1796,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
-    addActors(actors: Array<ActorEntry>): void;
+    addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
     protected applyFlipTx: (worldPos: Point3) => Point3;
     // (undocumented)
@@ -1812,7 +1820,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
     // (undocumented)
+    getActorByIndex(index: number): ActorEntry;
+    // (undocumented)
     getActors(): Array<ActorEntry>;
+    // (undocumented)
+    getActorUIDByIndex(index: number): string;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
@@ -2017,7 +2029,9 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
-    setSlabThickness(slabThickness: number): void;
+    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
+    // (undocumented)
+    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)

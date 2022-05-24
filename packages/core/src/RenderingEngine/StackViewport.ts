@@ -1603,7 +1603,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
       // This is necessary to initialize the clipping range and it is not related
       // to our custom slabThickness.
-      //activeCamera.setThicknessFromFocalPoint(0.1);
       // @ts-ignore: vtkjs incorrect typing
       activeCamera.setFreezeFocalPoint(true);
 
@@ -1664,7 +1663,6 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // This is necessary to initialize the clipping range and it is not related
     // to our custom slabThickness.
-    //activeCamera.setThicknessFromFocalPoint(0.1);
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 

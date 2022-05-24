@@ -29,8 +29,10 @@ interface IVolumeInput {
   callback?: VolumeInputCallback;
   /** Blend mode of the volume - by default it is `additive` */
   blendMode?: BlendModes;
-  /** Slab thickness of the volume - by default it is calculated by the image size*/
+  /** Slab thickness of the volume - by default it is 0.05*/
   slabThickness?: number;
+  /** Slab thickness enabled - if this is false, the rendering will ignore the slabThickness value*/
+  slabThicknessEnabled?: boolean;
 }
 
 export type { IVolumeInput, VolumeInputCallback };
