@@ -9,12 +9,14 @@ import { vec3 } from 'gl-matrix';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VtkObject } from '@kitware/vtk.js/interfaces';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
 type ActorEntry = {
     uid: string;
     volumeActor: VolumeActor;
+    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -69,7 +71,8 @@ const colormapsData: CPUFallbackColormapsData;
 declare namespace CONSTANTS {
     export {
         ORIENTATION,
-        colormapsData as CPU_COLORMAPS
+        colormapsData as CPU_COLORMAPS,
+        MINIMUM_SLAB_THICKNESS
     }
 }
 export { CONSTANTS }
@@ -605,8 +608,6 @@ interface ICachedVolume {
 // @public (undocumented)
 interface ICamera {
     // (undocumented)
-    clippingRange?: Point2;
-    // (undocumented)
     flipHorizontal?: boolean;
     // (undocumented)
     flipVertical?: boolean;
@@ -618,8 +619,6 @@ interface ICamera {
     parallelScale?: number;
     // (undocumented)
     position?: Point3;
-    // (undocumented)
-    slabThickness?: number;
     // (undocumented)
     viewAngle?: number;
     // (undocumented)
@@ -1085,7 +1084,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     modality: string;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1152,7 +1151,11 @@ interface IViewport {
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
     // (undocumented)
+    getActorByIndex(index: number): ActorEntry;
+    // (undocumented)
     getActors(): Array<ActorEntry>;
+    // (undocumented)
+    getActorUIDByIndex(index: number): string;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
@@ -1253,6 +1256,8 @@ interface IVolumeInput {
     // (undocumented)
     slabThickness?: number;
     // (undocumented)
+    slabThicknessEnabled?: boolean;
+    // (undocumented)
     visibility?: boolean;
     // (undocumented)
     volumeId: string;
@@ -1295,9 +1300,11 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
-    setSlabThickness(slabThickness: number): void;
+    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
+    // (undocumented)
+    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)
@@ -1356,6 +1363,9 @@ const metadataProvider: {
     add: (imageId: string, payload: [number, number]) => void;
     get: (type: string, imageId: string) => [number, number];
 };
+
+// @public (undocumented)
+const MINIMUM_SLAB_THICKNESS = 0.05;
 
 // @public (undocumented)
 const ORIENTATION: Record<string, Orientation>;
@@ -1615,7 +1625,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     removeAllActors(): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1782,13 +1792,15 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
-    addActors(actors: Array<ActorEntry>): void;
+    addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
     protected applyFlipTx: (worldPos: Point3) => Point3;
     // (undocumented)
     readonly canvas: HTMLCanvasElement;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
+    // (undocumented)
+    checkAndTriggerCameraModifiedEvent(previousCamera: ICamera, updatedCamera: ICamera): void;
     // (undocumented)
     customRenderViewportToCanvas: () => unknown;
     // (undocumented)
@@ -1804,7 +1816,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     getActor(actorUID: string): ActorEntry;
     // (undocumented)
+    getActorByIndex(index: number): ActorEntry;
+    // (undocumented)
     getActors(): Array<ActorEntry>;
+    // (undocumented)
+    getActorUIDByIndex(index: number): string;
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
@@ -1844,7 +1860,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)
@@ -1860,6 +1876,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
+    setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
+    // (undocumented)
     sHeight: number;
     // (undocumented)
     readonly suppressEvents: boolean;
@@ -1871,6 +1889,8 @@ export class Viewport implements IViewport {
     sy: number;
     // (undocumented)
     readonly type: ViewportType;
+    // (undocumented)
+    updateActorsClippingPlanesOnCameraModified(updatedCamera: ICamera): void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
@@ -2003,9 +2023,11 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
-    setSlabThickness(slabThickness: number): void;
+    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
+    // (undocumented)
+    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)

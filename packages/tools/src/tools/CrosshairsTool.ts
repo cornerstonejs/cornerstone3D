@@ -43,7 +43,10 @@ import {
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { MouseDragEventType } from '../types/EventTypes';
+import { render } from 'react-dom';
+import { CONSTANTS } from '@cornerstonejs/core';
 
+const { MINIMUM_SLAB_THICKNESS } = CONSTANTS;
 const { liangBarksyClip } = math.vec2;
 
 // TODO: nested config is weird
@@ -201,7 +204,6 @@ export default class CrosshairsTool extends AnnotationTool {
           slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
           toolCenter: this.toolCenter,
         },
-        // Todo: add enum for active Operations
         activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
         activeViewportIds: [], // a list of the viewport ids connected to the reference lines being translated
         viewportId,
@@ -539,45 +541,12 @@ export default class CrosshairsTool extends AnnotationTool {
       // TRANSLATION
       // NOTE1: if it's a panning don't update the crosshair center
       // NOTE2: rotation handles are updates in renderTool
-      // panning check is:
-      // -- deltaCameraPosition dot viewPlaneNormal > 1e-2
       if (
         IsTranslation &&
         Math.abs(
           vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
         ) > 1e-2
       ) {
-        // update linked view in the same scene that have the same camera
-        // this goes here, because the parent viewport translation may happen in another tool
-        // const otherLinkedViewportsAnnotationsWithSameCameraDirection =
-        //   this._filterLinkedViewportWithSameOrientationAndScene(
-        //     enabledElement,
-        //     annotations
-        //   )
-
-        // for (
-        //   let i = 0;
-        //   i < otherLinkedViewportsAnnotationsWithSameCameraDirection.length;
-        //   ++i
-        // ) {
-        //   const annotation =
-        //     otherLinkedViewportsAnnotationsWithSameCameraDirection[i]
-        //   const { data } = annotation
-        //   const scene = renderingEngine.getScene(data.sceneUID)
-        //   const otherViewport = scene.getViewport(data.viewportId)
-        //   const camera = otherViewport.getCamera()
-
-        //   const newFocalPoint = [0, 0, 0]
-        //   const newPosition = [0, 0, 0]
-
-        //   vtkMath.add(camera.focalPoint, deltaCameraPosition, newFocalPoint)
-        //   vtkMath.add(camera.position, deltaCameraPosition, newPosition)
-
-        //   // updated cached "previous" camera position and focal point
-        //   annotation.metadata.cameraPosition = [...currentCamera.position]
-        //   annotation.metadata.cameraFocalPoint = [...currentCamera.focalPoint]
-        // }
-
         // update center of the crosshair
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
@@ -695,7 +664,6 @@ export default class CrosshairsTool extends AnnotationTool {
     const { element } = viewport;
     const annotations = getAnnotations(element, this.getToolName());
     const camera = viewport.getCamera();
-
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 
@@ -1490,36 +1458,26 @@ export default class CrosshairsTool extends AnnotationTool {
     return viewportsWithDifferentCameras;
   };
 
-  _filterLinkedViewportWithSameOrientationAndScene = (
+  _filterViewportWithSameOrientation = (
     enabledElement,
+    referenceAnnotation,
     annotations
   ) => {
-    const { renderingEngine, viewport } = enabledElement;
-    const viewportControllable = this._getReferenceLineControllable(
-      viewport.id
-    );
+    const { renderingEngine } = enabledElement;
+    const { data } = referenceAnnotation;
+    const viewport = renderingEngine.getViewport(data.viewportId);
 
-    const otherLinkedViewportAnnotationsFromSameScene = annotations.filter(
-      (annotation) => {
-        const { data } = annotation;
-        const otherViewport = renderingEngine.getViewport(data.viewportId);
-        const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
+    const linkedViewportAnnotations = annotations.filter((annotation) => {
+      const { data } = annotation;
+      const otherViewport = renderingEngine.getViewport(data.viewportId);
+      const otherViewportControllable = this._getReferenceLineControllable(
+        otherViewport.id
+      );
 
-        return (
-          viewport !== otherViewport &&
-          // scene === otherScene &&
-          otherViewportControllable === true &&
-          viewportControllable === true
-        );
-      }
-    );
+      return otherViewportControllable === true;
+    });
 
-    if (
-      !otherLinkedViewportAnnotationsFromSameScene ||
-      !otherLinkedViewportAnnotationsFromSameScene.length
-    ) {
+    if (!linkedViewportAnnotations || !linkedViewportAnnotations.length) {
       return [];
     }
 
@@ -1527,8 +1485,8 @@ export default class CrosshairsTool extends AnnotationTool {
     const viewPlaneNormal = camera.viewPlaneNormal;
     vtkMath.normalize(viewPlaneNormal);
 
-    const otherLinkedViewportsAnnotationsWithSameCameraDirection =
-      otherLinkedViewportAnnotationsFromSameScene.filter((annotation) => {
+    const otherViewportsAnnotationsWithSameCameraDirection =
+      linkedViewportAnnotations.filter((annotation) => {
         const { viewportId } = annotation.data;
         const otherViewport = renderingEngine.getViewport(viewportId);
         const otherCamera = otherViewport.getCamera();
@@ -1541,7 +1499,7 @@ export default class CrosshairsTool extends AnnotationTool {
         );
       });
 
-    return otherLinkedViewportsAnnotationsWithSameCameraDirection;
+    return otherViewportsAnnotationsWithSameCameraDirection;
   };
 
   _filterAnnotationsByUniqueViewportOrientations = (
@@ -1909,9 +1867,18 @@ export default class CrosshairsTool extends AnnotationTool {
         (annotation) => {
           const { data } = annotation;
           const otherViewport = renderingEngine.getViewport(data.viewportId);
+          const otherViewportControllable = this._getReferenceLineControllable(
+            otherViewport.id
+          );
+          const otherViewportDraggableRotatable =
+            this._getReferenceLineDraggableRotatable(otherViewport.id);
 
-          return viewportAnnotation.data.activeViewportIds.find(
-            (id) => id === otherViewport.id
+          return (
+            otherViewportControllable === true &&
+            otherViewportDraggableRotatable === true &&
+            viewportAnnotation.data.activeViewportIds.find(
+              (id) => id === otherViewport.id
+            )
           );
         }
       );
@@ -1932,18 +1899,16 @@ export default class CrosshairsTool extends AnnotationTool {
       const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
         (annotation) => {
           const { data } = annotation;
-          data.handles.toolCenter = center;
           const otherViewport = renderingEngine.getViewport(data.viewportId);
           const otherViewportControllable = this._getReferenceLineControllable(
             otherViewport.id
           );
-          const otherViewportRotatable =
+          const otherViewportDraggableRotatable =
             this._getReferenceLineDraggableRotatable(otherViewport.id);
 
           return (
-            // scene === otherScene &&
             otherViewportControllable === true &&
-            otherViewportRotatable === true
+            otherViewportDraggableRotatable === true
           );
         }
       );
@@ -2026,17 +1991,44 @@ export default class CrosshairsTool extends AnnotationTool {
     } else if (handles.activeOperation === OPERATION.SLAB) {
       // SLAB THICKNESS
       // this should be just the active one under the mouse,
-      const viewportsAnnotationsToUpdate = annotations.filter(
-        (annotation: CrosshairsAnnotation) => {
+      const otherViewportAnnotations =
+        this._getAnnotationsForViewportsWithDifferentCameras(
+          enabledElement,
+          annotations
+        );
+
+      const referenceAnnotations = otherViewportAnnotations.filter(
+        (annotation) => {
           const { data } = annotation;
           const otherViewport = renderingEngine.getViewport(data.viewportId);
+          const otherViewportControllable = this._getReferenceLineControllable(
+            otherViewport.id
+          );
+          const otherViewportSlabThicknessControlsOn =
+            this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
 
-          return viewportAnnotation.data.activeViewportIds.find(
-            (id) => id === otherViewport.id
+          return (
+            otherViewportControllable === true &&
+            otherViewportSlabThicknessControlsOn === true &&
+            viewportAnnotation.data.activeViewportIds.find(
+              (id) => id === otherViewport.id
+            )
           );
         }
       );
 
+      if (referenceAnnotations.length === 0) {
+        return;
+      }
+      const viewportsAnnotationsToUpdate =
+        this._filterViewportWithSameOrientation(
+          enabledElement,
+          referenceAnnotations[0],
+          annotations
+        );
+
+      const viewportsIds = [];
+      viewportsIds.push(viewport.id);
       viewportsAnnotationsToUpdate.forEach(
         (annotation: CrosshairsAnnotation) => {
           const { data } = annotation;
@@ -2126,7 +2118,10 @@ export default class CrosshairsTool extends AnnotationTool {
             }
 
             slabThicknessValue = Math.abs(slabThicknessValue);
-            slabThicknessValue = Math.max(0.1, slabThicknessValue);
+            slabThicknessValue = Math.max(
+              MINIMUM_SLAB_THICKNESS,
+              slabThicknessValue
+            );
 
             const near = this._pointNearReferenceLine(
               viewportAnnotation,
@@ -2136,14 +2131,18 @@ export default class CrosshairsTool extends AnnotationTool {
             );
 
             if (near) {
-              otherViewport.setSlabThickness(null);
-            } else {
-              otherViewport.setSlabThickness(slabThicknessValue);
+              slabThicknessValue = MINIMUM_SLAB_THICKNESS;
             }
-            otherViewport.render();
+
+            otherViewport.setSlabThicknessForAllVolumeActors(
+              slabThicknessValue
+            );
+
+            viewportsIds.push(otherViewport.id);
           }
         }
       );
+      renderingEngine.renderViewports(viewportsIds);
     }
   };
 
@@ -2164,6 +2163,7 @@ export default class CrosshairsTool extends AnnotationTool {
       this._applyDeltaShiftToViewportCamera(renderingEngine, annotation, delta);
     });
   }
+
   _applyDeltaShiftToViewportCamera(
     renderingEngine: Types.IRenderingEngine,
     annotation,

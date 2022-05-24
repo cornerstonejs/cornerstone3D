@@ -6,24 +6,11 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 /**
  * vtkSlabCamera - A dervied class of the core vtkCamera class
  *
- * This class adds a slabThickness parameter. The difference between this and
- * the regular thickness parameter is that the set method will not modify the
- * vtk camera range parameters.
- *
- * NOTE1: there is a 1:1 correspondence between a camera and a viewport.
- *
- * NOTE2: while the thickness is a property unique to the viewport/camera, the
- * blendMode is a property of a volume (which can be shared over multiple viewports)
- * and one viewport can have multiple volumes.
- *
- * NOTE3: In the case of thickness > 0.1, this customization is needed to
- * distinguish cases different BlendMode in the mapper shader. In fact, the same
- * shader is called over multiple volumes which can have different blend modes.
- * For example, if the blend mode is different from COMPOSITE and we
- * are rendering thin layers, the camera parameters in the shaders are derived
- * from the new slabThickness (which does not affect the vtk camera
- * clipping/range parameters).
- *
+ * This customization is necesssary because when we do coordinate transformations
+ * we need to set the cRange between [d, d + 0.1],
+ * where d is distance between the camera position and the focal point.
+ * While when we render we set to the clippingRange [0.01, d * 2],
+ * where d is the calculated from the bounds of all the actors.
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
@@ -31,14 +18,14 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 function vtkSlabCamera(publicAPI, model) {
   model.classHierarchy.push('vtkSlabCamera');
 
-  const tmpMatrix = mat4.create();
+  // Set up private variables and methods
+  const tmpMatrix = mat4.identity(new Float64Array(16));
+  const tmpvec1 = new Float64Array(3);
 
   /**
    * getProjectionMatrix - A fork of vtkCamera's getProjectionMatrix method.
-   * This fork performs most of the same actions, but if slabThicknessActive is
-   * true, then it uses the value of slabThickness for calculating the actual
-   * clipping range for the Z-buffer values that map to the near and far
-   * clipping planes.
+   * This fork performs most of the same actions, but define crange around
+   * model.distance.
    */
   publicAPI.getProjectionMatrix = (aspect, nearz, farz) => {
     const result = mat4.create();
@@ -55,16 +42,8 @@ function vtkSlabCamera(publicAPI, model) {
 
     mat4.identity(tmpMatrix);
 
-    let cRange0 = model.clippingRange[0];
-    let cRange1 = model.clippingRange[1];
-
-    if (model.slabThicknessActive) {
-      const cameraMidpoint =
-        (model.clippingRange[1] + model.clippingRange[0]) * 0.5;
-      cRange0 = cameraMidpoint - model.slabThickness;
-      cRange1 = cameraMidpoint + model.slabThickness;
-    }
-
+    const cRange0 = model.distance;
+    const cRange1 = model.distance + 0.1;
     const cWidth = cRange1 - cRange0;
     const cRange = [
       cRange0 + ((nearz + 1) * cWidth) / 2.0,
@@ -126,17 +105,8 @@ function vtkSlabCamera(publicAPI, model) {
 
 // ----------------------------------------------------------------------------
 
-const DEFAULT_VALUES = {
-  slabThickness: null,
-  slabThicknessActive: false,
-};
-
 export function extend(publicAPI, model, initialValues = {}) {
-  Object.assign(model, DEFAULT_VALUES, initialValues);
-
   vtkCamera.extend(publicAPI, model, initialValues);
-
-  macro.setGet(publicAPI, model, ['slabThickness', 'slabThicknessActive']);
 
   // Object methods
   vtkSlabCamera(publicAPI, model);

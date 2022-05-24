@@ -1,6 +1,7 @@
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { vec3, mat4 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
@@ -21,6 +22,7 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
+import { MINIMUM_SLAB_THICKNESS } from '../constants';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -336,12 +338,36 @@ class Viewport implements IViewport {
   }
 
   /**
+   * Get an actor UID by its index
+   * @param index - array index.
+   * @returns actorUID
+   */
+  public getActorUIDByIndex(index: number): string {
+    const actor = this.getActors()[index];
+    if (actor) {
+      return actor.uid;
+    }
+  }
+
+  /**
+   * Get an actor by its index
+   * @param index - array index.
+   * @returns actorUID
+   */
+  public getActorByIndex(index: number): ActorEntry {
+    return this.getActors()[index];
+  }
+
+  /**
    * It removes all actors from the viewport and then adds the actors from the array.
    * @param actors - An array of ActorEntry objects.
    */
   public setActors(actors: Array<ActorEntry>): void {
     this.removeAllActors();
-    this.addActors(actors);
+    const resetCameraPanAndZoom = true;
+    // when we set the actor we need to reset the camera to iinitialize the
+    // camera focal point wiith the bounds of the actors.
+    this.addActors(actors, resetCameraPanAndZoom);
   }
 
   /**
@@ -371,10 +397,18 @@ class Viewport implements IViewport {
 
   /**
    * Add a list of actors (actor entries) to the viewport
+   * @param resetCameraPanAndZoom - force reset pan and zoom of the camera,
+   *        default vaule is false.
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors(actors: Array<ActorEntry>): void {
+  public addActors(
+    actors: Array<ActorEntry>,
+    resetCameraPanAndZoom = false
+  ): void {
     actors.forEach((actor) => this.addActor(actor));
+
+    // set the clipping planes for the actors
+    this.resetCamera(resetCameraPanAndZoom, resetCameraPanAndZoom);
   }
 
   /**
@@ -494,14 +528,14 @@ class Viewport implements IViewport {
    * is reset for the current view.
    * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
    * @param resetZoom - If true, the camera zoom is reset to the default zoom
-   * @returns boolean
+   * @returns number - distance calculated by the all actor bounds
    */
-  protected resetCamera(resetPan = true, resetZoom = true): boolean {
+  protected resetCamera(resetPan = true, resetZoom = true): number {
     const renderer = this.getRenderer();
     const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds();
-    const focalPoint = [0, 0, 0];
+    const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 
     // Todo: remove this, this is just for tests passing
@@ -584,7 +618,7 @@ class Viewport implements IViewport {
     let focalPointToSet = focalPoint;
 
     if (!resetPan && imageData) {
-      focalPointToSet = this._getFocalPointForViewPlaneReset(imageData);
+      focalPointToSet = previousCamera.focalPoint;
     }
 
     activeCamera.setFocalPoint(
@@ -614,7 +648,6 @@ class Viewport implements IViewport {
       -focalPointToSet[2]
     );
 
-    // instead of setThicknessFromFocalPoint we should do it here
     activeCamera.setClippingRange(distance, distance + 0.1);
 
     const RESET_CAMERA_EVENT = {
@@ -630,21 +663,9 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
-      const eventDetail = {
-        previousCamera: previousCamera,
-        camera: this.getCamera(),
-        canvas: this.canvas,
-        element: this.element,
-        viewportId: this.id,
-        renderingEngineId: this.renderingEngineId,
-      };
+    this.checkAndTriggerCameraModifiedEvent(previousCamera, this.getCamera());
 
-      // For crosshairs to adapt to new viewport size
-      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-    }
-
-    return true;
+    return distance;
   }
 
   /**
@@ -676,12 +697,14 @@ class Viewport implements IViewport {
       z += point_z;
     });
 
-    // Set the focal point on the average of the intersection points
-    return [
+    const newFocalPoint = <Point3>[
       x / intersections.length,
       y / intersections.length,
       z / intersections.length,
     ];
+
+    // Set the focal point on the average of the intersection points
+    return newFocalPoint;
   }
 
   /**
@@ -710,35 +733,14 @@ class Viewport implements IViewport {
   public getCamera(): ICamera {
     const vtkCamera = this.getVtkActiveCamera();
 
-    // TODO: Make sure these are deep copies.
-    let slabThickness;
-    // Narrowing down the type for typescript
-    if ('getSlabThickness' in vtkCamera) {
-      slabThickness = vtkCamera.getSlabThickness();
-    }
-
     return {
       viewUp: <Point3>vtkCamera.getViewUp(),
       viewPlaneNormal: <Point3>vtkCamera.getViewPlaneNormal(),
-      clippingRange: <Point2>vtkCamera.getClippingRange(),
-      // TODO: I'm really not sure about this, it requires a calculation, and
-      // how useful is this without the renderer context?
-      // Lets add it back if we find we need it.
-      //compositeProjectionMatrix: vtkCamera.getCompositeProjectionMatrix(),
-      //
-      //
-      // Compensating for the flipped viewport. Since our method for flipping is
-      // flipping the actor matrix itself, the focal point won't change; therefore,
-      // we need to accommodate for this required change elsewhere
-      // vec3.sub(dir, viewport.applyFlipTx(focalPoint), point)
       position: <Point3>this.applyFlipTx(vtkCamera.getPosition() as Point3),
       focalPoint: <Point3>this.applyFlipTx(vtkCamera.getFocalPoint() as Point3),
-      // position: <Point3>vtkCamera.getPosition(),
-      // focalPoint: <Point3>vtkCamera.getFocalPoint(),
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
-      slabThickness,
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
     };
@@ -755,12 +757,10 @@ class Viewport implements IViewport {
     const {
       viewUp,
       viewPlaneNormal,
-      clippingRange,
       position,
       focalPoint,
       parallelScale,
       viewAngle,
-      slabThickness,
       flipHorizontal,
       flipVertical,
     } = cameraInterface;
@@ -781,10 +781,6 @@ class Viewport implements IViewport {
       );
     }
 
-    if (clippingRange !== undefined) {
-      vtkCamera.setClippingRange(clippingRange);
-    }
-
     if (position !== undefined) {
       vtkCamera.setPosition(...this.applyFlipTx(position));
     }
@@ -801,10 +797,21 @@ class Viewport implements IViewport {
       vtkCamera.setViewAngle(viewAngle);
     }
 
-    if (slabThickness !== undefined && 'setSlabThickness' in vtkCamera) {
-      vtkCamera.setSlabThickness(slabThickness);
-    }
+    // update clippingPlanes
+    this.updateActorsClippingPlanesOnCameraModified(updatedCamera);
 
+    this.checkAndTriggerCameraModifiedEvent(previousCamera, updatedCamera);
+  }
+
+  /**
+   * Trigger camera modified event
+   * @param cameraInterface - ICamera
+   * @param cameraInterface - ICamera
+   */
+  public checkAndTriggerCameraModifiedEvent(
+    previousCamera: ICamera,
+    updatedCamera: ICamera
+  ): void {
     if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
       const eventDetail: EventTypes.CameraModifiedEventDetail = {
         previousCamera,
@@ -817,12 +824,60 @@ class Viewport implements IViewport {
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     }
+  }
 
-    if (this.type == ViewportType.PERSPECTIVE) {
-      const renderer = this.getRenderer();
+  /**
+   * Updates the actors clipping planes orientation from the camera properties
+   * @param updatedCamera - ICamera
+   */
+  public updateActorsClippingPlanesOnCameraModified(
+    updatedCamera: ICamera
+  ): void {
+    const actors = this.getActors();
+    actors.forEach((actor) => {
+      const mapper = actor.volumeActor.getMapper();
+      const vtkPlanes = mapper.getClippingPlanes();
 
-      renderer.resetCameraClippingRange();
+      let slabThickness = MINIMUM_SLAB_THICKNESS;
+      if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
+        slabThickness = actor.slabThickness;
+      }
+
+      this.setOrientationOfClippingPlanes(
+        vtkPlanes,
+        slabThickness,
+        updatedCamera.viewPlaneNormal,
+        updatedCamera.focalPoint
+      );
+    });
+  }
+
+  public setOrientationOfClippingPlanes(
+    vtkPlanes: Array<vtkPlane>,
+    slabThickness: number,
+    viewPlaneNormal: Point3,
+    focalPoint: Point3
+  ): void {
+    if (vtkPlanes.length < 2) {
+      return;
     }
+
+    const scaledDistance = <Point3>[
+      viewPlaneNormal[0],
+      viewPlaneNormal[1],
+      viewPlaneNormal[2],
+    ];
+    vtkMath.multiplyScalar(scaledDistance, slabThickness);
+
+    vtkPlanes[0].setNormal(viewPlaneNormal);
+    const newOrigin1 = <Point3>[0, 0, 0];
+    vtkMath.subtract(focalPoint, scaledDistance, newOrigin1);
+    vtkPlanes[0].setOrigin(newOrigin1);
+
+    vtkPlanes[1].setNormal(vtkMath.multiplyScalar(viewPlaneNormal, -1));
+    const newOrigin2 = <Point3>[0, 0, 0];
+    vtkMath.add(focalPoint, scaledDistance, newOrigin2);
+    vtkPlanes[1].setOrigin(newOrigin2);
   }
 
   private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {

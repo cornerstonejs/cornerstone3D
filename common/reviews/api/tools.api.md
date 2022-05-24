@@ -21,6 +21,7 @@ declare namespace activeSegmentation {
 type ActorEntry = {
     uid: string;
     volumeActor: VolumeActor;
+    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -1004,7 +1005,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     filterInteractableAnnotationsForElement: (element: any, annotations: any) => any;
     // (undocumented)
-    _filterLinkedViewportWithSameOrientationAndScene: (enabledElement: any, annotations: any) => any;
+    _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
@@ -1761,14 +1762,12 @@ interface ICachedVolume {
 
 // @public
 interface ICamera {
-    clippingRange?: Point2;
     flipHorizontal?: boolean;
     flipVertical?: boolean;
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
     position?: Point3;
-    slabThickness?: number;
     viewAngle?: number;
     viewPlaneNormal?: Point3;
     viewUp?: Point3;
@@ -2109,7 +2108,7 @@ interface IStackViewport extends IViewport {
     isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -2226,7 +2225,9 @@ interface IViewport {
     defaultOptions: any;
     element: HTMLDivElement;
     getActor(actorUID: string): ActorEntry;
+    getActorByIndex(index: number): ActorEntry;
     getActors(): Array<ActorEntry>;
+    getActorUIDByIndex(index: number): string;
     getCamera(): ICamera;
     getCanvas(): HTMLCanvasElement;
     // (undocumented)
@@ -2300,6 +2301,9 @@ interface IVolumeInput {
     slabThickness?: number;
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
+    slabThicknessEnabled?: boolean;
+    // actorUID for segmentations, since two segmentations with the same volumeId
+    // can have different representations
     visibility?: boolean;
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
@@ -2332,8 +2336,9 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
-    setSlabThickness(slabThickness: number): void;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
+    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
     immediate?: boolean

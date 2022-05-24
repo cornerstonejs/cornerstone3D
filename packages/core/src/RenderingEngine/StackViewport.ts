@@ -158,6 +158,7 @@ class StackViewport extends Viewport implements IStackViewport {
       );
       camera.setViewUp(...viewUp);
       camera.setParallelProjection(true);
+      camera.setThicknessFromFocalPoint(0.1);
       // @ts-ignore: vtkjs incorrect typing
       camera.setFreezeFocalPoint(true);
     }
@@ -1595,7 +1596,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
       // This is necessary to initialize the clipping range and it is not related
       // to our custom slabThickness.
-      // activeCamera.setThicknessFromFocalPoint(0.1)
+      // @ts-ignore: vtkjs incorrect typing
       activeCamera.setFreezeFocalPoint(true);
 
       // We shouldn't restore the focalPoint, position and parallelScale after reset
@@ -1654,7 +1655,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // This is necessary to initialize the clipping range and it is not related
     // to our custom slabThickness.
-    // activeCamera.setThicknessFromFocalPoint(0.1)
+    // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
     // set voi for the first time
@@ -1711,16 +1712,17 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  public resetCamera(resetPan = true, resetZoom = true): boolean {
+  public resetCamera(resetPan = true, resetZoom = true): number {
+    let distance = 1;
     if (this.useCPURendering) {
       this.resetCameraCPU(resetPan, resetZoom);
     } else {
-      this.resetCameraGPU(resetPan, resetZoom);
+      distance = this.resetCameraGPU(resetPan, resetZoom);
     }
 
     this.rotation = 0;
     this.rotationCache = 0;
-    return true;
+    return distance;
   }
 
   private resetCameraCPU(resetPan, resetZoom) {
@@ -1733,8 +1735,8 @@ class StackViewport extends Viewport implements IStackViewport {
     resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
   }
 
-  private resetCameraGPU(resetPan, resetZoom) {
-    super.resetCamera(resetPan, resetZoom);
+  private resetCameraGPU(resetPan, resetZoom): number {
+    return super.resetCamera(resetPan, resetZoom);
   }
 
   /**

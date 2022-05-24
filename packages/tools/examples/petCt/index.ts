@@ -332,6 +332,7 @@ function setUpToolGroups() {
       getReferenceLineControllable,
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
+      applySlabThicknessToOnlyFirstActor: true,
     });
   });
 
@@ -656,6 +657,7 @@ async function setUpDisplay() {
       {
         volumeId: ptVolumeId,
         callback: setPetColorMapTransferFunctionForVolumeActor,
+        slabThicknessEnabled: false,
       },
     ],
     [

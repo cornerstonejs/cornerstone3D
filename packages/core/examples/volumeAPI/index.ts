@@ -279,7 +279,7 @@ addSliderToToolbar({
     // Get the volume actor from the viewport
     const actor = viewport.getActor(volumeId);
 
-    viewport.setSlabThickness(valueAsNumber);
+    viewport.setSlabThicknessForAllVolumeActors(valueAsNumber);
 
     // TODO -> We should have set blend mode for volume on the viewport?
     actor.volumeActor.getMapper().setBlendMode(blendMode);

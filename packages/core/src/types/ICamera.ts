@@ -6,8 +6,6 @@ import Point3 from './Point3';
  * want to know more about the camera.
  */
 interface ICamera {
-  /** Camera Clipping range*/
-  clippingRange?: Point2;
   /** Camera Focal point */
   focalPoint?: Point3;
   /** Camera Parallel Projection flag - whether camera is using parallel projection */
@@ -22,8 +20,6 @@ interface ICamera {
   viewPlaneNormal?: Point3;
   /** Camera viewUp - the direction of viewUP in camera */
   viewUp?: Point3;
-  /** Camera Slab Thickness */
-  slabThickness?: number;
   /** flip Horizontal */
   flipHorizontal?: boolean;
   /** flip Vertical */

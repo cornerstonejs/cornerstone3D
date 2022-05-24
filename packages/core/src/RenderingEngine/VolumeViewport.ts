@@ -5,9 +5,10 @@ import ViewportType from '../enums/ViewportType';
 import Viewport from './Viewport';
 import { createVolumeActor } from './helpers';
 import { loadVolume } from '../volumeLoader';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import { getShouldUseCPURendering } from '../init';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
+import { getShouldUseCPURendering } from '../init';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import type {
   Point2,
@@ -19,7 +20,7 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-
+import { MINIMUM_SLAB_THICKNESS } from '../constants';
 const EPSILON = 1e-3;
 
 /**
@@ -70,7 +71,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       -sliceNormal[2]
     );
     camera.setViewUpFrom(viewUp);
-    camera.setFreezeFocalPoint(true);
 
     this.resetCamera();
   }
@@ -106,12 +106,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     this._FrameOfReferenceUID = FrameOfReferenceUID;
 
-    const slabThicknessValues = [];
     const volumeActors = [];
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, slabThickness, actorUID } = volumeInputArray[i];
+      const { volumeId, slabThickness, actorUID, slabThicknessEnabled } =
+        volumeInputArray[i];
       const volumeActor = await createVolumeActor(volumeInputArray[i]);
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -120,20 +120,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
       const uid = actorUID || volumeId;
-      volumeActors.push({ uid, volumeActor, slabThickness });
-
-      if (
-        slabThickness !== undefined &&
-        !slabThicknessValues.includes(slabThickness)
-      ) {
-        slabThicknessValues.push(slabThickness);
-      }
-    }
-
-    if (slabThicknessValues.length > 1) {
-      console.warn(
-        'Currently slab thickness for intensity projections is tied to the camera, not per volume, using the largest of the two volumes for this viewport.'
-      );
+      volumeActors.push({
+        uid,
+        volumeActor,
+        slabThickness,
+        slabThicknessEnabled,
+      });
     }
 
     this._setVolumeActors(volumeActors);
@@ -163,7 +155,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, visibility, actorUID } = volumeInputArray[i];
+      const {
+        volumeId,
+        visibility,
+        actorUID,
+        slabThickness,
+        slabThicknessEnabled,
+      } = volumeInputArray[i];
       const volumeActor = await createVolumeActor(volumeInputArray[i]);
 
       if (visibility === false) {
@@ -176,7 +174,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
       const uid = actorUID || volumeId;
-      volumeActors.push({ uid, volumeActor });
+      volumeActors.push({
+        uid,
+        volumeActor,
+        slabThickness,
+        slabThicknessEnabled,
+      });
     }
 
     this.addActors(volumeActors);
@@ -273,8 +276,44 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  public resetCamera(resetPan = true, resetZoom = true): boolean {
-    return super.resetCamera(resetPan, resetZoom);
+  public resetCamera(resetPan = true, resetZoom = true): number {
+    const distance = super.resetCamera(resetPan, resetZoom);
+
+    const activeCamera = this.getVtkActiveCamera();
+    activeCamera.setClippingRange(0.01, distance * 2);
+
+    const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
+    const focalPoint = <Point3>activeCamera.getFocalPoint();
+
+    const actors = this.getActors();
+    actors.forEach((actor) => {
+      // we assume that the first two clipping plane of the mapper are always
+      // the 'camera' clipping
+      const mapper = actor.volumeActor.getMapper();
+      const vtkPlanes = mapper.getClippingPlanes();
+      if (vtkPlanes.length === 0) {
+        const clipPlane1 = vtkPlane.newInstance();
+        const clipPlane2 = vtkPlane.newInstance();
+        const newVtkPlanes = [clipPlane1, clipPlane2];
+
+        let slabThickness = MINIMUM_SLAB_THICKNESS;
+        if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
+          slabThickness = actor.slabThickness;
+        }
+
+        this.setOrientationOfClippingPlanes(
+          newVtkPlanes,
+          slabThickness,
+          viewPlaneNormal,
+          focalPoint
+        );
+
+        mapper.addClippingPlane(clipPlane1);
+        mapper.addClippingPlane(clipPlane2);
+      }
+    });
+
+    return distance;
   }
 
   public getFrameOfReferenceUID = (): string => {
@@ -282,23 +321,72 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   };
 
   /**
-   * Sets the slab thickness option in the `Viewport`'s `options`.
+   * Sets the slab thickness to all the volume actors in the viewport.
    *
    * @param slabThickness - The slab thickness to set.
    */
-  public setSlabThickness(slabThickness: number): void {
-    this.setCamera({
-      slabThickness,
+  public setSlabThicknessForAllVolumeActors(slabThickness: number): void {
+    const actors = this.getActors();
+    let updateClippingPlanes = false;
+    actors.forEach((actor) => {
+      if (actor.slabThicknessEnabled === false) {
+        return;
+      }
+
+      actor.slabThickness = slabThickness;
+      updateClippingPlanes = true;
     });
+
+    if (updateClippingPlanes === false) {
+      return;
+    }
+
+    const currentCamera = this.getCamera();
+    this.updateActorsClippingPlanesOnCameraModified(currentCamera);
+    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
   }
 
   /**
-   * Gets the slab thickness option in the `Viewport`'s `options`.
+   * Sets the slab thickness to a specific volume actor in the viewport.
+   *
+   * @param actorUID - The unique ID of the actor.
+   * @param slabThickness - The slab thickness to set.
+   */
+  public setSlabThicknessForVolumeActor(
+    actorUID: string,
+    slabThickness: number
+  ): void {
+    const actor = this.getActor(actorUID);
+
+    if (actor.slabThicknessEnabled === false) {
+      return;
+    }
+
+    actor.slabThickness = slabThickness;
+
+    const currentCamera = this.getCamera();
+    this.updateActorsClippingPlanesOnCameraModified(currentCamera);
+    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
+  }
+
+  /**
+   * Gets the largest slab thickness from all actors in the viewport.
    *
    * @returns slabThickness - The slab thickness.
    */
   public getSlabThickness(): number {
-    const { slabThickness } = this.getCamera();
+    const actors = this.getActors();
+    let slabThickness = MINIMUM_SLAB_THICKNESS;
+    actors.forEach((actor) => {
+      if (actor.slabThicknessEnabled === false) {
+        return;
+      }
+
+      if (actor.slabThickness > slabThickness) {
+        slabThickness = actor.slabThickness;
+      }
+    });
+
     return slabThickness;
   }
 
@@ -335,42 +423,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @param volumeActorEntries - The volume actors to add the viewport.
    *
-   * NOTE: overwrites the slab thickness value in the options if one of the actor has a higher value
    */
   private _setVolumeActors(volumeActorEntries: Array<ActorEntry>): void {
-    const renderer = this.getRenderer();
-
     this.setActors(volumeActorEntries);
-    // volumeActorEntries.forEach((va) => renderer.addActor(va.volumeActor))
-
-    let slabThickness = null;
-    if (this.type === ViewportType.ORTHOGRAPHIC) {
-      volumeActorEntries.forEach((va) => {
-        if (va.slabThickness && va.slabThickness > slabThickness) {
-          slabThickness = va.slabThickness;
-        }
-      });
-
-      this.resetCamera();
-
-      const activeCamera = renderer.getActiveCamera();
-
-      // This is necessary to initialize the clipping range and it is not related
-      // to our custom slabThickness.
-      // activeCamera.setThicknessFromFocalPoint(0.1)
-      // This is necessary to give the slab thickness.
-      // NOTE: our custom camera implementation has an additional slab thickness
-      // values to handle MIP and non MIP volumes in the same viewport.
-      activeCamera.setSlabThickness(slabThickness);
-      activeCamera.setFreezeFocalPoint(true);
-    } else {
-      // Use default renderer resetCamera, fits bounding sphere of data.
-      renderer.resetCamera();
-
-      const activeCamera = renderer.getActiveCamera();
-
-      activeCamera.setFreezeFocalPoint(true);
-    }
   }
 
   /**
@@ -383,16 +438,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
-    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
-
-    const slabThicknessActive = vtkCamera.getSlabThicknessActive();
-    // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
-    // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used
-    // in the volumeMapper (where we need our custom getProjectionMatrix) and in the coordinates transformations
-    // (where we don't need our custom getProjectionMatrix)
-    // TO DO: we should customize vtk to use our custom getProjectionMatrix only in the volumeMapper
-    vtkCamera.setSlabThicknessActive(false);
-
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
@@ -411,8 +456,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       renderer
     );
 
-    vtkCamera.setSlabThicknessActive(slabThicknessActive);
-
     worldCoord = this.applyFlipTx(worldCoord);
     return worldCoord;
   };
@@ -426,16 +469,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
-
-    const slabThicknessActive = vtkCamera.getSlabThicknessActive();
-    // NOTE: this is necessary to disable our customization of getProjectionMatrix in the vtkSlabCamera,
-    // since getProjectionMatrix is used in vtk vtkRenderer.projectionToView. vtkRenderer.projectionToView is used
-    // in the volumeMapper (where we need our custom getProjectionMatrix) and in the coordinates transformations
-    // (where we don't need our custom getProjectionMatrix)
-    // TO DO: we should customize vtk to use our custom getProjectionMatrix only in the volumeMapper
-    vtkCamera.setSlabThicknessActive(false);
-
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
@@ -454,8 +487,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       displayCoord[0] - this.sx,
       displayCoord[1] - this.sy,
     ];
-
-    vtkCamera.setSlabThicknessActive(slabThicknessActive);
 
     return canvasCoord;
   };

@@ -246,24 +246,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
   publicAPI.setCameraShaderParameters = (cellBO, ren, actor) => {
     const program = cellBO.getProgram();
     const cam = model.openGLCamera.getRenderable();
-    const blendMode = actor.getMapper().getBlendMode();
-    const slabThickness = cam.getSlabThickness();
     const crange = cam.getClippingRange();
-
-    const defaultSlabThickness = null;
-    const cameraMidpoint = (crange[1] + crange[0]) * 0.5;
-    // if not equal to tiny slab thickness (i.e. it is defined as an actual
-    // intended value), use slab thickness instead of clipping range
-    if (
-      blendMode !== BlendMode.COMPOSITE_BLEND &&
-      slabThickness !== defaultSlabThickness
-    ) {
-      crange[0] = cameraMidpoint - slabThickness;
-      crange[1] = cameraMidpoint + slabThickness;
-      cam.setSlabThicknessActive(true);
-    } else {
-      cam.setSlabThicknessActive(false);
-    }
+    // NOTE: the actual slab thickness clipping is done with clipping planes,
+    // but here we still need to set the cam uniform to the clipping range.
 
     program.setUniformf('camThick', crange[1] - crange[0]);
     program.setUniformf('camNear', crange[0]);
@@ -450,6 +435,10 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     }
 
     mat4.invert(model.projectionToView, keyMats.vcpc);
+
+    // cornerstone3D customization: to allow slabthickness in both directions
+    model.projectionToView[10] = model.projectionToView[14];
+
     program.setUniformMatrix('PCVCMatrix', model.projectionToView);
 
     // handle lighting values
