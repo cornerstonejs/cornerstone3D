@@ -36,8 +36,14 @@ export default function (
 
   const lut = image.cachedLut.lutArray;
 
-  const mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT);
+  let mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT);
   const vlutfn = getVOILUT(windowWidth, windowCenter, voiLUT);
+
+  if (image.isPreScaled) {
+    // if the image is already preScaled, it means the slop, intercept
+    // are applied and there is no need for a modalityLut
+    mlutfn = (x) => x;
+  }
 
   if (invert === true) {
     for (

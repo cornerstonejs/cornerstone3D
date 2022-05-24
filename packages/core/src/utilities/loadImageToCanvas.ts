@@ -5,6 +5,7 @@ import * as metaData from '../metaData';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvas from './renderToCanvas';
+import getScalingParameters from './getScalingParameters';
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the CPU rendering pipeline
@@ -55,25 +56,7 @@ export default function loadImageToCanvas(
       );
     }
 
-    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
-    const suvFactor = metaData.get('scalingModule', imageId) || {};
-
-    const generalSeriesModule =
-      metaData.get('generalSeriesModule', imageId) || {};
-
-    const { modality } = generalSeriesModule;
-
-    const scalingParameters = {
-      rescaleSlope: modalityLutModule.rescaleSlope,
-      rescaleIntercept: modalityLutModule.rescaleIntercept,
-      suvbw: suvFactor.suvbw,
-      modality,
-    };
-
-    let scalingParametersToUse;
-    if (modality === 'PT' && suvFactor.suvbw !== undefined) {
-      scalingParametersToUse = scalingParameters;
-    }
+    const scalingParameters = getScalingParameters(imageId);
 
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
@@ -84,7 +67,7 @@ export default function loadImageToCanvas(
         length: null,
       },
       preScale: {
-        scalingParameters: scalingParametersToUse,
+        scalingParameters,
       },
       requestType,
     };

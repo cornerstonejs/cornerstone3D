@@ -1,4 +1,4 @@
-import invertRgbTransferFunction from './invertRgbTransferFunction';
+import csUtils from './invertRgbTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
 import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
@@ -26,13 +26,14 @@ import imageToWorldCoords from './imageToWorldCoords';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
+import getScalingParameters from './getScalingParameters';
 
 // name spaces
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
 
 export {
-  invertRgbTransferFunction,
+  csUtils as invertRgbTransferFunction,
   scaleRgbTransferFunction,
   triggerEvent,
   imageIdToURI,
@@ -62,4 +63,5 @@ export {
   getSliceRange,
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
+  getScalingParameters,
 };

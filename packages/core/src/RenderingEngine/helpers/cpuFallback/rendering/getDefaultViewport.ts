@@ -39,7 +39,10 @@ export default function (
       windowWidth: 5,
       windowCenter: 2.5,
     };
-  } else if (image.windowWidth && image.windowCenter) {
+  } else if (
+    image.windowWidth !== undefined &&
+    image.windowCenter !== undefined
+  ) {
     voi = {
       windowWidth: Array.isArray(image.windowWidth)
         ? image.windowWidth[0]

@@ -55,6 +55,7 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
+import getScalingParameters from '../utilities/getScalingParameters';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1360,24 +1361,9 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const modalityLutModule =
-        metaData.get('modalityLutModule', imageId) || {};
-      const suvFactor = metaData.get('scalingModule', imageId) || {};
+      const scalingParameters = getScalingParameters(imageId);
 
-      const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {};
-
-      const { modality } = generalSeriesModule;
-
-      let scalingParameters;
-      if (modality === 'PT' && suvFactor.suvbw) {
-        scalingParameters = {
-          rescaleSlope: modalityLutModule.rescaleSlope,
-          rescaleIntercept: modalityLutModule.rescaleIntercept,
-          suvbw: suvFactor.suvbw,
-          modality,
-        };
-
+      if (imageId) {
         this.scalingCache[imageId] = scalingParameters;
       }
 
@@ -1464,24 +1450,9 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const modalityLutModule =
-        metaData.get('modalityLutModule', imageId) || {};
-      const suvFactor = metaData.get('scalingModule', imageId) || {};
+      const scalingParameters = getScalingParameters(imageId);
 
-      const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {};
-
-      const { modality } = generalSeriesModule;
-
-      let scalingParameters;
-      if (modality === 'PT' && suvFactor.suvbw) {
-        scalingParameters = {
-          rescaleSlope: modalityLutModule.rescaleSlope,
-          rescaleIntercept: modalityLutModule.rescaleIntercept,
-          suvbw: suvFactor.suvbw,
-          modality,
-        };
-
+      if (scalingParameters) {
         this.scalingCache[imageId] = scalingParameters;
       }
 

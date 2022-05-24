@@ -548,6 +548,9 @@ export function getRenderingEngines(): IRenderingEngine[] | undefined;
 function getRuntimeId(context?: unknown, separator?: string, max?: number): string;
 
 // @public (undocumented)
+function getScalingParameters(imageId: string): ScalingParameters | undefined;
+
+// @public (undocumented)
 export function getShouldUseCPURendering(): boolean;
 
 // @public (undocumented)
@@ -1820,7 +1823,8 @@ declare namespace utilities {
         imageToWorldCoords,
         getSliceRange,
         snapFocalPointToSlice,
-        getImageSliceDataForVolumeViewport
+        getImageSliceDataForVolumeViewport,
+        getScalingParameters
     }
 }
 export { utilities }
