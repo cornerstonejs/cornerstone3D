@@ -127,7 +127,8 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
 
   const numImages = imageIds.length;
   const bytesPerImage = scalarData.byteLength / numImages;
-  const length = scalarData.length / numImages;
+  const voxelsPerImage = scalarData.length / numImages;
+  const bytePerPixel = scalarData.BYTES_PER_ELEMENT;
 
   let type;
 
@@ -157,11 +158,13 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
     }
   }
 
+  const byteOffset = imageIdIndex * bytesPerImage;
+
   const options = {
     targetBuffer: {
       arrayBuffer: scalarData.buffer,
-      offset: imageIdIndex * bytesPerImage,
-      length,
+      offset: byteOffset,
+      length: voxelsPerImage,
       type,
     },
     priority: PRIORITY,
@@ -185,7 +188,9 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
   if (!image) {
     imageScalarData = _getImageScalarDataFromImageVolume(
       imageVolume,
-      imageIdIndex
+      byteOffset,
+      bytePerPixel,
+      voxelsPerImage
     );
   } else {
     imageScalarData = image.getPixelData();
@@ -200,30 +205,25 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
   };
 }
 
-function _getImageScalarDataFromImageVolume(imageVolume, imageIdIndex) {
-  const { scalarData, imageIds, dimensions } = imageVolume;
-  const numImages = imageIds.length;
-  const bytesPerImage = scalarData.byteLength / numImages;
-
-  const numVoxels = dimensions[0] * dimensions[1] * dimensions[2];
-  const numComponents = scalarData.length / numVoxels;
-  const pixelsPerImage = dimensions[0] * dimensions[1] * numComponents;
-  const volumeBuffer = scalarData.buffer;
-  const TypedArray = scalarData.constructor;
-
-  const bytePerPixel = bytesPerImage / pixelsPerImage;
-  let byteOffset = bytesPerImage * imageIdIndex;
-
+function _getImageScalarDataFromImageVolume(
+  imageVolume,
+  byteOffset,
+  bytePerPixel,
+  voxelsPerImage
+) {
+  const { scalarData } = imageVolume;
+  const { volumeBuffer } = scalarData;
   if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
     byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
   }
 
-  const imageScalarData = new TypedArray(pixelsPerImage);
+  const TypedArray = scalarData.constructor;
+  const imageScalarData = new TypedArray(voxelsPerImage);
 
   const volumeBufferView = new TypedArray(
     volumeBuffer,
     byteOffset,
-    pixelsPerImage
+    voxelsPerImage
   );
 
   imageScalarData.set(volumeBufferView);

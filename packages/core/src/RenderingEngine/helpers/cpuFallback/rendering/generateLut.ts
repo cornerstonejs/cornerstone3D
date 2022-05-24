@@ -36,30 +36,46 @@ export default function (
 
   const lut = image.cachedLut.lutArray;
 
-  let mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT);
+  const mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT);
   const vlutfn = getVOILUT(windowWidth, windowCenter, voiLUT);
 
   if (image.isPreScaled) {
-    // if the image is already preScaled, it means the slop, intercept
+    // if the image is already preScaled, it means that the slop and the intercept
     // are applied and there is no need for a modalityLut
-    mlutfn = (x) => x;
-  }
-
-  if (invert === true) {
-    for (
-      let storedValue = minPixelValue;
-      storedValue <= maxPixelValue;
-      storedValue++
-    ) {
-      lut[storedValue + -offset] = 255 - vlutfn(mlutfn(storedValue));
+    if (invert === true) {
+      for (
+        let storedValue = minPixelValue;
+        storedValue <= maxPixelValue;
+        storedValue++
+      ) {
+        lut[storedValue + -offset] = 255 - vlutfn(storedValue);
+      }
+    } else {
+      for (
+        let storedValue = minPixelValue;
+        storedValue <= maxPixelValue;
+        storedValue++
+      ) {
+        lut[storedValue + -offset] = vlutfn(storedValue);
+      }
     }
   } else {
-    for (
-      let storedValue = minPixelValue;
-      storedValue <= maxPixelValue;
-      storedValue++
-    ) {
-      lut[storedValue + -offset] = vlutfn(mlutfn(storedValue));
+    if (invert === true) {
+      for (
+        let storedValue = minPixelValue;
+        storedValue <= maxPixelValue;
+        storedValue++
+      ) {
+        lut[storedValue + -offset] = 255 - vlutfn(mlutfn(storedValue));
+      }
+    } else {
+      for (
+        let storedValue = minPixelValue;
+        storedValue <= maxPixelValue;
+        storedValue++
+      ) {
+        lut[storedValue + -offset] = vlutfn(mlutfn(storedValue));
+      }
     }
   }
 
