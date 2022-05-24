@@ -338,7 +338,7 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Get an actor by its UID
+   * Get an actor UID by its index
    * @param index - array index.
    * @returns actorUID
    */
@@ -350,7 +350,7 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Get an actor by its UID
+   * Get an actor by its index
    * @param index - array index.
    * @returns actorUID
    */
@@ -834,7 +834,7 @@ class Viewport implements IViewport {
         slabThickness = actor.slabThickness;
       }
 
-      this.setOrietantionToClippingPlanes(
+      this.setOrientationOfClippingPlanes(
         vtkPlanes,
         slabThickness,
         updatedCamera.viewPlaneNormal,
@@ -843,7 +843,7 @@ class Viewport implements IViewport {
     });
   }
 
-  public setOrietantionToClippingPlanes(
+  public setOrientationOfClippingPlanes(
     vtkPlanes: Array<vtkPlane>,
     slabThickness: number,
     viewPlaneNormal: Point3,

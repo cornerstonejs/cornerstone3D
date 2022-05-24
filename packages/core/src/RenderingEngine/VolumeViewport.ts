@@ -185,7 +185,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     this.addActors(volumeActors);
 
     if (immediate) {
-      // render
       this.render();
     }
   }
@@ -301,7 +300,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
           slabThickness = actor.slabThickness;
         }
 
-        this.setOrietantionToClippingPlanes(
+        this.setOrientationOfClippingPlanes(
           newVtkPlanes,
           slabThickness,
           viewPlaneNormal,
@@ -321,11 +320,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   };
 
   /**
-   * Sets the slab thickness to all the actors in the viewport.
+   * Sets the slab thickness to all the volume actors in the viewport.
    *
    * @param slabThickness - The slab thickness to set.
    */
-  public setSlabThicknessForAllActors(slabThickness: number): void {
+  public setSlabThicknessForAllVolumeActors(slabThickness: number): void {
     const actors = this.getActors();
     let updateClippingPlanes = false;
     actors.forEach((actor) => {
@@ -347,12 +346,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
-   * Sets the slab thickness to a specific actor in the viewport.
+   * Sets the slab thickness to a specific volume actor in the viewport.
    *
    * @param actorUID - The unique ID of the actor.
    * @param slabThickness - The slab thickness to set.
    */
-  public setSlabThicknessForActor(
+  public setSlabThicknessForVolumeActor(
     actorUID: string,
     slabThickness: number
   ): void {

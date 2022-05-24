@@ -1302,9 +1302,9 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
-    setSlabThicknessForActor(actorUID: string, slabThickness: number): void;
+    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     // (undocumented)
-    setSlabThicknessForAllActors(slabThickness: number): void;
+    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)
@@ -1876,7 +1876,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
-    setOrietantionToClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
+    setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
     // (undocumented)
     sHeight: number;
     // (undocumented)
@@ -2025,9 +2025,9 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
     // (undocumented)
-    setSlabThicknessForActor(actorUID: string, slabThickness: number): void;
+    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     // (undocumented)
-    setSlabThicknessForAllActors(slabThickness: number): void;
+    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)
