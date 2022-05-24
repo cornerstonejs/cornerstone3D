@@ -1,27 +1,25 @@
-import { getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  StackViewport,
+  VolumeViewport,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import JumpToSliceOptions from '../../types/JumpToSliceOptions';
-import clip from '../clip';
+import { scrollThroughStack } from '../stackScrollTool';
 
 /**
- * It uses the imageIdIndex in the Options to scroll to the slice that is intended.
- *
- * @privateRemarks Currently, only supports imageIdIndex in the options, but
- * could be extended to support other types of options such as camera position,
- * focal point, etc. for volume viewports.
+ * It uses the imageIndex in the Options to scroll to the slice that is intended.
+ * It works for any enabledElements (both stack and volume viewports)
  *
  * @param element - the HTML Div element scrolling inside
  * @param options - the options used for scrolling
  * @returns Promise that resolves to ImageIdIndex
  */
-function jumpToSlice(
+async function jumpToSlice(
   element: HTMLDivElement,
   options: JumpToSliceOptions
-): Promise<string> {
-  const { imageIdIndex } = options;
-  if (imageIdIndex === undefined) {
-    throw new Error('Cannot jump to slice without an imageIdIndex yet');
-  }
-
+): Promise<void> {
+  const { imageIndex } = options;
   const enabledElement = getEnabledElement(element);
 
   if (!enabledElement) {
@@ -30,14 +28,18 @@ function jumpToSlice(
 
   const { viewport } = enabledElement;
 
-  if (!(viewport instanceof StackViewport)) {
-    throw new Error('Cannot scroll to slice on a non-stack viewport yet');
+  let currentImageIndex;
+  if (viewport instanceof StackViewport) {
+    currentImageIndex = viewport.getCurrentImageIdIndex();
+  } else if (viewport instanceof VolumeViewport) {
+    const { imageIndex } = csUtils.getImageSliceDataForVolumeViewport(viewport);
+    currentImageIndex = imageIndex;
+  } else {
+    throw new Error('Unsupported viewport type');
   }
+  const delta = imageIndex - currentImageIndex;
 
-  const numberOfFrames = viewport.getImageIds().length;
-  const newImageIdIndex = clip(imageIdIndex, 0, numberOfFrames - 1);
-
-  return viewport.setImageIdIndex(newImageIdIndex);
+  scrollThroughStack(viewport, { delta });
 }
 
 export default jumpToSlice;

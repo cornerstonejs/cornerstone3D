@@ -25,6 +25,16 @@ type ActorEntry = {
     slabThickness?: number;
 };
 
+// @public
+type ActorSliceRange = {
+    actor: VolumeActor;
+    viewPlaneNormal: Point3;
+    focalPoint: Point3;
+    min: number;
+    max: number;
+    current: number;
+};
+
 // @public (undocumented)
 function addAnnotation(element: HTMLDivElement, annotation: Annotation): void;
 
@@ -1458,7 +1468,9 @@ declare namespace EventTypes {
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
-        ImageLoadProgressEventDetail
+        ImageLoadProgressEventDetail,
+        VolumeNewImageEvent,
+        VolumeNewImageEventDetail
     }
 }
 
@@ -1648,13 +1660,6 @@ function getSegmentations(): Segmentation[] | [];
 
 // @public (undocumented)
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
-
-// @public (undocumented)
-function getSliceRange(volumeActor: Types_2.VolumeActor, viewPlaneNormal: Types_2.Point3, focalPoint: Types_2.Point3): {
-    min: number;
-    max: number;
-    current: number;
-};
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
@@ -2349,11 +2354,11 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<string>;
+function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<void>;
 
 // @public (undocumented)
 type JumpToSliceOptions = {
-    imageIdIndex?: number;
+    imageIndex?: number;
 };
 
 // @public (undocumented)
@@ -2910,6 +2915,7 @@ type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
 // @public
 type PreStackNewImageEventDetail = {
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -3354,8 +3360,7 @@ type ScalingParameters = {
 
 // @public (undocumented)
 type ScrollOptions_2 = {
-    direction: number;
-    invert?: boolean;
+    delta: number;
     volumeId?: string;
 };
 
@@ -3622,6 +3627,7 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 type StackNewImageEventDetail = {
     image: IImage;
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -3658,7 +3664,6 @@ export class StackScrollTool extends BaseTool {
 declare namespace stackScrollTool {
     export {
         snapFocalPointToSlice,
-        getSliceRange,
         scrollThroughStack
     }
 }
@@ -4149,6 +4154,18 @@ options?: Record<string, any>
     promise: Promise<Record<string, any>>;
     cancelFn?: () => void | undefined;
     decache?: () => void | undefined;
+};
+
+// @public
+type VolumeNewImageEvent = CustomEvent_2<VolumeNewImageEventDetail>;
+
+// @public
+type VolumeNewImageEventDetail = {
+    imageData: vtkImageData;
+    imageIndex: number;
+    numberOfSlices: number;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)

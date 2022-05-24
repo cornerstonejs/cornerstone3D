@@ -23,6 +23,9 @@ import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvas from './renderToCanvas';
 import worldToImageCoords from './worldToImageCoords';
 import imageToWorldCoords from './imageToWorldCoords';
+import getSliceRange from './getSliceRange';
+import snapFocalPointToSlice from './snapFocalPointToSlice';
+import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
 
 // name spaces
 import * as planar from './planar';
@@ -56,4 +59,7 @@ export {
   renderToCanvas,
   worldToImageCoords,
   imageToWorldCoords,
+  getSliceRange,
+  snapFocalPointToSlice,
+  getImageSliceDataForVolumeViewport,
 };

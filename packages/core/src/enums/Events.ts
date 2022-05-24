@@ -124,6 +124,16 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.StackNewImageEventDetail | StackNewImage Event Detail }
    */
   STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
+
+  /**
+   * Triggers on the element when a new image is set on the volumeViewport, this can be due to scrolling or other
+   * tools that change the camera position or focal point.
+   *
+   * Make use of {@link EventTypes.VolumeNewImageEvent | VolumeNewImage Event Type } for typing your event listeners for VOLUME_NEW_IMAGE event,
+   * and see what event detail is included in {@link EventTypes.VolumeNewImageEventDetail | VolumeNewImage Event Detail }
+   */
+  VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
+
   /**
    * Triggers on the element when a new image is about to be set on the stackViewport, pre display
    *

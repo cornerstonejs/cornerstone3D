@@ -1273,6 +1273,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
+          imageIdIndex,
           viewportId: this.id,
           renderingEngineId: this.renderingEngineId,
         };
@@ -1419,6 +1420,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
+          imageIdIndex,
           viewportId: this.id,
           renderingEngineId: this.renderingEngineId,
         };
@@ -1493,6 +1495,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {
         imageId,
+        imageIdIndex,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
       };

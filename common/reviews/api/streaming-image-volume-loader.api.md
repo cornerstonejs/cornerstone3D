@@ -17,9 +17,19 @@ type ActorEntry = {
 };
 
 // @public
+type ActorSliceRange = {
+    actor: VolumeActor;
+    viewPlaneNormal: Point3;
+    focalPoint: Point3;
+    min: number;
+    max: number;
+    current: number;
+};
+
+// @public
 enum BlendModes {
     AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
-    COMPOSITE = BlendMode.COMPOSITE,
+    COMPOSITE = BlendMode.COMPOSITE_BLEND,
     MAXIMUM_INTENSITY_BLEND = BlendMode.MAXIMUM_INTENSITY_BLEND,
     MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
 }
@@ -361,9 +371,12 @@ enum Events {
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
+
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
     VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
+    VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
     // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
     // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
     // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
@@ -406,7 +419,9 @@ declare namespace EventTypes {
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
-        ImageLoadProgressEventDetail
+        ImageLoadProgressEventDetail,
+        VolumeNewImageEvent,
+        VolumeNewImageEventDetail
     }
 }
 
@@ -991,6 +1006,7 @@ type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
 // @public
 type PreStackNewImageEventDetail = {
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -1044,6 +1060,7 @@ type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 type StackNewImageEventDetail = {
     image: IImage;
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -1191,6 +1208,18 @@ options?: Record<string, any>
     promise: Promise<Record<string, any>>;
     cancelFn?: () => void | undefined;
     decache?: () => void | undefined;
+};
+
+// @public
+type VolumeNewImageEvent = CustomEvent_2<VolumeNewImageEventDetail>;
+
+// @public
+type VolumeNewImageEventDetail = {
+    imageData: vtkImageData;
+    imageIndex: number;
+    numberOfSlices: number;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // (No @packageDocumentation comment for this package)

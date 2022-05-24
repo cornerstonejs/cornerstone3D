@@ -3,7 +3,7 @@ import { vec3 } from 'gl-matrix';
 import cache from '../cache';
 import ViewportType from '../enums/ViewportType';
 import Viewport from './Viewport';
-import { createVolumeActor } from './helpers';
+import { createVolumeActor, volumeNewImageEventDispatcher } from './helpers';
 import { loadVolume } from '../volumeLoader';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
@@ -17,10 +17,13 @@ import type {
   IVolumeInput,
   ActorEntry,
   FlipDirection,
+  EventTypes,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { MINIMUM_SLAB_THICKNESS } from '../constants';
+import { Events } from '../enums';
+
 const EPSILON = 1e-3;
 
 /**
@@ -63,6 +66,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         throw new Error(`Unrecognized viewport type: ${this.type}`);
     }
 
+    this.initializeVolumeNewImageEventDispatcher();
+
     const { sliceNormal, viewUp } = this.defaultOptions.orientation;
 
     camera.setDirectionOfProjection(
@@ -77,6 +82,21 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  private initializeVolumeNewImageEventDispatcher(): void {
+    this.element.addEventListener(
+      Events.CAMERA_MODIFIED,
+      (cameraEvent: EventTypes.CameraModifiedEvent) => {
+        const viewportImageData = this.getImageData();
+
+        if (!viewportImageData) {
+          return;
+        }
+
+        volumeNewImageEventDispatcher(cameraEvent, viewportImageData);
+      }
+    );
   }
 
   /**
