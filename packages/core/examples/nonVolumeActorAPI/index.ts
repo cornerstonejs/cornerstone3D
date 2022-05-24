@@ -2,47 +2,36 @@ import {
   RenderingEngine,
   Types,
   Enums,
-  volumeLoader,
   getRenderingEngine,
-  utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
-  createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  addSliderToToolbar,
   camera as cameraHelpers,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import { VolumeActor } from 'core/src/types';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ViewportType, BlendModes } = Enums;
-const { ORIENTATION, MINIMUM_SLAB_THICKNESS } = CONSTANTS;
+const { ViewportType } = Enums;
+const { ORIENTATION } = CONSTANTS;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
 
-// Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Non Volume Actor in Volume Viewport API',
-  'Demonstrates how to interact with a Volume viewport with mixed volume and non volume actors.'
+  'Demonstrates how to interact with a Volume viewport with non volume actors.'
 );
 
 const content = document.getElementById('content');
@@ -53,96 +42,6 @@ element.style.height = '500px';
 
 content.appendChild(element);
 // ============================= //
-
-// TODO -> Maybe some of these implementations should be pushed down to some API
-
-// Buttons
-addButtonToToolbar({
-  title: 'Set VOI Range',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
-
-    // Set the mapping range of the actor to a range to highlight bones
-    const volumeActor = actor.actor as unknown as VolumeActor;
-    volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .setMappingRange(-1500, 2500);
-
-    viewport.render();
-  },
-});
-addButtonToToolbar({
-  title: 'Flip H',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Flip the viewport horizontally
-    const { flipHorizontal } = viewport.getCamera();
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
-
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Flip V',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Flip the viewport vertically
-    const { flipVertical } = viewport.getCamera();
-
-    viewport.setCamera({ flipVertical: !flipVertical });
-
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Invert',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
-    const volumeActor = actor.actor as unknown as VolumeActor;
-    const rgbTransferFunction = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0);
-
-    utilities.invertRgbTransferFunction(rgbTransferFunction);
-
-    viewport.render();
-  },
-});
 
 addButtonToToolbar({
   title: 'Apply Random Zoom And Pan',
@@ -255,48 +154,12 @@ addDropdownToToolbar({
   },
 });
 
-addSliderToToolbar({
-  title: 'Slab Thickness',
-  range: [0, 300],
-  defaultValue: 0,
-  onSelectedValueChange: (value) => {
-    let valueAsNumber = Number(value);
-
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    if (valueAsNumber < MINIMUM_SLAB_THICKNESS) {
-      // Cannot render zero thickness
-      valueAsNumber = MINIMUM_SLAB_THICKNESS;
-    }
-
-    viewport.setSlabThickness(valueAsNumber);
-
-    viewport.render();
-  },
-});
-
 /**
  * Runs the demo
  */
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
-    type: 'VOLUME',
-  });
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -319,33 +182,20 @@ async function run() {
     renderingEngine.getViewport(viewportId)
   );
 
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
-
-  // Set the volume to load
-  volume.load();
-
-  // Set the volume on the viewport
-  viewport.setVolumes([
-    {
-      volumeId,
-      callback: setCtTransferFunctionForVolumeActor,
-      blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-    },
-  ]);
-
-  /*const sphereSource = vtkSphereSource.newInstance();
+  const sphereSource = vtkSphereSource.newInstance();
   const actor = vtkActor.newInstance();
   const mapper = vtkMapper.newInstance();
 
   actor.getProperty().setEdgeVisibility(true);
 
   mapper.setInputConnection(sphereSource.getOutputPort());
-  actor.setMapper(mapper);*/
+  actor.setMapper(mapper);
 
-  // To Do: add actor to viewport
+  const nonVolumeActors = [];
+  nonVolumeActors.push({ uid: 'spherePolyData', actor });
+
+  viewport.addActors(nonVolumeActors);
+  //viewport.setSlabThickness(100);
 
   // Render the image
   viewport.render();

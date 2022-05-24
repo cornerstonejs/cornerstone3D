@@ -307,7 +307,7 @@ class Viewport implements IViewport {
   private getDefaultImageData(): any {
     const actor = this.getDefaultActor();
 
-    if (actor) {
+    if (actor && actor.actor.isA('vtkVolume')) {
       return actor.actor.getMapper().getInputData();
     }
   }
@@ -506,6 +506,7 @@ class Viewport implements IViewport {
     const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds();
+
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 

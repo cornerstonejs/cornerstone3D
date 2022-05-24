@@ -20,6 +20,7 @@ import type {
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { MINIMUM_SLAB_THICKNESS } from '../constants';
+import { Console } from 'console';
 const EPSILON = 1e-3;
 
 /**
@@ -262,11 +263,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public resetCamera(resetPan = true, resetZoom = true): number {
     const distance = super.resetCamera(resetPan, resetZoom);
-
     const activeCamera = this.getVtkActiveCamera();
     activeCamera.setClippingRange(0.01, distance * 2);
 
-    const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
+    /*const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
     const actors = this.getActors();
 
@@ -295,7 +295,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         mapper.addClippingPlane(clipPlane1);
         mapper.addClippingPlane(clipPlane2);
       }
-    });
+    });*/
 
     return distance;
   }

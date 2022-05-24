@@ -70,11 +70,13 @@ addButtonToToolbar({
     const actor = viewport.getActor(volumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    const volumeActor = actor.actor as unknown as VolumeActor;
-    volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .setMappingRange(-1500, 2500);
+    if (actor && actor.actor.isA('vtkVolume')) {
+      const volumeActor = actor.actor as unknown as VolumeActor;
+      volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0)
+        .setMappingRange(-1500, 2500);
+    }
 
     viewport.render();
   },
@@ -132,12 +134,14 @@ addButtonToToolbar({
     // Get the volume actor from the viewport
     const actor = viewport.getActor(volumeId);
 
-    const volumeActor = actor.actor as unknown as VolumeActor;
-    const rgbTransferFunction = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0);
+    if (actor && actor.actor.isA('vtkVolume')) {
+      const volumeActor = actor.actor as unknown as VolumeActor;
+      const rgbTransferFunction = volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0);
 
-    utilities.invertRgbTransferFunction(rgbTransferFunction);
+      utilities.invertRgbTransferFunction(rgbTransferFunction);
+    }
 
     viewport.render();
   },
@@ -279,14 +283,14 @@ addSliderToToolbar({
       blendMode = BlendMode.COMPOSITE_BLEND;
     }
 
-    // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
-
     viewport.setSlabThickness(valueAsNumber);
 
-    // TODO -> We should have set blend mode for volume on the viewport?
-    const volumeActor = actor.actor as unknown as VolumeActor;
-    volumeActor.getMapper().setBlendMode(blendMode);
+    // Get the volume actor from the viewport
+    const actor = viewport.getActor(volumeId);
+    if (actor && actor.actor.isA('vtkVolume')) {
+      const volumeActor = actor.actor as unknown as VolumeActor;
+      volumeActor.getMapper().setBlendMode(blendMode);
+    }
 
     viewport.render();
   },

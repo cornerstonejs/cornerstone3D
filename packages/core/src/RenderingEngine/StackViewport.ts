@@ -825,13 +825,15 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    const volumeActor = actor as unknown as VolumeActor;
-    const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
+    if (actor && actor.isA('vtkVolume')) {
+      const volumeActor = actor as unknown as VolumeActor;
+      const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
-    if ((!this.invert && invert) || (this.invert && !invert)) {
-      invertRgbTransferFunction(tfunc);
+      if ((!this.invert && invert) || (this.invert && !invert)) {
+        invertRgbTransferFunction(tfunc);
+      }
+      this.invert = invert;
     }
-    this.invert = invert;
   }
 
   private setVOICPU(voiRange: VOIRange): void {
@@ -888,27 +890,29 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    const volumeActor = actor as unknown as VolumeActor;
-    const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
+    if (actor && actor.isA('vtkVolume')) {
+      const volumeActor = actor as unknown as VolumeActor;
+      const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
-    if (typeof voiRange === 'undefined') {
-      const imageData = volumeActor.getMapper().getInputData();
-      const range = imageData.getPointData().getScalars().getRange();
-      tfunc.setRange(range[0], range[1]);
-      voiRange = { lower: range[0], upper: range[1] };
-    } else {
-      const { lower, upper } = voiRange;
-      tfunc.setRange(lower, upper);
+      if (typeof voiRange === 'undefined') {
+        const imageData = volumeActor.getMapper().getInputData();
+        const range = imageData.getPointData().getScalars().getRange();
+        tfunc.setRange(range[0], range[1]);
+        voiRange = { lower: range[0], upper: range[1] };
+      } else {
+        const { lower, upper } = voiRange;
+        tfunc.setRange(lower, upper);
+      }
+
+      this.voiApplied = true;
+      this.voiRange = voiRange;
+      const eventDetail: VoiModifiedEventDetail = {
+        viewportId: this.id,
+        range: voiRange,
+      };
+
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
     }
-
-    this.voiApplied = true;
-    this.voiRange = voiRange;
-    const eventDetail: VoiModifiedEventDetail = {
-      viewportId: this.id,
-      range: voiRange,
-    };
-
-    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
   }
 
   /**

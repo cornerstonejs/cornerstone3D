@@ -69,11 +69,13 @@ addButtonToToolbar({
     const actor = viewport.getActor(ctVolumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    const volumeActor = actor.actor as unknown as VolumeActor;
-    volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .setMappingRange(-1500, 2500);
+    if (actor && actor.actor.isA('vtkVolume')) {
+      const volumeActor = actor.actor as unknown as VolumeActor;
+      volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0)
+        .setMappingRange(-1500, 2500);
+    }
 
     viewport.render();
   },
