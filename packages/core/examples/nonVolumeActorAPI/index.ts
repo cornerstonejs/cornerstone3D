@@ -212,9 +212,6 @@ async function run() {
 
   viewport.addActors(nonVolumeActors);
 
-  console.info(viewport.getRenderer().toJSON());
-  console.info(mapper.toJSON());
-  console.info(actor.toJSON());
   // Render the image
   viewport.render();
 }
