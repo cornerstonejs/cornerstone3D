@@ -797,7 +797,6 @@ class Viewport implements IViewport {
       vtkCamera.setViewAngle(viewAngle);
     }
 
-    console.info(this.worldToCanvas(<Point3>vtkCamera.getFocalPoint()));
     // update clippingPlanes
     this.updateActorsClippingPlanesOnCameraModified(updatedCamera);
 
