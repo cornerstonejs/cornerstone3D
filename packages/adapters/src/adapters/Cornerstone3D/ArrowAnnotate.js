@@ -30,7 +30,7 @@ class ArrowAnnotate {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
-        const text = defaultState.metadata.label;
+        const text = defaultState.annotation.metadata.label;
 
         const { GraphicData } = SCOORDGroup;
 
@@ -43,11 +43,37 @@ class ArrowAnnotate {
             worldCoords.push(point);
         }
 
+        // Since the arrowAnnotate measurement is just a point, to generate the tool state
+        // we derive the second point based on the image size relative to the first point.
+        if (worldCoords.length === 1) {
+            const imagePixelModule = metadata.get(
+                "imagePixelModule",
+                referencedImageId
+            );
+
+            let xOffset = 10;
+            let yOffset = 10;
+
+            if (imagePixelModule) {
+                const { columns, rows } = imagePixelModule;
+                xOffset = columns / 10;
+                yOffset = rows / 10;
+            }
+
+            const secondPoint = imageToWorldCoords(referencedImageId, [
+                GraphicData[0] + xOffset,
+                GraphicData[1] + yOffset
+            ]);
+
+            worldCoords.push(secondPoint);
+        }
+
         const state = defaultState;
 
         state.annotation.data = {
             text,
             handles: {
+                arrowFirst: true,
                 points: [worldCoords[0], worldCoords[1]],
                 activeHandleIndex: 0,
                 textBox: {
@@ -70,18 +96,25 @@ class ArrowAnnotate {
             );
         }
 
-        const { points } = data.handles;
+        const { points, arrowFirst } = data.handles;
 
-        const pointsImage = points.map(point => {
-            const pointImage = worldToImageCoords(referencedImageId, point);
-            return {
-                x: pointImage[0],
-                y: pointImage[1]
-            };
-        });
+        let point;
+
+        if (arrowFirst) {
+            point = points[0];
+        } else {
+            point = points[1];
+        }
+
+        const pointImage = worldToImageCoords(referencedImageId, point);
 
         const TID300RepresentationArguments = {
-            points: pointsImage,
+            points: [
+                {
+                    x: pointImage[0],
+                    y: pointImage[1]
+                }
+            ],
             trackingIdentifierTextValue,
             findingSites: findingSites || []
         };

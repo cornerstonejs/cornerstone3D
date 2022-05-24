@@ -196,7 +196,9 @@ EllipticalROI.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
         return false;
     }
 
-    return toolType === ELLIPTICALROI;
+    // The following is needed since the new cornerstone3D has changed
+    // the EllipticalRoi toolName (which was in the old cornerstone) to EllipticalROI
+    return toolType.toLowerCase() === ELLIPTICALROI.toLowerCase();
 };
 
 MeasurementReport.registerTool(EllipticalROI);

@@ -6,6 +6,7 @@ import ArrowAnnotate from "./ArrowAnnotate.js";
 import Probe from "./Probe.js";
 import PlanarFreehandROI from "./PlanarFreehandROI.js";
 import CodeScheme from "./CodingScheme";
+import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 
 const Cornerstone3D = {
     Length,
@@ -15,7 +16,8 @@ const Cornerstone3D = {
     Probe,
     PlanarFreehandROI,
     MeasurementReport,
-    CodeScheme
+    CodeScheme,
+    CORNERSTONE_3D_TAG
 };
 
 export default Cornerstone3D;

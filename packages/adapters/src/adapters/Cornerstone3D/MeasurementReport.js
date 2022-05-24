@@ -191,6 +191,7 @@ export default class MeasurementReport {
         });
 
         const defaultState = {
+            sopInstanceUid: ReferencedSOPInstanceUID,
             annotation: {
                 annotationUID: DicomMetaDictionary.uid(),
                 metadata: {
