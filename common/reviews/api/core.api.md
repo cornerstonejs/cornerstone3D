@@ -20,6 +20,7 @@ type Actor = vtkActor;
 type ActorEntry = {
     uid: string;
     actor: Actor;
+    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -1880,7 +1881,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
-    setOrietantionToClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
+    setOrientationToClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
     // (undocumented)
     sHeight: number;
     // (undocumented)
