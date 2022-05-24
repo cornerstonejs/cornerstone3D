@@ -44,7 +44,7 @@ content.appendChild(element);
 // ============================= //
 
 addButtonToToolbar({
-  title: 'Apply Random Zoom And Pan',
+  title: 'Apply Zoom',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -54,20 +54,36 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    // Reset the camera so that we can set some pan and zoom relative to the
-    // defaults for this demo. Note that changes could be relative instead.
-    viewport.resetCamera();
+    // Get the current camera properties
+    const camera = viewport.getCamera();
+
+    const parallelScale = camera.parallelScale * 0.5;
+
+    viewport.setCamera({
+      parallelScale,
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Apply UnZoom',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
     // Get the current camera properties
     const camera = viewport.getCamera();
 
-    const { parallelScale, position, focalPoint } =
-      cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
+    const parallelScale = camera.parallelScale * 2;
 
     viewport.setCamera({
       parallelScale,
-      position: <Types.Point3>position,
-      focalPoint: <Types.Point3>focalPoint,
     });
     viewport.render();
   },
@@ -195,8 +211,10 @@ async function run() {
   nonVolumeActors.push({ uid: 'spherePolyData', actor });
 
   viewport.addActors(nonVolumeActors);
-  //viewport.setSlabThickness(100);
 
+  console.info(viewport.getRenderer().toJSON());
+  console.info(mapper.toJSON());
+  console.info(actor.toJSON());
   // Render the image
   viewport.render();
 }
