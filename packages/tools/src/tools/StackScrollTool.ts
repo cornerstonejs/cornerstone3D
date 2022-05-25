@@ -51,6 +51,8 @@ export default class StackScrollTool extends BaseTool {
       this.previousDirection = direction;
     }
 
-    scrollThroughStack(viewport, { direction, invert, volumeId });
+    const delta = direction * (invert ? -1 : 1);
+
+    scrollThroughStack(viewport, { delta, volumeId });
   }
 }

@@ -28,7 +28,12 @@ function getSynchronizersForViewport(
       viewportId
     );
 
-    if (notDisabled && hasSourceViewport) {
+    const hasTargetViewport = synchronizer.hasTargetViewport(
+      renderingEngineId,
+      viewportId
+    );
+
+    if (notDisabled && (hasSourceViewport || hasTargetViewport)) {
       synchronizersFilteredByIds.push(synchronizer);
     }
   }

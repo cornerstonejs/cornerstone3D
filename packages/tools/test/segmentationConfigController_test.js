@@ -129,7 +129,6 @@ describe('Segmentation Controller --', () => {
         },
       };
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const seg1VolumeID =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
@@ -219,7 +218,6 @@ describe('Segmentation Controller --', () => {
     //     fillAlpha: 0.996,
     //   }
 
-    //   // fake volume generator follows the pattern of
     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
     //   const seg1VolumeID =
     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_30_30_3_80_80_6'
@@ -312,7 +310,6 @@ describe('Segmentation Controller --', () => {
     //     },
     //   }
 
-    //   // fake volume generator follows the pattern of
     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
     //   const seg1VolumeID =
     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_70_30_3_80_80_6'

@@ -1,6 +1,5 @@
 import { vec3 } from 'gl-matrix';
-
-import type { Types } from '@cornerstonejs/core';
+import { ActorSliceRange, Point3 } from '../types';
 
 /**
  * Given a number of frames, `deltaFrames`,
@@ -9,7 +8,7 @@ import type { Types } from '@cornerstonejs/core';
  *
  * @param focalPoint - The focal point to move.
  * @param position - The camera position to move.
- * @param scrollRange - The scroll range used to find the current
+ * @param sliceRange - The scroll range used to find the current
  * position in the stack, as well as prevent scrolling past the extent of the volume.
  * @param viewPlaneNormal - The normal direction of the camera.
  * @param spacingInNormalDirection - The spacing of frames the normal direction of the camera.
@@ -18,14 +17,14 @@ import type { Types } from '@cornerstonejs/core';
  * @returns The `newFocalPoint` and `newPosition` of the camera.
  */
 export default function snapFocalPointToSlice(
-  focalPoint: Types.Point3,
-  position: Types.Point3,
-  scrollRange,
-  viewPlaneNormal: Types.Point3,
+  focalPoint: Point3,
+  position: Point3,
+  sliceRange: ActorSliceRange,
+  viewPlaneNormal: Point3,
   spacingInNormalDirection: number,
   deltaFrames: number
-): { newFocalPoint: Types.Point3; newPosition: Types.Point3 } {
-  const { min, max, current } = scrollRange;
+): { newFocalPoint: Point3; newPosition: Point3 } {
+  const { min, max, current } = sliceRange;
 
   // Get the current offset off the camera position so we can add it on at the end.
   const posDiffFromFocalPoint = vec3.create();
@@ -41,7 +40,7 @@ export default function snapFocalPointToSlice(
   let frameIndex = Math.round(floatingStepNumber);
 
   // Dolly the focal point back to min slice focal point.
-  let newFocalPoint = <Types.Point3>[
+  let newFocalPoint = <Point3>[
     focalPoint[0] -
       viewPlaneNormal[0] * floatingStepNumber * spacingInNormalDirection,
     focalPoint[1] -
@@ -63,13 +62,13 @@ export default function snapFocalPointToSlice(
   // Dolly the focal towards to the correct frame focal point.
   const newSlicePosFromMin = frameIndex * spacingInNormalDirection;
 
-  newFocalPoint = <Types.Point3>[
+  newFocalPoint = <Point3>[
     newFocalPoint[0] + viewPlaneNormal[0] * newSlicePosFromMin,
     newFocalPoint[1] + viewPlaneNormal[1] * newSlicePosFromMin,
     newFocalPoint[2] + viewPlaneNormal[2] * newSlicePosFromMin,
   ];
 
-  const newPosition = <Types.Point3>[
+  const newPosition = <Point3>[
     newFocalPoint[0] + posDiffFromFocalPoint[0],
     newFocalPoint[1] + posDiffFromFocalPoint[1],
     newFocalPoint[2] + posDiffFromFocalPoint[2],

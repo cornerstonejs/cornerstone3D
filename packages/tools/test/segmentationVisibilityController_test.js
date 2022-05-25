@@ -117,7 +117,6 @@ describe('Segmentation Controller --', () => {
       const element = createViewport(this.renderingEngine, AXIAL);
       this.DOMElements.push(element);
 
-      // fake volume generator follows the pattern of
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const seg1VolumeID =
         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
@@ -201,7 +200,6 @@ describe('Segmentation Controller --', () => {
     //   const element = createViewport(this.renderingEngine, AXIAL)
     //   this.DOMElements.push(element)
 
-    //   // fake volume generator follows the pattern of
     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
     //   const seg1VolumeID =
     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
@@ -266,7 +264,6 @@ describe('Segmentation Controller --', () => {
     // it('should be able to load two segmentations on the toolGroup and make one invisible', function (done) {
     //   const element = createViewport(this.renderingEngine, AXIAL)
 
-    //   // fake volume generator follows the pattern of
     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
     //   const seg1VolumeID =
     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'

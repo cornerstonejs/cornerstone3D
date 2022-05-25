@@ -5,6 +5,7 @@ import * as metaData from '../metaData';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvas from './renderToCanvas';
+import getScalingParameters from './getScalingParameters';
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the CPU rendering pipeline
@@ -55,18 +56,7 @@ export default function loadImageToCanvas(
       );
     }
 
-    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
-    const suvFactor = metaData.get('scalingModule', imageId) || {};
-
-    const generalSeriesModule =
-      metaData.get('generalSeriesModule', imageId) || {};
-
-    const scalingParameters = {
-      rescaleSlope: modalityLutModule.rescaleSlope,
-      rescaleIntercept: modalityLutModule.rescaleIntercept,
-      modality: generalSeriesModule.modality,
-      suvbw: suvFactor.suvbw,
-    };
+    const scalingParameters = getScalingParameters(imageId);
 
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool

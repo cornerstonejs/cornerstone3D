@@ -56,6 +56,7 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
+import getScalingParameters from '../utilities/getScalingParameters';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1280,6 +1281,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
+          imageIdIndex,
           viewportId: this.id,
           renderingEngineId: this.renderingEngineId,
         };
@@ -1366,21 +1368,11 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const modalityLutModule =
-        metaData.get('modalityLutModule', imageId) || {};
-      const suvFactor = metaData.get('scalingModule', imageId) || {};
+      const scalingParameters = getScalingParameters(imageId);
 
-      const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {};
-
-      const scalingParameters: ScalingParameters = {
-        rescaleSlope: modalityLutModule.rescaleSlope,
-        rescaleIntercept: modalityLutModule.rescaleIntercept,
-        modality: generalSeriesModule.modality,
-        suvbw: suvFactor.suvbw,
-      };
-
-      this.scalingCache[imageId] = scalingParameters;
+      if (imageId) {
+        this.scalingCache[imageId] = scalingParameters;
+      }
 
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
@@ -1426,6 +1418,7 @@ class StackViewport extends Viewport implements IStackViewport {
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
+          imageIdIndex,
           viewportId: this.id,
           renderingEngineId: this.renderingEngineId,
         };
@@ -1464,21 +1457,11 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const modalityLutModule =
-        metaData.get('modalityLutModule', imageId) || {};
-      const suvFactor = metaData.get('scalingModule', imageId) || {};
+      const scalingParameters = getScalingParameters(imageId);
 
-      const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {};
-
-      const scalingParameters: ScalingParameters = {
-        rescaleSlope: modalityLutModule.rescaleSlope,
-        rescaleIntercept: modalityLutModule.rescaleIntercept,
-        modality: generalSeriesModule.modality,
-        suvbw: suvFactor.suvbw,
-      };
-
-      this.scalingCache[imageId] = scalingParameters;
+      if (scalingParameters) {
+        this.scalingCache[imageId] = scalingParameters;
+      }
 
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
@@ -1487,6 +1470,7 @@ class StackViewport extends Viewport implements IStackViewport {
       const priority = -5;
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
+
       const options = {
         targetBuffer: {
           type,
@@ -1500,6 +1484,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {
         imageId,
+        imageIdIndex,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
       };

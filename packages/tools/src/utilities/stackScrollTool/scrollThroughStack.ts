@@ -5,8 +5,6 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import clip from '../clip';
-import getSliceRange from './getSliceRange';
-import snapFocalPointToSlice from './snapFocalPointToSlice';
 import { ScrollOptions } from '../../types';
 
 /**
@@ -23,9 +21,7 @@ export default function scrollThroughStack(
   options: ScrollOptions
 ): void {
   const { type: viewportType } = viewport;
-  const { volumeId, direction, invert } = options;
-
-  const delta = invert ? -direction : direction;
+  const { volumeId, delta } = options;
 
   if (viewport instanceof StackViewport) {
     // stack viewport
@@ -52,12 +48,16 @@ export default function scrollThroughStack(
     }
 
     const volumeActor = actor.actor as unknown as Types.VolumeActor;
-    const scrollRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
+    const sliceRange = csUtils.getSliceRange(
+      volumeActor,
+      viewPlaneNormal,
+      focalPoint
+    );
 
-    const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+    const { newFocalPoint, newPosition } = csUtils.snapFocalPointToSlice(
       focalPoint,
       position,
-      scrollRange,
+      sliceRange,
       viewPlaneNormal,
       spacingInNormalDirection,
       delta

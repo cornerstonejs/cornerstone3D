@@ -1,5 +1,5 @@
 type JumpToSliceOptions = {
-  imageIdIndex?: number;
+  imageIndex: number;
 };
 
 export default JumpToSliceOptions;

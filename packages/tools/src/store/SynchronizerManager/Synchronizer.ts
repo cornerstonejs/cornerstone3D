@@ -175,6 +175,16 @@ class Synchronizer {
     });
   }
 
+  public hasTargetViewport(
+    renderingEngineId: string,
+    viewportId: string
+  ): boolean {
+    return _containsViewport(this._targetViewports, {
+      renderingEngineId,
+      viewportId,
+    });
+  }
+
   private fireEvent(sourceViewport: Types.IViewportId, sourceEvent: any): void {
     if (this.isDisabled() || this._ignoreFiredEvents) {
       return;

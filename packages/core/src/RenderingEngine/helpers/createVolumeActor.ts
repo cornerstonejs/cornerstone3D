@@ -1,9 +1,13 @@
-import { VolumeActor } from './../../types/IActor';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
+import { VolumeActor } from './../../types/IActor';
+import { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../volumeLoader';
-//@ts-ignore
 import createVolumeMapper from './createVolumeMapper';
 import BlendModes from '../../enums/BlendModes';
+import { triggerEvent } from '../../utilities';
+import { Events } from '../../enums';
+import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 
 interface createVolumeActorInterface {
   volumeId: string;
@@ -20,7 +24,9 @@ interface createVolumeActorInterface {
  * @returns A promise that resolves to a VolumeActor.
  */
 async function createVolumeActor(
-  props: createVolumeActorInterface
+  props: createVolumeActorInterface,
+  element: HTMLDivElement,
+  viewportId: string
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -43,11 +49,47 @@ async function createVolumeActor(
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
-  if (callback) {
-    callback({ volumeActor, volumeId });
+  // If the volume is composed of imageIds, we can apply a default VOI based
+  // on either the metadata or the min/max of the middle slice. Example of other
+  // types of volumes which might not be composed of imageIds would be e.g., nrrd, nifti
+  // format volumes
+  if (imageVolume.imageIds) {
+    setDefaultVolumeVOI(volumeActor, imageVolume).then(() => {
+      if (callback) {
+        callback({ volumeActor, volumeId });
+      }
+      triggerVOIModified(element, viewportId, volumeActor);
+    });
+  } else {
+    if (callback) {
+      callback({ volumeActor, volumeId });
+    }
+
+    triggerVOIModified(element, viewportId, volumeActor);
   }
 
   return volumeActor;
+}
+
+function triggerVOIModified(
+  element: HTMLDivElement,
+  viewportId: string,
+  volumeActor: VolumeActor
+) {
+  const voiRange = volumeActor
+    .getProperty()
+    .getRGBTransferFunction(0)
+    .getRange();
+
+  const voiModifiedEventDetail: VoiModifiedEventDetail = {
+    viewportId,
+    range: {
+      lower: voiRange[0],
+      upper: voiRange[1],
+    },
+  };
+
+  triggerEvent(element, Events.VOI_MODIFIED, voiModifiedEventDetail);
 }
 
 export default createVolumeActor;

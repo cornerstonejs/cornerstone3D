@@ -4,6 +4,9 @@ import cache from '../cache';
 import ViewportType from '../enums/ViewportType';
 import Viewport from './Viewport';
 import { createVolumeActor } from './helpers';
+import volumeNewImageEventDispatcher, {
+  resetVolumeNewImageState,
+} from './helpers/volumeNewImageEventDispatcher';
 import { loadVolume } from '../volumeLoader';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
@@ -16,10 +19,14 @@ import type {
   IVolumeInput,
   ActorEntry,
   FlipDirection,
+  EventTypes,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { MINIMUM_SLAB_THICKNESS } from '../constants';
+import { Events } from '../enums';
+import eventTarget from '../eventTarget';
+
 const EPSILON = 1e-3;
 
 /**
@@ -62,6 +69,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         throw new Error(`Unrecognized viewport type: ${this.type}`);
     }
 
+    this.initializeVolumeNewImageEventDispatcher();
+
     const { sliceNormal, viewUp } = this.defaultOptions.orientation;
 
     camera.setDirectionOfProjection(
@@ -76,6 +85,51 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  private initializeVolumeNewImageEventDispatcher(): void {
+    function volumeNewImageHandler(cameraEvent) {
+      const viewportImageData = this.getImageData();
+
+      if (!viewportImageData) {
+        return;
+      }
+
+      volumeNewImageEventDispatcher(cameraEvent);
+    }
+
+    function volumeNewImageCleanUp(evt) {
+      const { viewportId } = evt.detail;
+
+      if (viewportId !== this.id) {
+        return;
+      }
+
+      eventTarget.removeEventListener(
+        Events.ELEMENT_DISABLED,
+        volumeNewImageCleanUp
+      );
+
+      resetVolumeNewImageState(viewportId);
+      this.element.removeEventListener(
+        Events.CAMERA_MODIFIED,
+        volumeNewImageHandler
+      );
+    }
+
+    this.element.removeEventListener(
+      Events.CAMERA_MODIFIED,
+      volumeNewImageHandler.bind(this)
+    );
+    this.element.addEventListener(
+      Events.CAMERA_MODIFIED,
+      volumeNewImageHandler.bind(this)
+    );
+
+    eventTarget.addEventListener(
+      Events.ELEMENT_DISABLED,
+      volumeNewImageCleanUp.bind(this)
+    );
   }
 
   /**
@@ -109,9 +163,14 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, slabThickness, actorUID, slabThicknessEnabled } =
+      const { volumeId, actorUID, slabThickness, slabThicknessEnabled } =
         volumeInputArray[i];
-      const actor = await createVolumeActor(volumeInputArray[i]);
+
+      const actor = await createVolumeActor(
+        volumeInputArray[i],
+        this.element,
+        this.id
+      );
 
       // We cannot use only volumeId since then we cannot have for instance more
       // than one representation of the same volume (since actors would have the
@@ -161,7 +220,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         slabThickness,
         slabThicknessEnabled,
       } = volumeInputArray[i];
-      const actor = await createVolumeActor(volumeInputArray[i]);
+
+      const actor = await createVolumeActor(
+        volumeInputArray[i],
+        this.element,
+        this.id
+      );
 
       if (visibility === false) {
         actor.setVisibility(false);

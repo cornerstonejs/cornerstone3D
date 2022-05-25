@@ -287,3 +287,8 @@ function deepSet(context, key, value) {
     context[key] = value;
   }
 }
+
+/**
+ * Initial Settings for the repository
+ */
+Settings.getDefaultSettings().set('useCursors', true);

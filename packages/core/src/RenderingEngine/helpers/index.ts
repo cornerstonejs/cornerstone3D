@@ -3,6 +3,7 @@ import createVolumeMapper from './createVolumeMapper';
 import getOrCreateCanvas from './getOrCreateCanvas';
 import setVolumesForViewports from './setVolumesForViewports';
 import addVolumesToViewports from './addVolumesToViewports';
+import volumeNewImageEventDispatcher from './volumeNewImageEventDispatcher';
 
 export {
   createVolumeActor,
@@ -10,4 +11,5 @@ export {
   getOrCreateCanvas,
   setVolumesForViewports,
   addVolumesToViewports,
+  volumeNewImageEventDispatcher,
 };

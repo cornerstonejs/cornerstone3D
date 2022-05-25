@@ -25,6 +25,16 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
+type ActorSliceRange = {
+    actor: VolumeActor;
+    viewPlaneNormal: Point3;
+    focalPoint: Point3;
+    min: number;
+    max: number;
+    current: number;
+};
+
+// @public (undocumented)
 function addProvider(provider: (type: string, imageId: string) => {
     any: any;
 }, priority?: number): void;
@@ -363,7 +373,7 @@ function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preven
 function createUint8SharedArray(length: number): Uint8Array;
 
 // @public (undocumented)
-export function createVolumeActor(props: createVolumeActorInterface): Promise<VolumeActor>;
+export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string): Promise<VolumeActor>;
 
 // @public (undocumented)
 export function createVolumeMapper(imageData: any, vtkOpenGLTexture: any): any;
@@ -448,7 +458,9 @@ export enum EVENTS {
     // (undocumented)
     VOLUME_LOADED = "CORNERSTONE_VOLUME_LOADED",
     // (undocumented)
-    VOLUME_LOADED_FAILED = "CORNERSTONE_VOLUME_LOADED_FAILED"
+    VOLUME_LOADED_FAILED = "CORNERSTONE_VOLUME_LOADED_FAILED",
+    // (undocumented)
+    VOLUME_NEW_IMAGE = "CORNERSTONE_VOLUME_NEW_IMAGE"
 }
 
 // @public (undocumented)
@@ -491,7 +503,9 @@ declare namespace EventTypes {
         ImageSpacingCalibratedEvent,
         ImageSpacingCalibratedEventDetail,
         ImageLoadProgressEvent,
-        ImageLoadProgressEventDetail
+        ImageLoadProgressEventDetail,
+        VolumeNewImageEvent,
+        VolumeNewImageEventDetail
     }
 }
 
@@ -512,6 +526,9 @@ export function getEnabledElementByIds(viewportId: string, renderingEngineId: st
 
 // @public (undocumented)
 export function getEnabledElements(): IEnabledElement[];
+
+// @public (undocumented)
+function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): ImageSliceData;
 
 // @public (undocumented)
 function getMetaData(type: string, imageId: string): any;
@@ -535,7 +552,13 @@ export function getRenderingEngines(): IRenderingEngine[] | undefined;
 function getRuntimeId(context?: unknown, separator?: string, max?: number): string;
 
 // @public (undocumented)
+function getScalingParameters(imageId: string): ScalingParameters | undefined;
+
+// @public (undocumented)
 export function getShouldUseCPURendering(): boolean;
+
+// @public (undocumented)
+function getSliceRange(volumeActor: VolumeActor, viewPlaneNormal: Point3, focalPoint: Point3): ActorSliceRange;
 
 // @public (undocumented)
 function getSpacingInNormalDirection(imageVolume: IImageVolume, viewPlaneNormal: Point3): number;
@@ -775,6 +798,8 @@ interface IImageVolume {
     // (undocumented)
     imageIds?: Array<string>;
     // (undocumented)
+    isPrescaled: boolean;
+    // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)
     metadata: Metadata;
@@ -906,6 +931,12 @@ type ImageRenderedEventDetail = {
 export const imageRetrievalPoolManager: RequestPoolManager;
 
 // @public (undocumented)
+type ImageSliceData = {
+    numberOfSlices: number;
+    imageIndex: number;
+};
+
+// @public (undocumented)
 type ImageSpacingCalibratedEvent = CustomEvent_2<ImageSpacingCalibratedEventDetail>;
 
 // @public (undocumented)
@@ -934,6 +965,8 @@ export class ImageVolume implements IImageVolume {
     imageData?: any;
     // (undocumented)
     imageIds?: Array<string>;
+    // (undocumented)
+    isPrescaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
     // (undocumented)
@@ -1344,6 +1377,7 @@ type Metadata = {
     PhotometricInterpretation: string;
     PixelRepresentation: number;
     Modality: string;
+    SeriesInstanceUID: string;
     ImageOrientationPatient: Array<number>;
     PixelSpacing: Array<number>;
     FrameOfReferenceUID: string;
@@ -1412,6 +1446,7 @@ type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
 // @public (undocumented)
 type PreStackNewImageEventDetail = {
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -1568,12 +1603,19 @@ export function setUseCPURendering(status: boolean): void;
 export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
 
 // @public (undocumented)
+function snapFocalPointToSlice(focalPoint: Point3, position: Point3, sliceRange: ActorSliceRange, viewPlaneNormal: Point3, spacingInNormalDirection: number, deltaFrames: number): {
+    newFocalPoint: Point3;
+    newPosition: Point3;
+};
+
+// @public (undocumented)
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
 // @public (undocumented)
 type StackNewImageEventDetail = {
     image: IImage;
     imageId: string;
+    imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
 };
@@ -1745,7 +1787,9 @@ declare namespace Types {
         CPUFallbackLookupTable,
         CPUFallbackLUT,
         CPUFallbackRenderingTools,
-        CustomEvent_2 as CustomEventType
+        CustomEvent_2 as CustomEventType,
+        ActorSliceRange,
+        ImageSliceData
     }
 }
 export { Types }
@@ -1781,7 +1825,11 @@ declare namespace utilities {
         loadImageToCanvas,
         renderToCanvas,
         worldToImageCoords,
-        imageToWorldCoords
+        imageToWorldCoords,
+        getSliceRange,
+        snapFocalPointToSlice,
+        getImageSliceDataForVolumeViewport,
+        getScalingParameters
     }
 }
 export { utilities }
@@ -2000,6 +2048,17 @@ type VolumeLoaderFn = (volumeId: string, options?: Record<string, any>) => {
     promise: Promise<Record<string, any>>;
     cancelFn?: () => void | undefined;
     decache?: () => void | undefined;
+};
+
+// @public (undocumented)
+type VolumeNewImageEvent = CustomEvent_2<VolumeNewImageEventDetail>;
+
+// @public (undocumented)
+type VolumeNewImageEventDetail = {
+    imageIndex: number;
+    numberOfSlices: number;
+    viewportId: string;
+    renderingEngineId: string;
 };
 
 // @public (undocumented)

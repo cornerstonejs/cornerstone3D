@@ -1,5 +1,9 @@
 import { MouseBindings, ToolModes } from '../../enums';
-import { getRenderingEngine, getRenderingEngines } from '@cornerstonejs/core';
+import {
+  getRenderingEngine,
+  getRenderingEngines,
+  Settings,
+} from '@cornerstonejs/core';
 import { state } from '../index';
 import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types';
 
@@ -131,7 +135,11 @@ export default class ToolGroup implements IToolGroup {
 
     // Handle the newly added viewport's mouse cursor
     const activeToolName = this.getActivePrimaryMouseButtonTool();
-    this.setViewportsCursorByToolName(activeToolName);
+
+    const runtimeSettings = Settings.getRuntimeSettings();
+    if (runtimeSettings.get('useCursors')) {
+      this.setViewportsCursorByToolName(activeToolName);
+    }
   }
 
   /**
@@ -209,7 +217,11 @@ export default class ToolGroup implements IToolGroup {
     this._toolInstances[toolName].mode = Active;
 
     // reset the mouse cursor if tool has left click binding
-    if (this._hasMousePrimaryButtonBinding(toolBindingsOptions)) {
+    const runtimeSettings = Settings.getRuntimeSettings();
+    if (
+      this._hasMousePrimaryButtonBinding(toolBindingsOptions) &&
+      runtimeSettings.get('useCursors')
+    ) {
       this.setViewportsCursorByToolName(toolName);
     }
 

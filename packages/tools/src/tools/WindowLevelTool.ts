@@ -66,8 +66,10 @@ export default class WindowLevelTool extends BaseTool {
           renderingEngine.id
         );
       [lower, upper] = rgbTransferFunction.getRange();
-      modality = cache.getVolume(volumeId).metadata.Modality;
+      const volume = cache.getVolume(volumeId);
+      modality = volume.metadata.Modality;
       useDynamicRange = true;
+      isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
     } else if (viewport instanceof StackViewport) {
       const properties = viewport.getProperties();
       modality = viewport.modality;

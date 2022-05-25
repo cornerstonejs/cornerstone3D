@@ -441,8 +441,6 @@ describe('StreamingImageVolume', () => {
         'fakeSharedBufferImageLoader:myImage5_256_256_0_20_1_1_0',
       ];
 
-      // fake volume generator follows the pattern of
-      // volumeScheme:volumeURI_xSize_ySize_zSize_barStart_barWidth_xSpacing_ySpacing_zSpacing_rgbFlag
       const volumeId = 'cornerstoneStreamingImageVolume:volume';
 
       try {

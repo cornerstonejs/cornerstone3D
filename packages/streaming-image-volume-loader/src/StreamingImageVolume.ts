@@ -7,14 +7,14 @@ import {
   ImageVolume,
   cache,
   imageLoader,
-  utilities as cornerstoneUtils,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 
 import type { Types } from '@cornerstonejs/core';
 import { scaleArray, autoLoad } from './helpers';
 
 const requestType = Enums.RequestType.Prefetch;
-const { getMinMax } = cornerstoneUtils;
+const { getMinMax } = csUtils;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -545,6 +545,7 @@ export default class StreamingImageVolume extends ImageVolume {
     }
 
     this.scaling = { PET: petScaling };
+    this.isPrescaled = true;
   }
 
   private _removeFromCache() {
