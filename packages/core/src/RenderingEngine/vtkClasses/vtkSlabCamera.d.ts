@@ -362,6 +362,12 @@ export interface vtkSlabCamera extends VtkObject {
   getWorldToPhysicalMatrix(result: mat4): void;
 
   /**
+   *
+   * @defaultValue false
+   */
+  getIsPerformingCoordinateTransformation(status: boolean): void;
+
+  /**
    * Recompute the ViewUp vector to force it to be perpendicular to the camera's focalpoint vector.
    */
   orthogonalizeViewUp(): void;
@@ -730,6 +736,12 @@ export interface vtkSlabCamera extends VtkObject {
    * @param factor -
    */
   zoom(factor: number): void;
+
+  /**
+   * Activate camera clipping customization necessary when doing coordinate transformations
+   * @param status -
+   */
+  setIsPerformingCoordinateTransformation(status: boolean): void;
 }
 
 /**

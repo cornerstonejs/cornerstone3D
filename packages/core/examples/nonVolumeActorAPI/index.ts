@@ -1,6 +1,3 @@
-import '@kitware/vtk.js/Rendering/Profiles/Geometry';
-import '@kitware/vtk.js/Rendering/Profiles/Molecule'; // for vtkSphereMapper
-
 import {
   RenderingEngine,
   Types,
@@ -203,7 +200,7 @@ async function run() {
 
   const sphereSource = vtkSphereSource.newInstance({
     center: [0, 0, 0],
-    radius: 0.12,
+    radius: 1,
     phiResolution: 20,
     thetaResolution: 20,
   });

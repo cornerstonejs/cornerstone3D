@@ -4,7 +4,7 @@ import { vec3, mat4 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
 /**
- * vtkSlabCamera - A dervied class of the core vtkCamera class
+ * vtkSlabCamera - A derived class of the core vtkCamera class
  *
  * This customization is necesssary because when we do coordinate transformations
  * we need to set the cRange between [d, d + 0.1],
@@ -25,7 +25,7 @@ function vtkSlabCamera(publicAPI, model) {
   /**
    * getProjectionMatrix - A fork of vtkCamera's getProjectionMatrix method.
    * This fork performs most of the same actions, but define crange around
-   * model.distance.
+   * model.distance when doing coordinate transformations.
    */
   publicAPI.getProjectionMatrix = (aspect, nearz, farz) => {
     const result = mat4.create();
@@ -42,8 +42,13 @@ function vtkSlabCamera(publicAPI, model) {
 
     mat4.identity(tmpMatrix);
 
-    const cRange0 = model.distance;
-    const cRange1 = model.distance + 0.1;
+    let cRange0 = model.clippingRange[0];
+    let cRange1 = model.clippingRange[1];
+    if (model.isPerformingCoordinateTransformation) {
+      cRange0 = model.distance;
+      cRange1 = model.distance + 0.1;
+    }
+
     const cWidth = cRange1 - cRange0;
     const cRange = [
       cRange0 + ((nearz + 1) * cWidth) / 2.0,
@@ -105,8 +110,16 @@ function vtkSlabCamera(publicAPI, model) {
 
 // ----------------------------------------------------------------------------
 
+const DEFAULT_VALUES = {
+  isPerformingCoordinateTransformation: false,
+};
+
 export function extend(publicAPI, model, initialValues = {}) {
+  Object.assign(model, DEFAULT_VALUES, initialValues);
+
   vtkCamera.extend(publicAPI, model, initialValues);
+
+  macro.setGet(publicAPI, model, ['isPerformingCoordinateTransformation']);
 
   // Object methods
   vtkSlabCamera(publicAPI, model);

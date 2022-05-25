@@ -26,6 +26,7 @@ import type IVolumeViewport from '../types/IVolumeViewport';
 import { MINIMUM_SLAB_THICKNESS } from '../constants';
 import { Events } from '../enums';
 import eventTarget from '../eventTarget';
+import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 
 const EPSILON = 1e-3;
 
@@ -348,7 +349,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const distance = super.resetCamera(resetPan, resetZoom);
 
     const activeCamera = this.getVtkActiveCamera();
-    activeCamera.setClippingRange(0, distance * 2);
+    activeCamera.setClippingRange(0.01, distance * 2);
 
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
@@ -514,6 +515,31 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public canvasToWorld = (canvasPos: Point2): Point3 => {
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
+
+    /**
+     * NOTE: this is necessary because we want the coordinate trasformation
+     * respect to the view plane (plane orthogonal to the camera and passing to
+     * the focal point).
+     *
+     * When vtk.js computes the coordinate transformations, it simply uses the
+     * camera matrix (no ray casting).
+     *
+     * However for the volume viewport the clipping range is set to be
+     * (0.01, radius * 2), where the radius is radius containing all the actors
+     * in the viewport. This means that vkt.js will not return the coordinates
+     * of the point on the view plane
+     * (i.e. the depth coordinate will corresponde to a distance 0.01 from the
+     * camera position).
+     *
+     * Therefore the clipping range has to be set to (distance, distance + 0.01),
+     * where now distance is the distance between the camera position and focal
+     * point. This is done internally, in our camera customization when the flag
+     * isPerformingCoordinateTransformation is set to true.
+     */
+
+    vtkCamera.setIsPerformingCoordinateTransformation(true);
+
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
@@ -532,6 +558,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       renderer
     );
 
+    vtkCamera.setIsPerformingCoordinateTransformation(false);
+
     worldCoord = this.applyFlipTx(worldCoord);
     return worldCoord;
   };
@@ -545,6 +573,31 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @public
    */
   public worldToCanvas = (worldPos: Point3): Point2 => {
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
+
+    /**
+     * NOTE: this is necessary because we want the coordinate trasformation
+     * respect to the view plane (plane orthogonal to the camera and passing to
+     * the focal point).
+     *
+     * When vtk.js computes the coordinate transformations, it simply uses the
+     * camera matrix (no ray casting).
+     *
+     * However for the volume viewport the clipping range is set to be
+     * (0.01, radius * 2), where the radius is radius containing all the actors
+     * in the viewport. This means that vkt.js will not return the coordinates
+     * of the point on the view plane
+     * (i.e. the depth coordinate will corresponde to a distance 0.01 from the
+     * camera position).
+     *
+     * Therefore the clipping range has to be set to (distance, distance + 0.01),
+     * where now distance is the distance between the camera position and focal
+     * point. This is done internally, in our camera customization when the flag
+     * isPerformingCoordinateTransformation is set to true.
+     */
+
+    vtkCamera.setIsPerformingCoordinateTransformation(true);
+
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
@@ -563,6 +616,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       displayCoord[0] - this.sx,
       displayCoord[1] - this.sy,
     ];
+
+    vtkCamera.setIsPerformingCoordinateTransformation(false);
 
     return canvasCoord;
   };
