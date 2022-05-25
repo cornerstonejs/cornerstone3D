@@ -348,7 +348,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const distance = super.resetCamera(resetPan, resetZoom);
 
     const activeCamera = this.getVtkActiveCamera();
-    activeCamera.setClippingRange(0.01, distance * 2);
+    activeCamera.setClippingRange(0, 100000);
 
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();

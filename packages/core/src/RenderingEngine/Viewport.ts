@@ -535,6 +535,7 @@ class Viewport implements IViewport {
     const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds();
+    console.info(bounds);
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 
