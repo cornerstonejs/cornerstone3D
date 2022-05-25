@@ -305,6 +305,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public getIntensityFromWorld(point: Point3): number {
     const { actor, uid } = this.getDefaultActor();
+    if (!actor.isA('vtkVolume')) {
+      return;
+    }
+
     const imageData = actor.getMapper().getInputData();
 
     const volume = cache.getVolume(uid);
@@ -473,6 +477,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     const { actor } = defaultActor;
+    if (!actor.isA('vtkVolume')) {
+      return;
+    }
+
     const vtkImageData = actor.getMapper().getInputData();
     return {
       dimensions: vtkImageData.getDimensions(),
@@ -586,7 +594,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       return;
     }
 
-    const { uid } = this.getDefaultActor();
+    const { uid, actor } = this.getDefaultActor();
+    if (!actor.isA('vtkVolume')) {
+      return;
+    }
+
     const volume = cache.getVolume(uid);
 
     if (!volume) {

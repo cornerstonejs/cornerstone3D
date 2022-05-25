@@ -563,6 +563,8 @@ class Viewport implements IViewport {
     focalPoint[1] = (bounds[2] + bounds[3]) / 2.0;
     focalPoint[2] = (bounds[4] + bounds[5]) / 2.0;
 
+    console.info('bella1', focalPoint);
+
     if (imageData) {
       const dimensions = imageData.getDimensions();
       const middleIJK = dimensions.map((d) => Math.floor(d / 2));
@@ -570,6 +572,8 @@ class Viewport implements IViewport {
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
       imageData.indexToWorld(idx, focalPoint);
     }
+
+    console.info('bella2', focalPoint);
 
     const { widthWorld, heightWorld } =
       this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal);
@@ -631,6 +635,9 @@ class Viewport implements IViewport {
       focalPointToSet[1] + distance * viewPlaneNormal[1],
       focalPointToSet[2] + distance * viewPlaneNormal[2]
     );
+
+    console.info('bella3', activeCamera.getFocalPoint());
+    console.info('bella4', activeCamera.getPosition());
 
     renderer.resetCameraClippingRange(bounds);
 
