@@ -200,7 +200,7 @@ async function run() {
 
   const sphereSource = vtkSphereSource.newInstance({
     center: [0, 0, 0],
-    radius: 1,
+    radius: 100,
     phiResolution: 20,
     thetaResolution: 20,
   });
