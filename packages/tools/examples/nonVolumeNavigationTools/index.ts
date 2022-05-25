@@ -16,13 +16,23 @@ import {
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
+const {
+  PanTool,
+  ZoomTool,
+  VolumeRotateMouseWheelTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = cornerstoneTools;
+
 const { ViewportType } = Enums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ORIENTATION } = CONSTANTS;
 
 const renderingEngineId = 'myRenderingEngine';
@@ -37,57 +47,10 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '1000px';
+element.style.height = '1000px';
 
 content.appendChild(element);
-// ============================= //
-
-addButtonToToolbar({
-  title: 'Apply Zoom',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Get the current camera properties
-    const camera = viewport.getCamera();
-
-    const parallelScale = camera.parallelScale * 0.5;
-
-    viewport.setCamera({
-      parallelScale,
-    });
-    viewport.render();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Apply UnZoom',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    // Get the current camera properties
-    const camera = viewport.getCamera();
-
-    const parallelScale = camera.parallelScale * 2;
-
-    viewport.setCamera({
-      parallelScale,
-    });
-    viewport.render();
-  },
-});
 
 addButtonToToolbar({
   title: 'Reset Viewport',
@@ -177,6 +140,40 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  const toolGroupId = 'NAVIGATION_TOOL_GROUP_ID';
+
+  // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
+
+  // Define a tool group, which defines how mouse events map to tool commands for
+  // Any viewport using the group
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  // Add tools to the tool group
+  toolGroup.addTool('VolumeRotateMouseWheel');
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+
+  // Set the initial state of the tools, here all tools are active and bound to
+  // Different mouse inputs
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift + Left Click + Drag
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click + Drag
+      },
+    ],
+  });
+  toolGroup.setToolActive('VolumeRotateMouseWheel');
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -192,6 +189,9 @@ async function run() {
   };
 
   renderingEngine.enableElement(viewportInput);
+
+  // Set the tool group on the viewport
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
