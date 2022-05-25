@@ -161,8 +161,8 @@ function render(
     throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
-  const actor = viewport.getActor(segmentationRepresentationUID);
-  if (!actor) {
+  const actorEntry = viewport.getActor(segmentationRepresentationUID);
+  if (!actorEntry) {
     console.warn(
       'No actor found for actorUID: ',
       segmentationRepresentationUID
@@ -178,7 +178,7 @@ function render(
 
   _setLabelmapColorAndOpacity(
     viewport.id,
-    actor,
+    actorEntry,
     cfun,
     ofun,
     colorLUTIndex,
@@ -191,7 +191,7 @@ function render(
 
 function _setLabelmapColorAndOpacity(
   viewportId: string,
-  actor: Types.ActorEntry,
+  actorEntry: Types.ActorEntry,
   cfun: vtkColorTransferFunction,
   ofun: vtkPiecewiseFunction,
   colorLUTIndex: number,
@@ -218,8 +218,8 @@ function _setLabelmapColorAndOpacity(
 
   const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
   const numColors = Math.min(256, colorLUT.length);
-  const { uid } = actor;
-  const volumeActor = actor.actor as unknown as Types.VolumeActor;
+  const { uid } = actorEntry;
+  const volumeActor = actorEntry.actor as Types.VolumeActor;
 
   const { needColorUpdate, needOpacityUpdate } = _needsTransferFunctionUpdate(
     viewportId,

@@ -346,23 +346,27 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * Reset the camera for the volume viewport
    */
   public resetCamera(resetPan = true, resetZoom = true): number {
-    super.resetCamera(resetPan, resetZoom);
-
+    let distance = super.resetCamera(resetPan, resetZoom);
+    if (distance < 50) {
+      // this looks to be an arbitrarly values that vtk.js uses to indicate infinite
+      // however if distance is larger than 50, we need to set the distance.
+      distance = 50;
+    }
     const activeCamera = this.getVtkActiveCamera();
-    activeCamera.setClippingRange(-50, 50);
+    activeCamera.setClippingRange(-distance * 2, distance * 2);
 
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
 
-    const actors = this.getActors();
-    actors.forEach((actor) => {
+    const actorEntries = this.getActors();
+    actorEntries.forEach((actorEntry) => {
       // we assume that the first two clipping plane of the mapper are always
       // the 'camera' clipping. Apply clipping planes only if the actor is
       // a vtkVolume
-      if (!actor.actor || !actor.actor.isA('vtkVolume')) {
+      if (!actorEntry.actor || !actorEntry.actor.isA('vtkVolume')) {
         return;
       }
-      const mapper = actor.actor.getMapper();
+      const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
       if (vtkPlanes.length === 0) {
         const clipPlane1 = vtkPlane.newInstance();
@@ -370,8 +374,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         const newVtkPlanes = [clipPlane1, clipPlane2];
 
         let slabThickness = MINIMUM_SLAB_THICKNESS;
-        if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
-          slabThickness = actor.slabThickness;
+        if (
+          actorEntry.slabThicknessEnabled !== false &&
+          actorEntry.slabThickness
+        ) {
+          slabThickness = actorEntry.slabThickness;
         }
 
         this.setOrientationOfClippingPlanes(
@@ -526,11 +533,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (0.01, radius * 2), where the radius is radius containing all the actors
-     * in the viewport. This means that vkt.js will not return the coordinates
-     * of the point on the view plane
-     * (i.e. the depth coordinate will corresponde to a distance 0.01 from the
-     * camera position).
+     * (-radius * 2, radius * 2), where the radius is radius of the sphere
+     * containing all the actors in the viewport. The clipping range is
+     * used in the camera method getProjectionMatrix(). The projection matrix is
+     * used then for viewToWorld/worldToView methods of the renderer.
+     * This means that vkt.js will not return the coordinates of the point on
+     * the view plane (i.e. the depth coordinate will corresponde to the focal point).
      *
      * Therefore the clipping range has to be set to (distance, distance + 0.01),
      * where now distance is the distance between the camera position and focal
@@ -584,11 +592,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (0.01, radius * 2), where the radius is radius containing all the actors
-     * in the viewport. This means that vkt.js will not return the coordinates
-     * of the point on the view plane
-     * (i.e. the depth coordinate will corresponde to a distance 0.01 from the
-     * camera position).
+     * (-radius * 2, radius * 2), where the radius is radius of the sphere
+     * containing all the actors in the viewport. The clipping range is
+     * used in the camera method getProjectionMatrix(). The projection matrix is
+     * used then for viewToWorld/worldToView methods of the renderer.
+     * This means that vkt.js will not return the coordinates of the point on
+     * the view plane (i.e. the depth coordinate will corresponde to the focal point).
      *
      * Therefore the clipping range has to be set to (distance, distance + 0.01),
      * where now distance is the distance between the camera position and focal

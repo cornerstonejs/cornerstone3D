@@ -216,7 +216,7 @@ async function run() {
   const nonVolumeActors = [];
   nonVolumeActors.push({ uid: 'spherePolyData', actor });
 
-  viewport.addActors(nonVolumeActors);
+  viewport.setActors(nonVolumeActors);
 
   // Render the image
   viewport.render();

@@ -169,14 +169,14 @@ class Viewport implements IViewport {
   }
 
   protected applyFlipTx = (worldPos: Point3): Point3 => {
-    const actor = this.getDefaultActor();
+    const actorEntry = this.getDefaultActor();
 
-    if (!actor) {
+    if (!actorEntry) {
       return worldPos;
     }
 
-    const vtkActor = actor.actor;
-    const mat = vtkActor.getMatrix();
+    const actor = actorEntry.actor;
+    const mat = actor.getMatrix();
 
     const newPos = vec3.create();
     const matT = mat4.create();
@@ -281,12 +281,12 @@ class Viewport implements IViewport {
         .multiply(transformBackFromOriginTx.getMatrix());
     }
 
-    const actors = this.getActors();
+    const actorEntries = this.getActors();
 
-    actors.forEach((actor) => {
-      const vtkActor = actor.actor;
+    actorEntries.forEach((actorEntry) => {
+      const actor = actorEntry.actor;
 
-      const mat = vtkActor.getUserMatrix();
+      const mat = actor.getUserMatrix();
 
       if (flipHTx) {
         mat4.multiply(mat, mat, flipHTx.getMatrix());
@@ -296,7 +296,7 @@ class Viewport implements IViewport {
         mat4.multiply(mat, mat, flipVTx.getMatrix());
       }
 
-      vtkActor.setUserMatrix(mat);
+      actor.setUserMatrix(mat);
 
       this.getRenderingEngine().render();
     });
@@ -305,10 +305,10 @@ class Viewport implements IViewport {
   }
 
   private getDefaultImageData(): any {
-    const actor = this.getDefaultActor();
+    const actorEntry = this.getDefaultActor();
 
-    if (actor && actor.actor.isA('vtkVolume')) {
-      return actor.actor.getMapper().getInputData();
+    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
+      return actorEntry.actor.getMapper().getInputData();
     }
   }
 
@@ -375,13 +375,13 @@ class Viewport implements IViewport {
    * @param actorUID - The unique identifier for the actor.
    */
   public removeActor(actorUID: string): void {
-    const actor = this.getActor(actorUID);
-    if (!actor) {
+    const actorEntry = this.getActor(actorUID);
+    if (!actorEntry) {
       console.warn(`Actor ${actorUID} does not exist for this viewport`);
       return;
     }
     const renderer = this.getRenderer();
-    renderer.removeViewProp(actor.actor); // removeActor not implemented in vtk?
+    renderer.removeViewProp(actorEntry.actor); // removeActor not implemented in vtk?
     this._actors.delete(actorUID);
   }
 
@@ -434,8 +434,7 @@ class Viewport implements IViewport {
       throw new Error('Actors should have uid and vtk Actor properties');
     }
 
-    const actorCheck = this.getActor(actorUID);
-    if (actorCheck) {
+    if (this.getActor(actorUID)) {
       console.warn(`Actor ${actorUID} already exists for this viewport`);
       return;
     }
@@ -832,14 +831,17 @@ class Viewport implements IViewport {
   public updateActorsClippingPlanesOnCameraModified(
     updatedCamera: ICamera
   ): void {
-    const actors = this.getActors();
-    actors.forEach((actor) => {
-      const mapper = actor.actor.getMapper();
+    const actorEntries = this.getActors();
+    actorEntries.forEach((actorEntry) => {
+      const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
       let slabThickness = MINIMUM_SLAB_THICKNESS;
-      if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
-        slabThickness = actor.slabThickness;
+      if (
+        actorEntry.slabThicknessEnabled !== false &&
+        actorEntry.slabThickness
+      ) {
+        slabThickness = actorEntry.slabThickness;
       }
 
       this.setOrientationOfClippingPlanes(

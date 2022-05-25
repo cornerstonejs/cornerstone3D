@@ -11,7 +11,7 @@ export type VolumeActor = vtkVolume;
  */
 export type ActorEntry = {
   uid: string;
-  actor: Actor;
+  actor: Actor | VolumeActor;
   slabThicknessEnabled?: boolean;
   slabThickness?: number;
 };

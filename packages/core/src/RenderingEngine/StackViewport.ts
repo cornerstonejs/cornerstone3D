@@ -837,7 +837,7 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const volumeActor = actor as unknown as VolumeActor;
+    const volumeActor = actor as VolumeActor;
     const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
     if ((!this.invert && invert) || (this.invert && !invert)) {
@@ -904,7 +904,7 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const volumeActor = actor as unknown as VolumeActor;
+    const volumeActor = actor as VolumeActor;
     const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
     if (typeof voiRange === 'undefined') {

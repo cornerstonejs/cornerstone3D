@@ -67,11 +67,11 @@ addButtonToToolbar({
     );
 
     // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
+    const actorEntry = viewport.getActor(volumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    if (actor && actor.actor.isA('vtkVolume')) {
-      const volumeActor = actor.actor as unknown as VolumeActor;
+    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
+      const volumeActor = actorEntry.actor as VolumeActor;
       volumeActor
         .getProperty()
         .getRGBTransferFunction(0)
@@ -132,10 +132,10 @@ addButtonToToolbar({
     );
 
     // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
+    const actorEntry = viewport.getActor(volumeId);
 
-    if (actor && actor.actor.isA('vtkVolume')) {
-      const volumeActor = actor.actor as unknown as VolumeActor;
+    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
+      const volumeActor = actorEntry.actor as VolumeActor;
       const rgbTransferFunction = volumeActor
         .getProperty()
         .getRGBTransferFunction(0);
@@ -286,9 +286,9 @@ addSliderToToolbar({
     viewport.setSlabThicknessForAllVolumeActors(valueAsNumber);
 
     // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
-    if (actor && actor.actor.isA('vtkVolume')) {
-      const volumeActor = actor.actor as unknown as VolumeActor;
+    const actorEntry = viewport.getActor(volumeId);
+    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
+      const volumeActor = actorEntry.actor as VolumeActor;
       volumeActor.getMapper().setBlendMode(blendMode);
     }
 

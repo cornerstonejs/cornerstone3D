@@ -41,13 +41,13 @@ export default function scrollThroughStack(
       return;
     }
 
-    const actor = viewport.getActor(imageVolume.volumeId);
+    const actorEntry = viewport.getActor(imageVolume.volumeId);
 
-    if (!actor) {
+    if (!actorEntry) {
       console.warn('No actor found for with actorUID of', imageVolume.volumeId);
     }
 
-    const volumeActor = actor.actor as unknown as Types.VolumeActor;
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
     const sliceRange = csUtils.getSliceRange(
       volumeActor,
       viewPlaneNormal,
