@@ -43,7 +43,6 @@ import {
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { MouseDragEventType } from '../types/EventTypes';
-import { render } from 'react-dom';
 import { CONSTANTS } from '@cornerstonejs/core';
 
 const { RENDERINGDEFAULTS } = CONSTANTS;
@@ -60,8 +59,6 @@ interface ToolConfiguration {
   };
 }
 
-type ViewportInputs = Array<Types.IViewportId>;
-
 interface CrosshairsAnnotation extends Annotation {
   data: {
     handles: {
@@ -76,7 +73,7 @@ interface CrosshairsAnnotation extends Annotation {
 }
 
 function defaultReferenceLineColor() {
-  return 'rgb(200, 200, 200)';
+  return 'rgb(0, 200, 0)';
 }
 
 function defaultReferenceLineControllable() {
@@ -88,7 +85,7 @@ function defaultReferenceLineDraggableRotatable() {
 }
 
 function defaultReferenceLineSlabThicknessControlsOn() {
-  return false;
+  return true;
 }
 
 const OPERATION = {
@@ -127,6 +124,9 @@ export default class CrosshairsTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
         shadow: true,
+        // renders a colored circle on top right of the viewports whose color
+        // matches the color of the reference line
+        viewportIndicators: true,
         // Auto pan is a configuration which will update pan
         // other viewports in the toolGroup if the center of the crosshairs
         // is outside of the viewport. This might be useful for the case
@@ -1284,6 +1284,11 @@ export default class CrosshairsTool extends AnnotationTool {
 
     // render a circle to pin point the viewport color
     // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
+
+    if (!this.configuration.viewportIndicators) {
+      return;
+    }
+
     const referenceColorCoordinates = [
       sWidth * 0.95,
       sHeight * 0.05,

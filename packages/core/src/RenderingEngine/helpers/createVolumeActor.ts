@@ -54,12 +54,11 @@ async function createVolumeActor(
   // types of volumes which might not be composed of imageIds would be e.g., nrrd, nifti
   // format volumes
   if (imageVolume.imageIds) {
-    setDefaultVolumeVOI(volumeActor, imageVolume).then(() => {
-      if (callback) {
-        callback({ volumeActor, volumeId });
-      }
-      triggerVOIModified(element, viewportId, volumeActor);
-    });
+    await setDefaultVolumeVOI(volumeActor, imageVolume);
+    if (callback) {
+      callback({ volumeActor, volumeId });
+    }
+    triggerVOIModified(element, viewportId, volumeActor);
   } else {
     if (callback) {
       callback({ volumeActor, volumeId });
