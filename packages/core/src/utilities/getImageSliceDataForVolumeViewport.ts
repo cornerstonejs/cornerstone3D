@@ -1,4 +1,4 @@
-import { ImageSliceData, IVolumeViewport } from '../types';
+import { ImageSliceData, IVolumeViewport, VolumeActor } from '../types';
 import getSliceRange from './getSliceRange';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 
@@ -27,7 +27,7 @@ function getImageSliceDataForVolumeViewport(
     console.warn('No actor found for with actorUID of', imageVolume.volumeId);
   }
 
-  const { volumeActor } = actor;
+  const volumeActor = actor.actor as unknown as VolumeActor;
   const sliceRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
 
   const { min, max, current } = sliceRange;
