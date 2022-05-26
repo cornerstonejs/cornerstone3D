@@ -27,17 +27,18 @@ const {
   PanTool,
   RotateTool,
   ZoomTool,
-  VolumeRotateMouseWheelTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ORIENTATION } = CONSTANTS;
 
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'POLYDATA_SAGITTAL';
+const viewportId1 = 'POLYDATA_SAGITTAL_ORTHO';
+const viewportId2 = 'POLYDATA_SAGITTAL_STERO';
+const viewportIds = [viewportId1, viewportId2];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -45,30 +46,56 @@ setTitleAndDescription(
   'Demonstrates how to interact with a Volume viewport with non volume actors.'
 );
 
+const size = '500px';
 const content = document.getElementById('content');
-const element = document.createElement('div');
-element.id = 'cornerstone-element';
-element.style.width = '1000px';
-element.style.height = '1000px';
+const viewportGrid = document.createElement('div');
 
-content.appendChild(element);
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
+
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
+
+// Disable right click context menu so we can have right click tools
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+
+content.appendChild(viewportGrid);
+
+const instructions = document.createElement('p');
+instructions.innerText = `
+  Basic controls:
+  - Left Click / Drag : Rotate
+  - Middle Click / Drag : Pan
+  - Right Click / Drag : Zoom
+  `;
+
+content.append(instructions);
 
 addButtonToToolbar({
-  title: 'Reset Viewport',
+  title: 'Reset Viewports',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    viewportIds.forEach((viewportId) => {
+      // Get the volume viewport
+      const viewport = <Types.IVolumeViewport>(
+        renderingEngine.getViewport(viewportId)
+      );
 
-    // Resets the viewport's camera
-    viewport.resetCamera();
-    // TODO reset the viewport properties, we don't have API for this.
+      // Resets the viewport's camera
+      viewport.resetCamera();
 
-    viewport.render();
+      viewport.render();
+    });
   },
 });
 
@@ -88,49 +115,51 @@ addDropdownToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    viewportIds.forEach((viewportId) => {
+      // Get the volume viewport
+      const viewport = <Types.IVolumeViewport>(
+        renderingEngine.getViewport(viewportId)
+      );
 
-    // TODO -> Maybe we should rename sliceNormal to viewPlaneNormal everywhere?
-    let viewUp;
-    let viewPlaneNormal;
+      let viewUp;
+      let viewPlaneNormal;
 
-    switch (selectedValue) {
-      case orientationOptions.axial:
-        viewUp = ORIENTATION.AXIAL.viewUp;
-        viewPlaneNormal = ORIENTATION.AXIAL.sliceNormal;
+      switch (selectedValue) {
+        case orientationOptions.axial:
+          viewUp = ORIENTATION.AXIAL.viewUp;
+          viewPlaneNormal = ORIENTATION.AXIAL.sliceNormal;
 
-        break;
-      case orientationOptions.sagittal:
-        viewUp = ORIENTATION.SAGITTAL.viewUp;
-        viewPlaneNormal = ORIENTATION.SAGITTAL.sliceNormal;
+          break;
+        case orientationOptions.sagittal:
+          viewUp = ORIENTATION.SAGITTAL.viewUp;
+          viewPlaneNormal = ORIENTATION.SAGITTAL.sliceNormal;
 
-        break;
-      case orientationOptions.coronal:
-        viewUp = ORIENTATION.CORONAL.viewUp;
-        viewPlaneNormal = ORIENTATION.CORONAL.sliceNormal;
+          break;
+        case orientationOptions.coronal:
+          viewUp = ORIENTATION.CORONAL.viewUp;
+          viewPlaneNormal = ORIENTATION.CORONAL.sliceNormal;
 
-        break;
-      case orientationOptions.oblique:
-        // Some random oblique value for this dataset
-        viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446];
-        viewPlaneNormal = [
-          -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
-        ];
+          break;
+        case orientationOptions.oblique:
+          // Some random oblique value for this dataset
+          viewUp = [
+            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+          ];
+          viewPlaneNormal = [
+            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+          ];
 
-        break;
-      default:
-        throw new Error('undefined orientation option');
-    }
+          break;
+        default:
+          throw new Error('undefined orientation option');
+      }
 
-    // TODO -> Maybe we should have a helper for this on the viewport
-    // Set the new orientation
-    viewport.setCamera({ viewUp, viewPlaneNormal });
-    // Reset the camera after the normal changes
-    viewport.resetCamera();
-    viewport.render();
+      // Set the new orientation
+      viewport.setCamera({ viewUp, viewPlaneNormal });
+      // Reset the camera after the normal changes
+      viewport.resetCamera();
+      viewport.render();
+    });
   },
 });
 
@@ -161,8 +190,7 @@ async function run() {
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Shift + Left Click + Drag
-        modifierKey: KeyboardBindings.Shift,
+        mouseButton: MouseBindings.Auxiliary, // Middle + Drag
       },
     ],
   });
@@ -178,58 +206,70 @@ async function run() {
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click + Drag
+        mouseButton: MouseBindings.Secondary, // Right Click + Drag
       },
     ],
   });
-  toolGroup.setToolActive('VolumeRotateMouseWheel');
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
-    element,
-    defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+  // Create the viewports
+  const viewportInputArray = [
+    {
+      viewportId: viewportId1,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element1,
+      defaultOptions: {
+        orientation: ORIENTATION.SAGITTAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
     },
-  };
+    {
+      viewportId: viewportId2,
+      type: ViewportType.PERSPECTIVE,
+      element: element2,
+      defaultOptions: {
+        orientation: ORIENTATION.SAGITTAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+  ];
 
-  renderingEngine.enableElement(viewportInput);
+  renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
 
-  // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  viewportIds.forEach((viewportId) => {
+    // Get the stack viewport that was created
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  const sphereSource = vtkSphereSource.newInstance({
-    center: [0, 0, 0],
-    radius: 100,
-    phiResolution: 20,
-    thetaResolution: 20,
+    const sphereSource = vtkSphereSource.newInstance({
+      center: [0, 0, 0],
+      radius: 100,
+      phiResolution: 10,
+      thetaResolution: 10,
+    });
+    const actor = vtkActor.newInstance();
+    const mapper = vtkMapper.newInstance();
+
+    actor.getProperty().setEdgeVisibility(true);
+
+    mapper.setInputConnection(sphereSource.getOutputPort());
+    actor.setMapper(mapper);
+
+    const nonVolumeActors = [];
+    nonVolumeActors.push({ uid: 'spherePolyData', actor });
+
+    viewport.setActors(nonVolumeActors);
+
+    // Render the image
+    viewport.render();
   });
-  const actor = vtkActor.newInstance();
-  const mapper = vtkMapper.newInstance();
-
-  actor.getProperty().setEdgeVisibility(true);
-  actor.getProperty().setOpacity(1);
-
-  mapper.setInputConnection(sphereSource.getOutputPort());
-  actor.setMapper(mapper);
-
-  const nonVolumeActors = [];
-  nonVolumeActors.push({ uid: 'spherePolyData', actor });
-
-  viewport.setActors(nonVolumeActors);
-
-  // Render the image
-  viewport.render();
 }
 
 run();
