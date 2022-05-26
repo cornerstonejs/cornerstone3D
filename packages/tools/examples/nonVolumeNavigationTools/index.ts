@@ -25,6 +25,7 @@ console.warn(
 
 const {
   PanTool,
+  RotateTool,
   ZoomTool,
   VolumeRotateMouseWheelTool,
   ToolGroupManager,
@@ -144,15 +145,15 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(RotateTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   // Add tools to the tool group
-  toolGroup.addTool('VolumeRotateMouseWheel');
   toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(RotateTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
@@ -165,6 +166,15 @@ async function run() {
       },
     ],
   });
+
+  toolGroup.setToolActive(RotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click + Drag
+      },
+    ],
+  });
+
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {

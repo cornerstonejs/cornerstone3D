@@ -15,7 +15,7 @@ type Actor = vtkActor;
 // @public
 type ActorEntry = {
     uid: string;
-    actor: Actor;
+    actor: Actor | VolumeActor;
     slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
