@@ -29,6 +29,8 @@ import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecifi
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
+const { transformWorldToIndex } = csUtils;
+
 /**
  * This tool is similar to the RectangleROIThresholdTool which
  * only draws a rectangle on the image, and by using utility functions
@@ -107,7 +109,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       );
     }
 
-    if (referencedImageId) {
+    if (!referencedImageId) {
       throw new Error('This tool does not work on non-acquisition planes');
     }
 
@@ -198,7 +200,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     return annotation;
   };
 
-  // Todo: make it work for other acquisition planes
+  // Todo: make it work for other than acquisition planes
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
@@ -207,17 +209,15 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     const { viewPlaneNormal, spacingInNormal } = metadata;
     const { imageData } = imageVolume;
     const { startSlice, endSlice } = data;
-    const { projectionPoints } = data.cachedStats;
     const { points } = data.handles;
 
-    const startIJK = vec3.create();
-    imageData.worldToIndexVec3(points[0], startIJK);
+    const startIJK = transformWorldToIndex(imageData, points[0]);
 
     if (startIJK[2] !== startSlice) {
       throw new Error('Start slice does not match');
     }
 
-    // subtitute the end slice index 2 with startIJK index 2
+    // substitute the end slice index 2 with startIJK index 2
     const endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
 
     const startWorld = vec3.create();
@@ -265,7 +265,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
 
     const { cachedStats } = data;
     const volumeId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(volumeId);
+    const imageVolume = cache.getVolume(volumeId.split('volumeId:')[1]);
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to
@@ -306,12 +306,6 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     if (!annotations?.length) {
       return;
     }
-
-    // annotations = this.filterInteractableAnnotationsForElement(element, annotations)
-
-    // if (!annotations?.length) {
-    //   return
-    // }
 
     const { viewport } = enabledElement;
     const sliceIndex = viewport.getCurrentImageIdIndex();
