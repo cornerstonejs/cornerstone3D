@@ -14,7 +14,10 @@ module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
 
   names.forEach((name, index) => {
     const exampleBasePath = exampleBasePaths[index];
-    multiExampleEntryPoints += `${name}: "${exampleBasePath}", \n`;
+    multiExampleEntryPoints += `${name.replace(
+      /\\/g,
+      '/'
+    )}: "${exampleBasePath.replace(/\\/g, '/')}", \n`;
   });
 
   let multiTemplates = '';
