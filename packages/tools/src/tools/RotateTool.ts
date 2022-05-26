@@ -4,7 +4,6 @@ import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { PublicToolProps, ToolProps } from '../types';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import { IVolumeViewport } from 'core/src/types';
 
 /**
  * Tool that rotates the camera in the plane defined by the sliceNormal and the viewUp.

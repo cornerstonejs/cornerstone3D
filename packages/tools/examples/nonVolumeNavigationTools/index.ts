@@ -46,7 +46,7 @@ setTitleAndDescription(
   'Demonstrates how to interact with a Volume viewport with non volume actors.'
 );
 
-const size = '500px';
+const size = '750px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -231,7 +231,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: ORIENTATION.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: <Types.Point3>[0, 0.2, 0.2],
       },
     },
   ];

@@ -3363,6 +3363,21 @@ type RepresentationPublicInput = {
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
+export class RotateTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _dragCallback(evt: any): void;
+    // (undocumented)
+    mouseDragCallback: () => void;
+    // (undocumented)
+    rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    touchDragCallback: () => void;
+}
+
+// @public (undocumented)
 type Scaling = {
     PET?: PTScaling;
 };
