@@ -1,11 +1,17 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import getBoundingBoxAroundShape from './getBoundingBoxAroundShape';
-import extendBoundingBoxInSliceAxisIfNecessary from './extendBoundingBoxInSliceAxisIfNecessary';
+import extend2DBoundingBoxInViewAxis from './extend2DBoundingBoxInViewAxis';
 
-function getBoundsIJKFromRectangleROIs(annotations, referenceVolume, options) {
-  const { numSlicesToProject } = options;
+type Options = {
+  numSlicesToProject?: number;
+};
 
+function getBoundsIJKFromRectangleAnnotations(
+  annotations,
+  referenceVolume,
+  options = {} as Options
+) {
   const AllBoundsIJK = [];
   annotations.forEach((annotation) => {
     const { data } = annotation;
@@ -27,10 +33,10 @@ function getBoundsIJKFromRectangleROIs(annotations, referenceVolume, options) {
 
     // If the tool is 2D but it is configured to project to X amount of slices
     // Don't project the slices if projectionPoints have been used to define the extents
-    if (numSlicesToProject && !data.cachedStats?.projectionPoints) {
-      boundsIJK = extendBoundingBoxInSliceAxisIfNecessary(
+    if (options.numSlicesToProject && !data.cachedStats?.projectionPoints) {
+      boundsIJK = extend2DBoundingBoxInViewAxis(
         boundsIJK,
-        numSlicesToProject
+        options.numSlicesToProject
       );
     }
 
@@ -67,4 +73,4 @@ function getBoundsIJKFromRectangleROIs(annotations, referenceVolume, options) {
   return boundsIJK;
 }
 
-export default getBoundsIJKFromRectangleROIs;
+export default getBoundsIJKFromRectangleAnnotations;

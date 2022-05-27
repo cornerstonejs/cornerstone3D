@@ -6,7 +6,7 @@ import {
 } from '../../tools';
 
 import thresholdVolumeByRange from './thresholdVolumeByRange';
-import getBoundsIJKFromRectangleROIs from '../boundingBox/getBoundsIJKFromRectangleROIs';
+import getBoundsIJKFromRectangleAnnotations from '../boundingBox/getBoundsIJKFromRectangleAnnotations';
 
 export type ThresholdRangeOptions = {
   lower: number;
@@ -60,7 +60,7 @@ function rectangleROIThresholdVolumeByRange(
   const optionsToUse = {
     lower: options.lower,
     higher: options.higher,
-    boundsIJK: getBoundsIJKFromRectangleROIs(
+    boundsIJK: getBoundsIJKFromRectangleAnnotations(
       annotations,
       referenceVolume,
       options
