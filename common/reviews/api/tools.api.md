@@ -362,6 +362,8 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
+    _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
+    // (undocumented)
     doubleClickCallback: (evt: EventTypes_2.MouseUpEventType) => void;
     // (undocumented)
     editData: {
@@ -2355,9 +2357,13 @@ interface IVolumeViewport extends IViewport {
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs?: Array<string>,
+    immediate?: boolean
+    ): void;
     setSlabThickness(
     slabThickness: number,
-    blendMode: BlendModes,
     filterActorUIDs?: Array<string>
     ): void;
     setVolumes(

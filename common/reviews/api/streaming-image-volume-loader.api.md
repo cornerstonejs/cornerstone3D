@@ -961,9 +961,13 @@ interface IVolumeViewport extends IViewport {
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs?: Array<string>,
+    immediate?: boolean
+    ): void;
     setSlabThickness(
     slabThickness: number,
-    blendMode: BlendModes,
     filterActorUIDs?: Array<string>
     ): void;
     setVolumes(

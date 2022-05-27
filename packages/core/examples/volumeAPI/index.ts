@@ -276,7 +276,8 @@ addSliderToToolbar({
       blendMode = Enums.BlendModes.COMPOSITE;
     }
 
-    viewport.setSlabThickness(valueAsNumber, blendMode);
+    viewport.setBlendMode(blendMode);
+    viewport.setSlabThickness(valueAsNumber);
     viewport.render();
   },
 });

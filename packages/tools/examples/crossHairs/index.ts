@@ -5,6 +5,7 @@ import {
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -177,6 +178,17 @@ addDropdownToToolbar({
       ...oldConfiguration,
       slabThicknessBlendMode: blendModeToUse,
     };
+
+    // Update the blendMode for actors to instantly reflect the change
+    toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
+
+      viewport.setBlendMode(blendModeToUse);
+      viewport.render();
+    });
   },
 });
 

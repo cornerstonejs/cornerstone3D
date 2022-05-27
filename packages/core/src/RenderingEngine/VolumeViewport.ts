@@ -398,6 +398,32 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     return this._FrameOfReferenceUID;
   };
 
+  public setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs = [],
+    immediate = false
+  ): void {
+    let actorEntries = this.getActors();
+
+    if (filterActorUIDs && filterActorUIDs.length > 0) {
+      actorEntries = actorEntries.filter((actorEntry: ActorEntry) => {
+        return filterActorUIDs.includes(actorEntry.uid);
+      });
+    }
+
+    actorEntries.forEach((actorEntry) => {
+      const { volumeActor } = actorEntry;
+
+      const mapper = volumeActor.getMapper();
+      // @ts-ignore vtk incorrect typing
+      mapper.setBlendMode(blendMode);
+    });
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
   /**
    * It sets the slabThickness of the actors of the viewport. If filterActorUIDs are
    * provided, only the actors with the given UIDs will be affected. If no
@@ -408,11 +434,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @param filterActorUIDs - Optional argument to filter the actors to apply
    * the slab thickness to (if not provided, all actors will be affected).
    */
-  public setSlabThickness(
-    slabThickness: number,
-    blendMode: BlendModes,
-    filterActorUIDs = []
-  ): void {
+  public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
     let actorEntries = this.getActors();
 
     if (filterActorUIDs && filterActorUIDs.length > 0) {
@@ -426,10 +448,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
       if (volumeActor.isA('vtkVolume')) {
         actorEntry.slabThickness = slabThickness;
-
-        const mapper = volumeActor.getMapper();
-        // @ts-ignore vtk incorrect typing
-        mapper.setBlendMode(blendMode);
       }
     });
 

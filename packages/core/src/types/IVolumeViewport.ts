@@ -77,11 +77,18 @@ export default interface IVolumeViewport extends IViewport {
    */
   resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
   /**
+   * Sets the blendMode for actors of the viewport.
+   */
+  setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs?: Array<string>,
+    immediate?: boolean
+  ): void;
+  /**
    * Sets the slab thickness for actors of the viewport.
    */
   setSlabThickness(
     slabThickness: number,
-    blendMode: BlendModes,
     filterActorUIDs?: Array<string>
   ): void;
   /**

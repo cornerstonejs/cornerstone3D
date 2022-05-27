@@ -1336,7 +1336,9 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
-    setSlabThickness(slabThickness: number, blendMode: BlendModes, filterActorUIDs?: Array<string>): void;
+    setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
+    // (undocumented)
+    setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)
@@ -2087,7 +2089,9 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
-    setSlabThickness(slabThickness: number, blendMode: BlendModes, filterActorUIDs?: any[]): void;
+    setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
+    // (undocumented)
+    setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)

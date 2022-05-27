@@ -2190,7 +2190,10 @@ export default class CrosshairsTool extends AnnotationTool {
     if (slabThickness === MINIMUM_SLAB_THICKNESS) {
       blendModeToUse = Enums.BlendModes.COMPOSITE;
     }
-    viewport.setSlabThickness(slabThickness, blendModeToUse, actorUIDs);
+
+    const immediate = false;
+    viewport.setBlendMode(blendModeToUse, actorUIDs, immediate);
+    viewport.setSlabThickness(slabThickness, actorUIDs);
   }
 
   _isClockWise(a, b, c) {
