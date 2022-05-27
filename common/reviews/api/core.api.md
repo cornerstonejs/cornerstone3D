@@ -6,16 +6,20 @@
 
 import type { mat4 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VtkObject } from '@kitware/vtk.js/interfaces';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
+// @public (undocumented)
+type Actor = vtkActor;
 
 // @public (undocumented)
 type ActorEntry = {
     uid: string;
-    volumeActor: VolumeActor;
+    actor: Actor | VolumeActor;
     slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
@@ -82,7 +86,7 @@ declare namespace CONSTANTS {
     export {
         ORIENTATION,
         colormapsData as CPU_COLORMAPS,
-        MINIMUM_SLAB_THICKNESS
+        RENDERINGDEFAULTS
     }
 }
 export { CONSTANTS }
@@ -1117,7 +1121,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     modality: string;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1333,7 +1337,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     // (undocumented)
@@ -1397,9 +1401,6 @@ const metadataProvider: {
     add: (imageId: string, payload: [number, number]) => void;
     get: (type: string, imageId: string) => [number, number];
 };
-
-// @public (undocumented)
-const MINIMUM_SLAB_THICKNESS = 0.05;
 
 // @public (undocumented)
 const ORIENTATION: Record<string, Orientation>;
@@ -1480,6 +1481,12 @@ function removeAllProviders(): void;
 function removeProvider(provider: (type: string, imageId: string) => {
     any: any;
 }): void;
+
+// @public (undocumented)
+const RENDERINGDEFAULTS: {
+    MINIMUM_SLAB_THICKNESS: number;
+    MAXIMUMRAYDISTANCE: number;
+};
 
 // @public (undocumented)
 export class RenderingEngine implements IRenderingEngine {
@@ -1667,7 +1674,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     removeAllActors(): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -1754,6 +1761,7 @@ declare namespace Types {
         StackViewportProperties,
         PublicViewportInput,
         VolumeActor,
+        Actor,
         ActorEntry,
         IImageLoadObject,
         IVolumeLoadObject,
@@ -1908,7 +1916,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)
@@ -2082,7 +2090,7 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     // (undocumented)

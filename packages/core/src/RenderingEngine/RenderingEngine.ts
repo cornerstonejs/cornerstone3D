@@ -725,7 +725,10 @@ class RenderingEngine implements IRenderingEngine {
     if (type === ViewportType.STACK) {
       // 4.a Create stack viewport
       viewport = new StackViewport(viewportInput);
-    } else if (type === ViewportType.ORTHOGRAPHIC) {
+    } else if (
+      type === ViewportType.ORTHOGRAPHIC ||
+      type === ViewportType.PERSPECTIVE
+    ) {
       // 4.b Create a volume viewport
       viewport = new VolumeViewport(viewportInput);
     } else {

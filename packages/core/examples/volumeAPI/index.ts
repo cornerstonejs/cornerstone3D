@@ -66,10 +66,11 @@ addButtonToToolbar({
     );
 
     // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
+    const actorEntry = viewport.getActor(volumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    actor.volumeActor
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    volumeActor
       .getProperty()
       .getRGBTransferFunction(0)
       .setMappingRange(-1500, 2500);
@@ -128,9 +129,10 @@ addButtonToToolbar({
     );
 
     // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
+    const actorEntry = viewport.getActor(volumeId);
 
-    const rgbTransferFunction = actor.volumeActor
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    const rgbTransferFunction = volumeActor
       .getProperty()
       .getRGBTransferFunction(0);
 
@@ -276,13 +278,12 @@ addSliderToToolbar({
       blendMode = BlendMode.COMPOSITE_BLEND;
     }
 
-    // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
-
     viewport.setSlabThicknessForAllVolumeActors(valueAsNumber);
 
-    // TODO -> We should have set blend mode for volume on the viewport?
-    actor.volumeActor.getMapper().setBlendMode(blendMode);
+    // Get the volume actor from the viewport
+    const actorEntry = viewport.getActor(volumeId);
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    volumeActor.getMapper().setBlendMode(blendMode);
 
     viewport.render();
   },

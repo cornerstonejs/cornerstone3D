@@ -122,10 +122,11 @@ addButtonToToolbar({
     );
 
     // Get the volume actor from the viewport
-    const actor = viewport.getActor(volumeId);
+    const actorEntry = viewport.getActor(volumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    actor.volumeActor
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    volumeActor
       .getProperty()
       .getRGBTransferFunction(0)
       .setMappingRange(-1500, 2500);

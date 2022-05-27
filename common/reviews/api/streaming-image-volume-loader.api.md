@@ -5,13 +5,17 @@
 ```ts
 
 import type { mat4 } from 'gl-matrix';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
+// @public (undocumented)
+type Actor = vtkActor;
 
 // @public
 type ActorEntry = {
     uid: string;
-    volumeActor: VolumeActor;
+    actor: Actor | VolumeActor;
     slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
@@ -799,7 +803,7 @@ interface IStackViewport extends IViewport {
     isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -960,7 +964,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     setVolumes(
@@ -1164,7 +1168,7 @@ type VOIRange = {
     lower: number;
 };
 
-// @public
+// @public (undocumented)
 type VolumeActor = vtkVolume;
 
 // @public

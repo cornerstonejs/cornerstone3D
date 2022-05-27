@@ -22,7 +22,7 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { MINIMUM_SLAB_THICKNESS } from '../constants';
+import { RENDERINGDEFAULTS } from '../constants';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -169,14 +169,14 @@ class Viewport implements IViewport {
   }
 
   protected applyFlipTx = (worldPos: Point3): Point3 => {
-    const actor = this.getDefaultActor();
+    const actorEntry = this.getDefaultActor();
 
-    if (!actor) {
+    if (!actorEntry) {
       return worldPos;
     }
 
-    const volumeActor = actor.volumeActor;
-    const mat = volumeActor.getMatrix();
+    const actor = actorEntry.actor;
+    const mat = actor.getMatrix();
 
     const newPos = vec3.create();
     const matT = mat4.create();
@@ -281,12 +281,12 @@ class Viewport implements IViewport {
         .multiply(transformBackFromOriginTx.getMatrix());
     }
 
-    const actors = this.getActors();
+    const actorEntries = this.getActors();
 
-    actors.forEach((actor) => {
-      const volumeActor = actor.volumeActor;
+    actorEntries.forEach((actorEntry) => {
+      const actor = actorEntry.actor;
 
-      const mat = volumeActor.getUserMatrix();
+      const mat = actor.getUserMatrix();
 
       if (flipHTx) {
         mat4.multiply(mat, mat, flipHTx.getMatrix());
@@ -296,7 +296,7 @@ class Viewport implements IViewport {
         mat4.multiply(mat, mat, flipVTx.getMatrix());
       }
 
-      volumeActor.setUserMatrix(mat);
+      actor.setUserMatrix(mat);
 
       this.getRenderingEngine().render();
     });
@@ -305,10 +305,10 @@ class Viewport implements IViewport {
   }
 
   private getDefaultImageData(): any {
-    const actor = this.getDefaultActor();
+    const actorEntry = this.getDefaultActor();
 
-    if (actor) {
-      return actor.volumeActor.getMapper().getInputData();
+    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
+      return actorEntry.actor.getMapper().getInputData();
     }
   }
 
@@ -375,13 +375,13 @@ class Viewport implements IViewport {
    * @param actorUID - The unique identifier for the actor.
    */
   public removeActor(actorUID: string): void {
-    const actor = this.getActor(actorUID);
-    if (!actor) {
+    const actorEntry = this.getActor(actorUID);
+    if (!actorEntry) {
       console.warn(`Actor ${actorUID} does not exist for this viewport`);
       return;
     }
     const renderer = this.getRenderer();
-    renderer.removeViewProp(actor.volumeActor); // removeActor not implemented in vtk?
+    renderer.removeViewProp(actorEntry.actor); // removeActor not implemented in vtk?
     this._actors.delete(actorUID);
   }
 
@@ -412,15 +412,15 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Add an actor to the viewport including its id, its volumeActor and slabThickness
+   * Add an actor to the viewport including its id, its actor and slabThickness
    * if defined
    * @param actorEntry - ActorEntry
    * @param actorEntry.uid - The unique identifier for the actor.
-   * @param actorEntry.volumeActor - The volume actor.
+   * @param actorEntry.actor - The volume actor.
    * @param actorEntry.slabThickness - The slab thickness.
    */
   public addActor(actorEntry: ActorEntry): void {
-    const { uid: actorUID, volumeActor } = actorEntry;
+    const { uid: actorUID, actor } = actorEntry;
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
@@ -430,18 +430,17 @@ class Viewport implements IViewport {
       return;
     }
 
-    if (!actorUID || !volumeActor) {
-      throw new Error('Actors should have uid and vtk volumeActor properties');
+    if (!actorUID || !actor) {
+      throw new Error('Actors should have uid and vtk Actor properties');
     }
 
-    const actor = this.getActor(actorUID);
-    if (actor) {
+    if (this.getActor(actorUID)) {
       console.warn(`Actor ${actorUID} already exists for this viewport`);
       return;
     }
 
     const renderer = this.getRenderer();
-    renderer.addActor(volumeActor);
+    renderer.addActor(actor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
   }
 
@@ -528,9 +527,9 @@ class Viewport implements IViewport {
    * is reset for the current view.
    * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
    * @param resetZoom - If true, the camera zoom is reset to the default zoom
-   * @returns number - distance calculated by the all actor bounds
+   * @returns boolean
    */
-  protected resetCamera(resetPan = true, resetZoom = true): number {
+  protected resetCamera(resetPan = true, resetZoom = true): boolean {
     const renderer = this.getRenderer();
     const previousCamera = _cloneDeep(this.getCamera());
 
@@ -665,7 +664,7 @@ class Viewport implements IViewport {
 
     this.checkAndTriggerCameraModifiedEvent(previousCamera, this.getCamera());
 
-    return distance;
+    return true;
   }
 
   /**
@@ -702,7 +701,6 @@ class Viewport implements IViewport {
       y / intersections.length,
       z / intersections.length,
     ];
-
     // Set the focal point on the average of the intersection points
     return newFocalPoint;
   }
@@ -833,14 +831,17 @@ class Viewport implements IViewport {
   public updateActorsClippingPlanesOnCameraModified(
     updatedCamera: ICamera
   ): void {
-    const actors = this.getActors();
-    actors.forEach((actor) => {
-      const mapper = actor.volumeActor.getMapper();
+    const actorEntries = this.getActors();
+    actorEntries.forEach((actorEntry) => {
+      const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
-      let slabThickness = MINIMUM_SLAB_THICKNESS;
-      if (actor.slabThicknessEnabled !== false && actor.slabThickness) {
-        slabThickness = actor.slabThickness;
+      let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
+      if (
+        actorEntry.slabThicknessEnabled !== false &&
+        actorEntry.slabThickness
+      ) {
+        slabThickness = actorEntry.slabThickness;
       }
 
       this.setOrientationOfClippingPlanes(

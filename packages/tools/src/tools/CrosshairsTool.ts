@@ -46,7 +46,7 @@ import { MouseDragEventType } from '../types/EventTypes';
 import { render } from 'react-dom';
 import { CONSTANTS } from '@cornerstonejs/core';
 
-const { MINIMUM_SLAB_THICKNESS } = CONSTANTS;
+const { RENDERINGDEFAULTS } = CONSTANTS;
 const { liangBarksyClip } = math.vec2;
 
 // TODO: nested config is weird
@@ -2119,7 +2119,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
             slabThicknessValue = Math.abs(slabThicknessValue);
             slabThicknessValue = Math.max(
-              MINIMUM_SLAB_THICKNESS,
+              RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS,
               slabThicknessValue
             );
 
@@ -2131,7 +2131,7 @@ export default class CrosshairsTool extends AnnotationTool {
             );
 
             if (near) {
-              slabThicknessValue = MINIMUM_SLAB_THICKNESS;
+              slabThicknessValue = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
             }
 
             otherViewport.setSlabThicknessForAllVolumeActors(

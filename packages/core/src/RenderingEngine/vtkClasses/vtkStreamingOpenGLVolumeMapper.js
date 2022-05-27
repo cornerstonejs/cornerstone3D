@@ -5,7 +5,6 @@ import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
 import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
-import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
 const { vtkWarningMacro } = macro;
 /**
@@ -256,7 +255,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     // // [WMVP]C == {world, model, view, projection} coordinates
     // // E.g., WCPC == world to projection coordinate transformation
+    cam.setIsPerformingCoordinateTransformation(true);
     const keyMats = model.openGLCamera.getKeyMatrices(ren);
+    cam.setIsPerformingCoordinateTransformation(false);
     const actMats = model.openGLVolume.getKeyMatrices();
     mat4.multiply(model.modelToView, keyMats.wcvc, actMats.mcwc);
 
@@ -435,10 +436,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     }
 
     mat4.invert(model.projectionToView, keyMats.vcpc);
-
-    // cornerstone3D customization: to allow slabthickness in both directions
     model.projectionToView[10] = model.projectionToView[14];
-
     program.setUniformMatrix('PCVCMatrix', model.projectionToView);
 
     // handle lighting values

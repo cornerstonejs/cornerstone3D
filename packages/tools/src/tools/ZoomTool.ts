@@ -2,6 +2,7 @@ import { BaseTool } from './base';
 
 import { getEnabledElement } from '@cornerstonejs/core';
 import { PublicToolProps, ToolProps } from '../types';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -65,7 +66,6 @@ export default class ZoomTool extends BaseTool {
 
     const newParallelScale = (1.0 - k) * camera.parallelScale;
 
-    // viewport.setCamera({ parallelScale: newParallelScale, deltaPoints });
     viewport.setCamera({ parallelScale: newParallelScale });
   };
 
@@ -74,13 +74,10 @@ export default class ZoomTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const size = [element.clientWidth, element.clientHeight];
-
-    // To Do: clipping planes?
-    //const range = camera.clippingRange;
-    const range = 1;
-    const zoomScale = 1.5 * (range[1] / size[1]);
-
     const { position, focalPoint, viewPlaneNormal } = camera;
+
+    const distance = vtkMath.distance2BetweenPoints(position, focalPoint);
+    const zoomScale = distance / size[1];
 
     const directionOfProjection = [
       -viewPlaneNormal[0],

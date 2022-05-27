@@ -5,10 +5,11 @@
 ```ts
 
 import type { mat4 } from 'gl-matrix';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import type { vtkVolume } from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
     export {
@@ -17,10 +18,13 @@ declare namespace activeSegmentation {
     }
 }
 
+// @public (undocumented)
+type Actor = vtkActor;
+
 // @public
 type ActorEntry = {
     uid: string;
-    volumeActor: VolumeActor;
+    actor: Actor | VolumeActor;
     slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
@@ -2124,7 +2128,7 @@ interface IStackViewport extends IViewport {
     isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -2352,7 +2356,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     setVolumes(
@@ -3936,6 +3940,21 @@ type ToolStyleConfig = {
     global?: AnnotationStyle_2;
 };
 
+// @public (undocumented)
+export class TrackballRotateTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _dragCallback(evt: any): void;
+    // (undocumented)
+    mouseDragCallback: () => void;
+    // (undocumented)
+    rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    touchDragCallback: () => void;
+}
+
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];
 
@@ -4114,7 +4133,7 @@ type VOIRange = {
     lower: number;
 };
 
-// @public
+// @public (undocumented)
 type VolumeActor = vtkVolume;
 
 // @public
