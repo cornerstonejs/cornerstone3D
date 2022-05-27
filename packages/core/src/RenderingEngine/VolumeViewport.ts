@@ -23,7 +23,7 @@ import type {
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { RENDERINGDEFAULTS } from '../constants';
-import { Events } from '../enums';
+import { Events, BlendModes } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 
@@ -399,31 +399,43 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   };
 
   /**
-   * It sets the slabThickness of the actors of the viewport. If actorUIDs are
-   * provided, it will only set the slabThickness of the actors with the given
-   * uid, but if actorUIDs are not provided, it will set the slabThickness of
-   * all the actors in the viewport.
+   * It sets the slabThickness of the actors of the viewport. If filterActorUIDs are
+   * provided, only the actors with the given UIDs will be affected. If no
+   * filterActorUIDs are provided, all actors will be affected.
    *
-   * @param slabThickness - number -The slab thickness to set.
-   * @param actorUIDs - An array of actor UIDs. If this is not
-   * provided, all actors will be updated.
+   * @param slabThickness - The slab thickness to set.
+   * @param blendMode - The blend mode to use when rendering the actors.
+   * @param filterActorUIDs - Optional argument to filter the actors to apply
+   * the slab thickness to (if not provided, all actors will be affected).
    */
-  public setSlabThickness(slabThickness: number, actorUIDs?: string[]): void {
-    let actors;
+  public setSlabThickness(
+    slabThickness: number,
+    blendMode: BlendModes,
+    filterActorUIDs = []
+  ): void {
+    let actorEntries = this.getActors();
 
-    if (actorUIDs && actorUIDs.length > 0) {
-      actors = actorUIDs.map((uid) => this.getActor(uid));
-    } else {
-      actors = this.getActors();
+    if (filterActorUIDs && filterActorUIDs.length > 0) {
+      actorEntries = actorEntries.filter((actorEntry) => {
+        return filterActorUIDs.includes(actorEntry.uid);
+      });
     }
 
-    actors.forEach((actor) => {
-      actor.slabThickness = slabThickness;
+    actorEntries.forEach((actorEntry) => {
+      const { volumeActor } = actorEntry;
+
+      if (volumeActor.isA('vtkVolume')) {
+        actorEntry.slabThickness = slabThickness;
+
+        const mapper = volumeActor.getMapper();
+        // @ts-ignore vtk incorrect typing
+        mapper.setBlendMode(blendMode);
+      }
     });
 
     const currentCamera = this.getCamera();
-    this.updateActorsClippingPlanes(currentCamera);
-    this.TriggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
+    this.updateClippingPlanesForActors(currentCamera);
+    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
   }
 
   /**

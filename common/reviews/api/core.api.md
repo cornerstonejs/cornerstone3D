@@ -1336,7 +1336,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
-    setSlabThickness(slabThickness: number, actorUIDs?: Array<string>): void;
+    setSlabThickness(slabThickness: number, blendMode: BlendModes, filterActorUIDs?: Array<string>): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)
@@ -1937,11 +1937,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     sy: number;
     // (undocumented)
-    TriggerCameraModifiedEventIfNecessary(previousCamera: ICamera, updatedCamera: ICamera): void;
+    triggerCameraModifiedEventIfNecessary(previousCamera: ICamera, updatedCamera: ICamera): void;
     // (undocumented)
     readonly type: ViewportType;
     // (undocumented)
-    updateActorsClippingPlanes(updatedCamera: ICamera): void;
+    protected updateClippingPlanesForActors(updatedCamera: ICamera): void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
@@ -2087,7 +2087,7 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
-    setSlabThickness(slabThickness: number, actorUIDs?: string[]): void;
+    setSlabThickness(slabThickness: number, blendMode: BlendModes, filterActorUIDs?: any[]): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)

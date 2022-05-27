@@ -4,6 +4,7 @@ import {
   getEnabledElementByIds,
   getEnabledElement,
   utilities as csUtils,
+  Enums,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -142,7 +143,9 @@ export default class CrosshairsTool extends AnnotationTool {
         },
         // actorUIDs for slabThickness application, if not defined, the slab thickness
         // will be applied to all actors of the viewport
-        actorUIDsForSlabThickness: [],
+        filterActorUIDsToSetSlabThickness: [],
+        // blend mode for slabThickness modifications
+        slabThicknessBlendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     }
   ) {
@@ -2151,7 +2154,7 @@ export default class CrosshairsTool extends AnnotationTool {
             // slabThickness for, we need to delegate the slabThickness setting
             // to the crosshairs tool instance of the toolGroup since configurations
             // exist on the toolInstance and each toolGroup has its own crosshairs
-            // tool instance (Otherwise, we would need to set this actorUIDsForSlabThickness at
+            // tool instance (Otherwise, we would need to set this filterActorUIDsToSetSlabThickness at
             // the viewport level which makes tool and viewport state convoluted).
             const toolGroup = getToolGroupForViewport(
               otherViewport.id,
@@ -2175,12 +2178,19 @@ export default class CrosshairsTool extends AnnotationTool {
 
   setSlabThickness(viewport, slabThickness) {
     let actorUIDs;
-    const { actorUIDsForSlabThickness } = this.configuration;
-    if (actorUIDsForSlabThickness && actorUIDsForSlabThickness.length > 0) {
-      actorUIDs = actorUIDsForSlabThickness;
+    const { filterActorUIDsToSetSlabThickness } = this.configuration;
+    if (
+      filterActorUIDsToSetSlabThickness &&
+      filterActorUIDsToSetSlabThickness.length > 0
+    ) {
+      actorUIDs = filterActorUIDsToSetSlabThickness;
     }
 
-    viewport.setSlabThickness(slabThickness, actorUIDs);
+    let blendModeToUse = this.configuration.slabThicknessBlendMode;
+    if (slabThickness === MINIMUM_SLAB_THICKNESS) {
+      blendModeToUse = Enums.BlendModes.COMPOSITE;
+    }
+    viewport.setSlabThickness(slabThickness, blendModeToUse, actorUIDs);
   }
 
   _isClockWise(a, b, c) {

@@ -4,6 +4,7 @@ import { IViewport } from './IViewport';
 import { IVolumeInput } from './IVolumeInput';
 import FlipDirection from './FlipDirection';
 import IImageData from './IImageData';
+import { BlendModes } from '../enums';
 
 /**
  * Interface for the Volume Viewport
@@ -78,7 +79,11 @@ export default interface IVolumeViewport extends IViewport {
   /**
    * Sets the slab thickness for actors of the viewport.
    */
-  setSlabThickness(slabThickness: number, actorUIDs?: Array<string>): void;
+  setSlabThickness(
+    slabThickness: number,
+    blendMode: BlendModes,
+    filterActorUIDs?: Array<string>
+  ): void;
   /**
    * Gets the slab thickness option in the `Viewport`'s `options`.
    */

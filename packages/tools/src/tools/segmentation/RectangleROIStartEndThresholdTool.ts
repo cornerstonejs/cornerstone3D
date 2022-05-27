@@ -200,7 +200,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     return annotation;
   };
 
-  // Todo: make it work for other than acquisition planes
+  // Todo: make it work for planes other than acquisition planes
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume

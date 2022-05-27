@@ -662,7 +662,7 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    this.TriggerCameraModifiedEventIfNecessary(
+    this.triggerCameraModifiedEventIfNecessary(
       previousCamera,
       this.getCamera()
     );
@@ -799,8 +799,8 @@ class Viewport implements IViewport {
     }
 
     // update clippingPlanes
-    this.updateActorsClippingPlanes(updatedCamera);
-    this.TriggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
+    this.updateClippingPlanesForActors(updatedCamera);
+    this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
   }
 
   /**
@@ -808,7 +808,7 @@ class Viewport implements IViewport {
    * @param cameraInterface - ICamera
    * @param cameraInterface - ICamera
    */
-  public TriggerCameraModifiedEventIfNecessary(
+  public triggerCameraModifiedEventIfNecessary(
     previousCamera: ICamera,
     updatedCamera: ICamera
   ): void {
@@ -830,7 +830,7 @@ class Viewport implements IViewport {
    * Updates the actors clipping planes orientation from the camera properties
    * @param updatedCamera - ICamera
    */
-  public updateActorsClippingPlanes(updatedCamera: ICamera): void {
+  protected updateClippingPlanesForActors(updatedCamera: ICamera): void {
     const actorEntries = this.getActors();
     actorEntries.forEach((actorEntry) => {
       const mapper = actorEntry.actor.getMapper();
