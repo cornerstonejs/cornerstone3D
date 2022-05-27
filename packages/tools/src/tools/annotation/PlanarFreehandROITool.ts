@@ -136,6 +136,12 @@ class PlanarFreehandROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        // When true, always render end points when you have an open contour, rather
+        // than just rendering a line.
+        allowsRenderOpenContourHandles: true,
+        // When `allowsRenderOpenContourHandles` is true, use this radius to draw
+        // the endpoints when not hovering.
+        alwaysRenderOpenContourHandlesRadius: 2,
         allowOpenContours: true,
         // Proximity in canvas coordinates used to join contours.
         closeContourProximity: 10,
