@@ -547,6 +547,9 @@ export class BidirectionalTool extends AnnotationTool {
 }
 
 // @public (undocumented)
+type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+
+// @public (undocumented)
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -1539,9 +1542,6 @@ declare namespace EventTypes_2 {
 }
 
 // @public (undocumented)
-function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
-
-// @public (undocumented)
 function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations): Annotations;
 
 // @public (undocumented)
@@ -1605,9 +1605,6 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
-
-// @public (undocumented)
-function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
@@ -3117,7 +3114,7 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
         };
         data: {
             label: string;
-            startSlice: number;
+            startSlice: any;
             endSlice: number;
             cachedStats: {
                 projectionPoints: any[];
@@ -3235,6 +3232,9 @@ export class RectangleROIThresholdTool extends RectangleROITool {
     // (undocumented)
     static toolName: string;
 }
+
+// @public (undocumented)
+function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, referenceVolumes: Types_2.IImageVolume[], options: ThresholdRangeOptions_2): Types_2.IImageVolume;
 
 // @public (undocumented)
 export class RectangleROITool extends AnnotationTool {
@@ -3423,13 +3423,12 @@ export { segmentation }
 
 declare namespace segmentation_2 {
     export {
-        getBoundingBoxAroundShape,
-        extend2DBoundingBoxInViewAxis,
         thresholdVolumeByRange,
         createMergedLabelmapForIndex,
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
-        createLabelmapVolumeForViewport
+        createLabelmapVolumeForViewport,
+        rectangleROIThresholdVolumeByRange
     }
 }
 
@@ -3838,7 +3837,7 @@ type TextBoxHandle = {
 };
 
 // @public (undocumented)
-function thresholdVolumeByRange(annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationRepresentation: ToolGroupSpecificRepresentation, options: ThresholdRangeOptions): Types_2.IImageVolume;
+function thresholdVolumeByRange(segmentationVolume: Types_2.IImageVolume, referenceVolume: Types_2.IImageVolume, options: ThresholdRangeOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
@@ -4045,7 +4044,8 @@ declare namespace Types {
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint,
         ScrollOptions_2 as ScrollOptions,
-        CINETypes
+        CINETypes,
+        BoundsIJK
     }
 }
 export { Types }

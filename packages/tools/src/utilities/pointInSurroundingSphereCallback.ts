@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
 import { pointInSphere } from './math/sphere';
-import { getBoundingBoxAroundShape } from './segmentation/getBoundingBoxUtils';
+import { getBoundingBoxAroundShape } from './boundingBox';
 import pointInShapeCallback, {
   PointInShapeCallback,
 } from './pointInShapeCallback';
