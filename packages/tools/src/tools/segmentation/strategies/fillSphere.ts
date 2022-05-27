@@ -38,10 +38,10 @@ function fillSphere(
   };
 
   pointInSurroundingSphereCallback(
-    viewport as Types.IVolumeViewport,
     imageData,
     [points[0], points[1]],
-    callback
+    callback,
+    viewport as Types.IVolumeViewport
   );
 
   triggerSegmentationDataModified(segmentationId);

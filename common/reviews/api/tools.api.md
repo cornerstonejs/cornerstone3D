@@ -546,6 +546,14 @@ export class BidirectionalTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
+declare namespace boundingBox {
+    export {
+        extend2DBoundingBoxInViewAxis,
+        getBoundingBoxAroundShape,
+        getBoundsIJKFromRectangleAnnotations
+    }
+}
+
 // @public (undocumented)
 type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
@@ -1542,6 +1550,9 @@ declare namespace EventTypes_2 {
 }
 
 // @public (undocumented)
+function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+
+// @public (undocumented)
 function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations): Annotations;
 
 // @public (undocumented)
@@ -1605,6 +1616,12 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 
 // @public (undocumented)
 function getAnnotationsSelectedCount(): number;
+
+// @public (undocumented)
+function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+
+// @public (undocumented)
+function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
@@ -2912,7 +2929,7 @@ function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK): void;
 
 // @public (undocumented)
-function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
+function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
 
 // @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
@@ -4075,7 +4092,8 @@ declare namespace utilities {
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
         cine,
-        clip_2 as clip
+        clip_2 as clip,
+        boundingBox
     }
 }
 export { utilities }
