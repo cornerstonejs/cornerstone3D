@@ -61,7 +61,8 @@ export default class TrackballRotateTool extends BaseTool {
     });
   };
 
-  //https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js
+  // pseudocode inspired from
+  // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js
   _dragCallback(evt): void {
     const { element, currentPoints, lastPoints } = evt.detail;
     const currentPointsCanvas = currentPoints.canvas;
