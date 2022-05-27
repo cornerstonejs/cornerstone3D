@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.10.2...@cornerstonejs/core@0.10.3) (2022-05-27)
+
+
+### Bug Fixes
+
+* scale factor for zoom in perspective mode and do not update clipping planes for non Volume Actors ([#116](https://github.com/cornerstonejs/cornerstone3D-beta/issues/116)) ([ce8c13e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ce8c13e534a48392fc11dcb615d8d81275cd01d7))
+
+
+
+
+
 ## [0.10.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.10.1...@cornerstonejs/core@0.10.2) (2022-05-27)
 
 
