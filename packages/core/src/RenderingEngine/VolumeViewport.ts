@@ -167,8 +167,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, actorUID, slabThickness, slabThicknessEnabled } =
-        volumeInputArray[i];
+      const { volumeId, actorUID, slabThickness } = volumeInputArray[i];
 
       const actor = await createVolumeActor(
         volumeInputArray[i],
@@ -186,7 +185,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
-        slabThicknessEnabled,
       });
     }
 
@@ -217,13 +215,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const {
-        volumeId,
-        visibility,
-        actorUID,
-        slabThickness,
-        slabThicknessEnabled,
-      } = volumeInputArray[i];
+      const { volumeId, visibility, actorUID, slabThickness } =
+        volumeInputArray[i];
 
       const actor = await createVolumeActor(
         volumeInputArray[i],
@@ -245,7 +238,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
-        slabThicknessEnabled,
       });
     }
 
@@ -383,10 +375,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         const newVtkPlanes = [clipPlane1, clipPlane2];
 
         let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
-        if (
-          actorEntry.slabThicknessEnabled !== false &&
-          actorEntry.slabThickness
-        ) {
+        if (actorEntry.slabThickness) {
           slabThickness = actorEntry.slabThickness;
         }
 
@@ -410,52 +399,31 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   };
 
   /**
-   * Sets the slab thickness to all the volume actors in the viewport.
+   * It sets the slabThickness of the actors of the viewport. If actorUIDs are
+   * provided, it will only set the slabThickness of the actors with the given
+   * uid, but if actorUIDs are not provided, it will set the slabThickness of
+   * all the actors in the viewport.
    *
-   * @param slabThickness - The slab thickness to set.
+   * @param slabThickness - number -The slab thickness to set.
+   * @param actorUIDs - An array of actor UIDs. If this is not
+   * provided, all actors will be updated.
    */
-  public setSlabThicknessForAllVolumeActors(slabThickness: number): void {
-    const actors = this.getActors();
-    let updateClippingPlanes = false;
-    actors.forEach((actor) => {
-      if (actor.slabThicknessEnabled === false) {
-        return;
-      }
+  public setSlabThickness(slabThickness: number, actorUIDs?: string[]): void {
+    let actors;
 
+    if (actorUIDs && actorUIDs.length > 0) {
+      actors = actorUIDs.map((uid) => this.getActor(uid));
+    } else {
+      actors = this.getActors();
+    }
+
+    actors.forEach((actor) => {
       actor.slabThickness = slabThickness;
-      updateClippingPlanes = true;
     });
 
-    if (updateClippingPlanes === false) {
-      return;
-    }
-
     const currentCamera = this.getCamera();
-    this.updateActorsClippingPlanesOnCameraModified(currentCamera);
-    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
-  }
-
-  /**
-   * Sets the slab thickness to a specific volume actor in the viewport.
-   *
-   * @param actorUID - The unique ID of the actor.
-   * @param slabThickness - The slab thickness to set.
-   */
-  public setSlabThicknessForVolumeActor(
-    actorUID: string,
-    slabThickness: number
-  ): void {
-    const actor = this.getActor(actorUID);
-
-    if (actor.slabThicknessEnabled === false) {
-      return;
-    }
-
-    actor.slabThickness = slabThickness;
-
-    const currentCamera = this.getCamera();
-    this.updateActorsClippingPlanesOnCameraModified(currentCamera);
-    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
+    this.updateActorsClippingPlanes(currentCamera);
+    this.TriggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
   }
 
   /**
@@ -467,10 +435,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const actors = this.getActors();
     let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
     actors.forEach((actor) => {
-      if (actor.slabThicknessEnabled === false) {
-        return;
-      }
-
       if (actor.slabThickness > slabThickness) {
         slabThickness = actor.slabThickness;
       }

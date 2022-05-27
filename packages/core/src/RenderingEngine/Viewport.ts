@@ -662,7 +662,10 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    this.checkAndTriggerCameraModifiedEvent(previousCamera, this.getCamera());
+    this.TriggerCameraModifiedEventIfNecessary(
+      previousCamera,
+      this.getCamera()
+    );
 
     return true;
   }
@@ -796,9 +799,8 @@ class Viewport implements IViewport {
     }
 
     // update clippingPlanes
-    this.updateActorsClippingPlanesOnCameraModified(updatedCamera);
-
-    this.checkAndTriggerCameraModifiedEvent(previousCamera, updatedCamera);
+    this.updateActorsClippingPlanes(updatedCamera);
+    this.TriggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
   }
 
   /**
@@ -806,7 +808,7 @@ class Viewport implements IViewport {
    * @param cameraInterface - ICamera
    * @param cameraInterface - ICamera
    */
-  public checkAndTriggerCameraModifiedEvent(
+  public TriggerCameraModifiedEventIfNecessary(
     previousCamera: ICamera,
     updatedCamera: ICamera
   ): void {
@@ -828,19 +830,14 @@ class Viewport implements IViewport {
    * Updates the actors clipping planes orientation from the camera properties
    * @param updatedCamera - ICamera
    */
-  public updateActorsClippingPlanesOnCameraModified(
-    updatedCamera: ICamera
-  ): void {
+  public updateActorsClippingPlanes(updatedCamera: ICamera): void {
     const actorEntries = this.getActors();
     actorEntries.forEach((actorEntry) => {
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
       let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
-      if (
-        actorEntry.slabThicknessEnabled !== false &&
-        actorEntry.slabThickness
-      ) {
+      if (actorEntry.slabThickness) {
         slabThickness = actorEntry.slabThickness;
       }
 

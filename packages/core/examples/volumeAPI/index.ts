@@ -278,7 +278,10 @@ addSliderToToolbar({
       blendMode = BlendMode.COMPOSITE_BLEND;
     }
 
-    viewport.setSlabThicknessForAllVolumeActors(valueAsNumber);
+    // Get the volume actor from the viewport
+    const actor = viewport.getActor(volumeId);
+
+    viewport.setSlabThickness(valueAsNumber);
 
     // Get the volume actor from the viewport
     const actorEntry = viewport.getActor(volumeId);

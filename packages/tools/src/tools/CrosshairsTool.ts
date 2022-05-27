@@ -7,7 +7,10 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getToolGroup } from '../store/ToolGroupManager';
+import {
+  getToolGroup,
+  getToolGroupForViewport,
+} from '../store/ToolGroupManager';
 
 import {
   addAnnotation,
@@ -137,6 +140,9 @@ export default class CrosshairsTool extends AnnotationTool {
           enabled: false,
           panSize: 10,
         },
+        // actorUIDs for slabThickness application, if not defined, the slab thickness
+        // will be applied to all actors of the viewport
+        actorUIDsForSlabThickness: [],
       },
     }
   ) {
@@ -555,7 +561,7 @@ export default class CrosshairsTool extends AnnotationTool {
     }
 
     // AutoPan modification
-    if (this.configuration.autoPan.enabled) {
+    if (this.configuration.autoPan?.enabled) {
       const viewports = csUtils.getVolumeViewportsContainingSameVolumes(
         viewport,
         renderingEngine.id
@@ -2139,7 +2145,23 @@ export default class CrosshairsTool extends AnnotationTool {
               slabThicknessValue = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
             }
 
-            otherViewport.setSlabThicknessForAllVolumeActors(
+            // We want to set the slabThickness for the viewport's actors but
+            // since the crosshairs tool instance has configuration regarding which
+            // actorUIDs (in case of volume -> actorUID = volumeIds) to set the
+            // slabThickness for, we need to delegate the slabThickness setting
+            // to the crosshairs tool instance of the toolGroup since configurations
+            // exist on the toolInstance and each toolGroup has its own crosshairs
+            // tool instance (Otherwise, we would need to set this actorUIDsForSlabThickness at
+            // the viewport level which makes tool and viewport state convoluted).
+            const toolGroup = getToolGroupForViewport(
+              otherViewport.id,
+              renderingEngine.id
+            );
+            const crosshairsInstance = toolGroup.getToolInstance(
+              this.getToolName()
+            );
+            crosshairsInstance.setSlabThickness(
+              otherViewport,
               slabThicknessValue
             );
 
@@ -2150,6 +2172,16 @@ export default class CrosshairsTool extends AnnotationTool {
       renderingEngine.renderViewports(viewportsIds);
     }
   };
+
+  setSlabThickness(viewport, slabThickness) {
+    let actorUIDs;
+    const { actorUIDsForSlabThickness } = this.configuration;
+    if (actorUIDsForSlabThickness && actorUIDsForSlabThickness.length > 0) {
+      actorUIDs = actorUIDsForSlabThickness;
+    }
+
+    viewport.setSlabThickness(slabThickness, actorUIDs);
+  }
 
   _isClockWise(a, b, c) {
     // return true if the rotation is clockwise
