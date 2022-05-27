@@ -15,7 +15,7 @@ type Actor = vtkActor;
 // @public
 type ActorEntry = {
     uid: string;
-    volumeActor: VolumeActor;
+    actor: Actor | VolumeActor;
     slabThickness?: number;
 };
 
@@ -960,7 +960,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,

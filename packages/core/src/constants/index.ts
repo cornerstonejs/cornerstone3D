@@ -1,5 +1,5 @@
 import ORIENTATION from './orientation';
 import CPU_COLORMAPS from './cpuColormaps';
-import RENDERINGDEFAULTS from './rendering';
+import RENDERING_DEFAULTS from './rendering';
 
-export { ORIENTATION, CPU_COLORMAPS, RENDERINGDEFAULTS };
+export { ORIENTATION, CPU_COLORMAPS, RENDERING_DEFAULTS };

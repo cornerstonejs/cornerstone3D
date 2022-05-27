@@ -22,7 +22,7 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { RENDERINGDEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS } from '../constants';
 import { Events, BlendModes } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
@@ -258,6 +258,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @param immediate - If true, the Viewport will be rendered immediately
    */
   public removeVolumeActors(actorUIDs: Array<string>, immediate = false): void {
+    // Todo: This is actually removeActors
     this.removeActors(actorUIDs);
 
     if (immediate) {
@@ -346,13 +347,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     // Set large numbers to ensure everything is always rendered
     if (activeCamera.getParallelProjection()) {
       activeCamera.setClippingRange(
-        -RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE,
-        RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     } else {
       activeCamera.setClippingRange(
-        RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     }
 
@@ -374,7 +375,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         const clipPlane2 = vtkPlane.newInstance();
         const newVtkPlanes = [clipPlane1, clipPlane2];
 
-        let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
+        let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
         if (actorEntry.slabThickness) {
           slabThickness = actorEntry.slabThickness;
         }
@@ -412,9 +413,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     actorEntries.forEach((actorEntry) => {
-      const { volumeActor } = actorEntry;
+      const { actor } = actorEntry;
 
-      const mapper = volumeActor.getMapper();
+      const mapper = actor.getMapper();
       // @ts-ignore vtk incorrect typing
       mapper.setBlendMode(blendMode);
     });
@@ -444,9 +445,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     actorEntries.forEach((actorEntry) => {
-      const { volumeActor } = actorEntry;
+      const { actor } = actorEntry;
 
-      if (volumeActor.isA('vtkVolume')) {
+      if (actor.isA('vtkVolume')) {
         actorEntry.slabThickness = slabThickness;
       }
     });
@@ -463,7 +464,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public getSlabThickness(): number {
     const actors = this.getActors();
-    let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
+    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     actors.forEach((actor) => {
       if (actor.slabThickness > slabThickness) {
         slabThickness = actor.slabThickness;
@@ -536,7 +537,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (-RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE, RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE).
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
      * The clipping range is used in the camera method getProjectionMatrix().
      * The projection matrix is used then for viewToWorld/worldToView methods of
      * the renderer. This means that vkt.js will not return the coordinates of
@@ -595,11 +596,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (-RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE, RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE).
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
      * The clipping range is used in the camera method getProjectionMatrix().
      * The projection matrix is used then for viewToWorld/worldToView methods of
      * the renderer. This means that vkt.js will not return the coordinates of
-     * the point on the view plane (i.e. the depth coordinate will corresponde
+     * the point on the view plane (i.e. the depth coordinate will corresponded
      * to the focal point).
      *
      * Therefore the clipping range has to be set to (distance, distance + 0.01),

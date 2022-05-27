@@ -19,7 +19,7 @@ type Actor = vtkActor;
 // @public (undocumented)
 type ActorEntry = {
     uid: string;
-    volumeActor: VolumeActor;
+    actor: Actor | VolumeActor;
     slabThickness?: number;
 };
 
@@ -85,7 +85,7 @@ declare namespace CONSTANTS {
     export {
         ORIENTATION,
         colormapsData as CPU_COLORMAPS,
-        RENDERINGDEFAULTS
+        RENDERING_DEFAULTS
     }
 }
 export { CONSTANTS }
@@ -1480,9 +1480,9 @@ function removeProvider(provider: (type: string, imageId: string) => {
 }): void;
 
 // @public (undocumented)
-const RENDERINGDEFAULTS: {
+const RENDERING_DEFAULTS: {
     MINIMUM_SLAB_THICKNESS: number;
-    MAXIMUMRAYDISTANCE: number;
+    MAXIMUM_RAY_DISTANCE: number;
 };
 
 // @public (undocumented)

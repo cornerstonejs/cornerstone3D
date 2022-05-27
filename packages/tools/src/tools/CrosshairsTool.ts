@@ -49,7 +49,7 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 import { MouseDragEventType } from '../types/EventTypes';
 import { CONSTANTS } from '@cornerstonejs/core';
 
-const { RENDERINGDEFAULTS } = CONSTANTS;
+const { RENDERING_DEFAULTS } = CONSTANTS;
 const { liangBarksyClip } = math.vec2;
 
 // TODO: nested config is weird
@@ -2133,7 +2133,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
             slabThicknessValue = Math.abs(slabThicknessValue);
             slabThicknessValue = Math.max(
-              RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS,
+              RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
               slabThicknessValue
             );
 
@@ -2145,7 +2145,7 @@ export default class CrosshairsTool extends AnnotationTool {
             );
 
             if (near) {
-              slabThicknessValue = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
+              slabThicknessValue = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
             }
 
             // We want to set the slabThickness for the viewport's actors but
@@ -2187,7 +2187,7 @@ export default class CrosshairsTool extends AnnotationTool {
     }
 
     let blendModeToUse = this.configuration.slabThicknessBlendMode;
-    if (slabThickness === MINIMUM_SLAB_THICKNESS) {
+    if (slabThickness === RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS) {
       blendModeToUse = Enums.BlendModes.COMPOSITE;
     }
 

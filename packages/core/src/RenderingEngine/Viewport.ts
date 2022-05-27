@@ -22,7 +22,7 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { RENDERINGDEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS } from '../constants';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -405,6 +405,14 @@ class Viewport implements IViewport {
     actors: Array<ActorEntry>,
     resetCameraPanAndZoom = false
   ): void {
+    const renderingEngine = this.getRenderingEngine();
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      console.warn(
+        'Viewport::addActors::Rendering engine has not been initialized or has been destroyed'
+      );
+      return;
+    }
+
     actors.forEach((actor) => this.addActor(actor));
 
     // set the clipping planes for the actors
@@ -836,7 +844,7 @@ class Viewport implements IViewport {
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
-      let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
+      let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
       if (actorEntry.slabThickness) {
         slabThickness = actorEntry.slabThickness;
       }
