@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.17.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.17.1...@cornerstonejs/tools@0.17.2) (2022-05-27)
+
+
+### Bug Fixes
+
+* remove the need for slabThickness in volumeAPI for tools ([#113](https://github.com/cornerstonejs/cornerstone3D-beta/issues/113)) ([a5e431d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a5e431dee952281be340994aa773a593a85fad04))
+
+
+
+
+
 ## [0.17.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.17.0...@cornerstonejs/tools@0.17.1) (2022-05-27)
 
 **Note:** Version bump only for package @cornerstonejs/tools
