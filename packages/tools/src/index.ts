@@ -23,7 +23,7 @@ import {
   BaseTool,
   AnnotationTool,
   PanTool,
-  RotateTool,
+  TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
   ZoomTool,
@@ -64,7 +64,7 @@ export {
   AnnotationTool,
   // Manipulation Tools
   PanTool,
-  RotateTool,
+  TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
   ZoomTool,

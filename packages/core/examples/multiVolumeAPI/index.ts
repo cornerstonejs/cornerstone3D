@@ -15,7 +15,6 @@ import {
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
-import { VolumeActor } from 'core/src/types';
 
 // This is for debugging purposes
 console.warn(
@@ -69,13 +68,11 @@ addButtonToToolbar({
     const actorEntry = viewport.getActor(ctVolumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
-      const volumeActor = actorEntry.actor as VolumeActor;
-      volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
-        .setMappingRange(-1500, 2500);
-    }
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(-1500, 2500);
 
     viewport.render();
   },

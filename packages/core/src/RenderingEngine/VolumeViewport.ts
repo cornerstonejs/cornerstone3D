@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import cache from '../cache';
 import ViewportType from '../enums/ViewportType';
@@ -9,7 +10,6 @@ import volumeNewImageEventDispatcher, {
 } from './helpers/volumeNewImageEventDispatcher';
 import { loadVolume } from '../volumeLoader';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import { getShouldUseCPURendering } from '../init';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import type {
@@ -19,11 +19,10 @@ import type {
   IVolumeInput,
   ActorEntry,
   FlipDirection,
-  EventTypes,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { MINIMUM_SLAB_THICKNESS } from '../constants';
+import { RENDERINGDEFAULTS } from '../constants';
 import { Events } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
@@ -345,14 +344,20 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  public resetCamera(resetPan = true, resetZoom = true): number {
+  public resetCamera(resetPan = true, resetZoom = true): boolean {
     super.resetCamera(resetPan, resetZoom);
     const activeCamera = this.getVtkActiveCamera();
     // Set large numbers to ensure everything is always rendered
     if (activeCamera.getParallelProjection()) {
-      activeCamera.setClippingRange(-1e6, 1e6);
+      activeCamera.setClippingRange(
+        -RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE,
+        RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE
+      );
     } else {
-      activeCamera.setClippingRange(1e-3, 1e6);
+      activeCamera.setClippingRange(
+        RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE
+      );
     }
 
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
@@ -373,7 +378,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         const clipPlane2 = vtkPlane.newInstance();
         const newVtkPlanes = [clipPlane1, clipPlane2];
 
-        let slabThickness = MINIMUM_SLAB_THICKNESS;
+        let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
         if (
           actorEntry.slabThicknessEnabled !== false &&
           actorEntry.slabThickness
@@ -393,7 +398,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       }
     });
 
-    return 1;
+    return true;
   }
 
   public getFrameOfReferenceUID = (): string => {
@@ -456,7 +461,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public getSlabThickness(): number {
     const actors = this.getActors();
-    let slabThickness = MINIMUM_SLAB_THICKNESS;
+    let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
     actors.forEach((actor) => {
       if (actor.slabThicknessEnabled === false) {
         return;
@@ -533,12 +538,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (-1e6, 1e6). The clipping range is used in the camera method
-     * getProjectionMatrix(). The projection matrix is used then for
-     * viewToWorld/worldToView methods of the renderer. This means that vkt.js
-     * will not return the coordinates of the point on
-     * the view plane (i.e. the depth coordinate will corresponde to the
-     * focal point).
+     * (-RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE, RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE).
+     * The clipping range is used in the camera method getProjectionMatrix().
+     * The projection matrix is used then for viewToWorld/worldToView methods of
+     * the renderer. This means that vkt.js will not return the coordinates of
+     * the point on the view plane (i.e. the depth coordinate will corresponde
+     * to the focal point).
      *
      * Therefore the clipping range has to be set to (distance, distance + 0.01),
      * where now distance is the distance between the camera position and focal
@@ -592,12 +597,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (-1e6, 1e6). The clipping range is used in the camera method
-     * getProjectionMatrix(). The projection matrix is used then for
-     * viewToWorld/worldToView methods of the renderer. This means that vkt.js
-     * will not return the coordinates of the point on
-     * the view plane (i.e. the depth coordinate will corresponde to the
-     * focal point).
+     * (-RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE, RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE).
+     * The clipping range is used in the camera method getProjectionMatrix().
+     * The projection matrix is used then for viewToWorld/worldToView methods of
+     * the renderer. This means that vkt.js will not return the coordinates of
+     * the point on the view plane (i.e. the depth coordinate will corresponde
+     * to the focal point).
      *
      * Therefore the clipping range has to be set to (distance, distance + 0.01),
      * where now distance is the distance between the camera position and focal

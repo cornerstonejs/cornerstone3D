@@ -22,7 +22,7 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { MINIMUM_SLAB_THICKNESS } from '../constants';
+import { RENDERINGDEFAULTS } from '../constants';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -527,9 +527,9 @@ class Viewport implements IViewport {
    * is reset for the current view.
    * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
    * @param resetZoom - If true, the camera zoom is reset to the default zoom
-   * @returns number - distance calculated by the all actor bounds
+   * @returns boolean
    */
-  protected resetCamera(resetPan = true, resetZoom = true): number {
+  protected resetCamera(resetPan = true, resetZoom = true): boolean {
     const renderer = this.getRenderer();
     const previousCamera = _cloneDeep(this.getCamera());
 
@@ -664,7 +664,7 @@ class Viewport implements IViewport {
 
     this.checkAndTriggerCameraModifiedEvent(previousCamera, this.getCamera());
 
-    return distance;
+    return true;
   }
 
   /**
@@ -836,7 +836,7 @@ class Viewport implements IViewport {
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
-      let slabThickness = MINIMUM_SLAB_THICKNESS;
+      let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
       if (
         actorEntry.slabThicknessEnabled !== false &&
         actorEntry.slabThickness

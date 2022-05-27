@@ -2128,7 +2128,7 @@ interface IStackViewport extends IViewport {
     isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -2356,7 +2356,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     setVolumes(
@@ -3363,21 +3363,6 @@ type RepresentationPublicInput = {
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
-export class RotateTool extends BaseTool {
-    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
-    // (undocumented)
-    _dragCallback(evt: any): void;
-    // (undocumented)
-    mouseDragCallback: () => void;
-    // (undocumented)
-    rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
-    // (undocumented)
-    static toolName: string;
-    // (undocumented)
-    touchDragCallback: () => void;
-}
-
-// @public (undocumented)
 type Scaling = {
     PET?: PTScaling;
 };
@@ -3954,6 +3939,21 @@ type ToolStyleConfig = {
     [toolName: string]: AnnotationStyle_2;
     global?: AnnotationStyle_2;
 };
+
+// @public (undocumented)
+export class TrackballRotateTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _dragCallback(evt: any): void;
+    // (undocumented)
+    mouseDragCallback: () => void;
+    // (undocumented)
+    rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    touchDragCallback: () => void;
+}
 
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];

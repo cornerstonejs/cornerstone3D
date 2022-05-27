@@ -74,7 +74,7 @@ export default interface IVolumeViewport extends IViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+  resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
   /**
    * Sets the slab thickness for all the actors in the viewport.
    */

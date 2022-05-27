@@ -1,15 +1,16 @@
-import { BaseTool } from './base';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { PublicToolProps, ToolProps } from '../types';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import { BaseTool } from './base';
 
 /**
  * Tool that rotates the camera in the plane defined by the sliceNormal and the viewUp.
  */
-export default class RotateTool extends BaseTool {
-  static toolName = 'Rotate';
+export default class TrackballRotateTool extends BaseTool {
+  static toolName = 'TrackballRotate';
   touchDragCallback: () => void;
   mouseDragCallback: () => void;
 
@@ -83,7 +84,7 @@ export default class RotateTool extends BaseTool {
     ];
 
     const center: Types.Point2 = [width * 0.5, height * 0.5];
-    // NOTE: centerWorld corresponds to teh focal point in cornerstone3D
+    // NOTE: centerWorld corresponds to the focal point in cornerstone3D
     const centerWorld = viewport.canvasToWorld(center);
     const normalizedCenter = [0.5, 0.5];
 

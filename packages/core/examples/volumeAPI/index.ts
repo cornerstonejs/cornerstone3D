@@ -18,7 +18,6 @@ import {
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
-import { VolumeActor } from 'core/src/types';
 
 // This is for debugging purposes
 console.warn(
@@ -70,13 +69,11 @@ addButtonToToolbar({
     const actorEntry = viewport.getActor(volumeId);
 
     // Set the mapping range of the actor to a range to highlight bones
-    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
-      const volumeActor = actorEntry.actor as VolumeActor;
-      volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
-        .setMappingRange(-1500, 2500);
-    }
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(-1500, 2500);
 
     viewport.render();
   },
@@ -134,14 +131,12 @@ addButtonToToolbar({
     // Get the volume actor from the viewport
     const actorEntry = viewport.getActor(volumeId);
 
-    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
-      const volumeActor = actorEntry.actor as VolumeActor;
-      const rgbTransferFunction = volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0);
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    const rgbTransferFunction = volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0);
 
-      utilities.invertRgbTransferFunction(rgbTransferFunction);
-    }
+    utilities.invertRgbTransferFunction(rgbTransferFunction);
 
     viewport.render();
   },
@@ -287,10 +282,8 @@ addSliderToToolbar({
 
     // Get the volume actor from the viewport
     const actorEntry = viewport.getActor(volumeId);
-    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
-      const volumeActor = actorEntry.actor as VolumeActor;
-      volumeActor.getMapper().setBlendMode(blendMode);
-    }
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    volumeActor.getMapper().setBlendMode(blendMode);
 
     viewport.render();
   },

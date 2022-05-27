@@ -84,26 +84,15 @@ describe('Volume Viewport GPU -- ', () => {
     beforeEach(function () {
       cache.purgeCache();
       this.DOMElements = [];
-
       this.renderingEngine = new RenderingEngine(renderingEngineId);
-
-      metaData.addProvider(fakeMetaDataProvider, 10000);
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
     });
 
     afterEach(function () {
       cache.purgeCache();
       this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      unregisterAllImageLoaders();
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
     });
 
-    it('should successfully load a sphere source', function (done) {
+    it('should successfully render a sphere source', function (done) {
       const element = createViewport(this.renderingEngine, SAGITTAL);
       this.DOMElements.push(element);
 

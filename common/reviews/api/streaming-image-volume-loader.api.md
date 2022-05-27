@@ -803,7 +803,7 @@ interface IStackViewport extends IViewport {
     isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     resetProperties(): void;
     resize: () => void;
     scaling: Scaling;
@@ -964,7 +964,7 @@ interface IVolumeViewport extends IViewport {
     getProperties: () => any;
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): number;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setSlabThicknessForAllVolumeActors(slabThickness: number): void;
     setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
     setVolumes(

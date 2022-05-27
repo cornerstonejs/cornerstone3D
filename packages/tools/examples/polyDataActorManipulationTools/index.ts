@@ -1,22 +1,12 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  getRenderingEngine,
-  CONSTANTS,
-} from '@cornerstonejs/core';
-import {
-  initDemo,
-  setTitleAndDescription,
-  addButtonToToolbar,
-  addDropdownToToolbar,
-  camera as cameraHelpers,
-} from '../../../../utils/demo/helpers';
+import { RenderingEngine, Types, Enums, CONSTANTS } from '@cornerstonejs/core';
+import { setTitleAndDescription } from '../../../../utils/demo/helpers';
+import { init as csRenderInit } from '@cornerstonejs/core';
+import { init as csToolsInit } from '@cornerstonejs/tools';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
 console.warn(
@@ -25,7 +15,7 @@ console.warn(
 
 const {
   PanTool,
-  RotateTool,
+  TrackballRotateTool,
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -42,8 +32,8 @@ const viewportIds = [viewportId1, viewportId2];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Non Volume Actor in Volume Viewport API',
-  'Demonstrates how to interact with a Volume viewport with non volume actors.'
+  'Manipulation Tools with Poly Data in a Volume Viewport API',
+  'Demonstrates how to interact with a Volume viewport (Pan, Zoom, Rotate) by mouse events.'
 );
 
 const size = '750px';
@@ -79,102 +69,46 @@ instructions.innerText = `
 
 content.append(instructions);
 
-addButtonToToolbar({
-  title: 'Reset Viewports',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
+function getSphereActor({
+  center,
+  radius,
+  phiResolution,
+  thetaResolution,
+  opacity,
+  edgeVisibility,
+}) {
+  const sphereSource = vtkSphereSource.newInstance({
+    center,
+    radius,
+    phiResolution,
+    thetaResolution,
+  });
 
-    viewportIds.forEach((viewportId) => {
-      // Get the volume viewport
-      const viewport = <Types.IVolumeViewport>(
-        renderingEngine.getViewport(viewportId)
-      );
+  const actor = vtkActor.newInstance();
+  const mapper = vtkMapper.newInstance();
 
-      // Resets the viewport's camera
-      viewport.resetCamera();
+  actor.getProperty().setEdgeVisibility(edgeVisibility);
+  actor.getProperty().setOpacity(opacity);
 
-      viewport.render();
-    });
-  },
-});
+  mapper.setInputConnection(sphereSource.getOutputPort());
+  actor.setMapper(mapper);
 
-const orientationOptions = {
-  axial: 'axial',
-  sagittal: 'sagittal',
-  coronal: 'coronal',
-  oblique: 'oblique',
-};
-
-addDropdownToToolbar({
-  options: {
-    values: ['axial', 'sagittal', 'coronal', 'oblique'],
-    defaultValue: 'sagittal',
-  },
-  onSelectedValueChange: (selectedValue) => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    viewportIds.forEach((viewportId) => {
-      // Get the volume viewport
-      const viewport = <Types.IVolumeViewport>(
-        renderingEngine.getViewport(viewportId)
-      );
-
-      let viewUp;
-      let viewPlaneNormal;
-
-      switch (selectedValue) {
-        case orientationOptions.axial:
-          viewUp = ORIENTATION.AXIAL.viewUp;
-          viewPlaneNormal = ORIENTATION.AXIAL.sliceNormal;
-
-          break;
-        case orientationOptions.sagittal:
-          viewUp = ORIENTATION.SAGITTAL.viewUp;
-          viewPlaneNormal = ORIENTATION.SAGITTAL.sliceNormal;
-
-          break;
-        case orientationOptions.coronal:
-          viewUp = ORIENTATION.CORONAL.viewUp;
-          viewPlaneNormal = ORIENTATION.CORONAL.sliceNormal;
-
-          break;
-        case orientationOptions.oblique:
-          // Some random oblique value for this dataset
-          viewUp = [
-            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
-          ];
-          viewPlaneNormal = [
-            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
-          ];
-
-          break;
-        default:
-          throw new Error('undefined orientation option');
-      }
-
-      // Set the new orientation
-      viewport.setCamera({ viewUp, viewPlaneNormal });
-      // Reset the camera after the normal changes
-      viewport.resetCamera();
-      viewport.render();
-    });
-  },
-});
+  return actor;
+}
 
 /**
  * Runs the demo
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await csRenderInit();
+  await csToolsInit();
 
   const toolGroupId = 'NAVIGATION_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(RotateTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -182,7 +116,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   // Add tools to the tool group
   toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(RotateTool.toolName);
+  toolGroup.addTool(TrackballRotateTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
@@ -195,7 +129,7 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolActive(RotateTool.toolName, {
+  toolGroup.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click + Drag
@@ -248,24 +182,16 @@ async function run() {
       renderingEngine.getViewport(viewportId)
     );
 
-    const sphereSource = vtkSphereSource.newInstance({
+    const actor = getSphereActor({
       center: [0, 0, 0],
-      radius: 100,
-      phiResolution: 10,
-      thetaResolution: 10,
+      radius: 1,
+      phiResolution: 20,
+      thetaResolution: 20,
+      opacity: 1,
+      edgeVisibility: true,
     });
-    const actor = vtkActor.newInstance();
-    const mapper = vtkMapper.newInstance();
 
-    actor.getProperty().setEdgeVisibility(true);
-
-    mapper.setInputConnection(sphereSource.getOutputPort());
-    actor.setMapper(mapper);
-
-    const nonVolumeActors = [];
-    nonVolumeActors.push({ uid: 'spherePolyData', actor });
-
-    viewport.setActors(nonVolumeActors);
+    viewport.setActors([{ uid: 'spherePolyData', actor }]);
 
     // Render the image
     viewport.render();

@@ -1716,17 +1716,16 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  public resetCamera(resetPan = true, resetZoom = true): number {
-    let distance = 1;
+  public resetCamera(resetPan = true, resetZoom = true): boolean {
     if (this.useCPURendering) {
       this.resetCameraCPU(resetPan, resetZoom);
     } else {
-      distance = this.resetCameraGPU(resetPan, resetZoom);
+      this.resetCameraGPU(resetPan, resetZoom);
     }
 
     this.rotation = 0;
     this.rotationCache = 0;
-    return distance;
+    return true;
   }
 
   private resetCameraCPU(resetPan, resetZoom) {
@@ -1739,7 +1738,7 @@ class StackViewport extends Viewport implements IStackViewport {
     resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
   }
 
-  private resetCameraGPU(resetPan, resetZoom): number {
+  private resetCameraGPU(resetPan, resetZoom): boolean {
     return super.resetCamera(resetPan, resetZoom);
   }
 

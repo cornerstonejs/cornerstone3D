@@ -54,6 +54,10 @@
         "name": "Multiple Volume Canvas-to-World",
         "description": "Demonstrates how to use the canvasToWorld API to find the intensity value of each volume on mouse hover"
       },
+      "polyDataActorAPI": {
+        "name": "Poly Data Actor in a Volume Viewport",
+        "description": "Demonstrates how to render poly data with a Volume viewport"
+      },
       "wadouri": {
         "name": "Legacy DICOMweb (WADO-URI) Support",
         "description": "Demonstrates how to support retrieval of entire Part 10 DICOM files directly via URL"
@@ -133,6 +137,10 @@
       "segmentLocking": {
         "name": "Segmentation Swapping",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
+      },
+      "polyDataActorManipulationTools": {
+        "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
+        "description": "Demonstrates how to interact with a Volume viewport (Pan, Zoom, Rotate) by mouse events"
       }
     },
     "tools-advanced": {

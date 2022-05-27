@@ -14,7 +14,6 @@ import {
   camera as cameraHelpers,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
-import { VolumeActor } from 'core/src/types';
 
 // This is for debugging purposes
 console.warn(
@@ -125,14 +124,12 @@ addButtonToToolbar({
     // Get the volume actor from the viewport
     const actorEntry = viewport.getActor(volumeId);
 
-    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
-      // Set the mapping range of the actor to a range to highlight bones
-      const volumeActor = actorEntry.actor as VolumeActor;
-      volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
-        .setMappingRange(-1500, 2500);
-    }
+    // Set the mapping range of the actor to a range to highlight bones
+    const volumeActor = actorEntry.actor as Types.VolumeActor;
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(-1500, 2500);
 
     viewport.render();
   },

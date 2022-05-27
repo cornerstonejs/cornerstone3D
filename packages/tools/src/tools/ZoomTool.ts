@@ -77,7 +77,7 @@ export default class ZoomTool extends BaseTool {
     const { position, focalPoint, viewPlaneNormal } = camera;
 
     const distance = vtkMath.distance2BetweenPoints(position, focalPoint);
-    const zoomScale = 0.01 * (distance / size[1]);
+    const zoomScale = distance / size[1];
 
     const directionOfProjection = [
       -viewPlaneNormal[0],
