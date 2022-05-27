@@ -20,7 +20,6 @@ type Actor = vtkActor;
 type ActorEntry = {
     uid: string;
     actor: Actor | VolumeActor;
-    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -86,7 +85,7 @@ declare namespace CONSTANTS {
     export {
         ORIENTATION,
         colormapsData as CPU_COLORMAPS,
-        RENDERINGDEFAULTS
+        RENDERING_DEFAULTS
     }
 }
 export { CONSTANTS }
@@ -1293,8 +1292,6 @@ interface IVolumeInput {
     // (undocumented)
     slabThickness?: number;
     // (undocumented)
-    slabThicknessEnabled?: boolean;
-    // (undocumented)
     visibility?: boolean;
     // (undocumented)
     volumeId: string;
@@ -1339,9 +1336,9 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
-    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
+    setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
+    setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)
@@ -1483,9 +1480,9 @@ function removeProvider(provider: (type: string, imageId: string) => {
 }): void;
 
 // @public (undocumented)
-const RENDERINGDEFAULTS: {
+const RENDERING_DEFAULTS: {
     MINIMUM_SLAB_THICKNESS: number;
-    MAXIMUMRAYDISTANCE: number;
+    MAXIMUM_RAY_DISTANCE: number;
 };
 
 // @public (undocumented)
@@ -1856,8 +1853,6 @@ export class Viewport implements IViewport {
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
-    checkAndTriggerCameraModifiedEvent(previousCamera: ICamera, updatedCamera: ICamera): void;
-    // (undocumented)
     customRenderViewportToCanvas: () => unknown;
     // (undocumented)
     readonly defaultOptions: any;
@@ -1944,9 +1939,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     sy: number;
     // (undocumented)
+    triggerCameraModifiedEventIfNecessary(previousCamera: ICamera, updatedCamera: ICamera): void;
+    // (undocumented)
     readonly type: ViewportType;
     // (undocumented)
-    updateActorsClippingPlanesOnCameraModified(updatedCamera: ICamera): void;
+    protected updateClippingPlanesForActors(updatedCamera: ICamera): void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
@@ -2092,9 +2089,9 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
-    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
+    setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
-    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
+    setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
     // (undocumented)

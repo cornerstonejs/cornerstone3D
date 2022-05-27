@@ -8,7 +8,6 @@ const {
   Enums,
   metaData,
   volumeLoader,
-  utilities,
   setVolumesForViewports,
   eventTarget,
   imageLoader,

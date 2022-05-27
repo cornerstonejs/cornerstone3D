@@ -232,6 +232,12 @@ class Synchronizer {
 
     const { renderingEngineId, viewportId } = enabledElement;
 
+    // If the viewport has been removed from the synchronizer before the event is
+    // fired, then return immediately.
+    if (!this._sourceViewports.find((s) => s.viewportId === viewportId)) {
+      return;
+    }
+
     this.fireEvent(
       {
         renderingEngineId,

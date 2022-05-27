@@ -25,7 +25,7 @@ const {
   segmentation,
 } = cornerstoneTools;
 
-const { ViewportType, BlendModes } = Enums;
+const { ViewportType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume

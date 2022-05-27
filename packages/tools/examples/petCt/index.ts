@@ -323,7 +323,7 @@ function setUpToolGroups() {
   fusionToolGroup.addViewport(viewportIds.FUSION.CORONAL, renderingEngineId);
 
   // Manipulation Tools
-  [ctToolGroup, ptToolGroup, fusionToolGroup].forEach((toolGroup) => {
+  [ctToolGroup, ptToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
@@ -332,11 +332,22 @@ function setUpToolGroups() {
       getReferenceLineControllable,
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
-      applySlabThicknessToOnlyFirstActor: true,
     });
   });
 
-  // Here is the difference in the toolgroups used, that we need to specify the
+  fusionToolGroup.addTool(PanTool.toolName);
+  fusionToolGroup.addTool(ZoomTool.toolName);
+  fusionToolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  fusionToolGroup.addTool(CrosshairsTool.toolName, {
+    getReferenceLineColor,
+    getReferenceLineControllable,
+    getReferenceLineDraggableRotatable,
+    getReferenceLineSlabThicknessControlsOn,
+    // Only set CT volume to MIP in the fusion viewport
+    filterActorUIDsToSetSlabThickness: [ctVolumeId],
+  });
+
+  // Here is the difference in the toolGroups used, that we need to specify the
   // volume to use for the WindowLevelTool for the fusion viewports
   ctToolGroup.addTool(WindowLevelTool.toolName);
   ptToolGroup.addTool(WindowLevelTool.toolName);
@@ -628,7 +639,6 @@ async function setUpDisplay() {
       {
         volumeId: ctVolumeId,
         callback: setCtTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL, viewportIds.CT.CORONAL]
@@ -640,7 +650,6 @@ async function setUpDisplay() {
       {
         volumeId: ptVolumeId,
         callback: setPetTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [viewportIds.PT.AXIAL, viewportIds.PT.SAGITTAL, viewportIds.PT.CORONAL]
@@ -652,12 +661,10 @@ async function setUpDisplay() {
       {
         volumeId: ctVolumeId,
         callback: setCtTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
       {
         volumeId: ptVolumeId,
         callback: setPetColorMapTransferFunctionForVolumeActor,
-        slabThicknessEnabled: false,
       },
     ],
     [

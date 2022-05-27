@@ -22,8 +22,8 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { RENDERINGDEFAULTS } from '../constants';
-import { Events } from '../enums';
+import { RENDERING_DEFAULTS } from '../constants';
+import { Events, BlendModes } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 
@@ -88,6 +88,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   private initializeVolumeNewImageEventDispatcher(): void {
+    const volumeNewImageHandlerBound = volumeNewImageHandler.bind(this);
+    const volumeNewImageCleanUpBound = volumeNewImageCleanUp.bind(this);
+
     function volumeNewImageHandler(cameraEvent) {
       const viewportImageData = this.getImageData();
 
@@ -105,30 +108,31 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         return;
       }
 
+      this.element.removeEventListener(
+        Events.CAMERA_MODIFIED,
+        volumeNewImageHandlerBound
+      );
+
       eventTarget.removeEventListener(
         Events.ELEMENT_DISABLED,
-        volumeNewImageCleanUp
+        volumeNewImageCleanUpBound
       );
 
       resetVolumeNewImageState(viewportId);
-      this.element.removeEventListener(
-        Events.CAMERA_MODIFIED,
-        volumeNewImageHandler
-      );
     }
 
     this.element.removeEventListener(
       Events.CAMERA_MODIFIED,
-      volumeNewImageHandler.bind(this)
+      volumeNewImageHandlerBound
     );
     this.element.addEventListener(
       Events.CAMERA_MODIFIED,
-      volumeNewImageHandler.bind(this)
+      volumeNewImageHandlerBound
     );
 
     eventTarget.addEventListener(
       Events.ELEMENT_DISABLED,
-      volumeNewImageCleanUp.bind(this)
+      volumeNewImageCleanUpBound
     );
   }
 
@@ -163,8 +167,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, actorUID, slabThickness, slabThicknessEnabled } =
-        volumeInputArray[i];
+      const { volumeId, actorUID, slabThickness } = volumeInputArray[i];
 
       const actor = await createVolumeActor(
         volumeInputArray[i],
@@ -182,7 +185,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
-        slabThicknessEnabled,
       });
     }
 
@@ -213,13 +215,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const {
-        volumeId,
-        visibility,
-        actorUID,
-        slabThickness,
-        slabThicknessEnabled,
-      } = volumeInputArray[i];
+      const { volumeId, visibility, actorUID, slabThickness } =
+        volumeInputArray[i];
 
       const actor = await createVolumeActor(
         volumeInputArray[i],
@@ -241,7 +238,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
-        slabThicknessEnabled,
       });
     }
 
@@ -262,6 +258,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @param immediate - If true, the Viewport will be rendered immediately
    */
   public removeVolumeActors(actorUIDs: Array<string>, immediate = false): void {
+    // Todo: This is actually removeActors
     this.removeActors(actorUIDs);
 
     if (immediate) {
@@ -350,13 +347,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     // Set large numbers to ensure everything is always rendered
     if (activeCamera.getParallelProjection()) {
       activeCamera.setClippingRange(
-        -RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE,
-        RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     } else {
       activeCamera.setClippingRange(
-        RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     }
 
@@ -378,11 +375,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         const clipPlane2 = vtkPlane.newInstance();
         const newVtkPlanes = [clipPlane1, clipPlane2];
 
-        let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
-        if (
-          actorEntry.slabThicknessEnabled !== false &&
-          actorEntry.slabThickness
-        ) {
+        let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+        if (actorEntry.slabThickness) {
           slabThickness = actorEntry.slabThickness;
         }
 
@@ -405,53 +399,62 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     return this._FrameOfReferenceUID;
   };
 
-  /**
-   * Sets the slab thickness to all the volume actors in the viewport.
-   *
-   * @param slabThickness - The slab thickness to set.
-   */
-  public setSlabThicknessForAllVolumeActors(slabThickness: number): void {
-    const actors = this.getActors();
-    let updateClippingPlanes = false;
-    actors.forEach((actor) => {
-      if (actor.slabThicknessEnabled === false) {
-        return;
-      }
+  public setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs = [],
+    immediate = false
+  ): void {
+    let actorEntries = this.getActors();
 
-      actor.slabThickness = slabThickness;
-      updateClippingPlanes = true;
-    });
-
-    if (updateClippingPlanes === false) {
-      return;
+    if (filterActorUIDs && filterActorUIDs.length > 0) {
+      actorEntries = actorEntries.filter((actorEntry: ActorEntry) => {
+        return filterActorUIDs.includes(actorEntry.uid);
+      });
     }
 
-    const currentCamera = this.getCamera();
-    this.updateActorsClippingPlanesOnCameraModified(currentCamera);
-    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
+    actorEntries.forEach((actorEntry) => {
+      const { actor } = actorEntry;
+
+      const mapper = actor.getMapper();
+      // @ts-ignore vtk incorrect typing
+      mapper.setBlendMode(blendMode);
+    });
+
+    if (immediate) {
+      this.render();
+    }
   }
 
   /**
-   * Sets the slab thickness to a specific volume actor in the viewport.
+   * It sets the slabThickness of the actors of the viewport. If filterActorUIDs are
+   * provided, only the actors with the given UIDs will be affected. If no
+   * filterActorUIDs are provided, all actors will be affected.
    *
-   * @param actorUID - The unique ID of the actor.
    * @param slabThickness - The slab thickness to set.
+   * @param blendMode - The blend mode to use when rendering the actors.
+   * @param filterActorUIDs - Optional argument to filter the actors to apply
+   * the slab thickness to (if not provided, all actors will be affected).
    */
-  public setSlabThicknessForVolumeActor(
-    actorUID: string,
-    slabThickness: number
-  ): void {
-    const actor = this.getActor(actorUID);
+  public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
+    let actorEntries = this.getActors();
 
-    if (actor.slabThicknessEnabled === false) {
-      return;
+    if (filterActorUIDs && filterActorUIDs.length > 0) {
+      actorEntries = actorEntries.filter((actorEntry) => {
+        return filterActorUIDs.includes(actorEntry.uid);
+      });
     }
 
-    actor.slabThickness = slabThickness;
+    actorEntries.forEach((actorEntry) => {
+      const { actor } = actorEntry;
+
+      if (actor.isA('vtkVolume')) {
+        actorEntry.slabThickness = slabThickness;
+      }
+    });
 
     const currentCamera = this.getCamera();
-    this.updateActorsClippingPlanesOnCameraModified(currentCamera);
-    this.checkAndTriggerCameraModifiedEvent(currentCamera, currentCamera);
+    this.updateClippingPlanesForActors(currentCamera);
+    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
   }
 
   /**
@@ -461,12 +464,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public getSlabThickness(): number {
     const actors = this.getActors();
-    let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
+    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     actors.forEach((actor) => {
-      if (actor.slabThicknessEnabled === false) {
-        return;
-      }
-
       if (actor.slabThickness > slabThickness) {
         slabThickness = actor.slabThickness;
       }
@@ -538,7 +537,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (-RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE, RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE).
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
      * The clipping range is used in the camera method getProjectionMatrix().
      * The projection matrix is used then for viewToWorld/worldToView methods of
      * the renderer. This means that vkt.js will not return the coordinates of
@@ -597,11 +596,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * camera matrix (no ray casting).
      *
      * However for the volume viewport the clipping range is set to be
-     * (-RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE, RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE).
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
      * The clipping range is used in the camera method getProjectionMatrix().
      * The projection matrix is used then for viewToWorld/worldToView methods of
      * the renderer. This means that vkt.js will not return the coordinates of
-     * the point on the view plane (i.e. the depth coordinate will corresponde
+     * the point on the view plane (i.e. the depth coordinate will corresponded
      * to the focal point).
      *
      * Therefore the clipping range has to be set to (distance, distance + 0.01),

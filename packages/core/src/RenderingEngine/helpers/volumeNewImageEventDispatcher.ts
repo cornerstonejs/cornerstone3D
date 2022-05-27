@@ -13,7 +13,7 @@ type VolumeImageState = Record<string, number>;
 const state: VolumeImageState = {};
 
 export function resetVolumeNewImageState(viewportId: string): void {
-  if (state[viewportId]) {
+  if (state[viewportId] !== undefined) {
     delete state[viewportId];
   }
 }
@@ -41,7 +41,7 @@ function volumeNewImageEventDispatcher(
     );
   }
 
-  if (!state[viewport.id]) {
+  if (state[viewport.id] === undefined) {
     state[viewport.id] = 0;
   }
 

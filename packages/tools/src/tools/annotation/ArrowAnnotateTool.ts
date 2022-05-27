@@ -66,8 +66,8 @@ class ArrowAnnotateTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
-        getTextCallback: () => prompt('Enter your annotation:'),
-        changeTextCallback: () => prompt('Enter your annotation:'),
+        getTextCallback,
+        changeTextCallback,
         preventHandleOutsideImage: false,
         arrowFirst: true,
       },
@@ -323,29 +323,33 @@ class ArrowAnnotateTool extends AnnotationTool {
     }
 
     if (newAnnotation) {
-      const text = this.configuration.getTextCallback();
-      if (!text) {
-        removeAnnotation(annotation.annotationUID, element);
+      this.configuration.getTextCallback((text) => {
+        if (!text) {
+          removeAnnotation(annotation.annotationUID, element);
+          triggerAnnotationRenderForViewportIds(
+            renderingEngine,
+            viewportIdsToRender
+          );
+          this.editData = null;
+          this.isDrawing = false;
+          return;
+        }
+        annotation.data.text = text;
+
+        const eventType = Events.ANNOTATION_COMPLETED;
+
+        const eventDetail: AnnotationCompletedEventDetail = {
+          annotation,
+        };
+
+        triggerEvent(eventTarget, eventType, eventDetail);
+
         triggerAnnotationRenderForViewportIds(
           renderingEngine,
           viewportIdsToRender
         );
-        this.editData = null;
-        this.isDrawing = false;
-        return;
-      }
-      annotation.data.text = text;
-
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      });
     }
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     this.editData = null;
     this.isDrawing = false;
@@ -434,8 +438,21 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     const annotation = clickedAnnotation as ArrowAnnotation;
 
-    const text = this.configuration.changeTextCallback();
-    annotation.data.text = text;
+    this.configuration.changeTextCallback(
+      clickedAnnotation,
+      evt.detail,
+      this._doneChangingTextCallback.bind(this, element, annotation)
+    );
+
+    this.editData = null;
+    this.isDrawing = false;
+  };
+
+  _doneChangingTextCallback(element, annotation, updatedText) {
+    annotation.data.text = updatedText;
+
+    const { renderingEngine, viewportId, renderingEngineId } =
+      getEnabledElement(element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -451,10 +468,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       viewportId,
       renderingEngineId,
     });
-
-    this.editData = null;
-    this.isDrawing = false;
-  };
+  }
 
   cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
@@ -697,6 +711,14 @@ class ArrowAnnotateTool extends AnnotationTool {
       csUtils.indexWithinDimensions(index2, dimensions)
     );
   }
+}
+
+function getTextCallback(doneChangingTextCallback) {
+  return doneChangingTextCallback(prompt('Enter your annotation:'));
+}
+
+function changeTextCallback(data, eventData, doneChangingTextCallback) {
+  return doneChangingTextCallback(prompt('Enter your annotation:'));
 }
 
 export default ArrowAnnotateTool;

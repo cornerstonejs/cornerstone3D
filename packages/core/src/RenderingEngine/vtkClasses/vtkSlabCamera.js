@@ -46,7 +46,7 @@ function vtkSlabCamera(publicAPI, model) {
     let cRange1 = model.clippingRange[1];
     if (model.isPerformingCoordinateTransformation) {
       /**
-       * NOTE: this is necessary because we want the coordinate trasformation
+       * NOTE: this is necessary because we want the coordinate transformation
        * respect to the view plane (plane orthogonal to the camera and passing to
        * the focal point).
        *
@@ -54,11 +54,11 @@ function vtkSlabCamera(publicAPI, model) {
        * camera matrix (no ray casting).
        *
        * However for the volume viewport the clipping range is set to be
-       * (-RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE, RENDERINGDEFAULTS.MAXIMUMRAYDISTANCE).
+       * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
        * The clipping range is used in the camera method getProjectionMatrix().
        * The projection matrix is used then for viewToWorld/worldToView methods of
        * the renderer. This means that vkt.js will not return the coordinates of
-       * the point on the view plane (i.e. the depth coordinate will corresponde
+       * the point on the view plane (i.e. the depth coordinate will corresponded
        * to the focal point).
        *
        * Therefore the clipping range has to be set to (distance, distance + 0.01),

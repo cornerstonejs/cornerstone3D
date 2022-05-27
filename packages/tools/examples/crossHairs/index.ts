@@ -5,16 +5,16 @@ import {
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
-const { BlendModes } = Enums;
 
 // This is for debugging purposes
 console.warn(
@@ -136,7 +136,61 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return index !== -1;
 }
 
-// ============================= //
+const blendModeOptions = {
+  MIP: 'Maximum Intensity Projection',
+  MINIP: 'Minimum Intensity Projection',
+  AIP: 'Average Intensity Projection',
+};
+
+addDropdownToToolbar({
+  options: {
+    values: [
+      'Maximum Intensity Projection',
+      'Minimum Intensity Projection',
+      'Average Intensity Projection',
+    ],
+    defaultValue: 'Maximum Intensity Projection',
+  },
+  onSelectedValueChange: (selectedValue) => {
+    let blendModeToUse;
+    switch (selectedValue) {
+      case blendModeOptions.MIP:
+        blendModeToUse = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+        break;
+      case blendModeOptions.MINIP:
+        blendModeToUse = Enums.BlendModes.MINIMUM_INTENSITY_BLEND;
+        break;
+      case blendModeOptions.AIP:
+        blendModeToUse = Enums.BlendModes.AVERAGE_INTENSITY_BLEND;
+        break;
+      default:
+        throw new Error('undefined orientation option');
+    }
+
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    const crosshairsInstance = toolGroup.getToolInstance(
+      CrosshairsTool.toolName
+    );
+    const oldConfiguration = crosshairsInstance.configuration;
+
+    crosshairsInstance.configuration = {
+      ...oldConfiguration,
+      slabThicknessBlendMode: blendModeToUse,
+    };
+
+    // Update the blendMode for actors to instantly reflect the change
+    toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
+
+      viewport.setBlendMode(blendModeToUse);
+      viewport.render();
+    });
+  },
+});
 
 /**
  * Runs the demo
@@ -211,7 +265,6 @@ async function run() {
       {
         volumeId,
         callback: setCtTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     ],
     [viewportId1, viewportId2, viewportId3]

@@ -4,10 +4,14 @@ import {
   getEnabledElementByIds,
   getEnabledElement,
   utilities as csUtils,
+  Enums,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getToolGroup } from '../store/ToolGroupManager';
+import {
+  getToolGroup,
+  getToolGroupForViewport,
+} from '../store/ToolGroupManager';
 
 import {
   addAnnotation,
@@ -43,10 +47,9 @@ import {
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { MouseDragEventType } from '../types/EventTypes';
-import { render } from 'react-dom';
 import { CONSTANTS } from '@cornerstonejs/core';
 
-const { RENDERINGDEFAULTS } = CONSTANTS;
+const { RENDERING_DEFAULTS } = CONSTANTS;
 const { liangBarksyClip } = math.vec2;
 
 // TODO: nested config is weird
@@ -59,8 +62,6 @@ interface ToolConfiguration {
     shadow?: boolean;
   };
 }
-
-type ViewportInputs = Array<Types.IViewportId>;
 
 interface CrosshairsAnnotation extends Annotation {
   data: {
@@ -76,7 +77,7 @@ interface CrosshairsAnnotation extends Annotation {
 }
 
 function defaultReferenceLineColor() {
-  return 'rgb(200, 200, 200)';
+  return 'rgb(0, 200, 0)';
 }
 
 function defaultReferenceLineControllable() {
@@ -88,7 +89,7 @@ function defaultReferenceLineDraggableRotatable() {
 }
 
 function defaultReferenceLineSlabThicknessControlsOn() {
-  return false;
+  return true;
 }
 
 const OPERATION = {
@@ -127,6 +128,9 @@ export default class CrosshairsTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
         shadow: true,
+        // renders a colored circle on top right of the viewports whose color
+        // matches the color of the reference line
+        viewportIndicators: true,
         // Auto pan is a configuration which will update pan
         // other viewports in the toolGroup if the center of the crosshairs
         // is outside of the viewport. This might be useful for the case
@@ -137,6 +141,11 @@ export default class CrosshairsTool extends AnnotationTool {
           enabled: false,
           panSize: 10,
         },
+        // actorUIDs for slabThickness application, if not defined, the slab thickness
+        // will be applied to all actors of the viewport
+        filterActorUIDsToSetSlabThickness: [],
+        // blend mode for slabThickness modifications
+        slabThicknessBlendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
     }
   ) {
@@ -555,7 +564,7 @@ export default class CrosshairsTool extends AnnotationTool {
     }
 
     // AutoPan modification
-    if (this.configuration.autoPan.enabled) {
+    if (this.configuration.autoPan?.enabled) {
       const viewports = csUtils.getVolumeViewportsContainingSameVolumes(
         viewport,
         renderingEngine.id
@@ -1284,6 +1293,11 @@ export default class CrosshairsTool extends AnnotationTool {
 
     // render a circle to pin point the viewport color
     // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
+
+    if (!this.configuration.viewportIndicators) {
+      return;
+    }
+
     const referenceColorCoordinates = [
       sWidth * 0.95,
       sHeight * 0.05,
@@ -2119,7 +2133,7 @@ export default class CrosshairsTool extends AnnotationTool {
 
             slabThicknessValue = Math.abs(slabThicknessValue);
             slabThicknessValue = Math.max(
-              RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS,
+              RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
               slabThicknessValue
             );
 
@@ -2131,10 +2145,26 @@ export default class CrosshairsTool extends AnnotationTool {
             );
 
             if (near) {
-              slabThicknessValue = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
+              slabThicknessValue = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
             }
 
-            otherViewport.setSlabThicknessForAllVolumeActors(
+            // We want to set the slabThickness for the viewport's actors but
+            // since the crosshairs tool instance has configuration regarding which
+            // actorUIDs (in case of volume -> actorUID = volumeIds) to set the
+            // slabThickness for, we need to delegate the slabThickness setting
+            // to the crosshairs tool instance of the toolGroup since configurations
+            // exist on the toolInstance and each toolGroup has its own crosshairs
+            // tool instance (Otherwise, we would need to set this filterActorUIDsToSetSlabThickness at
+            // the viewport level which makes tool and viewport state convoluted).
+            const toolGroup = getToolGroupForViewport(
+              otherViewport.id,
+              renderingEngine.id
+            );
+            const crosshairsInstance = toolGroup.getToolInstance(
+              this.getToolName()
+            );
+            crosshairsInstance.setSlabThickness(
+              otherViewport,
               slabThicknessValue
             );
 
@@ -2145,6 +2175,26 @@ export default class CrosshairsTool extends AnnotationTool {
       renderingEngine.renderViewports(viewportsIds);
     }
   };
+
+  setSlabThickness(viewport, slabThickness) {
+    let actorUIDs;
+    const { filterActorUIDsToSetSlabThickness } = this.configuration;
+    if (
+      filterActorUIDsToSetSlabThickness &&
+      filterActorUIDsToSetSlabThickness.length > 0
+    ) {
+      actorUIDs = filterActorUIDsToSetSlabThickness;
+    }
+
+    let blendModeToUse = this.configuration.slabThicknessBlendMode;
+    if (slabThickness === RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS) {
+      blendModeToUse = Enums.BlendModes.COMPOSITE;
+    }
+
+    const immediate = false;
+    viewport.setBlendMode(blendModeToUse, actorUIDs, immediate);
+    viewport.setSlabThickness(slabThickness, actorUIDs);
+  }
 
   _isClockWise(a, b, c) {
     // return true if the rotation is clockwise

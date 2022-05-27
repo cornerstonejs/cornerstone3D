@@ -22,7 +22,7 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { RENDERINGDEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS } from '../constants';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -405,6 +405,14 @@ class Viewport implements IViewport {
     actors: Array<ActorEntry>,
     resetCameraPanAndZoom = false
   ): void {
+    const renderingEngine = this.getRenderingEngine();
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      console.warn(
+        'Viewport::addActors::Rendering engine has not been initialized or has been destroyed'
+      );
+      return;
+    }
+
     actors.forEach((actor) => this.addActor(actor));
 
     // set the clipping planes for the actors
@@ -662,7 +670,10 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    this.checkAndTriggerCameraModifiedEvent(previousCamera, this.getCamera());
+    this.triggerCameraModifiedEventIfNecessary(
+      previousCamera,
+      this.getCamera()
+    );
 
     return true;
   }
@@ -796,9 +807,8 @@ class Viewport implements IViewport {
     }
 
     // update clippingPlanes
-    this.updateActorsClippingPlanesOnCameraModified(updatedCamera);
-
-    this.checkAndTriggerCameraModifiedEvent(previousCamera, updatedCamera);
+    this.updateClippingPlanesForActors(updatedCamera);
+    this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
   }
 
   /**
@@ -806,7 +816,7 @@ class Viewport implements IViewport {
    * @param cameraInterface - ICamera
    * @param cameraInterface - ICamera
    */
-  public checkAndTriggerCameraModifiedEvent(
+  public triggerCameraModifiedEventIfNecessary(
     previousCamera: ICamera,
     updatedCamera: ICamera
   ): void {
@@ -828,19 +838,14 @@ class Viewport implements IViewport {
    * Updates the actors clipping planes orientation from the camera properties
    * @param updatedCamera - ICamera
    */
-  public updateActorsClippingPlanesOnCameraModified(
-    updatedCamera: ICamera
-  ): void {
+  protected updateClippingPlanesForActors(updatedCamera: ICamera): void {
     const actorEntries = this.getActors();
     actorEntries.forEach((actorEntry) => {
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
-      let slabThickness = RENDERINGDEFAULTS.MINIMUM_SLAB_THICKNESS;
-      if (
-        actorEntry.slabThicknessEnabled !== false &&
-        actorEntry.slabThickness
-      ) {
+      let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+      if (actorEntry.slabThickness) {
         slabThickness = actorEntry.slabThickness;
       }
 

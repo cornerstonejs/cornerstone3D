@@ -27,7 +27,7 @@ interface IViewport {
   sWidth: number;
   /** height of the viewport on the offscreen canvas (if rendering using GPU) */
   sHeight: number;
-  /** actors rendered in the viewport (volumeActors as of now) */
+  /** actors rendered in the viewport*/
   _actors: Map<string, any>;
   /** viewport default options including the axis, and background color  */
   defaultOptions: any;
@@ -43,7 +43,7 @@ interface IViewport {
   worldToCanvas: (worldPos: Point3) => Point2;
   /** get the first actor */
   getDefaultActor(): ActorEntry;
-  /** returns all the actors on the viewport which includes both volumeActor object and its uid */
+  /** returns all the actor entires for a viewport which is an object containing actor and its uid */
   getActors(): Array<ActorEntry>;
   /** returns specific actor by its uid */
   getActor(actorUID: string): ActorEntry;

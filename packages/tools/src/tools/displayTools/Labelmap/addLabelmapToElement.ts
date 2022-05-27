@@ -1,9 +1,4 @@
-import {
-  getEnabledElement,
-  addVolumesToViewports,
-  Enums,
-} from '@cornerstonejs/core';
-const { BlendModes } = Enums;
+import { getEnabledElement, addVolumesToViewports } from '@cornerstonejs/core';
 
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
@@ -36,7 +31,6 @@ async function addLabelmapToElement(
       {
         volumeId,
         actorUID: segmentationRepresentationUID,
-        //blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         visibility,
       },
     ],

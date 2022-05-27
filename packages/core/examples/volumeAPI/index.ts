@@ -17,7 +17,6 @@ import {
   camera as cameraHelpers,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
-import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
 // This is for debugging purposes
 console.warn(
@@ -25,7 +24,6 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
-const { BlendMode } = vtkConstants;
 const { ORIENTATION } = CONSTANTS;
 
 const renderingEngineId = 'myRenderingEngine';
@@ -268,23 +266,18 @@ addSliderToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    let blendMode = BlendMode.MAXIMUM_INTENSITY_BLEND;
+    let blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 
     if (valueAsNumber < 0.1) {
       // Cannot render zero thickness
       valueAsNumber = 0.1;
 
       // Not a mip, just show slice
-      blendMode = BlendMode.COMPOSITE_BLEND;
+      blendMode = Enums.BlendModes.COMPOSITE;
     }
 
-    viewport.setSlabThicknessForAllVolumeActors(valueAsNumber);
-
-    // Get the volume actor from the viewport
-    const actorEntry = viewport.getActor(volumeId);
-    const volumeActor = actorEntry.actor as Types.VolumeActor;
-    volumeActor.getMapper().setBlendMode(blendMode);
-
+    viewport.setBlendMode(blendMode);
+    viewport.setSlabThickness(valueAsNumber);
     viewport.render();
   },
 });

@@ -16,7 +16,6 @@ type Actor = vtkActor;
 type ActorEntry = {
     uid: string;
     actor: Actor | VolumeActor;
-    slabThicknessEnabled?: boolean;
     slabThickness?: number;
 };
 
@@ -929,9 +928,6 @@ interface IVolumeInput {
     slabThickness?: number;
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
-    slabThicknessEnabled?: boolean;
-    // actorUID for segmentations, since two segmentations with the same volumeId
-    // can have different representations
     visibility?: boolean;
     // actorUID for segmentations, since two segmentations with the same volumeId
     // can have different representations
@@ -965,8 +961,15 @@ interface IVolumeViewport extends IViewport {
     getSlabThickness(): number;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
-    setSlabThicknessForAllVolumeActors(slabThickness: number): void;
-    setSlabThicknessForVolumeActor(actorUID: string, slabThickness: number): void;
+    setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs?: Array<string>,
+    immediate?: boolean
+    ): void;
+    setSlabThickness(
+    slabThickness: number,
+    filterActorUIDs?: Array<string>
+    ): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
     immediate?: boolean
