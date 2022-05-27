@@ -841,6 +841,12 @@ class Viewport implements IViewport {
   protected updateClippingPlanesForActors(updatedCamera: ICamera): void {
     const actorEntries = this.getActors();
     actorEntries.forEach((actorEntry) => {
+      // we assume that the first two clipping plane of the mapper are always
+      // the 'camera' clipping. Update clipping planes only if the actor is
+      // a vtkVolume
+      if (!actorEntry.actor || !actorEntry.actor.isA('vtkVolume')) {
+        return;
+      }
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
