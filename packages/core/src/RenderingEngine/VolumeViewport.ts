@@ -363,7 +363,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const actorEntries = this.getActors();
     actorEntries.forEach((actorEntry) => {
       // we assume that the first two clipping plane of the mapper are always
-      // the 'camera' clipping. Apply clipping planes only if the actor is
+      // the 'camera' clipping. Add clipping planes only if the actor is
       // a vtkVolume
       if (!actorEntry.actor || !actorEntry.actor.isA('vtkVolume')) {
         return;
