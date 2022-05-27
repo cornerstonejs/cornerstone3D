@@ -147,8 +147,8 @@ function renderOpenContour(
 
   const activeHandleIndex = annotation.data.handles.activeHandleIndex;
 
-  if (this.configuration.allowsRenderOpenContourHandles === true) {
-    const radius = this.configuration.alwaysRenderOpenContourHandlesRadius;
+  if (this.configuration.alwaysRenderOpenContourHandles?.enabled === true) {
+    const radius = this.configuration.alwaysRenderOpenContourHandles.radius;
 
     // Draw highlighted points
     const handleGroupUID = '0';
