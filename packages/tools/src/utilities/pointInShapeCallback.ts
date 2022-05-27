@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import BoundsIJK from '../types/BoundsIJK';
 
 export type PointInShapeCallback = ({
   value,
@@ -18,8 +19,6 @@ export type ShapeFnCriteria = (
   pointIJK: Types.Point3,
   pointLPS: Types.Point3
 ) => boolean;
-
-type BoundsIJK = [Types.Point2, Types.Point2, Types.Point2];
 
 /**
  * For each point in the image (If boundsIJK is not provided, otherwise, for each

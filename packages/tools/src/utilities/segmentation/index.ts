@@ -3,6 +3,7 @@ import {
   extend2DBoundingBoxInViewAxis,
 } from './getBoundingBoxUtils';
 import thresholdVolumeByRange from './thresholdVolumeByRange';
+import rectangleROIThresholdVolumeByRange from './rectangleROIThresholdVolumeByRange';
 import createMergedLabelmapForIndex from './createMergedLabelmapForIndex';
 import isValidRepresentationConfig from './isValidRepresentationConfig';
 import getDefaultRepresentationConfig from './getDefaultRepresentationConfig';
@@ -16,4 +17,5 @@ export {
   isValidRepresentationConfig,
   getDefaultRepresentationConfig,
   createLabelmapVolumeForViewport,
+  rectangleROIThresholdVolumeByRange,
 };

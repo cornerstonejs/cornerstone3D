@@ -23,6 +23,7 @@ import type { ToolProps, PublicToolProps } from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type JumpToSliceOptions from './JumpToSliceOptions';
 import type ScrollOptions from './ScrollOptions';
+import type BoundsIJK from './BoundsIJK';
 import type * as CINETypes from './CINETypes';
 import type {
   Color,
@@ -84,4 +85,5 @@ export type {
   ScrollOptions,
   // CINE
   CINETypes,
+  BoundsIJK,
 };
