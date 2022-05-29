@@ -231,6 +231,16 @@ function getSegmentationRepresentationByUID(
 }
 
 /**
+ * It removes the segmentation from the segmentation state manager
+ * @param segmentationId - The id of the segmentation
+ */
+function removeSegmentation(segmentationId: string) {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.removeSegmentation(segmentationId);
+  triggerSegmentationModified(segmentationId);
+}
+
+/**
  * Remove a segmentation representation from the segmentation state manager for a toolGroup.
  * It fires SEGMENTATION_REPRESENTATION_MODIFIED event.
  *
@@ -298,6 +308,7 @@ export {
   getSegmentation,
   getSegmentations,
   addSegmentation,
+  removeSegmentation,
   // ToolGroup specific Segmentation Representation
   getSegmentationRepresentations,
   addSegmentationRepresentation,

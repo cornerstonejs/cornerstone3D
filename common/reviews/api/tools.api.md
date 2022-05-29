@@ -3364,6 +3364,9 @@ function removeAllAnnotations(element?: HTMLDivElement): void;
 function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
 
 // @public (undocumented)
+function removeSegmentation(segmentationId: string): void;
+
+// @public (undocumented)
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
@@ -3729,6 +3732,7 @@ declare namespace state_2 {
         getSegmentation,
         getSegmentations,
         addSegmentation,
+        removeSegmentation,
         getSegmentationRepresentations,
         addSegmentationRepresentation,
         removeSegmentationRepresentation,
