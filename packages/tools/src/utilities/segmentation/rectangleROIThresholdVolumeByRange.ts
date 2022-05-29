@@ -57,15 +57,17 @@ function rectangleROIThresholdVolumeByRange(
 
   _validateAnnotations(annotations);
 
+  const boundsIJK = getBoundsIJKFromRectangleAnnotations(
+    annotations,
+    referenceVolume,
+    options
+  );
+
   const optionsToUse = {
     lower: options.lower,
     higher: options.higher,
-    boundsIJK: getBoundsIJKFromRectangleAnnotations(
-      annotations,
-      referenceVolume,
-      options
-    ),
     overwrite: options.overwrite,
+    boundsIJK,
   };
 
   const outputSegmentationVolume = thresholdVolumeByRange(

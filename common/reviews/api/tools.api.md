@@ -3131,7 +3131,7 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
         };
         data: {
             label: string;
-            startSlice: any;
+            startSlice: number;
             endSlice: number;
             cachedStats: {
                 projectionPoints: any[];

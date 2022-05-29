@@ -113,8 +113,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       throw new Error('This tool does not work on non-acquisition planes');
     }
 
-    const { imageData } = viewport.getImageData();
-    const startIndex = transformWorldToIndex(imageData, worldPos)[2];
+    const startIndex = viewport.getCurrentImageIdIndex();
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
