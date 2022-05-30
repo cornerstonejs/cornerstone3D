@@ -147,9 +147,42 @@ function renderOpenContour(
 
   const activeHandleIndex = annotation.data.handles.activeHandleIndex;
 
-  if (activeHandleIndex !== null) {
+  if (this.configuration.alwaysRenderOpenContourHandles?.enabled === true) {
+    const radius = this.configuration.alwaysRenderOpenContourHandles.radius;
+
     // Draw highlighted points
     const handleGroupUID = '0';
+
+    // We already mapped all the points, so don't do the mapping again.
+    // The activeHandleIndex can only be one of two points.
+    const handlePoints = [
+      canvasPoints[0],
+      canvasPoints[canvasPoints.length - 1],
+    ];
+
+    // Don't render a hovered handle, as this will be rendered larger in
+    // the next block.
+    if (activeHandleIndex === 0) {
+      handlePoints.shift();
+    } else if (activeHandleIndex === 1) {
+      handlePoints.pop();
+    }
+
+    drawHandlesSvg(
+      svgDrawingHelper,
+      annotation.annotationUID,
+      handleGroupUID,
+      handlePoints,
+      {
+        color: options.color,
+        handleRadius: radius,
+      }
+    );
+  }
+
+  if (activeHandleIndex !== null) {
+    // Draw highlighted points
+    const handleGroupUID = '1';
 
     // We already mapped all the points, so don't do the mapping again.
     // The activeHandleIndex can only be one of two points.
