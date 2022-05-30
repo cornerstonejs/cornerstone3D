@@ -10,7 +10,20 @@ import {
   SegmentationDataModifiedEventDetail,
   SegmentationModifiedEventDetail,
   SegmentationRepresentationRemovedEventDetail,
+  SegmentationRemovedEventDetail,
 } from '../../types/EventTypes';
+
+/**
+ * Trigger an event that a segmentation is removed
+ * @param segmentationId - The Id of segmentation
+ */
+function triggerSegmentationRemoved(segmentationId: string): void {
+  const eventDetail: SegmentationRemovedEventDetail = {
+    segmentationId,
+  };
+
+  triggerEvent(eventTarget, Events.SEGMENTATION_REMOVED, eventDetail);
+}
 
 /**
  * Trigger an event that a segmentation representation was removed
@@ -140,4 +153,5 @@ export {
   // Global
   triggerSegmentationDataModified,
   triggerSegmentationModified,
+  triggerSegmentationRemoved,
 };

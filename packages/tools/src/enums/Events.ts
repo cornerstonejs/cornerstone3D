@@ -103,6 +103,14 @@ enum Events {
   SEGMENTATION_REPRESENTATION_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_MODIFIED',
 
   /**
+   * Triggers on the eventTarget when a Segmentation is removed from the state manager.
+   * Make use of {@link EventTypes.SegmentationRemovedEventType | Segmentation Removed Event Type}
+   * for typing your event listeners for this segmentation removed event, and see what
+   * event detail is included in {@link EventTypes.SegmentationRemovedEventDetail | Segmentation Removed Event Detail}.
+   */
+  SEGMENTATION_REMOVED = 'CORNERSTONE_TOOLS_SEGMENTATION_REMOVED',
+
+  /**
    * Triggers on the eventTarget when a Segmentation representation of a toolGroup is removed in the state manager.
    * Make use of {@link EventTypes.SegmentationRepresentationRemovedEventType | Segmentation Representation Removed Event Type}
    * for typing your event listeners for this segmentation representation removed event, and see what

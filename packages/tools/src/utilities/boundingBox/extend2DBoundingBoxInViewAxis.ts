@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 
 /**
- * Used the current bounds of the 2D rectangle and extends it in the view axis by numSlices
+ * Uses the current bounds of the 2D rectangle and extends it in the view axis by numSlices
  * It compares min and max of each IJK to find the view axis (for axial, zMin === zMax) and
  * then calculates the extended range. It will assume the slice is relative to the
  * current slice and will add the given slices to the current max of the boundingBox.
@@ -19,12 +19,6 @@ function extend2DBoundingBoxInViewAxis(
   if (sliceNormalIndex === -1) {
     throw new Error('3D bounding boxes not supported in an oblique plane');
   }
-
-  // if (slices instanceof Array) {
-  //   boundsIJK[sliceNormalIndex][0] = Math.min(...slices)
-  //   boundsIJK[sliceNormalIndex][1] = Math.max(...slices)
-  //   return boundsIJK
-  // }
 
   // get the index and subtract slices from the min and add to the max
   boundsIJK[sliceNormalIndex][0] -= numSlicesToProject;

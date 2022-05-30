@@ -5,7 +5,7 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import { BoundsIJK } from '../../types';
 
 export type ThresholdRangeOptions = {
-  higher: number;
+  upper: number;
   lower: number;
   boundsIJK: BoundsIJK;
   overwrite: boolean;
@@ -25,7 +25,7 @@ function thresholdVolumeByRange(
   options: ThresholdRangeOptions
 ): Types.IImageVolume {
   const { scalarData, imageData: segmentationImageData } = segmentationVolume;
-  const { overwrite, boundsIJK, higher, lower } = options;
+  const { overwrite, boundsIJK, upper, lower } = options;
 
   const { imageData } = referenceVolume;
   const referenceValues = imageData.getPointData().getScalars().getData();
@@ -40,7 +40,7 @@ function thresholdVolumeByRange(
   const callback = ({ index, pointIJK }) => {
     const offset = imageData.computeOffsetIndex(pointIJK);
     const value = referenceValues[offset];
-    if (value <= lower || value >= higher) {
+    if (value <= lower || value >= upper) {
       return;
     }
 

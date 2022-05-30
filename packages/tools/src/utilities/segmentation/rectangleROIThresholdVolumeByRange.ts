@@ -6,11 +6,11 @@ import {
 } from '../../tools';
 
 import thresholdVolumeByRange from './thresholdVolumeByRange';
-import getBoundsIJKFromRectangleAnnotations from '../boundingBox/getBoundsIJKFromRectangleAnnotations';
+import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsIJKFromRectangleAnnotations';
 
 export type ThresholdRangeOptions = {
   lower: number;
-  higher: number;
+  upper: number;
   numSlicesToProject?: number; // number of slices to project before and after current slice
   overwrite: boolean;
 };
@@ -65,7 +65,7 @@ function rectangleROIThresholdVolumeByRange(
 
   const optionsToUse = {
     lower: options.lower,
-    higher: options.higher,
+    upper: options.upper,
     overwrite: options.overwrite,
     boundsIJK,
   };

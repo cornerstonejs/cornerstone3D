@@ -1,7 +1,7 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import getBoundingBoxAroundShape from './getBoundingBoxAroundShape';
-import extend2DBoundingBoxInViewAxis from './extend2DBoundingBoxInViewAxis';
+import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape';
+import extend2DBoundingBoxInViewAxis from '../boundingBox/extend2DBoundingBoxInViewAxis';
 
 type Options = {
   numSlicesToProject?: number;

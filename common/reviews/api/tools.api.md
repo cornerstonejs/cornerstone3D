@@ -549,8 +549,7 @@ export class BidirectionalTool extends AnnotationTool {
 declare namespace boundingBox {
     export {
         extend2DBoundingBoxInViewAxis,
-        getBoundingBoxAroundShape,
-        getBoundsIJKFromRectangleAnnotations
+        getBoundingBoxAroundShape
     }
 }
 
@@ -1438,6 +1437,8 @@ enum Events {
     // (undocumented)
     SEGMENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED",
     // (undocumented)
+    SEGMENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REMOVED",
+    // (undocumented)
     SEGMENTATION_RENDERED = "CORNERSTONE_TOOLS_SEGMENTATION_RENDERED",
     // (undocumented)
     SEGMENTATION_REPRESENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_MODIFIED",
@@ -1521,6 +1522,8 @@ declare namespace EventTypes_2 {
         SegmentationRepresentationModifiedEventType,
         SegmentationRepresentationRemovedEventDetail,
         SegmentationRepresentationRemovedEventType,
+        SegmentationRemovedEventType,
+        SegmentationRemovedEventDetail,
         SegmentationDataModifiedEventDetail,
         SegmentationRenderedEventType,
         SegmentationRenderedEventDetail,
@@ -1618,7 +1621,7 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
-function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+function getBoundingBoxAroundShape(points: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
 function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
@@ -3312,6 +3315,12 @@ export class RectangleROITool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, interactionType: InteractionTypes) => void;
 }
 
+declare namespace rectangleROITool {
+    export {
+        getBoundsIJKFromRectangleAnnotations
+    }
+}
+
 // @public (undocumented)
 export class RectangleScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3483,6 +3492,14 @@ type SegmentationModifiedEventDetail = {
 
 // @public (undocumented)
 type SegmentationModifiedEventType = Types_2.CustomEventType<SegmentationModifiedEventDetail>;
+
+// @public (undocumented)
+type SegmentationRemovedEventDetail = {
+    segmentationId: string;
+};
+
+// @public (undocumented)
+type SegmentationRemovedEventType = Types_2.CustomEventType<SegmentationRemovedEventDetail>;
 
 // @public (undocumented)
 type SegmentationRenderedEventDetail = {
@@ -4015,12 +4032,16 @@ declare namespace triggerSegmentationEvents {
         triggerSegmentationRepresentationModified,
         triggerSegmentationRepresentationRemoved,
         triggerSegmentationDataModified,
-        triggerSegmentationModified
+        triggerSegmentationModified,
+        triggerSegmentationRemoved
     }
 }
 
 // @public (undocumented)
 function triggerSegmentationModified(segmentationId?: string): void;
+
+// @public (undocumented)
+function triggerSegmentationRemoved(segmentationId: string): void;
 
 // @public (undocumented)
 function triggerSegmentationRepresentationModified(toolGroupId: string, segmentationRepresentationUID?: string): void;
@@ -4097,7 +4118,8 @@ declare namespace utilities {
         jumpToSlice,
         cine,
         clip_2 as clip,
-        boundingBox
+        boundingBox,
+        rectangleROITool
     }
 }
 export { utilities }

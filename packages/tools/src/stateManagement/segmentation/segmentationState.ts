@@ -3,6 +3,7 @@ import {
   triggerSegmentationRepresentationModified,
   triggerSegmentationModified,
   triggerSegmentationRepresentationRemoved,
+  triggerSegmentationRemoved,
 } from './triggerSegmentationEvents';
 import type {
   ColorLUT,
@@ -232,12 +233,15 @@ function getSegmentationRepresentationByUID(
 
 /**
  * It removes the segmentation from the segmentation state manager
+ *
+ * @triggers SEGMENTATION_REMOVED
+ *
  * @param segmentationId - The id of the segmentation
  */
-function removeSegmentation(segmentationId: string) {
+function removeSegmentation(segmentationId: string): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.removeSegmentation(segmentationId);
-  triggerSegmentationModified(segmentationId);
+  triggerSegmentationRemoved(segmentationId);
 }
 
 /**

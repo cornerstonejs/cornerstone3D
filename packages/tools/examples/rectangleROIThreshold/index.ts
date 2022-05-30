@@ -140,7 +140,7 @@ addButtonToToolbar({
       {
         numSlicesToProject,
         lower: lowerThreshold,
-        higher: upperThreshold,
+        upper: upperThreshold,
         overwrite: false,
       }
     );

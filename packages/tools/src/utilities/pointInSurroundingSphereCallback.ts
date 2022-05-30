@@ -13,11 +13,15 @@ import { getBoundingBoxAroundShape } from './boundingBox';
 const { transformWorldToIndex } = csUtils;
 
 /**
- * Given an imageData, and the great circle top and bottom points of a sphere (
- * great circle also known as orthodrome is the intersection of the sphere and
- * the plane that passes through the center of the sphere), this function will
- * run the callback for each point of the imageData that is within the sphere
- * defined by the great circle points.
+ * Given an imageData, and the great circle top and bottom points of a sphere,
+ * this function will run the callback for each point of the imageData that is
+ * within the sphere defined by the great circle points. If the viewport
+ * is provided, region of interest will be an accurate approximation of the
+ * sphere (using viewport camera), and the resulting performance will be
+ * better.
+ *
+ * @privateRemarks great circle also known as orthodrome is the intersection of
+ * the sphere and the plane that passes through the center of the sphere
  *
  * @param imageData - The volume imageData
  * @param circlePoints - bottom and top points of the great circle in world coordinates

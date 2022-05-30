@@ -1,16 +1,16 @@
 import type { Types } from '@cornerstonejs/core';
 
 /**
- * With a given vertices coordinates in IJK, it calculates the minimum and maximum
+ * With a given vertices (points) coordinates in IJK, it calculates the minimum and maximum
  * coordinate in each axis, and returns them. If dimensions are provided it also
  * clip the min, max to the provided width, height and depth
  *
- * @param vertices - shape vertices coordinates
+ * @param points - shape corner points coordinates (IJK)
  * @param dimensions - dimensions of the image
  * @returns [[xMin,xMax],[yMin,yMax], [zMin,zMax]]
  */
 function getBoundingBoxAroundShape(
-  vertices: Types.Point3[],
+  points: Types.Point3[],
   dimensions?: Types.Point3
 ): [Types.Point2, Types.Point2, Types.Point2] {
   let xMin = Infinity;
@@ -20,13 +20,13 @@ function getBoundingBoxAroundShape(
   let zMin = Infinity;
   let zMax = 0;
 
-  vertices.forEach((v) => {
-    xMin = Math.min(v[0], xMin);
-    xMax = Math.max(v[0], xMax);
-    yMin = Math.min(v[1], yMin);
-    yMax = Math.max(v[1], yMax);
-    zMin = Math.min(v[2], zMin);
-    zMax = Math.max(v[2], zMax);
+  points.forEach((p) => {
+    xMin = Math.min(p[0], xMin);
+    xMax = Math.max(p[0], xMax);
+    yMin = Math.min(p[1], yMin);
+    yMax = Math.max(p[1], yMax);
+    zMin = Math.min(p[2], zMin);
+    zMax = Math.max(p[2], zMax);
   });
 
   xMin = Math.floor(xMin);
@@ -37,6 +37,7 @@ function getBoundingBoxAroundShape(
   zMax = Math.floor(zMax);
 
   if (dimensions) {
+    // clip the min, max to the provided width, height and depth
     const [width, height, depth] = dimensions;
     xMin = Math.max(0, xMin);
     xMax = Math.min(width - 1, xMax);
