@@ -62,9 +62,8 @@ async function createVolumeActor(
   } else {
     if (callback) {
       callback({ volumeActor, volumeId });
+      triggerVOIModified(element, viewportId, volumeActor);
     }
-
-    triggerVOIModified(element, viewportId, volumeActor);
   }
 
   return volumeActor;
