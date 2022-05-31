@@ -26,7 +26,8 @@ interface createVolumeActorInterface {
 async function createVolumeActor(
   props: createVolumeActorInterface,
   element: HTMLDivElement,
-  viewportId: string
+  viewportId: string,
+  suppressEvents = false
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -55,15 +56,13 @@ async function createVolumeActor(
   // format volumes
   if (imageVolume.imageIds) {
     await setDefaultVolumeVOI(volumeActor, imageVolume);
-    if (callback) {
-      callback({ volumeActor, volumeId });
-    }
-    triggerVOIModified(element, viewportId, volumeActor);
-  } else {
-    if (callback) {
-      callback({ volumeActor, volumeId });
-    }
+  }
 
+  if (callback) {
+    callback({ volumeActor, volumeId });
+  }
+
+  if (!suppressEvents) {
     triggerVOIModified(element, viewportId, volumeActor);
   }
 

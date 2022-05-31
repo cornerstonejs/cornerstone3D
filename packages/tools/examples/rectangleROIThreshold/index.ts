@@ -131,29 +131,16 @@ addButtonToToolbar({
     // Todo: this only works for volumeViewport
     const { uid } = volumeActorInfo;
     const referenceVolume = cache.getVolume(uid);
+    const segmentationVolume = cache.getVolume(segmentationId);
 
-    const segmentationRepresentation =
-      segmentation.state.getSegmentationRepresentationByUID(
-        toolGroupId,
-        segmentationRepresentationByUID
-      );
-
-    const annotations = selectedAnnotationUIDs.map((annotationUID) => {
-      const annotation = cornerstoneTools.annotation.state.getAnnotation(
-        annotationUID
-      ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation;
-
-      return annotation;
-    });
-
-    csToolsUtils.segmentation.thresholdVolumeByRange(
-      annotations,
+    csToolsUtils.segmentation.rectangleROIThresholdVolumeByRange(
+      selectedAnnotationUIDs,
+      segmentationVolume,
       [referenceVolume],
-      segmentationRepresentation,
       {
-        lowerThreshold,
-        higherThreshold: upperThreshold,
         numSlicesToProject,
+        lower: lowerThreshold,
+        upper: upperThreshold,
         overwrite: false,
       }
     );

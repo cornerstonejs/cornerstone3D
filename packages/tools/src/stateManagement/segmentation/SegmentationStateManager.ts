@@ -186,6 +186,16 @@ export default class SegmentationStateManager {
   }
 
   /**
+   * It removes the segmentation from the segmentation state.
+   * @param segmentationId - The id of the segmentation to remove.
+   */
+  removeSegmentation(segmentationId: string): void {
+    this.state.segmentations = this.state.segmentations.filter(
+      (segmentation) => segmentation.segmentationId !== segmentationId
+    );
+  }
+
+  /**
    * Remove a segmentation representation from the toolGroup
    * @param toolGroupId - The Id of the tool group
    * @param segmentationRepresentationUID - the uid of the segmentation representation to remove

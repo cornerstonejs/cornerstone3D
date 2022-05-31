@@ -21,7 +21,8 @@ async function setVolumesForViewports(
   renderingEngine: IRenderingEngine,
   volumeInputs: Array<IVolumeInput>,
   viewportIds: Array<string>,
-  immediateRender = false
+  immediateRender = false,
+  suppressEvents = false
 ): Promise<void> {
   // Check if all viewports are volumeViewports
   viewportIds.forEach((viewportId) => {
@@ -40,7 +41,7 @@ async function setVolumesForViewports(
   const setVolumePromises = viewportIds.map(async (viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId) as IVolumeViewport;
 
-    await viewport.setVolumes(volumeInputs, immediateRender);
+    await viewport.setVolumes(volumeInputs, immediateRender, suppressEvents);
   });
 
   await Promise.all(setVolumePromises);

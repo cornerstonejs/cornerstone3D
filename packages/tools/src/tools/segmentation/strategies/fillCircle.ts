@@ -6,7 +6,7 @@ import {
   getCanvasEllipseCorners,
   pointInEllipse,
 } from '../../../utilities/math/ellipse';
-import { getBoundingBoxAroundShape } from '../../../utilities/segmentation';
+import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { pointInShapeCallback } from '../../../utilities';
 

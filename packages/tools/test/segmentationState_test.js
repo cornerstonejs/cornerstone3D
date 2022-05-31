@@ -120,7 +120,6 @@ describe('Segmentation State -- ', () => {
         expect(globalState).toBeDefined();
 
         expect(globalState.segmentationId).toBe(segVolumeId);
-        expect(globalState.label).toBe(segVolumeId);
         expect(globalState.activeSegmentIndex).toBe(1);
       });
       eventTarget.addEventListener(

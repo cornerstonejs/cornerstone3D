@@ -39,7 +39,7 @@ function addProvider(provider: (type: string, imageId: string) => {
 }, priority?: number): void;
 
 // @public (undocumented)
-export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
+export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
 enum BlendModes {
@@ -372,7 +372,7 @@ function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preven
 function createUint8SharedArray(length: number): Uint8Array;
 
 // @public (undocumented)
-export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string): Promise<VolumeActor>;
+export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string, suppressEvents?: boolean): Promise<VolumeActor>;
 
 // @public (undocumented)
 export function createVolumeMapper(imageData: any, vtkOpenGLTexture: any): any;
@@ -1310,7 +1310,7 @@ interface IVolumeLoadObject {
 // @public (undocumented)
 interface IVolumeViewport extends IViewport {
     // (undocumented)
-    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
+    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
@@ -1340,7 +1340,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
-    setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
+    setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
     useCPURendering: boolean;
     // (undocumented)
@@ -1600,7 +1600,7 @@ export class Settings {
 export function setUseCPURendering(status: boolean): void;
 
 // @public (undocumented)
-export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean): Promise<void>;
+export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Point3, position: Point3, sliceRange: ActorSliceRange, viewPlaneNormal: Point3, spacingInNormalDirection: number, deltaFrames: number): {
@@ -2065,7 +2065,7 @@ type VolumeNewImageEventDetail = {
 export class VolumeViewport extends Viewport implements IVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
-    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
+    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
@@ -2093,7 +2093,7 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
-    setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean): Promise<void>;
+    setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
     useCPURendering: boolean;
     // (undocumented)

@@ -546,6 +546,16 @@ export class BidirectionalTool extends AnnotationTool {
     touchDragCallback: any;
 }
 
+declare namespace boundingBox {
+    export {
+        extend2DBoundingBoxInViewAxis,
+        getBoundingBoxAroundShape
+    }
+}
+
+// @public (undocumented)
+type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+
 // @public (undocumented)
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -1427,6 +1437,8 @@ enum Events {
     // (undocumented)
     SEGMENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED",
     // (undocumented)
+    SEGMENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REMOVED",
+    // (undocumented)
     SEGMENTATION_RENDERED = "CORNERSTONE_TOOLS_SEGMENTATION_RENDERED",
     // (undocumented)
     SEGMENTATION_REPRESENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_MODIFIED",
@@ -1510,6 +1522,8 @@ declare namespace EventTypes_2 {
         SegmentationRepresentationModifiedEventType,
         SegmentationRepresentationRemovedEventDetail,
         SegmentationRepresentationRemovedEventType,
+        SegmentationRemovedEventType,
+        SegmentationRemovedEventDetail,
         SegmentationDataModifiedEventDetail,
         SegmentationRenderedEventType,
         SegmentationRenderedEventDetail,
@@ -1607,7 +1621,10 @@ function getAnnotationsSelectedByToolName(toolName: string): Array<string>;
 function getAnnotationsSelectedCount(): number;
 
 // @public (undocumented)
-function getBoundingBoxAroundShape(vertices: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+function getBoundingBoxAroundShape(points: Types_2.Point3[], dimensions?: Types_2.Point3): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
+
+// @public (undocumented)
+function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
@@ -2341,7 +2358,8 @@ interface IVolumeLoadObject {
 interface IVolumeViewport extends IViewport {
     addVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean
+    immediate?: boolean,
+    suppressEvents?: boolean
     ): Promise<void>;
     canvasToWorld: (canvasPos: Point2) => Point3;
     flip(flipDirection: FlipDirection): void;
@@ -2368,7 +2386,8 @@ interface IVolumeViewport extends IViewport {
     ): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean
+    immediate?: boolean,
+    suppressEvents?: boolean
     ): Promise<void>;
     // (undocumented)
     useCPURendering: boolean;
@@ -2915,7 +2934,7 @@ function pointInEllipse(ellipse: Ellipse, pointLPS: Types_2.Point3): boolean;
 function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK): void;
 
 // @public (undocumented)
-function pointInSurroundingSphereCallback(viewport: Types_2.IVolumeViewport, imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback): void;
+function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
 
 // @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
@@ -3237,6 +3256,9 @@ export class RectangleROIThresholdTool extends RectangleROITool {
 }
 
 // @public (undocumented)
+function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, referenceVolumes: Types_2.IImageVolume[], options: ThresholdRangeOptions_2): Types_2.IImageVolume;
+
+// @public (undocumented)
 export class RectangleROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -3295,6 +3317,12 @@ export class RectangleROITool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, interactionType: InteractionTypes) => void;
 }
 
+declare namespace rectangleROITool {
+    export {
+        getBoundsIJKFromRectangleAnnotations
+    }
+}
+
 // @public (undocumented)
 export class RectangleScissorsTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
@@ -3345,6 +3373,9 @@ function removeAllAnnotations(element?: HTMLDivElement): void;
 
 // @public (undocumented)
 function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
+
+// @public (undocumented)
+function removeSegmentation(segmentationId: string): void;
 
 // @public (undocumented)
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
@@ -3423,13 +3454,12 @@ export { segmentation }
 
 declare namespace segmentation_2 {
     export {
-        getBoundingBoxAroundShape,
-        extend2DBoundingBoxInViewAxis,
         thresholdVolumeByRange,
         createMergedLabelmapForIndex,
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
-        createLabelmapVolumeForViewport
+        createLabelmapVolumeForViewport,
+        rectangleROIThresholdVolumeByRange
     }
 }
 
@@ -3464,6 +3494,14 @@ type SegmentationModifiedEventDetail = {
 
 // @public (undocumented)
 type SegmentationModifiedEventType = Types_2.CustomEventType<SegmentationModifiedEventDetail>;
+
+// @public (undocumented)
+type SegmentationRemovedEventDetail = {
+    segmentationId: string;
+};
+
+// @public (undocumented)
+type SegmentationRemovedEventType = Types_2.CustomEventType<SegmentationRemovedEventDetail>;
 
 // @public (undocumented)
 type SegmentationRenderedEventDetail = {
@@ -3713,6 +3751,7 @@ declare namespace state_2 {
         getSegmentation,
         getSegmentations,
         addSegmentation,
+        removeSegmentation,
         getSegmentationRepresentations,
         addSegmentationRepresentation,
         removeSegmentationRepresentation,
@@ -3838,7 +3877,7 @@ type TextBoxHandle = {
 };
 
 // @public (undocumented)
-function thresholdVolumeByRange(annotations: AnnotationForThresholding[], referenceVolumes: Types_2.IImageVolume[], segmentationRepresentation: ToolGroupSpecificRepresentation, options: ThresholdRangeOptions): Types_2.IImageVolume;
+function thresholdVolumeByRange(segmentationVolume: Types_2.IImageVolume, referenceVolume: Types_2.IImageVolume, options: ThresholdRangeOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
@@ -3995,12 +4034,16 @@ declare namespace triggerSegmentationEvents {
         triggerSegmentationRepresentationModified,
         triggerSegmentationRepresentationRemoved,
         triggerSegmentationDataModified,
-        triggerSegmentationModified
+        triggerSegmentationModified,
+        triggerSegmentationRemoved
     }
 }
 
 // @public (undocumented)
 function triggerSegmentationModified(segmentationId?: string): void;
+
+// @public (undocumented)
+function triggerSegmentationRemoved(segmentationId: string): void;
 
 // @public (undocumented)
 function triggerSegmentationRepresentationModified(toolGroupId: string, segmentationRepresentationUID?: string): void;
@@ -4045,7 +4088,8 @@ declare namespace Types {
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint,
         ScrollOptions_2 as ScrollOptions,
-        CINETypes
+        CINETypes,
+        BoundsIJK
     }
 }
 export { Types }
@@ -4075,7 +4119,9 @@ declare namespace utilities {
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
         cine,
-        clip_2 as clip
+        clip_2 as clip,
+        boundingBox,
+        rectangleROITool
     }
 }
 export { utilities }

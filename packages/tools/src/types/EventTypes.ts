@@ -141,6 +141,14 @@ type SegmentationRepresentationModifiedEventDetail = {
 };
 
 /**
+ * EventDetail for when a Segmentation is removed
+ */
+type SegmentationRemovedEventDetail = {
+  /** the id of the removed segmentation */
+  segmentationId: string;
+};
+
+/**
  * EventDetail for when a Segmentation Representation is removed
  */
 type SegmentationRepresentationRemovedEventDetail = {
@@ -373,6 +381,12 @@ type SegmentationRepresentationModifiedEventType =
   Types.CustomEventType<SegmentationRepresentationModifiedEventDetail>;
 
 /**
+ * Event for when Segmentation is removed
+ */
+type SegmentationRemovedEventType =
+  Types.CustomEventType<SegmentationRemovedEventDetail>;
+
+/**
  * Event for when Segmentation Representation is modified
  */
 type SegmentationRepresentationRemovedEventType =
@@ -466,6 +480,8 @@ export {
   SegmentationRepresentationModifiedEventType,
   SegmentationRepresentationRemovedEventDetail,
   SegmentationRepresentationRemovedEventType,
+  SegmentationRemovedEventType,
+  SegmentationRemovedEventDetail,
   SegmentationDataModifiedEventDetail,
   SegmentationRenderedEventType,
   SegmentationRenderedEventDetail,

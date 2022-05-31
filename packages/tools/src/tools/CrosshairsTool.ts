@@ -565,16 +565,17 @@ export default class CrosshairsTool extends AnnotationTool {
 
     // AutoPan modification
     if (this.configuration.autoPan?.enabled) {
-      const viewports = csUtils.getVolumeViewportsContainingSameVolumes(
-        viewport,
+      const toolGroup = getToolGroupForViewport(
+        viewport.id,
         renderingEngine.id
       );
 
-      viewports.forEach(({ id: viewportId }) => {
-        // other viewports in the scene
-        if (viewportId !== viewport.id) {
-          this._autoPanViewportIfNecessary(viewportId, renderingEngine);
-        }
+      const otherViewportIds = toolGroup
+        .getViewportIds()
+        .filter((id) => id !== viewport.id);
+
+      otherViewportIds.forEach((viewportId) => {
+        this._autoPanViewportIfNecessary(viewportId, renderingEngine);
       });
     }
 

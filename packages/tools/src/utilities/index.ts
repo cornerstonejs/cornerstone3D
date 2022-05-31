@@ -25,6 +25,8 @@ import * as stackScrollTool from './stackScrollTool';
 import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
 import * as cine from './cine';
+import * as boundingBox from './boundingBox';
+import * as rectangleROITool from './rectangleROITool';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -51,4 +53,6 @@ export {
   jumpToSlice,
   cine,
   clip,
+  boundingBox,
+  rectangleROITool,
 };

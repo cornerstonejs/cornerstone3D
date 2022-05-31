@@ -45,7 +45,8 @@ export default interface IVolumeViewport extends IViewport {
    */
   setVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean
+    immediate?: boolean,
+    suppressEvents?: boolean
   ): Promise<void>;
   /**
    * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
@@ -53,7 +54,8 @@ export default interface IVolumeViewport extends IViewport {
    */
   addVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean
+    immediate?: boolean,
+    suppressEvents?: boolean
   ): Promise<void>;
   /**
    * It removes the volume actor from the Viewport. If the volume actor is not in
