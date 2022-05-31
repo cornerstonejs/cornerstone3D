@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.17.4...@cornerstonejs/tools@0.18.0) (2022-05-31)
+
+
+### Features
+
+* improved threshold volume API and refactored boundingBox utils ([#117](https://github.com/cornerstonejs/cornerstone3D-beta/issues/117)) ([adc308b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/adc308bef0509852bc48c96114eb3268c3d100b9))
+
+
+
+
+
 ## [0.17.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.17.3...@cornerstonejs/tools@0.17.4) (2022-05-30)
 
 **Note:** Version bump only for package @cornerstonejs/tools
