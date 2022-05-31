@@ -23,18 +23,24 @@ async function addLabelmapToElement(
   // in the event listener, we will make other segmentations visible/invisible
   // based on the config
   const visibility = true;
+  const immediateRender = false;
+  const suppressEvents = true;
+
+  const volumeInputs = [
+    {
+      volumeId,
+      actorUID: segmentationRepresentationUID,
+      visibility,
+    },
+  ];
 
   // Add labelmap volumes to the viewports to be be rendered, but not force the render
   await addVolumesToViewports(
     renderingEngine,
-    [
-      {
-        volumeId,
-        actorUID: segmentationRepresentationUID,
-        visibility,
-      },
-    ],
-    [viewportId]
+    volumeInputs,
+    [viewportId],
+    immediateRender,
+    suppressEvents
   );
 }
 

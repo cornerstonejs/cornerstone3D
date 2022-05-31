@@ -147,7 +147,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public async setVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate = false
+    immediate = false,
+    suppressEvents = false
   ): Promise<void> {
     const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
 
@@ -172,7 +173,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       const actor = await createVolumeActor(
         volumeInputArray[i],
         this.element,
-        this.id
+        this.id,
+        suppressEvents
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -204,7 +206,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public async addVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate = false
+    immediate = false,
+    suppressEvents = false
   ): Promise<void> {
     const volumeActors = [];
 
@@ -221,7 +224,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       const actor = await createVolumeActor(
         volumeInputArray[i],
         this.element,
-        this.id
+        this.id,
+        suppressEvents
       );
 
       if (visibility === false) {

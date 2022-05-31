@@ -945,7 +945,8 @@ interface IVolumeLoadObject {
 interface IVolumeViewport extends IViewport {
     addVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean
+    immediate?: boolean,
+    suppressEvents?: boolean
     ): Promise<void>;
     canvasToWorld: (canvasPos: Point2) => Point3;
     flip(flipDirection: FlipDirection): void;
@@ -972,7 +973,8 @@ interface IVolumeViewport extends IViewport {
     ): void;
     setVolumes(
     volumeInputArray: Array<IVolumeInput>,
-    immediate?: boolean
+    immediate?: boolean,
+    suppressEvents?: boolean
     ): Promise<void>;
     // (undocumented)
     useCPURendering: boolean;
