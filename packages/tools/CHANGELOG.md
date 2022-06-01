@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.18.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.18.0...@cornerstonejs/tools@0.18.1) (2022-06-01)
+
+
+### Bug Fixes
+
+* toolGroup default cursor ([#120](https://github.com/cornerstonejs/cornerstone3D-beta/issues/120)) ([8c385c4](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8c385c4780cbaf40400fffc310fd1e3b86056767))
+
+
+
+
+
 # [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.17.4...@cornerstonejs/tools@0.18.0) (2022-05-31)
 
 
