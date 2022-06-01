@@ -147,9 +147,6 @@ class Cache implements ICache {
    * @fires Events.IMAGE_CACHE_IMAGE_REMOVED
    * @fires Events.VOLUME_CACHE_VOLUME_REMOVED
    *
-   * @param numBytes - number of bytes
-   *
-   * @returns available number of bytes
    */
   public purgeCache = (): void => {
     const imageIterator = this._imageCache.keys();
@@ -167,6 +164,13 @@ class Cache implements ICache {
       triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, { imageId });
     }
 
+    this.purgeVolumeCache();
+  };
+
+  /**
+   * Deletes all the volumes in the cache
+   */
+  public purgeVolumeCache = (): void => {
     const volumeIterator = this._volumeCache.keys();
 
     /* eslint-disable no-constant-condition */
