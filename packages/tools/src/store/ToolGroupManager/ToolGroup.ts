@@ -218,11 +218,14 @@ export default class ToolGroup implements IToolGroup {
 
     // reset the mouse cursor if tool has left click binding
     const runtimeSettings = Settings.getRuntimeSettings();
-    if (
-      this._hasMousePrimaryButtonBinding(toolBindingsOptions) &&
-      runtimeSettings.get('useCursors')
-    ) {
+    const useCursor = runtimeSettings.get('useCursors');
+
+    if (this._hasMousePrimaryButtonBinding(toolBindingsOptions) && useCursor) {
       this.setViewportsCursorByToolName(toolName);
+    } else {
+      // reset to default cursor
+      const cursor = MouseCursor.getDefinedCursor('default');
+      this._setCursorForViewports(cursor);
     }
 
     if (typeof this._toolInstances[toolName].onSetToolActive === 'function') {
@@ -379,9 +382,15 @@ export default class ToolGroup implements IToolGroup {
   setViewportsCursorByToolName(toolName: string, strategyName?: string): void {
     const cursorName = strategyName ? `${toolName}.${strategyName}` : toolName;
     let cursor = SVGMouseCursor.getDefinedCursor(cursorName, true);
+
     if (!cursor) {
       cursor = MouseCursor.getDefinedCursor('default');
     }
+
+    this._setCursorForViewports(cursor);
+  }
+
+  _setCursorForViewports(cursor: MouseCursor): void {
     this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
       const viewport =
         getRenderingEngine(renderingEngineId).getViewport(viewportId);
