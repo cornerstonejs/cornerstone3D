@@ -4,6 +4,7 @@ import {
   getRenderingEngines,
   Settings,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { state } from '../index';
 import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types';
 
@@ -40,6 +41,13 @@ export default class ToolGroup implements IToolGroup {
    */
   getViewportIds(): string[] {
     return this.viewportsInfo.map(({ viewportId }) => viewportId);
+  }
+
+  /**
+   * Returns the toolGroup viewports info which is an array of {viewportId, renderingEngineId}
+   */
+  getViewportsInfo(): Array<Types.IViewportId> {
+    return Object.assign({}, this.viewportsInfo);
   }
 
   /**

@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import JumpToSliceOptions from '../../types/JumpToSliceOptions';
 import clip from '../clip';
-import { scrollThroughStack } from '../stackScrollTool';
+import scroll from '../scroll';
 
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.
@@ -39,7 +39,7 @@ async function jumpToSlice(
 
   const delta = imageIndexToJump - currentImageIndex;
 
-  scrollThroughStack(viewport, { delta });
+  scroll(viewport, { delta });
 }
 
 function _getImageSliceData(

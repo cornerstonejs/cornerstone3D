@@ -226,6 +226,16 @@ type ImageLoadProgressEventDetail = {
 };
 
 /**
+ * The NEW_STACK_SET even'ts data, when a new stack is set on a StackViewport
+ */
+type NewStackSetEventDetail = {
+  imageIds: string[];
+  viewportId: string;
+  element: HTMLDivElement;
+  currentImageIdIndex: number;
+};
+
+/**
  * CameraModified Event type
  */
 type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
@@ -325,6 +335,11 @@ type ImageSpacingCalibratedEvent =
  */
 type ImageLoadProgressEvent = CustomEventType<ImageLoadProgressEventDetail>;
 
+/**
+ * NEW_STACK_SET
+ */
+type NewStackSetEvent = CustomEventType<NewStackSetEventDetail>;
+
 export type {
   CameraModifiedEventDetail,
   CameraModifiedEvent,
@@ -364,4 +379,6 @@ export type {
   ImageLoadProgressEventDetail,
   VolumeNewImageEvent,
   VolumeNewImageEventDetail,
+  NewStackSetEvent,
+  NewStackSetEventDetail,
 };

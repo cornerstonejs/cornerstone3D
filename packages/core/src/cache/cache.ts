@@ -413,6 +413,23 @@ class Cache implements ICache {
   }
 
   /**
+   * It checks the imageCache for the provided imageId, and returns true
+   * if the image is loaded, false otherwise. Note, this only checks the imageCache
+   * and does not check the volume cache.
+   * @param imageId - image Id to check
+   * @returns boolean
+   */
+  public isImageIdCached(imageId: string): boolean {
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (!cachedImage) {
+      return false;
+    }
+
+    return cachedImage.loaded;
+  }
+
+  /**
    * Returns the volume that contains the requested imageId. It will check the
    * imageIds inside the volume to find a match.
    *

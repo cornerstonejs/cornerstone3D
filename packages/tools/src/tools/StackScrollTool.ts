@@ -1,6 +1,6 @@
 import { getEnabledElementByIds, VolumeViewport } from '@cornerstonejs/core';
 import { BaseTool } from './base';
-import { scrollThroughStack } from '../utilities/stackScrollTool';
+import { scroll } from '../utilities';
 import { PublicToolProps, ToolProps, EventTypes } from '../types';
 
 /**
@@ -53,6 +53,7 @@ export default class StackScrollTool extends BaseTool {
 
     const delta = direction * (invert ? -1 : 1);
 
-    scrollThroughStack(viewport, { delta, volumeId });
+    // Todo: debounce the scroll similar to stackScrollToolMouseWheelTool
+    scroll(viewport, { delta, volumeId });
   }
 }

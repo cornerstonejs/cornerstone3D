@@ -1160,6 +1160,15 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const imageId = await this._setImageIdIndex(currentImageIdIndex);
 
+    const eventDetail: EventTypes.NewStackSetEventDetail = {
+      imageIds,
+      viewportId: this.id,
+      element: this.element,
+      currentImageIdIndex: currentImageIdIndex,
+    };
+
+    triggerEvent(eventTarget, Events.NEW_STACK_SET, eventDetail);
+
     return imageId;
   }
 

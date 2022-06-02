@@ -156,6 +156,14 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ImageLoadProgressEventDetail | ImageLoadProgress Event Detail }
    */
   IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
+
+  /**
+   * Triggers on the event target when a new stack is set on its stack viewport.
+   * Make use of {@link EventTypes.NewStackSet | NewStackSet Event Type } for typing your event listeners for NEW_STACK_SET event,
+   * and see what event detail is included in {@link EventTypes.NewStackSetEventDetail | NewStackSet Event Detail }
+   */
+  NEW_STACK_SET = 'CORNERSTONE_NEW_STACK_SET',
+
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',

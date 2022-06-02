@@ -217,6 +217,14 @@ enum Events {
    */
   MOUSE_WHEEL = 'CORNERSTONE_TOOLS_MOUSE_WHEEL',
 
+  /**
+   * Triggers on the element when the underlying viewport is scrolled.
+   * Make use of {@link EventTypes.StackScrollEventType | Stack Scroll Event Type}
+   * for typing your event listeners for this stack scroll event, and see what
+   * event detail is included in {@link EventTypes.StackScrollEventDetail | Stack Scroll Event Detail}.
+   */
+  STACK_SCROLL = 'CORNERSTONE_TOOLS_STACK_SCROLL',
+
   // Todo: not being fired as of now
   // ANNOTATION_COMPLETED = 'CORNERSTONE_TOOLS_ANNOTATION_COMPLETED',
   // Todo: not implemented yet

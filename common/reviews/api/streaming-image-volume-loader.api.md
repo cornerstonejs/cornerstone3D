@@ -370,16 +370,19 @@ enum Events {
     IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
     IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
+    NEW_STACK_SET = 'CORNERSTONE_NEW_STACK_SET',
     PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
 
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
-
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
     VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
+
     VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
+
     // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
     // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
     // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
@@ -424,7 +427,9 @@ declare namespace EventTypes {
         ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
-        VolumeNewImageEventDetail
+        VolumeNewImageEventDetail,
+        NewStackSetEvent,
+        NewStackSetEventDetail
     }
 }
 
@@ -997,6 +1002,17 @@ type Metadata = {
     Columns: number;
     Rows: number;
     voiLut: Array<VOI>;
+};
+
+// @public
+type NewStackSetEvent = CustomEvent_2<NewStackSetEventDetail>;
+
+// @public
+type NewStackSetEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
 };
 
 // @public (undocumented)

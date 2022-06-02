@@ -445,6 +445,8 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_VOLUME_MODIFIED = "CORNERSTONE_IMAGE_VOLUME_MODIFIED",
     // (undocumented)
+    NEW_STACK_SET = "CORNERSTONE_NEW_STACK_SET",
+    // (undocumented)
     PRE_STACK_NEW_IMAGE = "CORNERSTONE_PRE_STACK_NEW_IMAGE",
     // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
@@ -504,7 +506,9 @@ declare namespace EventTypes {
         ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
-        VolumeNewImageEventDetail
+        VolumeNewImageEventDetail,
+        NewStackSetEvent,
+        NewStackSetEventDetail
     }
 }
 
@@ -1400,6 +1404,17 @@ const metadataProvider: {
 };
 
 // @public (undocumented)
+type NewStackSetEvent = CustomEvent_2<NewStackSetEventDetail>;
+
+// @public (undocumented)
+type NewStackSetEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
+};
+
+// @public (undocumented)
 const ORIENTATION: Record<string, Orientation>;
 
 // @public (undocumented)
@@ -1430,9 +1445,6 @@ type Point3 = [number, number, number];
 
 // @public (undocumented)
 type Point4 = [number, number, number, number];
-
-// @public (undocumented)
-function prefetchStack(imageIds: string[], requestType?: RequestType, priority?: number): void;
 
 // @public (undocumented)
 type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
@@ -1821,7 +1833,6 @@ declare namespace utilities {
         getVolumeViewportsContainingSameVolumes,
         getVolumeViewportsContainingVolumeId,
         transformWorldToIndex,
-        prefetchStack,
         loadImageToCanvas,
         renderToCanvas,
         worldToImageCoords,

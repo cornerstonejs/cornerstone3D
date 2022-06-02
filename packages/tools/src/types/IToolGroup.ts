@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions';
 
 /**
@@ -15,6 +15,8 @@ export default interface IToolGroup {
   toolOptions: Record<string, any>;
   /** Get viewportIds in the toolGroup*/
   getViewportIds: () => string[];
+  /** Get viewports info in the toolGroup*/
+  getViewportsInfo: () => Array<Types.IViewportId>;
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any };
   /** Add a tool to toolGroup with its configuration */
