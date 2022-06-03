@@ -3764,11 +3764,15 @@ export class StackScrollMouseWheelTool extends BaseTool {
 export class StackScrollTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    deltaY: number;
+    // (undocumented)
     _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
     // (undocumented)
-    mouseDragCallback: () => void;
+    _getNumberOfSlices(viewport: any): number;
     // (undocumented)
-    previousDirection: number;
+    _getPixelPerImage(viewport: any): number;
+    // (undocumented)
+    mouseDragCallback: () => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -4365,7 +4369,16 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     _dragPerspectiveProjection: (evt: any, camera: any) => void;
     // (undocumented)
+    _getCappedParallelScale: (viewport: any, parallelScale: any) => {
+        parallelScale: any;
+        thresholdExceeded: boolean;
+    };
+    // (undocumented)
     initialMousePosWorld: Types_2.Point3;
+    // (undocumented)
+    maxZoomScale: number;
+    // (undocumented)
+    minZoomScale: number;
     // (undocumented)
     mouseDragCallback: () => void;
     // (undocumented)

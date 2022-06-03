@@ -1707,7 +1707,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     scaling: Scaling;
     // (undocumented)
-    scroll(delta: number, debounce?: boolean): void;
+    scroll(delta: number, debounce?: boolean, loop?: boolean): void;
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
