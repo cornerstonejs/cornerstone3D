@@ -136,6 +136,11 @@ export default class StackScrollMouseWheelTool extends BaseTool {
       evt: Types.EventTypes.NewStackSetEvent
     ) {
       const toolGroup = ToolGroupManager.getToolGroup(this.toolGroupId);
+
+      if (!toolGroup) {
+        return;
+      }
+
       const viewportIds = toolGroup.getViewportIds();
 
       const { imageIds, viewportId, currentImageIdIndex } = evt.detail;
@@ -154,6 +159,11 @@ export default class StackScrollMouseWheelTool extends BaseTool {
     ) {
       const { viewportId } = evt.detail;
       const toolGroup = ToolGroupManager.getToolGroup(this.toolGroupId);
+
+      if (!toolGroup) {
+        return;
+      }
+
       const viewportIds = toolGroup.getViewportIds();
 
       if (viewportIds.indexOf(viewportId) === -1) {

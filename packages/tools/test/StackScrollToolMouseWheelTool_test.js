@@ -75,7 +75,9 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.stackToolGroup = ToolGroupManager.createToolGroup(
       StackScrollTool.toolName
     );
-    this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
+      debounceIfNotLoaded: false,
+    });
     this.stackToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
     this.renderingEngine = new RenderingEngine(renderingEngineId);
@@ -85,9 +87,9 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   });
 
   afterEach(function () {
+    this.renderingEngine.destroy();
     csTools3d.destroy();
     cache.purgeCache();
-    this.renderingEngine.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     imageLoader.unregisterAllImageLoaders();
     ToolGroupManager.destroyToolGroup(StackScrollTool.toolName);
