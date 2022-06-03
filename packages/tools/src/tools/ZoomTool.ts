@@ -16,6 +16,8 @@ export default class ZoomTool extends BaseTool {
   mouseDragCallback: () => void;
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
+  minZoomScale = 0.1;
+  maxZoomScale = 10;
 
   // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(
@@ -142,10 +144,13 @@ export default class ZoomTool extends BaseTool {
       ) as Types.Point3;
     }
 
+    const { parallelScale: cappedParallelScale, thresholdExceeded } =
+      this._getCappedParallelScale(viewport, newParallelScale);
+
     viewport.setCamera({
-      parallelScale: newParallelScale,
-      focalPoint: focalPointToSet,
-      position: positionToSet,
+      parallelScale: cappedParallelScale,
+      focalPoint: thresholdExceeded ? focalPoint : focalPointToSet,
+      position: thresholdExceeded ? position : positionToSet,
     });
   };
 
@@ -182,5 +187,34 @@ export default class ZoomTool extends BaseTool {
     focalPoint[2] += tmp;
 
     viewport.setCamera({ position, focalPoint });
+  };
+
+  _getCappedParallelScale = (viewport, parallelScale) => {
+    const imageData = viewport.getImageData();
+
+    if (!imageData) {
+      return;
+    }
+
+    const { dimensions, spacing } = imageData;
+
+    const t = dimensions[0] * spacing[0];
+    const scale = t / parallelScale;
+
+    let newParallelScale = parallelScale;
+    let thresholdExceeded = false;
+
+    if (scale < this.minZoomScale) {
+      newParallelScale = t / this.minZoomScale;
+      thresholdExceeded = true;
+    } else if (scale > this.maxZoomScale) {
+      newParallelScale = t / this.maxZoomScale;
+      thresholdExceeded = true;
+    }
+
+    return {
+      parallelScale: newParallelScale,
+      thresholdExceeded,
+    };
   };
 }
