@@ -9,7 +9,6 @@ const {
   cache,
   RenderingEngine,
   Enums,
-  utilities,
   imageLoader,
   metaData,
   volumeLoader,
@@ -21,8 +20,7 @@ const { Events, ViewportType, InterpolationType } = Enums;
 const { ORIENTATION } = CONSTANTS;
 
 const { registerVolumeLoader } = volumeLoader;
-const { StackScrollMouseWheelTool, ToolGroupManager, StackScrollTool } =
-  csTools3d;
+const { StackScrollMouseWheelTool, ToolGroupManager } = csTools3d;
 
 const {
   fakeImageLoader,
@@ -33,6 +31,7 @@ const {
 } = testUtils;
 
 const renderingEngineId = 'RENDERING_ENGINE_UID22';
+const toolGroupId = 'stackscrollmousetool';
 
 const viewportId = 'VIEWPORT22';
 
@@ -72,9 +71,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     cache.purgeCache();
     this.DOMElements = [];
 
-    this.stackToolGroup = ToolGroupManager.createToolGroup(
-      StackScrollTool.toolName
-    );
+    this.stackToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
     this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
       debounceIfNotLoaded: false,
     });
@@ -87,12 +84,12 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   });
 
   afterEach(function () {
-    this.renderingEngine.destroy();
     csTools3d.destroy();
     cache.purgeCache();
+    this.renderingEngine.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     imageLoader.unregisterAllImageLoaders();
-    ToolGroupManager.destroyToolGroup(StackScrollTool.toolName);
+    ToolGroupManager.destroyToolGroup(toolGroupId);
 
     this.DOMElements.forEach((el) => {
       if (el.parentNode) {
@@ -112,7 +109,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     const vp = this.renderingEngine.getViewport(viewportId);
 
-    const renderEventHandler = () => {
+    function renderEventHandler() {
       const index1 = [50, 50, 4];
 
       const { imageData } = vp.getImageData();
@@ -139,21 +136,29 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       attachEventHandler();
 
       element.dispatchEvent(evt);
-    };
+    }
 
-    const attachEventHandler = () => {
+    function attachEventHandler() {
       const canvas = vp.getCanvas();
 
       element.removeEventListener(Events.IMAGE_RENDERED, renderEventHandler);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const image = canvas.toDataURL('image/png');
-        compareImages(
-          image,
-          volumeURI_100_100_10_1_1_1_0_scrolled,
-          'volumeURI_100_100_10_1_1_1_0_scrolled'
-        ).then(done, done.fail);
-      });
-    };
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        function secondImageRendered() {
+          const image = canvas.toDataURL('image/png');
+          compareImages(
+            image,
+            volumeURI_100_100_10_1_1_1_0_scrolled,
+            'volumeURI_100_100_10_1_1_1_0_scrolled'
+          ).then(done, done.fail);
+
+          element.removeEventListener(
+            Events.IMAGE_RENDERED,
+            secondImageRendered
+          );
+        }
+      );
+    }
 
     element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
@@ -186,7 +191,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     const imageId2 = 'fakeImageLoader:imageURI_64_64_0_20_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
 
-    const renderEventHandler = () => {
+    function renderEventHandler() {
       // First render is the actual image render
       const index1 = [50, 50, 4];
 
@@ -212,23 +217,32 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       });
 
       attachEventHandler();
-      element.dispatchEvent(evt);
-    };
-
-    const attachEventHandler = () => {
-      const canvas = vp.getCanvas();
 
       element.removeEventListener(Events.IMAGE_RENDERED, renderEventHandler);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        // Second render is as a result of scrolling
-        const image = canvas.toDataURL('image/png');
-        compareImages(
-          image,
-          imageURI_64_64_0_20_1_1_0_scrolled,
-          'imageURI_64_64_0_20_1_1_0_scrolled'
-        ).then(done, done.fail);
-      });
-    };
+      element.dispatchEvent(evt);
+    }
+
+    function attachEventHandler() {
+      const canvas = vp.getCanvas();
+
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        function secondImageRendered() {
+          // Second render is as a result of scrolling
+          const image = canvas.toDataURL('image/png');
+          compareImages(
+            image,
+            imageURI_64_64_0_20_1_1_0_scrolled,
+            'imageURI_64_64_0_20_1_1_0_scrolled'
+          ).then(done, done.fail);
+
+          element.removeEventListener(
+            Events.IMAGE_RENDERED,
+            secondImageRendered
+          );
+        }
+      );
+    }
 
     element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 

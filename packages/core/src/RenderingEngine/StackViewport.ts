@@ -180,10 +180,26 @@ class StackViewport extends Viewport implements IStackViewport {
     this.panCache = [0, 0, 0];
     this.cameraPosOnRender = [0, 0, 0];
     this.resetCamera();
+
+    this.initializeElementDisabledHandler();
   }
 
   static get useCustomRenderingPipeline(): boolean {
     return getShouldUseCPURendering();
+  }
+
+  private initializeElementDisabledHandler() {
+    eventTarget.addEventListener(
+      Events.ELEMENT_DISABLED,
+      function elementDisabledHandler() {
+        clearTimeout(this.debouncedTimeout);
+
+        eventTarget.removeEventListener(
+          Events.ELEMENT_DISABLED,
+          elementDisabledHandler
+        );
+      }
+    );
   }
 
   /**
