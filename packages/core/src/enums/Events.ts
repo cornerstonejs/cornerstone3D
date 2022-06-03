@@ -164,6 +164,14 @@ enum Events {
    */
   NEW_STACK_SET = 'CORNERSTONE_NEW_STACK_SET',
 
+  /**
+   * Triggers on the element when the underlying StackViewport is scrolled.
+   * Make use of {@link EventTypes.StackScrollEventType | Stack Scroll Event Type}
+   * for typing your event listeners for this stack scroll event, and see what
+   * event detail is included in {@link EventTypes.StackScrollEventDetail | Stack Scroll Event Detail}.
+   */
+  STACK_SCROLL = 'CORNERSTONE_TOOLS_STACK_SCROLL',
+
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',

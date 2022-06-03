@@ -1161,6 +1161,9 @@ function destroySynchronizer(synchronizerId: string): void;
 function destroyToolGroup(toolGroupId: string): void;
 
 // @public (undocumented)
+function disable(element: any): void;
+
+// @public (undocumented)
 function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
 
 // @public (undocumented)
@@ -1382,6 +1385,9 @@ export class EllipticalROITool extends AnnotationTool {
     touchDragCallback: any;
 }
 
+// @public (undocumented)
+function enable(element: any): void;
+
 declare namespace Enums {
     export {
         MouseBindings,
@@ -1493,7 +1499,11 @@ declare namespace EventTypes {
         ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
-        VolumeNewImageEventDetail
+        VolumeNewImageEventDetail,
+        NewStackSetEvent,
+        NewStackSetEventDetail,
+        StackScrollEventType,
+        StackScrollEventDetail
     }
 }
 
@@ -1640,6 +1650,12 @@ function getColorForSegmentIndex(toolGroupId: string, segmentationRepresentation
 
 // @public (undocumented)
 function getColorLUT(index: number): ColorLUT | undefined;
+
+// @public (undocumented)
+function getConfiguration(): {
+    maxImagesToPrefetch: number;
+    preserveExistingPool: boolean;
+};
 
 // @public (undocumented)
 function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
@@ -2221,6 +2237,8 @@ interface IToolGroup {
     // (undocumented)
     getViewportIds: () => string[];
     // (undocumented)
+    getViewportsInfo: () => Array<Types_2.IViewportId>;
+    // (undocumented)
     id: string;
     // (undocumented)
     removeViewports: {
@@ -2395,11 +2413,12 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-function jumpToSlice(element: HTMLDivElement, options: JumpToSliceOptions): Promise<void>;
+function jumpToSlice(element: HTMLDivElement, options?: JumpToSliceOptions): Promise<void>;
 
 // @public (undocumented)
 type JumpToSliceOptions = {
     imageIndex: number;
+    debounceLoading?: boolean;
 };
 
 // @public (undocumented)
@@ -2768,6 +2787,17 @@ type MouseWheelEventDetail = NormalizedMouseEventDetail & {
 
 // @public (undocumented)
 type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
+
+// @public
+type NewStackSetEvent = CustomEvent_2<NewStackSetEventDetail>;
+
+// @public
+type NewStackSetEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
+};
 
 // @public (undocumented)
 type NormalizedMouseEventDetail = {
@@ -3416,13 +3446,14 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
+function scroll_2(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, options: ScrollOptions_2): void;
+
+// @public (undocumented)
 type ScrollOptions_2 = {
     delta: number;
     volumeId?: string;
+    debounceLoading?: boolean;
 };
-
-// @public (undocumented)
-function scrollThroughStack(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, options: ScrollOptions_2): void;
 
 // @public (undocumented)
 type Segmentation = {
@@ -3605,6 +3636,9 @@ function setAnnotationVisibility(annotationUID: string, visible?: boolean): void
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
+function setConfiguration(config: any): void;
+
+// @public (undocumented)
 function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
 
 // @public (undocumented)
@@ -3690,11 +3724,33 @@ type StackNewImageEventDetail = {
     renderingEngineId: string;
 };
 
+declare namespace stackPrefetch {
+    export {
+        enable,
+        disable,
+        setConfiguration,
+        getConfiguration
+    }
+}
+
+// @public
+type StackScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
+};
+
+// @public (undocumented)
+type StackScrollEventType = CustomEvent_2<StackScrollEventDetail>;
+
 // @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
     constructor(toolProps?: {}, defaultToolProps?: {
         supportedInteractionTypes: string[];
-        invert: boolean;
+        configuration: {
+            invert: boolean;
+            debounceIfNotLoaded: boolean;
+        };
     });
     // (undocumented)
     _configuration: any;
@@ -3717,12 +3773,6 @@ export class StackScrollTool extends BaseTool {
     static toolName: string;
     // (undocumented)
     touchDragCallback: () => void;
-}
-
-declare namespace stackScrollTool {
-    export {
-        scrollThroughStack
-    }
 }
 
 // @public
@@ -4102,7 +4152,6 @@ declare namespace utilities {
         math,
         planar,
         viewportFilters,
-        stackScrollTool,
         drawing_2 as drawing,
         debounce,
         deepmerge as deepMerge,
@@ -4121,7 +4170,9 @@ declare namespace utilities {
         cine,
         clip_2 as clip,
         boundingBox,
-        rectangleROITool
+        rectangleROITool,
+        stackPrefetch,
+        scroll_2 as scroll
     }
 }
 export { utilities }
@@ -4306,13 +4357,19 @@ export class WindowLevelTool extends BaseTool {
 export class ZoomTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _dragCallback(evt: any): void;
+    dirVec: Types_2.Point3;
     // (undocumented)
-    _dragParallelProjection: (evt: any, camera: any) => void;
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
+    // (undocumented)
+    _dragParallelProjection: (evt: EventTypes_2.MouseDragEventType, camera: Types_2.ICamera) => void;
     // (undocumented)
     _dragPerspectiveProjection: (evt: any, camera: any) => void;
     // (undocumented)
+    initialMousePosWorld: Types_2.Point3;
+    // (undocumented)
     mouseDragCallback: () => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     static toolName: string;
     // (undocumented)

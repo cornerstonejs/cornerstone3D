@@ -451,6 +451,8 @@ export enum EVENTS {
     // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
     // (undocumented)
+    STACK_SCROLL = "CORNERSTONE_TOOLS_STACK_SCROLL",
+    // (undocumented)
     VOI_MODIFIED = "CORNERSTONE_VOI_MODIFIED",
     // (undocumented)
     VOLUME_CACHE_VOLUME_ADDED = "CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED",
@@ -508,7 +510,9 @@ declare namespace EventTypes {
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
         NewStackSetEvent,
-        NewStackSetEventDetail
+        NewStackSetEventDetail,
+        StackScrollEventType,
+        StackScrollEventDetail
     }
 }
 
@@ -1633,6 +1637,16 @@ type StackNewImageEventDetail = {
 };
 
 // @public (undocumented)
+type StackScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
+};
+
+// @public (undocumented)
+type StackScrollEventType = CustomEvent_2<StackScrollEventDetail>;
+
+// @public (undocumented)
 export class StackViewport extends Viewport implements IStackViewport {
     constructor(props: ViewportInput);
     // (undocumented)
@@ -1673,6 +1687,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
+    getTargetImageIdIndex: () => number;
+    // (undocumented)
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
@@ -1690,6 +1706,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     resize: () => void;
     // (undocumented)
     scaling: Scaling;
+    // (undocumented)
+    scroll(delta: number, debounce?: boolean): void;
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)

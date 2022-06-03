@@ -306,18 +306,6 @@ type MouseWheelEventDetail = NormalizedMouseEventDetail & {
   points: IPoints;
 };
 
-/**
- * Stack Scroll event detail
- */
-type StackScrollEventDetail = {
-  /** the new imageId index in the stack that we just scroll to */
-  newImageIdIndex: number;
-  /** the new imageId in the stack that we just scroll to */
-  imageId: string;
-  /** direction of the scroll */
-  direction: number;
-};
-
 /////////////////////////////
 //
 //
@@ -468,8 +456,6 @@ type MouseDoubleClickEventType =
  */
 type MouseWheelEventType = Types.CustomEventType<MouseWheelEventDetail>;
 
-type StackScrollEventType = Types.CustomEventType<StackScrollEventDetail>;
-
 export {
   NormalizedMouseEventDetail,
   NormalizedMouseEventType,
@@ -521,6 +507,4 @@ export {
   MouseDoubleClickEventType,
   MouseWheelEventDetail,
   MouseWheelEventType,
-  StackScrollEventDetail,
-  StackScrollEventType,
 };

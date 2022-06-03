@@ -21,9 +21,9 @@ import scroll from '../scroll';
  */
 async function jumpToSlice(
   element: HTMLDivElement,
-  options: JumpToSliceOptions
+  options = {} as JumpToSliceOptions
 ): Promise<void> {
-  const { imageIndex } = options;
+  const { imageIndex, debounceLoading } = options;
   const enabledElement = getEnabledElement(element);
 
   if (!enabledElement) {
@@ -32,23 +32,27 @@ async function jumpToSlice(
 
   const { viewport } = enabledElement;
 
-  const { imageIndex: currentImageIndex, numberOfSlices } =
-    _getImageSliceData(viewport);
+  const { imageIndex: currentImageIndex, numberOfSlices } = _getImageSliceData(
+    viewport,
+    debounceLoading
+  );
 
   const imageIndexToJump = _getImageIndexToJump(numberOfSlices, imageIndex);
-
   const delta = imageIndexToJump - currentImageIndex;
 
-  scroll(viewport, { delta });
+  scroll(viewport, { delta, debounceLoading });
 }
 
 function _getImageSliceData(
-  viewport: Types.IStackViewport | Types.IVolumeViewport
+  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  debounceLoading?: boolean
 ): Types.ImageSliceData {
   if (viewport instanceof StackViewport) {
     return {
       numberOfSlices: viewport.getImageIds().length,
-      imageIndex: viewport.getCurrentImageIdIndex(),
+      imageIndex: debounceLoading
+        ? viewport.getTargetImageIdIndex()
+        : viewport.getCurrentImageIdIndex(),
     };
   } else if (viewport instanceof VolumeViewport) {
     return csUtils.getImageSliceDataForVolumeViewport(viewport);

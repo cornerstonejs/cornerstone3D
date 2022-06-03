@@ -3,10 +3,7 @@ import {
   Types,
   VolumeViewport,
   utilities as csUtils,
-  triggerEvent,
 } from '@cornerstonejs/core';
-import clip from './clip';
-import { Events } from '../enums';
 import { ScrollOptions } from '../types';
 
 /**
@@ -26,7 +23,7 @@ export default function scroll(
   const { volumeId, delta } = options;
 
   if (viewport instanceof StackViewport) {
-    scrollStack(viewport, delta);
+    viewport.scroll(delta, options.debounceLoading);
   } else if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta);
   } else {
@@ -77,19 +74,4 @@ export function scrollVolume(
     position: newPosition,
   });
   viewport.render();
-}
-
-function scrollStack(viewport: StackViewport, delta: number) {
-  const currentImageIdIndex = viewport.getCurrentImageIdIndex();
-  const numberOfFrames = viewport.getImageIds().length;
-  let newImageIdIndex = currentImageIdIndex + delta;
-  newImageIdIndex = clip(newImageIdIndex, 0, numberOfFrames - 1);
-
-  viewport.setImageIdIndex(newImageIdIndex);
-
-  const eventData = {
-    newImageIdIndex,
-    direction: delta,
-  };
-  triggerEvent(viewport.element, Events.STACK_SCROLL, eventData);
 }

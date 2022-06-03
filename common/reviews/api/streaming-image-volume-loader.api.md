@@ -373,12 +373,14 @@ enum Events {
     NEW_STACK_SET = 'CORNERSTONE_NEW_STACK_SET',
     PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
+    STACK_SCROLL = 'CORNERSTONE_TOOLS_STACK_SCROLL',
+
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
 
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
-
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
+
     VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
 
     VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
@@ -429,7 +431,9 @@ declare namespace EventTypes {
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
         NewStackSetEvent,
-        NewStackSetEventDetail
+        NewStackSetEventDetail,
+        StackScrollEventType,
+        StackScrollEventDetail
     }
 }
 
@@ -1097,6 +1101,16 @@ type StackNewImageEventDetail = {
     viewportId: string;
     renderingEngineId: string;
 };
+
+// @public
+type StackScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
+};
+
+// @public (undocumented)
+type StackScrollEventType = CustomEvent_2<StackScrollEventDetail>;
 
 // @public
 type StackViewportProperties = {

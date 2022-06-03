@@ -236,6 +236,18 @@ type NewStackSetEventDetail = {
 };
 
 /**
+ * Stack Scroll event detail
+ */
+type StackScrollEventDetail = {
+  /** the new imageId index in the stack that we just scroll to */
+  newImageIdIndex: number;
+  /** the new imageId in the stack that we just scroll to */
+  imageId: string;
+  /** direction of the scroll */
+  direction: number;
+};
+
+/**
  * CameraModified Event type
  */
 type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
@@ -340,6 +352,8 @@ type ImageLoadProgressEvent = CustomEventType<ImageLoadProgressEventDetail>;
  */
 type NewStackSetEvent = CustomEventType<NewStackSetEventDetail>;
 
+type StackScrollEventType = CustomEventType<StackScrollEventDetail>;
+
 export type {
   CameraModifiedEventDetail,
   CameraModifiedEvent,
@@ -381,4 +395,6 @@ export type {
   VolumeNewImageEventDetail,
   NewStackSetEvent,
   NewStackSetEventDetail,
+  StackScrollEventType,
+  StackScrollEventDetail,
 };
