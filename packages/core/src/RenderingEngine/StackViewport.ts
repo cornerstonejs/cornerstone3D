@@ -1367,7 +1367,6 @@ class StackViewport extends Viewport implements IStackViewport {
         // Update the viewport's currentImageIdIndex to reflect the newly
         // rendered image
         this.currentImageIdIndex = imageIdIndex;
-        this.targetImageIdIndex = imageIdIndex;
         resolve(imageId);
       }
 
@@ -1464,7 +1463,6 @@ class StackViewport extends Viewport implements IStackViewport {
         // Update the viewport's currentImageIdIndex to reflect the newly
         // rendered image
         this.currentImageIdIndex = imageIdIndex;
-        this.targetImageIdIndex = imageIdIndex;
         resolve(imageId);
       }
 

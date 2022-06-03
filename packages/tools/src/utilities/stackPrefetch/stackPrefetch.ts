@@ -240,13 +240,6 @@ function prefetch(element) {
     }
   }
 
-  // let requestFn;
-  const options = {
-    addToBeginning,
-    priority,
-    requestType,
-  };
-
   // if (preventCache) {
   //   requestFn = (id) => external.cornerstone.loadImage(id, options);
   // } else {
@@ -256,7 +249,7 @@ function prefetch(element) {
   const requestFn = (imageId, options) =>
     imageLoader.loadAndCacheImage(imageId, options);
 
-  imageIdsToPrefetch.reverse().forEach((imageId) => {
+  imageIdsToPrefetch.forEach((imageId) => {
     const scalingParameters = csUtils.getScalingParameters(imageId);
 
     // IMPORTANT: Request type should be passed if not the 'interaction'
