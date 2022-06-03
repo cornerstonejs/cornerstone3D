@@ -1768,18 +1768,25 @@ class StackViewport extends Viewport implements IStackViewport {
    * debounceThreshold which is 40 milliseconds by default.
    * @param delta - number of indices to scroll, it can be positive or negative
    * @param debounce - whether to debounce the scroll event
+   * @param loop - whether to loop the stack
    */
-  public scroll(delta: number, debounce = true): void {
+  public scroll(delta: number, debounce = true, loop = false): void {
     const imageIds = this.imageIds;
 
     const currentTargetImageIdIndex = this.targetImageIdIndex;
     const numberOfFrames = imageIds.length;
 
     let newTargetImageIdIndex = currentTargetImageIdIndex + delta;
-    newTargetImageIdIndex = Math.min(
-      Math.max(0, newTargetImageIdIndex),
-      numberOfFrames - 1
-    );
+    newTargetImageIdIndex = Math.max(0, newTargetImageIdIndex);
+
+    if (loop) {
+      newTargetImageIdIndex = newTargetImageIdIndex % numberOfFrames;
+    } else {
+      newTargetImageIdIndex = Math.min(
+        numberOfFrames - 1,
+        newTargetImageIdIndex
+      );
+    }
 
     this.targetImageIdIndex = newTargetImageIdIndex;
 
