@@ -1,8 +1,9 @@
+import { vec3 } from 'gl-matrix';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import { getEnabledElement, Types } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 
-import { getEnabledElement } from '@cornerstonejs/core';
-import { PublicToolProps, ToolProps } from '../types';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import { EventTypes, PublicToolProps, ToolProps } from '../types';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -13,15 +14,23 @@ export default class ZoomTool extends BaseTool {
   static toolName = 'Zoom';
   touchDragCallback: () => void;
   mouseDragCallback: () => void;
+  initialMousePosWorld: Types.Point3;
+  dirVec: Types.Point3;
 
   // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: {
+        // whether zoom to the center of the image OR zoom to the mouse position
+        zoomToCenter: false,
+      },
     }
   ) {
     super(toolProps, defaultToolProps);
+    this.initialMousePosWorld = [0, 0, 0];
+    this.dirVec = [0, 0, 0];
 
     /**
      * Will only fire two cornerstone events:
@@ -35,8 +44,36 @@ export default class ZoomTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
+  preMouseDownCallback = (
+    evt: EventTypes.MouseDownActivateEventType
+  ): boolean => {
+    const eventData = evt.detail;
+    const { currentPoints, element } = eventData;
+    const worldPos = currentPoints.world;
+    const enabledElement = getEnabledElement(element);
+
+    const camera = enabledElement.viewport.getCamera();
+    const { focalPoint } = camera;
+
+    this.initialMousePosWorld = worldPos;
+
+    // The direction vector from the clicked location to the focal point
+    // which would act as the vector to translate the image (if zoomToCenter is false)
+    let dirVec = vec3.fromValues(
+      focalPoint[0] - worldPos[0],
+      focalPoint[1] - worldPos[1],
+      focalPoint[2] - worldPos[2]
+    );
+
+    dirVec = vec3.normalize(vec3.create(), dirVec);
+
+    this.dirVec = dirVec as Types.Point3;
+
+    return true;
+  };
+
   // Takes ICornerstoneEvent, Mouse or Touch
-  _dragCallback(evt) {
+  _dragCallback(evt: EventTypes.MouseDragEventType) {
     const { element } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
@@ -52,21 +89,64 @@ export default class ZoomTool extends BaseTool {
     viewport.render();
   }
 
-  _dragParallelProjection = (evt, camera) => {
+  _dragParallelProjection = (
+    evt: EventTypes.MouseDragEventType,
+    camera: Types.ICamera
+  ) => {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const size = [element.clientWidth, element.clientHeight];
 
+    const { parallelScale, focalPoint, position } = camera;
+
     const zoomScale = 1.5 / size[1];
-
     const deltaY = deltaPoints.canvas[1];
-
     const k = deltaY * zoomScale;
 
-    const newParallelScale = (1.0 - k) * camera.parallelScale;
+    let newParallelScale = (1.0 - k) * parallelScale;
 
-    viewport.setCamera({ parallelScale: newParallelScale });
+    let focalPointToSet = focalPoint;
+    let positionToSet = position;
+
+    // if we're not zooming to the center, we need to adjust the focal point
+    // and position to set the focal point and position to the value that
+    // would simulate the zoom to the mouse position
+    if (!this.configuration.zoomToCenter) {
+      // Distance of the initial mouse position (world) to the focal point
+      // which is always the center of the canvas.
+      const distanceToCanvasCenter = vec3.distance(
+        focalPoint,
+        this.initialMousePosWorld
+      );
+
+      // we need to move in the direction of the vector between the focal point
+      // and the initial mouse position by some amount until ultimately we
+      // reach the mouse position at the focal point
+      const zoomScale = 10 / size[1];
+      const k = deltaY * zoomScale;
+      newParallelScale = (1.0 - k) * parallelScale;
+
+      positionToSet = vec3.scaleAndAdd(
+        vec3.create(),
+        position,
+        this.dirVec,
+        -distanceToCanvasCenter * k
+      ) as Types.Point3;
+
+      focalPointToSet = vec3.scaleAndAdd(
+        vec3.create(),
+        focalPoint,
+        this.dirVec,
+        -distanceToCanvasCenter * k
+      ) as Types.Point3;
+    }
+
+    viewport.setCamera({
+      parallelScale: newParallelScale,
+      focalPoint: focalPointToSet,
+      position: positionToSet,
+    });
   };
 
   _dragPerspectiveProjection = (evt, camera) => {
