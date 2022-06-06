@@ -445,13 +445,13 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_VOLUME_MODIFIED = "CORNERSTONE_IMAGE_VOLUME_MODIFIED",
     // (undocumented)
-    NEW_STACK_SET = "CORNERSTONE_NEW_STACK_SET",
-    // (undocumented)
     PRE_STACK_NEW_IMAGE = "CORNERSTONE_PRE_STACK_NEW_IMAGE",
     // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
     // (undocumented)
-    STACK_SCROLL = "CORNERSTONE_TOOLS_STACK_SCROLL",
+    STACK_VIEWPORT_NEW_STACK = "CORNERSTONE_STACK_VIEWPORT_NEW_STACK",
+    // (undocumented)
+    STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
     // (undocumented)
     VOI_MODIFIED = "CORNERSTONE_VOI_MODIFIED",
     // (undocumented)
@@ -509,10 +509,10 @@ declare namespace EventTypes {
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
-        NewStackSetEvent,
-        NewStackSetEventDetail,
-        StackScrollEventType,
-        StackScrollEventDetail
+        StackViewportNewStackEvent,
+        StackViewportNewStackEventDetail,
+        StackViewportScrollEvent,
+        StackViewportScrollEventDetail
     }
 }
 
@@ -1408,17 +1408,6 @@ const metadataProvider: {
 };
 
 // @public (undocumented)
-type NewStackSetEvent = CustomEvent_2<NewStackSetEventDetail>;
-
-// @public (undocumented)
-type NewStackSetEventDetail = {
-    imageIds: string[];
-    viewportId: string;
-    element: HTMLDivElement;
-    currentImageIdIndex: number;
-};
-
-// @public (undocumented)
 const ORIENTATION: Record<string, Orientation>;
 
 // @public (undocumented)
@@ -1637,16 +1626,6 @@ type StackNewImageEventDetail = {
 };
 
 // @public (undocumented)
-type StackScrollEventDetail = {
-    newImageIdIndex: number;
-    imageId: string;
-    direction: number;
-};
-
-// @public (undocumented)
-type StackScrollEventType = CustomEvent_2<StackScrollEventDetail>;
-
-// @public (undocumented)
 export class StackViewport extends Viewport implements IStackViewport {
     constructor(props: ViewportInput);
     // (undocumented)
@@ -1729,11 +1708,32 @@ export class StackViewport extends Viewport implements IStackViewport {
 }
 
 // @public (undocumented)
+type StackViewportNewStackEvent = CustomEvent_2<StackViewportNewStackEventDetail>;
+
+// @public (undocumented)
+type StackViewportNewStackEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
+};
+
+// @public (undocumented)
 type StackViewportProperties = {
     voiRange?: VOIRange;
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+};
+
+// @public (undocumented)
+type StackViewportScrollEvent = CustomEvent_2<StackViewportScrollEventDetail>;
+
+// @public (undocumented)
+type StackViewportScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
 };
 
 // @public (undocumented)

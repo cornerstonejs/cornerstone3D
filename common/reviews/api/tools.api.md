@@ -1500,10 +1500,10 @@ declare namespace EventTypes {
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
-        NewStackSetEvent,
-        NewStackSetEventDetail,
-        StackScrollEventType,
-        StackScrollEventDetail
+        StackViewportNewStackEvent,
+        StackViewportNewStackEventDetail,
+        StackViewportScrollEvent,
+        StackViewportScrollEventDetail
     }
 }
 
@@ -2788,17 +2788,6 @@ type MouseWheelEventDetail = NormalizedMouseEventDetail & {
 // @public (undocumented)
 type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 
-// @public
-type NewStackSetEvent = CustomEvent_2<NewStackSetEventDetail>;
-
-// @public
-type NewStackSetEventDetail = {
-    imageIds: string[];
-    viewportId: string;
-    element: HTMLDivElement;
-    currentImageIdIndex: number;
-};
-
 // @public (undocumented)
 type NormalizedMouseEventDetail = {
     event: Record<string, unknown> | MouseEvent;
@@ -3733,16 +3722,6 @@ declare namespace stackPrefetch {
     }
 }
 
-// @public
-type StackScrollEventDetail = {
-    newImageIdIndex: number;
-    imageId: string;
-    direction: number;
-};
-
-// @public (undocumented)
-type StackScrollEventType = CustomEvent_2<StackScrollEventDetail>;
-
 // @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
     constructor(toolProps?: {}, defaultToolProps?: {
@@ -3780,11 +3759,33 @@ export class StackScrollTool extends BaseTool {
 }
 
 // @public
+type StackViewportNewStackEvent =
+CustomEvent_2<StackViewportNewStackEventDetail>;
+
+// @public
+type StackViewportNewStackEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
+};
+
+// @public
 type StackViewportProperties = {
     voiRange?: VOIRange;
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+};
+
+// @public (undocumented)
+type StackViewportScrollEvent = CustomEvent_2<StackViewportScrollEventDetail>;
+
+// @public
+type StackViewportScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
 };
 
 declare namespace state {

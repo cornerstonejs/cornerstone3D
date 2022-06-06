@@ -159,18 +159,17 @@ enum Events {
 
   /**
    * Triggers on the event target when a new stack is set on its stack viewport.
-   * Make use of {@link EventTypes.NewStackSet | NewStackSet Event Type } for typing your event listeners for NEW_STACK_SET event,
-   * and see what event detail is included in {@link EventTypes.NewStackSetEventDetail | NewStackSet Event Detail }
+   * Make use of {@link EventTypes.StackViewportNewStack | StackViewportNewStack Event Type } for typing your event listeners for STACK_VIEWPORT_NEW_STACK event,
+   * and see what event detail is included in {@link EventTypes.StackViewportNewStackEventDetail | StackViewportNewStack Event Detail }
    */
-  NEW_STACK_SET = 'CORNERSTONE_NEW_STACK_SET',
+  STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
 
   /**
    * Triggers on the element when the underlying StackViewport is scrolled.
-   * Make use of {@link EventTypes.StackScrollEventType | Stack Scroll Event Type}
-   * for typing your event listeners for this stack scroll event, and see what
-   * event detail is included in {@link EventTypes.StackScrollEventDetail | Stack Scroll Event Detail}.
+   * Make use of {@link EventTypes.StackViewportScroll | StackViewportScroll Event Type } for typing your event listeners for STACK_VIEWPORT_SCROLL event,
+   * and see what event detail is included in {@link EventTypes.StackViewportScrollEventDetail | StackViewportScroll Event Detail }
    */
-  STACK_SCROLL = 'CORNERSTONE_TOOLS_STACK_SCROLL',
+  STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',

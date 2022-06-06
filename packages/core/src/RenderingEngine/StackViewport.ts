@@ -56,7 +56,8 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
 import {
-  StackScrollEventDetail,
+  StackViewportNewStackEventDetail,
+  StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
 import getScalingParameters from '../utilities/getScalingParameters';
@@ -1187,14 +1188,14 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const imageId = await this._setImageIdIndex(currentImageIdIndex);
 
-    const eventDetail: EventTypes.NewStackSetEventDetail = {
+    const eventDetail: StackViewportNewStackEventDetail = {
       imageIds,
       viewportId: this.id,
       element: this.element,
       currentImageIdIndex: currentImageIdIndex,
     };
 
-    triggerEvent(eventTarget, Events.NEW_STACK_SET, eventDetail);
+    triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
 
     return imageId;
   }
@@ -1823,14 +1824,14 @@ class StackViewport extends Viewport implements IStackViewport {
       }, 40);
     }
 
-    const eventData: StackScrollEventDetail = {
+    const eventData: StackViewportScrollEventDetail = {
       newImageIdIndex: newTargetImageIdIndex,
       imageId: targetImageId,
       direction: delta,
     };
 
     if (newTargetImageIdIndex !== currentTargetImageIdIndex) {
-      triggerEvent(this.element, Events.STACK_SCROLL, eventData);
+      triggerEvent(this.element, Events.STACK_VIEWPORT_SCROLL, eventData);
     }
   }
 

@@ -370,10 +370,10 @@ enum Events {
     IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
     IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
-    NEW_STACK_SET = 'CORNERSTONE_NEW_STACK_SET',
     PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
-    STACK_SCROLL = 'CORNERSTONE_TOOLS_STACK_SCROLL',
+    STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+    STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
 
@@ -430,10 +430,10 @@ declare namespace EventTypes {
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
         VolumeNewImageEventDetail,
-        NewStackSetEvent,
-        NewStackSetEventDetail,
-        StackScrollEventType,
-        StackScrollEventDetail
+        StackViewportNewStackEvent,
+        StackViewportNewStackEventDetail,
+        StackViewportScrollEvent,
+        StackViewportScrollEventDetail
     }
 }
 
@@ -1008,17 +1008,6 @@ type Metadata = {
     voiLut: Array<VOI>;
 };
 
-// @public
-type NewStackSetEvent = CustomEvent_2<NewStackSetEventDetail>;
-
-// @public
-type NewStackSetEventDetail = {
-    imageIds: string[];
-    viewportId: string;
-    element: HTMLDivElement;
-    currentImageIdIndex: number;
-};
-
 // @public (undocumented)
 type Orientation = {
     sliceNormal: Point3;
@@ -1103,14 +1092,16 @@ type StackNewImageEventDetail = {
 };
 
 // @public
-type StackScrollEventDetail = {
-    newImageIdIndex: number;
-    imageId: string;
-    direction: number;
-};
+type StackViewportNewStackEvent =
+CustomEvent_2<StackViewportNewStackEventDetail>;
 
-// @public (undocumented)
-type StackScrollEventType = CustomEvent_2<StackScrollEventDetail>;
+// @public
+type StackViewportNewStackEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
+};
 
 // @public
 type StackViewportProperties = {
@@ -1118,6 +1109,16 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+};
+
+// @public (undocumented)
+type StackViewportScrollEvent = CustomEvent_2<StackViewportScrollEventDetail>;
+
+// @public
+type StackViewportScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
 };
 
 // @public (undocumented)
