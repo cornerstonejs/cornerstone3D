@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.12.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.11.1...@cornerstonejs/core@0.12.0) (2022-06-06)
+
+
+### Features
+
+* improved stack prefetch and zoom to mouse  ([#121](https://github.com/cornerstonejs/cornerstone3D-beta/issues/121)) ([bc72d37](https://github.com/cornerstonejs/cornerstone3D-beta/commit/bc72d37b10f5a9e3e2bc9ed1254a707047f04f45))
+
+
+
+
+
 ## [0.11.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.11.0...@cornerstonejs/core@0.11.1) (2022-06-01)
 
 
