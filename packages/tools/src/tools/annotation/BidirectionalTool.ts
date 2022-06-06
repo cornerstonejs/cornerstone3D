@@ -952,13 +952,14 @@ export default class BidirectionalTool extends AnnotationTool {
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void => {
+  ): boolean => {
+    let renderStatus = true;
     const { viewport } = enabledElement;
     const { element } = viewport;
     let annotations = getAnnotations(viewport.element, this.getToolName());
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
@@ -967,7 +968,7 @@ export default class BidirectionalTool extends AnnotationTool {
     );
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const targetId = this.getTargetId(viewport);
@@ -1010,7 +1011,7 @@ export default class BidirectionalTool extends AnnotationTool {
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
-        return;
+        return renderStatus;
       }
 
       let activeHandleCanvasCoords;
@@ -1070,6 +1071,8 @@ export default class BidirectionalTool extends AnnotationTool {
         }
       );
 
+      renderStatus = true;
+
       const textLines = this._getTextLines(data, targetId);
 
       if (!textLines || textLines.length === 0) {
@@ -1109,6 +1112,8 @@ export default class BidirectionalTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
     }
+
+    return renderStatus;
   };
 
   _movingLongAxisWouldPutItThroughShortAxis = (

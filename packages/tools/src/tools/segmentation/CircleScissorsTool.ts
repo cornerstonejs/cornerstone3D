@@ -299,16 +299,17 @@ export default class CircleScissorsTool extends BaseTool {
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void => {
+  ): boolean => {
+    let renderStatus = false;
     if (!this.editData) {
-      return;
+      return renderStatus;
     }
 
     const { viewport } = enabledElement;
     const { viewportIdsToRender } = this.editData;
 
     if (!viewportIdsToRender.includes(viewport.id)) {
-      return;
+      return renderStatus;
     }
 
     const { annotation } = this.editData;
@@ -336,7 +337,7 @@ export default class CircleScissorsTool extends BaseTool {
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
       console.warn('Rendering Engine has been destroyed');
-      return;
+      return renderStatus;
     }
 
     const circleUID = '0';
@@ -350,5 +351,8 @@ export default class CircleScissorsTool extends BaseTool {
         color,
       }
     );
+
+    renderStatus = true;
+    return renderStatus;
   };
 }

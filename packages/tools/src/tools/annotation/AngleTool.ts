@@ -523,7 +523,9 @@ class AngleTool extends AnnotationTool {
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void => {
+  ): boolean => {
+    let renderStatus = false;
+
     const { viewport } = enabledElement;
     const { element } = viewport;
 
@@ -531,7 +533,7 @@ class AngleTool extends AnnotationTool {
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
@@ -540,7 +542,7 @@ class AngleTool extends AnnotationTool {
     );
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const targetId = this.getTargetId(viewport);
@@ -592,6 +594,12 @@ class AngleTool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed');
+        return renderStatus;
+      }
+
       if (activeHandleCanvasCoords) {
         const handleGroupUID = '0';
 
@@ -622,9 +630,11 @@ class AngleTool extends AnnotationTool {
         }
       );
 
+      renderStatus = true;
+
       // Don't add textBox until annotation has 3 anchor points (actually 4 because of the center point)
       if (canvasCoordinates.length !== 3) {
-        return;
+        return renderStatus;
       }
 
       lineUID = '2';
@@ -641,12 +651,6 @@ class AngleTool extends AnnotationTool {
           lineDash,
         }
       );
-
-      // If rendering engine has been destroyed while rendering
-      if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
-        return;
-      }
 
       if (!data.cachedStats[targetId]?.angle) {
         continue;
@@ -686,6 +690,8 @@ class AngleTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
     }
+
+    return renderStatus;
   };
 
   // text line for the current active length annotation

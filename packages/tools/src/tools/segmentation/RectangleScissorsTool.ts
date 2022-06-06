@@ -334,9 +334,10 @@ export default class RectangleScissorsTool extends BaseTool {
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: any
-  ): void => {
+  ): boolean => {
+    let renderStatus = false;
     if (!this.editData) {
-      return;
+      return renderStatus;
     }
 
     const { viewport } = enabledElement;
@@ -354,7 +355,7 @@ export default class RectangleScissorsTool extends BaseTool {
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
       console.warn('Rendering Engine has been destroyed');
-      return;
+      return renderStatus;
     }
 
     const rectangleUID = '0';
@@ -368,5 +369,9 @@ export default class RectangleScissorsTool extends BaseTool {
         color,
       }
     );
+
+    renderStatus = true;
+
+    return renderStatus;
   };
 }
