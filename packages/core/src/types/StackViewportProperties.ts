@@ -13,6 +13,8 @@ type StackViewportProperties = {
   interpolationType?: InterpolationType;
   /** image rotation */
   rotation?: number;
+  /** suppress events (optional) */
+  suppressEvents?: boolean;
 };
 
 export default StackViewportProperties;

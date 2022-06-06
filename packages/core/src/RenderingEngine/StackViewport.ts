@@ -524,16 +524,19 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
    * @param rotation - image rotation in degrees
    */
-  public setProperties({
-    voiRange,
-    invert,
-    interpolationType,
-    rotation,
-  }: StackViewportProperties = {}): void {
+  public setProperties(
+    {
+      voiRange,
+      invert,
+      interpolationType,
+      rotation,
+      suppressEvents,
+    }: StackViewportProperties = { suppressEvents: false }
+  ) {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi
     if (typeof voiRange !== 'undefined' || !this.voiApplied) {
-      this.setVOI(voiRange);
+      this.setVOI(voiRange, suppressEvents);
     }
 
     if (typeof invert !== 'undefined') {
@@ -625,6 +628,7 @@ class StackViewport extends Viewport implements IStackViewport {
       rotation: this.rotation,
       interpolationType: this.interpolationType,
       invert: this.invert,
+      suppressEvents: true,
     });
   }
 
@@ -742,13 +746,13 @@ class StackViewport extends Viewport implements IStackViewport {
     this.flipVertical = viewport.vflip;
   }
 
-  private setVOI(voiRange: VOIRange): void {
+  private setVOI(voiRange: VOIRange, suppressEvents?: boolean): void {
     if (this.useCPURendering) {
-      this.setVOICPU(voiRange);
+      this.setVOICPU(voiRange, suppressEvents);
       return;
     }
 
-    this.setVOIGPU(voiRange);
+    this.setVOIGPU(voiRange, suppressEvents);
   }
 
   private setRotation(rotationCache: number, rotation: number): void {
@@ -873,7 +877,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.invert = invert;
   }
 
-  private setVOICPU(voiRange: VOIRange): void {
+  private setVOICPU(voiRange: VOIRange, suppressEvents?: boolean): void {
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
     if (!viewport || !image) {
@@ -917,10 +921,12 @@ class StackViewport extends Viewport implements IStackViewport {
       range: voiRange,
     };
 
-    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    if (!suppressEvents) {
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    }
   }
 
-  private setVOIGPU(voiRange: VOIRange): void {
+  private setVOIGPU(voiRange: VOIRange, suppressEvents?: boolean): void {
     const defaultActor = this.getDefaultActor();
     if (!defaultActor) {
       return;
@@ -951,7 +957,9 @@ class StackViewport extends Viewport implements IStackViewport {
       range: voiRange,
     };
 
-    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    if (!suppressEvents) {
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    }
   }
 
   /**
