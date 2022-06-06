@@ -50,6 +50,7 @@ instructions.innerText = `
   - Click on Play Clip to start the CINE tool
   - Click on Stop Clip to stop the CINE tool
   - Drag the frame slider to change the frames per second rate
+  - Note: as the slices are loading one by one, the first couple of loops will be slower than the rest
 `;
 
 content.append(instructions);
@@ -168,9 +169,7 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  viewport.setStack(imageIds).then(() => {
-    csUtils.prefetchStack(imageIds);
-  });
+  viewport.setStack(imageIds);
 
   // Render the image
   viewport.render();
