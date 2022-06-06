@@ -1,6 +1,11 @@
-import { getEnabledElementByIds, VolumeViewport } from '@cornerstonejs/core';
+import {
+  getEnabledElementByIds,
+  VolumeViewport,
+  StackViewport,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import { BaseTool } from './base';
-import { scrollThroughStack } from '../utilities/stackScrollTool';
+import { scroll } from '../utilities';
 import { PublicToolProps, ToolProps, EventTypes } from '../types';
 
 /**
@@ -9,7 +14,7 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
  */
 export default class StackScrollTool extends BaseTool {
   static toolName = 'StackScroll';
-  previousDirection: number;
+  deltaY: number;
   touchDragCallback: () => void;
   mouseDragCallback: () => void;
 
@@ -19,11 +24,12 @@ export default class StackScrollTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         invert: false,
+        debounceIfNotLoaded: true,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
-    this.previousDirection = 1;
+    this.deltaY = 1;
 
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
@@ -31,28 +37,54 @@ export default class StackScrollTool extends BaseTool {
 
   _dragCallback(evt: EventTypes.MouseDragEventType) {
     const { deltaPoints, viewportId, renderingEngineId } = evt.detail;
-    const deltaFrames = deltaPoints.canvas[1];
     const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
     const targetId = this.getTargetId(viewport);
-    const { invert } = this.configuration;
+    const { debounceIfNotLoaded } = this.configuration;
+
+    const deltaPointY = deltaPoints.canvas[1];
 
     let volumeId;
     if (viewport instanceof VolumeViewport) {
       volumeId = targetId.split('volumeId:')[1];
     }
 
-    // We need this check since the deltaFrames can be 0 when the user is
-    // scrolling very slowly so in that case we use the previous direction
-    let direction;
-    if (deltaFrames === 0) {
-      direction = this.previousDirection;
-    } else {
-      direction = deltaFrames > 0 ? 1 : -1;
-      this.previousDirection = direction;
+    const pixelsPerImage = this._getPixelPerImage(viewport);
+    const deltaY = deltaPointY + this.deltaY;
+
+    if (!pixelsPerImage) {
+      return;
     }
 
-    const delta = direction * (invert ? -1 : 1);
+    if (Math.abs(deltaY) >= pixelsPerImage) {
+      const imageIdIndexOffset = Math.round(deltaY / pixelsPerImage);
 
-    scrollThroughStack(viewport, { delta, volumeId });
+      scroll(viewport, {
+        delta: imageIdIndexOffset,
+        volumeId,
+        debounceLoading: debounceIfNotLoaded,
+      });
+
+      this.deltaY = deltaY % pixelsPerImage;
+    } else {
+      this.deltaY = deltaY;
+    }
+  }
+
+  _getPixelPerImage(viewport) {
+    const { element } = viewport;
+    const numberOfSlices = this._getNumberOfSlices(viewport);
+
+    // The Math.max here makes it easier to mouseDrag-scroll small or really large image stacks
+    return Math.max(2, element.offsetHeight / Math.max(numberOfSlices, 8));
+  }
+
+  _getNumberOfSlices(viewport) {
+    if (viewport instanceof VolumeViewport) {
+      const { numberOfSlices } =
+        csUtils.getImageSliceDataForVolumeViewport(viewport);
+      return numberOfSlices;
+    } else if (viewport instanceof StackViewport) {
+      return viewport.getImageIds().length;
+    }
   }
 }

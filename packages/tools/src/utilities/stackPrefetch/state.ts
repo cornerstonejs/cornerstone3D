@@ -1,15 +1,14 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { CINETypes } from '../../types';
 
-const state: Record<string, CINETypes.ToolData> = {};
+const state: Record<number, any> = {};
 
-function addToolState(element: HTMLDivElement, data: CINETypes.ToolData): void {
+function addToolState(element: HTMLDivElement, data): void {
   const enabledElement = getEnabledElement(element);
   const { viewportId } = enabledElement;
   state[viewportId] = data;
 }
 
-function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined {
+function getToolState(element: HTMLDivElement): any {
   const enabledElement = getEnabledElement(element);
   const { viewportId } = enabledElement;
   return state[viewportId];

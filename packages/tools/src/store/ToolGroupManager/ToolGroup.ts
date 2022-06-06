@@ -2,8 +2,10 @@ import { MouseBindings, ToolModes } from '../../enums';
 import {
   getRenderingEngine,
   getRenderingEngines,
+  getEnabledElementByIds,
   Settings,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { state } from '../index';
 import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types';
 
@@ -40,6 +42,13 @@ export default class ToolGroup implements IToolGroup {
    */
   getViewportIds(): string[] {
     return this.viewportsInfo.map(({ viewportId }) => viewportId);
+  }
+
+  /**
+   * Returns the toolGroup viewports info which is an array of {viewportId, renderingEngineId}
+   */
+  getViewportsInfo(): Array<Types.IViewportId> {
+    return Object.assign({}, this.viewportsInfo);
   }
 
   /**
@@ -392,11 +401,17 @@ export default class ToolGroup implements IToolGroup {
 
   _setCursorForViewports(cursor: MouseCursor): void {
     this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
-      const viewport =
-        getRenderingEngine(renderingEngineId).getViewport(viewportId);
-      if (viewport && viewport.element) {
-        initElementCursor(viewport.element, cursor);
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+
+      if (!enabledElement) {
+        return;
       }
+
+      const { viewport } = enabledElement;
+      initElementCursor(viewport.element, cursor);
     });
   }
 

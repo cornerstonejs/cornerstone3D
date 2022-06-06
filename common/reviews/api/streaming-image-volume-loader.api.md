@@ -372,14 +372,19 @@ enum Events {
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
     PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
+    STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+    STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
+
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
-
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
-
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
+
     VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
+
     VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
+
     // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
     // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
     // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
@@ -424,7 +429,11 @@ declare namespace EventTypes {
         ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
-        VolumeNewImageEventDetail
+        VolumeNewImageEventDetail,
+        StackViewportNewStackEvent,
+        StackViewportNewStackEventDetail,
+        StackViewportScrollEvent,
+        StackViewportScrollEventDetail
     }
 }
 
@@ -1083,11 +1092,33 @@ type StackNewImageEventDetail = {
 };
 
 // @public
+type StackViewportNewStackEvent =
+CustomEvent_2<StackViewportNewStackEventDetail>;
+
+// @public
+type StackViewportNewStackEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
+};
+
+// @public
 type StackViewportProperties = {
     voiRange?: VOIRange;
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+};
+
+// @public (undocumented)
+type StackViewportScrollEvent = CustomEvent_2<StackViewportScrollEventDetail>;
+
+// @public
+type StackViewportScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
 };
 
 // @public (undocumented)

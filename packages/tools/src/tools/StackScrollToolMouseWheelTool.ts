@@ -1,7 +1,11 @@
+import {
+  getEnabledElement,
+  VolumeViewport,
+  StackViewport,
+} from '@cornerstonejs/core';
 import { BaseTool } from './base';
-import { scrollThroughStack } from '../utilities/stackScrollTool';
 import { MouseWheelEventType } from '../types/EventTypes';
-import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
+import { scrollVolume } from '../utilities/scroll';
 
 /**
  * The StackScrollMouseWheelTool is a tool that allows the user to scroll through a
@@ -16,7 +20,10 @@ export default class StackScrollMouseWheelTool extends BaseTool {
     toolProps = {},
     defaultToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      invert: false,
+      configuration: {
+        invert: false,
+        debounceIfNotLoaded: true,
+      },
     }
   ) {
     super(toolProps, defaultToolProps);
@@ -27,14 +34,16 @@ export default class StackScrollMouseWheelTool extends BaseTool {
     const { direction } = wheel;
     const { invert } = this.configuration;
     const { viewport } = getEnabledElement(element);
-    const targetId = this.getTargetId(viewport);
-
-    let volumeId;
-    if (viewport instanceof VolumeViewport) {
-      volumeId = targetId.split('volumeId:')[1];
-    }
-
     const delta = direction * (invert ? -1 : 1);
-    scrollThroughStack(viewport, { delta, volumeId });
+
+    if (viewport instanceof StackViewport) {
+      viewport.scroll(delta, this.configuration.debounceIfNotLoaded);
+    } else if (viewport instanceof VolumeViewport) {
+      const targetId = this.getTargetId(viewport);
+      const volumeId = targetId.split('volumeId:')[1];
+      scrollVolume(viewport, volumeId, delta);
+    } else {
+      throw new Error('StackScrollMouseWheelTool: Unsupported viewport type');
+    }
   }
 }

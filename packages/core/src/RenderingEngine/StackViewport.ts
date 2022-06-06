@@ -55,8 +55,13 @@ import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
-import { VoiModifiedEventDetail } from '../types/EventTypes';
+import {
+  StackViewportNewStackEventDetail,
+  StackViewportScrollEventDetail,
+  VoiModifiedEventDetail,
+} from '../types/EventTypes';
 import getScalingParameters from '../utilities/getScalingParameters';
+import cache from '../cache';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -100,7 +105,12 @@ type CalibrationEvent = {
  */
 class StackViewport extends Viewport implements IStackViewport {
   private imageIds: Array<string>;
+  // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex: number;
+  // the imageIdIndex that is targeted to be loaded with scrolling but has not initiated loading yet
+  private targetImageIdIndex: number;
+  // setTimeout if the image is debounced to be loaded
+  private debouncedTimeout: number;
 
   // Viewport Properties
   private voiRange: VOIRange;
@@ -167,13 +177,30 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.imageIds = [];
     this.currentImageIdIndex = 0;
+    this.targetImageIdIndex = 0;
     this.panCache = [0, 0, 0];
     this.cameraPosOnRender = [0, 0, 0];
     this.resetCamera();
+
+    this.initializeElementDisabledHandler();
   }
 
   static get useCustomRenderingPipeline(): boolean {
     return getShouldUseCPURendering();
+  }
+
+  private initializeElementDisabledHandler() {
+    eventTarget.addEventListener(
+      Events.ELEMENT_DISABLED,
+      function elementDisabledHandler() {
+        clearTimeout(this.debouncedTimeout);
+
+        eventTarget.removeEventListener(
+          Events.ELEMENT_DISABLED,
+          elementDisabledHandler
+        );
+      }
+    );
   }
 
   /**
@@ -1142,6 +1169,7 @@ class StackViewport extends Viewport implements IStackViewport {
   ): Promise<string> {
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
+    this.targetImageIdIndex = currentImageIdIndex;
     this.stackInvalidated = true;
     this.scalingCache = {};
     this.rotationCache = 0;
@@ -1159,6 +1187,15 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const imageId = await this._setImageIdIndex(currentImageIdIndex);
+
+    const eventDetail: StackViewportNewStackEventDetail = {
+      imageIds,
+      viewportId: this.id,
+      element: this.element,
+      currentImageIdIndex: currentImageIdIndex,
+    };
+
+    triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
 
     return imageId;
   }
@@ -1743,6 +1780,62 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
+   * It scrolls the stack of imageIds by the delta amount provided. If the debounce
+   * flag is set, it will only scroll the stack if the delta is greater than the
+   * debounceThreshold which is 40 milliseconds by default.
+   * @param delta - number of indices to scroll, it can be positive or negative
+   * @param debounce - whether to debounce the scroll event
+   * @param loop - whether to loop the stack
+   */
+  public scroll(delta: number, debounce = true, loop = false): void {
+    const imageIds = this.imageIds;
+
+    const currentTargetImageIdIndex = this.targetImageIdIndex;
+    const numberOfFrames = imageIds.length;
+
+    let newTargetImageIdIndex = currentTargetImageIdIndex + delta;
+    newTargetImageIdIndex = Math.max(0, newTargetImageIdIndex);
+
+    if (loop) {
+      newTargetImageIdIndex = newTargetImageIdIndex % numberOfFrames;
+    } else {
+      newTargetImageIdIndex = Math.min(
+        numberOfFrames - 1,
+        newTargetImageIdIndex
+      );
+    }
+
+    this.targetImageIdIndex = newTargetImageIdIndex;
+
+    const targetImageId = imageIds[newTargetImageIdIndex];
+
+    const imageAlreadyLoaded = cache.isImageIdCached(targetImageId);
+
+    // If image is already cached we want to scroll right away; however, if it is
+    // not cached, we can debounce the scroll event to avoid firing multiple scroll
+    // events for the images that might happen to be passing by (as a result of infinite
+    // scrolling).
+    if (imageAlreadyLoaded || !debounce) {
+      this.setImageIdIndex(newTargetImageIdIndex);
+    } else {
+      clearTimeout(this.debouncedTimeout);
+      this.debouncedTimeout = window.setTimeout(() => {
+        this.setImageIdIndex(newTargetImageIdIndex);
+      }, 40);
+    }
+
+    const eventData: StackViewportScrollEventDetail = {
+      newImageIdIndex: newTargetImageIdIndex,
+      imageId: targetImageId,
+      direction: delta,
+    };
+
+    if (newTargetImageIdIndex !== currentTargetImageIdIndex) {
+      triggerEvent(this.element, Events.STACK_VIEWPORT_SCROLL, eventData);
+    }
+  }
+
+  /**
    * Loads the image based on the provided imageIdIndex. It is an Async function which
    * returns a promise that resolves to the imageId.
    *
@@ -1992,6 +2085,16 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public getCurrentImageIdIndex = (): number => {
     return this.currentImageIdIndex;
+  };
+
+  /**
+   *
+   * Returns the imageIdIndex that is targeted to be loaded, in case of debounced
+   * loading (with scroll), the targetImageIdIndex is the latest imageId
+   * index that is requested to be loaded but debounced.
+   */
+  public getTargetImageIdIndex = (): number => {
+    return this.targetImageIdIndex;
   };
 
   /**

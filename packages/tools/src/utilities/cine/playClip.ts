@@ -9,6 +9,8 @@ import { CINETypes } from '../../types';
 
 const { triggerEvent } = utilities;
 
+const debounced = true;
+const loop = true;
 /**
  * Starts playing a clip or adjusts the frame rate of an already playing clip.  framesPerSecond is
  * optional and defaults to 30 if not specified.  A negative framesPerSecond will play the clip in reverse.
@@ -44,7 +46,7 @@ function playClip(
   }
 
   const stackData = {
-    currentImageIdIndex: viewport.getCurrentImageIdIndex(),
+    targetImageIdIndex: viewport.getTargetImageIdIndex(),
     imageIds: viewport.getImageIds(),
   };
 
@@ -97,7 +99,7 @@ function playClip(
   // This function encapsulates the frame rendering logic...
   const playClipAction = () => {
     // Hoisting of context variables
-    let newImageIdIndex = stackData.currentImageIdIndex;
+    let newImageIdIndex = stackData.targetImageIdIndex;
 
     const imageCount = stackData.imageIds.length;
 
@@ -130,10 +132,9 @@ function playClip(
       newImageIdIndex = imageCount - 1;
     }
 
-    if (newImageIdIndex !== stackData.currentImageIdIndex) {
-      viewport.setImageIdIndex(newImageIdIndex).then(() => {
-        stackData.currentImageIdIndex = newImageIdIndex;
-      });
+    if (newImageIdIndex !== stackData.targetImageIdIndex) {
+      const delta = newImageIdIndex - stackData.targetImageIdIndex;
+      viewport.scroll(delta, debounced, loop);
     }
   };
 
@@ -149,7 +150,7 @@ function playClip(
       function playClipTimeoutHandler() {
         playClipData.intervalId = window.setTimeout(
           playClipTimeoutHandler,
-          playClipTimeouts[stackData.currentImageIdIndex]
+          playClipTimeouts[stackData.targetImageIdIndex]
         );
         playClipAction();
       },

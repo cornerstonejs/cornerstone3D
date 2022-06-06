@@ -76,7 +76,9 @@ describe('Synchronizer Manager: ', () => {
     this.DOMElements = [];
 
     this.firstToolGroup = ToolGroupManager.createToolGroup('volume1');
-    this.firstToolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    this.firstToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
+      debounceIfNotLoaded: false,
+    });
     this.firstToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
     this.renderingEngine = new RenderingEngine(renderingEngineId);
     registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);

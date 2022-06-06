@@ -449,6 +449,10 @@ export enum EVENTS {
     // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
     // (undocumented)
+    STACK_VIEWPORT_NEW_STACK = "CORNERSTONE_STACK_VIEWPORT_NEW_STACK",
+    // (undocumented)
+    STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
+    // (undocumented)
     VOI_MODIFIED = "CORNERSTONE_VOI_MODIFIED",
     // (undocumented)
     VOLUME_CACHE_VOLUME_ADDED = "CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED",
@@ -504,7 +508,11 @@ declare namespace EventTypes {
         ImageLoadProgressEvent,
         ImageLoadProgressEventDetail,
         VolumeNewImageEvent,
-        VolumeNewImageEventDetail
+        VolumeNewImageEventDetail,
+        StackViewportNewStackEvent,
+        StackViewportNewStackEventDetail,
+        StackViewportScrollEvent,
+        StackViewportScrollEventDetail
     }
 }
 
@@ -1432,9 +1440,6 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
-function prefetchStack(imageIds: string[], requestType?: RequestType, priority?: number): void;
-
-// @public (undocumented)
 type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
 
 // @public (undocumented)
@@ -1661,6 +1666,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
+    getTargetImageIdIndex: () => number;
+    // (undocumented)
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
@@ -1678,6 +1685,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     resize: () => void;
     // (undocumented)
     scaling: Scaling;
+    // (undocumented)
+    scroll(delta: number, debounce?: boolean, loop?: boolean): void;
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
@@ -1699,11 +1708,32 @@ export class StackViewport extends Viewport implements IStackViewport {
 }
 
 // @public (undocumented)
+type StackViewportNewStackEvent = CustomEvent_2<StackViewportNewStackEventDetail>;
+
+// @public (undocumented)
+type StackViewportNewStackEventDetail = {
+    imageIds: string[];
+    viewportId: string;
+    element: HTMLDivElement;
+    currentImageIdIndex: number;
+};
+
+// @public (undocumented)
 type StackViewportProperties = {
     voiRange?: VOIRange;
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+};
+
+// @public (undocumented)
+type StackViewportScrollEvent = CustomEvent_2<StackViewportScrollEventDetail>;
+
+// @public (undocumented)
+type StackViewportScrollEventDetail = {
+    newImageIdIndex: number;
+    imageId: string;
+    direction: number;
 };
 
 // @public (undocumented)
@@ -1821,7 +1851,6 @@ declare namespace utilities {
         getVolumeViewportsContainingSameVolumes,
         getVolumeViewportsContainingVolumeId,
         transformWorldToIndex,
-        prefetchStack,
         loadImageToCanvas,
         renderToCanvas,
         worldToImageCoords,
