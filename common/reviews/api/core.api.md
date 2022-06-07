@@ -1696,7 +1696,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, }?: StackViewportProperties): void;
+    setProperties({ voiRange, invert, interpolationType, rotation, suppressEvents, }?: StackViewportProperties): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
@@ -1724,6 +1724,7 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+    suppressEvents?: boolean;
 };
 
 // @public (undocumented)

@@ -1109,6 +1109,7 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+    suppressEvents?: boolean;
 };
 
 // @public (undocumented)

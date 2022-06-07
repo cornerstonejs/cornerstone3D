@@ -140,7 +140,7 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -391,7 +391,7 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -535,7 +535,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     preventHandleOutsideImage: boolean;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -647,7 +647,7 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     static toolName: string;
 }
@@ -1085,7 +1085,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _pointNearTool(element: any, annotation: any, canvasCoords: any, proximity: any): boolean;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     setSlabThickness(viewport: any, slabThickness: any): void;
     // (undocumented)
@@ -1195,7 +1195,7 @@ export class DragProbeTool extends ProbeTool {
     // (undocumented)
     postMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => ProbeAnnotation;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -1374,7 +1374,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _pointInEllipseCanvas(ellipse: any, location: Types_2.Point2): boolean;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -2554,7 +2554,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -2904,7 +2904,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3044,7 +3044,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -3192,7 +3192,7 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3267,7 +3267,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3327,7 +3327,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3374,7 +3374,7 @@ export class RectangleScissorsTool extends BaseTool {
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
@@ -3696,7 +3696,7 @@ export class SphereScissorsTool extends BaseTool {
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => true;
     // (undocumented)
-    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => void;
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: any) => boolean;
     // (undocumented)
     static toolName: string;
 }
@@ -3776,6 +3776,7 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+    suppressEvents?: boolean;
 };
 
 // @public (undocumented)
@@ -4370,8 +4371,8 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     _dragPerspectiveProjection: (evt: any, camera: any) => void;
     // (undocumented)
-    _getCappedParallelScale: (viewport: any, parallelScale: any) => {
-        parallelScale: any;
+    _getCappedParallelScale: (viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, parallelScale: number) => {
+        parallelScale: number;
         thresholdExceeded: boolean;
     };
     // (undocumented)
