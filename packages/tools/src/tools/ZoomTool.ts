@@ -144,6 +144,19 @@ export default class ZoomTool extends BaseTool {
       ) as Types.Point3;
     }
 
+    const customViewport =
+      Object.getPrototypeOf(viewport).constructor.useCustomRenderingPipeline;
+
+    // If it is a custom viewport, we can't rely on parallel scale physical
+    // values to determine if the threshold is exceeded.
+    if (customViewport) {
+      viewport.setCamera({
+        parallelScale: newParallelScale,
+      });
+
+      return;
+    }
+
     const { parallelScale: cappedParallelScale, thresholdExceeded } =
       this._getCappedParallelScale(viewport, newParallelScale);
 
@@ -189,7 +202,10 @@ export default class ZoomTool extends BaseTool {
     viewport.setCamera({ position, focalPoint });
   };
 
-  _getCappedParallelScale = (viewport, parallelScale) => {
+  _getCappedParallelScale = (
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    parallelScale: number
+  ): { parallelScale: number; thresholdExceeded: boolean } => {
     const imageData = viewport.getImageData();
 
     if (!imageData) {
