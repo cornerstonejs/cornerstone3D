@@ -1295,27 +1295,25 @@ export default class CrosshairsTool extends AnnotationTool {
     data.handles.rotationPoints = newRtpoints;
     data.handles.slabThicknessPoints = newStpoints;
 
-    if (!this.configuration.viewportIndicators) {
-      return renderStatus;
+    if (this.configuration.viewportIndicators) {
+      // render a circle to pin point the viewport color
+      // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
+      const referenceColorCoordinates = [
+        sWidth * 0.95,
+        sHeight * 0.05,
+      ] as Types.Point2;
+      const circleRadius = canvasDiagonalLength * 0.01;
+
+      const circleUID = '0';
+      drawCircleSvg(
+        svgDrawingHelper,
+        annotationUID,
+        circleUID,
+        referenceColorCoordinates,
+        circleRadius,
+        { color, fill: color }
+      );
     }
-
-    // render a circle to pin point the viewport color
-    // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
-    const referenceColorCoordinates = [
-      sWidth * 0.95,
-      sHeight * 0.05,
-    ] as Types.Point2;
-    const circleRadius = canvasDiagonalLength * 0.01;
-
-    const circleUID = '0';
-    drawCircleSvg(
-      svgDrawingHelper,
-      annotationUID,
-      circleUID,
-      referenceColorCoordinates,
-      circleRadius,
-      { color, fill: color }
-    );
 
     return renderStatus;
   };

@@ -530,9 +530,9 @@ class StackViewport extends Viewport implements IStackViewport {
       invert,
       interpolationType,
       rotation,
-      suppressEvents,
-    }: StackViewportProperties = { suppressEvents: false }
-  ) {
+    }: StackViewportProperties = {},
+    suppressEvents = false
+  ): void {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi
     if (typeof voiRange !== 'undefined' || !this.voiApplied) {
@@ -623,13 +623,16 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _setPropertiesFromCache(): void {
-    this.setProperties({
-      voiRange: this.voiRange,
-      rotation: this.rotation,
-      interpolationType: this.interpolationType,
-      invert: this.invert,
-      suppressEvents: true,
-    });
+    const suppressEvents = true;
+    this.setProperties(
+      {
+        voiRange: this.voiRange,
+        rotation: this.rotation,
+        interpolationType: this.interpolationType,
+        invert: this.invert,
+      },
+      suppressEvents
+    );
   }
 
   private getCameraCPU(): Partial<ICamera> {

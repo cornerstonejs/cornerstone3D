@@ -7,8 +7,6 @@ import { Events, ToolModes } from '../enums';
 import { draw as drawSvg } from '../drawingSvg';
 import getToolsWithModesForElement from './getToolsWithModesForElement';
 import { AnnotationRenderedEventDetail } from '../types/EventTypes';
-import { getAnnotations } from '../stateManagement';
-
 const { Active, Passive, Enabled } = ToolModes;
 
 /**
@@ -159,10 +157,10 @@ class AnnotationRenderingEngine {
       viewportId,
     };
 
-    const enabledToolsWithAnnotations = enabledTools.filter((tool) => {
-      const annotations = getAnnotations(element, tool.getToolName());
-      return annotations && annotations.length;
-    });
+    // const enabledToolsWithAnnotations = enabledTools.filter((tool) => {
+    //   const annotations = getAnnotations(element, tool.getToolName());
+    //   return annotations && annotations.length;
+    // });
 
     drawSvg(element, (svgDrawingHelper) => {
       let anyRendered = false;
@@ -176,7 +174,13 @@ class AnnotationRenderingEngine {
         }
       };
 
-      enabledToolsWithAnnotations.forEach(handleDrawSvg);
+      /**
+       * We should be able to filter tools that don't have annotations, but
+       * currently some of tools have renderAnnotation method BUT
+       * don't keep annotation in the state, so if we do so, the tool will not be
+       * rendered.
+       */
+      enabledTools.forEach(handleDrawSvg);
 
       if (anyRendered) {
         triggerEvent(element, Events.ANNOTATION_RENDERED, { ...eventDetail });
