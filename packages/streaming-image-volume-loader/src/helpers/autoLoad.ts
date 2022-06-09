@@ -1,9 +1,10 @@
 import { getRenderingEngines, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 //import type { Types } from '@cornerstonejs/core'
 
 type RenderingEngineAndViewportIds = {
-  renderingEngine: any | undefined; //Types.IRenderingEngine | undefined
+  renderingEngine: Types.IRenderingEngine | undefined; //Types.IRenderingEngine | undefined
   viewportIds: Array<string>;
 };
 

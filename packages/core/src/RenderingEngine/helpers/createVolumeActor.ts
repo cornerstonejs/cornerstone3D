@@ -11,7 +11,7 @@ import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 
 interface createVolumeActorInterface {
   volumeId: string;
-  callback?: ({ volumeActor: any, volumeId: string }) => void;
+  callback?: ({ volumeActor: VolumeActor, volumeId: string }) => void;
   blendMode?: BlendModes;
 }
 
