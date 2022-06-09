@@ -148,10 +148,10 @@ export default class ZoomTool extends BaseTool {
     // has a physical meaning and we can use that to determine the threshold
     const imageData = viewport.getImageData();
 
-    const { dimensions, spacing } = imageData;
+    const { spacing } = imageData;
     const { minZoomScale, maxZoomScale } = this.configuration;
 
-    const t = dimensions[0] * spacing[0];
+    const t = element.clientHeight * spacing[1] * 0.5;
     const scale = t / parallelScaleToSet;
 
     let cappedParallelScale = parallelScaleToSet;

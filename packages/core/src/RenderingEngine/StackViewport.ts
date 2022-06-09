@@ -667,13 +667,18 @@ class StackViewport extends Viewport implements IStackViewport {
     // Focal point is the center of the canvas in world coordinate by design
     const canvasCenterWorld = this.canvasToWorld(canvasCenter);
 
+    // parallel scale is half of the viewport height in the world units (mm)
+
+    const topLeftCanvas = this.canvasToWorld([0, 0]);
+    const bottomLeftCanvas = this.canvasToWorld([0, this.element.clientHeight]);
+
+    const parallelScale = vec3.distance(topLeftCanvas, bottomLeftCanvas) / 2;
+
     return {
       parallelProjection: true,
       focalPoint: canvasCenterWorld,
       position: [0, 0, 0],
-      parallelScale: image
-        ? (image.width * image.columnPixelSpacing) / viewport.scale
-        : 1,
+      parallelScale,
       scale: viewport.scale,
       viewPlaneNormal: [
         viewPlaneNormal[0],
@@ -696,6 +701,8 @@ class StackViewport extends Viewport implements IStackViewport {
       flipHorizontal,
       flipVertical,
     } = cameraInterface;
+
+    const { clientHeight } = this.element;
 
     if (focalPoint) {
       const focalPointCanvas = this.worldToCanvasCPU(focalPoint);
@@ -724,18 +731,22 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     if (parallelScale) {
-      // We need to convert he parallelScale which has a physical meaning for
-      // camera scale factor to scale (since CPU works with scale)
-      const { columnPixelSpacing } = image;
-      const scale = (image.width * columnPixelSpacing) / parallelScale;
+      // We need to convert he parallelScale which has a physical meaning to
+      // camera scale factor (since CPU works with scale). Since parallelScale represents
+      // half of the height of the viewport in the world unit (mm), we can use that
+      // to compute the scale factor which is the ratio of the viewport height in pixels
+      // to the current rendered image height.
+      const { rowPixelSpacing } = image;
+      const scale = (clientHeight * rowPixelSpacing * 0.5) / parallelScale;
 
       viewport.scale = scale;
       viewport.parallelScale = parallelScale;
     }
 
     if (scale) {
+      const { rowPixelSpacing } = image;
       viewport.scale = scale;
-      viewport.parallelScale = (image.width * image.columnPixelSpacing) / scale;
+      viewport.parallelScale = (clientHeight * rowPixelSpacing * 0.5) / scale;
     }
 
     if (flipHorizontal || flipVertical) {
