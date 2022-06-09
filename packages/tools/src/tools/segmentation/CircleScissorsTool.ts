@@ -2,7 +2,12 @@ import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
 
 import { fillInsideCircle } from './strategies/fillCircle';
 import { Events } from '../../enums';
@@ -298,7 +303,7 @@ export default class CircleScissorsTool extends BaseTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
     if (!this.editData) {

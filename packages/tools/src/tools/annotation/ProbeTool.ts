@@ -40,6 +40,7 @@ import {
   ToolHandle,
   PublicToolProps,
   ToolProps,
+  SVGDrawingHelper,
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -395,7 +396,7 @@ export default class ProbeTool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;

@@ -42,6 +42,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
@@ -704,7 +705,7 @@ export default class EllipticalROITool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;

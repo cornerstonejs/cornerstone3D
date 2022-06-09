@@ -37,6 +37,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
@@ -951,7 +952,7 @@ export default class BidirectionalTool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = true;
     const { viewport } = enabledElement;

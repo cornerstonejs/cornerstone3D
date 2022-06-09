@@ -10,7 +10,7 @@ function draw(
   fn(svgDrawingHelper);
   // Restore...
 
-  svgDrawingHelper._clearUntouched();
+  svgDrawingHelper.clearUntouched();
 }
 
 export default draw;

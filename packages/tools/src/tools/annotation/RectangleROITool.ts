@@ -41,6 +41,7 @@ import {
   ToolProps,
   PublicToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import {
@@ -603,7 +604,7 @@ export default class RectangleROITool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;

@@ -1,8 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
+import { SVGDrawingHelper } from '../types';
 import drawLine from './drawLine';
 
 export default function drawArrow(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   arrowUID: string,
   start: Types.Point2,

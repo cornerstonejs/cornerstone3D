@@ -3,9 +3,10 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import { SVGDrawingHelper } from '../types';
 
 export default function drawLine(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   lineUID: string,
   start: Types.Point2,
@@ -32,7 +33,7 @@ export default function drawLine(
 
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
-  const existingLine = svgDrawingHelper._getSvgNode(svgNodeHash);
+  const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
 
   const attributes = {
     x1: `${start[0]}`,
@@ -48,12 +49,12 @@ export default function drawLine(
     // This is run to avoid re-rendering annotations that actually haven't changed
     _setAttributesIfNecessary(attributes, existingLine);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash);
+    svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const newLine = document.createElementNS(svgns, 'line');
 
     _setNewAttributesIfValid(attributes, newLine);
 
-    svgDrawingHelper._appendNode(newLine, svgNodeHash);
+    svgDrawingHelper.appendNode(newLine, svgNodeHash);
   }
 }

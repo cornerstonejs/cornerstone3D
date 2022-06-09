@@ -263,6 +263,8 @@ interface CPUFallbackTransform {
 // @public (undocumented)
 type CPUFallbackViewport = {
     scale?: number;
+    parallelScale?: number;
+    focalPoint?: number[];
     translation?: {
         x: number;
         y: number;
@@ -503,6 +505,7 @@ interface ICamera {
     parallelProjection?: boolean;
     parallelScale?: number;
     position?: Point3;
+    scale?: number;
     viewAngle?: number;
     viewPlaneNormal?: Point3;
     viewUp?: Point3;

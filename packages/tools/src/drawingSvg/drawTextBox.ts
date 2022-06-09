@@ -1,4 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
+import { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
 import _setAttributesIfNecessary from './_setAttributesIfNecessary';
@@ -12,7 +13,7 @@ import _setAttributesIfNecessary from './_setAttributesIfNecessary';
  * @returns Bounding box; can be used for isPointNearTool
  */
 function drawTextBox(
-  svgDrawingHelper: Record<string, unknown>,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   textUID: string,
   textLines: Array<string>,
@@ -46,7 +47,7 @@ function drawTextBox(
 }
 
 function _drawTextGroup(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   textUID: string,
   textLines: Array<string>,
@@ -59,7 +60,7 @@ function _drawTextGroup(
   const [x, y] = [position[0] + padding, position[1] + padding];
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'text', textUID);
-  const existingTextGroup = svgDrawingHelper._getSvgNode(svgNodeHash);
+  const existingTextGroup = svgDrawingHelper.getSvgNode(svgNodeHash);
 
   // Todo: right now textBox gets a re-render even if the textBox has not changed
   // and evenIf the attributes are not set again since they are the same.
@@ -85,7 +86,7 @@ function _drawTextGroup(
       }
 
       existingTextGroup.appendChild(textElement);
-      svgDrawingHelper._appendNode(existingTextGroup, svgNodeHash);
+      svgDrawingHelper.appendNode(existingTextGroup, svgNodeHash);
     }
 
     const textAttributes = {
@@ -104,7 +105,7 @@ function _drawTextGroup(
 
     textGroupBoundingBox = _drawTextBackground(existingTextGroup, background);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash);
+    svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const textGroup = document.createElementNS(svgns, 'g');
 
@@ -120,7 +121,7 @@ function _drawTextGroup(
     }
 
     textGroup.appendChild(textElement);
-    svgDrawingHelper._appendNode(textGroup, svgNodeHash);
+    svgDrawingHelper.appendNode(textGroup, svgNodeHash);
     textGroupBoundingBox = _drawTextBackground(textGroup, background);
   }
 

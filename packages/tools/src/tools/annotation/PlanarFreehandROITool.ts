@@ -36,6 +36,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
@@ -110,22 +111,22 @@ class PlanarFreehandROITool extends AnnotationTool {
 
   private renderContour: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderContourBeingDrawn: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderClosedContourBeingEdited: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderOpenContourBeingEdited: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
 
@@ -503,7 +504,7 @@ class PlanarFreehandROITool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     const renderStatus = false;
     const { viewport } = enabledElement;

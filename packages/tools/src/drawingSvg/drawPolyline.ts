@@ -2,6 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import { SVGDrawingHelper } from '../types';
 
 /**
  * Draws an SVG polyline with the given points.
@@ -10,7 +11,7 @@ import _setAttributesIfNecessary from './_setAttributesIfNecessary';
  * last point connected to the first.
  */
 export default function drawPolyline(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   polylineUID: string,
   points: Types.Point2[],
@@ -42,7 +43,7 @@ export default function drawPolyline(
 
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'polyline', polylineUID);
-  const existingPolyLine = svgDrawingHelper._getSvgNode(svgNodeHash);
+  const existingPolyLine = svgDrawingHelper.getSvgNode(svgNodeHash);
 
   let pointsAttribute = '';
 
@@ -68,12 +69,12 @@ export default function drawPolyline(
     // This is run to avoid re-rendering annotations that actually haven't changed
     _setAttributesIfNecessary(attributes, existingPolyLine);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash);
+    svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const newPolyLine = document.createElementNS(svgns, 'polyline');
 
     _setNewAttributesIfValid(attributes, newPolyLine);
 
-    svgDrawingHelper._appendNode(newPolyLine, svgNodeHash);
+    svgDrawingHelper.appendNode(newPolyLine, svgNodeHash);
   }
 }

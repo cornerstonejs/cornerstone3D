@@ -8,7 +8,12 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
-import { EventTypes, PublicToolProps, ToolProps } from '../../types';
+import {
+  EventTypes,
+  PublicToolProps,
+  SVGDrawingHelper,
+  ToolProps,
+} from '../../types';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import ProbeTool from './ProbeTool';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -105,7 +110,7 @@ export default class DragProbeTool extends ProbeTool {
 
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;

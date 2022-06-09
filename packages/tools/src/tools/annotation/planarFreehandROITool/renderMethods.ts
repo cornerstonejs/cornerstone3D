@@ -7,6 +7,7 @@ import { polyline } from '../../../utilities/math';
 import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../../types/AnnotationStyle';
+import { SVGDrawingHelper } from '../../../types';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 
@@ -48,7 +49,7 @@ function _getRenderingOptions(
  */
 function renderContour(
   enabledElement: Types.IEnabledElement,
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   // Check if the contour is an open contour
@@ -94,7 +95,7 @@ function calculateUShapeContourVectorToPeakIfNotPresent(
  */
 function renderClosedContour(
   enabledElement: Types.IEnabledElement,
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { viewport } = enabledElement;
@@ -125,7 +126,7 @@ function renderClosedContour(
  */
 function renderOpenContour(
   enabledElement: Types.IEnabledElement,
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { viewport } = enabledElement;
@@ -203,7 +204,7 @@ function renderOpenContour(
 
 function renderOpenUShapedContour(
   enabledElement: Types.IEnabledElement,
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { viewport } = enabledElement;
@@ -259,7 +260,7 @@ function renderOpenUShapedContour(
  */
 function renderContourBeingDrawn(
   enabledElement: Types.IEnabledElement,
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const options = this._getRenderingOptions(enabledElement, annotation);
@@ -349,7 +350,7 @@ function renderClosedContourBeingEdited(
  */
 function renderOpenContourBeingEdited(
   enabledElement: Types.IEnabledElement,
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
   const { fusedCanvasPoints } = this.editData;

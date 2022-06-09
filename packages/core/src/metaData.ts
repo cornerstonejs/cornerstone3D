@@ -70,7 +70,7 @@ export function removeAllProviders(): void {
  * @returns The metadata retrieved from the metadata store
  * @category MetaData
  */
-function getMetaData(type: string, imageId: string): unknown {
+function getMetaData(type: string, imageId: string): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
     const result = providers[i].provider(type, imageId);

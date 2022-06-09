@@ -3,9 +3,10 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 import _setAttributesIfNecessary from './_setAttributesIfNecessary';
+import { SVGDrawingHelper } from '../types';
 
 function drawHandles(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   handleGroupUID: string,
   handlePoints: Array<Types.Point2>,
@@ -67,18 +68,18 @@ function drawHandles(
       throw new Error(`Unsupported handle type: ${type}`);
     }
 
-    const existingHandleElement = svgDrawingHelper._getSvgNode(svgNodeHash);
+    const existingHandleElement = svgDrawingHelper.getSvgNode(svgNodeHash);
 
     if (existingHandleElement) {
       _setAttributesIfNecessary(attributes, existingHandleElement);
 
-      svgDrawingHelper._setNodeTouched(svgNodeHash);
+      svgDrawingHelper.setNodeTouched(svgNodeHash);
     } else {
       const newHandleElement = document.createElementNS(svgns, type);
 
       _setNewAttributesIfValid(attributes, newHandleElement);
 
-      svgDrawingHelper._appendNode(newHandleElement, svgNodeHash);
+      svgDrawingHelper.appendNode(newHandleElement, svgNodeHash);
     }
   }
 }
