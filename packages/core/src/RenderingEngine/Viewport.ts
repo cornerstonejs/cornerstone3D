@@ -624,7 +624,7 @@ class Viewport implements IViewport {
 
     let focalPointToSet = focalPoint;
 
-    if (!resetPan && imageData) {
+    if (!resetPan) {
       focalPointToSet = previousCamera.focalPoint;
     }
 
