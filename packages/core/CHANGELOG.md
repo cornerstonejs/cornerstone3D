@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.12.0...@cornerstonejs/core@0.12.1) (2022-06-10)
+
+
+### Bug Fixes
+
+* resetPan option in resetCamera was ignored for PolyData ([#125](https://github.com/cornerstonejs/cornerstone3D-beta/issues/125)) ([5f4f36d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/5f4f36df1e70f25b379fccef7c08b86f8c80f3dc))
+
+
+
+
+
 # [0.12.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.11.1...@cornerstonejs/core@0.12.0) (2022-06-06)
 
 
