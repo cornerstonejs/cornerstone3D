@@ -14,15 +14,13 @@ class Probe {
         imageToWorldCoords,
         metadata
     ) {
-        const {
-            defaultState,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(
-            MeasurementGroup,
-            sopInstanceUIDToImageIdMap,
-            metadata,
-            Probe.toolType
-        );
+        const { defaultState, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(
+                MeasurementGroup,
+                sopInstanceUIDToImageIdMap,
+                metadata,
+                Probe.toolType
+            );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;

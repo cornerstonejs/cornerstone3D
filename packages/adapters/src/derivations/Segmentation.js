@@ -62,10 +62,10 @@ export default class Segmentation extends DerivedPixels {
 
             for (let i = 0; i < this.referencedDatasets.length; i++) {
                 ReferencedInstanceSequence.push({
-                    ReferencedSOPClassUID: this.referencedDatasets[i]
-                        .SOPClassUID,
-                    ReferencedSOPInstanceUID: this.referencedDatasets[i]
-                        .SOPInstanceUID
+                    ReferencedSOPClassUID:
+                        this.referencedDatasets[i].SOPClassUID,
+                    ReferencedSOPInstanceUID:
+                        this.referencedDatasets[i].SOPInstanceUID
                 });
             }
 
@@ -251,22 +251,23 @@ export default class Segmentation extends DerivedPixels {
         ReferencedSegmentNumber,
         referencedFrameNumbers
     ) {
-        const PerFrameFunctionalGroupsSequence = this.dataset
-            .PerFrameFunctionalGroupsSequence;
+        const PerFrameFunctionalGroupsSequence =
+            this.dataset.PerFrameFunctionalGroupsSequence;
 
-        const ReferencedSeriesSequence = this.referencedDataset
-            .ReferencedSeriesSequence;
+        const ReferencedSeriesSequence =
+            this.referencedDataset.ReferencedSeriesSequence;
 
         for (let i = 0; i < referencedFrameNumbers.length; i++) {
             const frameNumber = referencedFrameNumbers[i];
 
             const perFrameFunctionalGroups = {};
 
-            perFrameFunctionalGroups.PlanePositionSequence = DerivedDataset.copyDataset(
-                this.referencedDataset.PerFrameFunctionalGroupsSequence[
-                    frameNumber - 1
-                ].PlanePositionSequence
-            );
+            perFrameFunctionalGroups.PlanePositionSequence =
+                DerivedDataset.copyDataset(
+                    this.referencedDataset.PerFrameFunctionalGroupsSequence[
+                        frameNumber - 1
+                    ].PlanePositionSequence
+                );
 
             // If the PlaneOrientationSequence is not in the SharedFunctionalGroupsSequence,
             // extract it from the PerFrameFunctionalGroupsSequence.
@@ -274,11 +275,12 @@ export default class Segmentation extends DerivedPixels {
                 !this.dataset.SharedFunctionalGroupsSequence
                     .PlaneOrientationSequence
             ) {
-                perFrameFunctionalGroups.PlaneOrientationSequence = DerivedDataset.copyDataset(
-                    this.referencedDataset.PerFrameFunctionalGroupsSequence[
-                        frameNumber - 1
-                    ].PlaneOrientationSequence
-                );
+                perFrameFunctionalGroups.PlaneOrientationSequence =
+                    DerivedDataset.copyDataset(
+                        this.referencedDataset.PerFrameFunctionalGroupsSequence[
+                            frameNumber - 1
+                        ].PlaneOrientationSequence
+                    );
             }
 
             perFrameFunctionalGroups.FrameContentSequence = {
@@ -309,8 +311,8 @@ export default class Segmentation extends DerivedPixels {
                 }
             } else {
                 ReferencedSOPClassUID = this.referencedDataset.SOPClassUID;
-                ReferencedSOPInstanceUID = this.referencedDataset
-                    .SOPInstanceUID;
+                ReferencedSOPInstanceUID =
+                    this.referencedDataset.SOPInstanceUID;
                 ReferencedFrameNumber = frameNumber;
             }
 
@@ -371,7 +373,8 @@ export default class Segmentation extends DerivedPixels {
 
         // Capitalise the SegmentAlgorithmType if it happens to be given in
         // Lower/mixed case.
-        Segment.SegmentAlgorithmType = Segment.SegmentAlgorithmType.toUpperCase();
+        Segment.SegmentAlgorithmType =
+            Segment.SegmentAlgorithmType.toUpperCase();
 
         // Check SegmentAlgorithmType and SegmentAlgorithmName if necessary.
         switch (Segment.SegmentAlgorithmType) {

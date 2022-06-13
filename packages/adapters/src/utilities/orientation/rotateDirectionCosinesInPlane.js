@@ -9,7 +9,7 @@ import rotateVectorAroundUnitVector from "./rotateVectorAroundUnitVector.js";
  * @param  {Number} theta The rotation magnitude in radians.
  * @return {Number[6]}       The rotate row (0..2) and column (3..5) direction cosines.
  */
-export default function(iop, theta) {
+export default function (iop, theta) {
     const r = [iop[0], iop[1], iop[2]];
     const c = [iop[3], iop[4], iop[5]];
     const rxc = crossProduct3D(r, c);

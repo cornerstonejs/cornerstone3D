@@ -2,21 +2,27 @@ import dcmjs from "../src/index.js";
 import fs from "fs";
 
 it("test_untilTag", () => {
-    const buffer = fs.readFileSync('test/sample-dicom.dcm');
+    const buffer = fs.readFileSync("test/sample-dicom.dcm");
 
     const { DicomMessage, DicomMetaDictionary } = dcmjs.data;
 
-    console.time('readFile');
-    const fullData = DicomMessage.readFile(buffer.buffer)
-    console.timeEnd('readFile');
+    console.time("readFile");
+    const fullData = DicomMessage.readFile(buffer.buffer);
+    console.timeEnd("readFile");
 
-    console.time('readFile without untilTag');
-    const dicomData = DicomMessage.readFile(buffer.buffer, { untilTag: '7FE00010', includeUntilTagValue: false });
-    console.timeEnd('readFile without untilTag');
+    console.time("readFile without untilTag");
+    const dicomData = DicomMessage.readFile(buffer.buffer, {
+        untilTag: "7FE00010",
+        includeUntilTagValue: false
+    });
+    console.timeEnd("readFile without untilTag");
 
-    console.time('readFile with untilTag');
-    const dicomData2 = DicomMessage.readFile(buffer.buffer, { untilTag: '7FE00010', includeUntilTagValue: true });
-    console.timeEnd('readFile with untilTag');
+    console.time("readFile with untilTag");
+    const dicomData2 = DicomMessage.readFile(buffer.buffer, {
+        untilTag: "7FE00010",
+        includeUntilTagValue: true
+    });
+    console.timeEnd("readFile with untilTag");
 
     const full_dataset = DicomMetaDictionary.naturalizeDataset(fullData.dict);
     full_dataset._meta = DicomMetaDictionary.namifyDataset(fullData.meta);

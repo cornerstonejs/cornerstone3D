@@ -1,10 +1,10 @@
 const handler = {
-    get: function(target, prop) {
+    get: function (target, prop) {
         if (prop in target) return target[prop];
         return target[0][prop];
     },
 
-    set: function(obj, prop, value) {
+    set: function (obj, prop, value) {
         if (typeof prop === "number") {
             obj[prop] = value;
         } else if (prop in obj) {

@@ -12,7 +12,8 @@
     "build": "rollup -c",
     "build:examples": "npm run build && npx cpx 'build/**/*.{js,map}' examples/js",
     "start": "rollup -c -w",
-    "lint": "eslint -c .eslintrc.json --fix src && prettier --tab-width 4 --write src/**/*.js"
+    "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+    "lint": "eslint --fix ."
   },
   "repository": {
     "type": "git",
@@ -30,13 +31,12 @@
     "@babel/register": "^7.13.0",
     "acorn": "^7.1.0",
     "acorn-jsx": "^5.2.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^5.16.0",
+    "eslint": "^8.17.0",
     "follow-redirects": "^1.10.0",
     "husky": "^1.3.1",
     "jest": "^27.5.1",
     "lint-staged": "^8.2.1",
-    "prettier": "^1.19.1",
+    "prettier": "^2.6.2",
     "rollup": "^1.31.1",
     "rollup-plugin-babel": "^4.3.3",
     "rollup-plugin-commonjs": "^9.3.4",
@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@babel/runtime-corejs2": "^7.17.8",
+    "eslint-config-prettier": "^8.5.0",
     "gl-matrix": "^3.1.0",
     "lodash.clonedeep": "^4.5.0",
     "loglevelnext": "^3.0.1",
@@ -61,7 +62,7 @@
   },
   "lint-staged": {
     "src/**/*.{js,jsx,json,css}": [
-      "prettier --tab-width 4 --write",
+      "prettier --write",
       "git add"
     ]
   }

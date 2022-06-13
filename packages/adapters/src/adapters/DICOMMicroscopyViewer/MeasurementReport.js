@@ -62,9 +62,8 @@ export default class MeasurementReport {
                 measurementGroups.push(group);
             }
 
-            allMeasurementGroups = allMeasurementGroups.concat(
-                measurementGroups
-            );
+            allMeasurementGroups =
+                allMeasurementGroups.concat(measurementGroups);
         });
 
         const MeasurementReport = new TID1500MeasurementReport(

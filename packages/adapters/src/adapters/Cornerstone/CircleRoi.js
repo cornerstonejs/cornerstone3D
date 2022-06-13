@@ -12,11 +12,8 @@ class CircleRoi {
 
     /** Gets the measurement data for cornerstone, given DICOM SR measurement data. */
     static getMeasurementData(MeasurementGroup) {
-        const {
-            defaultState,
-            NUMGroup,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const { defaultState, NUMGroup, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const { GraphicData } = SCOORDGroup;
 

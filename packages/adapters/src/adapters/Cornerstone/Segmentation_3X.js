@@ -63,10 +63,8 @@ function generateSegmentation(
     const isMultiframe = image0.imageId.includes("?frame");
     const seg = _createSegFromImages(images, isMultiframe, options);
 
-    const {
-        referencedFramesPerSegment,
-        segmentIndicies
-    } = _getNumberOfFramesPerSegment(toolState, images, segments);
+    const { referencedFramesPerSegment, segmentIndicies } =
+        _getNumberOfFramesPerSegment(toolState, images, segments);
 
     let NumberOfFrames = 0;
 
@@ -265,10 +263,11 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     const SharedFunctionalGroupsSequence =
         multiframe.SharedFunctionalGroupsSequence;
 
-    const sharedImageOrientationPatient = SharedFunctionalGroupsSequence.PlaneOrientationSequence
-        ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
-              .ImageOrientationPatient
-        : undefined;
+    const sharedImageOrientationPatient =
+        SharedFunctionalGroupsSequence.PlaneOrientationSequence
+            ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
+                  .ImageOrientationPatient
+            : undefined;
 
     const sliceLength = multiframe.Columns * multiframe.Rows;
     const segMetadata = getSegmentMetadata(multiframe);
@@ -441,10 +440,8 @@ function getImageIdOfSourceImage(
     imageIds,
     metadataProvider
 ) {
-    const {
-        ReferencedSOPInstanceUID,
-        ReferencedFrameNumber
-    } = SourceImageSequence;
+    const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
+        SourceImageSequence;
 
     return ReferencedFrameNumber
         ? getImageIdOfReferencedFrame(

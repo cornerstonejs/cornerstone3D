@@ -73,11 +73,8 @@ export default class TID300Measurement {
         let findingSites = this.props.findingSites || [];
 
         return findingSites.map(findingSite => {
-            const {
-                CodeValue,
-                CodingSchemeDesignator,
-                CodeMeaning
-            } = findingSite;
+            const { CodeValue, CodingSchemeDesignator, CodeMeaning } =
+                findingSite;
             return {
                 RelationshipType: "CONTAINS",
                 ValueType: "CODE",

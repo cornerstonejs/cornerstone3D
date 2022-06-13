@@ -9,11 +9,8 @@ class ArrowAnnotate {
     constructor() {}
 
     static getMeasurementData(MeasurementGroup) {
-        const {
-            defaultState,
-            SCOORDGroup,
-            findingGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const { defaultState, SCOORDGroup, findingGroup } =
+            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const text = findingGroup.ConceptCodeSequence.CodeMeaning;
 

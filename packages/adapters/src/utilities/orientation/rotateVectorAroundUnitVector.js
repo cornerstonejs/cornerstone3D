@@ -9,7 +9,7 @@ import crossProduct3D from "./crossProduct3D.js";
  * @param  {Number} theta    The rotation magnitude in radians.
  * @return {Number[3]}       The rotated v vector.
  */
-export default function(v, k, theta) {
+export default function (v, k, theta) {
     const cosTheta = Math.cos(theta);
     const sinTheta = Math.sin(theta);
     const oneMinusCosTheta = 1.0 - cosTheta;

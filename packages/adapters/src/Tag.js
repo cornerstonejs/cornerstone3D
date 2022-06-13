@@ -14,37 +14,17 @@ class Tag {
     toString() {
         return (
             "(" +
-            paddingLeft(
-                "0000",
-                this.group()
-                    .toString(16)
-                    .toUpperCase()
-            ) +
+            paddingLeft("0000", this.group().toString(16).toUpperCase()) +
             "," +
-            paddingLeft(
-                "0000",
-                this.element()
-                    .toString(16)
-                    .toUpperCase()
-            ) +
+            paddingLeft("0000", this.element().toString(16).toUpperCase()) +
             ")"
         );
     }
 
     toCleanString() {
         return (
-            paddingLeft(
-                "0000",
-                this.group()
-                    .toString(16)
-                    .toUpperCase()
-            ) +
-            paddingLeft(
-                "0000",
-                this.element()
-                    .toString(16)
-                    .toUpperCase()
-            )
+            paddingLeft("0000", this.group().toString(16).toUpperCase()) +
+            paddingLeft("0000", this.element().toString(16).toUpperCase())
         );
     }
 

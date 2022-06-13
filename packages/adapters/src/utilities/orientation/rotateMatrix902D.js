@@ -6,7 +6,7 @@ import ndarray from "ndarray";
  * @param  {Ndarray} matrix The matrix to rotate.
  * @return {Ndarry}        The rotated matrix.
  */
-export default function(matrix) {
+export default function (matrix) {
     const [rows, cols] = matrix.shape;
 
     //debugPrintMatrix(matrix);

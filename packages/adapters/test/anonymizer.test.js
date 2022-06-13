@@ -1,4 +1,4 @@
-import dcmjs from '../src/index.js';
+import dcmjs from "../src/index.js";
 import fs from "fs";
 
 const { DicomMessage } = dcmjs.data;
@@ -27,4 +27,4 @@ it("test_anonymization", () => {
 
     // then
     expect(patientIDTag.Value).toEqual(["ANON^PATIENT"]);
-})
+});

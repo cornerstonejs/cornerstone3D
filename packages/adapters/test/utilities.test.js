@@ -1,4 +1,4 @@
-import dcmjs from '../src/index.js';
+import dcmjs from "../src/index.js";
 
 const { utilities } = dcmjs;
 const { addAccessors } = utilities;

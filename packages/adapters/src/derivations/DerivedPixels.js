@@ -47,14 +47,16 @@ export default class DerivedPixels extends DerivedDataset {
         // TODO: add derivation references
         //
         if (this.referencedDataset.SharedFunctionalGroupsSequence) {
-            this.dataset.SharedFunctionalGroupsSequence = DerivedDataset.copyDataset(
-                this.referencedDataset.SharedFunctionalGroupsSequence
-            );
+            this.dataset.SharedFunctionalGroupsSequence =
+                DerivedDataset.copyDataset(
+                    this.referencedDataset.SharedFunctionalGroupsSequence
+                );
         }
         if (this.referencedDataset.PerFrameFunctionalGroupsSequence) {
-            this.dataset.PerFrameFunctionalGroupsSequence = DerivedDataset.copyDataset(
-                this.referencedDataset.PerFrameFunctionalGroupsSequence
-            );
+            this.dataset.PerFrameFunctionalGroupsSequence =
+                DerivedDataset.copyDataset(
+                    this.referencedDataset.PerFrameFunctionalGroupsSequence
+                );
         }
 
         // make an array of zeros for the pixels

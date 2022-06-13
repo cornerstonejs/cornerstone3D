@@ -236,7 +236,7 @@ var tagNamesToEmpty = [
 ];
 
 export function cleanTags(dict) {
-    tagNamesToEmpty.forEach(function(tag) {
+    tagNamesToEmpty.forEach(function (tag) {
         var tagInfo = DicomMetaDictionary.nameMap[tag];
         if (tagInfo && tagInfo.version != "PrivateTag") {
             var tagNumber = tagInfo.tag,

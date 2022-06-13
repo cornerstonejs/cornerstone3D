@@ -32909,8 +32909,7 @@ const dictionary = {
     "(0040,4023)": {
         tag: "(0040,4023)",
         vr: "UI",
-        name:
-            "RETIRED_ReferencedGeneralPurposeScheduledProcedureStepTransactionUID",
+        name: "RETIRED_ReferencedGeneralPurposeScheduledProcedureStepTransactionUID",
         vm: "1",
         version: "DICOM/retired"
     },

@@ -133,7 +133,7 @@ class DicomMessage {
         var written = 0;
 
         var sortedTags = Object.keys(jsonObjects).sort();
-        sortedTags.forEach(function(tagString) {
+        sortedTags.forEach(function (tagString) {
             var tag = Tag.fromString(tagString),
                 tagObject = jsonObjects[tagString],
                 vrType = tagObject.vr,

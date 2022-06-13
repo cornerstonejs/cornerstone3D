@@ -6,10 +6,8 @@ class RectangleRoi {
     constructor() {}
 
     static getMeasurementData(MeasurementGroup) {
-        const {
-            defaultState,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const { defaultState, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const state = {
             ...defaultState,

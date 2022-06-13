@@ -19,15 +19,13 @@ class PlanarFreehandROI {
         imageToWorldCoords,
         metadata
     ) {
-        const {
-            defaultState,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(
-            MeasurementGroup,
-            sopInstanceUIDToImageIdMap,
-            metadata,
-            PlanarFreehandROI.toolType
-        );
+        const { defaultState, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(
+                MeasurementGroup,
+                sopInstanceUIDToImageIdMap,
+                metadata,
+                PlanarFreehandROI.toolType
+            );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;

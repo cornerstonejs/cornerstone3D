@@ -1,1 +1,1 @@
-it("No tests yet", () => {})
+it("No tests yet", () => {});

@@ -19,16 +19,13 @@ class EllipticalROI {
         imageToWorldCoords,
         metadata
     ) {
-        const {
-            defaultState,
-            NUMGroup,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(
-            MeasurementGroup,
-            sopInstanceUIDToImageIdMap,
-            metadata,
-            EllipticalROI.toolType
-        );
+        const { defaultState, NUMGroup, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(
+                MeasurementGroup,
+                sopInstanceUIDToImageIdMap,
+                metadata,
+                EllipticalROI.toolType
+            );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;

@@ -11,7 +11,7 @@ class Normalizer {
     static consistentSOPClassUIDs(datasets) {
         // return sopClassUID if all exist and match, otherwise undefined
         let sopClassUID;
-        datasets.forEach(function(dataset) {
+        datasets.forEach(function (dataset) {
             if (!dataset.SOPClassUID) {
                 return undefined;
             }
@@ -38,19 +38,16 @@ class Normalizer {
         sopClassUIDMap[toUID.ParametricMapStorage] = PMImageNormalizer;
         sopClassUIDMap[toUID.MRImage] = MRImageNormalizer;
         sopClassUIDMap[toUID.EnhancedCTImage] = EnhancedCTImageNormalizer;
-        sopClassUIDMap[
-            toUID.LegacyConvertedEnhancedCTImage
-        ] = EnhancedCTImageNormalizer;
+        sopClassUIDMap[toUID.LegacyConvertedEnhancedCTImage] =
+            EnhancedCTImageNormalizer;
         sopClassUIDMap[toUID.EnhancedMRImage] = EnhancedMRImageNormalizer;
-        sopClassUIDMap[
-            toUID.LegacyConvertedEnhancedMRImage
-        ] = EnhancedMRImageNormalizer;
+        sopClassUIDMap[toUID.LegacyConvertedEnhancedMRImage] =
+            EnhancedMRImageNormalizer;
         sopClassUIDMap[toUID.EnhancedUSVolume] = EnhancedUSVolumeNormalizer;
         sopClassUIDMap[toUID.PETImage] = PETImageNormalizer;
         sopClassUIDMap[toUID.EnhancedPETImage] = PETImageNormalizer;
-        sopClassUIDMap[
-            toUID.LegacyConvertedEnhancedPETImage
-        ] = PETImageNormalizer;
+        sopClassUIDMap[toUID.LegacyConvertedEnhancedPETImage] =
+            PETImageNormalizer;
         sopClassUIDMap[toUID.Segmentation] = SEGImageNormalizer;
         sopClassUIDMap[toUID.DeformableSpatialRegistration] = DSRNormalizer;
         return sopClassUIDMap[sopClassUID];
@@ -172,7 +169,7 @@ class ImageNormalizer extends Normalizer {
             columnVector
         );
         let distanceDatasetPairs = [];
-        this.datasets.forEach(function(dataset) {
+        this.datasets.forEach(function (dataset) {
             let position = dataset.ImagePositionPatient.slice();
             let positionVector = ImageNormalizer.vec3Subtract(
                 position,
@@ -181,7 +178,7 @@ class ImageNormalizer extends Normalizer {
             let distance = ImageNormalizer.vec3Dot(positionVector, scanAxis);
             distanceDatasetPairs.push([distance, dataset]);
         });
-        distanceDatasetPairs.sort(function(a, b) {
+        distanceDatasetPairs.sort(function (a, b) {
             return b[0] - a[0];
         });
 
@@ -201,7 +198,7 @@ class ImageNormalizer extends Normalizer {
         let frameSize = referenceDataset.PixelData.byteLength;
         ds.PixelData = new ArrayBuffer(ds.NumberOfFrames * frameSize);
         let frame = 0;
-        distanceDatasetPairs.forEach(function(pair) {
+        distanceDatasetPairs.forEach(function (pair) {
             let dataset = pair[1];
             let pixels = new Uint16Array(dataset.PixelData);
             let frameView = new Uint16Array(
@@ -261,7 +258,7 @@ class ImageNormalizer extends Normalizer {
 
         // copy over each datasets window/level into the per-frame groups
         // and set the referenced series uid
-        distanceDatasetPairs.forEach(function(pair) {
+        distanceDatasetPairs.forEach(function (pair) {
             const dataset = pair[1];
 
             ds.PerFrameFunctionalGroupsSequence.push({
@@ -391,7 +388,7 @@ class ImageNormalizer extends Normalizer {
             // provide a volume-level window/level guess (mean of per-frame)
             if (ds.PerFrameFunctionalGroupsSequence) {
                 let wcww = { center: 0, width: 0, count: 0 };
-                ds.PerFrameFunctionalGroupsSequence.forEach(function(
+                ds.PerFrameFunctionalGroupsSequence.forEach(function (
                     functionalGroup
                 ) {
                     if (functionalGroup.FrameVOILUT) {

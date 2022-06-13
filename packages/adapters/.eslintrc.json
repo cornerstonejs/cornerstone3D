@@ -1,18 +1,18 @@
 {
   "env": {
-  "browser": true,
+    "browser": true,
     "node": true,
     "es6": true,
     "jest": true
   },
+
   "extends": [
-    "eslint:recommended"
+    "eslint:recommended",
+    "prettier"
   ],
-  "rules": {
-    "indent": [
-      "error",
-      4
-    ]
-  },
-  "parser": "babel-eslint"
+
+  "parserOptions": {
+    "ecmaVersion": 11,
+    "sourceType": "module"
+  }
 }

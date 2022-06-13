@@ -17,15 +17,13 @@ class ArrowAnnotate {
         imageToWorldCoords,
         metadata
     ) {
-        const {
-            defaultState,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(
-            MeasurementGroup,
-            sopInstanceUIDToImageIdMap,
-            metadata,
-            ArrowAnnotate.toolType
-        );
+        const { defaultState, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(
+                MeasurementGroup,
+                sopInstanceUIDToImageIdMap,
+                metadata,
+                ArrowAnnotate.toolType
+            );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;

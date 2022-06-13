@@ -13,11 +13,8 @@ class Angle {
      * @returns
      */
     static getMeasurementData(MeasurementGroup) {
-        const {
-            defaultState,
-            NUMGroup,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const { defaultState, NUMGroup, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const state = {
             ...defaultState,

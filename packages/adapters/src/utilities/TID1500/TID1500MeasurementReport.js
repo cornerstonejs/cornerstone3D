@@ -6,7 +6,8 @@ export default class TID1500MeasurementReport {
         const CurrentRequestedProcedureEvidenceSequence = [];
 
         this.ImageLibraryContentSequence = ImageLibraryContentSequence;
-        this.CurrentRequestedProcedureEvidenceSequence = CurrentRequestedProcedureEvidenceSequence;
+        this.CurrentRequestedProcedureEvidenceSequence =
+            CurrentRequestedProcedureEvidenceSequence;
 
         this.PersonObserverName = {
             RelationshipType: "HAS OBS CONTEXT",
@@ -168,9 +169,8 @@ export default class TID1500MeasurementReport {
         // with the proper ReferencedSOPSequence
         TID1501MeasurementGroups.forEach(measurementGroup => {
             measurementGroup.TID300Measurements.forEach(measurement => {
-                const {
-                    ReferencedSOPInstanceUID
-                } = measurement.ReferencedSOPSequence;
+                const { ReferencedSOPInstanceUID } =
+                    measurement.ReferencedSOPSequence;
 
                 if (!parsedSOPInstances.includes(ReferencedSOPInstanceUID)) {
                     ImageLibraryContentSequence.push({

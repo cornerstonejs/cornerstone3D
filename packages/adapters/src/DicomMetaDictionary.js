@@ -7,9 +7,8 @@ class DicomMetaDictionary {
     // intakes a custom dictionary that will be used to parse/denaturalize the dataset
     constructor(customDictionary) {
         this.customDictionary = customDictionary;
-        this.customNameMap = DicomMetaDictionary._generateCustomNameMap(
-            customDictionary
-        );
+        this.customNameMap =
+            DicomMetaDictionary._generateCustomNameMap(customDictionary);
     }
 
     static punctuateTag(rawTag) {
@@ -282,18 +281,12 @@ class DicomMetaDictionary {
     // date and time in UTC
     static date() {
         let now = new Date();
-        return now
-            .toISOString()
-            .replace(/-/g, "")
-            .slice(0, 8);
+        return now.toISOString().replace(/-/g, "").slice(0, 8);
     }
 
     static time() {
         let now = new Date();
-        return now
-            .toISOString()
-            .replace(/:/g, "")
-            .slice(11, 17);
+        return now.toISOString().replace(/:/g, "").slice(11, 17);
     }
 
     static dateTime() {

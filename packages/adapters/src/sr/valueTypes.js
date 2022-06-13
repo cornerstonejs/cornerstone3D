@@ -555,9 +555,7 @@ class ScoordContentItem extends ContentItem {
             ) === -1
         ) {
             throw new Error(
-                `Invalid pixel origin interpretation '${
-                    options.pixelOriginInterpretation
-                }'.`
+                `Invalid pixel origin interpretation '${options.pixelOriginInterpretation}'.`
             );
         }
         if (options.fiducialUID !== undefined) {
