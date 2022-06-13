@@ -62,6 +62,7 @@ import {
 } from '../types/EventTypes';
 import getScalingParameters from '../utilities/getScalingParameters';
 import cache from '../cache';
+import correctShift from './helpers/cpuFallback/rendering/correctShift';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -686,6 +687,8 @@ class StackViewport extends Viewport implements IStackViewport {
         viewPlaneNormal[2],
       ],
       viewUp: [viewUp[0], viewUp[1], viewUp[2]],
+      flipHorizontal: this.flipHorizontal,
+      flipVertical: this.flipVertical,
     };
   }
 
@@ -726,8 +729,13 @@ class StackViewport extends Viewport implements IStackViewport {
         vec2.fromValues(prevFocalPointPixel[0], prevFocalPointPixel[1])
       );
 
-      viewport.translation.x -= deltaPixel[0];
-      viewport.translation.y -= deltaPixel[1];
+      const shift = correctShift(
+        { x: deltaPixel[0], y: deltaPixel[1] },
+        viewport
+      );
+
+      viewport.translation.x -= shift.x;
+      viewport.translation.y -= shift.y;
     }
 
     if (parallelScale) {
@@ -749,7 +757,7 @@ class StackViewport extends Viewport implements IStackViewport {
       viewport.parallelScale = (clientHeight * rowPixelSpacing * 0.5) / scale;
     }
 
-    if (flipHorizontal || flipVertical) {
+    if (flipHorizontal !== undefined || flipVertical !== undefined) {
       this.setFlipCPU({ flipHorizontal, flipVertical });
     }
 
