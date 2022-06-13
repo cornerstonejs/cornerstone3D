@@ -682,6 +682,7 @@ function findReferenceSourceImageId(
             FrameOfReferenceUID,
             PerFrameFunctionalGroup,
             imageIds,
+            metadataProvider,
             tolerance
         );
     }
@@ -730,9 +731,6 @@ function checkSEGsOverlapping(
 
     let frameSegmentsMapping = new Map();
     for (let frameSegment = 0; frameSegment < groupsLen; ++frameSegment) {
-        const PerFrameFunctionalGroups =
-            PerFrameFunctionalGroupsSequence[frameSegment];
-
         const segmentIndex = getSegmentIndex(multiframe, frameSegment);
         if (segmentIndex === undefined) {
             console.warn(
@@ -933,7 +931,7 @@ function insertOverlappingPixelDataPlanar(
                 continue;
             }
 
-            const sourceImageMetadata = cornerstone.metaData.get(
+            const sourceImageMetadata = metadataProvider.get(
                 "instance",
                 imageId
             );
@@ -1105,10 +1103,7 @@ function insertPixelDataPlanar(
             continue;
         }
 
-        const sourceImageMetadata = cornerstone.metaData.get(
-            "instance",
-            imageId
-        );
+        const sourceImageMetadata = metadataProvider.get("instance", imageId);
         if (
             Rows !== sourceImageMetadata.Rows ||
             Columns !== sourceImageMetadata.Columns
@@ -1302,6 +1297,7 @@ function getImageIdOfSourceImagebySourceImageSequence(
  * @param  {String}    FrameOfReferenceUID            Frame of reference.
  * @param  {Object}    PerFrameFunctionalGroup        Sequence describing segmentation reference attributes per frame.
  * @param  {String[]}  imageIds                       A list of imageIds.
+ * @param  {Object}    metadataProvider               A Cornerstone metadataProvider to query
  * @param  {Float}     tolerance                      The tolerance parameter
  *
  * @return {String}                                   The corresponding imageId.
@@ -1311,6 +1307,7 @@ function getImageIdOfSourceImagebyGeometry(
     FrameOfReferenceUID,
     PerFrameFunctionalGroup,
     imageIds,
+    metadataProvider,
     tolerance
 ) {
     if (
@@ -1328,7 +1325,7 @@ function getImageIdOfSourceImagebyGeometry(
         imageIdsIndexc < imageIds.length;
         ++imageIdsIndexc
     ) {
-        const sourceImageMetadata = cornerstone.metaData.get(
+        const sourceImageMetadata = metadataProvider.get(
             "instance",
             imageIds[imageIdsIndexc]
         );
