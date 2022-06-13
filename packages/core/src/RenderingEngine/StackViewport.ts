@@ -637,7 +637,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private getCameraCPU(): Partial<ICamera> {
-    const { metadata, viewport, image } = this._cpuFallbackEnabledElement;
+    const { metadata, viewport } = this._cpuFallbackEnabledElement;
     const { direction } = metadata;
 
     // focalPoint and position of CPU camera is just a placeholder since
@@ -665,15 +665,15 @@ class StackViewport extends Viewport implements IStackViewport {
       this.element.clientHeight / 2,
     ];
 
-    // Focal point is the center of the canvas in world coordinate by design
+    // Focal point is the center of the canvas in world coordinate by construction
     const canvasCenterWorld = this.canvasToWorld(canvasCenter);
 
     // parallel scale is half of the viewport height in the world units (mm)
 
-    const topLeftCanvas = this.canvasToWorld([0, 0]);
-    const bottomLeftCanvas = this.canvasToWorld([0, this.element.clientHeight]);
+    const topLeftWorld = this.canvasToWorld([0, 0]);
+    const bottomLeftWorld = this.canvasToWorld([0, this.element.clientHeight]);
 
-    const parallelScale = vec3.distance(topLeftCanvas, bottomLeftCanvas) / 2;
+    const parallelScale = vec3.distance(topLeftWorld, bottomLeftWorld) / 2;
 
     return {
       parallelProjection: true,
