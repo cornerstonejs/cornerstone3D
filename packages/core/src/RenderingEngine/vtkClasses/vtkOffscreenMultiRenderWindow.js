@@ -12,7 +12,7 @@ import '@kitware/vtk.js/Rendering/Core/Actor';
 import '@kitware/vtk.js/Rendering/Core/Mapper';
 
 /**
- * vtkOffscreenMultiRenderWindow - A class to deal with offscreen renderering with multiple renderers.
+ * vtkOffscreenMultiRenderWindow - A class to deal with offscreen rendering with multiple renderers.
  *
  * This class is based on the vtkGenericRenderWindow with two key differences:
  * - the vtkGenericRenderWindow had a renderer at the top level, with helpers to get it from the renderWindow.

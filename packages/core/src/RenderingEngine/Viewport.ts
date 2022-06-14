@@ -807,11 +807,16 @@ class Viewport implements IViewport {
       vtkCamera.setViewAngle(viewAngle);
     }
 
-    // update clippingPlanes
-    this.updateClippingPlanesForActors(updatedCamera);
+    // update clippingPlanes if volume viewports
+    const actorEntry = this.getDefaultActor();
+    if (actorEntry.actor.isA('vtkVolume')) {
+      this.updateClippingPlanesForActors(updatedCamera);
+    }
 
-    const renderer = this.getRenderer();
-    renderer.resetCameraClippingRange();
+    if (actorEntry.actor.isA('vtkImageSlice')) {
+      const renderer = this.getRenderer();
+      renderer.resetCameraClippingRange();
+    }
 
     this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
   }

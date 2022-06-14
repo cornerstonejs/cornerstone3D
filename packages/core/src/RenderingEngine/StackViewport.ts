@@ -359,6 +359,8 @@ class StackViewport extends Viewport implements IStackViewport {
     mapper.setInputData(imageData);
 
     const actor = vtkImageSlice.newInstance();
+
+    // @ts-ignore: vtkjs incorrect typing
     actor.setMapper(mapper);
 
     if (imageData.getPointData().getNumberOfComponents() > 1) {
@@ -1684,13 +1686,6 @@ class StackViewport extends Viewport implements IStackViewport {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
 
-      // Adjusting the camera based on slice axis. this is required if stack
-      // contains various image orientations (axial ct, sagittal xray)
-      const direction = this._imageData.getDirection() as Float32Array;
-      const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);
-
-      this.setCameraNoEvent({ viewUp, viewPlaneNormal });
-
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting
       // causes problem related to zoom and pan tools: upon rendering of a new slice
@@ -2121,6 +2116,17 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private canvasToWorldGPU = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
@@ -2138,6 +2144,9 @@ class StackViewport extends Viewport implements IStackViewport {
       renderer
     );
 
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
     worldCoord = this.applyFlipTx(worldCoord);
 
     return worldCoord;
@@ -2145,6 +2154,17 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private worldToCanvasGPU = (worldPos: Point3) => {
     const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
@@ -2162,6 +2182,9 @@ class StackViewport extends Viewport implements IStackViewport {
       displayCoord[0] - this.sx,
       displayCoord[1] - this.sy,
     ];
+
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
 
     return canvasCoord;
   };
