@@ -8,7 +8,7 @@ import getSvgDrawingHelper from './getSvgDrawingHelper';
  */
 function clearByToolType(element: HTMLDivElement, toolType: string): void {
   const svgDrawingHelper = getSvgDrawingHelper(element);
-  const nodes = svgDrawingHelper._svgLayerElement.querySelectorAll(
+  const nodes = svgDrawingHelper.svgLayerElement.querySelectorAll(
     'svg > *'
   ) as NodeListOf<SVGElement>;
 
@@ -18,7 +18,7 @@ function clearByToolType(element: HTMLDivElement, toolType: string): void {
     const toolUID = node.dataset.toolUid;
 
     if (toolUID === toolType) {
-      svgDrawingHelper._svgLayerElement.removeChild(node);
+      svgDrawingHelper.svgLayerElement.removeChild(node);
     }
   }
 }

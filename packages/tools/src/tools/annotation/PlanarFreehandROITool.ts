@@ -36,6 +36,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
@@ -110,22 +111,22 @@ class PlanarFreehandROITool extends AnnotationTool {
 
   private renderContour: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderContourBeingDrawn: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderClosedContourBeingEdited: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
   private renderOpenContourBeingEdited: (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any,
+    svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
   ) => void;
 
@@ -503,8 +504,9 @@ class PlanarFreehandROITool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    const renderStatus = false;
     const { viewport } = enabledElement;
     const { element } = viewport;
 
@@ -514,7 +516,7 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
@@ -523,7 +525,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     ) as PlanarFreehandROIAnnotation[];
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const isDrawing = this.isDrawing;
@@ -537,7 +539,7 @@ class PlanarFreehandROITool extends AnnotationTool {
         this.renderContour(enabledElement, svgDrawingHelper, annotation)
       );
 
-      return;
+      return renderStatus;
     }
 
     // One of the annotations will need special rendering treatment, render all
@@ -574,6 +576,9 @@ class PlanarFreehandROITool extends AnnotationTool {
         this.renderContour(enabledElement, svgDrawingHelper, annotation);
       }
     });
+
+    // Todo: return boolean flag for each rendering route in the planar tool.
+    return true;
   };
 }
 

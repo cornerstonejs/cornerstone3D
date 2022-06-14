@@ -2,7 +2,12 @@ import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
 
 import { fillInsideSphere } from './strategies/fillSphere';
 import { Events } from '../../enums';
@@ -299,17 +304,18 @@ export default class SphereScissorsTool extends BaseTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     if (!this.editData) {
-      return;
+      return renderStatus;
     }
 
     const { viewport } = enabledElement;
     const { viewportIdsToRender } = this.editData;
 
     if (!viewportIdsToRender.includes(viewport.id)) {
-      return;
+      return renderStatus;
     }
 
     const { annotation } = this.editData;
@@ -337,7 +343,7 @@ export default class SphereScissorsTool extends BaseTool {
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
       console.warn('Rendering Engine has been destroyed');
-      return;
+      return renderStatus;
     }
 
     const circleUID = '0';
@@ -351,5 +357,9 @@ export default class SphereScissorsTool extends BaseTool {
         color,
       }
     );
+
+    renderStatus = true;
+
+    return renderStatus;
   };
 }

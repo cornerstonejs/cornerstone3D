@@ -1,12 +1,13 @@
 import { state } from '../store';
 import { getEnabledElement } from '@cornerstonejs/core';
+import { SVGDrawingHelper } from '../types';
 
 /**
  * Returns the SVG drawing helper for the given HTML element.
  * @param element - The HTML element to get the SVG drawing helper for.
  * @private
  */
-function getSvgDrawingHelper(element: HTMLDivElement) {
+function getSvgDrawingHelper(element: HTMLDivElement): SVGDrawingHelper {
   const enabledElement = getEnabledElement(element);
   const { viewportId, renderingEngineId } = enabledElement;
   const canvasHash = `${viewportId}:${renderingEngineId}`;
@@ -18,22 +19,18 @@ function getSvgDrawingHelper(element: HTMLDivElement) {
   });
 
   return {
-    // Todo: not sure if we need enabledElement and _element anymore here
-    enabledElement: enabledElement,
-    _element: element,
-    _svgLayerElement: svgLayerElement,
-    _svgNodeCacheForCanvas: state.svgNodeCache,
-    _getSvgNode: getSvgNode.bind(this, canvasHash),
-    _appendNode: appendNode.bind(this, svgLayerElement, canvasHash),
-    _setNodeTouched: setNodeTouched.bind(this, canvasHash),
-    _clearUntouched: clearUntouched.bind(this, svgLayerElement, canvasHash),
-    // _drawnAnnotations: drawnAnnotations,
+    svgLayerElement: svgLayerElement,
+    svgNodeCacheForCanvas: state.svgNodeCache,
+    getSvgNode: getSvgNode.bind(this, canvasHash),
+    appendNode: appendNode.bind(this, svgLayerElement, canvasHash),
+    setNodeTouched: setNodeTouched.bind(this, canvasHash),
+    clearUntouched: clearUntouched.bind(this, svgLayerElement, canvasHash),
   };
 }
 
 /**
  *
- * @param canvasElement
+ * @param element
  * @private
  */
 function _getSvgLayer(element) {

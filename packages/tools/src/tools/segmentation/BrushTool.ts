@@ -1,7 +1,12 @@
 import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 
 import type { Types } from '@cornerstonejs/core';
-import type { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import type {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
 import { BaseTool } from '../base';
 
 import { fillInsideCircle } from './strategies/fillCircle';
@@ -416,7 +421,7 @@ export default class BrushTool extends BaseTool {
 
   renderAnnotation(
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   ): void {
     if (!this._hoverData) {
       return;

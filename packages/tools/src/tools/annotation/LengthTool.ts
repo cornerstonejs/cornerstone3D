@@ -44,6 +44,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -527,8 +528,9 @@ class LengthTool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     const { viewport } = enabledElement;
     const { element } = viewport;
 
@@ -536,7 +538,7 @@ class LengthTool extends AnnotationTool {
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
@@ -545,7 +547,7 @@ class LengthTool extends AnnotationTool {
     );
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const targetId = this.getTargetId(viewport);
@@ -631,10 +633,12 @@ class LengthTool extends AnnotationTool {
         }
       );
 
+      renderStatus = true;
+
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
-        return;
+        return renderStatus;
       }
 
       const textLines = this._getTextLines(data, targetId);
@@ -672,6 +676,8 @@ class LengthTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
     }
+
+    return renderStatus;
   };
 
   // text line for the current active length annotation

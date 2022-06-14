@@ -43,6 +43,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../types';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
@@ -668,8 +669,9 @@ export default class CrosshairsTool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
     const annotations = getAnnotations(element, this.getToolName());
@@ -681,7 +683,7 @@ export default class CrosshairsTool extends AnnotationTool {
     const viewportAnnotation = filteredToolAnnotations[0];
     if (!annotations || !viewportAnnotation || !viewportAnnotation.data) {
       // No annotations yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
-      return;
+      return renderStatus;
     }
 
     const annotationUID = viewportAnnotation.annotationUID;
@@ -1288,32 +1290,33 @@ export default class CrosshairsTool extends AnnotationTool {
       }
     });
 
+    renderStatus = true;
+
     // Save new handles points in annotation
     data.handles.rotationPoints = newRtpoints;
     data.handles.slabThicknessPoints = newStpoints;
 
-    // render a circle to pin point the viewport color
-    // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
+    if (this.configuration.viewportIndicators) {
+      // render a circle to pin point the viewport color
+      // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
+      const referenceColorCoordinates = [
+        sWidth * 0.95,
+        sHeight * 0.05,
+      ] as Types.Point2;
+      const circleRadius = canvasDiagonalLength * 0.01;
 
-    if (!this.configuration.viewportIndicators) {
-      return;
+      const circleUID = '0';
+      drawCircleSvg(
+        svgDrawingHelper,
+        annotationUID,
+        circleUID,
+        referenceColorCoordinates,
+        circleRadius,
+        { color, fill: color }
+      );
     }
 
-    const referenceColorCoordinates = [
-      sWidth * 0.95,
-      sHeight * 0.05,
-    ] as Types.Point2;
-    const circleRadius = canvasDiagonalLength * 0.01;
-
-    const circleUID = '0';
-    drawCircleSvg(
-      svgDrawingHelper,
-      annotationUID,
-      circleUID,
-      referenceColorCoordinates,
-      circleRadius,
-      { color, fill: color }
-    );
+    return renderStatus;
   };
 
   _autoPanViewportIfNecessary(

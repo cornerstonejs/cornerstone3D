@@ -42,6 +42,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
@@ -704,15 +705,16 @@ export default class EllipticalROITool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     const { viewport } = enabledElement;
     const { element } = viewport;
 
     let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
@@ -721,7 +723,7 @@ export default class EllipticalROITool extends AnnotationTool {
     );
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const targetId = this.getTargetId(viewport);
@@ -812,7 +814,7 @@ export default class EllipticalROITool extends AnnotationTool {
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
-        return;
+        return renderStatus;
       }
 
       let activeHandleCanvasCoords;
@@ -857,6 +859,8 @@ export default class EllipticalROITool extends AnnotationTool {
         }
       );
 
+      renderStatus = true;
+
       const textLines = this._getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
@@ -897,6 +901,8 @@ export default class EllipticalROITool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
     }
+
+    return renderStatus;
   };
 
   _getTextLines = (data, targetId) => {

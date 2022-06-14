@@ -295,6 +295,8 @@ interface CPUFallbackTransform {
 // @public (undocumented)
 type CPUFallbackViewport = {
     scale?: number;
+    parallelScale?: number;
+    focalPoint?: number[];
     translation?: {
         x: number;
         y: number;
@@ -653,6 +655,8 @@ interface ICamera {
     parallelScale?: number;
     // (undocumented)
     position?: Point3;
+    // (undocumented)
+    scale?: number;
     // (undocumented)
     viewAngle?: number;
     // (undocumented)
@@ -1696,7 +1700,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, }?: StackViewportProperties): void;
+    setProperties({ voiRange, invert, interpolationType, rotation, }?: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
@@ -1724,6 +1728,7 @@ type StackViewportProperties = {
     invert?: boolean;
     interpolationType?: InterpolationType;
     rotation?: number;
+    suppressEvents?: boolean;
 };
 
 // @public (undocumented)

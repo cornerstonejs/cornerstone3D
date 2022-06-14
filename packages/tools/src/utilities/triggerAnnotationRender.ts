@@ -6,9 +6,7 @@ import {
 import { Events, ToolModes } from '../enums';
 import { draw as drawSvg } from '../drawingSvg';
 import getToolsWithModesForElement from './getToolsWithModesForElement';
-import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool';
 import { AnnotationRenderedEventDetail } from '../types/EventTypes';
-
 const { Active, Passive, Enabled } = ToolModes;
 
 /**
@@ -160,26 +158,33 @@ class AnnotationRenderingEngine {
     };
 
     // const enabledToolsWithAnnotations = enabledTools.filter((tool) => {
-    //   const annotations = getAnnotations(element, (tool.constructor as typeof BaseTool).toolName)
-    //   return annotations && annotations.length
-    // })
+    //   const annotations = getAnnotations(element, tool.getToolName());
+    //   return annotations && annotations.length;
+    // });
 
     drawSvg(element, (svgDrawingHelper) => {
+      let anyRendered = false;
       const handleDrawSvg = (tool) => {
-        // Todo: we should not have the need to check tool if it is instance
-        // of SegmentationDisplayTool, but right now SegmentationScissors
-        // are instance of BaseTool and we cannot simply check if tool is
-        // instance of AnnotationTool
-        if (
-          !(tool instanceof SegmentationDisplayTool) &&
-          tool.renderAnnotation
-        ) {
-          tool.renderAnnotation(enabledElement, svgDrawingHelper);
-          triggerEvent(element, Events.ANNOTATION_RENDERED, { ...eventDetail });
+        if (tool.renderAnnotation) {
+          const rendered = tool.renderAnnotation(
+            enabledElement,
+            svgDrawingHelper
+          );
+          anyRendered = anyRendered || rendered;
         }
       };
 
+      /**
+       * We should be able to filter tools that don't have annotations, but
+       * currently some of tools have renderAnnotation method BUT
+       * don't keep annotation in the state, so if we do so, the tool will not be
+       * rendered.
+       */
       enabledTools.forEach(handleDrawSvg);
+
+      if (anyRendered) {
+        triggerEvent(element, Events.ANNOTATION_RENDERED, { ...eventDetail });
+      }
     });
   }
 

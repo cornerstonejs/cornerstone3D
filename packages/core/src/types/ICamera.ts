@@ -1,4 +1,3 @@
-import Point2 from './Point2';
 import Point3 from './Point3';
 
 /**
@@ -12,6 +11,11 @@ interface ICamera {
   parallelProjection?: boolean;
   /** Camera parallel scale - used for parallel projection zoom, smaller values zoom in */
   parallelScale?: number;
+  /**
+   * Scale factor for the camera, it is the ratio of how much an image pixel takes
+   * up one screen pixel
+   */
+  scale?: number;
   /** Camera position */
   position?: Point3;
   /** Camera view angle - 90 degrees is orthographic */

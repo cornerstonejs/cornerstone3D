@@ -39,6 +39,7 @@ import {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -563,8 +564,9 @@ class ArrowAnnotateTool extends AnnotationTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     const { viewport } = enabledElement;
     const { element } = viewport;
 
@@ -572,7 +574,7 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
@@ -581,7 +583,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     );
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const styleSpecifier: StyleSpecifier = {
@@ -660,10 +662,12 @@ class ArrowAnnotateTool extends AnnotationTool {
         );
       }
 
+      renderStatus = true;
+
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
-        return;
+        return renderStatus;
       }
 
       if (!text) {
@@ -703,6 +707,8 @@ class ArrowAnnotateTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
     }
+
+    return renderStatus;
   };
 
   _isInsideVolume(index1, index2, dimensions) {

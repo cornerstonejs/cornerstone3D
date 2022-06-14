@@ -62,6 +62,7 @@ import {
 } from '../types/EventTypes';
 import getScalingParameters from '../utilities/getScalingParameters';
 import cache from '../cache';
+import correctShift from './helpers/cpuFallback/rendering/correctShift';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -524,16 +525,19 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
    * @param rotation - image rotation in degrees
    */
-  public setProperties({
-    voiRange,
-    invert,
-    interpolationType,
-    rotation,
-  }: StackViewportProperties = {}): void {
+  public setProperties(
+    {
+      voiRange,
+      invert,
+      interpolationType,
+      rotation,
+    }: StackViewportProperties = {},
+    suppressEvents = false
+  ): void {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi
     if (typeof voiRange !== 'undefined' || !this.voiApplied) {
-      this.setVOI(voiRange);
+      this.setVOI(voiRange, suppressEvents);
     }
 
     if (typeof invert !== 'undefined') {
@@ -620,12 +624,16 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _setPropertiesFromCache(): void {
-    this.setProperties({
-      voiRange: this.voiRange,
-      rotation: this.rotation,
-      interpolationType: this.interpolationType,
-      invert: this.invert,
-    });
+    const suppressEvents = true;
+    this.setProperties(
+      {
+        voiRange: this.voiRange,
+        rotation: this.rotation,
+        interpolationType: this.interpolationType,
+        invert: this.invert,
+      },
+      suppressEvents
+    );
   }
 
   private getCameraCPU(): Partial<ICamera> {
@@ -652,72 +660,120 @@ class StackViewport extends Viewport implements IStackViewport {
       ) as Float32Array;
     }
 
+    const canvasCenter: Point2 = [
+      this.element.clientWidth / 2,
+      this.element.clientHeight / 2,
+    ];
+
+    // Focal point is the center of the canvas in world coordinate by construction
+    const canvasCenterWorld = this.canvasToWorld(canvasCenter);
+
+    // parallel scale is half of the viewport height in the world units (mm)
+
+    const topLeftWorld = this.canvasToWorld([0, 0]);
+    const bottomLeftWorld = this.canvasToWorld([0, this.element.clientHeight]);
+
+    const parallelScale = vec3.distance(topLeftWorld, bottomLeftWorld) / 2;
+
     return {
       parallelProjection: true,
-      focalPoint: [0, 0, 0],
+      focalPoint: canvasCenterWorld,
       position: [0, 0, 0],
-      parallelScale: viewport.scale,
+      parallelScale,
+      scale: viewport.scale,
       viewPlaneNormal: [
         viewPlaneNormal[0],
         viewPlaneNormal[1],
         viewPlaneNormal[2],
       ],
       viewUp: [viewUp[0], viewUp[1], viewUp[2]],
+      flipHorizontal: this.flipHorizontal,
+      flipVertical: this.flipVertical,
     };
   }
 
   private setCameraCPU(cameraInterface: ICamera): void {
-    const { viewport } = this._cpuFallbackEnabledElement;
+    const { viewport, image } = this._cpuFallbackEnabledElement;
     const previousCamera = this.getCameraCPU();
 
-    const { focalPoint, viewUp, parallelScale, flipHorizontal, flipVertical } =
-      cameraInterface;
+    const {
+      focalPoint,
+      viewUp,
+      parallelScale,
+      scale,
+      flipHorizontal,
+      flipVertical,
+    } = cameraInterface;
+
+    const { clientHeight } = this.element;
 
     if (focalPoint) {
-      const focalPointCanvas = this.worldToCanvasCPU(
-        cameraInterface.focalPoint
+      const focalPointCanvas = this.worldToCanvasCPU(focalPoint);
+      const focalPointPixel = canvasToPixel(
+        this._cpuFallbackEnabledElement,
+        focalPointCanvas
       );
-      const previousFocalPointCanvas = this.worldToCanvasCPU(
+
+      const prevFocalPointCanvas = this.worldToCanvasCPU(
         previousCamera.focalPoint
       );
-
-      const deltaCanvas = vec2.create();
-
-      vec2.subtract(
-        deltaCanvas,
-        vec2.fromValues(
-          previousFocalPointCanvas[0],
-          previousFocalPointCanvas[1]
-        ),
-        vec2.fromValues(focalPointCanvas[0], focalPointCanvas[1])
+      const prevFocalPointPixel = canvasToPixel(
+        this._cpuFallbackEnabledElement,
+        prevFocalPointCanvas
       );
 
-      viewport.translation.x += deltaCanvas[0] / previousCamera.parallelScale;
-      viewport.translation.y += deltaCanvas[1] / previousCamera.parallelScale;
+      const deltaPixel = vec2.create();
+      vec2.subtract(
+        deltaPixel,
+        vec2.fromValues(focalPointPixel[0], focalPointPixel[1]),
+        vec2.fromValues(prevFocalPointPixel[0], prevFocalPointPixel[1])
+      );
+
+      const shift = correctShift(
+        { x: deltaPixel[0], y: deltaPixel[1] },
+        viewport
+      );
+
+      viewport.translation.x -= shift.x;
+      viewport.translation.y -= shift.y;
     }
 
-    // If manipulating scale
-    if (parallelScale && previousCamera.parallelScale !== parallelScale) {
-      // Note: as parallel scale is defined differently to the GPU version,
-      // We instead need to find the difference and move the camera in
-      // the other direction in this adapter.
+    if (parallelScale) {
+      // We need to convert he parallelScale which has a physical meaning to
+      // camera scale factor (since CPU works with scale). Since parallelScale represents
+      // half of the height of the viewport in the world unit (mm), we can use that
+      // to compute the scale factor which is the ratio of the viewport height in pixels
+      // to the current rendered image height.
+      const { rowPixelSpacing } = image;
+      const scale = (clientHeight * rowPixelSpacing * 0.5) / parallelScale;
 
-      const diff = previousCamera.parallelScale - parallelScale;
-
-      viewport.scale += diff; // parallelScale; //viewport.scale < 0.1 ? 0.1 : viewport.scale;
+      viewport.scale = scale;
+      viewport.parallelScale = parallelScale;
     }
 
-    if (flipHorizontal || flipVertical) {
+    if (scale) {
+      const { rowPixelSpacing } = image;
+      viewport.scale = scale;
+      viewport.parallelScale = (clientHeight * rowPixelSpacing * 0.5) / scale;
+    }
+
+    if (flipHorizontal !== undefined || flipVertical !== undefined) {
       this.setFlipCPU({ flipHorizontal, flipVertical });
     }
+
+    // re-calculate the transforms
+    this._cpuFallbackEnabledElement.transform = calculateTransform(
+      this._cpuFallbackEnabledElement
+    );
 
     const updatedCamera = {
       ...previousCamera,
       focalPoint,
       viewUp,
-      parallelScale,
       flipHorizontal,
       flipVertical,
+      parallelScale: viewport.parallelScale,
+      scale: viewport.scale,
     };
 
     const eventDetail: EventTypes.CameraModifiedEventDetail = {
@@ -742,13 +798,13 @@ class StackViewport extends Viewport implements IStackViewport {
     this.flipVertical = viewport.vflip;
   }
 
-  private setVOI(voiRange: VOIRange): void {
+  private setVOI(voiRange: VOIRange, suppressEvents?: boolean): void {
     if (this.useCPURendering) {
-      this.setVOICPU(voiRange);
+      this.setVOICPU(voiRange, suppressEvents);
       return;
     }
 
-    this.setVOIGPU(voiRange);
+    this.setVOIGPU(voiRange, suppressEvents);
   }
 
   private setRotation(rotationCache: number, rotation: number): void {
@@ -873,7 +929,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.invert = invert;
   }
 
-  private setVOICPU(voiRange: VOIRange): void {
+  private setVOICPU(voiRange: VOIRange, suppressEvents?: boolean): void {
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
     if (!viewport || !image) {
@@ -917,10 +973,12 @@ class StackViewport extends Viewport implements IStackViewport {
       range: voiRange,
     };
 
-    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    if (!suppressEvents) {
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    }
   }
 
-  private setVOIGPU(voiRange: VOIRange): void {
+  private setVOIGPU(voiRange: VOIRange, suppressEvents?: boolean): void {
     const defaultActor = this.getDefaultActor();
     if (!defaultActor) {
       return;
@@ -951,7 +1009,9 @@ class StackViewport extends Viewport implements IStackViewport {
       range: voiRange,
     };
 
-    triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    if (!suppressEvents) {
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    }
   }
 
   /**
@@ -1773,6 +1833,19 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
+
+    const { scale } = this._cpuFallbackEnabledElement.viewport;
+
+    // canvas center is the focal point
+    const { clientWidth, clientHeight } = this.element;
+    const center: Point2 = [clientWidth / 2, clientHeight / 2];
+
+    const centerWorld = this.canvasToWorldCPU(center);
+
+    this.setCameraCPU({
+      focalPoint: centerWorld,
+      scale,
+    });
   }
 
   private resetCameraGPU(resetPan, resetZoom): boolean {

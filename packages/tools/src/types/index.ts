@@ -24,6 +24,7 @@ import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type JumpToSliceOptions from './JumpToSliceOptions';
 import type ScrollOptions from './ScrollOptions';
 import type BoundsIJK from './BoundsIJK';
+import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
   Color,
@@ -86,4 +87,5 @@ export type {
   // CINE
   CINETypes,
   BoundsIJK,
+  SVGDrawingHelper,
 };

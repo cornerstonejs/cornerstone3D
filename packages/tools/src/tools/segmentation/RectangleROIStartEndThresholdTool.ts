@@ -24,7 +24,12 @@ import { isAnnotationVisible } from '../../stateManagement/annotation/annotation
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
 import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -296,15 +301,16 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     const annotations = getAnnotations(
       enabledElement.viewport.element,
       this.getToolName()
     );
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const { viewport } = enabledElement;
@@ -358,7 +364,7 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
-        return;
+        return renderStatus;
       }
 
       let activeHandleCanvasCoords;
@@ -410,7 +416,11 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
           lineWidth,
         }
       );
+
+      renderStatus = true;
     }
+
+    return renderStatus;
   };
 
   _getEndSliceIndex(

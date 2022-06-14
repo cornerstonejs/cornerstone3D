@@ -2,13 +2,13 @@ import type { Types } from '@cornerstonejs/core';
 
 import drawLine from './drawLine';
 import findClosestPoint from '../utilities/math/vec2/findClosestPoint';
-import { PlanarBoundingBox } from '../types';
+import { PlanarBoundingBox, SVGDrawingHelper } from '../types';
 
 /**
  * Draw a link between an annotation to a box.
  */
 function drawLink(
-  svgDrawingHelper: Record<string, unknown>,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   linkUID: string,
   // Find closest point to approx. bounding box

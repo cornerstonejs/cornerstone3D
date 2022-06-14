@@ -8,7 +8,12 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
-import { EventTypes, PublicToolProps, ToolProps } from '../../types';
+import {
+  EventTypes,
+  PublicToolProps,
+  SVGDrawingHelper,
+  ToolProps,
+} from '../../types';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import ProbeTool from './ProbeTool';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -105,12 +110,13 @@ export default class DragProbeTool extends ProbeTool {
 
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     const { viewport } = enabledElement;
 
     if (!this.editData) {
-      return;
+      return renderStatus;
     }
 
     const targetId = this.getTargetId(viewport);
@@ -147,7 +153,7 @@ export default class DragProbeTool extends ProbeTool {
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
       console.warn('Rendering Engine has been destroyed');
-      return;
+      return renderStatus;
     }
 
     const handleGroupUID = '0';
@@ -159,6 +165,8 @@ export default class DragProbeTool extends ProbeTool {
       [canvasCoordinates],
       { color }
     );
+
+    renderStatus = true;
 
     const textLines = this._getTextLines(data, targetId);
     if (textLines) {
@@ -177,5 +185,7 @@ export default class DragProbeTool extends ProbeTool {
         this.getLinkedTextBoxStyle(styleSpecifier, annotation)
       );
     }
+
+    return renderStatus;
   };
 }

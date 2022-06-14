@@ -16,8 +16,6 @@ export default class ZoomTool extends BaseTool {
   mouseDragCallback: () => void;
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
-  minZoomScale = 0.1;
-  maxZoomScale = 10;
 
   // Apparently TS says super _must_ be the first call? This seems a bit opinionated.
   constructor(
@@ -27,6 +25,8 @@ export default class ZoomTool extends BaseTool {
       configuration: {
         // whether zoom to the center of the image OR zoom to the mouse position
         zoomToCenter: false,
+        minZoomScale: 0.1,
+        maxZoomScale: 30,
       },
     }
   ) {
@@ -83,9 +83,9 @@ export default class ZoomTool extends BaseTool {
     const camera = viewport.getCamera();
 
     if (camera.parallelProjection) {
-      this._dragParallelProjection(evt, camera);
+      this._dragParallelProjection(evt, viewport, camera);
     } else {
-      this._dragPerspectiveProjection(evt, camera);
+      this._dragPerspectiveProjection(evt, viewport, camera);
     }
 
     viewport.render();
@@ -93,20 +93,19 @@ export default class ZoomTool extends BaseTool {
 
   _dragParallelProjection = (
     evt: EventTypes.MouseDragEventType,
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
     camera: Types.ICamera
-  ) => {
+  ): void => {
     const { element, deltaPoints } = evt.detail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const size = [element.clientWidth, element.clientHeight];
 
+    const size = [element.clientWidth, element.clientHeight];
     const { parallelScale, focalPoint, position } = camera;
 
     const zoomScale = 1.5 / size[1];
     const deltaY = deltaPoints.canvas[1];
     const k = deltaY * zoomScale;
 
-    let newParallelScale = (1.0 - k) * parallelScale;
+    let parallelScaleToSet = (1.0 - k) * parallelScale;
 
     let focalPointToSet = focalPoint;
     let positionToSet = position;
@@ -121,13 +120,14 @@ export default class ZoomTool extends BaseTool {
         focalPoint,
         this.initialMousePosWorld
       );
+      // const initialYDistanceBetweenInitialAndFocalPoint;
 
       // we need to move in the direction of the vector between the focal point
       // and the initial mouse position by some amount until ultimately we
       // reach the mouse position at the focal point
-      const zoomScale = 10 / size[1];
+      const zoomScale = 5 / size[1];
       const k = deltaY * zoomScale;
-      newParallelScale = (1.0 - k) * parallelScale;
+      parallelScaleToSet = (1.0 - k) * parallelScale;
 
       positionToSet = vec3.scaleAndAdd(
         vec3.create(),
@@ -144,8 +144,26 @@ export default class ZoomTool extends BaseTool {
       ) as Types.Point3;
     }
 
-    const { parallelScale: cappedParallelScale, thresholdExceeded } =
-      this._getCappedParallelScale(viewport, newParallelScale);
+    // If it is a regular GPU accelerated viewport, then parallel scale
+    // has a physical meaning and we can use that to determine the threshold
+    const imageData = viewport.getImageData();
+
+    const { spacing } = imageData;
+    const { minZoomScale, maxZoomScale } = this.configuration;
+
+    const t = element.clientHeight * spacing[1] * 0.5;
+    const scale = t / parallelScaleToSet;
+
+    let cappedParallelScale = parallelScaleToSet;
+    let thresholdExceeded = false;
+
+    if (scale < minZoomScale) {
+      cappedParallelScale = t / minZoomScale;
+      thresholdExceeded = true;
+    } else if (scale >= maxZoomScale) {
+      cappedParallelScale = t / maxZoomScale;
+      thresholdExceeded = true;
+    }
 
     viewport.setCamera({
       parallelScale: cappedParallelScale,
@@ -154,10 +172,8 @@ export default class ZoomTool extends BaseTool {
     });
   };
 
-  _dragPerspectiveProjection = (evt, camera) => {
+  _dragPerspectiveProjection = (evt, viewport, camera) => {
     const { element, deltaPoints } = evt.detail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
     const size = [element.clientWidth, element.clientHeight];
     const { position, focalPoint, viewPlaneNormal } = camera;
 
@@ -187,34 +203,5 @@ export default class ZoomTool extends BaseTool {
     focalPoint[2] += tmp;
 
     viewport.setCamera({ position, focalPoint });
-  };
-
-  _getCappedParallelScale = (viewport, parallelScale) => {
-    const imageData = viewport.getImageData();
-
-    if (!imageData) {
-      return;
-    }
-
-    const { dimensions, spacing } = imageData;
-
-    const t = dimensions[0] * spacing[0];
-    const scale = t / parallelScale;
-
-    let newParallelScale = parallelScale;
-    let thresholdExceeded = false;
-
-    if (scale < this.minZoomScale) {
-      newParallelScale = t / this.minZoomScale;
-      thresholdExceeded = true;
-    } else if (scale > this.maxZoomScale) {
-      newParallelScale = t / this.maxZoomScale;
-      thresholdExceeded = true;
-    }
-
-    return {
-      parallelScale: newParallelScale,
-      thresholdExceeded,
-    };
   };
 }

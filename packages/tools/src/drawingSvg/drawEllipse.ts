@@ -1,11 +1,12 @@
 import type { Types } from '@cornerstonejs/core';
+import { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
 import _setAttributesIfNecessary from './_setAttributesIfNecessary';
 import _setNewAttributesIfValid from './_setNewAttributesIfValid';
 
 function drawEllipse(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   ellipseUID: string,
   corner1: Types.Point2,
@@ -27,7 +28,7 @@ function drawEllipse(
 
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'ellipse', ellipseUID);
-  const existingEllipse = svgDrawingHelper._getSvgNode(svgNodeHash);
+  const existingEllipse = svgDrawingHelper.getSvgNode(svgNodeHash);
 
   const w = Math.abs(corner1[0] - corner2[0]);
   const h = Math.abs(corner1[1] - corner2[1]);
@@ -52,13 +53,13 @@ function drawEllipse(
   if (existingEllipse) {
     _setAttributesIfNecessary(attributes, existingEllipse);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash);
+    svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const svgEllipseElement = document.createElementNS(svgns, 'ellipse');
 
     _setNewAttributesIfValid(attributes, svgEllipseElement);
 
-    svgDrawingHelper._appendNode(svgEllipseElement, svgNodeHash);
+    svgDrawingHelper.appendNode(svgEllipseElement, svgNodeHash);
   }
 }
 

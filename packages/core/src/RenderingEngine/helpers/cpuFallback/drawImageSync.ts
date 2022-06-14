@@ -15,7 +15,6 @@ export default function (
   invalidated: boolean
 ): void {
   const image = enabledElement.image;
-  const canvas = enabledElement.canvas;
 
   // Check if enabledElement can be redrawn
   if (!enabledElement.canvas || !enabledElement.image) {

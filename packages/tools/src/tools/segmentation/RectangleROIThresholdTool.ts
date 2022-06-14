@@ -20,7 +20,12 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
 import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
@@ -164,14 +169,15 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     const { viewport, renderingEngineId } = enabledElement;
     const { element } = viewport;
     let annotations = getAnnotations(element, this.getToolName());
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     annotations = this.filterInteractableAnnotationsForElement(
@@ -180,7 +186,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
     );
 
     if (!annotations?.length) {
-      return;
+      return renderStatus;
     }
 
     const styleSpecifier: StyleSpecifier = {
@@ -204,7 +210,7 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
-        return;
+        return renderStatus;
       }
 
       // Todo: This is not correct way to add the event trigger,
@@ -262,6 +268,10 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
           lineWidth,
         }
       );
+
+      renderStatus = true;
     }
+
+    return renderStatus;
   };
 }

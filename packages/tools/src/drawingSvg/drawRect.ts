@@ -3,10 +3,11 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import _setAttributesIfNecessary from './_setAttributesIfNecessary';
 import _setNewAttributesIfValid from './_setNewAttributesIfValid';
+import { SVGDrawingHelper } from '../types';
 
 // <rect x="120" y="100" width="100" height="100" />
 export default function drawRect(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   rectangleUID: string,
   start: Types.Point2,
@@ -33,7 +34,7 @@ export default function drawRect(
 
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'rect', rectangleUID);
-  const existingRect = svgDrawingHelper._getSvgNode(svgNodeHash);
+  const existingRect = svgDrawingHelper.getSvgNode(svgNodeHash);
 
   const tlhc = [Math.min(start[0], end[0]), Math.min(start[1], end[1])];
   const width = Math.abs(start[0] - end[0]);
@@ -53,12 +54,12 @@ export default function drawRect(
   if (existingRect) {
     _setAttributesIfNecessary(attributes, existingRect);
 
-    svgDrawingHelper._setNodeTouched(svgNodeHash);
+    svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const svgRectElement = document.createElementNS(svgns, 'rect');
 
     _setNewAttributesIfValid(attributes, svgRectElement);
 
-    svgDrawingHelper._appendNode(svgRectElement, svgNodeHash);
+    svgDrawingHelper.appendNode(svgRectElement, svgNodeHash);
   }
 }

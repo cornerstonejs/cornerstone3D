@@ -2,7 +2,12 @@ import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
 import { fillInsideRectangle } from './strategies/fillRectangle';
 import { eraseInsideRectangle } from './strategies/eraseRectangle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -333,10 +338,11 @@ export default class RectangleScissorsTool extends BaseTool {
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
-  ): void => {
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean => {
+    let renderStatus = false;
     if (!this.editData) {
-      return;
+      return renderStatus;
     }
 
     const { viewport } = enabledElement;
@@ -354,7 +360,7 @@ export default class RectangleScissorsTool extends BaseTool {
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
       console.warn('Rendering Engine has been destroyed');
-      return;
+      return renderStatus;
     }
 
     const rectangleUID = '0';
@@ -368,5 +374,9 @@ export default class RectangleScissorsTool extends BaseTool {
         color,
       }
     );
+
+    renderStatus = true;
+
+    return renderStatus;
   };
 }

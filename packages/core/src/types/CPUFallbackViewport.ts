@@ -4,6 +4,8 @@ import CPUFallbackLUT from './CPUFallbackLUT';
 
 type CPUFallbackViewport = {
   scale?: number;
+  parallelScale?: number;
+  focalPoint?: number[];
   translation?: {
     x: number;
     y: number;

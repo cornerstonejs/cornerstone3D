@@ -19,6 +19,7 @@ import {
   EventTypes,
   ToolHandle,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../../types';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
@@ -62,7 +63,7 @@ abstract class AnnotationTool extends BaseTool {
    */
   abstract renderAnnotation(
     enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: any
+    svgDrawingHelper: SVGDrawingHelper
   );
 
   /**
