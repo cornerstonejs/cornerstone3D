@@ -1162,7 +1162,7 @@ export default class BidirectionalTool extends AnnotationTool {
    */
   _getTextLines = (data, targetId) => {
     const { cachedStats } = data;
-    const { length, width } = cachedStats[targetId];
+    const { length, width, unit } = cachedStats[targetId];
 
     if (length === undefined) {
       return;
@@ -1171,8 +1171,8 @@ export default class BidirectionalTool extends AnnotationTool {
     // spaceBetweenSlices & pixelSpacing &
     // magnitude in each direction? Otherwise, this is "px"?
     const textLines = [
-      `L: ${length.toFixed(2)} mm`,
-      `W: ${width.toFixed(2)} mm`,
+      `L: ${length.toFixed(2)} ${unit}`,
+      `W: ${width.toFixed(2)} ${unit}`,
     ];
 
     return textLines;
@@ -1203,7 +1203,7 @@ export default class BidirectionalTool extends AnnotationTool {
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
-      const { imageData, dimensions } = image;
+      const { imageData, dimensions, hasPixelSpacing } = image;
 
       const dist1 = this._calculateLength(worldPos1, worldPos2);
       const dist2 = this._calculateLength(worldPos3, worldPos4);
@@ -1222,6 +1222,7 @@ export default class BidirectionalTool extends AnnotationTool {
       cachedStats[targetId] = {
         length,
         width,
+        unit: hasPixelSpacing ? 'mm' : 'px',
       };
     }
 

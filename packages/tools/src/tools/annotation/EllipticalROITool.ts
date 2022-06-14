@@ -907,7 +907,7 @@ export default class EllipticalROITool extends AnnotationTool {
 
   _getTextLines = (data, targetId) => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality } =
+    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
       cachedVolumeStats;
 
     const textLines = [];
@@ -916,7 +916,7 @@ export default class EllipticalROITool extends AnnotationTool {
     if (area) {
       areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
+        : `Area: ${area.toFixed(2)} ${areaUnit}${String.fromCharCode(178)}`;
     }
 
     if (mean) {
@@ -990,7 +990,7 @@ export default class EllipticalROITool extends AnnotationTool {
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
-      const { dimensions, imageData, metadata } = image;
+      const { dimensions, imageData, metadata, hasPixelSpacing } = image;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -1091,6 +1091,7 @@ export default class EllipticalROITool extends AnnotationTool {
           max,
           stdDev,
           isEmptyArea,
+          areaUnit: hasPixelSpacing ? 'mm' : 'px',
         };
       } else {
         this.isHandleOutsideImage = true;

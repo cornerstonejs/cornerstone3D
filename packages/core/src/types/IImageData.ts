@@ -22,6 +22,8 @@ interface IImageData {
   metadata: { Modality: string };
   /** image scaling for scaling pixelArray */
   scaling?: Scaling;
+  /** whether the image has pixel spacing and it is not undefined */
+  hasPixelSpacing?: boolean;
 }
 
 export default IImageData;

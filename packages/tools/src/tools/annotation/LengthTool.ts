@@ -683,15 +683,13 @@ class LengthTool extends AnnotationTool {
   // text line for the current active length annotation
   _getTextLines(data, targetId) {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { length } = cachedVolumeStats;
+    const { length, unit } = cachedVolumeStats;
 
     if (length === undefined) {
       return;
     }
 
-    // spaceBetweenSlices & pixelSpacing &
-    // magnitude in each direction? Otherwise, this is "px"?
-    const textLines = [`${length.toFixed(2)} mm`];
+    const textLines = [`${length.toFixed(2)} ${unit}`];
 
     return textLines;
   }
@@ -720,7 +718,7 @@ class LengthTool extends AnnotationTool {
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
-      const { imageData, dimensions } = image;
+      const { imageData, dimensions, hasPixelSpacing } = image;
 
       const length = this._calculateLength(worldPos1, worldPos2);
 
@@ -738,6 +736,7 @@ class LengthTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
+        unit: hasPixelSpacing ? 'mm' : 'px',
       };
     }
 

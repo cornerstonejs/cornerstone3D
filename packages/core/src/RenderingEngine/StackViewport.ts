@@ -92,6 +92,21 @@ interface ImageDataMetaData {
   imagePixelModule: ImagePixelModule;
 }
 
+interface ImagePlaneModule {
+  columnCosines?: Point3;
+  columnPixelSpacing?: number;
+  imageOrientationPatient?: Float32Array;
+  imagePositionPatient?: Point3;
+  pixelSpacing?: Point2;
+  rowCosines?: Point3;
+  rowPixelSpacing?: number;
+  sliceLocation?: number;
+  sliceThickness?: number;
+  frameOfReferenceUID: string;
+  columns: number;
+  rows: number;
+}
+
 // TODO This needs to be exposed as its published to consumers.
 type CalibrationEvent = {
   rowScale: number;
@@ -260,6 +275,7 @@ class StackViewport extends Viewport implements IStackViewport {
       imageData: actor.getMapper().getInputData(),
       metadata: { Modality: this.modality },
       scaling: this.scaling,
+      hasPixelSpacing: this.hasPixelSpacing,
     };
   }
 
@@ -297,6 +313,7 @@ class StackViewport extends Viewport implements IStackViewport {
         },
       },
       scalarData: this.cpuImagePixelData,
+      hasPixelSpacing: this.hasPixelSpacing,
     };
   }
 
@@ -395,6 +412,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.modality = modality;
 
     let imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+    imagePlaneModule = this._getImagePlaneModule(imagePlaneModule);
 
     // Todo: for now, it gives error for getImageData
     if (!this.useCPURendering) {
@@ -1795,10 +1813,10 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex;
+    this.hasPixelSpacing = true;
 
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
-
     const imageId = await this._loadAndDisplayImage(
       this.imageIds[imageIdIndex],
       imageIdIndex
@@ -2406,6 +2424,45 @@ class StackViewport extends Viewport implements IStackViewport {
     // TODO -> vtk has full colormaps which are piecewise and frankly better?
     // Do we really want a pre defined 256 color map just for the sake of harmonization?
     throw new Error('unsetColormapGPU not implemented.');
+  }
+
+  // create default values for imagePlaneModule if values are undefined
+  private _getImagePlaneModule(
+    imagePlaneModule: ImagePlaneModule
+  ): ImagePlaneModule {
+    const newImagePlaneModule: ImagePlaneModule = {
+      ...imagePlaneModule,
+    };
+
+    if (!newImagePlaneModule.columnPixelSpacing) {
+      newImagePlaneModule.columnPixelSpacing = 1;
+      this.hasPixelSpacing = false;
+    }
+
+    if (!newImagePlaneModule.rowPixelSpacing) {
+      newImagePlaneModule.rowPixelSpacing = 1;
+      this.hasPixelSpacing = false;
+    }
+
+    if (!newImagePlaneModule.columnCosines) {
+      newImagePlaneModule.columnCosines = [0, 1, 0];
+    }
+
+    if (!newImagePlaneModule.rowCosines) {
+      newImagePlaneModule.rowCosines = [1, 0, 0];
+    }
+
+    if (!newImagePlaneModule.imagePositionPatient) {
+      newImagePlaneModule.imagePositionPatient = [0, 0, 0];
+    }
+
+    if (!newImagePlaneModule.imageOrientationPatient) {
+      newImagePlaneModule.imageOrientationPatient = new Float32Array([
+        1, 0, 0, 0, 1, 0,
+      ]);
+    }
+
+    return newImagePlaneModule;
   }
 }
 

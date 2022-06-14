@@ -65,6 +65,7 @@ class Viewport implements IViewport {
   private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
+  protected hasPixelSpacing = true;
 
   constructor(props: ViewportInput) {
     this.id = props.id;
@@ -808,6 +809,10 @@ class Viewport implements IViewport {
 
     // update clippingPlanes
     this.updateClippingPlanesForActors(updatedCamera);
+
+    const renderer = this.getRenderer();
+    renderer.resetCameraClippingRange();
+
     this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
   }
 

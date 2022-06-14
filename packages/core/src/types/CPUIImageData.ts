@@ -22,6 +22,8 @@ type CPUIImageData = {
   metadata: { Modality: string };
   scalarData: number[];
   scaling: Scaling;
+  /** whether the image has pixel spacing and it is not undefined */
+  hasPixelSpacing?: boolean;
 };
 
 export default CPUIImageData;
