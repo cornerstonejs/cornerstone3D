@@ -1,3 +1,5 @@
+import addAccessors from "../addAccessors";
+
 export default class TID1500MeasurementReport {
     constructor(TIDIncludeGroups) {
         this.TIDIncludeGroups = TIDIncludeGroups;
@@ -6,8 +8,7 @@ export default class TID1500MeasurementReport {
         const CurrentRequestedProcedureEvidenceSequence = [];
 
         this.ImageLibraryContentSequence = ImageLibraryContentSequence;
-        this.CurrentRequestedProcedureEvidenceSequence =
-            CurrentRequestedProcedureEvidenceSequence;
+        this.CurrentRequestedProcedureEvidenceSequence = CurrentRequestedProcedureEvidenceSequence;
 
         this.PersonObserverName = {
             RelationshipType: "HAS OBS CONTEXT",
@@ -48,45 +49,45 @@ export default class TID1500MeasurementReport {
                 {
                     RelationshipType: "HAS CONCEPT MOD",
                     ValueType: "CODE",
-                    ConceptNameCodeSequence: {
+                    ConceptNameCodeSequence: addAccessors({
                         CodeValue: "121049",
                         CodingSchemeDesignator: "DCM",
                         CodeMeaning: "Language of Content Item and Descendants"
-                    },
-                    ConceptCodeSequence: {
+                    }),
+                    ConceptCodeSequence: addAccessors({
                         CodeValue: "eng",
                         CodingSchemeDesignator: "RFC5646",
                         CodeMeaning: "English"
-                    },
-                    ContentSequence: {
+                    }),
+                    ContentSequence: addAccessors({
                         RelationshipType: "HAS CONCEPT MOD",
                         ValueType: "CODE",
-                        ConceptNameCodeSequence: {
+                        ConceptNameCodeSequence: addAccessors({
                             CodeValue: "121046",
                             CodingSchemeDesignator: "DCM",
                             CodeMeaning: "Country of Language"
-                        },
-                        ConceptCodeSequence: {
+                        }),
+                        ConceptCodeSequence: addAccessors({
                             CodeValue: "US",
                             CodingSchemeDesignator: "ISO3166_1",
                             CodeMeaning: "United States"
-                        }
-                    }
+                        })
+                    })
                 },
                 this.PersonObserverName,
                 {
                     RelationshipType: "HAS CONCEPT MOD",
                     ValueType: "CODE",
-                    ConceptNameCodeSequence: {
+                    ConceptNameCodeSequence: addAccessors({
                         CodeValue: "121058",
                         CodingSchemeDesignator: "DCM",
                         CodeMeaning: "Procedure reported"
-                    },
-                    ConceptCodeSequence: {
+                    }),
+                    ConceptCodeSequence: addAccessors({
                         CodeValue: "1",
                         CodingSchemeDesignator: "99dcmjs",
                         CodeMeaning: "Unknown procedure"
-                    }
+                    })
                 },
                 {
                     RelationshipType: "CONTAINS",
@@ -169,8 +170,9 @@ export default class TID1500MeasurementReport {
         // with the proper ReferencedSOPSequence
         TID1501MeasurementGroups.forEach(measurementGroup => {
             measurementGroup.TID300Measurements.forEach(measurement => {
-                const { ReferencedSOPInstanceUID } =
-                    measurement.ReferencedSOPSequence;
+                const {
+                    ReferencedSOPInstanceUID
+                } = measurement.ReferencedSOPSequence;
 
                 if (!parsedSOPInstances.includes(ReferencedSOPInstanceUID)) {
                     ImageLibraryContentSequence.push({

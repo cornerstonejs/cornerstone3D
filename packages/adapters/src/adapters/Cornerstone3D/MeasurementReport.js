@@ -171,8 +171,10 @@ export default class MeasurementReport {
             group => group.ValueType === "SCOORD"
         );
         const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
-        const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-            ReferencedSOPSequence;
+        const {
+            ReferencedSOPInstanceUID,
+            ReferencedFrameNumber
+        } = ReferencedSOPSequence;
 
         const referencedImageId =
             sopInstanceUIDToImageIdMap[ReferencedSOPInstanceUID];
@@ -182,10 +184,10 @@ export default class MeasurementReport {
         );
 
         const finding = findingGroup
-            ? findingGroup.ConceptCodeSequence[0]
+            ? addAccessors(findingGroup.ConceptCodeSequence)
             : undefined;
         const findingSites = findingSiteGroups.map(fsg => {
-            return { ...fsg.ConceptCodeSequence[0] };
+            return addAccessors(fsg.ConceptCodeSequence);
         });
 
         const defaultState = {
@@ -206,8 +208,9 @@ export default class MeasurementReport {
             defaultState.description = defaultState.finding.CodeMeaning;
         }
 
-        defaultState.annotation.metadata.label =
-            MeasurementReport.getCornerstoneLabelFromDefaultState(defaultState);
+        defaultState.annotation.metadata.label = MeasurementReport.getCornerstoneLabelFromDefaultState(
+            defaultState
+        );
 
         return {
             defaultState,
@@ -255,8 +258,9 @@ export default class MeasurementReport {
             const { sopInstanceUID, sopClassUID } = sopCommonModule;
             const { studyInstanceUID, seriesInstanceUID } = generalSeriesModule;
 
-            sopInstanceUIDsToSeriesInstanceUIDMap[sopInstanceUID] =
-                seriesInstanceUID;
+            sopInstanceUIDsToSeriesInstanceUIDMap[
+                sopInstanceUID
+            ] = seriesInstanceUID;
 
             if (
                 !derivationSourceDatasets.find(
@@ -264,11 +268,10 @@ export default class MeasurementReport {
                 )
             ) {
                 // Entry not present for series, create one.
-                const derivationSourceDataset =
-                    MeasurementReport.generateDerivationSourceDataset(
-                        studyInstanceUID,
-                        seriesInstanceUID
-                    );
+                const derivationSourceDataset = MeasurementReport.generateDerivationSourceDataset(
+                    studyInstanceUID,
+                    seriesInstanceUID
+                );
 
                 derivationSourceDatasets.push(derivationSourceDataset);
             }
@@ -301,8 +304,9 @@ export default class MeasurementReport {
                 }
             });
 
-            allMeasurementGroups =
-                allMeasurementGroups.concat(measurementGroups);
+            allMeasurementGroups = allMeasurementGroups.concat(
+                measurementGroups
+            );
         });
 
         const tid1500MeasurementReport = new TID1500MeasurementReport(
@@ -377,12 +381,11 @@ export default class MeasurementReport {
                 measurementGroup.ContentSequence
             );
 
-            const TrackingIdentifierGroup =
-                measurementGroupContentSequence.find(
-                    contentItem =>
-                        contentItem.ConceptNameCodeSequence.CodeMeaning ===
-                        TRACKING_IDENTIFIER
-                );
+            const TrackingIdentifierGroup = measurementGroupContentSequence.find(
+                contentItem =>
+                    contentItem.ConceptNameCodeSequence.CodeMeaning ===
+                    TRACKING_IDENTIFIER
+            );
 
             const TrackingIdentifierValue = TrackingIdentifierGroup.TextValue;
 

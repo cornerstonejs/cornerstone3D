@@ -1,4 +1,5 @@
 import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
+import addAccessors from "../addAccessors.js";
 
 export default class TID300Measurement {
     constructor(props) {
@@ -55,16 +56,16 @@ export default class TID300Measurement {
             {
                 RelationshipType: "CONTAINS",
                 ValueType: "CODE",
-                ConceptNameCodeSequence: {
+                ConceptNameCodeSequence: addAccessors({
                     CodeValue: "121071",
                     CodingSchemeDesignator: "DCM",
                     CodeMeaning: "Finding"
-                },
-                ConceptCodeSequence: {
+                }),
+                ConceptCodeSequence: addAccessors({
                     CodeValue, //: "SAMPLE FINDING",
                     CodingSchemeDesignator, //: "99dcmjs",
                     CodeMeaning //: "Sample Finding"
-                }
+                })
             }
         ];
     }
@@ -73,21 +74,24 @@ export default class TID300Measurement {
         let findingSites = this.props.findingSites || [];
 
         return findingSites.map(findingSite => {
-            const { CodeValue, CodingSchemeDesignator, CodeMeaning } =
-                findingSite;
+            const {
+                CodeValue,
+                CodingSchemeDesignator,
+                CodeMeaning
+            } = findingSite;
             return {
                 RelationshipType: "CONTAINS",
                 ValueType: "CODE",
-                ConceptNameCodeSequence: {
+                ConceptNameCodeSequence: addAccessors({
                     CodeValue: "363698007",
                     CodingSchemeDesignator: "SCT",
                     CodeMeaning: "Finding Site"
-                },
-                ConceptCodeSequence: {
+                }),
+                ConceptCodeSequence: addAccessors({
                     CodeValue, //: "SAMPLE FINDING SITE",
                     CodingSchemeDesignator, //: "99dcmjs",
                     CodeMeaning //: "Sample Finding Site"
-                }
+                })
             };
         });
     }
