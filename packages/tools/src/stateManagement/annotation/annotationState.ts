@@ -106,6 +106,12 @@ function removeAnnotation(
   }
 
   const annotation = annotationManager.getAnnotation(annotationUID);
+
+  // no need to continue in case there is no annotation.
+  if (!annotation) {
+    return;
+  }
+
   annotationManager.removeAnnotation(annotationUID);
 
   // trigger annotation removed
