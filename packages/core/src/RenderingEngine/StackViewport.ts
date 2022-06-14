@@ -1,11 +1,11 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import _cloneDeep from 'lodash.clonedeep';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
+import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
@@ -17,6 +17,7 @@ import {
   invertRgbTransferFunction,
   windowLevel as windowLevelUtil,
   imageIdToURI,
+  isImageActor,
 } from '../utilities';
 import {
   Point2,
@@ -63,6 +64,7 @@ import {
 import getScalingParameters from '../utilities/getScalingParameters';
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
+import { ImageActor } from '../types/IActor';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -244,7 +246,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+    if (!isImageActor(actor)) {
       return;
     }
 
@@ -326,31 +328,21 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   /**
-   * Creates a volume actor and volume mapper based on the provided vtkImageData
-   * It sets the sampleDistance for the volumeMapper, and sets the actor VOI range
-   * initially, and assigns it to the class property to be saved for future slices.
+   * Creates imageMapper based on the provided vtkImageData and also creates
+   * the imageSliceActor and connects it to the imageMapper.
    * For color stack images, it sets the independent components to be false which
    * is required in vtk.
    *
    * @param imageData - vtkImageData for the viewport
    * @returns actor vtkActor
    */
+
   private createActorMapper = (imageData) => {
-    const mapper = vtkVolumeMapper.newInstance();
+    const mapper = vtkImageMapper.newInstance();
     mapper.setInputData(imageData);
 
-    const actor = vtkVolume.newInstance();
+    const actor = vtkImageSlice.newInstance();
     actor.setMapper(mapper);
-
-    // We set the sample distance to vSize to not get warning
-    const [xSize, ySize, zSize] = imageData.getDimensions();
-    const [xSpacing, ySpacing, zSpacing] = imageData.getSpacing();
-    const vSize = vec3.length([
-      xSize * xSpacing,
-      ySize * ySpacing,
-      zSize * zSpacing,
-    ]);
-    mapper.setSampleDistance(vSize / mapper.getMaximumSamplesPerRay());
 
     if (imageData.getPointData().getNumberOfComponents() > 1) {
       // @ts-ignore: vtkjs incorrect typing
@@ -875,7 +867,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+    if (!isImageActor(actor)) {
       return;
     }
     const volumeProperty = actor.getProperty();
@@ -916,7 +908,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+    if (!isImageActor(actor)) {
       return;
     }
 
@@ -985,28 +977,33 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+
+    if (!isImageActor(actor)) {
       return;
     }
 
-    const volumeActor = actor as VolumeActor;
-    const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
+    const imageActor = actor as ImageActor;
 
-    if (typeof voiRange === 'undefined') {
-      const imageData = volumeActor.getMapper().getInputData();
+    let voiRangeToUse = voiRange;
+    if (typeof voiRangeToUse === 'undefined') {
+      const imageData = imageActor.getMapper().getInputData();
       const range = imageData.getPointData().getScalars().getRange();
-      tfunc.setRange(range[0], range[1]);
-      voiRange = { lower: range[0], upper: range[1] };
-    } else {
-      const { lower, upper } = voiRange;
-      tfunc.setRange(lower, upper);
+      voiRangeToUse = { lower: range[0], upper: range[1] };
     }
 
+    const { windowWidth, windowCenter } = windowLevelUtil.toWindowLevel(
+      voiRangeToUse.lower,
+      voiRangeToUse.upper
+    );
+
+    imageActor.getProperty().setColorWindow(windowWidth);
+    imageActor.getProperty().setColorLevel(windowCenter);
+
     this.voiApplied = true;
-    this.voiRange = voiRange;
+    this.voiRange = voiRangeToUse;
     const eventDetail: VoiModifiedEventDetail = {
       viewportId: this.id,
-      range: voiRange,
+      range: voiRangeToUse,
     };
 
     if (!suppressEvents) {
@@ -1277,8 +1274,8 @@ class StackViewport extends Viewport implements IStackViewport {
       return false;
     }
 
-    const [xSpacing, ySpacing, zSpacing] = imageData.getSpacing();
-    const [xVoxels, yVoxels, zVoxels] = imageData.getDimensions();
+    const [xSpacing, ySpacing] = imageData.getSpacing();
+    const [xVoxels, yVoxels] = imageData.getDimensions();
     const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId);
     const direction = imageData.getDirection();
     const rowCosines = direction.slice(0, 3);

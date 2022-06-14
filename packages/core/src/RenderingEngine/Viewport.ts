@@ -9,7 +9,7 @@ import _cloneDeep from 'lodash.clonedeep';
 import Events from '../enums/Events';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import { triggerEvent, planar } from '../utilities';
+import { triggerEvent, planar, isImageActor } from '../utilities';
 import type {
   ICamera,
   ActorEntry,
@@ -307,7 +307,7 @@ class Viewport implements IViewport {
   private getDefaultImageData(): any {
     const actorEntry = this.getDefaultActor();
 
-    if (actorEntry && actorEntry.actor.isA('vtkVolume')) {
+    if (actorEntry && isImageActor(actorEntry.actor)) {
       return actorEntry.actor.getMapper().getInputData();
     }
   }
@@ -365,8 +365,8 @@ class Viewport implements IViewport {
   public setActors(actors: Array<ActorEntry>): void {
     this.removeAllActors();
     const resetCameraPanAndZoom = true;
-    // when we set the actor we need to reset the camera to iinitialize the
-    // camera focal point wiith the bounds of the actors.
+    // when we set the actor we need to reset the camera to initialize the
+    // camera focal point with the bounds of the actors.
     this.addActors(actors, resetCameraPanAndZoom);
   }
 
@@ -844,9 +844,10 @@ class Viewport implements IViewport {
       // we assume that the first two clipping plane of the mapper are always
       // the 'camera' clipping. Update clipping planes only if the actor is
       // a vtkVolume
-      if (!actorEntry.actor || !actorEntry.actor.isA('vtkVolume')) {
+      if (!actorEntry.actor || !isImageActor(actorEntry.actor)) {
         return;
       }
+
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
