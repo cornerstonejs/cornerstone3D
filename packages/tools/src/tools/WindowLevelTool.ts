@@ -51,7 +51,6 @@ export default class WindowLevelTool extends BaseTool {
       modality,
       newRange,
       viewportsContainingVolumeUID;
-    let useDynamicRange = false;
     let isPreScaled = false;
 
     if (viewport instanceof VolumeViewport) {
@@ -68,7 +67,6 @@ export default class WindowLevelTool extends BaseTool {
       [lower, upper] = rgbTransferFunction.getRange();
       const volume = cache.getVolume(volumeId);
       modality = volume.metadata.Modality;
-      useDynamicRange = true;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
     } else if (viewport instanceof StackViewport) {
       const properties = viewport.getProperties();
@@ -92,8 +90,8 @@ export default class WindowLevelTool extends BaseTool {
       });
     } else {
       newRange = this.getNewRange({
+        viewport,
         deltaPointsCanvas: deltaPoints.canvas,
-        useDynamicRange,
         volumeId,
         lower,
         upper,
@@ -136,12 +134,10 @@ export default class WindowLevelTool extends BaseTool {
     return { lower, upper };
   }
 
-  getNewRange({ deltaPointsCanvas, useDynamicRange, volumeId, lower, upper }) {
-    // Todo: enabling a viewport twice in a row sets the imageDynamicRange to be zero for some reason
-    // 1 was too little
-    const multiplier = useDynamicRange
-      ? this._getMultiplyerFromDynamicRange(volumeId)
-      : DEFAULT_MULTIPLIER;
+  getNewRange({ viewport, deltaPointsCanvas, volumeId, lower, upper }) {
+    const multiplier =
+      this._getMultiplierFromDynamicRange(viewport, volumeId) ||
+      DEFAULT_MULTIPLIER;
 
     const wwDelta = deltaPointsCanvas[0] * multiplier;
     const wcDelta = deltaPointsCanvas[1] * multiplier;
@@ -160,15 +156,23 @@ export default class WindowLevelTool extends BaseTool {
     return utilities.windowLevel.toLowHighRange(windowWidth, windowCenter);
   }
 
-  _getMultiplyerFromDynamicRange(volumeId) {
-    if (!volumeId) {
-      throw new Error('No volumeId provided for the volume Viewport');
+  _getMultiplierFromDynamicRange(viewport, volumeId) {
+    let imageDynamicRange;
+
+    if (volumeId) {
+      const imageVolume = cache.getVolume(volumeId);
+      const { dimensions, scalarData } = imageVolume;
+      imageDynamicRange = this._getImageDynamicRangeFromMiddleSlice(
+        scalarData,
+        dimensions
+      );
+    } else {
+      imageDynamicRange = this._getImageDynamicRangeFromViewport(viewport);
     }
 
-    let multiplier = DEFAULT_MULTIPLIER;
-    const imageDynamicRange = this._getImageDynamicRange(volumeId);
-
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
+
+    let multiplier = DEFAULT_MULTIPLIER;
 
     if (ratio > 1) {
       multiplier = Math.round(ratio);
@@ -177,21 +181,35 @@ export default class WindowLevelTool extends BaseTool {
     return multiplier;
   }
 
-  _getImageDynamicRange = (volumeId: string) => {
-    const imageVolume = cache.getVolume(volumeId);
-    const { dimensions, scalarData } = imageVolume;
+  _getImageDynamicRangeFromViewport(viewport) {
+    const { imageData } = viewport.getImageData();
+    const dimensions = imageData.getDimensions();
+
+    let scalarData;
+    // if getScalarData is a method on imageData
+    if (imageData.getScalarData) {
+      scalarData = imageData.getScalarData();
+    } else {
+      scalarData = imageData.getPointData().getScalars();
+    }
+
+    if (dimensions[2] !== 1) {
+      return this._getImageDynamicRangeFromMiddleSlice(scalarData, dimensions);
+    }
+
+    let range;
+    if (scalarData.getRange) {
+      range = scalarData.getRange();
+    } else {
+      const { min, max } = this._getMinMax(scalarData, scalarData.length);
+      range = [min, max];
+    }
+
+    return range[1] - range[0];
+  }
+
+  _getImageDynamicRangeFromMiddleSlice = (scalarData, dimensions) => {
     const middleSliceIndex = Math.floor(dimensions[2] / 2);
-
-    // Todo: volume shouldn't only be streaming image volume, it can be imageVolume
-    // if (!(imageVolume instanceof StreamingImageVolume)) {
-    //   return
-    // }
-
-    // const streamingVolume = <StreamingImageVolume>imageVolume
-
-    // if (!streamingVolume.loadStatus.cachedFrames[middleSliceIndex]) {
-    //   return DEFAULT_IMAGE_DYNAMIC_RANGE
-    // }
 
     const frameLength = dimensions[0] * dimensions[1];
     let bytesPerVoxel;
@@ -209,6 +227,12 @@ export default class WindowLevelTool extends BaseTool {
     const byteOffset = middleSliceIndex * frameLength * bytesPerVoxel;
     const frame = new TypedArrayConstructor(buffer, byteOffset, frameLength);
 
+    const { max, min } = this._getMinMax(frame, frameLength);
+
+    return max - min;
+  };
+
+  private _getMinMax(frame: Uint8Array | Float32Array, frameLength: number) {
     let min = Infinity;
     let max = -Infinity;
 
@@ -223,7 +247,6 @@ export default class WindowLevelTool extends BaseTool {
         max = voxel;
       }
     }
-
-    return max - min;
-  };
+    return { max, min };
+  }
 }

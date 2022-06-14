@@ -809,11 +809,11 @@ class Viewport implements IViewport {
 
     // update clippingPlanes if volume viewports
     const actorEntry = this.getDefaultActor();
-    if (actorEntry.actor.isA('vtkVolume')) {
+    if (actorEntry?.actor?.isA('vtkVolume')) {
       this.updateClippingPlanesForActors(updatedCamera);
     }
 
-    if (actorEntry.actor.isA('vtkImageSlice')) {
+    if (actorEntry?.actor?.isA('vtkImageSlice')) {
       const renderer = this.getRenderer();
       renderer.resetCameraClippingRange();
     }

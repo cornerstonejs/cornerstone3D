@@ -507,7 +507,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       imageData: actor.getMapper().getInputData(),
       metadata: undefined,
       scaling: undefined,
-      hasPixelSpacing: this.hasPixelSpacing,
+      hasPixelSpacing: true,
     };
   }
 

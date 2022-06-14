@@ -46,7 +46,7 @@ interface IImageVolume {
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string; // if volume is derived from another volume
   /** whether the metadata for the pixel spacing is not undefined  */
-  hasPixelSpacing?: boolean;
+  hasPixelSpacing: boolean;
   /** method to convert the volume data in the volume cache, to separate images in the image cache */
   convertToCornerstoneImage?: (
     imageId: string,
