@@ -145,11 +145,6 @@ function mouseUpDrawCallback(
   const eventDetail = evt.detail;
   const { element } = eventDetail;
 
-  // check and halt if necessary the drawing process
-  if (this.haltDrawing(evt)) {
-    return;
-  }
-
   if (
     allowOpenContours &&
     !pointsAreWithinCloseContourProximity(
@@ -165,11 +160,17 @@ function mouseUpDrawCallback(
 }
 
 /**
- * Completes the contour being drawn, creating a closed contour annotation.
+ * Completes the contour being drawn, creating a closed contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawClosedContour(element: HTMLDivElement): void {
+function completeDrawClosedContour(element: HTMLDivElement): boolean {
   this.removeCrossedLinesOnCompleteDraw();
   const { canvasPoints } = this.drawData;
+
+  // check and halt if necessary the drawing process, last chance to complete drawing and fire events.
+  if (this.haltDrawing(element, canvasPoints)) {
+    return false;
+  }
+
   const { annotation, viewportIdsToRender } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
@@ -203,6 +204,8 @@ function completeDrawClosedContour(element: HTMLDivElement): void {
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
   this.deactivateDraw(element);
+
+  return true;
 }
 
 /**
@@ -231,10 +234,16 @@ function removeCrossedLinesOnCompleteDraw(): void {
 }
 
 /**
- * Completes the contour being drawn, creating an open contour annotation.
+ * Completes the contour being drawn, creating an open contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawOpenContour(element: HTMLDivElement): void {
+function completeDrawOpenContour(element: HTMLDivElement): boolean {
   const { canvasPoints } = this.drawData;
+
+  // check and halt if necessary the drawing process, last chance to complete drawing and fire events.
+  if (this.haltDrawing(element, canvasPoints)) {
+    return false;
+  }
+
   const { annotation, viewportIdsToRender } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
@@ -271,6 +280,8 @@ function completeDrawOpenContour(element: HTMLDivElement): void {
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
   this.deactivateDraw(element);
+
+  return true;
 }
 
 /**
@@ -333,15 +344,10 @@ function applyCreateOnCross(
     canvasPoints.shift();
   }
 
-  // check and halt if necessary the drawing process
-  // this might occur when after creating on cross, the result of completing the contour would not produce a visible instance.
-  // I.e drawing tools does not draw it.
-  if (this.haltDrawing(evt)) {
-    return;
+  if (this.completeDrawClosedContour(element)) {
+    // pos complete operation
+    this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
   }
-
-  this.completeDrawClosedContour(element);
-  this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
 }
 
 /**
@@ -392,12 +398,7 @@ function shouldHaltDrawing(
 /**
  * Check and halt a drawing for a given event. It returns true in case drawing is halted, otherswise false.
  */
-function haltDrawing(
-  evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-): boolean {
-  const { canvasPoints } = this.drawData;
-  const eventDetail = evt.detail;
-  const { element } = eventDetail;
+function haltDrawing(element: HTMLDivElement, canvasPoints: any): boolean {
   const { subPixelResolution } = this.configuration;
 
   if (shouldHaltDrawing(canvasPoints, subPixelResolution)) {
