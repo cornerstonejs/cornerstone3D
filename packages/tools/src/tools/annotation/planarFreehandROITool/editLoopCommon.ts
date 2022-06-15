@@ -52,6 +52,11 @@ function checkForFirstCrossing(
 
     const distanceIndexPairs = [];
 
+    // prevent continue if there are not the minimum of points for this op.
+    if (prevCanvasPoints.length < 2) {
+      return;
+    }
+
     for (let i = 0; i < prevCanvasPoints.length; i++) {
       const prevCanvasPoint = prevCanvasPoints[i];
       const distance = vec2.distance(prevCanvasPoint, firstEditCanvasPoint);
