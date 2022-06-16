@@ -144,39 +144,6 @@ function mouseUpDrawCallback(
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;
   const { element } = eventDetail;
-  const { subPixelResolution } = this.configuration;
-
-  const minPoints = Math.max(
-    /**
-     * The number of points to span 3 voxels in length, this is a realistically
-     * smallest open contour one could reasonably define (2 voxels should probably be a line).
-     */
-    subPixelResolution * 3,
-    /**
-     * Minimum 3 points, there are other annotations for one point (probe)
-     * or 2 points (line), so this comes only from a mistake in practice.
-     */
-    3
-  );
-
-  if (canvasPoints.length < minPoints) {
-    // Remove annotation instead of completing it.
-    const { annotation, viewportIdsToRender } = this.commonData;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    removeAnnotation(annotation.annotationUID);
-
-    this.isDrawing = false;
-    this.drawData = undefined;
-    this.commonData = undefined;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    this.deactivateDraw(element);
-
-    return;
-  }
 
   if (
     allowOpenContours &&
@@ -193,11 +160,17 @@ function mouseUpDrawCallback(
 }
 
 /**
- * Completes the contour being drawn, creating a closed contour annotation.
+ * Completes the contour being drawn, creating a closed contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawClosedContour(element: HTMLDivElement): void {
+function completeDrawClosedContour(element: HTMLDivElement): boolean {
   this.removeCrossedLinesOnCompleteDraw();
   const { canvasPoints } = this.drawData;
+
+  // check and halt if necessary the drawing process, last chance to complete drawing and fire events.
+  if (this.haltDrawing(element, canvasPoints)) {
+    return false;
+  }
+
   const { annotation, viewportIdsToRender } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
@@ -231,6 +204,8 @@ function completeDrawClosedContour(element: HTMLDivElement): void {
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
   this.deactivateDraw(element);
+
+  return true;
 }
 
 /**
@@ -259,10 +234,16 @@ function removeCrossedLinesOnCompleteDraw(): void {
 }
 
 /**
- * Completes the contour being drawn, creating an open contour annotation.
+ * Completes the contour being drawn, creating an open contour annotation. It will return true if contour is completed or false in case contour drawing is halted.
  */
-function completeDrawOpenContour(element: HTMLDivElement): void {
+function completeDrawOpenContour(element: HTMLDivElement): boolean {
   const { canvasPoints } = this.drawData;
+
+  // check and halt if necessary the drawing process, last chance to complete drawing and fire events.
+  if (this.haltDrawing(element, canvasPoints)) {
+    return false;
+  }
+
   const { annotation, viewportIdsToRender } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
@@ -299,6 +280,8 @@ function completeDrawOpenContour(element: HTMLDivElement): void {
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
   this.deactivateDraw(element);
+
+  return true;
 }
 
 /**
@@ -361,8 +344,10 @@ function applyCreateOnCross(
     canvasPoints.shift();
   }
 
-  this.completeDrawClosedContour(element);
-  this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
+  if (this.completeDrawClosedContour(element)) {
+    // pos complete operation
+    this.activateClosedContourEdit(evt, annotation, viewportIdsToRender);
+  }
 }
 
 /**
@@ -389,6 +374,56 @@ function cancelDrawing(element: HTMLElement) {
 }
 
 /**
+ * Tell whether a drawing should be halted or not. It will be true when canvas points is less than the minimum required.
+ */
+function shouldHaltDrawing(
+  canvasPoints: any,
+  subPixelResolution: number
+): boolean {
+  const minPoints = Math.max(
+    /**
+     * The number of points to span 3 voxels in length, this is a realistically
+     * smallest open contour one could reasonably define (2 voxels should probably be a line).
+     */
+    subPixelResolution * 3,
+    /**
+     * Minimum 3 points, there are other annotations for one point (probe)
+     * or 2 points (line), so this comes only from a mistake in practice.
+     */
+    3
+  );
+  return canvasPoints.length < minPoints;
+}
+
+/**
+ * Check and halt a drawing for a given event. It returns true in case drawing is halted, otherswise false.
+ */
+function haltDrawing(element: HTMLDivElement, canvasPoints: any): boolean {
+  const { subPixelResolution } = this.configuration;
+
+  if (shouldHaltDrawing(canvasPoints, subPixelResolution)) {
+    // Remove annotation instead of completing it.
+    const { annotation, viewportIdsToRender } = this.commonData;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
+
+    removeAnnotation(annotation.annotationUID);
+
+    this.isDrawing = false;
+    this.drawData = undefined;
+    this.commonData = undefined;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    this.deactivateDraw(element);
+
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Registers the contour drawing loop to the tool instance.
  */
 function registerDrawLoop(toolInstance): void {
@@ -407,6 +442,7 @@ function registerDrawLoop(toolInstance): void {
   toolInstance.completeDrawClosedContour =
     completeDrawClosedContour.bind(toolInstance);
   toolInstance.cancelDrawing = cancelDrawing.bind(toolInstance);
+  toolInstance.haltDrawing = haltDrawing.bind(toolInstance);
 }
 
 export default registerDrawLoop;

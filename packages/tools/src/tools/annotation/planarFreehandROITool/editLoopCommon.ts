@@ -40,79 +40,83 @@ function checkForFirstCrossing(
 
     // On the first crossing, remove the first lines prior to the crossing
     this.removePointsUpUntilFirstCrossing(isClosedContour);
-  } else if (
-    editCanvasPoints.length >
-    this.configuration.checkCanvasEditFallbackProximity
-  ) {
-    // At this point, likely we are drawing along the line, we are past the proximity for grabbing.
-    // Search for nearest line segment to the start of the edit.
-    // Set the crossing index to the lower index of the segment.
+    // prevent continue if there are not the minimum of points for this op.
+  } else if (prevCanvasPoints.length >= 2) {
+    if (
+      editCanvasPoints.length >
+      this.configuration.checkCanvasEditFallbackProximity
+    ) {
+      // At this point, likely we are drawing along the line, we are past the proximity for grabbing.
+      // Search for nearest line segment to the start of the edit.
+      // Set the crossing index to the lower index of the segment.
 
-    const firstEditCanvasPoint = editCanvasPoints[0];
+      const firstEditCanvasPoint = editCanvasPoints[0];
 
-    const distanceIndexPairs = [];
+      const distanceIndexPairs = [];
 
-    for (let i = 0; i < prevCanvasPoints.length; i++) {
-      const prevCanvasPoint = prevCanvasPoints[i];
-      const distance = vec2.distance(prevCanvasPoint, firstEditCanvasPoint);
+      for (let i = 0; i < prevCanvasPoints.length; i++) {
+        const prevCanvasPoint = prevCanvasPoints[i];
+        const distance = vec2.distance(prevCanvasPoint, firstEditCanvasPoint);
 
-      distanceIndexPairs.push({ distance, index: i });
-    }
+        distanceIndexPairs.push({ distance, index: i });
+      }
 
-    distanceIndexPairs.sort((a, b) => a.distance - b.distance);
+      distanceIndexPairs.sort((a, b) => a.distance - b.distance);
 
-    const twoClosestDistanceIndexPairs = [
-      distanceIndexPairs[0],
-      distanceIndexPairs[1],
-    ];
+      const twoClosestDistanceIndexPairs = [
+        distanceIndexPairs[0],
+        distanceIndexPairs[1],
+      ];
 
-    const lowestIndex = Math.min(
-      twoClosestDistanceIndexPairs[0].index,
-      twoClosestDistanceIndexPairs[1].index
-    );
-
-    this.editData.startCrossingIndex = lowestIndex;
-  } else if (editCanvasPoints.length >= 2) {
-    // Check if extending a line back 6 (Proximity) canvas pixels would cross a line.
-
-    // Extend point back 6 canvas pixels from first point.
-    const dir = vec2.create();
-
-    vec2.subtract(dir, editCanvasPoints[1], editCanvasPoints[0]);
-    vec2.normalize(dir, dir);
-
-    const proximity = 6;
-
-    const extendedPoint: Types.Point2 = [
-      editCanvasPoints[0][0] - dir[0] * proximity,
-      editCanvasPoints[0][1] - dir[1] * proximity,
-    ];
-
-    const crossedLineSegmentFromExtendedPoint =
-      getFirstIntersectionWithPolyline(
-        prevCanvasPoints,
-        extendedPoint,
-        editCanvasPoints[0],
-        isClosedContour
+      const lowestIndex = Math.min(
+        twoClosestDistanceIndexPairs[0].index,
+        twoClosestDistanceIndexPairs[1].index
       );
 
-    if (crossedLineSegmentFromExtendedPoint) {
-      // Add points.
-      const pointsToPrepend = [extendedPoint];
+      this.editData.startCrossingIndex = lowestIndex;
+    } else {
+      // Check if extending a line back 6 (Proximity) canvas pixels would cross a line.
 
-      addCanvasPointsToArray(
-        element,
-        pointsToPrepend,
-        editCanvasPoints[0],
-        this.commonData
-      );
+      // Extend point back 6 canvas pixels from first point.
+      const dir = vec2.create();
 
-      editCanvasPoints.unshift(...pointsToPrepend);
+      vec2.subtract(dir, editCanvasPoints[1], editCanvasPoints[0]);
+      vec2.normalize(dir, dir);
 
-      this.removePointsUpUntilFirstCrossing(isClosedContour);
+      const proximity = 6;
 
-      this.editData.editIndex = editCanvasPoints.length - 1;
-      this.editData.startCrossingIndex = crossedLineSegmentFromExtendedPoint[0];
+      const extendedPoint: Types.Point2 = [
+        editCanvasPoints[0][0] - dir[0] * proximity,
+        editCanvasPoints[0][1] - dir[1] * proximity,
+      ];
+
+      const crossedLineSegmentFromExtendedPoint =
+        getFirstIntersectionWithPolyline(
+          prevCanvasPoints,
+          extendedPoint,
+          editCanvasPoints[0],
+          isClosedContour
+        );
+
+      if (crossedLineSegmentFromExtendedPoint) {
+        // Add points.
+        const pointsToPrepend = [extendedPoint];
+
+        addCanvasPointsToArray(
+          element,
+          pointsToPrepend,
+          editCanvasPoints[0],
+          this.commonData
+        );
+
+        editCanvasPoints.unshift(...pointsToPrepend);
+
+        this.removePointsUpUntilFirstCrossing(isClosedContour);
+
+        this.editData.editIndex = editCanvasPoints.length - 1;
+        this.editData.startCrossingIndex =
+          crossedLineSegmentFromExtendedPoint[0];
+      }
     }
   }
 }
