@@ -24,6 +24,13 @@ function readTag(stream) {
     return tag;
 }
 
+function toWindows(inputArray, size) {
+    return Array.from(
+        { length: inputArray.length - (size - 1) }, //get the appropriate length
+        (_, index) => inputArray.slice(index, index + size) //create the windows
+    );
+}
+
 var binaryVRs = ["FL", "FD", "SL", "SS", "UL", "US", "AT"],
     explicitVRs = ["OB", "OW", "OF", "SQ", "UC", "UR", "UT", "UN"],
     singleVRs = ["SQ", "OF", "OW", "OB", "UN"];
@@ -342,6 +349,7 @@ class BinaryRepresentation extends ValueRepresentation {
         if (length == 0xffffffff) {
             var itemTagValue = Tag.readTag(stream),
                 frames = [];
+
             if (itemTagValue.is(0xfffee000)) {
                 var itemLength = stream.readUint32(),
                     numOfFrames = 1,
@@ -357,68 +365,72 @@ class BinaryRepresentation extends ValueRepresentation {
                     offsets = [];
                 }
 
+                const getFrameOrFragement = stream => {
+                    var nextTag = Tag.readTag(stream);
+                    if (!nextTag.is(0xfffee000)) {
+                        return [null, true];
+                    }
+                    let frameOrFragmentItemLength = stream.readUint32();
+                    const buffer = stream.getBuffer(
+                        stream.offset,
+                        stream.offset + frameOrFragmentItemLength
+                    );
+                    stream.increment(frameOrFragmentItemLength);
+                    return [buffer, false];
+                };
+
                 // If there is an offset table, use that to loop through pixel data sequence
-                // FIX: These two loops contain the exact same code, but I couldn't think of a way
-                // to combine the for and while loops non-confusingly so went with the explicit but
-                // redundant approach.
                 if (offsets.length > 0) {
+                    // make offsets relative to the stream, not tag
+                    offsets = offsets.map(e => e + stream.offset);
                     offsets.push(stream.size);
 
-                    for (var _i = 0; _i < offsets.length - 1; _i++) {
-                        let fragments = [];
-
-                        while (stream.offset < offsets[_i + 1]) {
-                            var nextTag = Tag.readTag(stream);
-
-                            if (!nextTag.is(0xfffee000)) {
+                    // window offsets to an array of [start,stop] locations
+                    frames = toWindows(offsets, 2).map(range => {
+                        const fragments = [];
+                        const [start, stop] = range;
+                        // create a new readable stream based on the range
+                        const s = new ReadBufferStream(
+                            stream.buffer,
+                            stream.isLittleEndian,
+                            start,
+                            stop
+                        );
+                        while (!s.end()) {
+                            const [buf, done] = getFrameOrFragement(s);
+                            if (done) {
                                 break;
                             }
-
-                            let fragmentItemLength = stream.readUint32();
-
-                            fragments.push(stream.more(fragmentItemLength));
+                            fragments.push(buf);
                         }
+                        return fragments;
+                    });
 
-                        const frameSize = (() => {
-                            let size = 0;
-
-                            for (const fragment of fragments) {
-                                size += fragment.size;
-                            }
-
-                            return size;
-                        })();
-                        const frame = (() => {
-                            const frame = new Uint8Array(frameSize);
-                            let offset = 0;
-
-                            for (const fragment of fragments) {
-                                frame.set(
-                                    new Uint8Array(fragment.buffer),
-                                    offset
-                                );
-                                offset += fragment.size;
-                            }
-
-                            return frame;
-                        })();
-
-                        frames.push(frame.buffer);
-                    }
+                    frames = frames.map(fragments => {
+                        if (fragments.length < 1) {
+                            return fragments[0];
+                        } else {
+                            const frameSize = fragments.reduce(
+                                (size, buffer) => {
+                                    return size + buffer.byteLength;
+                                },
+                                0
+                            );
+                            const mergedFrame = new Uint8Array(frameSize);
+                            fragments.reduce((offset, buffer) => {
+                                mergedFrame.set(new Uint8Array(buffer), offset);
+                                return offset + buffer.byteLength;
+                            }, 0);
+                            return mergedFrame;
+                        }
+                    });
                 }
                 // If no offset table, loop through remainder of stream looking for termination tag
                 else {
                     while (stream.offset < stream.size) {
-                        const nextTag = Tag.readTag(stream);
-
-                        if (!nextTag.is(0xfffee000)) {
-                            break;
-                        }
-
-                        const frameItemLength = stream.readUint32();
-                        const fragmentStream = stream.more(frameItemLength);
-
-                        frames.push(fragmentStream.buffer);
+                        const [buffer, done] = getFrameOrFragement(stream);
+                        if (done) break;
+                        frames.push(buffer);
                     }
                 }
 
@@ -433,7 +445,6 @@ class BinaryRepresentation extends ValueRepresentation {
                     "Item tag not found after undefined binary length"
                 );
             }
-
             return frames;
         } else {
             var bytes;
@@ -442,7 +453,8 @@ class BinaryRepresentation extends ValueRepresentation {
             } else if (this.type == 'OB') {
                 bytes = stream.readUint8Array(length);
             }*/
-            bytes = stream.more(length).buffer;
+            bytes = stream.getBuffer(stream.offset, stream.offset + length);
+            stream.increment(length);
             return [bytes];
         }
     }

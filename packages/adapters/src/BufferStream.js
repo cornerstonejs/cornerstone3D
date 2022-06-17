@@ -300,13 +300,19 @@ class BufferStream {
     }
 
     more(length) {
-        if (this.offset + length > this.buffer.byteLength) {
+        if (this.offset + length > this.endOffset) {
             throw new Error("Request more than currently allocated buffer");
         }
 
-        var newBuf = this.buffer.slice(this.offset, this.offset + length);
+        const newBuf = new ReadBufferStream(
+            this.buffer,
+            null,
+            this.offset,
+            this.offset + length
+        );
         this.increment(length);
-        return new ReadBufferStream(newBuf);
+
+        return newBuf;
     }
 
     reset() {
@@ -324,9 +330,91 @@ class BufferStream {
 }
 
 class ReadBufferStream extends BufferStream {
-    constructor(buffer, littleEndian) {
+    constructor(buffer, littleEndian, start, end) {
         super(buffer, littleEndian);
-        this.size = this.buffer.byteLength;
+        this.offset = start || 0;
+        this.size = end || this.buffer.byteLength;
+        this.startOffset = this.offset;
+        this.endOffset = this.size;
+    }
+
+    readString(length) {
+        var chars = [];
+        var start = this.offset;
+        var end = this.offset + length;
+        if (end >= this.endOffset) {
+            end = this.endOffset;
+        }
+        for (let i = start; i < end; ++i) {
+            chars.push(String.fromCharCode(this.view.getUint8(i)));
+            this.increment(1);
+        }
+        return chars.join("");
+    }
+
+    reset() {
+        this.offset = this.startOffset;
+        return this;
+    }
+
+    end() {
+        return this.offset >= this.endOffset;
+    }
+
+    toEnd() {
+        this.offset = this.endOffset;
+    }
+
+    writeUint8(value) {
+        throw new Error(value, "writeUint8 not implemented");
+    }
+
+    writeInt8(value) {
+        throw new Error(value, "writeInt8 not implemented");
+    }
+
+    writeUint16(value) {
+        throw new Error(value, "writeUint16 not implemented");
+    }
+
+    writeTwoUint16s(value) {
+        throw new Error(value, "writeTwoUint16s not implemented");
+    }
+
+    writeInt16(value) {
+        throw new Error(value, "writeInt16 not implemented");
+    }
+
+    writeUint32(value) {
+        throw new Error(value, "writeUint32 not implemented");
+    }
+
+    writeInt32(value) {
+        throw new Error(value, "writeInt32 not implemented");
+    }
+
+    writeFloat(value) {
+        throw new Error(value, "writeFloat not implemented");
+    }
+
+    writeDouble(value) {
+        throw new Error(value, "writeDouble not implemented");
+    }
+
+    writeString(value) {
+        throw new Error(value, "writeString not implemented");
+    }
+
+    writeHex(value) {
+        throw new Error(value, "writeHex not implemented");
+    }
+
+    checkSize(step) {
+        throw new Error(step, "checkSize not implemented");
+    }
+
+    concat(stream) {
+        throw new Error(stream, "concat not implemented");
     }
 }
 
