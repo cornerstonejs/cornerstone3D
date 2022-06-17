@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.1...@cornerstonejs/core@0.13.2) (2022-06-17)
+
+
+### Bug Fixes
+
+* Fix resize behaviour after devicePixelRatio changes ([#131](https://github.com/cornerstonejs/cornerstone3D-beta/issues/131)) ([2e9d686](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2e9d686d83e4a529cd71f1b4d0ea19e1137cee3a))
+
+
+
+
+
 ## [0.13.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.0...@cornerstonejs/core@0.13.1) (2022-06-17)
 
 
