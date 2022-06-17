@@ -998,6 +998,7 @@ export default class BidirectionalTool extends AnnotationTool {
         data.cachedStats[targetId] = {
           length: null,
           width: null,
+          unit: null,
         };
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);

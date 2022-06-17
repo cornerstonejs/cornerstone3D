@@ -579,6 +579,7 @@ class LengthTool extends AnnotationTool {
       if (!data.cachedStats[targetId]) {
         data.cachedStats[targetId] = {
           length: null,
+          unit: null,
         };
 
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);

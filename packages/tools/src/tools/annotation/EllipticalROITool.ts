@@ -761,6 +761,7 @@ export default class EllipticalROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
+          areaUnit: null,
         };
 
         this._calculateCachedStats(

@@ -46,6 +46,8 @@ export class ImageVolume implements IImageVolume {
   imageIds?: Array<string>;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
+  /** whether the metadata for the pixel spacing is not undefined  */
+  hasPixelSpacing: boolean;
 
   constructor(props: IVolume) {
     this.volumeId = props.volumeId;
