@@ -62,6 +62,8 @@ function createViewport(renderingEngine, orientation, width, height) {
 
 describe('renderingCore -- Stack', () => {
   beforeAll(() => {
+    window.devicePixelRatio = 1;
+
     // initialize cornerstone
     cornerstone3D.setUseCPURendering(false);
   });

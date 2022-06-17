@@ -12,7 +12,7 @@ import '@kitware/vtk.js/Rendering/Core/Actor';
 import '@kitware/vtk.js/Rendering/Core/Mapper';
 
 /**
- * vtkOffscreenMultiRenderWindow - A class to deal with offscreen renderering with multiple renderers.
+ * vtkOffscreenMultiRenderWindow - A class to deal with offscreen rendering with multiple renderers.
  *
  * This class is based on the vtkGenericRenderWindow with two key differences:
  * - the vtkGenericRenderWindow had a renderer at the top level, with helpers to get it from the renderWindow.
@@ -80,11 +80,9 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
       // Don't use getBoundingClientRect() as in vtkGenericRenderWindow as is an offscreen canvas.
       const { width, height } = model.container;
 
-      const devicePixelRatio = 1;
-      model.openGLRenderWindow.setSize(
-        Math.floor(width * devicePixelRatio),
-        Math.floor(height * devicePixelRatio)
-      );
+      // Note: we do not scale by devicePixelRatio here because it has already
+      // been done when adding the offscreenCanvas viewport representations
+      model.openGLRenderWindow.setSize(Math.floor(width), Math.floor(height));
       invokeResize();
       model.renderWindow.render();
     }

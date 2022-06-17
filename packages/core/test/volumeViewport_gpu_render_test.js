@@ -77,6 +77,7 @@ function createViewport(
 
 describe('Volume Viewport GPU -- ', () => {
   beforeAll(() => {
+    window.devicePixelRatio = 1;
     cornerstone3D.setUseCPURendering(false);
   });
 

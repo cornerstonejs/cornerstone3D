@@ -25,7 +25,7 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "peerDependencies": {
-    "@kitware/vtk.js": "24.0.0",
+    "@kitware/vtk.js": "24.18.7",
     "gl-matrix": "^3.4.3"
   },
   "dependencies": {
@@ -33,7 +33,7 @@
     "lodash.clonedeep": "4.5.0"
   },
   "devDependencies": {
-    "@kitware/vtk.js": "24.0.0",
+    "@kitware/vtk.js": "24.18.7",
     "detect-gpu": "^4.0.7",
     "gl-matrix": "^3.4.3",
     "resemblejs": "^4.1.0"

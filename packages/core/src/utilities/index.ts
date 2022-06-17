@@ -26,6 +26,7 @@ import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
 import getScalingParameters from './getScalingParameters';
+import isImageActor from './isImageActor';
 
 // name spaces
 import * as planar from './planar';
@@ -62,4 +63,5 @@ export {
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
   getScalingParameters,
+  isImageActor,
 };

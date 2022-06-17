@@ -828,7 +828,7 @@ export default class RectangleROITool extends AnnotationTool {
    */
   _getTextLines = (data, targetId: string) => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, max, stdDev, Modality } = cachedVolumeStats;
+    const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
 
     if (mean === undefined) {
       return;
@@ -836,7 +836,9 @@ export default class RectangleROITool extends AnnotationTool {
 
     const textLines = [];
 
-    const areaLine = `Area: ${area.toFixed(2)} mm${String.fromCharCode(178)}`;
+    const areaLine = `Area: ${area.toFixed(2)} ${areaUnit}${String.fromCharCode(
+      178
+    )}`;
     let meanLine = `Mean: ${mean.toFixed(2)}`;
     let maxLine = `Max: ${max.toFixed(2)}`;
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
@@ -896,7 +898,8 @@ export default class RectangleROITool extends AnnotationTool {
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
-      const { dimensions, scalarData, imageData, metadata } = image;
+      const { dimensions, scalarData, imageData, metadata, hasPixelSpacing } =
+        image;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -985,6 +988,7 @@ export default class RectangleROITool extends AnnotationTool {
           mean,
           stdDev,
           max,
+          areaUnit: hasPixelSpacing ? 'mm' : 'px',
         };
       } else {
         this.isHandleOutsideImage = true;

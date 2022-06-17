@@ -8,6 +8,7 @@ import type { mat4 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
@@ -24,7 +25,7 @@ type Actor = vtkActor;
 // @public
 type ActorEntry = {
     uid: string;
-    actor: Actor | VolumeActor;
+    actor: Actor | VolumeActor | ImageActor;
     slabThickness?: number;
 };
 
@@ -475,6 +476,7 @@ interface BidirectionalAnnotation extends Annotation {
             [targetId: string]: {
                 length: number;
                 width: number;
+                unit: string;
             };
         };
     };
@@ -958,6 +960,7 @@ type CPUIImageData = {
     metadata: { Modality: string };
     scalarData: number[];
     scaling: Scaling;
+    hasPixelSpacing?: boolean;
 };
 
 // @public (undocumented)
@@ -1901,6 +1904,7 @@ interface IImage {
 interface IImageData {
     dimensions: Point3;
     direction: Float32Array;
+    hasPixelSpacing?: boolean;
     imageData: vtkImageData;
     metadata: { Modality: string };
     origin: Point3;
@@ -1924,6 +1928,7 @@ interface IImageVolume {
     ) => IImageLoadObject;
     dimensions: Point3;
     direction: Float32Array;
+    hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
     isPrescaled: boolean;
@@ -2505,6 +2510,7 @@ interface LengthAnnotation extends Annotation {
         cachedStats: {
             [targetId: string]: {
                 length: number;
+                unit: string;
             };
         };
     };
@@ -4341,13 +4347,15 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     _dragCallback(evt: any): void;
     // (undocumented)
-    _getImageDynamicRange: (volumeId: string) => number;
+    _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
-    _getMultiplyerFromDynamicRange(volumeId: any): number;
+    _getImageDynamicRangeFromViewport(viewport: any): number;
     // (undocumented)
-    getNewRange({ deltaPointsCanvas, useDynamicRange, volumeId, lower, upper }: {
+    _getMultiplierFromDynamicRange(viewport: any, volumeId: any): number;
+    // (undocumented)
+    getNewRange({ viewport, deltaPointsCanvas, volumeId, lower, upper }: {
+        viewport: any;
         deltaPointsCanvas: any;
-        useDynamicRange: any;
         volumeId: any;
         lower: any;
         upper: any;

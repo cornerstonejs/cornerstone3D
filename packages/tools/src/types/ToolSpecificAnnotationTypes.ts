@@ -5,6 +5,7 @@ interface ROICachedStats {
   [targetId: string]: {
     Modality: string;
     area: number;
+    areaUnit: string;
     max: number;
     mean: number;
     stdDev: number;
@@ -71,6 +72,7 @@ export interface LengthAnnotation extends Annotation {
     cachedStats: {
       [targetId: string]: {
         length: number;
+        unit: string;
       };
     };
   };
@@ -118,6 +120,7 @@ export interface BidirectionalAnnotation extends Annotation {
       [targetId: string]: {
         length: number;
         width: number;
+        unit: string;
       };
     };
   };

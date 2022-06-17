@@ -66,6 +66,7 @@ function createViewports(width, height) {
 
 describe('Synchronizer Manager: ', () => {
   beforeAll(() => {
+    window.devicePixelRatio = 1;
     cornerstone3D.setUseCPURendering(false);
   });
 

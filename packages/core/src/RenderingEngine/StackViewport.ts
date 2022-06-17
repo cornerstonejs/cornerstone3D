@@ -1,12 +1,12 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import _cloneDeep from 'lodash.clonedeep';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
-
+import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
@@ -17,6 +17,7 @@ import {
   invertRgbTransferFunction,
   windowLevel as windowLevelUtil,
   imageIdToURI,
+  isImageActor,
 } from '../utilities';
 import {
   Point2,
@@ -63,6 +64,7 @@ import {
 import getScalingParameters from '../utilities/getScalingParameters';
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
+import { ImageActor } from '../types/IActor';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -88,6 +90,21 @@ interface ImageDataMetaData {
   numVoxels: number;
   imagePlaneModule: unknown;
   imagePixelModule: ImagePixelModule;
+}
+
+interface ImagePlaneModule {
+  columnCosines?: Point3;
+  columnPixelSpacing?: number;
+  imageOrientationPatient?: Float32Array;
+  imagePositionPatient?: Point3;
+  pixelSpacing?: Point2;
+  rowCosines?: Point3;
+  rowPixelSpacing?: number;
+  sliceLocation?: number;
+  sliceThickness?: number;
+  frameOfReferenceUID: string;
+  columns: number;
+  rows: number;
 }
 
 // TODO This needs to be exposed as its published to consumers.
@@ -244,7 +261,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+    if (!isImageActor(actor)) {
       return;
     }
 
@@ -258,6 +275,7 @@ class StackViewport extends Viewport implements IStackViewport {
       imageData: actor.getMapper().getInputData(),
       metadata: { Modality: this.modality },
       scaling: this.scaling,
+      hasPixelSpacing: this.hasPixelSpacing,
     };
   }
 
@@ -295,6 +313,7 @@ class StackViewport extends Viewport implements IStackViewport {
         },
       },
       scalarData: this.cpuImagePixelData,
+      hasPixelSpacing: this.hasPixelSpacing,
     };
   }
 
@@ -326,31 +345,23 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   /**
-   * Creates a volume actor and volume mapper based on the provided vtkImageData
-   * It sets the sampleDistance for the volumeMapper, and sets the actor VOI range
-   * initially, and assigns it to the class property to be saved for future slices.
+   * Creates imageMapper based on the provided vtkImageData and also creates
+   * the imageSliceActor and connects it to the imageMapper.
    * For color stack images, it sets the independent components to be false which
    * is required in vtk.
    *
    * @param imageData - vtkImageData for the viewport
    * @returns actor vtkActor
    */
+
   private createActorMapper = (imageData) => {
-    const mapper = vtkVolumeMapper.newInstance();
+    const mapper = vtkImageMapper.newInstance();
     mapper.setInputData(imageData);
 
-    const actor = vtkVolume.newInstance();
-    actor.setMapper(mapper);
+    const actor = vtkImageSlice.newInstance();
 
-    // We set the sample distance to vSize to not get warning
-    const [xSize, ySize, zSize] = imageData.getDimensions();
-    const [xSpacing, ySpacing, zSpacing] = imageData.getSpacing();
-    const vSize = vec3.length([
-      xSize * xSpacing,
-      ySize * ySpacing,
-      zSize * zSpacing,
-    ]);
-    mapper.setSampleDistance(vSize / mapper.getMaximumSamplesPerRay());
+    // @ts-ignore: vtkjs incorrect typing
+    actor.setMapper(mapper);
 
     if (imageData.getPointData().getNumberOfComponents() > 1) {
       // @ts-ignore: vtkjs incorrect typing
@@ -403,6 +414,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.modality = modality;
 
     let imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+    imagePlaneModule = this._getImagePlaneModule(imagePlaneModule);
 
     // Todo: for now, it gives error for getImageData
     if (!this.useCPURendering) {
@@ -875,7 +887,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+    if (!isImageActor(actor)) {
       return;
     }
     const volumeProperty = actor.getProperty();
@@ -916,17 +928,29 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+    if (!isImageActor(actor)) {
       return;
     }
 
-    const volumeActor = actor as VolumeActor;
-    const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
+    // Duplicated logic to make sure typescript stops complaining
+    // about vtkActor not having the correct property
+    if (actor.isA('vtkVolume')) {
+      const volumeActor = actor as VolumeActor;
+      const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
-    if ((!this.invert && invert) || (this.invert && !invert)) {
-      invertRgbTransferFunction(tfunc);
+      if ((!this.invert && invert) || (this.invert && !invert)) {
+        invertRgbTransferFunction(tfunc);
+      }
+      this.invert = invert;
+    } else if (actor.isA('vtkImageSlice')) {
+      const imageSliceActor = actor as vtkImageSlice;
+      const tfunc = imageSliceActor.getProperty().getRGBTransferFunction(0);
+
+      if ((!this.invert && invert) || (this.invert && !invert)) {
+        invertRgbTransferFunction(tfunc);
+      }
+      this.invert = invert;
     }
-    this.invert = invert;
   }
 
   private setVOICPU(voiRange: VOIRange, suppressEvents?: boolean): void {
@@ -985,28 +1009,33 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     const { actor } = defaultActor;
-    if (!actor.isA('vtkVolume')) {
+
+    if (!isImageActor(actor)) {
       return;
     }
 
-    const volumeActor = actor as VolumeActor;
-    const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
+    const imageActor = actor as ImageActor;
 
-    if (typeof voiRange === 'undefined') {
-      const imageData = volumeActor.getMapper().getInputData();
+    let voiRangeToUse = voiRange;
+    if (typeof voiRangeToUse === 'undefined') {
+      const imageData = imageActor.getMapper().getInputData();
       const range = imageData.getPointData().getScalars().getRange();
-      tfunc.setRange(range[0], range[1]);
-      voiRange = { lower: range[0], upper: range[1] };
-    } else {
-      const { lower, upper } = voiRange;
-      tfunc.setRange(lower, upper);
+      voiRangeToUse = { lower: range[0], upper: range[1] };
     }
 
+    const { windowWidth, windowCenter } = windowLevelUtil.toWindowLevel(
+      voiRangeToUse.lower,
+      voiRangeToUse.upper
+    );
+
+    imageActor.getProperty().setColorWindow(windowWidth);
+    imageActor.getProperty().setColorLevel(windowCenter);
+
     this.voiApplied = true;
-    this.voiRange = voiRange;
+    this.voiRange = voiRangeToUse;
     const eventDetail: VoiModifiedEventDetail = {
       viewportId: this.id,
-      range: voiRange,
+      range: voiRangeToUse,
     };
 
     if (!suppressEvents) {
@@ -1277,8 +1306,8 @@ class StackViewport extends Viewport implements IStackViewport {
       return false;
     }
 
-    const [xSpacing, ySpacing, zSpacing] = imageData.getSpacing();
-    const [xVoxels, yVoxels, zVoxels] = imageData.getDimensions();
+    const [xSpacing, ySpacing] = imageData.getSpacing();
+    const [xVoxels, yVoxels] = imageData.getDimensions();
     const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId);
     const direction = imageData.getDirection();
     const rowCosines = direction.slice(0, 3);
@@ -1669,13 +1698,6 @@ class StackViewport extends Viewport implements IStackViewport {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
 
-      // Adjusting the camera based on slice axis. this is required if stack
-      // contains various image orientations (axial ct, sagittal xray)
-      const direction = this._imageData.getDirection() as Float32Array;
-      const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);
-
-      this.setCameraNoEvent({ viewUp, viewPlaneNormal });
-
       // Since the 3D location of the imageData is changing as we scroll, we need
       // to modify the camera position to render this properly. However, resetting
       // causes problem related to zoom and pan tools: upon rendering of a new slice
@@ -1737,7 +1759,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Image's pixel data
     this._updateVTKImageDataFromCornerstoneImage(image);
 
-    // Create a VTK Volume actor to display the vtkImageData object
+    // Create a VTK Image Slice actor to display the vtkImageData object
     const actor = this.createActorMapper(this._imageData);
     const actors = [];
     actors.push({ uid: this.id, actor });
@@ -1775,6 +1797,26 @@ class StackViewport extends Viewport implements IStackViewport {
     this.initialVOIRange = voiRange;
     this.setProperties({ voiRange });
 
+    // At the moment it appears that vtkImageSlice actors do not automatically
+    // have an RGB Transfer Function created, so we need to create one.
+    // Note: the 1024 here is what VTK would normally do to resample a color transfer function
+    // before it is put into the GPU. Setting it with a length of 1024 allows us to
+    // avoid that resampling step.
+    const cfun = vtkColorTransferFunction.newInstance();
+    let lower = 0;
+    let upper = 1024;
+    if (
+      voiRange &&
+      voiRange.lower !== undefined &&
+      voiRange.upper !== undefined
+    ) {
+      lower = voiRange.lower;
+      upper = voiRange.upper;
+    }
+    cfun.addRGBPoint(lower, 0.0, 0.0, 0.0);
+    cfun.addRGBPoint(upper, 1.0, 1.0, 1.0);
+    actor.getProperty().setRGBTransferFunction(0, cfun);
+
     // Saving position of camera on render, to cache the panning
     const { position } = this.getCamera();
     this.cameraPosOnRender = position;
@@ -1798,10 +1840,10 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex;
+    this.hasPixelSpacing = true;
 
     // Todo: trigger an event to allow applications to hook into START of loading state
     // Currently we use loadHandlerManagers for this
-
     const imageId = await this._loadAndDisplayImage(
       this.imageIds[imageIdIndex],
       imageIdIndex
@@ -2106,12 +2148,32 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private canvasToWorldGPU = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
-    const displayCoord = [canvasPos[0] + this.sx, canvasPos[1] + this.sy];
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+    const displayCoord = [
+      canvasPosWithDPR[0] + this.sx,
+      canvasPosWithDPR[1] + this.sy,
+    ];
 
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1];
@@ -2123,6 +2185,9 @@ class StackViewport extends Viewport implements IStackViewport {
       renderer
     );
 
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
     worldCoord = this.applyFlipTx(worldCoord);
 
     return worldCoord;
@@ -2130,6 +2195,17 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private worldToCanvasGPU = (worldPos: Point3) => {
     const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
@@ -2148,7 +2224,16 @@ class StackViewport extends Viewport implements IStackViewport {
       displayCoord[1] - this.sy,
     ];
 
-    return canvasCoord;
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = <Point2>[
+      canvasCoord[0] / devicePixelRatio,
+      canvasCoord[1] / devicePixelRatio,
+    ];
+
+    return canvasCoordWithDPR;
   };
 
   /**
@@ -2409,6 +2494,45 @@ class StackViewport extends Viewport implements IStackViewport {
     // TODO -> vtk has full colormaps which are piecewise and frankly better?
     // Do we really want a pre defined 256 color map just for the sake of harmonization?
     throw new Error('unsetColormapGPU not implemented.');
+  }
+
+  // create default values for imagePlaneModule if values are undefined
+  private _getImagePlaneModule(
+    imagePlaneModule: ImagePlaneModule
+  ): ImagePlaneModule {
+    const newImagePlaneModule: ImagePlaneModule = {
+      ...imagePlaneModule,
+    };
+
+    if (!newImagePlaneModule.columnPixelSpacing) {
+      newImagePlaneModule.columnPixelSpacing = 1;
+      this.hasPixelSpacing = false;
+    }
+
+    if (!newImagePlaneModule.rowPixelSpacing) {
+      newImagePlaneModule.rowPixelSpacing = 1;
+      this.hasPixelSpacing = false;
+    }
+
+    if (!newImagePlaneModule.columnCosines) {
+      newImagePlaneModule.columnCosines = [0, 1, 0];
+    }
+
+    if (!newImagePlaneModule.rowCosines) {
+      newImagePlaneModule.rowCosines = [1, 0, 0];
+    }
+
+    if (!newImagePlaneModule.imagePositionPatient) {
+      newImagePlaneModule.imagePositionPatient = [0, 0, 0];
+    }
+
+    if (!newImagePlaneModule.imageOrientationPatient) {
+      newImagePlaneModule.imageOrientationPatient = new Float32Array([
+        1, 0, 0, 0, 1, 0,
+      ]);
+    }
+
+    return newImagePlaneModule;
   }
 }
 

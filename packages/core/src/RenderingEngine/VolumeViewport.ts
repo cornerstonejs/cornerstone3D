@@ -507,6 +507,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       imageData: actor.getMapper().getInputData(),
       metadata: undefined,
       scaling: undefined,
+      hasPixelSpacing: true,
     };
   }
 
@@ -545,7 +546,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
      * The clipping range is used in the camera method getProjectionMatrix().
      * The projection matrix is used then for viewToWorld/worldToView methods of
      * the renderer. This means that vkt.js will not return the coordinates of
-     * the point on the view plane (i.e. the depth coordinate will corresponde
+     * the point on the view plane (i.e. the depth coordinate will correspond
      * to the focal point).
      *
      * Therefore the clipping range has to be set to (distance, distance + 0.01),
@@ -562,7 +563,15 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
-    const displayCoord = [canvasPos[0] + this.sx, canvasPos[1] + this.sy];
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+    const displayCoord = [
+      canvasPosWithDPR[0] + this.sx,
+      canvasPosWithDPR[1] + this.sy,
+    ];
 
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1];
@@ -634,9 +643,15 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       displayCoord[1] - this.sy,
     ];
 
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = <Point2>[
+      canvasCoord[0] / devicePixelRatio,
+      canvasCoord[1] / devicePixelRatio,
+    ];
+
     vtkCamera.setIsPerformingCoordinateTransformation(false);
 
-    return canvasCoord;
+    return canvasCoordWithDPR;
   };
 
   /**

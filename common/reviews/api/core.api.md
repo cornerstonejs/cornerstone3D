@@ -9,6 +9,7 @@ import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { VtkObject } from '@kitware/vtk.js/interfaces';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
@@ -19,7 +20,7 @@ type Actor = vtkActor;
 // @public (undocumented)
 type ActorEntry = {
     uid: string;
-    actor: Actor | VolumeActor;
+    actor: Actor | VolumeActor | ImageActor;
     slabThickness?: number;
 };
 
@@ -44,13 +45,13 @@ export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeI
 // @public (undocumented)
 enum BlendModes {
     // (undocumented)
-    AVERAGE_INTENSITY_BLEND,
+    AVERAGE_INTENSITY_BLEND = 3,
     // (undocumented)
-    COMPOSITE,
+    COMPOSITE = 0,
     // (undocumented)
-    MAXIMUM_INTENSITY_BLEND,
+    MAXIMUM_INTENSITY_BLEND = 1,
     // (undocumented)
-    MINIMUM_INTENSITY_BLEND
+    MINIMUM_INTENSITY_BLEND = 2
 }
 
 // @public (undocumented)
@@ -344,6 +345,7 @@ type CPUIImageData = {
     };
     scalarData: number[];
     scaling: Scaling;
+    hasPixelSpacing?: boolean;
 };
 
 // @public (undocumented)
@@ -771,6 +773,8 @@ interface IImageData {
     // (undocumented)
     direction: Float32Array;
     // (undocumented)
+    hasPixelSpacing?: boolean;
+    // (undocumented)
     imageData: vtkImageData;
     // (undocumented)
     metadata: {
@@ -804,6 +808,8 @@ interface IImageVolume {
     dimensions: Point3;
     // (undocumented)
     direction: Float32Array;
+    // (undocumented)
+    hasPixelSpacing: boolean;
     // (undocumented)
     imageData?: vtkImageData;
     // (undocumented)
@@ -973,6 +979,8 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     direction: Float32Array;
     // (undocumented)
+    hasPixelSpacing: boolean;
+    // (undocumented)
     imageData?: any;
     // (undocumented)
     imageIds?: Array<string>;
@@ -1090,6 +1098,9 @@ export function isCornerstoneInitialized(): boolean;
 
 // @public (undocumented)
 function isEqual(v1: number[] | Float32Array, v2: number[] | Float32Array, tolerance?: number): boolean;
+
+// @public (undocumented)
+function isImageActor(actor: vtkActor | vtkVolume | vtkImageSlice): boolean;
 
 // @public (undocumented)
 function isOpposite(v1: Point3, v2: Point3, tolerance?: number): boolean;
@@ -1863,7 +1874,8 @@ declare namespace utilities {
         getSliceRange,
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
-        getScalingParameters
+        getScalingParameters,
+        isImageActor
     }
 }
 export { utilities }
@@ -1926,6 +1938,8 @@ export class Viewport implements IViewport {
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
+    // (undocumented)
+    protected hasPixelSpacing: boolean;
     // (undocumented)
     readonly id: string;
     // (undocumented)

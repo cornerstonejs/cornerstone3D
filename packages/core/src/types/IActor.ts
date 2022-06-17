@@ -1,8 +1,10 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 export type Actor = vtkActor;
 export type VolumeActor = vtkVolume;
+export type ImageActor = vtkImageSlice;
 
 /**
  * Cornerstone Actor Entry including actor uid, actual Actor, and
@@ -11,6 +13,6 @@ export type VolumeActor = vtkVolume;
  */
 export type ActorEntry = {
   uid: string;
-  actor: Actor | VolumeActor;
+  actor: Actor | VolumeActor | ImageActor;
   slabThickness?: number;
 };

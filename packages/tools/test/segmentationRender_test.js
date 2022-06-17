@@ -78,6 +78,7 @@ function createViewport(
 
 describe('Segmentation Render -- ', () => {
   beforeAll(() => {
+    window.devicePixelRatio = 1;
     cornerstone3D.setUseCPURendering(false);
   });
 
