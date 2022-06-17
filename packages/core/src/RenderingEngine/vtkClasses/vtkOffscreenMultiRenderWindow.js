@@ -80,11 +80,9 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
       // Don't use getBoundingClientRect() as in vtkGenericRenderWindow as is an offscreen canvas.
       const { width, height } = model.container;
 
-      //const devicePixelRatio = window.devicePixelRatio || 1;
-      model.openGLRenderWindow.setSize(
-        Math.floor(width),
-        Math.floor(height)
-      );
+      // Note: we do not scale by devicePixelRatio here because it has already
+      // been done when adding the offscreenCanvas viewport representations
+      model.openGLRenderWindow.setSize(Math.floor(width), Math.floor(height));
       invokeResize();
       model.renderWindow.render();
     }
