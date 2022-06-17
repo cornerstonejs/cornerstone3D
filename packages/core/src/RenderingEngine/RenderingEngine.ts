@@ -898,17 +898,21 @@ class RenderingEngine implements IRenderingEngine {
   ): { offScreenCanvasWidth: number; offScreenCanvasHeight: number } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
 
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
     // 1. Calculated the height of the offScreen canvas to be the maximum height
     // between canvases
     const offScreenCanvasHeight = Math.max(
-      ...canvasesDrivenByVtkJs.map((canvas) => canvas.height)
+      ...canvasesDrivenByVtkJs.map(
+        (canvas) => canvas.clientHeight * devicePixelRatio
+      )
     );
 
     // 2. Calculating the width of the offScreen canvas to be the sum of all
     let offScreenCanvasWidth = 0;
 
     canvasesDrivenByVtkJs.forEach((canvas) => {
-      offScreenCanvasWidth += canvas.width;
+      offScreenCanvasWidth += canvas.clientWidth * devicePixelRatio;
     });
 
     offScreenCanvasContainer.width = offScreenCanvasWidth;
@@ -991,7 +995,10 @@ class RenderingEngine implements IRenderingEngine {
     _xOffset: number
   ): ViewportDisplayCoords {
     const { canvas } = viewport;
-    const { width, height } = canvas;
+    const { clientWidth, clientHeight } = canvas;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const height = clientHeight * devicePixelRatio;
+    const width = clientWidth * devicePixelRatio;
 
     // Update the canvas drawImage offsets.
     const sx = _xOffset;
