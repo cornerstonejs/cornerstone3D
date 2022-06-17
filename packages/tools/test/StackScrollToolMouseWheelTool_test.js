@@ -62,6 +62,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
 
 describe('Cornerstone Tools Scroll Wheel: ', () => {
   beforeAll(() => {
+    window.devicePixelRatio = 1;
     cornerstone3D.setUseCPURendering(false);
   });
 

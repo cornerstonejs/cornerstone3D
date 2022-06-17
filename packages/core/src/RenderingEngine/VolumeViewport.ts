@@ -563,7 +563,15 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
-    const displayCoord = [canvasPos[0] + this.sx, canvasPos[1] + this.sy];
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+    const displayCoord = [
+      canvasPosWithDPR[0] + this.sx,
+      canvasPosWithDPR[1] + this.sy,
+    ];
 
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1];
@@ -635,9 +643,15 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       displayCoord[1] - this.sy,
     ];
 
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = <Point2>[
+      canvasCoord[0] / devicePixelRatio,
+      canvasCoord[1] / devicePixelRatio,
+    ];
+
     vtkCamera.setIsPerformingCoordinateTransformation(false);
 
-    return canvasCoord;
+    return canvasCoordWithDPR;
   };
 
   /**

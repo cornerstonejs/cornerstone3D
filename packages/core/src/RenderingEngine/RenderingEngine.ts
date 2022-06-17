@@ -605,6 +605,12 @@ class RenderingEngine implements IRenderingEngine {
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
     canvasesDrivenByVtkJs.push(canvas);
 
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * devicePixelRatio;
+    canvas.height = rect.height * devicePixelRatio;
+
     // 2.c Calculating the new size for offScreen Canvas
     const { offScreenCanvasWidth, offScreenCanvasHeight } =
       this._resizeOffScreenCanvas(canvasesDrivenByVtkJs);
@@ -767,6 +773,7 @@ class RenderingEngine implements IRenderingEngine {
     const { clientWidth, clientHeight } = canvas;
 
     // Set the canvas to be same resolution as the client.
+    // TODO: Not necessary - breaks devicePixelRatio... why are we doing this?
     if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
       canvas.width = clientWidth;
       canvas.height = clientHeight;
@@ -832,10 +839,18 @@ class RenderingEngine implements IRenderingEngine {
     // Deal with vtkjs driven viewports
     if (viewportInputEntries.length) {
       // 1. Getting all the canvases from viewports calculation of the new offScreen size
-
       const vtkDrivenCanvases = viewportInputEntries.map((vp) =>
         getOrCreateCanvas(vp.element)
       );
+
+      // Ensure the canvas size includes any scaling due to device pixel ratio
+      vtkDrivenCanvases.forEach((canvas) => {
+        const devicePixelRatio = window.devicePixelRatio || 1;
+
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * devicePixelRatio;
+        canvas.height = rect.height * devicePixelRatio;
+      });
 
       // 2. Set canvas size based on height and sum of widths
       const { offScreenCanvasWidth, offScreenCanvasHeight } =
@@ -866,7 +881,7 @@ class RenderingEngine implements IRenderingEngine {
 
         // Incrementing the xOffset which provides the horizontal location of each
         // viewport on the offScreen canvas
-        xOffset += canvas.clientWidth;
+        xOffset += canvas.width;
       }
     }
   }
@@ -884,14 +899,14 @@ class RenderingEngine implements IRenderingEngine {
     // 1. Calculated the height of the offScreen canvas to be the maximum height
     // between canvases
     const offScreenCanvasHeight = Math.max(
-      ...canvasesDrivenByVtkJs.map((canvas) => canvas.clientHeight)
+      ...canvasesDrivenByVtkJs.map((canvas) => canvas.height)
     );
 
     // 2. Calculating the width of the offScreen canvas to be the sum of all
     let offScreenCanvasWidth = 0;
 
     canvasesDrivenByVtkJs.forEach((canvas) => {
-      offScreenCanvasWidth += canvas.clientWidth;
+      offScreenCanvasWidth += canvas.width;
     });
 
     offScreenCanvasContainer.width = offScreenCanvasWidth;
@@ -938,7 +953,7 @@ class RenderingEngine implements IRenderingEngine {
         _xOffset
       );
 
-      _xOffset += viewport.element.clientWidth;
+      _xOffset += viewport.canvas.width;
 
       viewport.sx = sx;
       viewport.sy = sy;
@@ -974,25 +989,19 @@ class RenderingEngine implements IRenderingEngine {
     _xOffset: number
   ): ViewportDisplayCoords {
     const { canvas } = viewport;
-    const { clientWidth, clientHeight } = canvas;
-
-    // Set the canvas to be same resolution as the client.
-    if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
-      canvas.width = clientWidth;
-      canvas.height = clientHeight;
-    }
+    const { width, height } = canvas;
 
     // Update the canvas drawImage offsets.
     const sx = _xOffset;
     const sy = 0;
-    const sWidth = clientWidth;
-    const sHeight = clientHeight;
+    const sWidth = width;
+    const sHeight = height;
 
     const sxStartDisplayCoords = sx / offScreenCanvasWidth;
 
     // Need to offset y if it not max height
     const syStartDisplayCoords =
-      sy + (offScreenCanvasHeight - clientHeight) / offScreenCanvasHeight;
+      sy + (offScreenCanvasHeight - height) / offScreenCanvasHeight;
 
     const sWidthDisplayCoords = sWidth / offScreenCanvasWidth;
     const sHeightDisplayCoords = sHeight / offScreenCanvasHeight;

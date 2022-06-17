@@ -6,7 +6,7 @@ import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
@@ -932,13 +932,25 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const volumeActor = actor as VolumeActor;
-    const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
+    // Duplicated logic to make sure typescript stops complaining
+    // about vtkActor not having the correct property
+    if (actor.isA('vtkVolume')) {
+      const volumeActor = actor as VolumeActor;
+      const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
-    if ((!this.invert && invert) || (this.invert && !invert)) {
-      invertRgbTransferFunction(tfunc);
+      if ((!this.invert && invert) || (this.invert && !invert)) {
+        invertRgbTransferFunction(tfunc);
+      }
+      this.invert = invert;
+    } else if (actor.isA('vtkImageSlice')) {
+      const imageSliceActor = actor as vtkImageSlice;
+      const tfunc = imageSliceActor.getProperty().getRGBTransferFunction(0);
+
+      if ((!this.invert && invert) || (this.invert && !invert)) {
+        invertRgbTransferFunction(tfunc);
+      }
+      this.invert = invert;
     }
-    this.invert = invert;
   }
 
   private setVOICPU(voiRange: VOIRange, suppressEvents?: boolean): void {
@@ -1747,7 +1759,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // Image's pixel data
     this._updateVTKImageDataFromCornerstoneImage(image);
 
-    // Create a VTK Volume actor to display the vtkImageData object
+    // Create a VTK Image Slice actor to display the vtkImageData object
     const actor = this.createActorMapper(this._imageData);
     const actors = [];
     actors.push({ uid: this.id, actor });
@@ -1784,6 +1796,23 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.initialVOIRange = voiRange;
     this.setProperties({ voiRange });
+
+    // At the moment it appears that vtkImageSlice actors do not automatically
+    // have an RGB Transfer Function created, so we need to create one
+    const cfun = vtkColorTransferFunction.newInstance();
+    let lower = 0;
+    let upper = 1024;
+    if (
+      voiRange &&
+      voiRange.lower !== undefined &&
+      voiRange.upper !== undefined
+    ) {
+      lower = voiRange.lower;
+      upper = voiRange.upper;
+    }
+    cfun.addRGBPoint(lower, 0.0, 0.0, 0.0);
+    cfun.addRGBPoint(upper, 1.0, 1.0, 1.0);
+    actor.getProperty().setRGBTransferFunction(0, cfun);
 
     // Saving position of camera on render, to cache the panning
     const { position } = this.getCamera();
@@ -2132,7 +2161,16 @@ class StackViewport extends Viewport implements IStackViewport {
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
-    const displayCoord = [canvasPos[0] + this.sx, canvasPos[1] + this.sy];
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+    const displayCoord = [
+      canvasPosWithDPR[0] + this.sx,
+      canvasPosWithDPR[1] + this.sy,
+    ];
 
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1];
@@ -2186,7 +2224,13 @@ class StackViewport extends Viewport implements IStackViewport {
     // set clipping range back to original to be able
     vtkCamera.setClippingRange(crange[0], crange[1]);
 
-    return canvasCoord;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = <Point2>[
+      canvasCoord[0] / devicePixelRatio,
+      canvasCoord[1] / devicePixelRatio,
+    ];
+
+    return canvasCoordWithDPR;
   };
 
   /**
