@@ -7,6 +7,7 @@
 import type { mat4 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
@@ -15,7 +16,7 @@ type Actor = vtkActor;
 // @public
 type ActorEntry = {
     uid: string;
-    actor: Actor | VolumeActor;
+    actor: Actor | VolumeActor | ImageActor;
     slabThickness?: number;
 };
 
@@ -310,6 +311,7 @@ type CPUIImageData = {
     metadata: { Modality: string };
     scalarData: number[];
     scaling: Scaling;
+    hasPixelSpacing?: boolean;
 };
 
 // @public (undocumented)
@@ -587,6 +589,7 @@ interface IImage {
 interface IImageData {
     dimensions: Point3;
     direction: Float32Array;
+    hasPixelSpacing?: boolean;
     imageData: vtkImageData;
     metadata: { Modality: string };
     origin: Point3;
@@ -610,6 +613,7 @@ interface IImageVolume {
     ) => IImageLoadObject;
     dimensions: Point3;
     direction: Float32Array;
+    hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
     isPrescaled: boolean;
