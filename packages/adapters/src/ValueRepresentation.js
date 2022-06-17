@@ -546,15 +546,19 @@ class DecimalString extends StringRepresentation {
         if (ds.indexOf(BACKSLASH) !== -1) {
             // handle decimal string with multiplicity
             const dsArray = ds.split(BACKSLASH);
-            ds = dsArray.map(ds => Number(ds));
+            ds = dsArray.map(ds => (ds === "" ? null : Number(ds)));
         } else {
-            ds = [Number(ds)];
+            ds = [ds === "" ? null : Number(ds)];
         }
 
         return ds;
     }
 
     formatValue(value) {
+        if (value === null) {
+            return "";
+        }
+
         const str = String(value);
         if (str.length > this.maxLength) {
             return value.toExponential();
@@ -640,16 +644,22 @@ class IntegerString extends StringRepresentation {
         if (is.indexOf(BACKSLASH) !== -1) {
             // handle integer string with multiplicity
             const integerStringArray = is.split(BACKSLASH);
-            is = integerStringArray.map(is => Number(is));
+            is = integerStringArray.map(is => (is === "" ? null : Number(is)));
         } else {
-            is = [Number(is)];
+            is = [is === "" ? null : Number(is)];
         }
 
         return is;
     }
 
+    formatValue(value) {
+        return value === null ? "" : String(value);
+    }
+
     writeBytes(stream, value, writeOptions) {
-        const val = Array.isArray(value) ? value.map(String) : [value];
+        const val = Array.isArray(value)
+            ? value.map(is => this.formatValue(is))
+            : [this.formatValue(value)];
         return super.writeBytes(stream, val, writeOptions);
     }
 }

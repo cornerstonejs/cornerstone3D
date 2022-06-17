@@ -366,8 +366,8 @@ it("test_null_number_vrs", () => {
         dicomData.dict
     );
 
-    expect(dataset.ImageAndFluoroscopyAreaDoseProduct).toEqual(0);
-    expect(dataset.InstanceNumber).toEqual(0);
+    expect(dataset.ImageAndFluoroscopyAreaDoseProduct).toEqual(null);
+    expect(dataset.InstanceNumber).toEqual(null);
 });
 
 it("test_exponential_notation", () => {
