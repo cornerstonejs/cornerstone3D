@@ -773,7 +773,9 @@ class RenderingEngine implements IRenderingEngine {
     const { clientWidth, clientHeight } = canvas;
 
     // Set the canvas to be same resolution as the client.
-    // TODO: Not necessary - breaks devicePixelRatio... why are we doing this?
+    // Note: This ignores devicePixelRatio for now. We may want to change it in the
+    // future but it has no benefit for the Cornerstone CPU rendering pathway at the
+    // moment anyway.
     if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
       canvas.width = clientWidth;
       canvas.height = clientHeight;

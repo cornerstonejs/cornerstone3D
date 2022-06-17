@@ -1798,7 +1798,10 @@ class StackViewport extends Viewport implements IStackViewport {
     this.setProperties({ voiRange });
 
     // At the moment it appears that vtkImageSlice actors do not automatically
-    // have an RGB Transfer Function created, so we need to create one
+    // have an RGB Transfer Function created, so we need to create one.
+    // Note: the 1024 here is what VTK would normally do to resample a color transfer function
+    // before it is put into the GPU. Setting it with a length of 1024 allows us to
+    // avoid that resampling step.
     const cfun = vtkColorTransferFunction.newInstance();
     let lower = 0;
     let upper = 1024;

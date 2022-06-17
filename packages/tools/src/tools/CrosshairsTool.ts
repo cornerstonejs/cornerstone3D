@@ -227,8 +227,8 @@ export default class CrosshairsTool extends AnnotationTool {
     return {
       normal: viewPlaneNormal,
       point: viewport.canvasToWorld([
-        viewport.sWidth / 2,
-        viewport.sHeight / 2,
+        viewport.canvas.clientWidth / 2,
+        viewport.canvas.clientHeight / 2,
       ]),
     };
   };
@@ -693,9 +693,10 @@ export default class CrosshairsTool extends AnnotationTool {
     // -- Convert these world positions to this canvas.
     // -- Extend/confine this line to fit in this canvas.
     // -- Render this line.
-
-    const { sWidth, sHeight } = viewport;
-    const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight);
+    const { clientWidth, clientHeight } = viewport.canvas;
+    const canvasDiagonalLength = Math.sqrt(
+      clientWidth * clientWidth + clientHeight * clientHeight
+    );
 
     const data = viewportAnnotation.data;
     const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter);
@@ -728,11 +729,14 @@ export default class CrosshairsTool extends AnnotationTool {
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
 
       // get coordinates for the reference line
-      const { sWidth, sHeight } = otherViewport;
+      const { clientWidth, clientHeight } = otherViewport.canvas;
       const otherCanvasDiagonalLength = Math.sqrt(
-        sWidth * sWidth + sHeight * sHeight
+        clientWidth * clientWidth + clientHeight * clientHeight
       );
-      const otherCanvasCenter: Types.Point2 = [sWidth * 0.5, sHeight * 0.5];
+      const otherCanvasCenter: Types.Point2 = [
+        clientWidth * 0.5,
+        clientHeight * 0.5,
+      ];
       const otherViewportCenterWorld =
         otherViewport.canvasToWorld(otherCanvasCenter);
 
@@ -755,7 +759,7 @@ export default class CrosshairsTool extends AnnotationTool {
       vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1);
 
       // get canvas information for points and lines (canvas box, canvas horizontal distances)
-      const canvasBox = [0, 0, sWidth, sHeight];
+      const canvasBox = [0, 0, clientWidth, clientHeight];
 
       const pointCanvas0 = viewport.worldToCanvas(pointWorld0);
 
@@ -1300,8 +1304,8 @@ export default class CrosshairsTool extends AnnotationTool {
       // render a circle to pin point the viewport color
       // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
       const referenceColorCoordinates = [
-        sWidth * 0.95,
-        sHeight * 0.05,
+        clientWidth * 0.95,
+        clientHeight * 0.05,
       ] as Types.Point2;
       const circleRadius = canvasDiagonalLength * 0.01;
 
@@ -1328,12 +1332,14 @@ export default class CrosshairsTool extends AnnotationTool {
     // 3. If it is outside, pan the viewport to fit in the toolCenter
 
     const viewport = renderingEngine.getViewport(viewportId);
-    const { sWidth, sHeight } = viewport;
-
+    const { clientWidth, clientHeight } = viewport.canvas;
     const topLefWorld = viewport.canvasToWorld([0, 0]);
-    const bottomRightWorld = viewport.canvasToWorld([sWidth, sHeight]);
-    const topRightWorld = viewport.canvasToWorld([sWidth, 0]);
-    const bottomLeftWorld = viewport.canvasToWorld([0, sHeight]);
+    const bottomRightWorld = viewport.canvasToWorld([
+      clientWidth,
+      clientHeight,
+    ]);
+    const topRightWorld = viewport.canvasToWorld([clientWidth, 0]);
+    const bottomLeftWorld = viewport.canvasToWorld([0, clientHeight]);
 
     // find the minimum and maximum world coordinates in each x,y,z
     const minX = Math.min(
@@ -2409,8 +2415,10 @@ export default class CrosshairsTool extends AnnotationTool {
   _pointNearTool(element, annotation, canvasCoords, proximity) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const { sWidth, sHeight } = viewport;
-    const canvasDiagonalLength = Math.sqrt(sWidth * sWidth + sHeight * sHeight);
+    const { clientWidth, clientHeight } = viewport.canvas;
+    const canvasDiagonalLength = Math.sqrt(
+      clientWidth * clientWidth + clientHeight * clientHeight
+    );
     const { data } = annotation;
 
     const { rotationPoints } = data.handles;
