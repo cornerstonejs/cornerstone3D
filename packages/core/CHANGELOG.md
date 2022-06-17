@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.0...@cornerstonejs/core@0.13.1) (2022-06-17)
+
+
+### Bug Fixes
+
+* large image rendering, missing metadata for StackViewport, high DPI devices ([#127](https://github.com/cornerstonejs/cornerstone3D-beta/issues/127)) ([d4bf1c8](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d4bf1c80391bcecaee64d9eb086416c42aa406e2))
+
+
+
+
+
 # [0.13.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.12.1...@cornerstonejs/core@0.13.0) (2022-06-14)
 
 
