@@ -803,11 +803,15 @@ class StackViewport extends Viewport implements IStackViewport {
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
     const { viewport } = this._cpuFallbackEnabledElement;
 
-    viewport.hflip = flipHorizontal;
-    this.flipHorizontal = viewport.hflip;
+    if (flipHorizontal !== undefined) {
+      viewport.hflip = flipHorizontal;
+      this.flipHorizontal = viewport.hflip;
+    }
 
-    viewport.vflip = flipVertical;
-    this.flipVertical = viewport.vflip;
+    if (flipVertical !== undefined) {
+      viewport.vflip = flipVertical;
+      this.flipVertical = viewport.vflip;
+    }
   }
 
   private setVOI(voiRange: VOIRange, suppressEvents?: boolean): void {
