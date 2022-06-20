@@ -10,6 +10,7 @@ import Events from '../enums/Events';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent, planar, isImageActor } from '../utilities';
+import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
   ActorEntry,
@@ -22,7 +23,6 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { RENDERING_DEFAULTS } from '../constants';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -656,7 +656,10 @@ class Viewport implements IViewport {
       -focalPointToSet[2]
     );
 
-    activeCamera.setClippingRange(distance, distance + 0.1);
+    activeCamera.setClippingRange(
+      -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+    );
 
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
