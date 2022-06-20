@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.2...@cornerstonejs/core@0.13.3) (2022-06-20)
+
+
+### Bug Fixes
+
+* Address issues with CPU Flip ([#132](https://github.com/cornerstonejs/cornerstone3D-beta/issues/132)) ([62b2843](https://github.com/cornerstonejs/cornerstone3D-beta/commit/62b28430cb00fc90e212f1c9f3cb7f748dbadb84))
+
+
+
+
+
 ## [0.13.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.1...@cornerstonejs/core@0.13.2) (2022-06-17)
 
 
