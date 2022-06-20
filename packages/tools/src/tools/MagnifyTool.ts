@@ -15,7 +15,7 @@ import {
 } from '../cursors/elementCursor';
 import { IPoints } from '../types';
 
-const MAGNIFY_VIEWPORT_ID = 'maginify-viewport';
+const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 
 export default class MagnifyTool extends BaseTool {
   static toolName = 'Magnify';
@@ -245,12 +245,18 @@ export default class MagnifyTool extends BaseTool {
 
   _mouseUpCallback = (evt: EventTypes.MouseUpEventType) => {
     const { element } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine } = enabledElement;
 
-    const magnifyToolElement = element.querySelector(
+    renderingEngine.disableElement(MAGNIFY_VIEWPORT_ID);
+
+    const viewportElement = element.querySelector('.viewport-element');
+
+    const magnifyToolElement = viewportElement.querySelector(
       '.magnifyTool'
     ) as HTMLDivElement;
 
-    magnifyToolElement.style.display = 'none';
+    viewportElement.removeChild(magnifyToolElement);
 
     this._deactivateDraw(element);
     resetElementCursor(element);
