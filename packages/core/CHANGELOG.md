@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.4...@cornerstonejs/core@0.13.5) (2022-06-20)
+
+
+### Bug Fixes
+
+* Resizing off-screen canvas was broken due to devicePixelRatio ([#134](https://github.com/cornerstonejs/cornerstone3D-beta/issues/134)) ([7b8ac34](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7b8ac340f4708d8b0d99951d2fa4e2c996514968))
+
+
+
+
+
 ## [0.13.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.3...@cornerstonejs/core@0.13.4) (2022-06-20)
 
 
