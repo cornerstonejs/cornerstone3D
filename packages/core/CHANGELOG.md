@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.3...@cornerstonejs/core@0.13.4) (2022-06-20)
+
+
+### Bug Fixes
+
+* Fix event for camera modified firing with wrong values ([#133](https://github.com/cornerstonejs/cornerstone3D-beta/issues/133)) ([f16f994](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f16f9947902a104568cb4a7be75c0d19dd4a0715))
+
+
+
+
+
 ## [0.13.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.2...@cornerstonejs/core@0.13.3) (2022-06-20)
 
 
