@@ -20,7 +20,7 @@ function createCanvas(element: Element | HTMLDivElement): HTMLCanvasElement {
 }
 
 /**
- * Creates and internal div that will contain canvas and SVG layer as children
+ * Creates an internal div that will contain canvas and SVG layer as children
  * @param element - An HTML Element
  * @returns div Cornerstone internal div that will include the canvas and SVG
  * as its children

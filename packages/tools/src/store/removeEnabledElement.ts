@@ -33,11 +33,9 @@ function removeEnabledElement(
 
   _resetSvgNodeCache(element);
 
-  // Todo: shouldn't this also remove the canvas?
   const viewportNode = element;
   const svgLayer = viewportNode.querySelector('svg');
   const internalViewportNode = element.querySelector(`div.${VIEWPORT_ELEMENT}`);
-  // element.removeChild(internalViewportNode)
   if (svgLayer) {
     internalViewportNode.removeChild(svgLayer);
   }
