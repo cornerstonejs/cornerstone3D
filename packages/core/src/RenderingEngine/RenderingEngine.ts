@@ -941,6 +941,8 @@ class RenderingEngine implements IRenderingEngine {
     // Redefine viewport properties
     let _xOffset = 0;
 
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
     for (let i = 0; i < viewportsDrivenByVtkJs.length; i++) {
       const viewport = viewportsDrivenByVtkJs[i];
       const {
@@ -959,7 +961,7 @@ class RenderingEngine implements IRenderingEngine {
         _xOffset
       );
 
-      _xOffset += viewport.canvas.width;
+      _xOffset += viewport.canvas.clientWidth * devicePixelRatio;
 
       viewport.sx = sx;
       viewport.sy = sy;
