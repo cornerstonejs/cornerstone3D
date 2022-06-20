@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.6...@cornerstonejs/core@0.13.7) (2022-06-20)
+
+
+### Bug Fixes
+
+* Use maximum clipping range for StackViewport ([#136](https://github.com/cornerstonejs/cornerstone3D-beta/issues/136)) ([016eff6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/016eff66a02e4b120fb8ed06f90faaa3b29a8024))
+
+
+
+
+
 ## [0.13.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.5...@cornerstonejs/core@0.13.6) (2022-06-20)
 
 
