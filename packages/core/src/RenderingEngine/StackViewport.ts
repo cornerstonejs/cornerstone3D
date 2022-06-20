@@ -708,14 +708,8 @@ class StackViewport extends Viewport implements IStackViewport {
     const { viewport, image } = this._cpuFallbackEnabledElement;
     const previousCamera = this.getCameraCPU();
 
-    const {
-      focalPoint,
-      viewUp,
-      parallelScale,
-      scale,
-      flipHorizontal,
-      flipVertical,
-    } = cameraInterface;
+    const { focalPoint, parallelScale, scale, flipHorizontal, flipVertical } =
+      cameraInterface;
 
     const { clientHeight } = this.element;
 
@@ -778,19 +772,9 @@ class StackViewport extends Viewport implements IStackViewport {
       this._cpuFallbackEnabledElement
     );
 
-    const updatedCamera = {
-      ...previousCamera,
-      focalPoint,
-      viewUp,
-      flipHorizontal,
-      flipVertical,
-      parallelScale: viewport.parallelScale,
-      scale: viewport.scale,
-    };
-
     const eventDetail: EventTypes.CameraModifiedEventDetail = {
       previousCamera,
-      camera: updatedCamera,
+      camera: this.getCamera(),
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
