@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.5...@cornerstonejs/core@0.13.6) (2022-06-20)
+
+
+### Bug Fixes
+
+* Cleanup magnify canvas on mouse up ([#135](https://github.com/cornerstonejs/cornerstone3D-beta/issues/135)) ([6fd0c3f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6fd0c3fe114586f9e7ac0ab1f448b6c5199d1f7a))
+
+
+
+
+
 ## [0.13.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.4...@cornerstonejs/core@0.13.5) (2022-06-20)
 
 
