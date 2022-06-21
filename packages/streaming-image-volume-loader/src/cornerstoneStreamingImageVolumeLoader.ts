@@ -4,7 +4,11 @@ import { vec3 } from 'gl-matrix';
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers';
 import StreamingImageVolume from './StreamingImageVolume';
 
-const { createUint8SharedArray, createFloat32SharedArray } = utilities;
+const {
+  createUint8SharedArray,
+  createInt16SharedArray,
+  createFloat32SharedArray,
+} = utilities;
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -29,142 +33,151 @@ function cornerstoneStreamingImageVolumeLoader(
     imageIds: string[];
   }
 ): IVolumeLoader {
-  if (!options || !options.imageIds || !options.imageIds.length) {
-    throw new Error(
-      'ImageIds must be provided to create a streaming image volume'
-    );
-  }
-
-  const { imageIds } = options;
-
-  const volumeMetadata = makeVolumeMetadata(imageIds);
-
-  const {
-    BitsAllocated,
-    PixelRepresentation,
-    PhotometricInterpretation,
-    ImageOrientationPatient,
-    PixelSpacing,
-    Columns,
-    Rows,
-    SeriesInstanceUID,
-  } = volumeMetadata;
-
-  const rowCosineVec = vec3.fromValues(
-    ImageOrientationPatient[0],
-    ImageOrientationPatient[1],
-    ImageOrientationPatient[2]
-  );
-  const colCosineVec = vec3.fromValues(
-    ImageOrientationPatient[3],
-    ImageOrientationPatient[4],
-    ImageOrientationPatient[5]
-  );
-
-  const scanAxisNormal = vec3.create();
-
-  vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
-
-  const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
-    imageIds,
-    scanAxisNormal
-  );
-
-  const numFrames = imageIds.length;
-
-  // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = <Types.Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing];
-  const dimensions = <Types.Point3>[Columns, Rows, numFrames];
-  const direction = new Float32Array([
-    ...rowCosineVec,
-    ...colCosineVec,
-    ...scanAxisNormal,
-  ]);
-  const signed = PixelRepresentation === 1;
-
-  // Check if it fits in the cache before we allocate data
-  // TODO Improve this when we have support for more types
-  // NOTE: We use 4 bytes per voxel as we are using Float32.
-  const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1;
-  const sizeInBytesPerComponent =
-    bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2];
-
-  let numComponents = 1;
-  if (PhotometricInterpretation === 'RGB') {
-    numComponents = 3;
-  }
-
-  const sizeInBytes = sizeInBytesPerComponent * numComponents;
-
-  // check if there is enough space in unallocated + image Cache
-  const isCacheable = cache.isCacheable(sizeInBytes);
-  if (!isCacheable) {
-    throw new Error(Enums.Events.CACHE_SIZE_EXCEEDED);
-  }
-
-  cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
-
-  let scalarData;
-
-  switch (BitsAllocated) {
-    case 8:
-      if (signed) {
+  const promise: Promise<StreamingImageVolume> = new Promise(
+    (resolve, reject) => {
+      if (!options || !options.imageIds || !options.imageIds.length) {
         throw new Error(
-          '8 Bit signed images are not yet supported by this plugin.'
-        );
-      } else {
-        scalarData = createUint8SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
+          'ImageIds must be provided to create a streaming image volume'
         );
       }
 
-      break;
+      const { imageIds } = options;
 
-    case 16:
-      scalarData = createFloat32SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2]
+      const volumeMetadata = makeVolumeMetadata(imageIds);
+
+      const {
+        BitsAllocated,
+        PixelRepresentation,
+        PhotometricInterpretation,
+        ImageOrientationPatient,
+        PixelSpacing,
+        Columns,
+        Rows,
+        SeriesInstanceUID,
+      } = volumeMetadata;
+
+      const rowCosineVec = vec3.fromValues(
+        ImageOrientationPatient[0],
+        ImageOrientationPatient[1],
+        ImageOrientationPatient[2]
+      );
+      const colCosineVec = vec3.fromValues(
+        ImageOrientationPatient[3],
+        ImageOrientationPatient[4],
+        ImageOrientationPatient[5]
       );
 
-      break;
+      const scanAxisNormal = vec3.create();
 
-    case 24:
-      // hacky because we don't support alpha channel in dicom
-      scalarData = createUint8SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2] * numComponents
+      vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
+
+      const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
+        imageIds,
+        scanAxisNormal
       );
 
-      break;
-  }
+      const numFrames = imageIds.length;
 
-  const streamingImageVolume = new StreamingImageVolume(
-    // ImageVolume properties
-    {
-      volumeId,
-      metadata: volumeMetadata,
-      dimensions,
-      spacing,
-      origin,
-      direction,
-      scalarData,
-      sizeInBytes,
-    },
-    // Streaming properties
-    {
-      imageIds: sortedImageIds,
-      loadStatus: {
-        // todo: loading and loaded should be on ImageVolume
-        loaded: false,
-        loading: false,
-        cachedFrames: [],
-        callbacks: [],
-      },
+      // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
+      const spacing = <Types.Point3>[
+        PixelSpacing[1],
+        PixelSpacing[0],
+        zSpacing,
+      ];
+      const dimensions = <Types.Point3>[Columns, Rows, numFrames];
+      const direction = new Float32Array([
+        ...rowCosineVec,
+        ...colCosineVec,
+        ...scanAxisNormal,
+      ]);
+      const signed = PixelRepresentation === 1;
+
+      // Check if it fits in the cache before we allocate data
+      const bytesPerVoxel = BitsAllocated === 16 ? 2 : 1;
+      const sizeInBytesPerComponent =
+        bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2];
+
+      let numComponents = 1;
+      if (PhotometricInterpretation === 'RGB') {
+        numComponents = 3;
+      }
+
+      const sizeInBytes = sizeInBytesPerComponent * numComponents;
+
+      // check if there is enough space in unallocated + image Cache
+      const isCacheable = cache.isCacheable(sizeInBytes);
+      if (!isCacheable) {
+        throw new Error(Enums.Events.CACHE_SIZE_EXCEEDED);
+      }
+
+      cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
+
+      let scalarData;
+
+      switch (BitsAllocated) {
+        case 8:
+          if (signed) {
+            throw new Error(
+              '8 Bit signed images are not yet supported by this plugin.'
+            );
+          } else {
+            scalarData = createUint8SharedArray(
+              dimensions[0] * dimensions[1] * dimensions[2]
+            );
+          }
+
+          break;
+
+        case 16:
+          scalarData = createInt16SharedArray(
+            dimensions[0] * dimensions[1] * dimensions[2]
+          );
+
+          break;
+
+        case 24:
+          // hacky because we don't support alpha channel in dicom
+          scalarData = createUint8SharedArray(
+            dimensions[0] * dimensions[1] * dimensions[2] * numComponents
+          );
+
+          break;
+      }
+
+      const streamingImageVolume = new StreamingImageVolume(
+        // ImageVolume properties
+        {
+          volumeId,
+          metadata: volumeMetadata,
+          dimensions,
+          spacing,
+          origin,
+          direction,
+          scalarData,
+          sizeInBytes,
+        },
+        // Streaming properties
+        {
+          imageIds: sortedImageIds,
+          loadStatus: {
+            // todo: loading and loaded should be on ImageVolume
+            loaded: false,
+            loading: false,
+            cachedFrames: [],
+            callbacks: [],
+          },
+        }
+      );
+
+      resolve(streamingImageVolume);
     }
   );
 
   return {
-    promise: Promise.resolve(streamingImageVolume),
+    promise,
     cancel: () => {
-      streamingImageVolume.cancelLoading();
+      // TODO: how to do this now?
+      // streamingImageVolume.cancelLoading();
     },
   };
 }

@@ -134,6 +134,8 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
 
   if (scalarData instanceof Uint8Array) {
     type = 'Uint8Array';
+  } else if (scalarData instanceof Int16Array) {
+    type = 'Int16Array';
   } else if (scalarData instanceof Float32Array) {
     type = 'Float32Array';
   } else {

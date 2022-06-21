@@ -218,6 +218,9 @@ export default class WindowLevelTool extends BaseTool {
     if (scalarData instanceof Float32Array) {
       bytesPerVoxel = 4;
       TypedArrayConstructor = Float32Array;
+    } else if (scalarData instanceof Int16Array) {
+      bytesPerVoxel = 2;
+      TypedArrayConstructor = Int16Array;
     } else if (scalarData instanceof Uint8Array) {
       bytesPerVoxel = 1;
       TypedArrayConstructor = Uint8Array;

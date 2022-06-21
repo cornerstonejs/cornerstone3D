@@ -19,7 +19,7 @@ interface IVolume {
   /** volume direction */
   direction: Float32Array;
   /** volume scalarData */
-  scalarData: Float32Array | Uint8Array;
+  scalarData: Float32Array | Int16Array | Uint8Array;
   /** volume size in bytes */
   sizeInBytes?: number;
   /** volume image data as vtkImageData */

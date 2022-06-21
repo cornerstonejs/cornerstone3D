@@ -21,11 +21,11 @@ interface VolumeLoaderOptions {
 interface DerivedVolumeOptions {
   volumeId: string;
   targetBuffer?: {
-    type: 'Float32Array' | 'Uint8Array';
+    type: 'Float32Array' | 'Int16Array' | 'Uint8Array';
   };
 }
 interface LocalVolumeOptions {
-  scalarData: Float32Array | Uint8Array;
+  scalarData: Float32Array | Int16Array | Uint8Array;
   metadata: Metadata;
   dimensions: Point3;
   spacing: Point3;
@@ -200,7 +200,7 @@ export async function createAndCacheVolume(
  * is given, it will be used to generate the intensity values for the derivedVolume.
  * Finally, it will save the volume in the cache.
  * @param referencedVolumeId - the volumeId from which the new volume will get its metadata
- * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
+ * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: Float32Array | Int16Array | Uint8Array}, scalarData: if provided}
  *
  * @returns ImageVolume
  */
@@ -234,6 +234,9 @@ export function createAndCacheDerivedVolume(
     if (targetBuffer.type === 'Float32Array') {
       numBytes = scalarLength * 4;
       TypedArray = Float32Array;
+    } else if (targetBuffer.type === 'Int16Array') {
+      numBytes = scalarLength * 2;
+      TypedArray = Int16Array;
     } else if (targetBuffer.type === 'Uint8Array') {
       numBytes = scalarLength;
       TypedArray = Uint8Array;
@@ -310,7 +313,11 @@ export function createLocalVolume(
 
   if (
     !scalarData ||
-    !(scalarData instanceof Uint8Array || scalarData instanceof Float32Array)
+    !(
+      scalarData instanceof Uint8Array ||
+      scalarData instanceof Int16Array ||
+      scalarData instanceof Float32Array
+    )
   ) {
     throw new Error(
       'To use createLocalVolume you should pass scalarData of type Uint8Array or Float32Array'

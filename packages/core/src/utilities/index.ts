@@ -9,6 +9,7 @@ import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMeta
 import isEqual from './isEqual';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
+import createInt16SharedArray from './createInt16SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
@@ -45,6 +46,7 @@ export {
   isEqual,
   isOpposite,
   createFloat32SharedArray,
+  createInt16SharedArray,
   createUint8SharedArray,
   windowLevel,
   getClosestImageId,

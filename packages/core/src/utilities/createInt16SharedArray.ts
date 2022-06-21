@@ -1,5 +1,5 @@
 /**
- * A helper function that creates a new Float32Array that utilized a shared
+ * A helper function that creates a new Int16Array that utilized a shared
  * array buffer. This allows the array to be updated  simultaneously in
  * workers or the main thread. Depending on the system (the CPU, the OS, the Browser)
  * it can take a while until the change is propagated to all contexts.
@@ -15,14 +15,14 @@
  * Creating an array for a Volume with known dimensions:
  * ```
  * const dimensions = [512, 512, 25];
- * const scalarData = createFloat32SharedArray(dimensions[0] * dimensions[1] * dimensions[2]);
+ * const scalarData = createInt16SharedArray(dimensions[0] * dimensions[1] * dimensions[2]);
  * ```
  *
  * @param length - frame size * number of frames
- * @returns a Float32Array with an underlying SharedArrayBuffer
+ * @returns an Int16Array with an underlying SharedArrayBuffer
  * @public
  */
-function createFloat32SharedArray(length: number): Float32Array {
+function createInt16SharedArray(length: number): Int16Array {
   if (!window.crossOriginIsolated) {
     throw new Error(
       'Your page is NOT cross-origin isolated, see https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated'
@@ -34,9 +34,9 @@ function createFloat32SharedArray(length: number): Float32Array {
     );
   }
 
-  const sharedArrayBuffer = new SharedArrayBuffer(length * 4);
+  const sharedArrayBuffer = new SharedArrayBuffer(length * 2);
 
-  return new Float32Array(sharedArrayBuffer);
+  return new Int16Array(sharedArrayBuffer);
 }
 
-export default createFloat32SharedArray;
+export default createInt16SharedArray;
