@@ -249,8 +249,19 @@ class BufferStream {
     checkSize(step) {
         if (this.offset + step > this.buffer.byteLength) {
             //throw new Error("Writing exceeded the size of buffer");
-            //resize
-            var dstSize = this.offset + step;
+            //
+            // Resize the buffer.
+            // The idea is that when it is necessary to increase the buffer size,
+            // there will likely be more bytes which need to be written to the
+            // buffer in the future. Buffer allocation is costly.
+            // So we increase the buffer size right now
+            // by a larger amount than necessary, to reserve space for later
+            // writes which then can be done much faster. The current size of
+            // the buffer is the best estimate of the scale by which the size
+            // should increase.
+            // So approximately doubling the size of the buffer
+            // (while ensuring it fits the new data) is a simple but effective strategy.
+            var dstSize = this.offset + step + this.buffer.byteLength;
             var dst = new ArrayBuffer(dstSize);
             new Uint8Array(dst).set(new Uint8Array(this.buffer));
             this.buffer = dst;
