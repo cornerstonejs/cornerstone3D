@@ -1019,10 +1019,26 @@ class UniqueIdentifier extends StringRepresentation {
     }
 
     readBytes(stream, length) {
-        return this.readNullPaddedString(stream, length).replace(
-            /[^0-9.]/g,
-            ""
-        );
+        const result = this.readNullPaddedString(stream, length);
+
+        const BACKSLASH = String.fromCharCode(0x5c);
+        const uidRegExp = /[^0-9.]/g;
+
+        // Treat backslashes as a delimiter for multiple UIDs, in which case an
+        // array of UIDs is returned. This is used by DICOM Q&R to support
+        // querying and matching multiple items on a UID field in a single
+        // query. For more details see:
+        //
+        // https://dicom.nema.org/medical/dicom/current/output/chtml/part04/sect_C.2.2.2.2.html
+        // https://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.4.html
+
+        if (result.indexOf(BACKSLASH) === -1) {
+            return result.replace(uidRegExp, "");
+        } else {
+            return result
+                .split(BACKSLASH)
+                .map(uid => uid.replace(uidRegExp, ""));
+        }
     }
 }
 

@@ -8,6 +8,7 @@ import os from "os";
 import path from "path";
 import unzipper from "unzipper";
 import followRedirects from "follow-redirects";
+import { promisify } from "util";
 
 const { https } = followRedirects;
 
@@ -594,4 +595,18 @@ it("test_custom_dictionary", () => {
     expect(dataset.TrialName).toEqual("Test Trial");
     //check that all other fields were preserved, 15 original + 1 for _vr and +1 for "TrialName"
     expect(Object.keys(dataset).length).toEqual(17);
+});
+
+it("Reads DICOM with multiplicity", async () => {
+    const url =
+        "https://github.com/dcmjs-org/data/releases/download/multiplicity/multiplicity.dcm";
+    const dcmPath = path.join(os.tmpdir(), "multiplicity.dcm");
+
+    await downloadToFile(url, dcmPath);
+
+    const file = await promisify(fs.readFile)(dcmPath);
+    const dicomDict = DicomMessage.readFile(file.buffer);
+
+    expect(dicomDict.dict["00101020"].Value).toEqual([1, 2]);
+    expect(dicomDict.dict["0018100B"].Value).toEqual(["1.2", "3.4"]);
 });
