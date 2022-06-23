@@ -365,18 +365,30 @@ class BinaryRepresentation extends ValueRepresentation {
                     offsets = [];
                 }
 
-                const getFrameOrFragement = stream => {
-                    var nextTag = Tag.readTag(stream);
-                    if (!nextTag.is(0xfffee000)) {
-                        return [null, true];
+                const SequenceItemTag = 0xfffee000;
+                const SequenceDelimiterTag = 0xfffee0dd;
+
+                const getNextSequenceItemData = stream => {
+                    const nextTag = Tag.readTag(stream);
+                    if (nextTag.is(SequenceItemTag)) {
+                        const itemLength = stream.readUint32();
+                        const buffer = stream.getBuffer(
+                            stream.offset,
+                            stream.offset + itemLength
+                        );
+                        stream.increment(itemLength);
+                        return buffer;
+                    } else if (nextTag.is(SequenceDelimiterTag)) {
+                        // Read SequenceDelimiterItem value for the SequenceDelimiterTag
+                        if (stream.readUint32() !== 0) {
+                            throw Error(
+                                "SequenceDelimiterItem tag value was not zero"
+                            );
+                        }
+                        return null;
                     }
-                    let frameOrFragmentItemLength = stream.readUint32();
-                    const buffer = stream.getBuffer(
-                        stream.offset,
-                        stream.offset + frameOrFragmentItemLength
-                    );
-                    stream.increment(frameOrFragmentItemLength);
-                    return [buffer, false];
+
+                    throw Error("Invalid tag in sequence");
                 };
 
                 // If there is an offset table, use that to loop through pixel data sequence
@@ -390,55 +402,53 @@ class BinaryRepresentation extends ValueRepresentation {
                         const fragments = [];
                         const [start, stop] = range;
                         // create a new readable stream based on the range
-                        const s = new ReadBufferStream(
+                        const rangeStream = new ReadBufferStream(
                             stream.buffer,
                             stream.isLittleEndian,
-                            start,
-                            stop
+                            {
+                                start: start,
+                                stop: stop
+                            }
                         );
-                        while (!s.end()) {
-                            const [buf, done] = getFrameOrFragement(s);
-                            if (done) {
+
+                        let frameSize = 0;
+                        while (!rangeStream.end()) {
+                            const buf = getNextSequenceItemData(rangeStream);
+                            if (buf === null) {
                                 break;
                             }
                             fragments.push(buf);
+                            frameSize += buf.byteLength;
                         }
-                        return fragments;
-                    });
 
-                    frames = frames.map(fragments => {
-                        if (fragments.length < 1) {
+                        // Ensure the parent stream's offset is kept up to date
+                        stream.offset = rangeStream.offset;
+
+                        // If there's only one buffer thne just return it directly
+                        if (fragments.length === 1) {
                             return fragments[0];
-                        } else {
-                            const frameSize = fragments.reduce(
-                                (size, buffer) => {
-                                    return size + buffer.byteLength;
-                                },
-                                0
-                            );
-                            const mergedFrame = new Uint8Array(frameSize);
-                            fragments.reduce((offset, buffer) => {
-                                mergedFrame.set(new Uint8Array(buffer), offset);
-                                return offset + buffer.byteLength;
-                            }, 0);
-                            return mergedFrame;
                         }
+
+                        // Allocate a final ArrayBuffer and concat all buffers into it
+                        const mergedFrame = new ArrayBuffer(frameSize);
+                        const u8Data = new Uint8Array(mergedFrame);
+                        fragments.reduce((offset, buffer) => {
+                            u8Data.set(buffer, offset);
+                            return offset + buffer.byteLength;
+                        }, 0);
+
+                        return mergedFrame;
                     });
                 }
                 // If no offset table, loop through remainder of stream looking for termination tag
                 else {
-                    while (stream.offset < stream.size) {
-                        const [buffer, done] = getFrameOrFragement(stream);
-                        if (done) break;
+                    while (!stream.end()) {
+                        const buffer = getNextSequenceItemData(stream);
+                        if (buffer === null) {
+                            break;
+                        }
                         frames.push(buffer);
                     }
-                }
-
-                // Read SequenceDelimitationItem Tag
-                stream.readUint32();
-                // Read SequenceDelimitationItem value.
-                if (stream.size - stream.offset >= 4) {
-                    stream.readUint32();
                 }
             } else {
                 throw new Error(
