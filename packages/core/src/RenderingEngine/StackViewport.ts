@@ -1200,15 +1200,15 @@ class StackViewport extends Viewport implements IStackViewport {
     let pixelArray;
     switch (bitsAllocated) {
       case 8:
-        pixelArray = new Uint8Array(numVoxels);
+        pixelArray = new Uint8Array(numVoxels * numComps);
         break;
 
       case 16:
-        pixelArray = new Float32Array(numVoxels);
+        pixelArray = new Float32Array(numVoxels * numComps);
 
         break;
       case 24:
-        pixelArray = new Uint8Array(numVoxels * 3);
+        pixelArray = new Uint8Array(numVoxels * 3 * numComps);
 
         break;
       default:
