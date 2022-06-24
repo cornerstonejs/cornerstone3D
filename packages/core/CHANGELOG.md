@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.7...@cornerstonejs/core@0.13.8) (2022-06-24)
+
+
+### Bug Fixes
+
+* Pixel data array was the wrong length for color images ([#138](https://github.com/cornerstonejs/cornerstone3D-beta/issues/138)) ([e42419d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e42419d0f7be45ff0ba87cb51502017b53687171))
+
+
+
+
+
 ## [0.13.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.6...@cornerstonejs/core@0.13.7) (2022-06-20)
 
 
