@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "0.20.10",
+  "version": "0.20.11",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -24,7 +24,7 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.13.8",
+    "@cornerstonejs/core": "^0.13.9",
     "lodash.clonedeep": "4.5.0"
   },
   "peerDependencies": {
@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@cornerstonejs/core": "^0.9.0",
-    "@cornerstonejs/streaming-image-volume-loader": "^0.4.8",
+    "@cornerstonejs/streaming-image-volume-loader": "^0.4.9",
     "@kitware/vtk.js": "24.18.7"
   },
   "contributors": [

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.8...@cornerstonejs/core@0.13.9) (2022-06-24)
+
+
+### Bug Fixes
+
+* Handle cases where row and column cosines are missing ([#139](https://github.com/cornerstonejs/cornerstone3D-beta/issues/139)) ([5bd0a70](https://github.com/cornerstonejs/cornerstone3D-beta/commit/5bd0a7062adf7efd4654b20b6f4c8daed236a2db))
+
+
+
+
+
 ## [0.13.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.7...@cornerstonejs/core@0.13.8) (2022-06-24)
 
 
