@@ -2,7 +2,7 @@ import { ReadBufferStream } from "./BufferStream.js";
 import { Tag } from "./Tag.js";
 import { DicomMetaDictionary } from "./DicomMetaDictionary.js";
 import { DicomDict } from "./DicomDict.js";
-import { tagFromNumbers, ValueRepresentation } from "./ValueRepresentation.js";
+import { ValueRepresentation } from "./ValueRepresentation.js";
 
 const IMPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2";
 const EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
@@ -37,14 +37,46 @@ class DicomMessage {
         untilTag = null,
         includeUntilTagValue = false
     ) {
+        console.warn("DicomMessage.read to be deprecated after dcmjs 0.24.x");
+        return this._read(bufferStream, syntax, {
+            ignoreErrors: ignoreErrors,
+            untilTag: untilTag,
+            includeUntilTagValue: includeUntilTagValue
+        });
+    }
+
+    static readTag(
+        bufferStream,
+        syntax,
+        untilTag = null,
+        includeUntilTagValue = false
+    ) {
+        console.warn(
+            "DicomMessage.readTag to be deprecated after dcmjs 0.24.x"
+        );
+        return this._readTag(bufferStream, syntax, {
+            untilTag: untilTag,
+            includeUntilTagValue: includeUntilTagValue
+        });
+    }
+
+    static _read(
+        bufferStream,
+        syntax,
+        options = {
+            ignoreErrors: false,
+            untilTag: null,
+            includeUntilTagValue: false
+        }
+    ) {
+        const { ignoreErrors, untilTag } = options;
         var dict = {};
         try {
             while (!bufferStream.end()) {
-                const readInfo = DicomMessage.readTag(
+                const readInfo = DicomMessage._readTag(
                     bufferStream,
                     syntax,
-                    untilTag,
-                    includeUntilTagValue
+                    options
                 );
                 const cleanTagString = readInfo.tag.toCleanString();
 
@@ -88,34 +120,30 @@ class DicomMessage {
         options = {
             ignoreErrors: false,
             untilTag: null,
-            includeUntilTagValue: false
+            includeUntilTagValue: false,
+            noCopy: false
         }
     ) {
-        const { ignoreErrors, untilTag, includeUntilTagValue } = options;
-        var stream = new ReadBufferStream(buffer),
+        var stream = new ReadBufferStream(buffer, null, {
+                noCopy: options.noCopy
+            }),
             useSyntax = EXPLICIT_LITTLE_ENDIAN;
         stream.reset();
         stream.increment(128);
         if (stream.readString(4) !== "DICM") {
             throw new Error("Invalid a dicom file");
         }
-        var el = DicomMessage.readTag(stream, useSyntax),
+        var el = DicomMessage._readTag(stream, useSyntax),
             metaLength = el.values[0];
 
         //read header buffer
         var metaStream = stream.more(metaLength);
 
-        var metaHeader = DicomMessage.read(metaStream, useSyntax, ignoreErrors);
+        var metaHeader = DicomMessage._read(metaStream, useSyntax, options);
         //get the syntax
         var mainSyntax = metaHeader["00020010"].Value[0];
         mainSyntax = DicomMessage._normalizeSyntax(mainSyntax);
-        var objects = DicomMessage.read(
-            stream,
-            mainSyntax,
-            ignoreErrors,
-            untilTag,
-            includeUntilTagValue
-        );
+        var objects = DicomMessage._read(stream, mainSyntax, options);
 
         var dicomDict = new DicomDict(metaHeader);
         dicomDict.dict = objects;
@@ -133,7 +161,7 @@ class DicomMessage {
         var written = 0;
 
         var sortedTags = Object.keys(jsonObjects).sort();
-        sortedTags.forEach(function (tagString) {
+        sortedTags.forEach(function(tagString) {
             var tag = Tag.fromString(tagString),
                 tagObject = jsonObjects[tagString],
                 vrType = tagObject.vr,
@@ -151,12 +179,15 @@ class DicomMessage {
         return written;
     }
 
-    static readTag(
+    static _readTag(
         stream,
         syntax,
-        untilTag = null,
-        includeUntilTagValue = false
+        options = {
+            untilTag: null,
+            includeUntilTagValue: false
+        }
     ) {
+        const { untilTag, includeUntilTagValue } = options;
         var implicit = syntax == IMPLICIT_LITTLE_ENDIAN ? true : false,
             isLittleEndian =
                 syntax == IMPLICIT_LITTLE_ENDIAN ||
@@ -166,9 +197,7 @@ class DicomMessage {
 
         var oldEndian = stream.isLittleEndian;
         stream.setEndian(isLittleEndian);
-        var group = stream.readUint16(),
-            element = stream.readUint16(),
-            tag = tagFromNumbers(group, element);
+        var tag = Tag.readTag(stream);
 
         if (untilTag === tag.toCleanString() && untilTag !== null) {
             if (!includeUntilTagValue) {

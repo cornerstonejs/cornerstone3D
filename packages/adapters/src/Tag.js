@@ -1,10 +1,13 @@
-import { paddingLeft } from "./ValueRepresentation.js";
 import { ValueRepresentation } from "./ValueRepresentation.js";
 import { DicomMessage } from "./DicomMessage.js";
 import { WriteBufferStream } from "./BufferStream.js";
 
 var IMPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2";
 var EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
+
+function paddingLeft(paddingValue, string) {
+    return String(paddingValue + string).slice(-paddingValue.length);
+}
 
 class Tag {
     constructor(value) {
@@ -14,17 +17,37 @@ class Tag {
     toString() {
         return (
             "(" +
-            paddingLeft("0000", this.group().toString(16).toUpperCase()) +
+            paddingLeft(
+                "0000",
+                this.group()
+                    .toString(16)
+                    .toUpperCase()
+            ) +
             "," +
-            paddingLeft("0000", this.element().toString(16).toUpperCase()) +
+            paddingLeft(
+                "0000",
+                this.element()
+                    .toString(16)
+                    .toUpperCase()
+            ) +
             ")"
         );
     }
 
     toCleanString() {
         return (
-            paddingLeft("0000", this.group().toString(16).toUpperCase()) +
-            paddingLeft("0000", this.element().toString(16).toUpperCase())
+            paddingLeft(
+                "0000",
+                this.group()
+                    .toString(16)
+                    .toUpperCase()
+            ) +
+            paddingLeft(
+                "0000",
+                this.element()
+                    .toString(16)
+                    .toUpperCase()
+            )
         );
     }
 

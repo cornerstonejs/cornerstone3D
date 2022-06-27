@@ -17,8 +17,12 @@ import minimalDataset from "./mocks/minimal_fields_dataset.json";
 import arrayItem from "./arrayItem.json";
 import { rawTags } from "./rawTags";
 
-const { DicomMetaDictionary, DicomDict, DicomMessage, ReadBufferStream } =
-    dcmjs.data;
+const {
+    DicomMetaDictionary,
+    DicomDict,
+    DicomMessage,
+    ReadBufferStream
+} = dcmjs.data;
 
 const EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
 
@@ -171,8 +175,9 @@ it("test_json_1", () => {
     //
     // make a natural version of a dataset with sequence tags and confirm it has correct values
     //
-    const naturalSequence =
-        DicomMetaDictionary.naturalizeDataset(sequenceMetadata);
+    const naturalSequence = DicomMetaDictionary.naturalizeDataset(
+        sequenceMetadata
+    );
 
     // The match object needs to be done on the actual element, not the proxied value
     expect(naturalSequence.ProcedureCodeSequence[0]).toMatchObject({
@@ -234,17 +239,17 @@ it("test_multiframe_1", async () => {
 
     const datasets = [];
     fileNames.forEach(fileName => {
-        const arrayBuffer = fs.readFileSync(
-            path.join(mrHeadPath, fileName)
-        ).buffer;
+        const arrayBuffer = fs.readFileSync(path.join(mrHeadPath, fileName))
+            .buffer;
         const dicomDict = DicomMessage.readFile(arrayBuffer);
         const dataset = DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
 
         datasets.push(dataset);
     });
 
-    const multiframe =
-        dcmjs.normalizers.Normalizer.normalizeToDataset(datasets);
+    const multiframe = dcmjs.normalizers.Normalizer.normalizeToDataset(
+        datasets
+    );
     const spacing =
         multiframe.SharedFunctionalGroupsSequence.PixelMeasuresSequence
             .SpacingBetweenSlices;
@@ -280,9 +285,8 @@ it("test_oneslice_seg", async () => {
 
     const datasets = [];
     fileNames.forEach(fileName => {
-        const arrayBuffer = fs.readFileSync(
-            path.join(ctPelvisPath, fileName)
-        ).buffer;
+        const arrayBuffer = fs.readFileSync(path.join(ctPelvisPath, fileName))
+            .buffer;
         const dicomDict = DicomMessage.readFile(arrayBuffer);
         const dataset = DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
         datasets.push(dataset);
@@ -308,8 +312,9 @@ it("test_oneslice_seg", async () => {
 });
 
 it("test_normalizer_smaller", () => {
-    const naturalizedTags =
-        dcmjs.data.DicomMetaDictionary.naturalizeDataset(rawTags);
+    const naturalizedTags = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+        rawTags
+    );
 
     const rawTagsLen = JSON.stringify(rawTags).length;
     const naturalizedTagsLen = JSON.stringify(naturalizedTags).length;
@@ -452,39 +457,6 @@ it("test_invalid_vr_length", () => {
     }
 });
 
-it("test_untiltag", () => {
-    const buffer = fs.readFileSync("test/sample-dicom.dcm");
-    console.time("readFile");
-    const fullData = DicomMessage.readFile(buffer.buffer);
-    console.timeEnd("readFile");
-
-    console.time("readFile without untilTag");
-    const dicomData = DicomMessage.readFile(buffer.buffer, {
-        untilTag: "7FE00010",
-        includeUntilTagValue: false
-    });
-    console.timeEnd("readFile without untilTag");
-
-    console.time("readFile with untilTag");
-    const dicomData2 = DicomMessage.readFile(buffer.buffer, {
-        untilTag: "7FE00010",
-        includeUntilTagValue: true
-    });
-    console.timeEnd("readFile with untilTag");
-
-    const full_dataset = DicomMetaDictionary.naturalizeDataset(fullData.dict);
-    full_dataset._meta = DicomMetaDictionary.namifyDataset(fullData.meta);
-
-    const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-    dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-
-    const dataset2 = DicomMetaDictionary.naturalizeDataset(dicomData2.dict);
-    dataset2._meta = DicomMetaDictionary.namifyDataset(dicomData2.meta);
-
-    expect(full_dataset.PixelData).toEqual(dataset2.PixelData);
-    expect(dataset.PixelData).toEqual(0);
-});
-
 it("test_encapsulation", async () => {
     const url =
         "https://github.com/dcmjs-org/data/releases/download/encapsulation/encapsulation.dcm";
@@ -531,10 +503,10 @@ it("test_encapsulation", async () => {
         throw new Error("Invalid a dicom file");
     }
 
-    const el = DicomMessage.readTag(stream, useSyntax),
+    const el = DicomMessage._readTag(stream, useSyntax),
         metaLength = el.values[0]; //read header buffer
     const metaStream = stream.more(metaLength);
-    const metaHeader = DicomMessage.read(metaStream, useSyntax, false); //get the syntax
+    const metaHeader = DicomMessage._read(metaStream, useSyntax); //get the syntax
     let mainSyntax = metaHeader["00020010"].Value[0];
 
     mainSyntax = DicomMessage._normalizeSyntax(mainSyntax);
@@ -565,7 +537,7 @@ it("test_encapsulation", async () => {
             lengths.push(length);
         }
 
-        DicomMessage.readTag(stream, mainSyntax, null, false);
+        DicomMessage._readTag(stream, mainSyntax);
     }
 
     // then

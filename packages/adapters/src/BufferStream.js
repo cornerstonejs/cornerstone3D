@@ -344,14 +344,28 @@ class ReadBufferStream extends BufferStream {
         littleEndian,
         options = {
             start: null,
-            stop: null
+            stop: null,
+            noCopy: false
         }
     ) {
         super(buffer, littleEndian);
         this.offset = options.start || 0;
         this.size = options.stop || this.buffer.byteLength;
+        this.noCopy = options.noCopy;
         this.startOffset = this.offset;
         this.endOffset = this.size;
+    }
+
+    getBuffer(start, end) {
+        if (this.noCopy) {
+            return new Uint8Array(this.buffer, start, end - start);
+        }
+        if (!start && !end) {
+            start = 0;
+            end = this.size;
+        }
+
+        return this.buffer.slice(start, end);
     }
 
     readString(length) {

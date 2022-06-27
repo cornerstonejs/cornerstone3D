@@ -4,24 +4,8 @@ import { ReadBufferStream } from "./BufferStream.js";
 import { WriteBufferStream } from "./BufferStream.js";
 import { Tag } from "./Tag.js";
 
-function paddingLeft(paddingValue, string) {
-    return String(paddingValue + string).slice(-paddingValue.length);
-}
-
 function rtrim(str) {
     return str.replace(/\s*$/g, "");
-}
-
-function tagFromNumbers(group, element) {
-    return new Tag(((group << 16) | element) >>> 0);
-}
-
-function readTag(stream) {
-    var group = stream.readUint16(),
-        element = stream.readUint16();
-
-    var tag = tagFromNumbers(group, element);
-    return tag;
 }
 
 function toWindows(inputArray, size) {
@@ -111,7 +95,7 @@ class ValueRepresentation {
                     written.push(0);
                 } else {
                     var self = this;
-                    valueArgs[0].forEach(function (v, k) {
+                    valueArgs[0].forEach(function(v, k) {
                         if (self.allowMultiple() && k > 0) {
                             stream.writeHex("5C");
                             //byteCount++;
@@ -407,7 +391,8 @@ class BinaryRepresentation extends ValueRepresentation {
                             stream.isLittleEndian,
                             {
                                 start: start,
-                                stop: stop
+                                stop: stop,
+                                noCopy: stream.noCopy
                             }
                         );
 
@@ -429,15 +414,20 @@ class BinaryRepresentation extends ValueRepresentation {
                             return fragments[0];
                         }
 
-                        // Allocate a final ArrayBuffer and concat all buffers into it
-                        const mergedFrame = new ArrayBuffer(frameSize);
-                        const u8Data = new Uint8Array(mergedFrame);
-                        fragments.reduce((offset, buffer) => {
-                            u8Data.set(buffer, offset);
-                            return offset + buffer.byteLength;
-                        }, 0);
+                        if (rangeStream.noCopy) {
+                            // return the fragments for downstream application to process
+                            return fragments;
+                        } else {
+                            // Allocate a final ArrayBuffer and concat all buffers into it
+                            const mergedFrame = new ArrayBuffer(frameSize);
+                            const u8Data = new Uint8Array(mergedFrame);
+                            fragments.reduce((offset, buffer) => {
+                                u8Data.set(new Uint8Array(buffer), offset);
+                                return offset + buffer.byteLength;
+                            }, 0);
 
-                        return mergedFrame;
+                            return mergedFrame;
+                        }
                     });
                 }
                 // If no offset table, loop through remainder of stream looking for termination tag
@@ -516,9 +506,7 @@ class AttributeTag extends ValueRepresentation {
     }
 
     readBytes(stream) {
-        var group = stream.readUint16(),
-            element = stream.readUint16();
-        return tagFromNumbers(group, element).value;
+        return Tag.readTag(stream).value;
     }
 
     writeBytes(stream, value, writeOptions) {
@@ -789,7 +777,7 @@ class SequenceOfItems extends ValueRepresentation {
 
             /* eslint-disable-next-line no-constant-condition */
             while (true) {
-                var tag = readTag(stream),
+                var tag = Tag.readTag(stream),
                     length = null;
                 read += 4;
 
@@ -856,7 +844,7 @@ class SequenceOfItems extends ValueRepresentation {
                         read += toRead;
                         if (undef) stream.increment(8);
 
-                        var items = DicomMessage.read(itemStream, syntax);
+                        var items = DicomMessage._read(itemStream, syntax);
                         elements.push(items);
                     }
                     if (!undefLength && read == sqlength) {
@@ -1109,6 +1097,4 @@ class OtherFloatString extends BinaryRepresentation {
     }
 }
 
-export { paddingLeft };
-export { tagFromNumbers };
 export { ValueRepresentation };
