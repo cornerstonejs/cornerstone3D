@@ -157,6 +157,11 @@ class PlanarFreehandROITool extends AnnotationTool {
         // value gives more finese to the tool/smoother lines, but the value cannot
         // be infinite as the lines become very computationally expensive to draw.
         subPixelResolution: 4,
+        interpolation: {
+          enabled: false,
+          knotSampleSize: 10,
+          editKnotSampleSize: 20, // used for edit only
+        },
       },
     }
   ) {
