@@ -62,4 +62,7 @@ export default interface IToolGroup {
       overwrite?: boolean
     ): void;
   };
+  getToolConfiguration: {
+    (toolName: string, configurationPath: string): any;
+  };
 }
