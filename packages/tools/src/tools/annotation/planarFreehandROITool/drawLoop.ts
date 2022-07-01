@@ -13,6 +13,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
+import { shouldInterpolate, getInterpolatedPoints } from './interpolatePoints';
 
 const {
   addCanvasPointsToArray,
@@ -185,10 +186,14 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
+  const updatedPoints = shouldInterpolate(this.configuration)
+    ? getInterpolatedPoints(this.configuration, canvasPoints)
+    : canvasPoints;
+
   // Note: -> This is pretty expensive and may not scale well with hundreds of
   // contours. A future optimisation if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
-  const worldPoints = canvasPoints.map((canvasPoint) =>
+  const worldPoints = updatedPoints.map((canvasPoint) =>
     viewport.canvasToWorld(canvasPoint)
   );
 
@@ -248,10 +253,14 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
+  const updatedPoints = shouldInterpolate(this.configuration)
+    ? getInterpolatedPoints(this.configuration, canvasPoints)
+    : canvasPoints;
+
   // Note: -> This is pretty expensive and may not scale well with hundreds of
   // contours. A future optimisation if we use this for segmentation is to re-do
   // this rendering with the GPU rather than SVG.
-  const worldPoints = canvasPoints.map((canvasPoint) =>
+  const worldPoints = updatedPoints.map((canvasPoint) =>
     viewport.canvasToWorld(canvasPoint)
   );
 

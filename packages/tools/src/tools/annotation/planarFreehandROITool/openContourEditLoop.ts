@@ -11,6 +11,7 @@ import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
+import { shouldInterpolate, getInterpolatedPoints } from './interpolatePoints';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 
@@ -438,7 +439,7 @@ function fuseEditPointsWithOpenContour(
     }
   }
 
-  // Add points from the orignal contour's high index up to to its end point.
+  // Add points from the original contour's high index up to to its end point.
   for (let i = highIndex; i < prevCanvasPoints.length; i++) {
     const canvasPoint = prevCanvasPoints[i];
 
@@ -507,13 +508,20 @@ function completeOpenContourEdit(element: HTMLDivElement) {
   const { viewport, renderingEngine } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
-  const { fusedCanvasPoints } = this.editData;
+  const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
-    const worldPoints = fusedCanvasPoints.map((canvasPoint) =>
+    const updatedPoints = shouldInterpolate(this.configuration)
+      ? getInterpolatedPoints(
+          this.configuration,
+          fusedCanvasPoints,
+          prevCanvasPoints
+        )
+      : fusedCanvasPoints;
+
+    const worldPoints = updatedPoints.map((canvasPoint) =>
       viewport.canvasToWorld(canvasPoint)
     );
-
     annotation.data.polyline = worldPoints;
     annotation.data.isOpenContour = true;
     annotation.data.handles.points = [

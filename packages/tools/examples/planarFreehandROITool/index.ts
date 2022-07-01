@@ -118,6 +118,22 @@ addButtonToToolbar({
     }
   },
 });
+
+let shouldInterpolate = false;
+function addToggleInterpolationButton(toolGroup) {
+  addButtonToToolbar({
+    title: 'Toggle interpolation',
+    onClick: () => {
+      shouldInterpolate = !shouldInterpolate;
+
+      toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
+        interpolation: {
+          enabled: shouldInterpolate,
+        },
+      });
+    },
+  });
+}
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -170,6 +186,9 @@ async function run() {
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  // set up toggle interpolation tool button.
+  addToggleInterpolationButton(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const stackImageIds = await createImageIdsAndCacheMetaData({
