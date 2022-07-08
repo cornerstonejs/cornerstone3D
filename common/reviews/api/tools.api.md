@@ -2238,6 +2238,10 @@ interface IToolGroup {
         (): undefined | string;
     };
     // (undocumented)
+    getToolConfiguration: {
+        (toolName: string, configurationPath: string): any;
+    };
+    // (undocumented)
     getToolInstance: {
         (toolName: string): any;
     };
