@@ -11,10 +11,7 @@ import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
-import {
-  assertInterpolation,
-  getInterpolatedPoints,
-} from './interpolatePoints';
+import { shouldInterpolate, getInterpolatedPoints } from './interpolatePoints';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 
@@ -514,7 +511,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
-    const updatedPoints = assertInterpolation(this.configuration)
+    const updatedPoints = shouldInterpolate(this.configuration)
       ? getInterpolatedPoints(
           this.configuration,
           fusedCanvasPoints,

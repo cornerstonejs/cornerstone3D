@@ -2,7 +2,7 @@ import { Types } from '@cornerstonejs/core';
 import { point } from '../../../utilities/math';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 
-export function assertInterpolation(configuration: Record<any, any>): boolean {
+export function shouldInterpolate(configuration: Record<any, any>): boolean {
   return configuration?.interpolation?.enabled === true;
 }
 
@@ -45,39 +45,66 @@ function followingIndex(
 ): number {
   return (index + size + direction) % size;
 }
+/**
+ * Array of params to be used on circular find next index.
+ * The values respresent start index, indexDelimiter, list of points
+ */
+type ListParamsType = [number, number, Types.Point2[]];
 
 /**
  * Circular finding that returns the next index for two list where the criteria is met.
+ *
+ * It can compare two lists out of sync considering it does a circular iteration over them.
+ *
+ * @example
+ *
+ * ```
+ * const pointsA = [[0, 1], [1, 3], [1, 5], [1,2]];
+ * const pointsB = [[1, 2], [1, 5], [1, 3], [0,0]];
+ * let firstParam = [0, 0, pointsA]
+ * let secondParam = [1, 1, pointsB]
+ * const criteria = (pointA, pointB) => areSamePosition(pointA, pointB)
+ * const direction = 1;
+ * let result = circularFindNextIndexBy(firstParam, secondParam, criteria,direction);
+ * console.log(result);
+ * // prints [1, 2]
+ * // use this result and find again
+ * firstParam = [result[0]+1, result[0], pointsA]
+ * secondParam = [result[1]+1, result[1], pointsB]
+ * result = circularFindNextIndexBy(firstParam, secondParam, criteria,direction);
+ * * // prints [3, 0]
+ *
  */
 function circularFindNextIndexBy(
-  pointContent: [number, number, Types.Point2[]],
-  otherPointContent: [number, number, Types.Point2[]],
+  listParams: ListParamsType,
+  otherListParams: ListParamsType,
   criteria: (pointA: Types.Point2, pointB: Types.Point2) => boolean,
   direction: number
-): [number, number] {
-  const [, indexDelimiter, points] = pointContent;
-  const [, otherIndexDelimiter, otherPoints] = otherPointContent;
+): [number | undefined, number | undefined] {
+  const [, indexDelimiter, points] = listParams;
+  const [, otherIndexDelimiter, otherPoints] = otherListParams;
 
   const pointsLength = points.length;
   const otherPointsLength = otherPoints.length;
 
-  let startIndex = pointContent[0];
-  let otherStartIndex = otherPointContent[0];
+  let startIndex = listParams[0];
+  let otherStartIndex = otherListParams[0];
 
-  function validIndex(
-    _index: number,
-    _indexDelimiter: number,
-    _points: Types.Point2[]
-  ): boolean {
-    return _points[_index] && _index !== _indexDelimiter;
+  if (
+    !points[startIndex] ||
+    !otherPoints[otherStartIndex] ||
+    !points[indexDelimiter] ||
+    !otherPoints[otherIndexDelimiter]
+  ) {
+    return [undefined, undefined];
   }
 
   while (
-    validIndex(startIndex, indexDelimiter, points) &&
-    validIndex(otherStartIndex, otherIndexDelimiter, otherPoints)
+    startIndex !== indexDelimiter &&
+    otherStartIndex !== otherIndexDelimiter
   ) {
     if (criteria(otherPoints[otherStartIndex], points[startIndex])) {
-      break;
+      return [startIndex, otherStartIndex];
     }
 
     startIndex = followingIndex(startIndex, pointsLength, direction);
@@ -88,7 +115,7 @@ function circularFindNextIndexBy(
     );
   }
 
-  return [startIndex, otherStartIndex];
+  return [undefined, undefined];
 }
 
 /**
@@ -147,8 +174,8 @@ export function getInterpolatedPoints(
 
   if (interpolation) {
     const {
-      knotSampleSize,
-      editKnotSampleSize,
+      minKnotDistance,
+      editMinKnotDistance,
       enabled = false,
     } = interpolation;
 
@@ -167,7 +194,7 @@ export function getInterpolatedPoints(
         points,
         changedIniIndex,
         changedEndIndex,
-        pointsOfReference ? editKnotSampleSize : knotSampleSize
+        pointsOfReference ? editMinKnotDistance : minKnotDistance
       );
     }
   }

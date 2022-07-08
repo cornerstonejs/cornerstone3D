@@ -11,10 +11,7 @@ import { polyline } from '../../../utilities/math';
 import { vec3, vec2 } from 'gl-matrix';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  getInterpolatedPoints,
-  assertInterpolation,
-} from './interpolatePoints';
+import { getInterpolatedPoints, shouldInterpolate } from './interpolatePoints';
 
 const {
   getSubPixelSpacingAndXYDirections,
@@ -405,7 +402,7 @@ function completeClosedContourEdit(element: HTMLDivElement) {
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
-    const updatedPoints = assertInterpolation(this.configuration)
+    const updatedPoints = shouldInterpolate(this.configuration)
       ? getInterpolatedPoints(
           this.configuration,
           fusedCanvasPoints,

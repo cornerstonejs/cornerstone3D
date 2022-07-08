@@ -161,17 +161,17 @@ interactions.
 
 ## Tool interpolation
 
-Some of tools can be configured to use interpolation process. PlanarFreehandROITool is an example for that.
+Contour tools like the PlanarFreehandROITool can be configured can be configured to use interpolation process.
 The interpolation process uses b-spline algorithm and consider 3 configurations properties:
 
 - interpolation.enabled: to tell whether it should be interpolated or not (false by default)
-- interpolation.knotSampleSize: the distance between each knot on interpolation process (for editing it is considered the property editKnotSampleSize) ( default value 10)
-- interpolation.editKnotSampleSize: same as knotSampleSize but applicable only when editing the tool (default value 20)
+- interpolation.minKnotDistance: the minimum distance between each knot on interpolation process (for editing it is considered the property editMinKnotDistance) ( default value 20)
+- interpolation.editMinKnotDistance: same as minKnotDistance but applicable only when editing the tool (default value 10)
 
 So, with that said the interpolation might occur when:
 
-- drawing is done (i.e mouse is released) and interpolation.enabled is true. Interpolation algorithm uses knotSampleSize
-- edit drawing is done (i.e mouse is released) and interpolation.enabled. Interpolation algorithm uses editKnotSampleSize and its only applied to changed segment
+- drawing is done (i.e mouse is released) and interpolation.enabled is true. Interpolation algorithm uses minKnotDistance
+- edit drawing is done (i.e mouse is released) and interpolation.enabled. Interpolation algorithm uses editMinKnotDistance and its only applied to changed segment
 
 Interpolation does not occur when:
 
@@ -179,7 +179,7 @@ Interpolation does not occur when:
 - drawing still happening (editing or not)
 
 The result of interpolation will be a smoother set of segments.
-Changing tool configuration (see below) you can fine-tune the interpolation process and per experience, a less aggressive interpolation works better for long segments to be interpolated (usually first drawing) whereas a more aggressive interpolation works better for short segments (usually editing).
+Changing tool configuration (see below) you can fine-tune the interpolation process and per experience, a less aggressive interpolation (small values of minKnotDistance) works better for long segments to be interpolated (usually first drawing) whereas a more aggressive interpolation works better for short segments (usually editing).
 
 ## How to interpolate
 
@@ -190,12 +190,12 @@ ctToolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
 });
 
 // in case we want to tune interpolation process
-// more agressive interpolation
+// more agressive interpolation. I.e there will less knot points and more interpolated points.
 ctToolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-  interpolation: { knotSampleSize: 5 },
+  interpolation: { minKnotDistance: 30 },
 });
-// less agressive interpolation
+// less agressive interpolation. I.e there will more knot points and less interpolated points.
 ctToolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-  interpolation: { knotSampleSize: 30 },
+  interpolation: { minKnotDistance: 5 },
 });
 ```

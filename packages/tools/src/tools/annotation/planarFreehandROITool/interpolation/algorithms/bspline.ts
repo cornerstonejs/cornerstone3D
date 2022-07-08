@@ -6,8 +6,9 @@ import { zip as d3Zip } from 'd3-array';
 import { Types } from '@cornerstonejs/core';
 
 /**
- * Returns a interpolated segment (b-spline algorithm) based on knotsIndexes.
- * KnotsIndexes tells the first/last index of segment and also which index will be present on interpolation.
+ * Returns an array of the originalPoints length containing the interpolated data.
+ * It interpolates a set of points indexed by knotsIndexes.
+ * That is, it DISCARDS all points except those in knotsIndexes. Then, a new set of points is created by using a b-spline on the remaining points, in order to re-create a new set of points.
  */
 export function interpolatePoints(
   originalPoints: Types.Point2[],

@@ -13,10 +13,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
-import {
-  assertInterpolation,
-  getInterpolatedPoints,
-} from './interpolatePoints';
+import { shouldInterpolate, getInterpolatedPoints } from './interpolatePoints';
 
 const {
   addCanvasPointsToArray,
@@ -189,7 +186,7 @@ function completeDrawClosedContour(element: HTMLDivElement): boolean {
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  const updatedPoints = assertInterpolation(this.configuration)
+  const updatedPoints = shouldInterpolate(this.configuration)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
     : canvasPoints;
 
@@ -256,7 +253,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
   const enabledElement = getEnabledElement(element);
   const { viewport, renderingEngine } = enabledElement;
 
-  const updatedPoints = assertInterpolation(this.configuration)
+  const updatedPoints = shouldInterpolate(this.configuration)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
     : canvasPoints;
 

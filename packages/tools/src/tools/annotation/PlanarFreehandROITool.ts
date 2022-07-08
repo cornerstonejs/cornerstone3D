@@ -159,8 +159,8 @@ class PlanarFreehandROITool extends AnnotationTool {
         subPixelResolution: 4,
         interpolation: {
           enabled: false,
-          knotSampleSize: 10,
-          editKnotSampleSize: 20, // used for edit only
+          minKnotDistance: 20,
+          editMinKnotDistance: 10, // used for edit only
         },
       },
     }
