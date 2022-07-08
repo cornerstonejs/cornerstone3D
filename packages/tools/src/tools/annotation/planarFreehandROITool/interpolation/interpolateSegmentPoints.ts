@@ -15,7 +15,7 @@ import { interpolatePoints } from './algorithms/bspline';
  *         |        round( -----------  )
  *         |                 minDis
  */
-function getContinuosUniformDistributionValues(
+function getContinuousUniformDistributionValues(
   minDistributionDistance: number,
   closedInterval: [number, number]
 ): number[] {
@@ -69,7 +69,7 @@ export default function interpolateSegmentPoints(
     points.length
   );
 
-  const knotsIndexes = getContinuosUniformDistributionValues(minKnotDistance, [
+  const knotsIndexes = getContinuousUniformDistributionValues(minKnotDistance, [
     interpolationIniIndex,
     interpolationEndIndex,
   ]);
