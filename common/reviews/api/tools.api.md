@@ -1175,6 +1175,9 @@ function distanceToPoint(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, poi
 function distanceToPoint_2(rect: number[], point: Types_2.Point2): number;
 
 // @public (undocumented)
+function distanceToPoint_3(p1: Types_2.Point2, p2: Types_2.Point2): number;
+
+// @public (undocumented)
 function distanceToPointSquared(lineStart: Types_2.Point2, lineEnd: Types_2.Point2, point: Types_2.Point2): number;
 
 // @public (undocumented)
@@ -2235,6 +2238,10 @@ interface IToolGroup {
         (): undefined | string;
     };
     // (undocumented)
+    getToolConfiguration: {
+        (toolName: string, configurationPath: string): any;
+    };
+    // (undocumented)
     getToolInstance: {
         (toolName: string): any;
     };
@@ -2255,6 +2262,10 @@ interface IToolGroup {
     // (undocumented)
     setToolActive: {
         (toolName: string, toolBindingsOption?: SetToolBindingsType): void;
+    };
+    // (undocumented)
+    setToolConfiguration: {
+        (toolName: string, configuration: Record<any, any>, overwrite?: boolean): void;
     };
     // (undocumented)
     setToolDisabled: {
@@ -2632,7 +2643,8 @@ declare namespace math {
         ellipse,
         lineSegment,
         rectangle,
-        polyline
+        polyline,
+        point
     }
 }
 
@@ -2942,6 +2954,12 @@ type PlayClipOptions = {
     loop?: boolean;
     frameTimeVectorSpeedMultiplier?: number;
 };
+
+declare namespace point {
+    export {
+        distanceToPoint_3 as distanceToPoint
+    }
+}
 
 // @public
 type Point2 = [number, number];

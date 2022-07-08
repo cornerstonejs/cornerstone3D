@@ -1,4 +1,6 @@
 import { MouseBindings, ToolModes } from '../../enums';
+import cloneDeep from 'lodash.clonedeep';
+import get from 'lodash.get';
 import {
   getRenderingEngine,
   getRenderingEngines,
@@ -11,6 +13,7 @@ import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types';
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
+import deepmerge from '../../utilities/deepMerge';
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 
@@ -413,6 +416,64 @@ export default class ToolGroup implements IToolGroup {
       const { viewport } = enabledElement;
       initElementCursor(viewport.element, cursor);
     });
+  }
+
+  /**
+   * Set a configuration of a tool by the given toolName.
+   * Use overwrite as true in case you want to overwrite any existing configuration (be careful, depending on config change it might break the annotation flow).
+   */
+  setToolConfiguration(
+    toolName: string,
+    configuration: Record<any, any>,
+    overwrite?: boolean
+  ): boolean {
+    if (this._toolInstances[toolName] === undefined) {
+      console.warn(
+        `Tool ${toolName} not present, can't set tool configuration.`
+      );
+      return false;
+    }
+
+    let _configuration;
+
+    if (overwrite) {
+      _configuration = configuration;
+    } else {
+      _configuration = deepmerge(
+        this._toolInstances[toolName].configuration,
+        configuration
+      );
+    }
+
+    this._toolInstances[toolName].configuration = _configuration;
+
+    this._renderViewports();
+
+    return true;
+  }
+
+  /**
+   * Get the configuration of tool. It returns only the config for the given path (in case exists).
+   * ConfigurationPath is the the path of the property to get separated by '.'.
+   *
+   * @example
+   * getToolConfiguration('LengthTool', 'firstLevel.secondLevel')
+   * // get from LengthTool instance the configuration value as being LengthToolInstance[configuration][firstLevel][secondLevel]
+   */
+  getToolConfiguration(toolName: string, configurationPath: string): any {
+    if (this._toolInstances[toolName] === undefined) {
+      console.warn(
+        `Tool ${toolName} not present, can't set tool configuration.`
+      );
+      return;
+    }
+
+    const _configuration = get(
+      this._toolInstances[toolName].configuration,
+      configurationPath
+    );
+
+    return cloneDeep(_configuration);
   }
 
   /**

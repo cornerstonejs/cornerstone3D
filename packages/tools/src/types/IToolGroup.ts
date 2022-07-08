@@ -55,4 +55,14 @@ export default interface IToolGroup {
   setViewportsCursorByToolName: {
     (toolName: string, strategyName?: string): void;
   };
+  setToolConfiguration: {
+    (
+      toolName: string,
+      configuration: Record<any, any>,
+      overwrite?: boolean
+    ): void;
+  };
+  getToolConfiguration: {
+    (toolName: string, configurationPath: string): any;
+  };
 }
