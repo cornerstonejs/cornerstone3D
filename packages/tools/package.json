@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "0.20.11",
+  "version": "0.20.12",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -30,9 +30,9 @@
   },
   "peerDependencies": {
     "@kitware/vtk.js": "24.18.7",
-    "gl-matrix": "^3.4.3",
     "@types/d3-array": "^3.0.3",
-    "@types/d3-interpolate": "^3.0.1"
+    "@types/d3-interpolate": "^3.0.1",
+    "gl-matrix": "^3.4.3"
   },
   "devDependencies": {
     "@cornerstonejs/streaming-image-volume-loader": "^0.4.9",
