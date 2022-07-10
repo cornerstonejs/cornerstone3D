@@ -9,6 +9,11 @@ const EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
 const EXPLICIT_BIG_ENDIAN = "1.2.840.10008.1.2.2";
 const singleVRs = ["SQ", "OF", "OW", "OB", "UN", "LT"];
 
+const encodingMapping = {
+    "iso-ir-192": "utf-8",
+    "": "latin1"
+};
+
 const encapsulatedSyntaxes = [
     "1.2.840.10008.1.2.4.50",
     "1.2.840.10008.1.2.4.51",
@@ -79,7 +84,30 @@ class DicomMessage {
                     options
                 );
                 const cleanTagString = readInfo.tag.toCleanString();
-
+                if (cleanTagString === "00080005") {
+                    if (readInfo.values.length > 0) {
+                        let coding = readInfo.values[0];
+                        coding = coding
+                            .replaceAll("_", "-")
+                            .replaceAll(" ", "-")
+                            .toLowerCase();
+                        if (coding in encodingMapping) {
+                            coding = encodingMapping[coding];
+                        }
+                        try {
+                            bufferStream.setDecoder(new TextDecoder(coding));
+                        } catch (error) {
+                            console.warn(error);
+                        }
+                    }
+                    if (readInfo.values.length > 1) {
+                        console.warn(
+                            "multiple encodings not supported, using first encoding!",
+                            readInfo.values
+                        );
+                    }
+                    readInfo.values = ["ISO_IR 192"]; // change SpecificCharacterSet to UTF-8
+                }
                 dict[cleanTagString] = {
                     vr: readInfo.vr.type,
                     Value: readInfo.values
@@ -130,7 +158,7 @@ class DicomMessage {
             useSyntax = EXPLICIT_LITTLE_ENDIAN;
         stream.reset();
         stream.increment(128);
-        if (stream.readString(4) !== "DICM") {
+        if (stream.readAsciiString(4) !== "DICM") {
             throw new Error("Invalid a dicom file");
         }
         var el = DicomMessage._readTag(stream, useSyntax),
@@ -161,7 +189,7 @@ class DicomMessage {
         var written = 0;
 
         var sortedTags = Object.keys(jsonObjects).sort();
-        sortedTags.forEach(function(tagString) {
+        sortedTags.forEach(function (tagString) {
             var tag = Tag.fromString(tagString),
                 tagObject = jsonObjects[tagString],
                 vrType = tagObject.vr,
@@ -230,7 +258,7 @@ class DicomMessage {
             }
             vr = ValueRepresentation.createByTypeString(vrType);
         } else {
-            vrType = stream.readString(2);
+            vrType = stream.readVR();
             vr = ValueRepresentation.createByTypeString(vrType);
             if (vr.isExplicit()) {
                 stream.increment(2);

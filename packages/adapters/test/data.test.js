@@ -1,21 +1,18 @@
 import "regenerator-runtime/runtime.js";
 
+import { getZippedTestDataset, getTestDataset } from "./testUtils.js";
 import { jest } from "@jest/globals";
 import dcmjs from "../src/index.js";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import os from "os";
 import path from "path";
-import unzipper from "unzipper";
-import followRedirects from "follow-redirects";
-import { promisify } from "util";
-
-const { https } = followRedirects;
 
 import datasetWithNullNumberVRs from "./mocks/null_number_vrs_dataset.json";
 import minimalDataset from "./mocks/minimal_fields_dataset.json";
 import arrayItem from "./arrayItem.json";
 import { rawTags } from "./rawTags";
+import { promisify } from "util";
 
 const {
     DicomMetaDictionary,
@@ -96,20 +93,6 @@ const sequenceMetadata = {
         ]
     }
 };
-
-function downloadToFile(url, filePath) {
-    return new Promise((resolve, reject) => {
-        const fileStream = fs.createWriteStream(filePath);
-        https
-            .get(url, response => {
-                response.pipe(fileStream);
-                fileStream.on("finish", () => {
-                    resolve(filePath);
-                });
-            })
-            .on("error", reject);
-    });
-}
 
 function makeOverlayBitmap({ width, height }) {
     const topBottom = new Array(width).fill(1, 0, width);
@@ -221,19 +204,10 @@ it("test_json_1", () => {
 });
 
 it("test_multiframe_1", async () => {
+
     const url =
         "https://github.com/dcmjs-org/data/releases/download/MRHead/MRHead.zip";
-    const zipFilePath = path.join(os.tmpdir(), "MRHead.zip");
-    const unzipPath = path.join(os.tmpdir(), "test_multiframe_1");
-
-    await downloadToFile(url, zipFilePath);
-
-    await new Promise(resolve => {
-        fs.createReadStream(zipFilePath).pipe(
-            unzipper.Extract({ path: unzipPath }).on("close", resolve)
-        );
-    });
-
+    const unzipPath = await getZippedTestDataset(url, "MRHead.zip", "test_multiframe_1");
     const mrHeadPath = path.join(unzipPath, "MRHead");
     const fileNames = await fsPromises.readdir(mrHeadPath);
 
@@ -264,18 +238,9 @@ it("test_oneslice_seg", async () => {
         "https://github.com/dcmjs-org/data/releases/download/CTPelvis/CTPelvis.zip";
     const segURL =
         "https://github.com/dcmjs-org/data/releases/download/CTPelvis/Lesion1_onesliceSEG.dcm";
-    const zipFilePath = path.join(os.tmpdir(), "CTPelvis.zip");
-    const unzipPath = path.join(os.tmpdir(), "test_oneslice_seg");
-    const segFilePath = path.join(os.tmpdir(), "Lesion1_onesliceSEG.dcm");
-
-    await downloadToFile(ctPelvisURL, zipFilePath);
-
-    await new Promise(resolve => {
-        fs.createReadStream(zipFilePath).pipe(
-            unzipper.Extract({ path: unzipPath }).on("close", resolve)
-        );
-    });
-
+    const unzipPath = await getZippedTestDataset(ctPelvisURL, "CTPelvis.zip", "test_oneslice_seg");
+    const segFileName = "Lesion1_onesliceSEG.dcm"
+    
     const ctPelvisPath = path.join(
         unzipPath,
         "Series-1.2.840.113704.1.111.1916.1223562191.15"
@@ -301,7 +266,7 @@ it("test_oneslice_seg", async () => {
     expect(multiframe.NumberOfFrames).toEqual(60);
     expect(roundedSpacing).toEqual(5);
 
-    await downloadToFile(segURL, segFilePath);
+    var segFilePath = await getTestDataset(segURL, segFileName);
     const arrayBuffer = fs.readFileSync(segFilePath).buffer;
     const dicomDict = DicomMessage.readFile(arrayBuffer);
     const dataset = DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
@@ -339,12 +304,7 @@ it("test_multiframe_us", () => {
 it("test_fragment_multiframe", async () => {
     const url =
         "https://github.com/dcmjs-org/data/releases/download/encapsulation/encapsulation-fragment-multiframe.dcm";
-    const dcmPath = path.join(
-        os.tmpdir(),
-        "encapsulation-fragment-multiframe.dcm"
-    );
-
-    await downloadToFile(url, dcmPath);
+    const dcmPath = await getTestDataset(url, "encapsulation-fragment-multiframe.dcm")
     const file = fs.readFileSync(dcmPath);
     const dicomData = dcmjs.data.DicomMessage.readFile(file.buffer, {
         // ignoreErrors: true,
@@ -460,9 +420,7 @@ it("test_invalid_vr_length", () => {
 it("test_encapsulation", async () => {
     const url =
         "https://github.com/dcmjs-org/data/releases/download/encapsulation/encapsulation.dcm";
-    const dcmPath = path.join(os.tmpdir(), "encapsulation.dcm");
-
-    await downloadToFile(url, dcmPath);
+    const dcmPath = await getTestDataset(url, "encapsulation.dcm")
 
     // given
     const arrayBuffer = fs.readFileSync(dcmPath).buffer;
@@ -499,7 +457,7 @@ it("test_encapsulation", async () => {
     stream.reset();
     stream.increment(128);
 
-    if (stream.readString(4) !== "DICM") {
+    if (stream.readAsciiString(4) !== "DICM") {
         throw new Error("Invalid a dicom file");
     }
 
@@ -572,10 +530,7 @@ it("test_custom_dictionary", () => {
 it("Reads DICOM with multiplicity", async () => {
     const url =
         "https://github.com/dcmjs-org/data/releases/download/multiplicity/multiplicity.dcm";
-    const dcmPath = path.join(os.tmpdir(), "multiplicity.dcm");
-
-    await downloadToFile(url, dcmPath);
-
+    const dcmPath = await getTestDataset(url, "multiplicity.dcm")
     const file = await promisify(fs.readFile)(dcmPath);
     const dicomDict = DicomMessage.readFile(file.buffer);
 
@@ -584,14 +539,12 @@ it("Reads DICOM with multiplicity", async () => {
 });
 
 it("Reads binary data into an ArrayBuffer", async () => {
-    const dicomUrl =
+    const url =
         "https://github.com/dcmjs-org/data/releases/download/binary-tag/binary-tag.dcm";
-    const dicomPath = path.join(os.tmpdir(), "binary-tag.dcm");
+    const dcmPath = await getTestDataset(url, "binary-tag.dcm")
 
-    await downloadToFile(dicomUrl, dicomPath);
-
-    const fileData = await promisify(fs.readFile)(dicomPath);
-    const dicomDict = DicomMessage.readFile(fileData.buffer);
+    const file = await promisify(fs.readFile)(dcmPath);
+    const dicomDict = DicomMessage.readFile(file.buffer);
     const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
         dicomDict.dict
     );
@@ -602,13 +555,10 @@ it("Reads binary data into an ArrayBuffer", async () => {
 });
 
 it("Reads a multiframe DICOM which has trailing padding", async () => {
-    const dicomUrl =
+    const url =
         "https://github.com/dcmjs-org/data/releases/download/binary-parsing-stressors/multiframe-ultrasound.dcm";
-    const dicomPath = path.join(os.tmpdir(), "multiframe-ultrasound.dcm");
-
-    await downloadToFile(dicomUrl, dicomPath);
-
-    const dicomDict = DicomMessage.readFile(fs.readFileSync(dicomPath).buffer);
+    const dcmPath = await getTestDataset(url, "multiframe-ultrasound.dcm")
+    const dicomDict = DicomMessage.readFile(fs.readFileSync(dcmPath).buffer);
     const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
         dicomDict.dict
     );
@@ -622,13 +572,10 @@ it("Reads a multiframe DICOM which has trailing padding", async () => {
 });
 
 it("Reads a multiframe DICOM with large private tags before and after the image data", async () => {
-    const dicomUrl =
+    const url =
         "https://github.com/dcmjs-org/data/releases/download/binary-parsing-stressors/large-private-tags.dcm";
-    const dicomPath = path.join(os.tmpdir(), "large-private-tags.dcm");
-
-    await downloadToFile(dicomUrl, dicomPath);
-
-    const dicomDict = DicomMessage.readFile(fs.readFileSync(dicomPath).buffer);
+    const dcmPath = await getTestDataset(url, "large-private-tags.dcm")
+    const dicomDict = DicomMessage.readFile(fs.readFileSync(dcmPath).buffer);
     const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
         dicomDict.dict
     );

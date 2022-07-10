@@ -8,7 +8,7 @@
     "example": "examples"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --testTimeout 60000",
     "build": "rollup -c",
     "build:examples": "npm run build && npx cpx 'build/**/*.{js,map}' examples/js",
     "start": "rollup -c -w",

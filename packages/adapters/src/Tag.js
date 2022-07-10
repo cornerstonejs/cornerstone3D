@@ -17,37 +17,17 @@ class Tag {
     toString() {
         return (
             "(" +
-            paddingLeft(
-                "0000",
-                this.group()
-                    .toString(16)
-                    .toUpperCase()
-            ) +
+            paddingLeft("0000", this.group().toString(16).toUpperCase()) +
             "," +
-            paddingLeft(
-                "0000",
-                this.element()
-                    .toString(16)
-                    .toUpperCase()
-            ) +
+            paddingLeft("0000", this.element().toString(16).toUpperCase()) +
             ")"
         );
     }
 
     toCleanString() {
         return (
-            paddingLeft(
-                "0000",
-                this.group()
-                    .toString(16)
-                    .toUpperCase()
-            ) +
-            paddingLeft(
-                "0000",
-                this.element()
-                    .toString(16)
-                    .toUpperCase()
-            )
+            paddingLeft("0000", this.group().toString(16).toUpperCase()) +
+            paddingLeft("0000", this.element().toString(16).toUpperCase())
         );
     }
 
@@ -147,12 +127,12 @@ class Tag {
             written += 4;
         } else {
             if (vr.isExplicit()) {
-                stream.writeString(vr.type);
-                stream.writeHex("0000");
+                stream.writeAsciiString(vr.type);
+                stream.writeUint16(0);
                 stream.writeUint32(valueLength);
                 written += 8;
             } else {
-                stream.writeString(vr.type);
+                stream.writeAsciiString(vr.type);
                 stream.writeUint16(valueLength);
                 written += 4;
             }

@@ -20,8 +20,8 @@ class DicomDict {
     write(writeOptions = { allowInvalidVRLength: false }) {
         var metaSyntax = EXPLICIT_LITTLE_ENDIAN;
         var fileStream = new WriteBufferStream(4096, true);
-        fileStream.writeHex("00".repeat(128));
-        fileStream.writeString("DICM");
+        fileStream.writeUint8Repeat(0, 128);
+        fileStream.writeAsciiString("DICM");
 
         var metaStream = new WriteBufferStream(1024);
         if (!this.meta["00020010"]) {

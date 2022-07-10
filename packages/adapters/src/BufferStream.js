@@ -1,38 +1,3 @@
-//http://jonisalonen.com/2012/from-utf-16-to-utf-8-in-javascript/
-function toUTF8Array(str) {
-    var utf8 = [];
-    for (var i = 0; i < str.length; i++) {
-        var charcode = str.charCodeAt(i);
-        if (charcode < 0x80) utf8.push(charcode);
-        else if (charcode < 0x800) {
-            utf8.push(0xc0 | (charcode >> 6), 0x80 | (charcode & 0x3f));
-        } else if (charcode < 0xd800 || charcode >= 0xe000) {
-            utf8.push(
-                0xe0 | (charcode >> 12),
-                0x80 | ((charcode >> 6) & 0x3f),
-                0x80 | (charcode & 0x3f)
-            );
-        }
-        // surrogate pair
-        else {
-            i++;
-            // UTF-16 encodes 0x10000-0x10FFFF by
-            // subtracting 0x10000 and splitting the
-            // 20 bits of 0x0-0xFFFFF into two halves
-            charcode =
-                0x10000 +
-                (((charcode & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
-            utf8.push(
-                0xf0 | (charcode >> 18),
-                0x80 | ((charcode >> 12) & 0x3f),
-                0x80 | ((charcode >> 6) & 0x3f),
-                0x80 | (charcode & 0x3f)
-            );
-        }
-    }
-    return utf8;
-}
-
 function toInt(val) {
     if (isNaN(val)) {
         throw new Error("Not a number: " + val);
@@ -62,6 +27,7 @@ class BufferStream {
         this.offset = 0;
         this.isLittleEndian = littleEndian || false;
         this.size = 0;
+        this.encoder = new TextEncoder("utf-8");
     }
 
     setEndian(isLittle) {
@@ -72,6 +38,15 @@ class BufferStream {
         this.checkSize(1);
         this.view.setUint8(this.offset, toInt(value));
         return this.increment(1);
+    }
+
+    writeUint8Repeat(value, count) {
+        const v = toInt(value);
+        this.checkSize(count);
+        for (let i = 0; i < count; i++) {
+            this.view.setUint8(this.offset + i, v);
+        }
+        return this.increment(count);
     }
 
     writeInt8(value) {
@@ -129,40 +104,23 @@ class BufferStream {
         return this.increment(8);
     }
 
-    writeString(value) {
-        value = value || "";
-        var utf8 = toUTF8Array(value),
-            bytelen = utf8.length;
-
-        this.checkSize(bytelen);
-        var startOffset = this.offset;
-        for (var i = 0; i < bytelen; i++) {
-            this.view.setUint8(startOffset, utf8[i]);
-            startOffset++;
-        }
-        return this.increment(bytelen);
+    writeUTF8String(value) {
+        const encodedString = this.encoder.encode(value);
+        this.checkSize(encodedString.byteLength);
+        new Uint8Array(this.buffer).set(encodedString, this.offset);
+        return this.increment(encodedString.byteLength);
     }
 
-    writeHex(value) {
-        var len = value.length,
-            blen = len / 2,
-            startOffset = this.offset;
-        this.checkSize(blen);
-        for (var i = 0; i < len; i += 2) {
-            var code = parseInt(value[i], 16),
-                nextCode;
-            if (i == len - 1) {
-                nextCode = null;
-            } else {
-                nextCode = parseInt(value[i + 1], 16);
-            }
-            if (nextCode !== null) {
-                code = (code << 4) | nextCode;
-            }
-            this.view.setUint8(startOffset, code);
-            startOffset++;
+    writeAsciiString(value) {
+        value = value || "";
+        var len = value.length;
+        this.checkSize(len);
+        var startOffset = this.offset;
+        for (let i = 0; i < len; i++) {
+            var charcode = value.charCodeAt(i);
+            this.view.setUint8(startOffset + i, charcode);
         }
-        return this.increment(blen);
+        return this.increment(len);
     }
 
     readUint32() {
@@ -181,6 +139,10 @@ class BufferStream {
         var val = this.view.getUint8(this.offset);
         this.increment(1);
         return val;
+    }
+
+    peekUint8(offset) {
+        return this.view.getUint8(this.offset + offset);
     }
 
     readUint8Array(length) {
@@ -224,18 +186,36 @@ class BufferStream {
         return val;
     }
 
-    readString(length) {
-        var chars = [];
+    readAsciiString(length) {
+        var result = "";
         var start = this.offset;
         var end = this.offset + length;
         if (end >= this.buffer.byteLength) {
             end = this.buffer.byteLength;
         }
         for (let i = start; i < end; ++i) {
-            chars.push(String.fromCharCode(this.view.getUint8(i)));
-            this.increment(1);
+            result += String.fromCharCode(this.view.getUint8(i));
         }
-        return chars.join("");
+        this.increment(end - start);
+        return result;
+    }
+
+    readVR() {
+        var vr =
+            String.fromCharCode(this.view.getUint8(this.offset)) +
+            String.fromCharCode(this.view.getUint8(this.offset + 1));
+        this.increment(2);
+        return vr;
+    }
+
+    readEncodedString(length) {
+        if (this.offset + length >= this.buffer.byteLength) {
+            length = this.buffer.byteLength - this.offset;
+        }
+        const view = new DataView(this.buffer, this.offset, length);
+        const result = this.decoder.decode(view);
+        this.increment(length);
+        return result;
     }
 
     readHex(length) {
@@ -354,6 +334,11 @@ class ReadBufferStream extends BufferStream {
         this.noCopy = options.noCopy;
         this.startOffset = this.offset;
         this.endOffset = this.size;
+        this.decoder = new TextDecoder("latin1");
+    }
+
+    setDecoder(decoder) {
+        this.decoder = decoder;
     }
 
     getBuffer(start, end) {
@@ -366,20 +351,6 @@ class ReadBufferStream extends BufferStream {
         }
 
         return this.buffer.slice(start, end);
-    }
-
-    readString(length) {
-        var chars = [];
-        var start = this.offset;
-        var end = this.offset + length;
-        if (end >= this.endOffset) {
-            end = this.endOffset;
-        }
-        for (let i = start; i < end; ++i) {
-            chars.push(String.fromCharCode(this.view.getUint8(i)));
-            this.increment(1);
-        }
-        return chars.join("");
     }
 
     reset() {
@@ -397,6 +368,10 @@ class ReadBufferStream extends BufferStream {
 
     writeUint8(value) {
         throw new Error(value, "writeUint8 not implemented");
+    }
+
+    writeUint8Repeat(value, count) {
+        throw new Error(value, "writeUint8Repeat not implemented");
     }
 
     writeInt8(value) {
@@ -431,12 +406,12 @@ class ReadBufferStream extends BufferStream {
         throw new Error(value, "writeDouble not implemented");
     }
 
-    writeString(value) {
-        throw new Error(value, "writeString not implemented");
+    writeAsciiString(value) {
+        throw new Error(value, "writeAsciiString not implemented");
     }
 
-    writeHex(value) {
-        throw new Error(value, "writeHex not implemented");
+    writeUTF8String(value) {
+        throw new Error(value, "writeUTF8String not implemented");
     }
 
     checkSize(step) {
