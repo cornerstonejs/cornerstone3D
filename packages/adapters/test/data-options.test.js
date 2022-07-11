@@ -4,11 +4,9 @@ import dcmjs from "../src/index.js";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import followRedirects from "follow-redirects";
-const { https } = followRedirects;
 import { promisify } from "util";
-import unzipper from "unzipper";
 import fsPromises from "fs/promises";
+import { getZippedTestDataset, getTestDataset } from "./testUtils.js";
 
 const {
     DicomMetaDictionary,
@@ -16,20 +14,6 @@ const {
     DicomMessage,
     ReadBufferStream
 } = dcmjs.data;
-
-function downloadToFile(url, filePath) {
-    return new Promise((resolve, reject) => {
-        const fileStream = fs.createWriteStream(filePath);
-        https
-            .get(url, response => {
-                response.pipe(fileStream);
-                fileStream.on("finish", () => {
-                    resolve(filePath);
-                });
-            })
-            .on("error", reject);
-    });
-}
 
 const areEqual = (first, second) =>
     first.byteLength === second.byteLength &&
@@ -69,20 +53,17 @@ it("test_untilTag", () => {
 });
 
 it("noCopy multiframe DICOM which has trailing padding", async () => {
-    const dicomUrl =
+    const url =
         "https://github.com/dcmjs-org/data/releases/download/binary-parsing-stressors/multiframe-ultrasound.dcm";
-    const dicomPath = path.join(os.tmpdir(), "multiframe-ultrasound.dcm");
-
-    await downloadToFile(dicomUrl, dicomPath);
-
+    const dcmPath = await getTestDataset(url, "multiframe-ultrasound.dcm")
     const dicomDictNoCopy = DicomMessage.readFile(
-        fs.readFileSync(dicomPath).buffer,
+        fs.readFileSync(dcmPath).buffer,
         {
             noCopy: true
         }
     );
 
-    const dicomDict = DicomMessage.readFile(fs.readFileSync(dicomPath).buffer, {
+    const dicomDict = DicomMessage.readFile(fs.readFileSync(dcmPath).buffer, {
         noCopy: false
     });
 
@@ -99,20 +80,18 @@ it("noCopy multiframe DICOM which has trailing padding", async () => {
 });
 
 it("noCopy multiframe DICOM with large private tags before and after the image data", async () => {
-    const dicomUrl =
+    const url =
         "https://github.com/dcmjs-org/data/releases/download/binary-parsing-stressors/large-private-tags.dcm";
-    const dicomPath = path.join(os.tmpdir(), "large-private-tags.dcm");
-
-    await downloadToFile(dicomUrl, dicomPath);
+    const dcmPath = await getTestDataset(url, "large-private-tags.dcm")
 
     const dicomDictNoCopy = DicomMessage.readFile(
-        fs.readFileSync(dicomPath).buffer,
+        fs.readFileSync(dcmPath).buffer,
         {
             noCopy: true
         }
     );
 
-    const dicomDict = DicomMessage.readFile(fs.readFileSync(dicomPath).buffer, {
+    const dicomDict = DicomMessage.readFile(fs.readFileSync(dcmPath).buffer, {
         noCopy: false
     });
 
@@ -129,12 +108,10 @@ it("noCopy multiframe DICOM with large private tags before and after the image d
 });
 
 it("noCopy binary data into an ArrayBuffer", async () => {
-    const dicomUrl =
+    const url =
         "https://github.com/dcmjs-org/data/releases/download/binary-tag/binary-tag.dcm";
-    const dicomPath = path.join(os.tmpdir(), "binary-tag.dcm");
-
-    await downloadToFile(dicomUrl, dicomPath);
-    const fileData = await promisify(fs.readFile)(dicomPath);
+    const dcmPath = await getTestDataset(url, "binary-tag.dcm")
+    const fileData = await promisify(fs.readFile)(dcmPath);
 
     const dicomDictNoCopy = DicomMessage.readFile(fileData.buffer, {
         noCopy: true
@@ -159,17 +136,8 @@ it("noCopy binary data into an ArrayBuffer", async () => {
 it("noCopy test_multiframe_1", async () => {
     const url =
         "https://github.com/dcmjs-org/data/releases/download/MRHead/MRHead.zip";
-    const zipFilePath = path.join(os.tmpdir(), "MRHead.zip");
-    const unzipPath = path.join(os.tmpdir(), "test_multiframe_1");
-
-    await downloadToFile(url, zipFilePath);
-
-    await new Promise(resolve => {
-        fs.createReadStream(zipFilePath).pipe(
-            unzipper.Extract({ path: unzipPath }).on("close", resolve)
-        );
-    });
-
+        
+    const unzipPath = await getZippedTestDataset(url, "MRHead.zip", "test_multiframe_1");
     const mrHeadPath = path.join(unzipPath, "MRHead");
     const fileNames = await fsPromises.readdir(mrHeadPath);
 
@@ -200,12 +168,7 @@ it("noCopy test_multiframe_1", async () => {
 it("noCopy test_fragment_multiframe", async () => {
     const url =
         "https://github.com/dcmjs-org/data/releases/download/encapsulation/encapsulation-fragment-multiframe.dcm";
-    const dcmPath = path.join(
-        os.tmpdir(),
-        "encapsulation-fragment-multiframe.dcm"
-    );
-
-    await downloadToFile(url, dcmPath);
+    const dcmPath = await getTestDataset(url, "encapsulation-fragment-multiframe.dcm")
     const file = fs.readFileSync(dcmPath);
 
     const dicomDict = dcmjs.data.DicomMessage.readFile(file.buffer, {
