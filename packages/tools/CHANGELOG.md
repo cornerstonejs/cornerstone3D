@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.20.13](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.20.11...@cornerstonejs/tools@0.20.13) (2022-07-15)
+
+
+### Bug Fixes
+
+* Ensure d3 packages are also listed on dependencies ([#146](https://github.com/cornerstonejs/cornerstone3D-beta/issues/146)) ([5747dc6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/5747dc6cbcb05eec690bf636ef733789c88f959f))
+
+
+
+
+
 ## [0.20.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.20.11...@cornerstonejs/tools@0.20.12) (2022-07-08)
 
 **Note:** Version bump only for package @cornerstonejs/tools
