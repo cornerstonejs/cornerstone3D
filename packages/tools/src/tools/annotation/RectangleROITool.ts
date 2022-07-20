@@ -836,9 +836,9 @@ export default class RectangleROITool extends AnnotationTool {
 
     const textLines = [];
 
-    const areaLine = `Area: ${area.toFixed(2)} ${areaUnit}${String.fromCharCode(
-      178
-    )}`;
+    const areaLine = `Area: ${area.toFixed(2)} ${
+      areaUnit ?? 'mm'
+    }${String.fromCharCode(178)}`;
     let meanLine = `Mean: ${mean.toFixed(2)}`;
     let maxLine = `Max: ${max.toFixed(2)}`;
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;

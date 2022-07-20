@@ -1172,8 +1172,8 @@ export default class BidirectionalTool extends AnnotationTool {
     // spaceBetweenSlices & pixelSpacing &
     // magnitude in each direction? Otherwise, this is "px"?
     const textLines = [
-      `L: ${length.toFixed(2)} ${unit}`,
-      `W: ${width.toFixed(2)} ${unit}`,
+      `L: ${length.toFixed(2)} ${unit ?? 'mm'}`,
+      `W: ${width.toFixed(2)} ${unit ?? 'mm'}`,
     ];
 
     return textLines;

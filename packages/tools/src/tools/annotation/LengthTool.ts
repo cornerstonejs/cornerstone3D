@@ -690,7 +690,7 @@ class LengthTool extends AnnotationTool {
       return;
     }
 
-    const textLines = [`${length.toFixed(2)} ${unit}`];
+    const textLines = [`${length.toFixed(2)} ${unit ?? 'mm'}`];
 
     return textLines;
   }

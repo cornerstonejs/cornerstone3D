@@ -917,7 +917,9 @@ export default class EllipticalROITool extends AnnotationTool {
     if (area) {
       areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}${String.fromCharCode(178)}`;
+        : `Area: ${area.toFixed(2)} ${areaUnit ?? 'mm'}${String.fromCharCode(
+            178
+          )}`;
     }
 
     if (mean) {
