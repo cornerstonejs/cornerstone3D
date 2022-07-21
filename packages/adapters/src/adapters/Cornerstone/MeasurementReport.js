@@ -3,6 +3,7 @@ import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
 import { StructuredReport } from "../../derivations/index.js";
 import TID1500MeasurementReport from "../../utilities/TID1500/TID1500MeasurementReport.js";
 import TID1501MeasurementGroup from "../../utilities/TID1500/TID1501MeasurementGroup.js";
+import addAccessors from "../../utilities/addAccessors.js";
 
 import { toArray, codeMeaningEquals } from "../helpers.js";
 
