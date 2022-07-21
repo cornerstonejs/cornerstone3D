@@ -226,7 +226,8 @@ class BinaryRepresentation extends ValueRepresentation {
             // Calculate a total length for storing binary stream
             var bufferLength = 0;
             for (i = 0; i < frames; i++) {
-                bufferLength += value[i].byteLength;
+                const needsPadding = Boolean(value[i].byteLength & 1);
+                bufferLength += value[i].byteLength + (needsPadding ? 1 : 0);
                 let fragmentsLength = 1;
                 if (fragmentMultiframe) {
                     fragmentsLength = Math.ceil(
@@ -243,6 +244,8 @@ class BinaryRepresentation extends ValueRepresentation {
             );
 
             for (i = 0; i < frames; i++) {
+                const needsPadding = Boolean(value[i].byteLength & 1);
+
                 startOffset.push(binaryStream.size);
                 var frameBuffer = value[i],
                     frameStream = new ReadBufferStream(frameBuffer);
@@ -255,11 +258,13 @@ class BinaryRepresentation extends ValueRepresentation {
                 }
 
                 for (var j = 0, fragmentStart = 0; j < fragmentsLength; j++) {
+                    const isFinalFragment = j === fragmentsLength - 1;
+
                     var fragmentEnd = fragmentStart + frameStream.size;
                     if (fragmentMultiframe) {
                         fragmentEnd = fragmentStart + fragmentSize;
                     }
-                    if (j == fragmentsLength - 1) {
+                    if (isFinalFragment) {
                         fragmentEnd = frameStream.size;
                     }
                     var fragStream = new ReadBufferStream(
@@ -268,8 +273,17 @@ class BinaryRepresentation extends ValueRepresentation {
                     fragmentStart = fragmentEnd;
                     binaryStream.writeUint16(0xfffe);
                     binaryStream.writeUint16(0xe000);
-                    binaryStream.writeUint32(fragStream.size);
+
+                    const addPaddingByte = isFinalFragment && needsPadding;
+
+                    binaryStream.writeUint32(
+                        fragStream.size + (addPaddingByte ? 1 : 0)
+                    );
                     binaryStream.concat(fragStream);
+
+                    if (addPaddingByte) {
+                        binaryStream.writeInt8(this.padByte);
+                    }
                 }
             }
 
@@ -283,11 +297,6 @@ class BinaryRepresentation extends ValueRepresentation {
             stream.writeUint16(0xfffe);
             stream.writeUint16(0xe0dd);
             stream.writeUint32(0x0);
-            var written = 8 + binaryStream.size + startOffset.length * 4 + 8;
-            if (written & 1) {
-                stream.writeUint8(this.padByte);
-                written++;
-            }
 
             return 0xffffffff;
         } else {

@@ -3,6 +3,7 @@ import "regenerator-runtime/runtime.js";
 import { getZippedTestDataset, getTestDataset } from "./testUtils.js";
 import { jest } from "@jest/globals";
 import dcmjs from "../src/index.js";
+import { WriteBufferStream } from "../src/BufferStream";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import os from "os";
@@ -587,4 +588,35 @@ it("Reads a multiframe DICOM with large private tags before and after the image 
     expect(dataset.PixelData[1].byteLength).toEqual(61482);
     expect(dataset.PixelData[128].byteLength).toEqual(62144);
     expect(dataset.PixelData[129].byteLength).toEqual(62148);
+});
+
+it("Writes encapsulated OB data which has an odd length with a padding byte in its last fragment", async () => {
+    const pixelData = [1, 2, 3];
+
+    const dataset = DicomMetaDictionary.denaturalizeDataset({
+        PixelData: [new Uint8Array(pixelData).buffer],
+        _vrMap: { PixelData: "OB" }
+    });
+
+    const stream = new WriteBufferStream(1024);
+    const bytesWritten = DicomMessage.write(
+        dataset,
+        stream,
+        "1.2.840.10008.1.2.4.50" // JPEG baseline (an encapsulated format)
+    );
+
+    expect(bytesWritten).toEqual(44);
+    expect([...new Uint32Array(stream.view.buffer, 0, 11)]).toEqual([
+        0x00107fe0, // PixelData tag's group & element
+        0x0000424f, // VR type "OB"
+        0xffffffff, // Value length (0xffffffff here indicates an undefined length)
+        0xe000fffe, // SequenceItemTag for the BOT (basic offset table)
+        0x00000004, // Size in bytes of the BOT
+        0x00000000, // First (and only) offset in the BOT
+        0xe000fffe, // SequenceItemTag
+        0x00000004, // SequenceItemTag's length in bytes
+        0x00030201, // The actual data for this fragment (specified above), with padding
+        0xe0ddfffe, // SequenceDelimiterTag
+        0x00000000 // SequenceDelimiterTag value (always zero)
+    ]);
 });
