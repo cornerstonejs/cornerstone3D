@@ -994,7 +994,12 @@ export default class BidirectionalTool extends AnnotationTool {
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      if (!data.cachedStats[targetId]) {
+      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
+      // force to recalculate the stats from the points
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].unit === undefined
+      ) {
         data.cachedStats[targetId] = {
           length: null,
           width: null,
@@ -1172,8 +1177,8 @@ export default class BidirectionalTool extends AnnotationTool {
     // spaceBetweenSlices & pixelSpacing &
     // magnitude in each direction? Otherwise, this is "px"?
     const textLines = [
-      `L: ${length.toFixed(2)} ${unit ?? 'mm'}`,
-      `W: ${width.toFixed(2)} ${unit ?? 'mm'}`,
+      `L: ${length.toFixed(2)} ${unit}`,
+      `W: ${width.toFixed(2)} ${unit}`,
     ];
 
     return textLines;
