@@ -1517,6 +1517,7 @@ class StackViewport extends Viewport implements IStackViewport {
         preScale: {
           scalingParameters,
         },
+        useRGBA: false,
       };
 
       imageLoadPoolManager.addRequest(
@@ -1607,6 +1608,7 @@ class StackViewport extends Viewport implements IStackViewport {
         preScale: {
           scalingParameters,
         },
+        useRGBA: false,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {

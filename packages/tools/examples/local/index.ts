@@ -2,6 +2,7 @@ import { RenderingEngine, Types, Enums, metaData } from '@cornerstonejs/core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import htmlSetup from './htmlSetup';
+import uids from './uids';
 
 const {
   PanTool,
@@ -169,6 +170,16 @@ function loadAndViewImage(imageId) {
 
     const voiLutModule = metaData.get('voiLutModule', imageId);
 
+    const sopCommonModule = metaData.get('sopCommonModule', imageId);
+    const transferSyntax = metaData.get('transferSyntax', imageId);
+
+    document.getElementById('transfersyntax').innerHTML =
+      transferSyntax.transferSyntaxUID;
+    document.getElementById('sopclassuid').innerHTML = `${
+      sopCommonModule.sopClassUID
+    } [${uids[sopCommonModule.sopClassUID]}]`;
+    document.getElementById('sopinstanceuid').innerHTML =
+      sopCommonModule.sopInstanceUID;
     document.getElementById('rows').innerHTML = imageData.dimensions[0];
     document.getElementById('columns').innerHTML = imageData.dimensions[1];
     document.getElementById('spacing').innerHTML = imageData.spacing.join('\\');

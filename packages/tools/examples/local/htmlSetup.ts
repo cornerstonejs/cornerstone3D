@@ -42,6 +42,9 @@ function setup(document) {
   div.appendChild(element);
   div.appendChild(metadata);
 
+  createMetadataRow('Transfer Syntax', metadata);
+  createMetadataRow('SOPClassUID', metadata);
+  createMetadataRow('SOPInstanceUID', metadata);
   createMetadataRow('Rows', metadata);
   createMetadataRow('Columns', metadata);
   createMetadataRow('Spacing', metadata);
