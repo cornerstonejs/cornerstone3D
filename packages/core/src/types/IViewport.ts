@@ -73,6 +73,14 @@ interface IViewport {
   getCanvas(): HTMLCanvasElement;
   /** returns camera object */
   getCamera(): ICamera;
+  /** returns the parallel zoom relative to the default (eg returns 1 after reset) */
+  getZoom(): number;
+  /** Sets the relative zoom - set to 1 to reset it */
+  setZoom(zoom: number, resetOffsets?: boolean);
+  /** Gets the canvas pan value */
+  getPan(): Point2;
+  /** Sets the canvas pan value */
+  setPan(pan: Point2, resetOffsets?: boolean);
   /** sets the camera */
   setCamera(cameraInterface: ICamera): void;
   /** whether the viewport has custom rendering */
