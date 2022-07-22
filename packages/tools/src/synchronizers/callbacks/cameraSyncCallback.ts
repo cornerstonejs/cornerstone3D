@@ -40,9 +40,10 @@ export default function cameraSyncCallback(
   if (camera.parallelProjection) {
     const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
     const srcDelta = sViewport.getPan();
+    const zoom = sViewport.getZoom();
 
     // Do the zoom first, as the pan is relative to the zoom level
-    tViewport.setZoom(sViewport.getZoom());
+    tViewport.setZoom(zoom);
     tViewport.setPan(srcDelta);
   } else {
     tViewport.setCamera(camera);

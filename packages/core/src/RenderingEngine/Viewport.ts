@@ -304,8 +304,6 @@ class Viewport implements IViewport {
       actor.setUserMatrix(mat);
     });
 
-    this.resetInitialOffsets();
-
     this.getRenderingEngine().render();
   }
 
@@ -669,8 +667,7 @@ class Viewport implements IViewport {
     if (this.flipHorizontal || this.flipVertical) {
       this.flip({ flipHorizontal: false, flipVertical: false });
     }
-
-    this.resetInitialOffsets(resetOffsets);
+    this.resetInitialOffsets(!!resetOffsets);
 
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
@@ -697,7 +694,9 @@ class Viewport implements IViewport {
    * @param resetOffsets can be passed to skip resetting, ie a no-op on this call
    */
   public resetInitialOffsets(resetOffsets = true) {
-    if (!resetOffsets) return;
+    if (!resetOffsets) {
+      return;
+    }
     this.initialCamera = this.getCamera();
   }
 
@@ -920,7 +919,7 @@ class Viewport implements IViewport {
       renderer.resetCameraClippingRange();
     }
 
-    this.resetInitialOffsets(resetOffsets);
+    this.resetInitialOffsets(!!resetOffsets);
 
     this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
   }
