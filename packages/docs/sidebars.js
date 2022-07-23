@@ -152,6 +152,7 @@ module.exports = {
         'contribute/update-api',
         'contribute/documentation',
         'contribute/tests',
+        'contribute/linking',
       ],
     },
     'migrationGuides',
