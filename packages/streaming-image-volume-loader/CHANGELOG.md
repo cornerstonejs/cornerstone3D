@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.4.9...@cornerstonejs/streaming-image-volume-loader@0.4.10) (2022-07-25)
+
+
+### Bug Fixes
+
+* annotation unit hydration bug and more color image support ([#151](https://github.com/cornerstonejs/cornerstone3D-beta/issues/151)) ([4f157dc](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4f157dc5d7a8d0d80abb5b68c35ed17cb5f349ed))
+
+
+
+
+
 ## [0.4.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.4.8...@cornerstonejs/streaming-image-volume-loader@0.4.9) (2022-06-24)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

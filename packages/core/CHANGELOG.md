@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.13.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.9...@cornerstonejs/core@0.13.10) (2022-07-25)
+
+
+### Bug Fixes
+
+* annotation unit hydration bug and more color image support ([#151](https://github.com/cornerstonejs/cornerstone3D-beta/issues/151)) ([4f157dc](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4f157dc5d7a8d0d80abb5b68c35ed17cb5f349ed))
+
+
+
+
+
 ## [0.13.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.8...@cornerstonejs/core@0.13.9) (2022-06-24)
 
 
