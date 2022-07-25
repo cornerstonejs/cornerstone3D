@@ -87,10 +87,7 @@ class DicomMessage {
                 if (cleanTagString === "00080005") {
                     if (readInfo.values.length > 0) {
                         let coding = readInfo.values[0];
-                        coding = coding
-                            .replaceAll("_", "-")
-                            .replaceAll(" ", "-")
-                            .toLowerCase();
+                        coding = coding.replace(/[_ ]/g, "-").toLowerCase();
                         if (coding in encodingMapping) {
                             coding = encodingMapping[coding];
                         }
