@@ -1069,8 +1069,8 @@ class StackViewport extends Viewport implements IStackViewport {
     let numberOfComponents = 1;
     if (
       photometricInterpretation === 'RGB' ||
-      photometricInterpretation === 'YBR_FULL' ||
-      photometricInterpretation === 'YBR_FULL_422'
+      photometricInterpretation.indexOf('YBR') !== -1 ||
+      photometricInterpretation === 'PALETTE COLOR'
     ) {
       numberOfComponents = 3;
     }
@@ -1336,6 +1336,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this._imageData.setOrigin(origin);
+
     // 1. Update the pixel data in the vtkImageData object with the pixelData
     //    from the loaded Cornerstone image
     const pixelData = image.getPixelData();
@@ -1343,8 +1344,6 @@ class StackViewport extends Viewport implements IStackViewport {
     const scalarData = scalars.getData() as Uint8Array | Float32Array;
 
     scalarData.set(pixelData);
-
-    // Set origin, direction, spacing, etc...
 
     // Trigger modified on the VTK Object so the texture is updated
     // TODO: evaluate directly changing things with texSubImage3D later

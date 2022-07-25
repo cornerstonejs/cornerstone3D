@@ -7072,10 +7072,10 @@ core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.3.tgz#a6042d3634c2b27e9328f837b965fac83808db85"
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
-cornerstone-wado-image-loader@^4.1.2:
-  version "4.1.3"
-  resolved "https://registry.yarnpkg.com/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.1.3.tgz#6053606ca6dd588d341f1117bb205822000192d1"
-  integrity sha512-1JOI1IFrpDNK96Z7Qmi50fmIlx81Ur67WfjmD371jtsbygIeh+K7p3pvate722IcLUwJZ3dbBEDY/voaD+HUXQ==
+cornerstone-wado-image-loader@^4.1.5:
+  version "4.1.5"
+  resolved "https://registry.yarnpkg.com/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.1.5.tgz#1e120564e887bf85b03d4a7f90c6aaea5fd5acf2"
+  integrity sha512-N+CqivL+KNnVzftUqhwtKa7ULvdO96Bo3sTd4dBu05b57FSKoyAjFQ40md/UzbwzC3hEdVy94rh1TVMPRdMN4w==
   dependencies:
     "@cornerstonejs/codec-charls" "^0.1.1"
     "@cornerstonejs/codec-libjpeg-turbo-8bit" "^0.0.7"
