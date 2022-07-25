@@ -33,8 +33,12 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
     const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
     Object.keys(headers).forEach(function (key) {
-      if (headers[key] === null) return;
-      if (key === 'Accept' && url.indexOf('accept=') !== -1) return;
+      if (headers[key] === null) {
+        return;
+      }
+      if (key === 'Accept' && url.indexOf('accept=') !== -1) {
+        return;
+      }
       xhr.setRequestHeader(key, headers[key]);
     });
 

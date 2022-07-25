@@ -157,6 +157,14 @@ function metaDataProvider(type, imageId) {
   if (type === 'overlayPlaneModule') {
     return getOverlayPlaneModule(metaData);
   }
+
+  // Note: this is not a DICOM module, but a useful metadata that can be
+  // retrieved from the image
+  if (type === 'transferSyntax') {
+    return {
+      transferSyntaxUID: getValue(metaData['00020010']),
+    };
+  }
 }
 
 export default metaDataProvider;

@@ -7,38 +7,36 @@ import {
   convertPALETTECOLOR,
 } from './colorSpaceConverters/index.js';
 
-function convertRGB(imageFrame, rgbaBuffer) {
+function convertRGB(imageFrame, colorBuffer, useRGBA) {
   if (imageFrame.planarConfiguration === 0) {
-    convertRGBColorByPixel(imageFrame.pixelData, rgbaBuffer);
+    convertRGBColorByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else {
-    convertRGBColorByPlane(imageFrame.pixelData, rgbaBuffer);
+    convertRGBColorByPlane(imageFrame.pixelData, colorBuffer, useRGBA);
   }
 }
 
-function convertYBRFull(imageFrame, rgbaBuffer) {
+function convertYBRFull(imageFrame, colorBuffer, useRGBA) {
   if (imageFrame.planarConfiguration === 0) {
-    convertYBRFullByPixel(imageFrame.pixelData, rgbaBuffer);
+    convertYBRFullByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else {
-    convertYBRFullByPlane(imageFrame.pixelData, rgbaBuffer);
+    convertYBRFullByPlane(imageFrame.pixelData, colorBuffer, useRGBA);
   }
 }
 
-export default function convertColorSpace(imageFrame, imageData) {
-  const rgbaBuffer = imageData.data;
+export default function convertColorSpace(imageFrame, colorBuffer, useRGBA) {
   // convert based on the photometric interpretation
-
   if (imageFrame.photometricInterpretation === 'RGB') {
-    convertRGB(imageFrame, rgbaBuffer);
+    convertRGB(imageFrame, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'YBR_RCT') {
-    convertRGB(imageFrame, rgbaBuffer);
+    convertRGB(imageFrame, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'YBR_ICT') {
-    convertRGB(imageFrame, rgbaBuffer);
+    convertRGB(imageFrame, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
-    convertPALETTECOLOR(imageFrame, rgbaBuffer);
+    convertPALETTECOLOR(imageFrame, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL_422') {
-    convertYBRFull422ByPixel(imageFrame.pixelData, rgbaBuffer);
+    convertYBRFull422ByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL') {
-    convertYBRFull(imageFrame, rgbaBuffer);
+    convertYBRFull(imageFrame, colorBuffer, useRGBA);
   } else {
     throw new Error(
       `No color space conversion for photometric interpretation ${imageFrame.photometricInterpretation}`

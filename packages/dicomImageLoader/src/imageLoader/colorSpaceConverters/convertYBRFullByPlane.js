@@ -1,4 +1,4 @@
-export default function (imageFrame, rgbaBuffer) {
+export default function (imageFrame, colorBuffer, useRGBA) {
   if (imageFrame === undefined) {
     throw new Error('decodeRGB: ybrBuffer must not be undefined');
   }
@@ -8,7 +8,7 @@ export default function (imageFrame, rgbaBuffer) {
 
   const numPixels = imageFrame.length / 3;
 
-  let rgbaIndex = 0;
+  let bufferIndex = 0;
 
   let yIndex = 0;
 
@@ -16,14 +16,30 @@ export default function (imageFrame, rgbaBuffer) {
 
   let crIndex = numPixels * 2;
 
+  if (useRGBA) {
+    for (let i = 0; i < numPixels; i++) {
+      const y = imageFrame[yIndex++];
+      const cb = imageFrame[cbIndex++];
+      const cr = imageFrame[crIndex++];
+
+      colorBuffer[bufferIndex++] = y + 1.402 * (cr - 128); // red
+      colorBuffer[bufferIndex++] =
+        y - 0.34414 * (cb - 128) - 0.71414 * (cr - 128); // green
+      colorBuffer[bufferIndex++] = y + 1.772 * (cb - 128); // blue
+      colorBuffer[bufferIndex++] = 255; // alpha
+    }
+
+    return;
+  }
+
   for (let i = 0; i < numPixels; i++) {
     const y = imageFrame[yIndex++];
     const cb = imageFrame[cbIndex++];
     const cr = imageFrame[crIndex++];
 
-    rgbaBuffer[rgbaIndex++] = y + 1.402 * (cr - 128); // red
-    rgbaBuffer[rgbaIndex++] = y - 0.34414 * (cb - 128) - 0.71414 * (cr - 128); // green
-    rgbaBuffer[rgbaIndex++] = y + 1.772 * (cb - 128); // blue
-    rgbaBuffer[rgbaIndex++] = 255; // alpha
+    colorBuffer[bufferIndex++] = y + 1.402 * (cr - 128); // red
+    colorBuffer[bufferIndex++] =
+      y - 0.34414 * (cb - 128) - 0.71414 * (cr - 128); // green
+    colorBuffer[bufferIndex++] = y + 1.772 * (cb - 128); // blue
   }
 }

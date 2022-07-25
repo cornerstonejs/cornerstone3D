@@ -15,10 +15,10 @@ function convertLUTto8Bit(lut, shift) {
  * Convert pixel data with PALETTE COLOR Photometric Interpretation to RGBA
  *
  * @param {ImageFrame} imageFrame
- * @param {Uint8ClampedArray} rgbaBuffer
+ * @param {Uint8ClampedArray} colorBuffer
  * @returns {void}
  */
-export default function (imageFrame, rgbaBuffer) {
+export default function (imageFrame, colorBuffer, useRGBA) {
   const numPixels = imageFrame.columns * imageFrame.rows;
   const pixelData = imageFrame.pixelData;
   const rData = imageFrame.redPaletteColorLookupTableData;
@@ -28,7 +28,7 @@ export default function (imageFrame, rgbaBuffer) {
 
   let palIndex = 0;
 
-  let rgbaIndex = 0;
+  let bufferIndex = 0;
 
   const start = imageFrame.redPaletteColorLookupTableDescriptor[1];
   const shift =
@@ -37,6 +37,27 @@ export default function (imageFrame, rgbaBuffer) {
   const rDataCleaned = convertLUTto8Bit(rData, shift);
   const gDataCleaned = convertLUTto8Bit(gData, shift);
   const bDataCleaned = convertLUTto8Bit(bData, shift);
+
+  if (useRGBA) {
+    for (let i = 0; i < numPixels; ++i) {
+      let value = pixelData[palIndex++];
+
+      if (value < start) {
+        value = 0;
+      } else if (value > start + len - 1) {
+        value = len - 1;
+      } else {
+        value -= start;
+      }
+
+      colorBuffer[bufferIndex++] = rDataCleaned[value];
+      colorBuffer[bufferIndex++] = gDataCleaned[value];
+      colorBuffer[bufferIndex++] = bDataCleaned[value];
+      colorBuffer[bufferIndex++] = 255;
+    }
+
+    return;
+  }
 
   for (let i = 0; i < numPixels; ++i) {
     let value = pixelData[palIndex++];
@@ -49,9 +70,8 @@ export default function (imageFrame, rgbaBuffer) {
       value -= start;
     }
 
-    rgbaBuffer[rgbaIndex++] = rDataCleaned[value];
-    rgbaBuffer[rgbaIndex++] = gDataCleaned[value];
-    rgbaBuffer[rgbaIndex++] = bDataCleaned[value];
-    rgbaBuffer[rgbaIndex++] = 255;
+    colorBuffer[bufferIndex++] = rDataCleaned[value];
+    colorBuffer[bufferIndex++] = gDataCleaned[value];
+    colorBuffer[bufferIndex++] = bDataCleaned[value];
   }
 }

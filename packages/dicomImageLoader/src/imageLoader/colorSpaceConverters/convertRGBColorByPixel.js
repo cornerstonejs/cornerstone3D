@@ -1,4 +1,4 @@
-export default function (imageFrame, rgbaBuffer) {
+export default function (imageFrame, colorBuffer, useRGBA) {
   if (imageFrame === undefined) {
     throw new Error('decodeRGB: rgbBuffer must not be undefined');
   }
@@ -10,12 +10,19 @@ export default function (imageFrame, rgbaBuffer) {
 
   let rgbIndex = 0;
 
-  let rgbaIndex = 0;
+  let bufferIndex = 0;
 
-  for (let i = 0; i < numPixels; i++) {
-    rgbaBuffer[rgbaIndex++] = imageFrame[rgbIndex++]; // red
-    rgbaBuffer[rgbaIndex++] = imageFrame[rgbIndex++]; // green
-    rgbaBuffer[rgbaIndex++] = imageFrame[rgbIndex++]; // blue
-    rgbaBuffer[rgbaIndex++] = 255; // alpha
+  if (useRGBA) {
+    for (let i = 0; i < numPixels; i++) {
+      colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // red
+      colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // green
+      colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // blue
+      colorBuffer[bufferIndex++] = 255; // alpha
+    }
+
+    return;
   }
+
+  // if RGB buffer
+  colorBuffer.set(imageFrame);
 }
