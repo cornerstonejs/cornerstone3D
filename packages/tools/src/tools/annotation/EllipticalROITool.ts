@@ -754,7 +754,13 @@ export default class EllipticalROITool extends AnnotationTool {
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates)
       );
-      if (!data.cachedStats[targetId]) {
+
+      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
+      // force to recalculate the stats from the points
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].areaUnit === undefined
+      ) {
         data.cachedStats[targetId] = {
           Modality: null,
           area: null,
@@ -917,7 +923,7 @@ export default class EllipticalROITool extends AnnotationTool {
     if (area) {
       areaLine = isEmptyArea
         ? `Area: Oblique not supported`
-        : `Area: ${area.toFixed(2)} ${areaUnit}${String.fromCharCode(178)}`;
+        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
     }
 
     if (mean) {

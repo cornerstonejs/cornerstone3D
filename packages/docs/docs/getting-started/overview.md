@@ -4,7 +4,6 @@ id: overview
 
 import Link from '@docusaurus/Link';
 
-
 # Overview
 
 `Cornerstone3D` is a lightweight Javascript library for visualization of medical images in modern web browsers that support the HTML5 canvas element.
@@ -15,6 +14,15 @@ Using `Cornerstone3D` and its accompanying libraries such as `Cornerstone3DTools
 <Link target={"_blank"} to="/live-examples/petCT.html">
     <button id="open-ptct-button">
         Open PT/CT Demo
+    </button>
+</Link>
+
+<br/>
+<br/>
+
+<Link target={"_blank"} to="/live-examples/local.html">
+    <button id="open-ptct-button">
+        Open Local DICOM Demo
     </button>
 </Link>
 
@@ -33,7 +41,6 @@ Using the new `Cornerstone3D` rendering engine and its Stack and Volume viewport
 - Render color images and render them as a volume
 - Fall back to CPU rendering when GPU rendering is not available
 - Change calibration of the images by modifying the metadata for the viewport (e.g. pixel spacing)
-
 
 ### Manipulation
 

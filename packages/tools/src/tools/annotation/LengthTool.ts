@@ -575,8 +575,12 @@ class LengthTool extends AnnotationTool {
 
       let activeHandleCanvasCoords;
 
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (!data.cachedStats[targetId]) {
+      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
+      // force to recalculate the stats from the points
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].unit === undefined
+      ) {
         data.cachedStats[targetId] = {
           length: null,
           unit: null,

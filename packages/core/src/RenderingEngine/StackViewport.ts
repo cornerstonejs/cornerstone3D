@@ -1067,7 +1067,11 @@ class StackViewport extends Viewport implements IStackViewport {
     // TODO: this function will need to have more logic later
     // see http://dicom.nema.org/medical/Dicom/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.2
     let numberOfComponents = 1;
-    if (photometricInterpretation === 'RGB') {
+    if (
+      photometricInterpretation === 'RGB' ||
+      photometricInterpretation.indexOf('YBR') !== -1 ||
+      photometricInterpretation === 'PALETTE COLOR'
+    ) {
       numberOfComponents = 3;
     }
 
@@ -1332,34 +1336,14 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this._imageData.setOrigin(origin);
+
     // 1. Update the pixel data in the vtkImageData object with the pixelData
     //    from the loaded Cornerstone image
     const pixelData = image.getPixelData();
     const scalars = this._imageData.getPointData().getScalars();
     const scalarData = scalars.getData() as Uint8Array | Float32Array;
 
-    // Handle cases where Cornerstone is providing an RGBA array, but we need RGB
-    // for VTK.
-    // TODO: This conversion from Cornerstone to VTK may take many forms?
-    //       We need to nail down the types for Cornerstone Images
-    if (image.color) {
-      // RGB case
-      let j = 0;
-      for (let i = 0; i < pixelData.length; i += 4) {
-        scalarData[j] = pixelData[i];
-        scalarData[j + 1] = pixelData[i + 1];
-        scalarData[j + 2] = pixelData[i + 2];
-        j += 3;
-      }
-    } else {
-      // In the general case, just set the VTK Image Data TypedArray data
-      // from the pixel data array provided from the Cornerstone Image
-      // TODO: What about Rescale Slope and Intercept?
-      // TODO: What about SUV computation?
-      scalarData.set(pixelData);
-    }
-
-    // Set origin, direction, spacing, etc...
+    scalarData.set(pixelData);
 
     // Trigger modified on the VTK Object so the texture is updated
     // TODO: evaluate directly changing things with texSubImage3D later
@@ -1517,6 +1501,7 @@ class StackViewport extends Viewport implements IStackViewport {
         preScale: {
           scalingParameters,
         },
+        useRGBA: false,
       };
 
       imageLoadPoolManager.addRequest(
@@ -1607,6 +1592,7 @@ class StackViewport extends Viewport implements IStackViewport {
         preScale: {
           scalingParameters,
         },
+        useRGBA: false,
       };
 
       const eventDetail: EventTypes.PreStackNewImageEventDetail = {

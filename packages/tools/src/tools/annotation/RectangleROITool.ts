@@ -648,13 +648,19 @@ export default class RectangleROITool extends AnnotationTool {
 
       const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
-      if (!data.cachedStats[targetId]) {
+      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
+      // force to recalculate the stats from the points
+      if (
+        !data.cachedStats[targetId] ||
+        data.cachedStats[targetId].unit === undefined
+      ) {
         data.cachedStats[targetId] = {
           Modality: null,
           area: null,
           max: null,
           mean: null,
           stdDev: null,
+          areaUnit: null,
         };
 
         this._calculateCachedStats(
@@ -836,9 +842,7 @@ export default class RectangleROITool extends AnnotationTool {
 
     const textLines = [];
 
-    const areaLine = `Area: ${area.toFixed(2)} ${areaUnit}${String.fromCharCode(
-      178
-    )}`;
+    const areaLine = `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
     let meanLine = `Mean: ${mean.toFixed(2)}`;
     let maxLine = `Max: ${max.toFixed(2)}`;
     let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;

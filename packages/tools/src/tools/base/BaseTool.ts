@@ -130,14 +130,12 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * Get the viewport and image for the targetId. Since we are using the
-   * schema of stackTarget:<viewportId>, we can get the viewport and image
-   * from the stack. For the volumeViewports, the targetId is the actual
-   * volumeId, so we can get the viewport and image.
+   * Get the image that is displayed for the targetId in the cachedStats
+   * which can be either imageId:<imageId> or volumeId:<volumeId>
    *
-   * @param targetId - annotation targetId
+   * @param targetId - annotation targetId stored in the cached stats
    * @param renderingEngine - The rendering engine
-   * @returns The viewport and image data for the target.
+   * @returns The image data for the target.
    */
   protected getTargetIdImage(
     targetId: string,
@@ -151,8 +149,12 @@ abstract class BaseTool implements IBaseTool {
       );
       return viewport.getImageData();
     } else if (targetId.startsWith('volumeId:')) {
+      // Todo: Why we are not getting the imageData from the viewport by .getImageData()?
       const volumeId = targetId.split('volumeId:')[1];
-      return cache.getVolume(volumeId);
+
+      // We can always assume for the volume, the pixel spacing exists and
+      // is the same for all the slices.
+      return { ...cache.getVolume(volumeId), hasPixelSpacing: true };
     } else {
       throw new Error(
         'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'
