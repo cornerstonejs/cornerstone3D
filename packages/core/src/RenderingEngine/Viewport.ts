@@ -690,10 +690,10 @@ class Viewport implements IViewport {
    * Resets the stored initial offset values for
    * zoom and pan.  These values are the offset
    * values used to allow the getPan and getZoom
-   * to return fixed initial values.
+   * to return [0,0] and 1 for the initial values.
    * @param resetOffsets can be passed to skip resetting, ie a no-op on this call
    */
-  public resetInitialOffsets(resetOffsets = true) {
+  protected resetInitialOffsets(resetOffsets = true) {
     if (!resetOffsets) {
       return;
     }

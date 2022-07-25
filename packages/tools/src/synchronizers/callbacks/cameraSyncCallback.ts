@@ -39,12 +39,12 @@ export default function cameraSyncCallback(
   // TODO: only sync in-plane movements if one viewport is a stack viewport
   if (camera.parallelProjection) {
     const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
-    const srcDelta = sViewport.getPan();
-    const zoom = sViewport.getZoom();
+    const srcPan = sViewport.getPan();
+    const srcZoom = sViewport.getZoom();
 
     // Do the zoom first, as the pan is relative to the zoom level
-    tViewport.setZoom(zoom);
-    tViewport.setPan(srcDelta);
+    tViewport.setZoom(srcZoom);
+    tViewport.setPan(srcPan);
   } else {
     tViewport.setCamera(camera);
   }
