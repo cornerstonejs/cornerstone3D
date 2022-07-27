@@ -289,6 +289,7 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
         decodeTimeInMS: imageFrame.decodeTimeInMS,
         floatPixelData: undefined,
         imageFrame,
+        rgba: isColorImage && useRGBA,
       };
 
       // If pixel data is intrinsically floating 32 array, we convert it to int for
