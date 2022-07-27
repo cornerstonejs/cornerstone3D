@@ -1343,7 +1343,24 @@ class StackViewport extends Viewport implements IStackViewport {
     const scalars = this._imageData.getPointData().getScalars();
     const scalarData = scalars.getData() as Uint8Array | Float32Array;
 
-    scalarData.set(pixelData);
+    if (image.rgba) {
+      // if image is already cached with rgba for any reason (cpu fallback),
+      // we need to convert it to rgb for the pixel data set
+      // RGB case
+      const numPixels = pixelData.length / 4;
+
+      let rgbIndex = 0;
+      let index = 0;
+
+      for (let i = 0; i < numPixels; i++) {
+        scalarData[index++] = pixelData[rgbIndex++]; // red
+        scalarData[index++] = pixelData[rgbIndex++]; // green
+        scalarData[index++] = pixelData[rgbIndex++]; // blue
+        rgbIndex++; // skip alpha
+      }
+    } else {
+      scalarData.set(pixelData);
+    }
 
     // Trigger modified on the VTK Object so the texture is updated
     // TODO: evaluate directly changing things with texSubImage3D later
