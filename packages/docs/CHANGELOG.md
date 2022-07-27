@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.25](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.4.24...docs@0.4.25) (2022-07-27)
+
+
+### Bug Fixes
+
+* convert RGBA to RGB for GPU rendering if cached ([#152](https://github.com/cornerstonejs/cornerstone3D-beta/issues/152)) ([fb8aa36](https://github.com/cornerstonejs/cornerstone3D-beta/commit/fb8aa36374c4bdf06d9d6da1f2df128c68dbc7da))
+
+
+
+
+
 ## [0.4.24](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.4.23...docs@0.4.24) (2022-07-25)
 
 
