@@ -1157,7 +1157,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, }: StackViewportProperties): void;
+    setProperties({ voiRange, invert, interpolationType, rotation }: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
@@ -1360,6 +1360,8 @@ interface IVolumeViewport extends IViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
+    // (undocumented)
+    setProperties({ voiRange }: StackViewportProperties_2, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -1743,6 +1745,11 @@ type StackViewportProperties = {
 };
 
 // @public (undocumented)
+type StackViewportProperties_2 = {
+    voiRange?: VOIRange;
+};
+
+// @public (undocumented)
 type StackViewportScrollEvent = CustomEvent_2<StackViewportScrollEventDetail>;
 
 // @public (undocumented)
@@ -1802,6 +1809,7 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         StackViewportProperties,
+        StackViewportProperties_2 as VolumeViewportProperties,
         PublicViewportInput,
         VolumeActor,
         Actor,
@@ -2138,6 +2146,8 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
+    // (undocumented)
+    setProperties({ voiRange }?: StackViewportProperties_2, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
