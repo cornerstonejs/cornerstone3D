@@ -1,9 +1,7 @@
 import {
   getRenderingEngine,
   StackViewport,
-  triggerEvent,
   Types,
-  Enums,
   VolumeViewport,
 } from '@cornerstonejs/core';
 
@@ -35,30 +33,12 @@ export default function voiSyncCallback(
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
   if (tViewport instanceof VolumeViewport) {
-    const actorEntry = tViewport.getActor(volumeId);
-
-    if (!actorEntry) {
-      return;
-    }
-
-    const volumeActor = actorEntry.actor as Types.VolumeActor;
-    volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .setRange(range.lower, range.upper);
-
-    const { element } = tViewport;
-
-    // Todo: this should be moved to the volume viewport when we add the
-    // setProperties API
-    triggerEvent(element, Enums.Events.VOI_MODIFIED, {
-      volumeId,
-      viewportId: tViewport.id,
-      range: {
-        lower: range.lower,
-        upper: range.upper,
+    tViewport.setProperties(
+      {
+        voiRange: range,
       },
-    });
+      volumeId
+    );
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties({
       voiRange: range,

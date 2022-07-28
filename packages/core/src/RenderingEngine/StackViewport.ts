@@ -1021,12 +1021,13 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.voiApplied = true;
     this.voiRange = voiRangeToUse;
-    const eventDetail: VoiModifiedEventDetail = {
-      viewportId: this.id,
-      range: voiRangeToUse,
-    };
 
     if (!suppressEvents) {
+      const eventDetail: VoiModifiedEventDetail = {
+        viewportId: this.id,
+        range: voiRangeToUse,
+      };
+
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
     }
   }

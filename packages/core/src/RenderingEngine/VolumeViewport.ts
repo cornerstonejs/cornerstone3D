@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache';
 import ViewportType from '../enums/ViewportType';
@@ -19,6 +20,7 @@ import type {
   IVolumeInput,
   ActorEntry,
   FlipDirection,
+  VolumeViewportProperties,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
@@ -26,6 +28,8 @@ import { RENDERING_DEFAULTS } from '../constants';
 import { Events, BlendModes } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
+import { triggerEvent } from '../utilities';
+import { VoiModifiedEventDetail } from '../types/EventTypes';
 
 const EPSILON = 1e-3;
 
@@ -134,6 +138,59 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       Events.ELEMENT_DISABLED,
       volumeNewImageCleanUpBound
     );
+  }
+
+  /**
+   * Sets the properties for the volume viewport on the volume
+   * (if fusion, it sets it for the first volume in the fusion)
+   *
+   * @param voiRange - Sets the lower and upper voi
+   * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
+   * @param suppressEvents - If true, the viewport will not emit events
+   */
+  public setProperties(
+    { voiRange }: VolumeViewportProperties = {},
+    volumeId?: string,
+    suppressEvents = false
+  ): void {
+    const actorEntries = this.getActors();
+
+    if (!actorEntries.length) {
+      return;
+    }
+
+    let volumeActor;
+
+    if (volumeId) {
+      const actorEntry = actorEntries.find((entry: ActorEntry) => {
+        return entry.uid === volumeId;
+      });
+
+      volumeActor = actorEntry?.actor as vtkVolume;
+    }
+
+    // set it for the first volume (if there are more than one - fusion)
+    if (!volumeActor) {
+      volumeActor = actorEntries[0].actor as vtkVolume;
+      volumeId = actorEntries[0].uid;
+    }
+
+    // Todo: later when we have more properties, refactor the setVoiRange code below
+    const { lower, upper } = voiRange;
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(lower, upper);
+
+    if (!suppressEvents) {
+      const eventDetail: VoiModifiedEventDetail = {
+        viewportId: this.id,
+        range: voiRange,
+        volumeId: volumeId,
+      };
+
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    }
   }
 
   /**

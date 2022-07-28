@@ -5,6 +5,7 @@ import { IVolumeInput } from './IVolumeInput';
 import FlipDirection from './FlipDirection';
 import IImageData from './IImageData';
 import { BlendModes } from '../enums';
+import { VolumeViewportProperties } from '.';
 
 /**
  * Interface for the Volume Viewport
@@ -37,6 +38,15 @@ export default interface IVolumeViewport extends IViewport {
    * currently being viewed.
    */
   getCurrentImageId: () => string;
+  /**
+   * Sets the properties for the viewport. If no volumeId is provided
+   * it applies the properties to the default volume actor (first volume)
+   */
+  setProperties(
+    { voiRange }: VolumeViewportProperties,
+    volumeId?: string,
+    suppressEvents?: boolean
+  ): void;
   /**
    * Creates volume actors for all volumes defined in the `volumeInputArray`.
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
