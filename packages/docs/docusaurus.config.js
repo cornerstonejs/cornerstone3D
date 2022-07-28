@@ -74,9 +74,18 @@ module.exports = {
             {
               html: `
                <div id="logo-wrapper-footer">
-                <img src='/img/cornerstone-dark-footer.png' id="cs-logo-footer" alt="cornerstone" />
-                <img src='/img/ohif-logo-dark.svg' id="ohif-logo-footer" alt="ohif" />
-               </div>
+                <a href="https://www.cornerstonejs.org/" target="_blank">
+                  <img
+                    src="/img/cornerstone-dark-footer.png"
+                    id="cs-logo-footer"
+                    alt="cornerstone"
+                  />
+                </a>
+                <a href="https://ohif.org/" target="_blank">
+                  <img src="/img/ohif-logo-dark.svg" id="ohif-logo-footer" alt="ohif" />
+                </a>
+              </div>
+
               `,
             },
           ],
