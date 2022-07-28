@@ -190,9 +190,10 @@ module.exports = {
             (pkg) => `packages/${pkg}`
           ),
         ],
+        url: 'https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages-alireza/',
+        removeScopes: ['cornerstonejs'],
         minimal: false,
         readmes: true,
-        debug: true,
         tsconfigName: 'tsconfig.json',
       },
     ],
