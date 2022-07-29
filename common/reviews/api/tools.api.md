@@ -2416,7 +2416,7 @@ interface IVolumeViewport extends IViewport {
     immediate?: boolean
     ): void;
     setProperties(
-        { voiRange }: StackViewportProperties_2,
+        { voiRange }: VolumeViewportProperties,
     volumeId?: string,
     suppressEvents?: boolean
     ): void;
@@ -3809,11 +3809,6 @@ type StackViewportProperties = {
     suppressEvents?: boolean;
 };
 
-// @public
-type StackViewportProperties_2 = {
-    voiRange?: VOIRange;
-};
-
 // @public (undocumented)
 type StackViewportScrollEvent = CustomEvent_2<StackViewportScrollEventDetail>;
 
@@ -4364,6 +4359,11 @@ export class VolumeRotateMouseWheelTool extends BaseTool {
     // (undocumented)
     static toolName: string;
 }
+
+// @public
+type VolumeViewportProperties = {
+    voiRange?: VOIRange;
+};
 
 // @public (undocumented)
 export class WindowLevelTool extends BaseTool {

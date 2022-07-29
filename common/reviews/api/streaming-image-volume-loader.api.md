@@ -982,7 +982,7 @@ interface IVolumeViewport extends IViewport {
     immediate?: boolean
     ): void;
     setProperties(
-        { voiRange }: StackViewportProperties_2,
+        { voiRange }: VolumeViewportProperties,
     volumeId?: string,
     suppressEvents?: boolean
     ): void;
@@ -1120,11 +1120,6 @@ type StackViewportProperties = {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
-};
-
-// @public
-type StackViewportProperties_2 = {
-    voiRange?: VOIRange;
 };
 
 // @public (undocumented)
@@ -1283,6 +1278,11 @@ type VolumeNewImageEventDetail = {
     numberOfSlices: number;
     viewportId: string;
     renderingEngineId: string;
+};
+
+// @public
+type VolumeViewportProperties = {
+    voiRange?: VOIRange;
 };
 
 // (No @packageDocumentation comment for this package)
