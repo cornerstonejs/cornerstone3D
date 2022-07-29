@@ -11,8 +11,8 @@ module.exports = {
   onBrokenLinks: 'log',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'CornerstoneJS', // Usually your GitHub org/user name.
-  projectName: 'Cornerstone', // Usually your repo name.
+  organizationName: 'cornerstoneJS', // Usually your GitHub org/user name.
+  projectName: 'cornerstone3D-beta', // Usually your repo name.
   themeConfig: {
     algolia: {
       appId: 'OWBKNRE2E5',
@@ -190,9 +190,10 @@ module.exports = {
             (pkg) => `packages/${pkg}`
           ),
         ],
+        url: 'https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages-alireza/',
+        removeScopes: ['cornerstonejs'],
         minimal: false,
         readmes: true,
-        debug: true,
         tsconfigName: 'tsconfig.json',
       },
     ],

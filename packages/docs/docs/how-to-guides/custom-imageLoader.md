@@ -8,7 +8,7 @@ In this how-to guide we will show you how to create a custom image loader.
 
 ## Introduction
 
-Cornerstone **DOES NOT** deal with image loading. It delegates image loading to [Image Loaders](./concepts/cornerstone-core/imageLoader.md).
+Cornerstone **DOES NOT** deal with image loading. It delegates image loading to [Image Loaders](../concepts/cornerstone-core/imageLoader.md).
 Cornerstone team have developed commonly used image loaders (`CornerstoneWADOImageLoader` for loading images from wado-compliant dicom servers
 using `wado-rs` or `wado-uri`, `CornerstoneWebImageLoader` to load web images such as PNG and JPEG and `cornerstone-nifti-image-loader` for loading NIFTI images).
 However, you might ask yourself:
