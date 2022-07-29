@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.14.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.11...@cornerstonejs/core@0.14.0) (2022-07-29)
+
+
+### Features
+
+* volume viewport api with setProperties ([#154](https://github.com/cornerstonejs/cornerstone3D-beta/issues/154)) ([fab3abe](https://github.com/cornerstonejs/cornerstone3D-beta/commit/fab3abe907ddde1ee61bc121c40d4fc23d2dbfd7))
+
+
+
+
+
 ## [0.13.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.10...@cornerstonejs/core@0.13.11) (2022-07-27)
 
 
