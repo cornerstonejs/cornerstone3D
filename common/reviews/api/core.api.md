@@ -1157,7 +1157,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, }: StackViewportProperties): void;
+    setProperties({ voiRange, invert, interpolationType, rotation }: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
@@ -1360,6 +1360,8 @@ interface IVolumeViewport extends IViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
+    // (undocumented)
+    setProperties({ voiRange }: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -1802,6 +1804,7 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         StackViewportProperties,
+        VolumeViewportProperties,
         PublicViewportInput,
         VolumeActor,
         Actor,
@@ -2139,6 +2142,8 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
+    setProperties({ voiRange }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
@@ -2149,6 +2154,11 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
+
+// @public (undocumented)
+type VolumeViewportProperties = {
+    voiRange?: VOIRange;
+};
 
 declare namespace windowLevel {
     export {

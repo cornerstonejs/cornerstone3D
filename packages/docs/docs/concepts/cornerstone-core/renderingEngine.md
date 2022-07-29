@@ -12,7 +12,7 @@ create multiple engines. However, multiple `RenderingEngine` instances can be cr
 
 In `Cornerstone3D` we have built the `RenderingEngine` from ground up, and we are utilizing [vtk.js](https://github.com/kitware/vtk-js) as the backbone of the rendering. `vtk.js` is a 3D rendering library capable of using WebGL for GPU-accelerated rendering.
 
-## OnScreen and OffScreen Rendering
+## OnScreen and Offscreen Rendering
 
 Previously in Cornerstone (legacy), we processed data in each viewport with a WebGL canvas. This doesn't scale well, as the number of viewports increases
 and for complex imaging use cases (e.g., synced viewports), we will end up with lots

@@ -29,12 +29,10 @@ export default interface IStackViewport extends IViewport {
    * Sets the properties for the viewport on the default actor. Properties include
    * setting the VOI, inverting the colors and setting the interpolation type, rotation
    */
-  setProperties({
-    voiRange,
-    invert,
-    interpolationType,
-    rotation,
-  }: StackViewportProperties): void;
+  setProperties(
+    { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+    suppressEvents?: boolean
+  ): void;
   /**
    * Retrieve the viewport properties
    */

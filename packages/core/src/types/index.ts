@@ -32,6 +32,7 @@ import type {
   ScalingParameters,
 } from './ScalingParameters';
 import type StackViewportProperties from './StackViewportProperties';
+import type VolumeViewportProperties from './VolumeViewportProperties';
 import type IViewportId from './IViewportId';
 import type FlipDirection from './FlipDirection';
 import type ICachedImage from './ICachedImage';
@@ -82,6 +83,7 @@ export type {
   IStreamingVolumeProperties,
   IViewport,
   StackViewportProperties,
+  VolumeViewportProperties,
   PublicViewportInput,
   VolumeActor,
   Actor,

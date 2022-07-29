@@ -825,12 +825,10 @@ interface IStackViewport extends IViewport {
     setCamera(cameraInterface: ICamera): void;
     setColormap(colormap: CPUFallbackColormapData): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
-    setProperties({
-        voiRange,
-        invert,
-        interpolationType,
-        rotation,
-    }: StackViewportProperties): void;
+    setProperties(
+        { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
+    suppressEvents?: boolean
+    ): void;
     setStack(
     imageIds: Array<string>,
     currentImageIdIndex?: number
@@ -982,6 +980,11 @@ interface IVolumeViewport extends IViewport {
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
     immediate?: boolean
+    ): void;
+    setProperties(
+        { voiRange }: VolumeViewportProperties,
+    volumeId?: string,
+    suppressEvents?: boolean
     ): void;
     setSlabThickness(
     slabThickness: number,
@@ -1275,6 +1278,11 @@ type VolumeNewImageEventDetail = {
     numberOfSlices: number;
     viewportId: string;
     renderingEngineId: string;
+};
+
+// @public
+type VolumeViewportProperties = {
+    voiRange?: VOIRange;
 };
 
 // (No @packageDocumentation comment for this package)
