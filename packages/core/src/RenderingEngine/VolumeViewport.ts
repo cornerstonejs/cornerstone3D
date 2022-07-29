@@ -175,6 +175,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       volumeId = actorEntries[0].uid;
     }
 
+    if (!voiRange) {
+      return;
+    }
+
     // Todo: later when we have more properties, refactor the setVoiRange code below
     const { lower, upper } = voiRange;
     volumeActor
