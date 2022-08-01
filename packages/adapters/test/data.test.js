@@ -22,6 +22,7 @@ const {
     ReadBufferStream
 } = dcmjs.data;
 
+const IMPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2";
 const EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
 
 const fileMetaInformationVersionArray = new Uint8Array(2);
@@ -619,4 +620,101 @@ it("Writes encapsulated OB data which has an odd length with a padding byte in i
         0xe0ddfffe, // SequenceDelimiterTag
         0x00000000 // SequenceDelimiterTag value (always zero)
     ]);
+});
+
+describe("With a SpecificCharacterSet tag", () => {
+    it("Reads a long string in the '' character set", async () => {
+        expect(readEncodedLongString("", [0x68, 0x69])).toEqual("hi");
+    });
+
+    it("Reads a long string in the ISO_IR 6 (default) character set", async () => {
+        expect(readEncodedLongString("ISO_IR 6", [0x68, 0x69])).toEqual("hi");
+    });
+
+    it("Reads a long string in the ISO_IR 13 (shift-jis) character set", async () => {
+        expect(readEncodedLongString("ISO_IR 13", [0x83, 0x8b])).toEqual("ル");
+    });
+
+    it("Reads a long string in the ISO_IR 166 (tis-620) character set", async () => {
+        expect(readEncodedLongString("ISO_IR 166", [0xb9, 0xf7])).toEqual("น๗");
+    });
+
+    it("Reads a long string in the ISO_IR 192 (utf-8) character set", async () => {
+        expect(readEncodedLongString("ISO_IR 192", [0xed, 0x95, 0x9c])).toEqual(
+            "한"
+        );
+    });
+
+    it("Throws an exception on an unsupported character set", async () => {
+        expect(() => readEncodedLongString("nope", [])).toThrow(
+            new Error("Unsupported character set: nope")
+        );
+    });
+
+    it("Doesn't throw an exception on an unsupported character set when ignoring errors", async () => {
+        expect(
+            readEncodedLongString("nope", [0x68, 0x69], { ignoreErrors: true })
+        ).toEqual("hi");
+    });
+
+    it("Throws an exception on multiple character sets", async () => {
+        expect(() =>
+            readEncodedLongString("ISO_IR 13\\ISO_IR 166", [])
+        ).toThrow(
+            /Using multiple character sets is not supported: ISO_IR 13,ISO_IR 166/
+        );
+    });
+
+    it("Doesn't throw an exception on multiple character sets when ignoring errors", async () => {
+        expect(
+            readEncodedLongString("ISO_IR 13\\ISO_IR 166", [0x68, 0x69], {
+                ignoreErrors: true
+            })
+        ).toEqual("hi");
+    });
+
+    function readEncodedLongString(
+        specificCharacterSet,
+        encodedBytes,
+        readOptions = { ignoreErrors: false }
+    ) {
+        // Pad to even lengths with spaces if needed
+        if (specificCharacterSet.length & 1) {
+            specificCharacterSet += " ";
+        }
+        if (encodedBytes.length & 1) {
+            encodedBytes.push(0x20);
+        }
+
+        // Manually construct the binary representation for the following two tags:
+        // - Tag #1: SpecificCharacterSet specifying the character set
+        // - Tag #2: InstitutionName which is a long string tag that will have its value
+        //           set to the encoded bytes
+        const stream = new WriteBufferStream(
+            16 + specificCharacterSet.length + encodedBytes.length
+        );
+        stream.isLittleEndian = true;
+
+        // Write SpecificCharacterSet tag
+        stream.writeUint32(0x00050008);
+        stream.writeUint32(specificCharacterSet.length);
+        stream.writeAsciiString(specificCharacterSet);
+
+        // Write InstitutionName tag
+        stream.writeUint32(0x00800008);
+        stream.writeUint32(encodedBytes.length);
+        for (const encodedByte of encodedBytes) {
+            stream.writeUint8(encodedByte);
+        }
+
+        // Read the stream back to get the value of the InstitutionName tag
+        const readResult = DicomMessage._read(
+            new ReadBufferStream(stream.buffer),
+            IMPLICIT_LITTLE_ENDIAN,
+            readOptions
+        );
+
+        // Return the resulting UTF-8 string value for InstitutionName
+        return readResult["00080080"].Value[0];
+    }
 });
