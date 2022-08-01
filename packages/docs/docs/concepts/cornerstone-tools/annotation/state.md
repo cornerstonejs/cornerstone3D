@@ -23,14 +23,14 @@ const annotation = {
   metadata: {
     viewPlaneNormal: Types.Point3, // The view plane normal of the camera
     viewUp: Types.Point3, // The view up vector of the camera
-    FrameOfReferenceUID: // viewport's FrameOfReferenceUID the annotation has been drawn on
-    referencedImageId, // The image ID the annotation has been drawn on (if applicable)
-    toolName, // The tool name
+    FrameOfReferenceUID: string, // viewport's FrameOfReferenceUID the annotation has been drawn on
+    referencedImageId?: string, // The image ID the annotation has been drawn on (if applicable)
+    toolName: string, // The tool name
   },
   data: {
     handles: {
       points: [Types.Point3], // The handles points in world coordinates (probe tool = 1 handle = 1 x,y,z point)
-    }
+    },
     cachedStats: {}, // Stored Statistics for the annotation
   },
 }
@@ -48,7 +48,6 @@ state is stored. Below, you can see a high-level overview of the state object.
 
 </div>
 
-
 ## API
 
 You can get/add annotations using the following API:
@@ -65,9 +64,6 @@ cornerstone3DTools.annotations.state.getAnnotations(element, toolName);
 
 // A helper which returns the single annotation entry matching the UID.
 cornerstone3DTools.annotations.state.getAnnotation(annotationUID);
-
-// Deletes the annotation found by the given UID.
-cornerstone3DTools.annotations.state.removeAnnotation(element, annotationUID);
 ```
 
 ## Read more

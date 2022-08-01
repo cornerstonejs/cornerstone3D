@@ -16,7 +16,7 @@ There are various APIs for locking and unlocking annotations along with get/set 
 import { annotations } from '@cornerstonejs/tools';
 
 // locking of an annotation
-annotations.locking.setAnnotationLocked(annotation);
+annotations.locking.setAnnotationLocked(annotation, (locked = true));
 
 // get all the locked annotations
 annotations.locking.getAnnotationsLocked();
