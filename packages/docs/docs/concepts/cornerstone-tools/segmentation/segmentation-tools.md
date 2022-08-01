@@ -5,7 +5,7 @@ title: Segmentation Tools
 
 # Segmentation Tools
 
-`Cornerstone3DTools` proves a set of tools to modify segmentations. These include
+`Cornerstone3DTools` provides a set of tools to modify segmentations. These include
 the `BrushTool`, Scissors (such as `RectangleScissor`, `CircleScissor`, `SphereScissor`),
 and `RectangleRoiThresholdTool`. We will cover each tool in more detail below.
 
@@ -29,13 +29,11 @@ on how to activate a tool in [Tools](../tools.md#adding-tools) and [ToolGroup](.
 
 ![](../../../assets/rectangle-scissor.gif)
 
-
 ## Circle Scissor Tool
 
 `CircleScissorTool` can be used to create a circular segmentation.
 
 ![](../../../assets/circle-scissor.gif)
-
 
 ## Sphere Scissor Tool
 

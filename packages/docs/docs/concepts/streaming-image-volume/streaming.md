@@ -54,7 +54,7 @@ await ctVolume.load();
 ## `streaming-wadors` imageLoader
 
 As mentioned before, we don't need to create the [`Image`](../cornerstone-core/images.md) object for each imageId in
-the `StreamingImageVolume`. Instead, we can just insert the pixelData of the image is directly inserted into the volume.
+the `StreamingImageVolume`. Instead, we can just insert the pixelData of the image directly into the volume.
 To achieve this, we have created a new `imageLoader` called [`SharedArrayBufferImageLoader`](/api/streaming-image-volume-loader/function/sharedArrayBufferImageLoader) which is small stripped version of the `cornerstoneWADOImageLoader` which loads the images
 but don't create image objects to save memory.
 
@@ -75,7 +75,6 @@ await ctVolume.load();
 ```
 
 ## Alternative implementations to consider
-
 
 Although we believe our pre-fetching method for volumes ensures that the volume is loaded as fast as possible,
 There can be other implementations of volume loaders that don't rely on this prefetching.
