@@ -3,7 +3,10 @@ import { point } from '../../../utilities/math';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 
 export function shouldInterpolate(configuration: Record<any, any>): boolean {
-  return configuration?.interpolation?.enabled === true;
+  return (
+    configuration?.interpolation?.enabled === true ||
+    configuration?.interpolation?.editEnabled === true
+  );
 }
 
 /**
@@ -174,16 +177,24 @@ export function getInterpolatedPoints(
 
   if (interpolation) {
     const {
-      minKnotDistance,
-      editMinKnotDistance,
+      knotsRatioPct,
+      editKnotsRatioPct,
+      forceAllSegment,
       enabled = false,
+      editEnabled = false,
     } = interpolation;
 
-    if (enabled) {
+    const knotsRatioPctToUse = pointsOfReference
+      ? editKnotsRatioPct
+      : knotsRatioPct;
+    const isEnabled = pointsOfReference ? editEnabled : enabled;
+
+    if (isEnabled) {
       // partial or total interpolation
-      const [changedIniIndex, changedEndIndex] = pointsOfReference
-        ? findChangedSegment(points, pointsOfReference)
-        : [0, points.length - 1];
+      const [changedIniIndex, changedEndIndex] =
+        pointsOfReference && !forceAllSegment
+          ? findChangedSegment(points, pointsOfReference)
+          : [0, points.length - 1];
 
       // do not interpolate if there is no valid segment
       if (!points[changedIniIndex] || !points[changedEndIndex]) {
@@ -194,7 +205,7 @@ export function getInterpolatedPoints(
         points,
         changedIniIndex,
         changedEndIndex,
-        pointsOfReference ? editMinKnotDistance : minKnotDistance
+        knotsRatioPctToUse
       );
     }
   }

@@ -158,9 +158,11 @@ class PlanarFreehandROITool extends AnnotationTool {
         // be infinite as the lines become very computationally expensive to draw.
         subPixelResolution: 4,
         interpolation: {
+          editEnabled: false, // used for edit only
           enabled: false,
-          minKnotDistance: 20,
-          editMinKnotDistance: 10, // used for edit only
+          knotsRatioPct: 40,
+          editKnotsRatioPct: 40,
+          forceAllSegment: false,
         },
       },
     }
