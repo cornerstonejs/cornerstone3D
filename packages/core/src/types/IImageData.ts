@@ -1,5 +1,5 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Point3, Scaling } from '../types';
+import { Point3, Scaling, IImage } from '../types';
 
 /**
  * IImageData of an image, which stores actual scalarData and metaData about the image.
@@ -20,6 +20,8 @@ interface IImageData {
   imageData: vtkImageData;
   /** image metadata - currently only modality */
   metadata: { Modality: string };
+  /** cornerstone image */
+  image: IImage;
   /** image scaling for scaling pixelArray */
   scaling?: Scaling;
   /** whether the image has pixel spacing and it is not undefined */

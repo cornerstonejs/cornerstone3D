@@ -1,4 +1,4 @@
-import { Point3, Scaling } from '../types';
+import { Point3, Scaling, IImage } from '../types';
 
 type CPUImageData = {
   worldToIndex?: (point: Point3) => Point3;
@@ -21,6 +21,8 @@ type CPUIImageData = {
   imageData: CPUImageData;
   metadata: { Modality: string };
   scalarData: number[];
+  /** cornerstone image object */
+  image: IImage;
   scaling: Scaling;
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;

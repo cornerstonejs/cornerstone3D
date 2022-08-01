@@ -72,7 +72,8 @@ export default class WindowLevelTool extends BaseTool {
       const properties = viewport.getProperties();
       modality = viewport.modality;
       ({ lower, upper } = properties.voiRange);
-      isPreScaled = viewport.isImagePreScaled(viewport.getCurrentImageId());
+      const { image } = viewport.getImageData();
+      isPreScaled = image.preScale?.scaled;
     } else {
       throw new Error('Viewport is not a valid type');
     }

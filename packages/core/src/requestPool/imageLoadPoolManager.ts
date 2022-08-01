@@ -18,9 +18,6 @@ import { RequestPoolManager } from './requestPoolManager';
  *     offset: null,
  *     length: null,
  *   },
- *   preScale: {
- *     scalingParameters,
- *   },
  * }
  *
  * imageLoadPoolManager.addRequest(
