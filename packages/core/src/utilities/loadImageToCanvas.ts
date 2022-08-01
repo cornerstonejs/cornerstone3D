@@ -5,7 +5,6 @@ import * as metaData from '../metaData';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvas from './renderToCanvas';
-import getScalingParameters from './getScalingParameters';
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the CPU rendering pipeline
@@ -56,8 +55,6 @@ export default function loadImageToCanvas(
       );
     }
 
-    const scalingParameters = getScalingParameters(imageId);
-
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
@@ -65,9 +62,6 @@ export default function loadImageToCanvas(
         type: 'Float32Array',
         offset: null,
         length: null,
-      },
-      preScale: {
-        scalingParameters,
       },
       requestType,
     };

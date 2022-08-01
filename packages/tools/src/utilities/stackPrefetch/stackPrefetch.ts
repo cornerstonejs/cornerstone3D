@@ -240,18 +240,10 @@ function prefetch(element) {
     }
   }
 
-  // if (preventCache) {
-  //   requestFn = (id) => external.cornerstone.loadImage(id, options);
-  // } else {
-  //
-  // }
-
   const requestFn = (imageId, options) =>
     imageLoader.loadAndCacheImage(imageId, options);
 
   imageIdsToPrefetch.forEach((imageId) => {
-    const scalingParameters = csUtils.getScalingParameters(imageId);
-
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
@@ -259,9 +251,6 @@ function prefetch(element) {
         type: 'Float32Array',
         offset: null,
         length: null,
-      },
-      preScale: {
-        scalingParameters,
       },
       requestType,
     };

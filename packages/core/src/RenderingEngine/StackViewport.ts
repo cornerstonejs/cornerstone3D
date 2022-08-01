@@ -61,7 +61,6 @@ import {
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
-import getScalingParameters from '../utilities/getScalingParameters';
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
@@ -1497,12 +1496,6 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const scalingParameters = getScalingParameters(imageId);
-
-      if (imageId) {
-        this.scalingCache[imageId] = scalingParameters;
-      }
-
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
       const type = 'Float32Array';
@@ -1515,9 +1508,6 @@ class StackViewport extends Viewport implements IStackViewport {
           type,
           offset: null,
           length: null,
-        },
-        preScale: {
-          scalingParameters,
         },
         useRGBA: false,
       };
@@ -1587,12 +1577,6 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const scalingParameters = getScalingParameters(imageId);
-
-      if (scalingParameters) {
-        this.scalingCache[imageId] = scalingParameters;
-      }
-
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
       const type = 'Float32Array';
@@ -1606,9 +1590,6 @@ class StackViewport extends Viewport implements IStackViewport {
           type,
           offset: null,
           length: null,
-        },
-        preScale: {
-          scalingParameters,
         },
         useRGBA: false,
       };
