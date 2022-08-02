@@ -416,6 +416,10 @@ export default class StreamingImageVolume extends ImageVolume {
           type,
         },
         preScale: {
+          enabled: true,
+          // we need to pass in the scalingParameters here, since the streaming
+          // volume loader doesn't go through the createImage phase in the loader,
+          // and therefore doesn't have the scalingParameters
           scalingParameters,
         },
       };

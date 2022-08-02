@@ -344,8 +344,19 @@ type CPUIImageData = {
         Modality: string;
     };
     scalarData: number[];
+    image: IImage;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    preScale?: {
+        enabled?: boolean;
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
 };
 
 // @public (undocumented)
@@ -720,6 +731,16 @@ interface IImage {
     // (undocumented)
     numComps: number;
     // (undocumented)
+    preScale?: {
+        scaled: boolean;
+        scalingParameters: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
+    // (undocumented)
     render?: (enabledElement: CPUFallbackEnabledElement, invalidated: boolean) => unknown;
     // (undocumented)
     rgba: boolean;
@@ -779,6 +800,17 @@ interface IImageData {
     };
     // (undocumented)
     origin: Point3;
+    // (undocumented)
+    preScale?: {
+        enabled?: boolean;
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     // (undocumented)
     scalarData: Float32Array;
     // (undocumented)
@@ -1135,8 +1167,6 @@ interface IStackViewport extends IViewport {
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
-    // (undocumented)
-    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     // (undocumented)
@@ -1685,8 +1715,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
-    // (undocumented)
-    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     // (undocumented)

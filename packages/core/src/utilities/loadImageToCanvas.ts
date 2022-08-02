@@ -63,6 +63,9 @@ export default function loadImageToCanvas(
         offset: null,
         length: null,
       },
+      preScale: {
+        enabled: true,
+      },
       requestType,
     };
 

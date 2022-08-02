@@ -274,7 +274,9 @@ class StackViewport extends Viewport implements IStackViewport {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      image: this.csImage,
+      preScale: {
+        ...this.csImage.preScale,
+      },
     };
   }
 
@@ -1419,7 +1421,8 @@ class StackViewport extends Viewport implements IStackViewport {
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
         const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
-        image.isPreScaled = image.preScale && image.preScale.scaled;
+
+        image.isPreScaled = image.preScale?.scaled;
 
         const viewport = getDefaultViewport(
           this.canvas,
@@ -1511,6 +1514,9 @@ class StackViewport extends Viewport implements IStackViewport {
           offset: null,
           length: null,
         },
+        preScale: {
+          enabled: true,
+        },
         useRGBA: false,
       };
 
@@ -1594,6 +1600,9 @@ class StackViewport extends Viewport implements IStackViewport {
           type,
           offset: null,
           length: null,
+        },
+        preScale: {
+          enabled: true,
         },
         useRGBA: false,
       };

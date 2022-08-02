@@ -252,6 +252,9 @@ function prefetch(element) {
         offset: null,
         length: null,
       },
+      preScale: {
+        enabled: true,
+      },
       requestType,
     };
 

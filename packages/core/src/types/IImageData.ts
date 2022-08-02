@@ -20,12 +20,27 @@ interface IImageData {
   imageData: vtkImageData;
   /** image metadata - currently only modality */
   metadata: { Modality: string };
-  /** cornerstone image */
-  image: IImage;
   /** image scaling for scaling pixelArray */
   scaling?: Scaling;
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
+  /** preScale object */
+  preScale?: {
+    enabled?: boolean;
+    /** boolean flag to indicate whether the image has been scaled */
+    scaled?: boolean;
+    /** scaling parameters */
+    scalingParameters?: {
+      /** modality of the image */
+      modality?: string;
+      /** rescale slop */
+      rescaleSlope?: number;
+      /** rescale intercept */
+      rescaleIntercept?: number;
+      /** PT suvbw */
+      suvbw?: number;
+    };
+  };
 }
 
 export default IImageData;

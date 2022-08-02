@@ -134,8 +134,4 @@ export default interface IStackViewport extends IViewport {
    * It sets the colormap to the default colormap.
    */
   unsetColormap(): void;
-  /**
-   * Checks if the imageId is preScaled when loaded
-   */
-  isImagePreScaled(imageId: string): boolean;
 }
