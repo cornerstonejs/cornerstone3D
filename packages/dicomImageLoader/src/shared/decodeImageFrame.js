@@ -219,8 +219,15 @@ function postProcessDecodedPixels(imageFrame, options, start) {
     pixelDataArray = typedArray;
   }
 
-  if (options.preScale && options.preScale.scalingParameters) {
-    const { scalingParameters } = options.preScale;
+  if (options.preScale.enabled) {
+    const scalingParameters = options.preScale.scalingParameters;
+
+    if (!scalingParameters) {
+      throw new Error(
+        'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'
+      );
+    }
+
     const { rescaleSlope, rescaleIntercept } = scalingParameters;
 
     if (
@@ -229,8 +236,8 @@ function postProcessDecodedPixels(imageFrame, options, start) {
     ) {
       if (scaleArray(pixelDataArray, scalingParameters)) {
         imageFrame.preScale = {
+          ...options.preScale,
           scaled: true,
-          scalingParameters,
         };
       }
     }

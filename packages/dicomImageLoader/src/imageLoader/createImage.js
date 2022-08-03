@@ -6,6 +6,7 @@ import convertColorSpace from './convertColorSpace.js';
 import getMinMax from '../shared/getMinMax.js';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor.js';
 import { getOptions } from './internal/options.js';
+import getScalingParameters from './getScalingParameters.js';
 
 let lastImageIdDrawn = '';
 
@@ -102,6 +103,14 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
     useRGBA = options.useRGBA;
   }
 
+  // always preScale the pixel array unless it is asked not to
+  options.preScale = {
+    enabled:
+      options.preScale && options.preScale.enabled !== undefined
+        ? options.preScale.enabled
+        : false,
+  };
+
   if (!pixelData || !pixelData.length) {
     return Promise.reject(new Error('The file does not contain image data.'));
   }
@@ -110,6 +119,20 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
 
+  // Get the scaling parameters from the metadata
+  if (options.preScale.enabled) {
+    const scalingParameters = getScalingParameters(
+      cornerstone.metaData,
+      imageId
+    );
+
+    if (scalingParameters) {
+      options.preScale = {
+        ...options.preScale,
+        scalingParameters,
+      };
+    }
+  }
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,
