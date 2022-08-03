@@ -11,6 +11,22 @@ interface IImage {
   sharedCacheKey?: string;
   /** Whether the image is Pre-scaled during loading */
   isPreScaled?: boolean;
+  /** preScale object */
+  preScale?: {
+    /** boolean flag to indicate whether the image has been scaled */
+    scaled: boolean;
+    /** scaling parameters */
+    scalingParameters: {
+      /** modality of the image */
+      modality?: string;
+      /** rescale slop */
+      rescaleSlope?: number;
+      /** rescale intercept */
+      rescaleIntercept?: number;
+      /** PT suvbw */
+      suvbw?: number;
+    };
+  };
   /** minimum pixel value of the image */
   minPixelValue: number;
   /* maximum pixel value of the image */

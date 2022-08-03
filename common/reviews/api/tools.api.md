@@ -961,6 +961,15 @@ type CPUIImageData = {
     scalarData: number[];
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
 };
 
 // @public (undocumented)
@@ -1867,6 +1876,15 @@ interface IImage {
     minPixelValue: number;
     modalityLUT?: CPUFallbackLUT;
     numComps: number;
+    preScale?: {
+        scaled: boolean;
+        scalingParameters: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     render?: (
     enabledElement: CPUFallbackEnabledElement,
     invalidated: boolean
@@ -1911,6 +1929,15 @@ interface IImageData {
     imageData: vtkImageData;
     metadata: { Modality: string };
     origin: Point3;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     scalarData: Float32Array;
     scaling?: Scaling;
     spacing: Point3;
@@ -2172,7 +2199,6 @@ interface IStackViewport extends IViewport {
     getRenderer(): any;
     hasImageId: (imageId: string) => boolean;
     hasImageURI: (imageURI: string) => boolean;
-    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;

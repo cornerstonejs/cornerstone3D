@@ -170,6 +170,7 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
     preScale: {
+      enabled: true,
       scalingParameters: scalingParametersToUse,
     },
   };

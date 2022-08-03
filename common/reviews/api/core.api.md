@@ -346,6 +346,15 @@ type CPUIImageData = {
     scalarData: number[];
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
 };
 
 // @public (undocumented)
@@ -563,9 +572,6 @@ export function getRenderingEngines(): IRenderingEngine[] | undefined;
 function getRuntimeId(context?: unknown, separator?: string, max?: number): string;
 
 // @public (undocumented)
-function getScalingParameters(imageId: string): ScalingParameters | undefined;
-
-// @public (undocumented)
 export function getShouldUseCPURendering(): boolean;
 
 // @public (undocumented)
@@ -723,6 +729,16 @@ interface IImage {
     // (undocumented)
     numComps: number;
     // (undocumented)
+    preScale?: {
+        scaled: boolean;
+        scalingParameters: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
+    // (undocumented)
     render?: (enabledElement: CPUFallbackEnabledElement, invalidated: boolean) => unknown;
     // (undocumented)
     rgba: boolean;
@@ -782,6 +798,16 @@ interface IImageData {
     };
     // (undocumented)
     origin: Point3;
+    // (undocumented)
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     // (undocumented)
     scalarData: Float32Array;
     // (undocumented)
@@ -1138,8 +1164,6 @@ interface IStackViewport extends IViewport {
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
-    // (undocumented)
-    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     // (undocumented)
@@ -1689,8 +1713,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
-    isImagePreScaled(imageId: string): boolean;
-    // (undocumented)
     modality: string;
     // (undocumented)
     removeAllActors(): void;
@@ -1877,7 +1899,6 @@ declare namespace utilities {
         getSliceRange,
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
-        getScalingParameters,
         isImageActor
     }
 }

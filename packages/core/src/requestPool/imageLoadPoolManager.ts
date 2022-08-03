@@ -19,7 +19,7 @@ import { RequestPoolManager } from './requestPoolManager';
  *     length: null,
  *   },
  *   preScale: {
- *     scalingParameters,
+ *     enabled: true,
  *   },
  * }
  *

@@ -153,6 +153,10 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     volumeId?: string,
     suppressEvents = false
   ): void {
+    if (volumeId !== undefined && !this.getActor(volumeId)) {
+      return;
+    }
+
     const actorEntries = this.getActors();
 
     if (!actorEntries.length) {
@@ -169,7 +173,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       volumeActor = actorEntry?.actor as vtkVolume;
     }
 
-    // set it for the first volume (if there are more than one - fusion)
+    // // set it for the first volume (if there are more than one - fusion)
     if (!volumeActor) {
       volumeActor = actorEntries[0].actor as vtkVolume;
       volumeId = actorEntries[0].uid;
@@ -181,10 +185,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     // Todo: later when we have more properties, refactor the setVoiRange code below
     const { lower, upper } = voiRange;
-    volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .setMappingRange(lower, upper);
+    volumeActor.getProperty().getRGBTransferFunction(0).setRange(lower, upper);
 
     if (!suppressEvents) {
       const eventDetail: VoiModifiedEventDetail = {

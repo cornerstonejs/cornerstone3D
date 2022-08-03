@@ -53,8 +53,8 @@ type RequestPool = {
  *     length: null,
  *   },
  *   preScale: {
- *     scalingParameters,
- *   },
+ *      enabled: true,
+ *    },
  * }
  *
  * imageLoadPoolManager.addRequest(
