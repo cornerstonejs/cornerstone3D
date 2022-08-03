@@ -44,6 +44,7 @@ import {
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -533,6 +534,7 @@ export default class ProbeTool extends AnnotationTool {
     }
 
     const textLines = [];
+    const unit = getModalityUnit(Modality);
 
     textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
@@ -551,10 +553,8 @@ export default class ProbeTool extends AnnotationTool {
           textLines.push(`${SUVBsa.toFixed(2)} SUV bsa`);
         }
       }
-    } else if (Modality === 'CT') {
-      textLines.push(`${value.toFixed(2)} HU`);
     } else {
-      textLines.push(`${value.toFixed(2)} MO`);
+      textLines.push(`${value.toFixed(2)} ${unit}`);
     }
 
     return textLines;

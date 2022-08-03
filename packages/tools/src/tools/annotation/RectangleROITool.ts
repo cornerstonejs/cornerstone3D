@@ -49,6 +49,7 @@ import {
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -841,31 +842,12 @@ export default class RectangleROITool extends AnnotationTool {
     }
 
     const textLines = [];
+    const unit = getModalityUnit(Modality);
 
-    const areaLine = `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
-    let meanLine = `Mean: ${mean.toFixed(2)}`;
-    let maxLine = `Max: ${max.toFixed(2)}`;
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
-
-    // Give appropriate units for the modality.
-    if (Modality === 'PT') {
-      meanLine += ' SUV';
-      maxLine += ' SUV';
-      stdDevLine += ' SUV';
-    } else if (Modality === 'CT') {
-      meanLine += ' HU';
-      maxLine += ' HU';
-      stdDevLine += ' HU';
-    } else {
-      meanLine += ' MO';
-      maxLine += ' MO';
-      stdDevLine += ' MO';
-    }
-
-    textLines.push(areaLine);
-    textLines.push(maxLine);
-    textLines.push(meanLine);
-    textLines.push(stdDevLine);
+    textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
+    textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
+    textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
+    textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
 
     return textLines;
   };
