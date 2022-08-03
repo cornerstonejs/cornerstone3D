@@ -874,18 +874,10 @@ type CPUFallbackRenderingTools = {
         voiLUT: CPUFallbackLUT;
         colormap: unknown;
     };
-    renderCanvasContext?: {
-        putImageData: (
-        renderCanvasData: unknown,
-        dx: number,
-        dy: number
-        ) => unknown;
-    };
+    renderCanvasContext?: CanvasRenderingContext2D;
     colormapId?: string;
     colorLUT?: CPUFallbackLookupTable;
-    renderCanvasData?: {
-        data: Uint8ClampedArray;
-    };
+    renderCanvasData?: ImageData;
 };
 
 // @public (undocumented)
@@ -2868,13 +2860,13 @@ declare namespace orientation_2 {
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _dragCallback(evt: any): void;
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 declare namespace planar {
@@ -3807,11 +3799,11 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     _getPixelPerImage(viewport: any): number;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // @public
@@ -4112,15 +4104,15 @@ type ToolStyleConfig = {
 export class TrackballRotateTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _dragCallback(evt: any): void;
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // @public
@@ -4397,7 +4389,7 @@ export class WindowLevelTool extends BaseTool {
         supportedInteractionTypes: string[];
     });
     // (undocumented)
-    _dragCallback(evt: any): void;
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
     // (undocumented)
     _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
@@ -4426,11 +4418,11 @@ export class WindowLevelTool extends BaseTool {
         upper: any;
     };
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // @public (undocumented)
@@ -4447,13 +4439,13 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     initialMousePosWorld: Types_2.Point3;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // (No @packageDocumentation comment for this package)

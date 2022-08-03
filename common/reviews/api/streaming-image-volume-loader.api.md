@@ -225,18 +225,10 @@ type CPUFallbackRenderingTools = {
         voiLUT: CPUFallbackLUT;
         colormap: unknown;
     };
-    renderCanvasContext?: {
-        putImageData: (
-        renderCanvasData: unknown,
-        dx: number,
-        dy: number
-        ) => unknown;
-    };
+    renderCanvasContext?: CanvasRenderingContext2D;
     colormapId?: string;
     colorLUT?: CPUFallbackLookupTable;
-    renderCanvasData?: {
-        data: Uint8ClampedArray;
-    };
+    renderCanvasData?: ImageData;
 };
 
 // @public (undocumented)
