@@ -112,6 +112,7 @@
         cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.load(url, cornerstoneWADOImageLoader.internal.xhrRequest).then(function(dataSet) {
             // dataset is now loaded, get the # of frames so we can build the array of imageIds
             var numFrames = dataSet.intString('x00280008');
+            var FrameRate = 1000/dataSet.floatString('x00181063');
             if(!numFrames) {
                 alert('Missing element NumberOfFrames (0028,0008)');
                 return;
@@ -146,9 +147,7 @@
                     cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);
                     cornerstoneTools.addToolState(element, 'stack', stack);
                     // Start playing the clip
-                    // TODO: extract the frame rate from the dataset
-                    var frameRate = 10;
-                    cornerstoneTools.playClip(element, frameRate);
+                    cornerstoneTools.playClip(element, FrameRate);
                     loaded = true;
                 }
             }, function(err) {
