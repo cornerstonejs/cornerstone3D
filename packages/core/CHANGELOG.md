@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.1...@cornerstonejs/core@0.14.2) (2022-08-03)
+
+
+### Bug Fixes
+
+* wadouri metadata was not using scaling parameters properly ([#159](https://github.com/cornerstonejs/cornerstone3D-beta/issues/159)) ([d21aba5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d21aba56f1e0a8730088d89a4dfde8358d978a60))
+
+
+
+
+
 ## [0.14.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.0...@cornerstonejs/core@0.14.1) (2022-08-03)
 
 

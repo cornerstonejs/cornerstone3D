@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.14](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.4.13...@cornerstonejs/streaming-image-volume-loader@0.4.14) (2022-08-03)
+
+
+### Bug Fixes
+
+* wadouri metadata was not using scaling parameters properly ([#159](https://github.com/cornerstonejs/cornerstone3D-beta/issues/159)) ([d21aba5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d21aba56f1e0a8730088d89a4dfde8358d978a60))
+
+
+
+
+
 ## [0.4.13](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.4.12...@cornerstonejs/streaming-image-volume-loader@0.4.13) (2022-08-03)
 
 
