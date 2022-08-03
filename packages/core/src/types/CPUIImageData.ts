@@ -21,14 +21,11 @@ type CPUIImageData = {
   imageData: CPUImageData;
   metadata: { Modality: string };
   scalarData: number[];
-  /** cornerstone image object */
-  image: IImage;
   scaling: Scaling;
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
   /** preScale object */
   preScale?: {
-    enabled?: boolean;
     /** boolean flag to indicate whether the image has been scaled */
     scaled?: boolean;
     /** scaling parameters */

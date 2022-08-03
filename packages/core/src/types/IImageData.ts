@@ -26,7 +26,6 @@ interface IImageData {
   hasPixelSpacing?: boolean;
   /** preScale object */
   preScale?: {
-    enabled?: boolean;
     /** boolean flag to indicate whether the image has been scaled */
     scaled?: boolean;
     /** scaling parameters */

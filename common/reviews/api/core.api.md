@@ -344,11 +344,9 @@ type CPUIImageData = {
         Modality: string;
     };
     scalarData: number[];
-    image: IImage;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
     preScale?: {
-        enabled?: boolean;
         scaled?: boolean;
         scalingParameters?: {
             modality?: string;
@@ -802,7 +800,6 @@ interface IImageData {
     origin: Point3;
     // (undocumented)
     preScale?: {
-        enabled?: boolean;
         scaled?: boolean;
         scalingParameters?: {
             modality?: string;

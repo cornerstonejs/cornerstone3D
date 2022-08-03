@@ -315,7 +315,9 @@ class StackViewport extends Viewport implements IStackViewport {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
-      image: image,
+      preScale: {
+        ...this.csImage.preScale,
+      },
     };
   }
 
