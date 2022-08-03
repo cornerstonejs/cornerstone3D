@@ -19,7 +19,7 @@ type Metadata = {
   /** Image Modality */
   Modality: string;
   /** SeriesInstanceUID of the volume */
-  SeriesInstanceUID: string;
+  SeriesInstanceUID?: string;
   /** The direction cosines of the first row and the first column with respect to the patient */
   ImageOrientationPatient: Array<number>;
   /** Physical distance in the patient between the center of each pixel */
