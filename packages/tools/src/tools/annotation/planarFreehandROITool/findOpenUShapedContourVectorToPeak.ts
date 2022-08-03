@@ -31,7 +31,7 @@ export default function findOpenUShapedContourVectorToPeak(
   vec2.set(normalVector2, firstToLastUnitVector[1], -firstToLastUnitVector[0]);
 
   // Find the center of the chord.
-  const centerOfFirstToLast = [
+  const centerOfFirstToLast: Types.Point2 = [
     (first[0] + last[0]) / 2,
     (first[1] + last[1]) / 2,
   ];
@@ -54,7 +54,10 @@ export default function findOpenUShapedContourVectorToPeak(
     }
   }
 
-  const toFurthest = [canvasPoints[furthest.index], centerOfFirstToLast];
+  const toFurthest: [Types.Point2, Types.Point2] = [
+    canvasPoints[furthest.index],
+    centerOfFirstToLast,
+  ];
   const toFurthestWorld = toFurthest.map(viewport.canvasToWorld);
 
   return toFurthestWorld;

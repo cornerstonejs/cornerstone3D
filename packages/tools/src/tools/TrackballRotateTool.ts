@@ -3,7 +3,7 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
-import { PublicToolProps, ToolProps } from '../types';
+import { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 
 /**
@@ -11,8 +11,8 @@ import { BaseTool } from './base';
  */
 export default class TrackballRotateTool extends BaseTool {
   static toolName = 'TrackballRotate';
-  touchDragCallback: () => void;
-  mouseDragCallback: () => void;
+  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -63,7 +63,7 @@ export default class TrackballRotateTool extends BaseTool {
 
   // pseudocode inspired from
   // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js
-  _dragCallback(evt): void {
+  _dragCallback(evt: EventTypes.MouseDragEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;
     const currentPointsCanvas = currentPoints.canvas;
     const lastPointsCanvas = lastPoints.canvas;

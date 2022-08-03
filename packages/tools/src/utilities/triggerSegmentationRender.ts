@@ -127,7 +127,7 @@ class SegmentationRenderingEngine {
 
       element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
-        onSegmentationRender
+        onSegmentationRender as EventListener
       );
 
       const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
