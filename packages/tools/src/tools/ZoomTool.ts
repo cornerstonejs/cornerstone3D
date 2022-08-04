@@ -12,8 +12,8 @@ import { EventTypes, PublicToolProps, ToolProps } from '../types';
  */
 export default class ZoomTool extends BaseTool {
   static toolName = 'Zoom';
-  touchDragCallback: () => void;
-  mouseDragCallback: () => void;
+  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
 

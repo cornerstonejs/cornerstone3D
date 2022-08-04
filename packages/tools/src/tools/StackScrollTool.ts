@@ -15,8 +15,8 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
 export default class StackScrollTool extends BaseTool {
   static toolName = 'StackScroll';
   deltaY: number;
-  touchDragCallback: () => void;
-  mouseDragCallback: () => void;
+  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
 
   constructor(
     toolProps: PublicToolProps = {},

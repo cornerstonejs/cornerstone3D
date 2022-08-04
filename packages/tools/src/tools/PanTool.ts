@@ -2,15 +2,15 @@ import { BaseTool } from './base';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { PublicToolProps, ToolProps } from '../types';
+import { EventTypes, PublicToolProps, ToolProps } from '../types';
 
 /**
  * Tool that pans the camera in the plane defined by the sliceNormal and the viewUp.
  */
 export default class PanTool extends BaseTool {
   static toolName = 'Pan';
-  touchDragCallback: () => void;
-  mouseDragCallback: () => void;
+  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -24,7 +24,7 @@ export default class PanTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  _dragCallback(evt) {
+  _dragCallback(evt: EventTypes.MouseDragEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
 

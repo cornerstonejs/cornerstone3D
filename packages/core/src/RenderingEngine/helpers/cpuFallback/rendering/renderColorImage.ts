@@ -50,10 +50,10 @@ function getLut(image: IImage, viewport: CPUFallbackViewport) {
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
  * it is returned, otherwise adjustments are made. It also sets the color transfer functions.
  *
- * @param {Object} enabledElement The cornerstone enabled element
- * @param {Object} image The image to be rendered
- * @param {Boolean} invalidated Is pixel data valid
- * @returns {HTMLCanvasElement} An appropriate canvas for rendering the image
+ * @param enabledElement - The cornerstone enabled element
+ * @param image - The image to be rendered
+ * @param invalidated - Is pixel data valid
+ * @returns An appropriate canvas for rendering the image
  * @memberof rendering
  */
 function getRenderCanvas(

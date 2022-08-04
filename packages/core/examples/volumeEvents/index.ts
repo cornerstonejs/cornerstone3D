@@ -74,36 +74,33 @@ let eventNumber = 1;
 
 const { IMAGE_RENDERED, CAMERA_MODIFIED, VOLUME_NEW_IMAGE } = Enums.Events;
 
-element.addEventListener(
-  IMAGE_RENDERED,
-  (evt: Types.EventTypes.ImageRenderedEvent) => {
-    updateLastEvents(eventNumber, IMAGE_RENDERED, JSON.stringify(evt.detail));
-    eventNumber++;
-  }
-);
+element.addEventListener(IMAGE_RENDERED, ((
+  evt: Types.EventTypes.ImageRenderedEvent
+) => {
+  updateLastEvents(eventNumber, IMAGE_RENDERED, JSON.stringify(evt.detail));
+  eventNumber++;
+}) as EventListener);
 
-element.addEventListener(
-  CAMERA_MODIFIED,
-  (evt: Types.EventTypes.CameraModifiedEvent) => {
-    updateLastEvents(eventNumber, CAMERA_MODIFIED, JSON.stringify(evt.detail));
-    eventNumber++;
-  }
-);
+element.addEventListener(CAMERA_MODIFIED, ((
+  evt: Types.EventTypes.CameraModifiedEvent
+) => {
+  updateLastEvents(eventNumber, CAMERA_MODIFIED, JSON.stringify(evt.detail));
+  eventNumber++;
+}) as EventListener);
 
-element.addEventListener(
-  VOLUME_NEW_IMAGE,
-  (evt: Types.EventTypes.VolumeNewImageEvent) => {
-    const { imageIndex, renderingEngineId, viewportId } = evt.detail;
-    const detail = {
-      imageIndex,
-      renderingEngineId,
-      viewportId,
-    };
+element.addEventListener(VOLUME_NEW_IMAGE, ((
+  evt: Types.EventTypes.VolumeNewImageEvent
+) => {
+  const { imageIndex, renderingEngineId, viewportId } = evt.detail;
+  const detail = {
+    imageIndex,
+    renderingEngineId,
+    viewportId,
+  };
 
-    updateLastEvents(eventNumber, VOLUME_NEW_IMAGE, JSON.stringify(detail));
-    eventNumber++;
-  }
-);
+  updateLastEvents(eventNumber, VOLUME_NEW_IMAGE, JSON.stringify(detail));
+  eventNumber++;
+}) as EventListener);
 
 // ============================= //
 

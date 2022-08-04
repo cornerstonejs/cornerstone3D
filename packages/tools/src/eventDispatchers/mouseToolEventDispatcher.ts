@@ -18,14 +18,20 @@ import {
  * @param element - The element to add the event listeners to.
  */
 const enable = function (element: HTMLDivElement): void {
-  element.addEventListener(Events.MOUSE_CLICK, mouseClick);
-  element.addEventListener(Events.MOUSE_DOWN, mouseDown);
-  element.addEventListener(Events.MOUSE_DOWN_ACTIVATE, mouseDownActivate);
-  element.addEventListener(Events.MOUSE_DOUBLE_CLICK, mouseDoubleClick);
-  element.addEventListener(Events.MOUSE_DRAG, mouseDrag);
-  element.addEventListener(Events.MOUSE_MOVE, mouseMove);
-  element.addEventListener(Events.MOUSE_UP, mouseUp);
-  element.addEventListener(Events.MOUSE_WHEEL, mouseWheel);
+  element.addEventListener(Events.MOUSE_CLICK, mouseClick as EventListener);
+  element.addEventListener(Events.MOUSE_DOWN, mouseDown as EventListener);
+  element.addEventListener(
+    Events.MOUSE_DOWN_ACTIVATE,
+    mouseDownActivate as EventListener
+  );
+  element.addEventListener(
+    Events.MOUSE_DOUBLE_CLICK,
+    mouseDoubleClick as EventListener
+  );
+  element.addEventListener(Events.MOUSE_DRAG, mouseDrag as EventListener);
+  element.addEventListener(Events.MOUSE_MOVE, mouseMove as EventListener);
+  element.addEventListener(Events.MOUSE_UP, mouseUp as EventListener);
+  element.addEventListener(Events.MOUSE_WHEEL, mouseWheel as EventListener);
 };
 
 /**
@@ -34,14 +40,20 @@ const enable = function (element: HTMLDivElement): void {
  * @param element - HTMLDivElement
  */
 const disable = function (element: HTMLDivElement) {
-  element.removeEventListener(Events.MOUSE_CLICK, mouseClick);
-  element.removeEventListener(Events.MOUSE_DOWN, mouseDown);
-  element.removeEventListener(Events.MOUSE_DOWN_ACTIVATE, mouseDownActivate);
-  element.removeEventListener(Events.MOUSE_DOUBLE_CLICK, mouseDoubleClick);
-  element.removeEventListener(Events.MOUSE_DRAG, mouseDrag);
-  element.removeEventListener(Events.MOUSE_MOVE, mouseMove);
-  element.removeEventListener(Events.MOUSE_UP, mouseUp);
-  element.removeEventListener(Events.MOUSE_WHEEL, mouseWheel);
+  element.removeEventListener(Events.MOUSE_CLICK, mouseClick as EventListener);
+  element.removeEventListener(Events.MOUSE_DOWN, mouseDown as EventListener);
+  element.removeEventListener(
+    Events.MOUSE_DOWN_ACTIVATE,
+    mouseDownActivate as EventListener
+  );
+  element.removeEventListener(
+    Events.MOUSE_DOUBLE_CLICK,
+    mouseDoubleClick as EventListener
+  );
+  element.removeEventListener(Events.MOUSE_DRAG, mouseDrag as EventListener);
+  element.removeEventListener(Events.MOUSE_MOVE, mouseMove as EventListener);
+  element.removeEventListener(Events.MOUSE_UP, mouseUp as EventListener);
+  element.removeEventListener(Events.MOUSE_WHEEL, mouseWheel as EventListener);
 };
 
 const mouseToolEventDispatcher = {

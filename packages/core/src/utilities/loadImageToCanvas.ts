@@ -47,7 +47,7 @@ export default function loadImageToCanvas(
     function sendRequest(imageId, imageIdIndex, options) {
       return loadAndCacheImage(imageId, options).then(
         (image) => {
-          successCallback.call(this, image, imageId, imageIdIndex);
+          successCallback.call(this, image, imageId);
         },
         (error) => {
           errorCallback.call(this, error, imageId);

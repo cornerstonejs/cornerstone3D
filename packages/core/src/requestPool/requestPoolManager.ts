@@ -1,4 +1,5 @@
 import RequestType from '../enums/RequestType';
+import { IImage } from '../types';
 import { uuidv4 } from '../utilities';
 
 type AdditionalDetails = {
@@ -7,7 +8,7 @@ type AdditionalDetails = {
 };
 
 type RequestDetailsInterface = {
-  requestFn: () => Promise<void>;
+  requestFn: () => Promise<IImage | void>;
   type: RequestType;
   additionalDetails: AdditionalDetails;
 };
@@ -141,7 +142,7 @@ class RequestPoolManager {
    *
    */
   public addRequest(
-    requestFn: () => Promise<void>,
+    requestFn: () => Promise<IImage | void>,
     type: RequestType,
     additionalDetails: Record<string, unknown>,
     priority = 0

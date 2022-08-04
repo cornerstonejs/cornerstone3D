@@ -6,7 +6,7 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
-  utilities as csUtils,
+  Types,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState } from './state';
 
