@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.2...@cornerstonejs/core@0.14.3) (2022-08-04)
+
+
+### Bug Fixes
+
+* make typescript strict true ([#162](https://github.com/cornerstonejs/cornerstone3D-beta/issues/162)) ([7c311f7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7c311f77f0532372ae82b6be2027bcd25925fa0d))
+
+
+
+
+
 ## [0.14.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.1...@cornerstonejs/core@0.14.2) (2022-08-03)
 
 
