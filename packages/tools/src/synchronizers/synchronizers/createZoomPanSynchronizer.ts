@@ -1,6 +1,6 @@
 import { createSynchronizer } from '../../store/SynchronizerManager';
 import { Enums } from '@cornerstonejs/core';
-import cameraSyncCallback from '../callbacks/cameraSyncCallback';
+import zoomPanSyncCallback from '../callbacks/zoomPanSyncCallback';
 import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
 const { CAMERA_MODIFIED } = Enums.Events;
@@ -13,14 +13,15 @@ const { CAMERA_MODIFIED } = Enums.Events;
  * @param options - allows passing option values to the synchronizer on "this"
  * @returns A new `Synchronizer` instance.
  */
-export default function createCameraPositionSynchronizer(
-  synchronizerName: string
+export default function createZoomPanSynchronizer(
+  synchronizerName: string,
+  options: Record<string, unknown> = {}
 ): Synchronizer {
-  const cameraPositionSynchronizer = createSynchronizer(
+  const zoomPanSynchronizer = createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
-    cameraSyncCallback
+    zoomPanSyncCallback.bind(options)
   );
 
-  return cameraPositionSynchronizer;
+  return zoomPanSynchronizer;
 }
