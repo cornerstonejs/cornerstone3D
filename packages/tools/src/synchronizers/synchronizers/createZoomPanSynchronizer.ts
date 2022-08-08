@@ -14,13 +14,12 @@ const { CAMERA_MODIFIED } = Enums.Events;
  * @returns A new `Synchronizer` instance.
  */
 export default function createZoomPanSynchronizer(
-  synchronizerName: string,
-  options: Record<string, unknown> = {}
+  synchronizerName: string
 ): Synchronizer {
   const zoomPanSynchronizer = createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
-    zoomPanSyncCallback.bind(options)
+    zoomPanSyncCallback
   );
 
   return zoomPanSynchronizer;

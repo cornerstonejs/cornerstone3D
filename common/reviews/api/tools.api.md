@@ -1012,6 +1012,9 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined;
 function createVOISynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
+function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 export class CrosshairsTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -2383,8 +2386,8 @@ interface IViewport {
     setActors(actors: Array<ActorEntry>): void;
     setCamera(cameraInterface: ICamera): void;
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
-    setPan(pan: Point2, resetOffsets?:boolean);
-    setZoom(zoom: number, resetOffsets?:boolean);
+    setPan(pan: Point2, resetOffsets?: boolean);
+    setZoom(zoom: number, resetOffsets?: boolean);
     sHeight: number;
     suppressEvents: boolean;
     sWidth: number;
@@ -2396,6 +2399,8 @@ interface IViewport {
 
 // @public
 interface IViewportId {
+    // (undocumented)
+    options?: Record<string, unknown>;
     // (undocumented)
     renderingEngineId: string;
     // (undocumented)
@@ -4027,7 +4032,8 @@ export { SynchronizerManager }
 declare namespace synchronizers {
     export {
         createCameraPositionSynchronizer,
-        createVOISynchronizer
+        createVOISynchronizer,
+        createZoomPanSynchronizer
     }
 }
 export { synchronizers }

@@ -763,10 +763,6 @@ class Viewport implements IViewport {
     return initialParallelScale / activeCamera.getParallelScale();
   }
 
-  public getImagePosition() {
-    const activeCamera = this.getVtkActiveCamera();
-  }
-
   /** Zooms the image using parallel scale by updating the camera value.
    * @param value is the relative parallel scale to apply.  It is relative
    * to the initial offsets value.

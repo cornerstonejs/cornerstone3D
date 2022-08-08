@@ -7,7 +7,8 @@ import { Synchronizer } from '../../store';
  *
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
- * @param targetViewport - The list of IDs defining the target viewport.
+ * @param targetViewport - The list of IDs defining the target viewport, never
+ *   the same as sourceViewport.
  * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
 export default function cameraSyncCallback(
@@ -16,14 +17,6 @@ export default function cameraSyncCallback(
   targetViewport: Types.IViewportId,
   cameraModifiedEvent: CustomEvent
 ): void {
-  // We need a helper for this
-  if (
-    sourceViewport.renderingEngineId === targetViewport.renderingEngineId &&
-    sourceViewport.viewportId === targetViewport.viewportId
-  ) {
-    return;
-  }
-
   const { camera } = cameraModifiedEvent.detail;
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);

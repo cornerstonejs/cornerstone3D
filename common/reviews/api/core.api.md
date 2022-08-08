@@ -1296,6 +1296,8 @@ interface IViewport {
 // @public (undocumented)
 interface IViewportId {
     // (undocumented)
+    options?: Record<string, unknown>;
+    // (undocumented)
     renderingEngineId: string;
     // (undocumented)
     viewportId: string;
@@ -1999,7 +2001,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)
-    resetInitialOffsets(resetOffsets?: boolean): void;
+    protected resetInitialOffsets(resetOffsets?: boolean): void;
     // (undocumented)
     resize: () => void;
     // (undocumented)

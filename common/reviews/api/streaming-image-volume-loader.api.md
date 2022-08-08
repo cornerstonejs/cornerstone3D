@@ -907,8 +907,8 @@ interface IViewport {
     setActors(actors: Array<ActorEntry>): void;
     setCamera(cameraInterface: ICamera): void;
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
-    setPan(pan: Point2, resetOffsets?:boolean);
-    setZoom(zoom: number, resetOffsets?:boolean);
+    setPan(pan: Point2, resetOffsets?: boolean);
+    setZoom(zoom: number, resetOffsets?: boolean);
     sHeight: number;
     suppressEvents: boolean;
     sWidth: number;
@@ -920,6 +920,8 @@ interface IViewport {
 
 // @public
 interface IViewportId {
+    // (undocumented)
+    options?: Record<string, unknown>;
     // (undocumented)
     renderingEngineId: string;
     // (undocumented)
