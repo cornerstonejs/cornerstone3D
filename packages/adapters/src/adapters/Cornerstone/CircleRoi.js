@@ -12,8 +12,11 @@ class CircleRoi {
 
     /** Gets the measurement data for cornerstone, given DICOM SR measurement data. */
     static getMeasurementData(MeasurementGroup) {
-        const { defaultState, NUMGroup, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup
+        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const { GraphicData } = SCOORDGroup;
 
@@ -25,7 +28,9 @@ class CircleRoi {
             toolType: CircleRoi.toolType,
             active: false,
             cachedStats: {
-                area: NUMGroup.MeasuredValueSequence.NumericValue,
+                area: NUMGroup
+                    ? NUMGroup.MeasuredValueSequence.NumericValue
+                    : 0,
                 // Dummy values to be updated by cornerstone
                 radius: 0,
                 perimeter: 0
@@ -64,7 +69,7 @@ class CircleRoi {
      * @returns
      */
     static getTID300RepresentationArguments(tool) {
-        const { cachedStats, handles, finding, findingSites } = tool;
+        const { cachedStats = {}, handles, finding, findingSites } = tool;
         const { start: center, end } = handles;
         const { area, radius } = cachedStats;
 

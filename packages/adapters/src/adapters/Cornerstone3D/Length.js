@@ -17,13 +17,16 @@ class Length {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                Length.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            Length.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -50,7 +53,9 @@ class Length {
             },
             cachedStats: {
                 [`imageId:${referencedImageId}`]: {
-                    length: NUMGroup.MeasuredValueSequence.NumericValue
+                    length: NUMGroup
+                        ? NUMGroup.MeasuredValueSequence.NumericValue
+                        : 0
                 }
             }
         };
@@ -60,7 +65,7 @@ class Length {
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats, handles } = data;
+        const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
 
@@ -76,7 +81,8 @@ class Length {
         const point1 = { x: start[0], y: start[1] };
         const point2 = { x: end[0], y: end[1] };
 
-        const distance = cachedStats[`imageId:${referencedImageId}`].length;
+        const { length: distance } =
+            cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             point1,

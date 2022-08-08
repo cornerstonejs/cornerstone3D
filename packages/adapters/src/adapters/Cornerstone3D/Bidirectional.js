@@ -88,7 +88,7 @@ class Bidirectional {
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats, handles } = data;
+        const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
 
@@ -98,7 +98,8 @@ class Bidirectional {
             );
         }
 
-        const { length, width } = cachedStats[`imageId:${referencedImageId}`];
+        const { length, width } =
+            cachedStats[`imageId:${referencedImageId}`] || {};
         const { points } = handles;
 
         // Find the length and width point pairs by comparing the distances of the points at 0,1 to points at 2,3

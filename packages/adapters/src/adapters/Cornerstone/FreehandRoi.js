@@ -6,8 +6,11 @@ class FreehandRoi {
     constructor() {}
 
     static getMeasurementData(MeasurementGroup) {
-        const { defaultState, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const {
+            defaultState,
+            SCOORDGroup,
+            NUMGroup
+        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const state = {
             ...defaultState,
@@ -22,6 +25,9 @@ class FreehandRoi {
                     allowedOutsideImage: true,
                     hasBoundingBox: true
                 }
+            },
+            cachedStats: {
+                area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0
             },
             color: undefined,
             invalidated: true
@@ -38,7 +44,7 @@ class FreehandRoi {
     }
 
     static getTID300RepresentationArguments(/*tool*/) {
-        const { handles, finding, findingSites, cachedStats } = tool;
+        const { handles, finding, findingSites, cachedStats = {} } = tool;
         const { points } = handles;
         const { area = 0, perimeter = 0 } = cachedStats;
 

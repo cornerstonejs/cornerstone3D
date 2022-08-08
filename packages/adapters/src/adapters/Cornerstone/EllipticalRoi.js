@@ -12,8 +12,11 @@ class EllipticalRoi {
 
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
-        const { defaultState, NUMGroup, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup
+        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const { GraphicData } = SCOORDGroup;
 
@@ -56,7 +59,7 @@ class EllipticalRoi {
             toolType: EllipticalRoi.toolType,
             active: false,
             cachedStats: {
-                area: NUMGroup.MeasuredValueSequence.NumericValue
+                area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0
             },
             handles: {
                 end: {
@@ -88,7 +91,7 @@ class EllipticalRoi {
     }
 
     static getTID300RepresentationArguments(tool) {
-        const { cachedStats, handles, finding, findingSites } = tool;
+        const { cachedStats = {}, handles, finding, findingSites } = tool;
         const { start, end } = handles;
         const { area } = cachedStats;
 

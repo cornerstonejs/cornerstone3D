@@ -19,13 +19,16 @@ class EllipticalROI {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                EllipticalROI.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            EllipticalROI.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -119,7 +122,9 @@ class EllipticalROI {
             },
             cachedStats: {
                 [`imageId:${referencedImageId}`]: {
-                    area: NUMGroup.MeasuredValueSequence.NumericValue
+                    area: NUMGroup
+                        ? NUMGroup.MeasuredValueSequence.NumericValue
+                        : 0
                 }
             }
         };
@@ -129,7 +134,7 @@ class EllipticalROI {
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats, handles } = data;
+        const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
 
@@ -167,7 +172,7 @@ class EllipticalROI {
             points.push({ x: bottom[0], y: bottom[1] });
         }
 
-        const { area } = cachedStats[`imageId:${referencedImageId}`];
+        const { area } = cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             area,

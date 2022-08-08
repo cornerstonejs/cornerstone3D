@@ -6,8 +6,11 @@ class RectangleRoi {
     constructor() {}
 
     static getMeasurementData(MeasurementGroup) {
-        const { defaultState, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const {
+            defaultState,
+            SCOORDGroup,
+            NUMGroup
+        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const state = {
             ...defaultState,
@@ -24,6 +27,9 @@ class RectangleRoi {
                     hasBoundingBox: true
                 },
                 initialRotation: 0
+            },
+            cachedStats: {
+                area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0
             },
             color: undefined,
             invalidated: true
@@ -43,7 +49,7 @@ class RectangleRoi {
     }
 
     static getTID300RepresentationArguments(tool) {
-        const { finding, findingSites, cachedStats, handles } = tool;
+        const { finding, findingSites, cachedStats = {}, handles } = tool;
         console.log("getTID300 Rectangle", tool, cachedStats, handles);
         const { start, end } = handles;
         const points = [
