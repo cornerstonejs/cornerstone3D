@@ -38,17 +38,21 @@ content.appendChild(element);
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'COLOR_STACK';
 
+// png images hosted on web (s3 with cors enabled)
 const imageIds = [
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1455.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1456.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1457.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1458.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1459.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1460.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1461.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1462.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1463.png',
-  'web:https://data.lhncbc.nlm.nih.gov/public/Visible-Human/Male-Images/PNG_format/abdomen/a_vm1464.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1460.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1461.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1462.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1463.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1464.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1465.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1466.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1467.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1468.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1469.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1470.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1471.png',
+  'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1472.png',
 ];
 
 registerWebImageLoader(imageLoader);
