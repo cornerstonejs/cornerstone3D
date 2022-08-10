@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.3...@cornerstonejs/tools@0.21.4) (2022-08-10)
+
+
+### Bug Fixes
+
+* unify handling of annotation units and remove 'MO' ([#161](https://github.com/cornerstonejs/cornerstone3D-beta/issues/161)) ([7fddeab](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7fddeab0f686fce5dc0e9c6953025ff14c00e252))
+
+
+
+
+
 ## [0.21.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.2...@cornerstonejs/tools@0.21.3) (2022-08-04)
 
 
