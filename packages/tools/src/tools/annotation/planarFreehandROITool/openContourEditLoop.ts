@@ -9,9 +9,12 @@ import {
 import type { EventTypes, Annotation } from '../../../types';
 import { vec3, vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
+import {
+  shouldInterpolate,
+  getInterpolatedPoints,
+} from '../../../utilities/planar/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
-import { shouldInterpolate, getInterpolatedPoints } from './interpolatePoints';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 

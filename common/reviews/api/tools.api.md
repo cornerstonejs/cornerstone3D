@@ -1145,6 +1145,7 @@ const _default: {
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
+    interpolateAnnotation: typeof interpolateAnnotation;
 };
 
 // @public (undocumented)
@@ -2073,6 +2074,9 @@ function initElementCursor(element: HTMLDivElement, cursor: MouseCursor | null):
 type InteractionTypes = 'Mouse';
 
 // @public (undocumented)
+function interpolateAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
+
+// @public (undocumented)
 function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, line2Start: Types_2.Point2, line2End: Types_2.Point2): number[];
 
 // @public (undocumented)
@@ -2857,7 +2861,8 @@ declare namespace planar {
         filterAnnotationsWithinSlice,
         getWorldWidthAndHeightFromCorners,
         filterAnnotationsForDisplay,
-        getPointInLineOfSightWithCriteria
+        getPointInLineOfSightWithCriteria,
+        interpolateAnnotation
     }
 }
 

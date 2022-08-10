@@ -158,47 +158,4 @@ interactions.
     </td>
   </tr>
 </table>
-
-## Tool interpolation
-
-Contour tools like the PlanarFreehandROITool can be configured can be configured to use interpolation process.
-The interpolation process uses b-spline algorithm and consider 3 configurations properties:
-
-- interpolation.enabled: to tell whether it should be interpolated or not (for editing it is considered the property editEnabled) (default: false)
-- interpolation.editEnabled: to tell whether it should be interpolated or not when editing (default: false)
-- interpolation.knotsRatioPct: percentage of points from Segment that are likely to be considered knots during interpolation (for editing it is considered the property editKnotsRatioPct) ( default: 40)
-- interpolation.editKnotsRatioPct: same as knotsRatioPct but applicable only when editing the tool (default: 40)
-- interpolation.forceAllSegment: tell whether interpolation occurs on edited segment only or all drawing (true means all drawing) (default: false)
-
-So, with that said the interpolation might occur when:
-
-- drawing is done (i.e mouse is released) and interpolation.enabled is true. Interpolation algorithm uses knotsRatioPct
-- edit drawing is done (i.e mouse is released) and interpolation.editEnabled. Interpolation algorithm uses editKnotsRatioPct and its only applied to changed segment in case interpolation.forceAllSegment is false
-
-Interpolation does not occur when:
-
-- interpolation.enabled is false and drawing is completed
-- interpolation.editEnabled is false and edit is completed
-- drawing still happening (editing or not)
-
-The result of interpolation will be a smoother set of segments.
-Changing tool configuration (see below) you can fine-tune the interpolation process by changing knotsRatioPct and editKnotsRatioPct value, which smaller values produces a more agressive interpolation.
-
-## How to interpolate
-
-```
-// in case we want to turn it on
-ctToolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-  interpolation: { enabled: true },
-});
-
-// in case we want to tune interpolation process
-// more agressive interpolation. I.e there will less knot points and more interpolated points.
-ctToolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-  interpolation: { knotsRatioPct: 2 },
-});
-// less agressive interpolation. I.e there will more knot points and less interpolated points.
-ctToolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-  interpolation: { knotsRatioPct: 30 },
-});
 ```

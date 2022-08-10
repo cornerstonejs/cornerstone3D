@@ -1,11 +1,11 @@
 import { Types } from '@cornerstonejs/core';
-import { point } from '../../../utilities/math';
+import { point } from '../math';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 
 export function shouldInterpolate(configuration: Record<any, any>): boolean {
   return (
-    configuration?.interpolation?.enabled === true ||
-    configuration?.interpolation?.editEnabled === true
+    configuration?.interpolation?.interpolationOnAdd === true ||
+    configuration?.interpolation?.interpolateOnEdit === true
   );
 }
 
@@ -177,35 +177,37 @@ export function getInterpolatedPoints(
 
   if (interpolation) {
     const {
-      knotsRatioPct,
-      editKnotsRatioPct,
-      forceAllSegment,
-      enabled = false,
-      editEnabled = false,
+      knotsRatioPercentageOnAdd,
+      knotsRatioPercentageOnEdit,
+      interpolationOnAdd = false,
+      interpolateOnEdit = false,
     } = interpolation;
 
-    const knotsRatioPctToUse = pointsOfReference
-      ? editKnotsRatioPct
-      : knotsRatioPct;
-    const isEnabled = pointsOfReference ? editEnabled : enabled;
+    const knotsRatioPercentage = pointsOfReference
+      ? knotsRatioPercentageOnEdit
+      : knotsRatioPercentageOnAdd;
+    const isEnabled = pointsOfReference
+      ? interpolateOnEdit
+      : interpolationOnAdd;
 
     if (isEnabled) {
       // partial or total interpolation
-      const [changedIniIndex, changedEndIndex] =
-        pointsOfReference && !forceAllSegment
-          ? findChangedSegment(points, pointsOfReference)
-          : [0, points.length - 1];
+      const [changedIniIndex, changedEndIndex] = pointsOfReference
+        ? findChangedSegment(points, pointsOfReference)
+        : [0, points.length - 1];
 
       // do not interpolate if there is no valid segment
       if (!points[changedIniIndex] || !points[changedEndIndex]) {
         return points;
       }
 
-      return interpolateSegmentPoints(
-        points,
-        changedIniIndex,
-        changedEndIndex,
-        knotsRatioPctToUse
+      return <Types.Point2[]>(
+        interpolateSegmentPoints(
+          points,
+          changedIniIndex,
+          changedEndIndex,
+          knotsRatioPercentage
+        )
       );
     }
   }
