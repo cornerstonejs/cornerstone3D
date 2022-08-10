@@ -68,7 +68,7 @@ and 3D segmentation editing tools such as brush, rectangle and circle scissors, 
 3d sphere tools.
 
 We will discuss in length the different types of segmentation tools and how they
-are used in `Cornerstone3DTools` in `Segmentation` section.
+are used in `Cornerstone3DTools` in [`Segmentation`](./segmentation/index.md) section.
 
 <details>
 

@@ -225,18 +225,10 @@ type CPUFallbackRenderingTools = {
         voiLUT: CPUFallbackLUT;
         colormap: unknown;
     };
-    renderCanvasContext?: {
-        putImageData: (
-        renderCanvasData: unknown,
-        dx: number,
-        dy: number
-        ) => unknown;
-    };
+    renderCanvasContext?: CanvasRenderingContext2D;
     colormapId?: string;
     colorLUT?: CPUFallbackLookupTable;
-    renderCanvasData?: {
-        data: Uint8ClampedArray;
-    };
+    renderCanvasData?: ImageData;
 };
 
 // @public (undocumented)
@@ -312,6 +304,15 @@ type CPUIImageData = {
     scalarData: number[];
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
 };
 
 // @public (undocumented)
@@ -549,6 +550,15 @@ interface IImage {
     minPixelValue: number;
     modalityLUT?: CPUFallbackLUT;
     numComps: number;
+    preScale?: {
+        scaled: boolean;
+        scalingParameters: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     render?: (
     enabledElement: CPUFallbackEnabledElement,
     invalidated: boolean
@@ -593,6 +603,15 @@ interface IImageData {
     imageData: vtkImageData;
     metadata: { Modality: string };
     origin: Point3;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     scalarData: Float32Array;
     scaling?: Scaling;
     spacing: Point3;
@@ -815,7 +834,6 @@ interface IStackViewport extends IViewport {
     getRenderer(): any;
     hasImageId: (imageId: string) => boolean;
     hasImageURI: (imageURI: string) => boolean;
-    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
@@ -1009,7 +1027,7 @@ type Metadata = {
     PhotometricInterpretation: string;
     PixelRepresentation: number;
     Modality: string;
-    SeriesInstanceUID: string;
+    SeriesInstanceUID?: string;
     ImageOrientationPatient: Array<number>;
     PixelSpacing: Array<number>;
     FrameOfReferenceUID: string;
@@ -1156,6 +1174,7 @@ export class StreamingImageVolume extends ImageVolume {
                 type: any;
             };
             preScale: {
+                enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
             };
         };

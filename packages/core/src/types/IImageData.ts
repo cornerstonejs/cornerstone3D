@@ -1,5 +1,5 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Point3, Scaling } from '../types';
+import { Point3, Scaling, IImage } from '../types';
 
 /**
  * IImageData of an image, which stores actual scalarData and metaData about the image.
@@ -24,6 +24,22 @@ interface IImageData {
   scaling?: Scaling;
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
+  /** preScale object */
+  preScale?: {
+    /** boolean flag to indicate whether the image has been scaled */
+    scaled?: boolean;
+    /** scaling parameters */
+    scalingParameters?: {
+      /** modality of the image */
+      modality?: string;
+      /** rescale slop */
+      rescaleSlope?: number;
+      /** rescale intercept */
+      rescaleIntercept?: number;
+      /** PT suvbw */
+      suvbw?: number;
+    };
+  };
 }
 
 export default IImageData;

@@ -3,6 +3,39 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.2...@cornerstonejs/core@0.14.3) (2022-08-04)
+
+
+### Bug Fixes
+
+* make typescript strict true ([#162](https://github.com/cornerstonejs/cornerstone3D-beta/issues/162)) ([7c311f7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7c311f77f0532372ae82b6be2027bcd25925fa0d))
+
+
+
+
+
+## [0.14.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.1...@cornerstonejs/core@0.14.2) (2022-08-03)
+
+
+### Bug Fixes
+
+* wadouri metadata was not using scaling parameters properly ([#159](https://github.com/cornerstonejs/cornerstone3D-beta/issues/159)) ([d21aba5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d21aba56f1e0a8730088d89a4dfde8358d978a60))
+
+
+
+
+
+## [0.14.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.0...@cornerstonejs/core@0.14.1) (2022-08-03)
+
+
+### Bug Fixes
+
+* Attempt to fix build issues [@haehn](https://github.com/haehn) has reported ([#144](https://github.com/cornerstonejs/cornerstone3D-beta/issues/144)) ([2a7ec92](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2a7ec9271e012929682aa5c0a860cd65d0d5c02d))
+
+
+
+
+
 # [0.14.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.13.11...@cornerstonejs/core@0.14.0) (2022-07-29)
 
 

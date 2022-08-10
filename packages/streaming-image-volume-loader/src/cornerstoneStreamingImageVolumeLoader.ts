@@ -47,7 +47,6 @@ function cornerstoneStreamingImageVolumeLoader(
     PixelSpacing,
     Columns,
     Rows,
-    SeriesInstanceUID,
   } = volumeMetadata;
 
   const rowCosineVec = vec3.fromValues(

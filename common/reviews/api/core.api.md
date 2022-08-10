@@ -261,14 +261,10 @@ type CPUFallbackRenderingTools = {
         voiLUT: CPUFallbackLUT;
         colormap: unknown;
     };
-    renderCanvasContext?: {
-        putImageData: (renderCanvasData: unknown, dx: number, dy: number) => unknown;
-    };
+    renderCanvasContext?: CanvasRenderingContext2D;
     colormapId?: string;
     colorLUT?: CPUFallbackLookupTable;
-    renderCanvasData?: {
-        data: Uint8ClampedArray;
-    };
+    renderCanvasData?: ImageData;
 };
 
 // @public (undocumented)
@@ -346,6 +342,15 @@ type CPUIImageData = {
     scalarData: number[];
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
 };
 
 // @public (undocumented)
@@ -563,9 +568,6 @@ export function getRenderingEngines(): IRenderingEngine[] | undefined;
 function getRuntimeId(context?: unknown, separator?: string, max?: number): string;
 
 // @public (undocumented)
-function getScalingParameters(imageId: string): ScalingParameters | undefined;
-
-// @public (undocumented)
 export function getShouldUseCPURendering(): boolean;
 
 // @public (undocumented)
@@ -723,6 +725,16 @@ interface IImage {
     // (undocumented)
     numComps: number;
     // (undocumented)
+    preScale?: {
+        scaled: boolean;
+        scalingParameters: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
+    // (undocumented)
     render?: (enabledElement: CPUFallbackEnabledElement, invalidated: boolean) => unknown;
     // (undocumented)
     rgba: boolean;
@@ -782,6 +794,16 @@ interface IImageData {
     };
     // (undocumented)
     origin: Point3;
+    // (undocumented)
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     // (undocumented)
     scalarData: Float32Array;
     // (undocumented)
@@ -1139,8 +1161,6 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
-    isImagePreScaled(imageId: string): boolean;
-    // (undocumented)
     modality: string;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
@@ -1399,7 +1419,7 @@ type Metadata = {
     PhotometricInterpretation: string;
     PixelRepresentation: number;
     Modality: string;
-    SeriesInstanceUID: string;
+    SeriesInstanceUID?: string;
     ImageOrientationPatient: Array<number>;
     PixelSpacing: Array<number>;
     FrameOfReferenceUID: string;
@@ -1689,8 +1709,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
-    isImagePreScaled(imageId: string): boolean;
-    // (undocumented)
     modality: string;
     // (undocumented)
     removeAllActors(): void;
@@ -1877,7 +1895,6 @@ declare namespace utilities {
         getSliceRange,
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
-        getScalingParameters,
         isImageActor
     }
 }

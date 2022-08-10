@@ -9,6 +9,7 @@ import {
   cache,
   Types,
 } from '@cornerstonejs/core';
+import { EventTypes } from '../types';
 
 // Todo: should move to configuration
 const DEFAULT_MULTIPLIER = 4;
@@ -23,8 +24,8 @@ const PT = 'PT';
  */
 export default class WindowLevelTool extends BaseTool {
   static toolName = 'WindowLevel';
-  touchDragCallback: () => void;
-  mouseDragCallback: () => void;
+  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
 
   constructor(
     toolProps = {},
@@ -38,7 +39,7 @@ export default class WindowLevelTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  _dragCallback(evt) {
+  _dragCallback(evt: EventTypes.MouseDragEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewportId, viewport } = enabledElement;
@@ -72,7 +73,8 @@ export default class WindowLevelTool extends BaseTool {
       const properties = viewport.getProperties();
       modality = viewport.modality;
       ({ lower, upper } = properties.voiRange);
-      isPreScaled = viewport.isImagePreScaled(viewport.getCurrentImageId());
+      const { preScale } = viewport.getImageData();
+      isPreScaled = preScale.scaled;
     } else {
       throw new Error('Viewport is not a valid type');
     }

@@ -55,6 +55,8 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -868,7 +870,9 @@ export default class EllipticalROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const isPreScaled = isViewportPreScaled(viewport, targetId);
+
+      const textLines = this._getTextLines(data, targetId, isPreScaled);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -912,55 +916,31 @@ export default class EllipticalROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines = (data, targetId) => {
+  _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
       cachedVolumeStats;
 
-    const textLines = [];
-    let areaLine, meanLine, stdDevLine, maxLine;
+    const textLines: string[] = [];
+    const unit = getModalityUnit(Modality, isPreScaled);
 
     if (area) {
-      areaLine = isEmptyArea
+      const areaLine = isEmptyArea
         ? `Area: Oblique not supported`
         : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
-    }
-
-    if (mean) {
-      meanLine = `Mean: ${mean.toFixed(2)}`;
-    }
-
-    if (max) {
-      maxLine = `Max: ${max.toFixed(2)}`;
-    }
-
-    if (stdDev) {
-      stdDevLine = `StdDev: ${stdDev.toFixed(2)}`;
-    }
-
-    let unit;
-    if (Modality === 'PT') {
-      unit = 'SUV';
-    } else if (Modality === 'CT') {
-      unit = 'HU';
-    } else {
-      unit = 'MO';
-    }
-
-    if (areaLine) {
       textLines.push(areaLine);
     }
 
-    if (meanLine) {
-      textLines.push(meanLine + ' ' + unit);
+    if (mean) {
+      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
     }
 
-    if (maxLine) {
-      textLines.push(maxLine + ' ' + unit);
+    if (max) {
+      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
     }
 
-    if (stdDevLine) {
-      textLines.push(stdDevLine + ' ' + unit);
+    if (stdDev) {
+      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
     }
 
     return textLines;

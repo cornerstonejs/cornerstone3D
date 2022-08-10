@@ -5,7 +5,6 @@ import * as metaData from '../metaData';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvas from './renderToCanvas';
-import getScalingParameters from './getScalingParameters';
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the CPU rendering pipeline
@@ -35,7 +34,7 @@ export default function loadImageToCanvas(
     function successCallback(image: IImage, imageId: string) {
       const { modality } = metaData.get('generalSeriesModule', imageId) || {};
 
-      image.isPreScaled = isImagePreScaled(image);
+      image.isPreScaled = image.isPreScaled || image.preScale?.scaled;
       renderToCanvas(canvas, image, modality);
       resolve(imageId);
     }
@@ -48,15 +47,13 @@ export default function loadImageToCanvas(
     function sendRequest(imageId, imageIdIndex, options) {
       return loadAndCacheImage(imageId, options).then(
         (image) => {
-          successCallback.call(this, image, imageId, imageIdIndex);
+          successCallback.call(this, image, imageId);
         },
         (error) => {
           errorCallback.call(this, error, imageId);
         }
       );
     }
-
-    const scalingParameters = getScalingParameters(imageId);
 
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
@@ -67,7 +64,7 @@ export default function loadImageToCanvas(
         length: null,
       },
       preScale: {
-        scalingParameters,
+        enabled: true,
       },
       requestType,
     };
@@ -79,31 +76,4 @@ export default function loadImageToCanvas(
       priority
     );
   });
-}
-
-// Note: this is more isTheImageThatWasRequestedGonnaBePreScaled, but since
-// we are using the same image metadata for adding request options and later
-// checking them, we can assume if the scalingParameters
-// are present, the image is pre-scaled
-function isImagePreScaled(image) {
-  const { imageId } = image;
-
-  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
-  const suvFactor = metaData.get('scalingModule', imageId) || {};
-
-  const generalSeriesModule =
-    metaData.get('generalSeriesModule', imageId) || {};
-
-  if (
-    modalityLutModule.rescaleSlope !== undefined &&
-    modalityLutModule.rescaleIntercept !== undefined
-  ) {
-    if (generalSeriesModule.modality === 'PT') {
-      return suvFactor.suvbw !== undefined;
-    }
-
-    return true;
-  }
-
-  return false;
 }

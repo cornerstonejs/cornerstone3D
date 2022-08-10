@@ -6,7 +6,7 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
-  utilities as csUtils,
+  Types,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState } from './state';
 
@@ -240,18 +240,10 @@ function prefetch(element) {
     }
   }
 
-  // if (preventCache) {
-  //   requestFn = (id) => external.cornerstone.loadImage(id, options);
-  // } else {
-  //
-  // }
-
   const requestFn = (imageId, options) =>
     imageLoader.loadAndCacheImage(imageId, options);
 
   imageIdsToPrefetch.forEach((imageId) => {
-    const scalingParameters = csUtils.getScalingParameters(imageId);
-
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
@@ -261,7 +253,7 @@ function prefetch(element) {
         length: null,
       },
       preScale: {
-        scalingParameters,
+        enabled: true,
       },
       requestType,
     };

@@ -18,6 +18,7 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import ProbeTool from './ProbeTool';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 export default class DragProbeTool extends ProbeTool {
   static toolName = 'DragProbe';
@@ -168,7 +169,9 @@ export default class DragProbeTool extends ProbeTool {
 
     renderStatus = true;
 
-    const textLines = this._getTextLines(data, targetId);
+    const isPreScaled = isViewportPreScaled(viewport, targetId);
+
+    const textLines = this._getTextLines(data, targetId, isPreScaled);
     if (textLines) {
       const textCanvasCoordinates = [
         canvasCoordinates[0] + 6,

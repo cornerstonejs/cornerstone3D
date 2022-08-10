@@ -18,11 +18,17 @@ const onImageRendered = function (evt: Types.EventTypes.ImageRenderedEvent) {
 };
 
 const enable = function (element: HTMLDivElement): void {
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered);
+  element.addEventListener(
+    Enums.Events.IMAGE_RENDERED,
+    onImageRendered as EventListener
+  );
 };
 
 const disable = function (element: HTMLDivElement): void {
-  element.removeEventListener(Enums.Events.IMAGE_RENDERED, onImageRendered);
+  element.removeEventListener(
+    Enums.Events.IMAGE_RENDERED,
+    onImageRendered as EventListener
+  );
 };
 
 export default {

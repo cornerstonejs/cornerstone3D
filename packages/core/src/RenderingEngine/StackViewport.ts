@@ -25,7 +25,6 @@ import {
   VOIRange,
   ICamera,
   IImage,
-  ScalingParameters,
   IImageData,
   CPUIImageData,
   PTScaling,
@@ -61,7 +60,6 @@ import {
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
-import getScalingParameters from '../utilities/getScalingParameters';
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
@@ -150,11 +148,11 @@ class StackViewport extends Viewport implements IStackViewport {
   private useCPURendering: boolean;
   private cpuImagePixelData: number[];
   private cpuRenderingInvalidated: boolean;
+  private csImage: IImage;
 
   // TODO: These should not be here and will be nuked
   public modality: string; // this is needed for tools
   public scaling: Scaling;
-  private scalingCache: Record<string, ScalingParameters> = {};
 
   /**
    * Constructor for the StackViewport class
@@ -276,11 +274,14 @@ class StackViewport extends Viewport implements IStackViewport {
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
+      preScale: {
+        ...this.csImage.preScale,
+      },
     };
   }
 
   private getImageDataCPU(): CPUIImageData | undefined {
-    const { metadata } = this._cpuFallbackEnabledElement;
+    const { metadata, image } = this._cpuFallbackEnabledElement;
 
     const spacing = metadata.spacing;
 
@@ -314,6 +315,9 @@ class StackViewport extends Viewport implements IStackViewport {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
+      preScale: {
+        ...this.csImage.preScale,
+      },
     };
   }
 
@@ -1253,7 +1257,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
     this.stackInvalidated = true;
-    this.scalingCache = {};
     this.rotationCache = 0;
     this.flipVertical = false;
     this.flipHorizontal = false;
@@ -1407,6 +1410,8 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
+        this.csImage = image;
+
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
           imageId,
@@ -1418,7 +1423,8 @@ class StackViewport extends Viewport implements IStackViewport {
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
         const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
-        image.isPreScaled = this.isImagePreScaled(imageId);
+
+        image.isPreScaled = image.preScale?.scaled;
 
         const viewport = getDefaultViewport(
           this.canvas,
@@ -1497,12 +1503,6 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const scalingParameters = getScalingParameters(imageId);
-
-      if (imageId) {
-        this.scalingCache[imageId] = scalingParameters;
-      }
-
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
       const type = 'Float32Array';
@@ -1517,7 +1517,7 @@ class StackViewport extends Viewport implements IStackViewport {
           length: null,
         },
         preScale: {
-          scalingParameters,
+          enabled: true,
         },
         useRGBA: false,
       };
@@ -1537,13 +1537,15 @@ class StackViewport extends Viewport implements IStackViewport {
       function successCallback(image, imageIdIndex, imageId) {
         // Todo: trigger an event to allow applications to hook into END of loading state
         // Currently we use loadHandlerManagers for this
-
         // Perform this check after the image has finished loading
         // in case the user has already scrolled away to another image.
         // In that case, do not render this image.
         if (this.currentImageIdIndex !== imageIdIndex) {
           return;
         }
+
+        // cornerstone image
+        this.csImage = image;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1587,12 +1589,6 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      const scalingParameters = getScalingParameters(imageId);
-
-      if (scalingParameters) {
-        this.scalingCache[imageId] = scalingParameters;
-      }
-
       // Todo: Note that eventually all viewport data is converted into Float32Array,
       // we use it here for the purpose of scaling for now.
       const type = 'Float32Array';
@@ -1608,7 +1604,7 @@ class StackViewport extends Viewport implements IStackViewport {
           length: null,
         },
         preScale: {
-          scalingParameters,
+          enabled: true,
         },
         useRGBA: false,
       };
@@ -1628,36 +1624,6 @@ class StackViewport extends Viewport implements IStackViewport {
         priority
       );
     });
-  }
-
-  /**
-   * Checks if the requests has been sent to the imageLoadPoolManager
-   * with preScaling options; therefore, the images have been pre-scaled.
-   * Note: this is more isTheImageThatWasRequestedGonnaBePreScaled, but since
-   * we are using the same image metadata for adding request options and later
-   * checking them, we can assume if the scalingParameters are present, the image is pre-scaled
-   * @param imageId  - imageId of the image
-   * @returns boolean
-   */
-  public isImagePreScaled(imageId: string): boolean {
-    const scalingParameters = this.scalingCache[imageId];
-
-    if (!scalingParameters) {
-      return false;
-    }
-
-    const { modality, rescaleIntercept, rescaleSlope, suvbw } =
-      scalingParameters;
-
-    if (rescaleSlope !== undefined && rescaleIntercept !== undefined) {
-      if (modality === 'PT') {
-        return suvbw !== undefined;
-      }
-
-      return true;
-    }
-
-    return false;
   }
 
   /**
@@ -1783,7 +1749,9 @@ class StackViewport extends Viewport implements IStackViewport {
         : undefined;
 
     // check if the image is already prescaled
-    const isPreScaled = this.isImagePreScaled(image.imageId);
+    const isPreScaled =
+      this.csImage.isPreScaled || this.csImage.preScale?.scaled;
+
     if (imagePixelModule.modality === 'PT' && isPreScaled) {
       voiRange = { lower: 0, upper: 5 };
     }

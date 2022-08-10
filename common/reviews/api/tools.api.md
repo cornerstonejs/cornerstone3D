@@ -874,18 +874,10 @@ type CPUFallbackRenderingTools = {
         voiLUT: CPUFallbackLUT;
         colormap: unknown;
     };
-    renderCanvasContext?: {
-        putImageData: (
-        renderCanvasData: unknown,
-        dx: number,
-        dy: number
-        ) => unknown;
-    };
+    renderCanvasContext?: CanvasRenderingContext2D;
     colormapId?: string;
     colorLUT?: CPUFallbackLookupTable;
-    renderCanvasData?: {
-        data: Uint8ClampedArray;
-    };
+    renderCanvasData?: ImageData;
 };
 
 // @public (undocumented)
@@ -961,6 +953,15 @@ type CPUIImageData = {
     scalarData: number[];
     scaling: Scaling;
     hasPixelSpacing?: boolean;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
 };
 
 // @public (undocumented)
@@ -1361,7 +1362,7 @@ export class EllipticalROITool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines: (data: any, targetId: any) => any[];
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -1868,6 +1869,15 @@ interface IImage {
     minPixelValue: number;
     modalityLUT?: CPUFallbackLUT;
     numComps: number;
+    preScale?: {
+        scaled: boolean;
+        scalingParameters: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     render?: (
     enabledElement: CPUFallbackEnabledElement,
     invalidated: boolean
@@ -1912,6 +1922,15 @@ interface IImageData {
     imageData: vtkImageData;
     metadata: { Modality: string };
     origin: Point3;
+    preScale?: {
+        scaled?: boolean;
+        scalingParameters?: {
+            modality?: string;
+            rescaleSlope?: number;
+            rescaleIntercept?: number;
+            suvbw?: number;
+        };
+    };
     scalarData: Float32Array;
     scaling?: Scaling;
     spacing: Point3;
@@ -2176,7 +2195,6 @@ interface IStackViewport extends IViewport {
     getRenderer(): any;
     hasImageId: (imageId: string) => boolean;
     hasImageURI: (imageURI: string) => boolean;
-    isImagePreScaled(imageId: string): boolean;
     // (undocumented)
     modality: string;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
@@ -2664,7 +2682,7 @@ type Metadata = {
     PhotometricInterpretation: string;
     PixelRepresentation: number;
     Modality: string;
-    SeriesInstanceUID: string;
+    SeriesInstanceUID?: string;
     ImageOrientationPatient: Array<number>;
     PixelSpacing: Array<number>;
     FrameOfReferenceUID: string;
@@ -2846,13 +2864,13 @@ declare namespace orientation_2 {
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _dragCallback(evt: any): void;
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 declare namespace planar {
@@ -3061,7 +3079,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    _getTextLines(data: any, targetId: any): any[];
+    _getTextLines(data: any, targetId: string, isPreScaled: boolean): string[] | undefined;
     // (undocumented)
     _getValueForModality(value: any, imageVolume: any, modality: any): {};
     // (undocumented)
@@ -3346,7 +3364,7 @@ export class RectangleROITool extends AnnotationTool {
         height: number;
     };
     // (undocumented)
-    _getTextLines: (data: any, targetId: string) => any[];
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[] | undefined;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -3786,11 +3804,11 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     _getPixelPerImage(viewport: any): number;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // @public
@@ -4091,15 +4109,15 @@ type ToolStyleConfig = {
 export class TrackballRotateTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _dragCallback(evt: any): void;
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // @public
@@ -4376,7 +4394,7 @@ export class WindowLevelTool extends BaseTool {
         supportedInteractionTypes: string[];
     });
     // (undocumented)
-    _dragCallback(evt: any): void;
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
     // (undocumented)
     _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
@@ -4405,11 +4423,11 @@ export class WindowLevelTool extends BaseTool {
         upper: any;
     };
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // @public (undocumented)
@@ -4426,13 +4444,13 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     initialMousePosWorld: Types_2.Point3;
     // (undocumented)
-    mouseDragCallback: () => void;
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     static toolName: string;
     // (undocumented)
-    touchDragCallback: () => void;
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
 
 // (No @packageDocumentation comment for this package)

@@ -25,7 +25,6 @@ import imageToWorldCoords from './imageToWorldCoords';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
-import getScalingParameters from './getScalingParameters';
 import isImageActor from './isImageActor';
 
 // name spaces
@@ -62,6 +61,5 @@ export {
   getSliceRange,
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
-  getScalingParameters,
   isImageActor,
 };
