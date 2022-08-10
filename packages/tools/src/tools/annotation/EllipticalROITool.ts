@@ -56,6 +56,7 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import { pointInShapeCallback } from '../../utilities/';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -869,7 +870,9 @@ export default class EllipticalROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const isPreScaled = isViewportPreScaled(viewport, targetId);
+
+      const textLines = this._getTextLines(data, targetId, isPreScaled);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -913,13 +916,13 @@ export default class EllipticalROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines = (data, targetId) => {
+  _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
       cachedVolumeStats;
 
-    const textLines = [];
-    const unit = getModalityUnit(Modality);
+    const textLines: string[] = [];
+    const unit = getModalityUnit(Modality, isPreScaled);
 
     if (area) {
       const areaLine = isEmptyArea

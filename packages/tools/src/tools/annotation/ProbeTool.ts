@@ -45,6 +45,7 @@ import {
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -503,7 +504,9 @@ export default class ProbeTool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const isPreScaled = isViewportPreScaled(viewport, targetId);
+
+      const textLines = this._getTextLines(data, targetId, isPreScaled);
       if (textLines) {
         const textCanvasCoordinates = [
           canvasCoordinates[0] + 6,
@@ -525,7 +528,11 @@ export default class ProbeTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines(data, targetId) {
+  _getTextLines(
+    data,
+    targetId: string,
+    isPreScaled: boolean
+  ): string[] | undefined {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats;
 
@@ -534,24 +541,18 @@ export default class ProbeTool extends AnnotationTool {
     }
 
     const textLines = [];
-    const unit = getModalityUnit(Modality);
+    const unit = getModalityUnit(Modality, isPreScaled);
 
     textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
-    if (Modality === 'PT') {
-      // Check if we have scaling for the other 2 SUV types for the PET.
-      // If we have scaling, value should be undefined
-      if (value) {
-        textLines.push(`${value.toFixed(2)} SUV`);
-      } else {
-        textLines.push(`${SUVBw.toFixed(2)} SUV bw`);
-
-        if (SUVLbm) {
-          textLines.push(`${SUVLbm.toFixed(2)} SUV lbm`);
-        }
-        if (SUVBsa) {
-          textLines.push(`${SUVBsa.toFixed(2)} SUV bsa`);
-        }
+    // Check if we have scaling for the other 2 SUV types for the PET.
+    if (Modality === 'PT' && isPreScaled === true && SUVBw !== undefined) {
+      textLines.push(`${SUVBw.toFixed(2)} SUV bw`);
+      if (SUVLbm) {
+        textLines.push(`${SUVLbm.toFixed(2)} SUV lbm`);
+      }
+      if (SUVBsa) {
+        textLines.push(`${SUVBsa.toFixed(2)} SUV bsa`);
       }
     } else {
       textLines.push(`${value.toFixed(2)} ${unit}`);
@@ -563,33 +564,28 @@ export default class ProbeTool extends AnnotationTool {
   _getValueForModality(value, imageVolume, modality) {
     const values = {};
 
-    if (modality === 'PT') {
-      // Check if we have scaling for the other 2 SUV types for the PET.
-      if (
-        imageVolume.scaling.PET &&
-        (imageVolume.scaling.PET.suvbwToSuvbsa ||
-          imageVolume.scaling.PET.suvbwToSuvlbm)
-      ) {
-        const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET;
+    values['value'] = value;
 
-        values['SUVBw'] = value;
+    // Check if we have scaling for the other 2 SUV types for the PET.
+    if (
+      modality === 'PT' &&
+      imageVolume.scaling.PET &&
+      (imageVolume.scaling.PET.suvbwToSuvbsa ||
+        imageVolume.scaling.PET.suvbwToSuvlbm)
+    ) {
+      const { suvbwToSuvlbm, suvbwToSuvbsa } = imageVolume.scaling.PET;
 
-        if (suvbwToSuvlbm) {
-          const SUVLbm = value * suvbwToSuvlbm;
+      values['SUVBw'] = value;
 
-          values['SUVLbm'] = SUVLbm;
-        }
-
-        if (suvbwToSuvlbm) {
-          const SUVBsa = value * suvbwToSuvbsa;
-
-          values['SUVBsa'] = SUVBsa;
-        }
-      } else {
-        values['value'] = value;
+      if (suvbwToSuvlbm) {
+        const SUVLbm = value * suvbwToSuvlbm;
+        values['SUVLbm'] = SUVLbm;
       }
-    } else {
-      values['value'] = value;
+
+      if (suvbwToSuvbsa) {
+        const SUVBsa = value * suvbwToSuvbsa;
+        values['SUVBsa'] = SUVBsa;
+      }
     }
 
     return values;
