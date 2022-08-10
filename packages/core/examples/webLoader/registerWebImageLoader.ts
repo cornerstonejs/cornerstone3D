@@ -2,6 +2,8 @@ import * as cornerstone from '@cornerstonejs/core';
 const canvas = document.createElement('canvas');
 let lastImageIdDrawn;
 
+// Todo: this loader should exist in a separate package in the same monorepo
+
 /**
  * creates a cornerstone Image object for the specified Image and imageId
  *
@@ -202,21 +204,9 @@ function _loadImageIntoBuffer(
 
           // @ts-ignore
           const pixelDataRGBA = image.getPixelData();
-          const pixelDataRGB = new Uint8ClampedArray(
-            (pixelDataRGBA.length * 3) / 4
-          );
-
-          let j = 0;
-          for (let i = 0; i < pixelDataRGBA.length; i += 4) {
-            pixelDataRGB[j] = pixelDataRGBA[i];
-            pixelDataRGB[j + 1] = pixelDataRGBA[i + 1];
-            pixelDataRGB[j + 2] = pixelDataRGBA[i + 2];
-            j += 3;
-          }
-
           const targetArray = new Uint8Array(arrayBuffer, offset, length);
 
-          targetArray.set(pixelDataRGB, 0);
+          targetArray.set(pixelDataRGBA, 0);
 
           resolve(true);
         },

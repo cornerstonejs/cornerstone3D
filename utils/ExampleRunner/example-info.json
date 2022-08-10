@@ -128,7 +128,7 @@
       },
       "planarFreehandROITool": {
         "name": "Freehand ROI Tool",
-        "description": "Demonstrates drawing of both open and closed freehand ROIs, contours, on stack and volume viewports"
+        "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
       },
       "globalSegmentationConfiguration": {
         "name": "Global Segmentation Configuration",
