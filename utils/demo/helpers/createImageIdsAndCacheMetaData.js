@@ -13,7 +13,6 @@ const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
 const VOLUME = 'volume';
-const STACK = 'stack';
 
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
@@ -48,7 +47,8 @@ export default async function createImageIdsAndCacheMetaData({
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
-    const prefix = type === VOLUME ? 'streaming-wadors:' : 'wadors:';
+    const prefix =
+      type.toLowerCase() === VOLUME ? 'streaming-wadors:' : 'wadors:';
 
     const imageId =
       prefix +
