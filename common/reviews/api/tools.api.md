@@ -1361,7 +1361,7 @@ export class EllipticalROITool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    _getTextLines: (data: any, targetId: any) => any[];
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -3074,7 +3074,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
-    _getTextLines(data: any, targetId: any): any[];
+    _getTextLines(data: any, targetId: string, isPreScaled: boolean): string[] | undefined;
     // (undocumented)
     _getValueForModality(value: any, imageVolume: any, modality: any): {};
     // (undocumented)
@@ -3359,7 +3359,7 @@ export class RectangleROITool extends AnnotationTool {
         height: number;
     };
     // (undocumented)
-    _getTextLines: (data: any, targetId: string) => any[];
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[] | undefined;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)

@@ -737,7 +737,7 @@ class AngleTool extends AnnotationTool {
     return renderStatus;
   };
 
-  // text line for the current active length annotation
+  // text line for the current active angle annotation
   _getTextLines(data, targetId) {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { angle } = cachedVolumeStats;

@@ -49,6 +49,8 @@ import {
   AnnotationModifiedEventDetail,
 } from '../../types/EventTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -766,7 +768,9 @@ export default class RectangleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this._getTextLines(data, targetId);
+      const isPreScaled = isViewportPreScaled(viewport, targetId);
+
+      const textLines = this._getTextLines(data, targetId, isPreScaled);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -831,8 +835,13 @@ export default class RectangleROITool extends AnnotationTool {
    *
    * @param data - The annotation tool-specific data.
    * @param targetId - The volumeId of the volume to display the stats for.
+   * @param isPreScaled - Whether the viewport is pre-scaled or not.
    */
-  _getTextLines = (data, targetId: string) => {
+  _getTextLines = (
+    data,
+    targetId: string,
+    isPreScaled: boolean
+  ): string[] | undefined => {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
 
@@ -840,32 +849,13 @@ export default class RectangleROITool extends AnnotationTool {
       return;
     }
 
-    const textLines = [];
+    const textLines: string[] = [];
+    const unit = getModalityUnit(Modality, isPreScaled);
 
-    const areaLine = `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
-    let meanLine = `Mean: ${mean.toFixed(2)}`;
-    let maxLine = `Max: ${max.toFixed(2)}`;
-    let stdDevLine = `Std Dev: ${stdDev.toFixed(2)}`;
-
-    // Give appropriate units for the modality.
-    if (Modality === 'PT') {
-      meanLine += ' SUV';
-      maxLine += ' SUV';
-      stdDevLine += ' SUV';
-    } else if (Modality === 'CT') {
-      meanLine += ' HU';
-      maxLine += ' HU';
-      stdDevLine += ' HU';
-    } else {
-      meanLine += ' MO';
-      maxLine += ' MO';
-      stdDevLine += ' MO';
-    }
-
-    textLines.push(areaLine);
-    textLines.push(maxLine);
-    textLines.push(meanLine);
-    textLines.push(stdDevLine);
+    textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
+    textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
+    textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
+    textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
 
     return textLines;
   };
