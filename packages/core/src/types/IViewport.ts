@@ -76,13 +76,13 @@ interface IViewport {
   /** returns the parallel zoom relative to the default (eg returns 1 after reset) */
   getZoom(): number;
   /** Sets the relative zoom - set to 1 to reset it */
-  setZoom(zoom: number, resetOffsets?: boolean);
+  setZoom(zoom: number, storeAsInitialCamera?: boolean);
   /** Gets the canvas pan value */
   getPan(): Point2;
   /** Sets the canvas pan value */
-  setPan(pan: Point2, resetOffsets?: boolean);
+  setPan(pan: Point2, storeAsInitialCamera?: boolean);
   /** sets the camera */
-  setCamera(cameraInterface: ICamera): void;
+  setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];

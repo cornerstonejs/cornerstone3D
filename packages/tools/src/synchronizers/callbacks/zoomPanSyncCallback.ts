@@ -12,7 +12,7 @@ import { Synchronizer } from '../../store';
  * @param targetViewport - The list of IDs defining the target viewport, different
  *   from sourceViewport
  */
-export default function cameraSyncCallback(
+export default function zoomPanSyncCallback(
   synchronizerInstance: Synchronizer,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId

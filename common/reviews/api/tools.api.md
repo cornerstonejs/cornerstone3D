@@ -1862,7 +1862,6 @@ interface ICamera {
     parallelProjection?: boolean;
     parallelScale?: number;
     position?: Point3;
-    resetOffsets?: boolean;
     scale?: number;
     viewAngle?: number;
     viewPlaneNormal?: Point3;
@@ -2384,10 +2383,10 @@ interface IViewport {
     renderingEngineId: string;
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
-    setPan(pan: Point2, resetOffsets?: boolean);
-    setZoom(zoom: number, resetOffsets?: boolean);
+    setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;
     sWidth: number;

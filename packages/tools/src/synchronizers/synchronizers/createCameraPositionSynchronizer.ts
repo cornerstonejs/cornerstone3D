@@ -10,7 +10,6 @@ const { CAMERA_MODIFIED } = Enums.Events;
  * rendering event and calls the `cameraSyncCallback`.
  *
  * @param synchronizerName - The name of the synchronizer.
- * @param options - allows passing option values to the synchronizer on "this"
  * @returns A new `Synchronizer` instance.
  */
 export default function createCameraPositionSynchronizer(

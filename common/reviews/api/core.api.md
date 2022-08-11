@@ -660,8 +660,6 @@ interface ICamera {
     // (undocumented)
     position?: Point3;
     // (undocumented)
-    resetOffsets?: boolean;
-    // (undocumented)
     scale?: number;
     // (undocumented)
     viewAngle?: number;
@@ -1270,13 +1268,13 @@ interface IViewport {
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     // (undocumented)
-    setPan(pan: Point2, resetOffsets?: boolean): any;
+    setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
     // (undocumented)
-    setZoom(zoom: number, resetOffsets?: boolean): any;
+    setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
     sHeight: number;
     // (undocumented)
@@ -1997,11 +1995,9 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    protected resetCamera(resetPan?: boolean, resetZoom?: boolean, resetOffsets?: boolean): boolean;
+    protected resetCamera(resetPan?: boolean, resetZoom?: boolean, storeAsInitialCamera?: boolean): boolean;
     // (undocumented)
     protected resetCameraNoEvent(): void;
-    // (undocumented)
-    protected resetInitialOffsets(resetOffsets?: boolean): void;
     // (undocumented)
     resize: () => void;
     // (undocumented)
@@ -2009,17 +2005,19 @@ export class Viewport implements IViewport {
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     protected setCameraNoEvent(camera: ICamera): void;
+    // (undocumented)
+    protected setInitialCamera(camera: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
     setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
     // (undocumented)
-    setPan(pan: Point2, resetOffsets?: boolean): void;
+    setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
     // (undocumented)
-    setZoom(value: number, resetOffsets?: boolean): void;
+    setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     sHeight: number;
     // (undocumented)

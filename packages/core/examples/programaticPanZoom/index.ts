@@ -82,14 +82,16 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     //viewport.resetCamera();
-    viewport.setZoom(0.8);
-    viewport.setPan([-128, 0]);
+    viewport.setZoom(1);
+    viewport.setPan([0, 0]);
     viewport.render();
   },
 });
 
+// This can be used to see how the reset works
+// Compare a reset before and after having done this
 addButtonToToolbar({
-  title: 'Reset current as initial',
+  title: 'Set current offset/size as pan 0,0/zoom 1',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);

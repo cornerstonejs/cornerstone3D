@@ -28,11 +28,6 @@ interface ICamera {
   flipHorizontal?: boolean;
   /** flip Vertical */
   flipVertical?: boolean;
-  /** resetOffsets set to true to reset the pan and zoom offsets
-   * such that the pan value becomes [0,0] and the zoom value 1.  Used to
-   * set the initial state.
-   */
-  resetOffsets?: boolean;
 }
 
 export default ICamera;
