@@ -10,8 +10,11 @@ import { EventTypes } from '../../../types';
 import { polyline } from '../../../utilities/math';
 import { vec3, vec2 } from 'gl-matrix';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import {
+  getInterpolatedPoints,
+  shouldInterpolate,
+} from '../../../utilities/planar/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { getInterpolatedPoints, shouldInterpolate } from './interpolatePoints';
 
 const {
   getSubPixelSpacingAndXYDirections,

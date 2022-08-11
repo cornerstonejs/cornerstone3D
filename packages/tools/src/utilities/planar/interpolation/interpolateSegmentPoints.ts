@@ -38,25 +38,31 @@ function getContinuousUniformDistributionValues(
 
   return result;
 }
+
 /**
  * Interpolates a segment of points from iniIndex until endIndex.
- * The process of interpolation will consider the min distance value between knots (minKnotDistance) to distribute and define which index will be considered as knot and consequently which index should be interpolated.
+ * The process of interpolation considers the param knotsRatioPercentage as being the percentage of points from Segment that are likely to be considered.
  * By default it uses b-spline algorithm.
  * The result total of points is equal to original points.
  */
 export default function interpolateSegmentPoints(
-  points: Types.Point2[],
+  points: (Types.Point2 | Types.Point3)[],
   iniIndex: number,
   endIndex: number,
-  minKnotDistance: number
-): Types.Point2[] {
+  knotsRatioPercentage: number
+): (Types.Point2 | Types.Point3)[] {
   const segmentSize = endIndex - iniIndex + 1;
+
+  const amountOfKnots =
+    Math.floor((knotsRatioPercentage / 100) * segmentSize) ?? 1;
+  const minKnotDistance = Math.floor(segmentSize / amountOfKnots) ?? 1;
+
   if (isNaN(segmentSize) || !segmentSize || !minKnotDistance) {
     return points;
   }
 
   // segment should be at least the double of desired minKnot distance. This will ensure at there will enough knots to interpolate.
-  if (segmentSize / minKnotDistance <= 2) {
+  if (segmentSize / minKnotDistance < 2) {
     return points;
   }
 

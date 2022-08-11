@@ -1,9 +1,12 @@
 import { Types } from '@cornerstonejs/core';
-import { point } from '../../../utilities/math';
+import { point } from '../math';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 
 export function shouldInterpolate(configuration: Record<any, any>): boolean {
-  return configuration?.interpolation?.enabled === true;
+  return (
+    configuration?.interpolation?.interpolationOnAdd === true ||
+    configuration?.interpolation?.interpolateOnEdit === true
+  );
 }
 
 /**
@@ -174,12 +177,20 @@ export function getInterpolatedPoints(
 
   if (interpolation) {
     const {
-      minKnotDistance,
-      editMinKnotDistance,
-      enabled = false,
+      knotsRatioPercentageOnAdd,
+      knotsRatioPercentageOnEdit,
+      interpolationOnAdd = false,
+      interpolateOnEdit = false,
     } = interpolation;
 
-    if (enabled) {
+    const knotsRatioPercentage = pointsOfReference
+      ? knotsRatioPercentageOnEdit
+      : knotsRatioPercentageOnAdd;
+    const isEnabled = pointsOfReference
+      ? interpolateOnEdit
+      : interpolationOnAdd;
+
+    if (isEnabled) {
       // partial or total interpolation
       const [changedIniIndex, changedEndIndex] = pointsOfReference
         ? findChangedSegment(points, pointsOfReference)
@@ -190,11 +201,13 @@ export function getInterpolatedPoints(
         return points;
       }
 
-      return interpolateSegmentPoints(
-        points,
-        changedIniIndex,
-        changedEndIndex,
-        pointsOfReference ? editMinKnotDistance : minKnotDistance
+      return <Types.Point2[]>(
+        interpolateSegmentPoints(
+          points,
+          changedIniIndex,
+          changedEndIndex,
+          knotsRatioPercentage
+        )
       );
     }
   }
