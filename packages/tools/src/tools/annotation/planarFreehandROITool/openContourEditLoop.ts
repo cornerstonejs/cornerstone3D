@@ -12,7 +12,7 @@ import { polyline } from '../../../utilities/math';
 import {
   shouldInterpolate,
   getInterpolatedPoints,
-} from '../../../utilities/planar/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 

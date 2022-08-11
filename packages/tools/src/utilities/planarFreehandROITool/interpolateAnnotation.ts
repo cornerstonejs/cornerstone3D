@@ -13,6 +13,10 @@ function shouldPreventInterpolation(
     return true;
   }
 
+  if (!enabledElement.viewport) {
+    return true;
+  }
+
   const { renderingEngineId, viewportId, FrameOfReferenceUID } = enabledElement;
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
@@ -45,7 +49,6 @@ function shouldPreventInterpolation(
  * It mutates annotation param.
  * The param knotsRatioPercentage defines the percentage of points to be considered as knots on the interpolation process.
  * Interpolation will be skipped in case: annotation is not present in enabledElement (or there is no toolGroup associated with it), related tool is being modified.
- * It annotation is interpolated it will automatically render related window.
  */
 export default function interpolateAnnotation(
   enabledElement: Types.IEnabledElement,
@@ -59,22 +62,26 @@ export default function interpolateAnnotation(
     return false;
   }
 
-  const interpolatedPolyline = <Types.Point3[]>(
+  const { viewport } = enabledElement;
+  // use only 2 dimensions on interpolation (what visually matters),
+  // otherwise a 3d interpolation might have a totally different output as it consider one more dimension.
+  const canvasPoints = annotation.data.polyline.map(viewport.worldToCanvas);
+  const interpolatedCanvasPoints = <Types.Point2[]>(
     interpolateSegmentPoints(
-      annotation.data.polyline,
+      canvasPoints,
       0,
-      annotation.data.polyline.length,
+      canvasPoints.length,
       knotsRatioPercentage
     )
   );
 
-  if (interpolatedPolyline === annotation.data.polyline) {
+  if (interpolatedCanvasPoints === canvasPoints) {
     return false;
   }
 
-  annotation.data.polyline = interpolatedPolyline;
-
-  enabledElement.viewport.render();
+  annotation.data.polyline = interpolatedCanvasPoints.map(
+    viewport.canvasToWorld
+  );
 
   return true;
 }

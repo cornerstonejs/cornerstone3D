@@ -4,7 +4,7 @@ import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 
 export function shouldInterpolate(configuration: Record<any, any>): boolean {
   return (
-    configuration?.interpolation?.interpolationOnAdd === true ||
+    configuration?.interpolation?.interpolateOnAdd === true ||
     configuration?.interpolation?.interpolateOnEdit === true
   );
 }
@@ -179,16 +179,14 @@ export function getInterpolatedPoints(
     const {
       knotsRatioPercentageOnAdd,
       knotsRatioPercentageOnEdit,
-      interpolationOnAdd = false,
+      interpolateOnAdd = false,
       interpolateOnEdit = false,
     } = interpolation;
 
     const knotsRatioPercentage = pointsOfReference
       ? knotsRatioPercentageOnEdit
       : knotsRatioPercentageOnAdd;
-    const isEnabled = pointsOfReference
-      ? interpolateOnEdit
-      : interpolationOnAdd;
+    const isEnabled = pointsOfReference ? interpolateOnEdit : interpolateOnAdd;
 
     if (isEnabled) {
       // partial or total interpolation

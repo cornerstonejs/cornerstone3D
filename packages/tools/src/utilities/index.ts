@@ -26,6 +26,7 @@ import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
 import * as cine from './cine';
 import * as boundingBox from './boundingBox';
+import * as planarFreehandROITool from './planarFreehandROITool';
 import * as rectangleROITool from './rectangleROITool';
 import * as stackPrefetch from './stackPrefetch';
 
@@ -55,6 +56,7 @@ export {
   clip,
   boundingBox,
   rectangleROITool,
+  planarFreehandROITool,
   stackPrefetch,
   scroll,
 };
