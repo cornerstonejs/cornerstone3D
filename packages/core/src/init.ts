@@ -31,6 +31,8 @@ function hasActiveWebGLContext() {
  * @category Initialization
  */
 async function init(defaultConfiguration = {}): Promise<boolean> {
+  console.log('gradienthealth linked::@cornerstone3D/core')
+
   if (csRenderInitialized) {
     return csRenderInitialized;
   }

@@ -635,6 +635,7 @@ export default class StreamingImageVolume extends ImageVolume {
       intercept,
       windowCenter,
       windowWidth,
+      voiLUTFunction: 'LINEAR', // todo: read from metadata
       color,
       numComps: numComponents,
       rows: dimensions[0],
