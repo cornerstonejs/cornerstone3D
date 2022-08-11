@@ -1294,8 +1294,6 @@ interface IViewport {
 // @public (undocumented)
 interface IViewportId {
     // (undocumented)
-    options?: Record<string, unknown>;
-    // (undocumented)
     renderingEngineId: string;
     // (undocumented)
     viewportId: string;

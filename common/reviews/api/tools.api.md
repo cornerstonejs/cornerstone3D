@@ -2399,8 +2399,6 @@ interface IViewport {
 // @public
 interface IViewportId {
     // (undocumented)
-    options?: Record<string, unknown>;
-    // (undocumented)
     renderingEngineId: string;
     // (undocumented)
     viewportId: string;
@@ -3997,6 +3995,8 @@ export class Synchronizer {
     // (undocumented)
     destroy(): void;
     // (undocumented)
+    getOptions(viewportId: string): Record<string, unknown> | undefined;
+    // (undocumented)
     getSourceViewports(): Array<Types_2.IViewportId>;
     // (undocumented)
     getTargetViewports(): Array<Types_2.IViewportId>;
@@ -4014,6 +4014,8 @@ export class Synchronizer {
     removeSource(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
     removeTarget(viewportInfo: Types_2.IViewportId): void;
+    // (undocumented)
+    setOptions(viewportId: string, options?: Record<string, unknown>): void;
 }
 
 declare namespace SynchronizerManager {

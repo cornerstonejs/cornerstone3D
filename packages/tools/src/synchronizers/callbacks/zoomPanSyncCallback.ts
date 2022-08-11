@@ -24,7 +24,7 @@ export default function zoomPanSyncCallback(
     );
   }
 
-  const { options } = targetViewport;
+  const options = synchronizerInstance.getOptions(targetViewport.viewportId);
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
   const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);

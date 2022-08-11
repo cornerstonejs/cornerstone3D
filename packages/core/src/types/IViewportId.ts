@@ -6,5 +6,4 @@
 export default interface IViewportId {
   renderingEngineId: string;
   viewportId: string;
-  options?: Record<string, unknown>;
 }

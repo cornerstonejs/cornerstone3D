@@ -920,8 +920,6 @@ interface IViewport {
 // @public
 interface IViewportId {
     // (undocumented)
-    options?: Record<string, unknown>;
-    // (undocumented)
     renderingEngineId: string;
     // (undocumented)
     viewportId: string;
