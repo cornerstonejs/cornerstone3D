@@ -73,7 +73,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const wadoRsRoot = 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
