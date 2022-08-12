@@ -13,7 +13,7 @@ import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotati
 import {
   getInterpolatedPoints,
   shouldInterpolate,
-} from '../../../utilities/planar/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 const {

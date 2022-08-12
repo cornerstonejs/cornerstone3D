@@ -1146,6 +1146,10 @@ const _default: {
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
+};
+
+// @public (undocumented)
+const _default_2: {
     interpolateAnnotation: typeof interpolateAnnotation;
 };
 
@@ -2879,8 +2883,7 @@ declare namespace planar {
         filterAnnotationsWithinSlice,
         getWorldWidthAndHeightFromCorners,
         filterAnnotationsForDisplay,
-        getPointInLineOfSightWithCriteria,
-        interpolateAnnotation
+        getPointInLineOfSightWithCriteria
     }
 }
 
@@ -2964,6 +2967,13 @@ export class PlanarFreehandROITool extends AnnotationTool {
     triggerAnnotationCompleted: (annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
     triggerAnnotationModified: (annotation: PlanarFreehandROIAnnotation, enabledElement: Types_2.IEnabledElement) => void;
+}
+
+declare namespace planarFreehandROITool {
+    export {
+        _default_2 as default,
+        interpolateAnnotation
+    }
 }
 
 // @public
@@ -4241,6 +4251,7 @@ declare namespace utilities {
         clip_2 as clip,
         boundingBox,
         rectangleROITool,
+        planarFreehandROITool,
         stackPrefetch,
         scroll_2 as scroll
     }

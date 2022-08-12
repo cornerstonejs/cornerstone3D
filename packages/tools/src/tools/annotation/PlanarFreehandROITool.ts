@@ -56,16 +56,16 @@ const { pointCanProjectOnLine } = polyline;
  *
  * PlanarFreehandROITool annotation can be smoothed on drawing completion. This is a configured based approach.
  * The interpolation process uses b-spline algorithm and consider 4 configurations properties:
- * - interpolation.interpolationOnAdd: to tell whether it should be interpolated or not (for editing it is considered the property interpolateOnEdit) (default: false)
+ * - interpolation.interpolateOnAdd: to tell whether it should be interpolated or not (for editing it is considered the property interpolateOnEdit) (default: false)
  * - interpolation.interpolateOnEdit: to tell whether it should be interpolated or not when editing (default: false)
  * - interpolation.knotsRatioPercentageOnAdd: percentage of points from Segment that are likely to be considered knots during interpolation (for editing it is considered the property knotsRatioPercentageOnEdit) ( default: 40)
  * - interpolation.knotsRatioPercentageOnEdit: same as knotsRatioPercentageOnAdd but applicable only when editing the tool (default: 40)
  *
  * So, with that said the interpolation might occur when:
- * - drawing is done (i.e mouse is released) and interpolation.interpolationOnAdd is true. Interpolation algorithm uses knotsRatioPercentageOnAdd
+ * - drawing is done (i.e mouse is released) and interpolation.interpolateOnAdd is true. Interpolation algorithm uses knotsRatioPercentageOnAdd
  * - edit drawing is done (i.e mouse is released) and interpolation.interpolateOnEdit is true. Interpolation algorithm uses knotsRatioPercentageOnEdit and its only applied to changed segment
  * Interpolation does not occur when:
- * - interpolation.interpolationOnAdd is false and drawing is completed
+ * - interpolation.interpolateOnAdd is false and drawing is completed
  * - interpolation.interpolateOnEdit is false and edit is completed
  * - drawing still happening (editing or not)
  *
@@ -97,7 +97,7 @@ const { pointCanProjectOnLine } = polyline;
  *
  * // set interpolation to be ON while editing only
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
- *   interpolation: { interpolationOnAdd: false, interpolateOnEdit: true  },
+ *   interpolation: { interpolateOnAdd: false, interpolateOnEdit: true  },
  * });
  * ```
  *
@@ -187,8 +187,8 @@ class PlanarFreehandROITool extends AnnotationTool {
         // be infinite as the lines become very computationally expensive to draw.
         subPixelResolution: 4,
         interpolation: {
+          interpolateOnAdd: false,
           interpolateOnEdit: false, // used for edit only
-          interpolationOnAdd: false,
           knotsRatioPercentageOnAdd: 40,
           knotsRatioPercentageOnEdit: 40,
         },

@@ -11,7 +11,7 @@ import { vec3 } from 'gl-matrix';
 import {
   shouldInterpolate,
   getInterpolatedPoints,
-} from '../../../utilities/planar/interpolatePoints';
+} from '../../../utilities/planarFreehandROITool/interpolatePoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
