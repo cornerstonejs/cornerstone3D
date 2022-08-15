@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.3...@cornerstonejs/core@0.14.4) (2022-08-15)
+
+
+### Bug Fixes
+
+* default voi for volumes and webLoader ([#171](https://github.com/cornerstonejs/cornerstone3D-beta/issues/171)) ([81f07a6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/81f07a6f9d2a27d9cd6bb78c7ee65d6ac4456724))
+
+
+
+
+
 ## [0.14.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.2...@cornerstonejs/core@0.14.3) (2022-08-04)
 
 
