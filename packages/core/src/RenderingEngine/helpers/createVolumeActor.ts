@@ -63,7 +63,7 @@ async function createVolumeActor(
   }
 
   if (!suppressEvents) {
-    triggerVOIModified(element, viewportId, volumeActor);
+    triggerVOIModified(element, viewportId, volumeActor, volumeId);
   }
 
   return volumeActor;
@@ -72,7 +72,8 @@ async function createVolumeActor(
 function triggerVOIModified(
   element: HTMLDivElement,
   viewportId: string,
-  volumeActor: VolumeActor
+  volumeActor: VolumeActor,
+  volumeId: string
 ) {
   const voiRange = volumeActor
     .getProperty()
@@ -85,6 +86,7 @@ function triggerVOIModified(
       lower: voiRange[0],
       upper: voiRange[1],
     },
+    volumeId,
   };
 
   triggerEvent(element, Events.VOI_MODIFIED, voiModifiedEventDetail);

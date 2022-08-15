@@ -61,6 +61,10 @@
       "wadouri": {
         "name": "Legacy DICOMweb (WADO-URI) Support",
         "description": "Demonstrates how to support retrieval of entire Part 10 DICOM files directly via URL"
+      },
+      "webLoader": {
+        "name": "Load Web images of PNG or JPG format",
+        "description": "Demonstrates how render web images in a stack viewport"
       }
     },
     "core-advanced": {
@@ -124,7 +128,7 @@
       },
       "planarFreehandROITool": {
         "name": "Freehand ROI Tool",
-        "description": "Demonstrates drawing of both open and closed freehand ROIs on stack and volume viewports"
+        "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
       },
       "globalSegmentationConfiguration": {
         "name": "Global Segmentation Configuration",
