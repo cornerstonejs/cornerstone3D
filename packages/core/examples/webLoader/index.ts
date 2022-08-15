@@ -38,7 +38,8 @@ content.appendChild(element);
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'COLOR_STACK';
 
-// png images hosted on web (s3 with cors enabled)
+// png images hosted on web (s3 with cors enabled) from the visible human project
+// https://www.nlm.nih.gov/research/visible/visible_human.html
 const imageIds = [
   'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1460.png',
   'web:https://cs3d-jpg-example.s3.us-east-2.amazonaws.com/a_vm1461.png',

@@ -18,6 +18,11 @@ export default function hardcodedMetaDataProvider(type, imageId, imageIds) {
   } else if (type === 'generalSeriesModule') {
     const generalSeriesModule = {
       modality: 'SC',
+      seriesNumber: 1,
+      seriesDescription: 'Color',
+      seriesDate: '20190201',
+      seriesTime: '120000',
+      seriesInstanceUID: '1.2.276.0.7230010.3.1.4.83233.20190201120000.1',
     };
 
     return generalSeriesModule;
@@ -41,7 +46,7 @@ export default function hardcodedMetaDataProvider(type, imageId, imageIds) {
   } else if (type === 'voiLutModule') {
     return {
       windowWidth: [255],
-      windowCenter: [127],
+      windowCenter: [128],
     };
   } else if (type === 'modalityLutModule') {
     return {
