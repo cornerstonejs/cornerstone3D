@@ -5,14 +5,7 @@ import {
   Types,
 } from '@cornerstonejs/core';
 
-export interface ISynchronizerEventHandler {
-  (
-    synchronizer: Synchronizer,
-    sourceViewport: Types.IViewportId,
-    targetViewport: Types.IViewportId,
-    sourceEvent: any
-  ): void;
-}
+import { ISynchronizerEventHandler } from '../../types';
 
 /**
  * Synchronizer is a class that listens to a specific event on a specific source

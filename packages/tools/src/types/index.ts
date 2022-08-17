@@ -39,6 +39,7 @@ import type {
   SegmentationState,
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
+import ISynchronizerEventHandler from './ISynchronizerEventHandler';
 
 export type {
   // AnnotationState
@@ -63,6 +64,7 @@ export type {
   InteractionTypes,
   //
   IToolGroup,
+  ISynchronizerEventHandler,
   ToolHandle,
   AnnotationHandle,
   TextBoxHandle,
