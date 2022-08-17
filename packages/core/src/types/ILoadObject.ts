@@ -8,7 +8,7 @@ export interface IImageLoadObject {
   /** promise that resolves to an image */
   promise: Promise<IImage>;
   /** optional cancel function for loading*/
-  cancel?: () => void;
+  cancelFn?: () => void;
   /** optional decache function */
   decache?: () => void;
 }
@@ -20,7 +20,7 @@ export interface IVolumeLoadObject {
   /** promise that resolves to an ImageVolume */
   promise: Promise<ImageVolume>;
   /** optional cancel function for loading*/
-  cancel?: () => void;
+  cancelFn?: () => void;
   /** optional decache function */
   decache?: () => void;
 }

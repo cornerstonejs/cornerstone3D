@@ -98,8 +98,8 @@ class Cache implements ICache {
     const { imageLoadObject } = this._imageCache.get(imageId);
 
     // Cancel any in-progress loading
-    if (imageLoadObject.cancel) {
-      imageLoadObject.cancel();
+    if (imageLoadObject.cancelFn) {
+      imageLoadObject.cancelFn();
     }
 
     if (imageLoadObject.decache) {
@@ -120,8 +120,8 @@ class Cache implements ICache {
     const { volumeLoadObject } = cachedVolume;
 
     // Cancel any in-progress loading
-    if (volumeLoadObject.cancel) {
-      volumeLoadObject.cancel();
+    if (volumeLoadObject.cancelFn) {
+      volumeLoadObject.cancelFn();
     }
 
     if (volumeLoadObject.decache) {
@@ -322,8 +322,8 @@ class Cache implements ICache {
     }
 
     if (
-      imageLoadObject.cancel &&
-      typeof imageLoadObject.cancel !== 'function'
+      imageLoadObject.cancelFn &&
+      typeof imageLoadObject.cancelFn !== 'function'
     ) {
       throw new Error(
         'putImageLoadObject: imageLoadObject.cancel must be a function'
@@ -522,8 +522,8 @@ class Cache implements ICache {
       );
     }
     if (
-      volumeLoadObject.cancel &&
-      typeof volumeLoadObject.cancel !== 'function'
+      volumeLoadObject.cancelFn &&
+      typeof volumeLoadObject.cancelFn !== 'function'
     ) {
       throw new Error(
         'putVolumeLoadObject: volumeLoadObject.cancel must be a function'

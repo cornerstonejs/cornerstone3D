@@ -619,7 +619,7 @@ interface IImageData {
 
 // @public
 interface IImageLoadObject {
-    cancel?: () => void;
+    cancelFn?: () => void;
     decache?: () => void;
     promise: Promise<IImage>;
 }
@@ -968,7 +968,7 @@ interface IVolumeInput {
 
 // @public
 interface IVolumeLoadObject {
-    cancel?: () => void;
+    cancelFn?: () => void;
     decache?: () => void;
     promise: Promise<ImageVolume>;
 }

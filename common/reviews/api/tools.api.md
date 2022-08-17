@@ -196,7 +196,8 @@ declare namespace annotation {
         locking,
         selection,
         state,
-        visibility
+        visibility,
+        FrameOfReferenceSpecificAnnotationManager
     }
 }
 export { annotation }
@@ -655,7 +656,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -1601,6 +1602,33 @@ type FlipDirection = {
 };
 
 // @public (undocumented)
+class FrameOfReferenceSpecificAnnotationManager {
+    constructor(uid?: string);
+    // (undocumented)
+    addAnnotation: (annotation: Annotation) => void;
+    // (undocumented)
+    get: (FrameOfReferenceUID: string, toolName: string) => Annotations | undefined;
+    // (undocumented)
+    getAnnotation: (annotationUID: string, filter?: FilterInterface) => Annotation | undefined;
+    // (undocumented)
+    getFrameOfReferenceAnnotations: (FrameOfReferenceUID: string) => FrameOfReferenceSpecificAnnotations;
+    // (undocumented)
+    getFramesOfReference: () => Array<string>;
+    // (undocumented)
+    _imageVolumeModifiedHandler: (evt: Types_2.EventTypes.ImageVolumeModifiedEvent) => void;
+    // (undocumented)
+    removeAllAnnotations: () => void;
+    // (undocumented)
+    removeAnnotation: (annotationUID: string, filter?: FilterInterface) => void;
+    // (undocumented)
+    restoreAnnotations: (state: AnnotationState | FrameOfReferenceSpecificAnnotations | Annotations, FrameOfReferenceUID?: string, toolName?: string) => void;
+    // (undocumented)
+    saveAnnotations: (FrameOfReferenceUID?: string, toolName?: string) => AnnotationState | FrameOfReferenceSpecificAnnotations | Annotations;
+    // (undocumented)
+    readonly uid: string;
+}
+
+// @public (undocumented)
 type FrameOfReferenceSpecificAnnotations = {
     [key: string]: Annotations;
 };
@@ -1942,7 +1970,7 @@ interface IImageData {
 
 // @public
 interface IImageLoadObject {
-    cancel?: () => void;
+    cancelFn?: () => void;
     decache?: () => void;
     promise: Promise<IImage>;
 }
@@ -2242,6 +2270,12 @@ interface IStreamingVolumeProperties {
 function isValidRepresentationConfig(representationType: string, config: RepresentationConfig): boolean;
 
 // @public (undocumented)
+interface ISynchronizerEventHandler {
+    // (undocumented)
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any): void;
+}
+
+// @public (undocumented)
 type IToolBinding = {
     mouseButton: ToolBindingMouseType;
     modifierKey?: ToolBindingKeyboardType;
@@ -2410,7 +2444,7 @@ interface IVolumeInput {
 
 // @public
 interface IVolumeLoadObject {
-    cancel?: () => void;
+    cancelFn?: () => void;
     decache?: () => void;
     promise: Promise<ImageVolume>;
 }
@@ -4199,6 +4233,7 @@ declare namespace Types {
         ToolOptionsType,
         InteractionTypes,
         IToolGroup,
+        ISynchronizerEventHandler,
         ToolHandle,
         AnnotationHandle,
         TextBoxHandle,

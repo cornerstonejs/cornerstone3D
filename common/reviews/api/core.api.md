@@ -815,7 +815,7 @@ interface IImageData {
 // @public (undocumented)
 interface IImageLoadObject {
     // (undocumented)
-    cancel?: () => void;
+    cancelFn?: () => void;
     // (undocumented)
     decache?: () => void;
     // (undocumented)
@@ -1343,7 +1343,7 @@ interface IVolumeInput {
 // @public (undocumented)
 interface IVolumeLoadObject {
     // (undocumented)
-    cancel?: () => void;
+    cancelFn?: () => void;
     // (undocumented)
     decache?: () => void;
     // (undocumented)
