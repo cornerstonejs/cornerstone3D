@@ -9,8 +9,8 @@ import { BaseTool } from './base';
 /**
  * Tool that rotates the camera in the plane defined by the sliceNormal and the viewUp.
  */
-export default class TrackballRotateTool extends BaseTool {
-  static toolName = 'TrackballRotate';
+class TrackballRotateTool extends BaseTool {
+  static toolName;
   touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
 
@@ -133,3 +133,6 @@ export default class TrackballRotateTool extends BaseTool {
     }
   }
 }
+
+TrackballRotateTool.toolName = 'TrackballRotate';
+export default TrackballRotateTool;

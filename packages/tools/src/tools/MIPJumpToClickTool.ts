@@ -11,8 +11,8 @@ import { PublicToolProps, ToolProps } from '../types';
  * tool configuration) will be scrolled (jumped) to the location of the point with
  * the highest intensity value in the MIP.
  */
-export default class MIPJumpToClickTool extends BaseTool {
-  static toolName = 'MIPJumpToClickTool';
+class MIPJumpToClickTool extends BaseTool {
+  static toolName;
 
   _bounds: any;
 
@@ -94,3 +94,6 @@ export default class MIPJumpToClickTool extends BaseTool {
     });
   }
 }
+
+MIPJumpToClickTool.toolName = 'MIPJumpToClickTool';
+export default MIPJumpToClickTool;

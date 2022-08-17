@@ -11,8 +11,8 @@ import { scrollVolume } from '../utilities/scroll';
  * The StackScrollMouseWheelTool is a tool that allows the user to scroll through a
  * stack of images using the mouse wheel
  */
-export default class StackScrollMouseWheelTool extends BaseTool {
-  static toolName = 'StackScrollMouseWheel';
+class StackScrollMouseWheelTool extends BaseTool {
+  static toolName;
 
   _configuration: any;
 
@@ -47,3 +47,6 @@ export default class StackScrollMouseWheelTool extends BaseTool {
     }
   }
 }
+
+StackScrollMouseWheelTool.toolName = 'StackScrollMouseWheel';
+export default StackScrollMouseWheelTool;

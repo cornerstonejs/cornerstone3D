@@ -27,7 +27,7 @@ interface IBaseTool {
  * application.
  */
 abstract class BaseTool implements IBaseTool {
-  static toolName = 'BaseTool';
+  static toolName;
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
   public configuration: Record<string, any>;
@@ -185,4 +185,7 @@ abstract class BaseTool implements IBaseTool {
   }
 }
 
+// Note: this is a workaround since terser plugin does not support static blocks
+// yet and we can't easily say static toolName = "BaseTool" in the class definition.
+BaseTool.toolName = 'BaseTool';
 export default BaseTool;

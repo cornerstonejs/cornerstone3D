@@ -91,8 +91,8 @@ const { transformWorldToIndex } = csUtils;
  * Read more in the Docs section of the website.
  *
  */
-export default class ProbeTool extends AnnotationTool {
-  static toolName = 'Probe';
+class ProbeTool extends AnnotationTool {
+  static toolName;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -664,3 +664,6 @@ export default class ProbeTool extends AnnotationTool {
     return cachedStats;
   }
 }
+
+ProbeTool.toolName = 'Probe';
+export default ProbeTool;

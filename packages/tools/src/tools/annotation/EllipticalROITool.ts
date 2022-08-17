@@ -98,8 +98,8 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-export default class EllipticalROITool extends AnnotationTool {
-  static toolName = 'EllipticalROI';
+class EllipticalROITool extends AnnotationTool {
+  static toolName;
   touchDragCallback: any;
   mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
@@ -1140,3 +1140,6 @@ export default class EllipticalROITool extends AnnotationTool {
     return inEllipse;
   }
 }
+
+EllipticalROITool.toolName = 'EllipticalROI';
+export default EllipticalROITool;

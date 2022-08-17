@@ -35,8 +35,8 @@ import { getSegmentation } from '../../stateManagement/segmentation/segmentation
  * segmentation and segmentIndex. Todo: sphere scissor has some memory problem which
  * lead to ui blocking behavior that needs to be fixed.
  */
-export default class SphereScissorsTool extends BaseTool {
-  static toolName = 'SphereScissor';
+class SphereScissorsTool extends BaseTool {
+  static toolName;
   editData: {
     annotation: any;
     segmentation: any;
@@ -363,3 +363,6 @@ export default class SphereScissorsTool extends BaseTool {
     return renderStatus;
   };
 }
+
+SphereScissorsTool.toolName = 'SphereScissor';
+export default SphereScissorsTool;

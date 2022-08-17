@@ -110,8 +110,8 @@ const EPSILON = 1e-3;
  * by modifying the slab thickness handles.
  *
  */
-export default class CrosshairsTool extends AnnotationTool {
-  static toolName = 'Crosshairs';
+class CrosshairsTool extends AnnotationTool {
+  static toolName;
 
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
@@ -2583,3 +2583,6 @@ export default class CrosshairsTool extends AnnotationTool {
     return data.handles.activeOperation === OPERATION.DRAG ? true : false;
   }
 }
+
+CrosshairsTool.toolName = 'Crosshairs;';
+export default CrosshairsTool;

@@ -49,7 +49,7 @@ import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class AngleTool extends AnnotationTool {
-  static toolName = 'Angle';
+  static toolName;
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -795,4 +795,5 @@ class AngleTool extends AnnotationTool {
   }
 }
 
+AngleTool.toolName = 'Angle';
 export default AngleTool;

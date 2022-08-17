@@ -86,8 +86,8 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-export default class BidirectionalTool extends AnnotationTool {
-  static toolName = 'Bidirectional';
+class BidirectionalTool extends AnnotationTool {
+  static toolName;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -1256,3 +1256,6 @@ export default class BidirectionalTool extends AnnotationTool {
     );
   };
 }
+
+BidirectionalTool.toolName = 'Bidirectional';
+export default BidirectionalTool;

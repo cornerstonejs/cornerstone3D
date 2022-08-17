@@ -92,8 +92,8 @@ const { transformWorldToIndex } = csUtils;
  *
  * Read more in the Docs section of the website.
  */
-export default class RectangleROITool extends AnnotationTool {
-  static toolName = 'RectangleROI';
+class RectangleROITool extends AnnotationTool {
+  static toolName;
 
   _throttledCalculateCachedStats: any;
   editData: {
@@ -1014,3 +1014,6 @@ export default class RectangleROITool extends AnnotationTool {
     );
   };
 }
+
+RectangleROITool.toolName = 'RectangleROI';
+export default RectangleROITool;
