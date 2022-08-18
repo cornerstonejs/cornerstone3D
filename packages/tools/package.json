@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "0.21.7",
+  "version": "0.21.8",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -24,7 +24,7 @@
     "example": "node ../../utils/ExampleRunner/example-runner-cli.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.14.4",
+    "@cornerstonejs/core": "^0.14.5",
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "^4.4.2"
   },

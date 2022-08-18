@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.7...@cornerstonejs/tools@0.21.8) (2022-08-18)
+
+
+### Bug Fixes
+
+* add extra missing exports and no static code block at build ([#179](https://github.com/cornerstonejs/cornerstone3D-beta/issues/179)) ([dfdc4bf](https://github.com/cornerstonejs/cornerstone3D-beta/commit/dfdc4bfbf331da40368a4976f3dc199bd355864a))
+
+
+
+
+
 ## [0.21.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.6...@cornerstonejs/tools@0.21.7) (2022-08-15)
 
 **Note:** Version bump only for package @cornerstonejs/tools
