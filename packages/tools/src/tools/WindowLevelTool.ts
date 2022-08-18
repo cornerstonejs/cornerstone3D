@@ -22,8 +22,8 @@ const PT = 'PT';
  * by dragging mouse over the image.
  *
  */
-export default class WindowLevelTool extends BaseTool {
-  static toolName = 'WindowLevel';
+class WindowLevelTool extends BaseTool {
+  static toolName;
   touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
 
@@ -252,3 +252,6 @@ export default class WindowLevelTool extends BaseTool {
     return { max, min };
   }
 }
+
+WindowLevelTool.toolName = 'WindowLevel';
+export default WindowLevelTool;

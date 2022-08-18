@@ -145,7 +145,7 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
@@ -196,7 +196,8 @@ declare namespace annotation {
         locking,
         selection,
         state,
-        visibility
+        visibility,
+        FrameOfReferenceSpecificAnnotationManager
     }
 }
 export { annotation }
@@ -332,7 +333,7 @@ export abstract class AnnotationTool extends BaseTool {
     // (undocumented)
     abstract renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     abstract toolSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes): void;
 }
@@ -396,7 +397,7 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: ArrowAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
@@ -450,7 +451,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     toolGroupId: string;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -541,7 +542,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: BidirectionalAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
@@ -568,7 +569,7 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -651,11 +652,11 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
+function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
@@ -1097,7 +1098,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     toolCenter: Types_2.Point3;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes) => void;
 }
@@ -1211,7 +1212,7 @@ export class DragProbeTool extends ProbeTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -1392,7 +1393,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalROIAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
@@ -1599,6 +1600,33 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
+
+// @public (undocumented)
+class FrameOfReferenceSpecificAnnotationManager {
+    constructor(uid?: string);
+    // (undocumented)
+    addAnnotation: (annotation: Annotation) => void;
+    // (undocumented)
+    get: (FrameOfReferenceUID: string, toolName: string) => Annotations | undefined;
+    // (undocumented)
+    getAnnotation: (annotationUID: string, filter?: FilterInterface) => Annotation | undefined;
+    // (undocumented)
+    getFrameOfReferenceAnnotations: (FrameOfReferenceUID: string) => FrameOfReferenceSpecificAnnotations;
+    // (undocumented)
+    getFramesOfReference: () => Array<string>;
+    // (undocumented)
+    _imageVolumeModifiedHandler: (evt: Types_2.EventTypes.ImageVolumeModifiedEvent) => void;
+    // (undocumented)
+    removeAllAnnotations: () => void;
+    // (undocumented)
+    removeAnnotation: (annotationUID: string, filter?: FilterInterface) => void;
+    // (undocumented)
+    restoreAnnotations: (state: AnnotationState | FrameOfReferenceSpecificAnnotations | Annotations, FrameOfReferenceUID?: string, toolName?: string) => void;
+    // (undocumented)
+    saveAnnotations: (FrameOfReferenceUID?: string, toolName?: string) => AnnotationState | FrameOfReferenceSpecificAnnotations | Annotations;
+    // (undocumented)
+    readonly uid: string;
+}
 
 // @public (undocumented)
 type FrameOfReferenceSpecificAnnotations = {
@@ -1942,7 +1970,7 @@ interface IImageData {
 
 // @public
 interface IImageLoadObject {
-    cancel?: () => void;
+    cancelFn?: () => void;
     decache?: () => void;
     promise: Promise<IImage>;
 }
@@ -2242,6 +2270,12 @@ interface IStreamingVolumeProperties {
 function isValidRepresentationConfig(representationType: string, config: RepresentationConfig): boolean;
 
 // @public (undocumented)
+interface ISynchronizerEventHandler {
+    // (undocumented)
+    (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any): void;
+}
+
+// @public (undocumented)
 type IToolBinding = {
     mouseButton: ToolBindingMouseType;
     modifierKey?: ToolBindingKeyboardType;
@@ -2410,7 +2444,7 @@ interface IVolumeInput {
 
 // @public
 interface IVolumeLoadObject {
-    cancel?: () => void;
+    cancelFn?: () => void;
     decache?: () => void;
     promise: Promise<ImageVolume>;
 }
@@ -2607,7 +2641,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: LengthAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
@@ -2663,7 +2697,7 @@ export class MagnifyTool extends BaseTool {
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 declare namespace math {
@@ -2703,7 +2737,7 @@ export class MIPJumpToClickTool extends BaseTool {
     // (undocumented)
     mouseClickCallback(evt: any): void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -2872,7 +2906,7 @@ export class PanTool extends BaseTool {
     // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
@@ -2958,7 +2992,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: PlanarFreehandROIAnnotation, interactionType: InteractionTypes) => void;
     // (undocumented)
@@ -3109,7 +3143,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback(): void;
     // (undocumented)
@@ -3259,7 +3293,7 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -3334,7 +3368,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -3394,7 +3428,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, interactionType: InteractionTypes) => void;
 }
@@ -3441,7 +3475,7 @@ export class RectangleScissorsTool extends BaseTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -3567,7 +3601,7 @@ export class SegmentationDisplayTool extends BaseTool {
     // (undocumented)
     renderSegmentation: (toolGroupId: string) => void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -3761,7 +3795,7 @@ export class SphereScissorsTool extends BaseTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public
@@ -3799,7 +3833,7 @@ export class StackScrollMouseWheelTool extends BaseTool {
     // (undocumented)
     mouseWheelCallback(evt: MouseWheelEventType): void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -3816,7 +3850,7 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
@@ -4125,7 +4159,7 @@ export class TrackballRotateTool extends BaseTool {
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
@@ -4199,6 +4233,7 @@ declare namespace Types {
         ToolOptionsType,
         InteractionTypes,
         IToolGroup,
+        ISynchronizerEventHandler,
         ToolHandle,
         AnnotationHandle,
         TextBoxHandle,
@@ -4391,7 +4426,7 @@ export class VolumeRotateMouseWheelTool extends BaseTool {
     // (undocumented)
     mouseWheelCallback(evt: MouseWheelEventType): void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public
@@ -4436,7 +4471,7 @@ export class WindowLevelTool extends BaseTool {
     // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }
@@ -4459,7 +4494,7 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
 }

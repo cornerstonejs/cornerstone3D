@@ -12,8 +12,8 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
  * The StackScrollTool is a tool that allows the user to scroll through a
  * stack of images by pressing the mouse click and dragging
  */
-export default class StackScrollTool extends BaseTool {
-  static toolName = 'StackScroll';
+class StackScrollTool extends BaseTool {
+  static toolName;
   deltaY: number;
   touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
@@ -88,3 +88,6 @@ export default class StackScrollTool extends BaseTool {
     }
   }
 }
+
+StackScrollTool.toolName = 'StackScroll';
+export default StackScrollTool;

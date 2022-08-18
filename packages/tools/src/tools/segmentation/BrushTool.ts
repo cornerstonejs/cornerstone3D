@@ -29,8 +29,8 @@ import {
 /**
  * @public
  */
-export default class BrushTool extends BaseTool {
-  static toolName = 'Brush';
+class BrushTool extends BaseTool {
+  static toolName;
   private _editData: {
     segmentation: any; //
     segmentsLocked: number[]; //
@@ -492,3 +492,6 @@ export default class BrushTool extends BaseTool {
     );
   }
 }
+
+BrushTool.toolName = 'Brush';
+export default BrushTool;

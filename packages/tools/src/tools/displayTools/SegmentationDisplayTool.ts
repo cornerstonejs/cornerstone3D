@@ -37,8 +37,8 @@ import {
  *
  *
  */
-export default class SegmentationDisplayTool extends BaseTool {
-  static toolName = 'SegmentationDisplay';
+class SegmentationDisplayTool extends BaseTool {
+  static toolName;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -164,3 +164,6 @@ export default class SegmentationDisplayTool extends BaseTool {
     return mergedConfig;
   }
 }
+
+SegmentationDisplayTool.toolName = 'SegmentationDisplay';
+export default SegmentationDisplayTool;

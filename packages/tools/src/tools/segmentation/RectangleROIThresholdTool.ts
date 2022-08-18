@@ -37,8 +37,8 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
  * create a segmentation. This tool, however, does not calculate the statistics
  * as RectangleROITool does.
  */
-export default class RectangleROIThresholdTool extends RectangleROITool {
-  static toolName = 'RectangleROIThreshold';
+class RectangleROIThresholdTool extends RectangleROITool {
+  static toolName;
   _throttledCalculateCachedStats: any;
   editData: {
     annotation: any;
@@ -275,3 +275,6 @@ export default class RectangleROIThresholdTool extends RectangleROITool {
     return renderStatus;
   };
 }
+
+RectangleROIThresholdTool.toolName = 'RectangleROIThreshold';
+export default RectangleROIThresholdTool;

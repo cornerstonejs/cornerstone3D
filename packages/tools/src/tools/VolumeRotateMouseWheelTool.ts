@@ -19,8 +19,8 @@ const DIRECTIONS = {
  * axis is set to be Z axis, but it can be configured to any custom normalized axis.
  *
  */
-export default class VolumeRotateMouseWheelTool extends BaseTool {
-  static toolName = 'VolumeRotateMouseWheel';
+class VolumeRotateMouseWheelTool extends BaseTool {
+  static toolName;
   _configuration: any;
 
   constructor(
@@ -81,3 +81,6 @@ export default class VolumeRotateMouseWheelTool extends BaseTool {
     viewport.render();
   }
 }
+
+VolumeRotateMouseWheelTool.toolName = 'VolumeRotateMouseWheel';
+export default VolumeRotateMouseWheelTool;

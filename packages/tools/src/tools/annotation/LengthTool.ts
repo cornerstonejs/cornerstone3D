@@ -87,7 +87,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class LengthTool extends AnnotationTool {
-  static toolName = 'Length';
+  static toolName;
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -810,4 +810,5 @@ class LengthTool extends AnnotationTool {
   }
 }
 
+LengthTool.toolName = 'Length';
 export default LengthTool;

@@ -104,7 +104,7 @@ const { pointCanProjectOnLine } = polyline;
  * Read more in the Docs section of the website.
  */
 class PlanarFreehandROITool extends AnnotationTool {
-  static toolName = 'PlanarFreehandROI';
+  static toolName;
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -617,4 +617,5 @@ class PlanarFreehandROITool extends AnnotationTool {
   };
 }
 
+PlanarFreehandROITool.toolName = 'PlanarFreehandROI';
 export default PlanarFreehandROITool;

@@ -20,8 +20,8 @@ import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
-export default class DragProbeTool extends ProbeTool {
-  static toolName = 'DragProbe';
+class DragProbeTool extends ProbeTool {
+  static toolName;
 
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -192,3 +192,6 @@ export default class DragProbeTool extends ProbeTool {
     return renderStatus;
   };
 }
+
+DragProbeTool.toolName = 'DragProbe';
+export default DragProbeTool;

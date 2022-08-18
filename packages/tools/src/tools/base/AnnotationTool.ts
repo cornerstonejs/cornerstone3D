@@ -38,7 +38,7 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
  * abstract methods.
  */
 abstract class AnnotationTool extends BaseTool {
-  static toolName = 'AnnotationTool';
+  static toolName;
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
@@ -503,4 +503,5 @@ abstract class AnnotationTool extends BaseTool {
   }
 }
 
+AnnotationTool.toolName = 'AnnotationTool';
 export default AnnotationTool;

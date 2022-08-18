@@ -17,8 +17,8 @@ import { IPoints } from '../types';
 
 const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 
-export default class MagnifyTool extends BaseTool {
-  static toolName = 'Magnify';
+class MagnifyTool extends BaseTool {
+  static toolName;
   mouseDragCallback: () => void;
   _bounds: any;
   editData: {
@@ -296,3 +296,6 @@ export default class MagnifyTool extends BaseTool {
     );
   };
 }
+
+MagnifyTool.toolName = 'Magnify';
+export default MagnifyTool;

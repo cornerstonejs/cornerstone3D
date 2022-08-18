@@ -32,8 +32,8 @@ import { getSegmentation } from '../../stateManagement/segmentation/segmentation
  * for the segmentation to modify. You can use SegmentationModule to set the active
  * segmentation and segmentIndex.
  */
-export default class CircleScissorsTool extends BaseTool {
-  static toolName = 'CircleScissor';
+class CircleScissorsTool extends BaseTool {
+  static toolName;
   editData: {
     annotation: any;
     segmentation: any;
@@ -361,3 +361,6 @@ export default class CircleScissorsTool extends BaseTool {
     return renderStatus;
   };
 }
+
+CircleScissorsTool.toolName = 'CircleScissor';
+export default CircleScissorsTool;

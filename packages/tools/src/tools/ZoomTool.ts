@@ -10,8 +10,8 @@ import { EventTypes, PublicToolProps, ToolProps } from '../types';
  * provides a way to set the zoom of a viewport by dragging mouse over the image.
  *
  */
-export default class ZoomTool extends BaseTool {
-  static toolName = 'Zoom';
+class ZoomTool extends BaseTool {
+  static toolName;
   touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   initialMousePosWorld: Types.Point3;
@@ -205,3 +205,6 @@ export default class ZoomTool extends BaseTool {
     viewport.setCamera({ position, focalPoint });
   };
 }
+
+ZoomTool.toolName = 'Zoom';
+export default ZoomTool;

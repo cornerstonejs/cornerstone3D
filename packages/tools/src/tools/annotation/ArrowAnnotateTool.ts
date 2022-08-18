@@ -45,7 +45,7 @@ import { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class ArrowAnnotateTool extends AnnotationTool {
-  static toolName = 'ArrowAnnotate';
+  static toolName;
 
   public touchDragCallback: any;
   public mouseDragCallback: any;
@@ -769,4 +769,5 @@ function changeTextCallback(data, eventData, doneChangingTextCallback) {
   return doneChangingTextCallback(prompt('Enter your annotation:'));
 }
 
+ArrowAnnotateTool.toolName = 'ArrowAnnotate';
 export default ArrowAnnotateTool;

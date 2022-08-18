@@ -211,7 +211,7 @@ export function cancelLoadImage(imageId: string): void {
   const imageLoadObject = cache.getImageLoadObject(imageId);
 
   if (imageLoadObject) {
-    imageLoadObject.cancel();
+    imageLoadObject.cancelFn();
   }
 }
 

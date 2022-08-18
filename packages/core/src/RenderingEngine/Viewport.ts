@@ -821,7 +821,10 @@ class Viewport implements IViewport {
       renderer.resetCameraClippingRange();
     }
 
-    this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
+    this.triggerCameraModifiedEventIfNecessary(
+      previousCamera,
+      this.getCamera()
+    );
   }
 
   /**

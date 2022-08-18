@@ -48,8 +48,8 @@ const { transformWorldToIndex } = csUtils;
  * // Todo: right now only the first slice has grabbable handles, need to make
  * // it so that the handles are grabbable on all slices.
  */
-export default class RectangleROIStartEndThresholdTool extends RectangleROITool {
-  static toolName = 'RectangleROIStartEndThreshold';
+class RectangleROIStartEndThresholdTool extends RectangleROITool {
+  static toolName;
   _throttledCalculateCachedStats: any;
   editData: {
     annotation: any;
@@ -466,3 +466,6 @@ export default class RectangleROIStartEndThresholdTool extends RectangleROITool 
     return imageIdIndex;
   }
 }
+
+RectangleROIStartEndThresholdTool.toolName = 'RectangleROIStartEndThreshold';
+export default RectangleROIStartEndThresholdTool;

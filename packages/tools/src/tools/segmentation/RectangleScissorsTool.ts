@@ -37,8 +37,8 @@ import { getSegmentation } from '../../stateManagement/segmentation/segmentation
  * for the segmentation to modify. You can use SegmentationModule to set the active
  * segmentation and segmentIndex.
  */
-export default class RectangleScissorsTool extends BaseTool {
-  static toolName = 'RectangleScissor';
+class RectangleScissorsTool extends BaseTool {
+  static toolName;
   _throttledCalculateCachedStats: any;
   editData: {
     annotation: any;
@@ -380,3 +380,6 @@ export default class RectangleScissorsTool extends BaseTool {
     return renderStatus;
   };
 }
+
+RectangleScissorsTool.toolName = 'RectangleScissor';
+export default RectangleScissorsTool;
