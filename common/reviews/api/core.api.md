@@ -10,7 +10,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import type { VtkObject } from '@kitware/vtk.js/interfaces';
+import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
