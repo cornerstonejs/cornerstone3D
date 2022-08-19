@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.14.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.5...@cornerstonejs/core@0.14.6) (2022-08-19)
+
+
+### Bug Fixes
+
+* **demoData:** The URL was pointing to a private AWS account ([#175](https://github.com/cornerstonejs/cornerstone3D-beta/issues/175)) ([69dafea](https://github.com/cornerstonejs/cornerstone3D-beta/commit/69dafea902dcd224ea5d1d6d418d5e0c1cec2fe0))
+
+
+
+
+
 ## [0.14.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.4...@cornerstonejs/core@0.14.5) (2022-08-18)
 
 
