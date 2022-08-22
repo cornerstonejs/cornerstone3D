@@ -74,60 +74,6 @@ jobs:
             - coverage
             - junit
 
-  BUILD_DOCS_FOR_PR:
-    <<: *defaults
-    resource_class: xlarge
-    steps:
-      - attach_workspace:
-          at: ~/repo
-      # TODO: Coverage is not found? Not persisted?
-      #- run:
-      #    name: Copy Test Coverage for Docs
-      #    command: cd packages/docs && yarn run copy-coverage-to-docs && cd ..
-      # TODO: Try to fix this later
-      #- run:
-      #    name: Prep Examples
-      #    command: cd packages/docs && yarn run prep-examples && cd ..
-      - run:
-          name: Build Docs
-          command: cd packages/docs && yarn run docs:ci-no-tests && cd ../..
-      - run: # print the name of the branch we're on
-          name: 'What branch am I on?'
-          command: echo ${CIRCLE_BRANCH}
-      - run:
-          name: Deploy to Netlify
-          # This uses environment variables in the CircleCI
-          # NETLIFY_AUTH_TOKEN
-          # NETLIFY_SITE_ID
-          command: ./node_modules/netlify-cli/bin/run deploy --dir=./packages/docs/build --alias ${CIRCLE_BRANCH}
-
-  BUILD_DOCS_FOR_PROD:
-    <<: *defaults
-    resource_class: xlarge
-    steps:
-      - attach_workspace:
-          at: ~/repo
-      # TODO: Coverage is not found? Not persisted?
-      #- run:
-      #    name: Copy Test Coverage for Docs
-      #    command: cd packages/docs && yarn run copy-coverage-to-docs && cd ..
-      # TODO: Try to fix this later
-      #- run:
-      #    name: Prep Examples
-      #    command: cd packages/docs && yarn run prep-examples && cd ..
-      - run:
-          name: Build Docs
-          command: cd packages/docs && yarn run docs:ci-no-tests && cd ../..
-      - run: # print the name of the branch we're on
-          name: 'What branch am I on?'
-          command: echo ${CIRCLE_BRANCH}
-      - run:
-          name: Deploy to Netlify
-          # This uses environment variables in the CircleCI
-          # NETLIFY_AUTH_TOKEN
-          # NETLIFY_SITE_ID
-          command: ./node_modules/netlify-cli/bin/run deploy --dir=./packages/docs/build --prod
-
   NPM_PUBLISH:
     <<: *defaults
     resource_class: small
@@ -169,10 +115,6 @@ workflows:
       - TEST:
           requires:
             - CHECKOUT # TODO: Also require build?
-      - BUILD_DOCS_FOR_PR:
-          requires:
-            - BUILD
-            - TEST
 
   # MERGE TO MAIN
   TEST_AND_RELEASE:
@@ -188,10 +130,6 @@ workflows:
           requires:
             - CHECKOUT
       - NPM_PUBLISH:
-          requires:
-            - BUILD
-            - TEST
-      - BUILD_DOCS_FOR_PROD:
           requires:
             - BUILD
             - TEST
