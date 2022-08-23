@@ -1246,9 +1246,13 @@ interface IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
+    getPan(): Point2;
+    // (undocumented)
     getRenderer(): void;
     // (undocumented)
     getRenderingEngine(): any;
+    // (undocumented)
+    getZoom(): number;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1264,9 +1268,13 @@ interface IViewport {
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
+    // (undocumented)
+    setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
+    // (undocumented)
+    setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
     sHeight: number;
     // (undocumented)
@@ -1951,6 +1959,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
+    getPan(): Point2;
+    // (undocumented)
     getProperties: () => void;
     // (undocumented)
     getRenderer(): any;
@@ -1959,9 +1969,13 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
+    getZoom(): number;
+    // (undocumented)
     protected hasPixelSpacing: boolean;
     // (undocumented)
     readonly id: string;
+    // (undocumented)
+    protected initialCamera: ICamera;
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
@@ -1979,7 +1993,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    protected resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    protected resetCamera(resetPan?: boolean, resetZoom?: boolean, storeAsInitialCamera?: boolean): boolean;
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)
@@ -1989,13 +2003,19 @@ export class Viewport implements IViewport {
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     protected setCameraNoEvent(camera: ICamera): void;
+    // (undocumented)
+    protected setInitialCamera(camera: ICamera): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
     setOrientationOfClippingPlanes(vtkPlanes: Array<vtkPlane>, slabThickness: number, viewPlaneNormal: Point3, focalPoint: Point3): void;
+    // (undocumented)
+    setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
+    // (undocumented)
+    setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     sHeight: number;
     // (undocumented)

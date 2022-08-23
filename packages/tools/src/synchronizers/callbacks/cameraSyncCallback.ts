@@ -1,27 +1,22 @@
 import { getRenderingEngine, Types } from '@cornerstonejs/core';
+import { Synchronizer } from '../../store';
 
 /**
- * Synchronizer callback to synchronize the camera. Synchronization
+ * Synchronizer callback to synchronize the camera by updating all camera
+ * values.  See also zoomPanSyncCallback
  *
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
- * @param targetViewport - The list of IDs defining the target viewport.
+ * @param targetViewport - The list of IDs defining the target viewport, never
+ *   the same as sourceViewport.
  * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
 export default function cameraSyncCallback(
-  synchronizerInstance,
+  synchronizerInstance: Synchronizer,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
   cameraModifiedEvent: CustomEvent
 ): void {
-  // We need a helper for this
-  if (
-    sourceViewport.renderingEngineId === targetViewport.renderingEngineId &&
-    sourceViewport.viewportId === targetViewport.viewportId
-  ) {
-    return;
-  }
-
   const { camera } = cameraModifiedEvent.detail;
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
@@ -33,10 +28,6 @@ export default function cameraSyncCallback(
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
-  // TODO: only sync in-plane movements if one viewport is a stack viewport
-
-  // Todo: we shouldn't set camera, we should set the focalPoint
-  // to the nearest slice center world position
   tViewport.setCamera(camera);
   tViewport.render();
 }

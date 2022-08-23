@@ -1,4 +1,9 @@
 import createCameraPositionSynchronizer from './createCameraPositionSynchronizer';
 import createVOISynchronizer from './createVOISynchronizer';
+import createZoomPanSynchronizer from './createZoomPanSynchronizer';
 
-export { createCameraPositionSynchronizer, createVOISynchronizer };
+export {
+  createCameraPositionSynchronizer,
+  createVOISynchronizer,
+  createZoomPanSynchronizer,
+};

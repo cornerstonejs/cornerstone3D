@@ -1012,6 +1012,9 @@ function createToolGroup(toolGroupId: string): IToolGroup | undefined;
 function createVOISynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
+function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 export class CrosshairsTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -2369,8 +2372,10 @@ interface IViewport {
     _getCorners(bounds: Array<number>): Array<number>[];
     getDefaultActor(): ActorEntry;
     getFrameOfReferenceUID: () => string;
+    getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;
+    getZoom(): number;
     id: string;
     options: ViewportInputOptions;
     removeAllActors(): void;
@@ -2378,8 +2383,10 @@ interface IViewport {
     renderingEngineId: string;
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
+    setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;
     sWidth: number;
@@ -3988,6 +3995,8 @@ export class Synchronizer {
     // (undocumented)
     destroy(): void;
     // (undocumented)
+    getOptions(viewportId: string): Record<string, unknown> | undefined;
+    // (undocumented)
     getSourceViewports(): Array<Types_2.IViewportId>;
     // (undocumented)
     getTargetViewports(): Array<Types_2.IViewportId>;
@@ -4005,6 +4014,8 @@ export class Synchronizer {
     removeSource(viewportInfo: Types_2.IViewportId): void;
     // (undocumented)
     removeTarget(viewportInfo: Types_2.IViewportId): void;
+    // (undocumented)
+    setOptions(viewportId: string, options?: Record<string, unknown>): void;
 }
 
 declare namespace SynchronizerManager {
@@ -4022,7 +4033,8 @@ export { SynchronizerManager }
 declare namespace synchronizers {
     export {
         createCameraPositionSynchronizer,
-        createVOISynchronizer
+        createVOISynchronizer,
+        createZoomPanSynchronizer
     }
 }
 export { synchronizers }

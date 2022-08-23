@@ -893,8 +893,10 @@ interface IViewport {
     _getCorners(bounds: Array<number>): Array<number>[];
     getDefaultActor(): ActorEntry;
     getFrameOfReferenceUID: () => string;
+    getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;
+    getZoom(): number;
     id: string;
     options: ViewportInputOptions;
     removeAllActors(): void;
@@ -902,8 +904,10 @@ interface IViewport {
     renderingEngineId: string;
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
+    setPan(pan: Point2, storeAsInitialCamera?: boolean);
+    setZoom(zoom: number, storeAsInitialCamera?: boolean);
     sHeight: number;
     suppressEvents: boolean;
     sWidth: number;

@@ -21,7 +21,7 @@ class Synchronizer {
   private _ignoreFiredEvents: boolean;
   private _sourceViewports: Array<Types.IViewportId>;
   private _targetViewports: Array<Types.IViewportId>;
-  //
+  private _viewportOptions: Record<string, Record<string, unknown>> = {};
   public id: string;
 
   constructor(
@@ -46,6 +46,24 @@ class Synchronizer {
    */
   public isDisabled(): boolean {
     return !this._enabled || !this._hasSourceElements();
+  }
+
+  /**
+   * Sets the options for the viewport id.  This can be used to
+   * provide configuration on a viewport basis for things like offsets
+   * to the general synchronization, or turn on/off synchronization of certain
+   * attributes.
+   */
+  public setOptions(
+    viewportId: string,
+    options: Record<string, unknown> = {}
+  ): void {
+    this._viewportOptions[viewportId] = options;
+  }
+
+  /** Gets the options for the given viewport id */
+  public getOptions(viewportId: string): Record<string, unknown> | undefined {
+    return this._viewportOptions[viewportId];
   }
 
   /**
