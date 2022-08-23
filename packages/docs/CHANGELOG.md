@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.5.9...docs@0.5.10) (2022-08-23)
+
+
+### Bug Fixes
+
+* docs on netlify ([#183](https://github.com/cornerstonejs/cornerstone3D-beta/issues/183)) ([8b2c4a8](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8b2c4a8acbccf41daf86c00315fa43d329caa4ff))
+
+
+
+
+
 ## [0.5.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.5.8...docs@0.5.9) (2022-08-19)
 
 **Note:** Version bump only for package docs
