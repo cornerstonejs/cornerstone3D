@@ -1,5 +1,5 @@
 import type { mat4 } from 'gl-matrix';
-import type { VtkObject } from '@kitware/vtk.js/interfaces';
+import type { vtkObject } from '@kitware/vtk.js/interfaces';
 
 // Copied from VTKCamera
 
@@ -29,7 +29,7 @@ interface ICameraInitialValues {
   physicalViewNorth?: number[];
 }
 
-export interface vtkSlabCamera extends VtkObject {
+export interface vtkSlabCamera extends vtkObject {
   /**
    * Apply a transform to the camera.
    * The camera position, focal-point, and view-up are re-calculated
