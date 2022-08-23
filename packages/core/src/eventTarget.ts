@@ -16,6 +16,8 @@ class CornerstoneEventTarget implements EventTarget {
     if (!this.listeners[type]) {
       this.listeners[type] = [];
     }
+
+    // prevent multiple callbacks from firing
     if (this.listeners[type].indexOf(callback) !== -1) {
       return;
     }

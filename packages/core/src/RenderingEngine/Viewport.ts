@@ -668,7 +668,10 @@ class Viewport implements IViewport {
     if (this.flipHorizontal || this.flipVertical) {
       this.flip({ flipHorizontal: false, flipVertical: false });
     }
-    this.setInitialCamera(this.getCamera(), storeAsInitialCamera);
+
+    if (storeAsInitialCamera) {
+      this.setInitialCamera(this.getCamera());
+    }
 
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
@@ -692,16 +695,8 @@ class Viewport implements IViewport {
    * This allows computing differences applied later as compared to the initial
    * position, for things like zoom and pan.
    * @param camera - to store as the initial value.
-   * @param storeAsInitialCamera - can be passed to skip resetting, ie a no-op on this call
-   *   This is just used to make it easy to call conditionally.
    */
-  protected setInitialCamera(
-    camera: ICamera,
-    storeAsInitialCamera = true
-  ): void {
-    if (!storeAsInitialCamera) {
-      return;
-    }
+  protected setInitialCamera(camera: ICamera): void {
     this.initialCamera = camera;
   }
 
@@ -768,7 +763,7 @@ class Viewport implements IViewport {
    * originally applied to the image.  That is, on initial display,
    * the zoom level is 1.  Computed as a function of the camera.
    */
-  public getZoom() {
+  public getZoom(): number {
     const activeCamera = this.getVtkActiveCamera();
     const { parallelScale: initialParallelScale } = this.initialCamera;
     return initialParallelScale / activeCamera.getParallelScale();
@@ -941,7 +936,9 @@ class Viewport implements IViewport {
       renderer.resetCameraClippingRange();
     }
 
-    this.setInitialCamera(updatedCamera, storeAsInitialCamera);
+    if (storeAsInitialCamera) {
+      this.setInitialCamera(updatedCamera);
+    }
 
     this.triggerCameraModifiedEventIfNecessary(
       previousCamera,
