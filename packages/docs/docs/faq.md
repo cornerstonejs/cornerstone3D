@@ -1,6 +1,7 @@
 ---
 id: faq
 ---
+
 # Frequently Asked Questions
 
 ### What is the difference between Cornerstone (legacy) and Cornerstone3D (alpha) and react-vtkjs-viewport?
@@ -34,7 +35,7 @@ The following will not be migrated at the current time
     <td>Mixins are self registering addons for tools introduced in CornerstoneTools 3.0+. We found there are more useful design patterns for making tools by composition, such as wrapping common utility functions. We intend to deprecate this feature.</td>
   </tr>
   <tr>
-    <td>Registered third party content other than tools (custom manipulators, utils, etc).</td>
+    <td>Registered third-party content other than tools (custom manipulators, utils, etc).</td>
     <td>We feel utils should just be wrapped up in NPM libraries and imported, and the old framework was probably too heavy for its use cases.</td>
   </tr>
 </tbody>
