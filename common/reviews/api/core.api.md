@@ -2007,7 +2007,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected setCameraNoEvent(camera: ICamera): void;
     // (undocumented)
-    protected setInitialCamera(camera: ICamera, storeAsInitialCamera?: boolean): void;
+    protected setInitialCamera(camera: ICamera): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
