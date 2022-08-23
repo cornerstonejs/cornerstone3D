@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.10...@cornerstonejs/tools@0.21.11) (2022-08-23)
+
+
+### Bug Fixes
+
+* invalid keybindings Alt and Ctrl ([#176](https://github.com/cornerstonejs/cornerstone3D-beta/issues/176)) ([d74d696](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d74d696b5de5fe1cd1fb6d36a32660c60140caa0))
+
+
+
+
+
 ## [0.21.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.9...@cornerstonejs/tools@0.21.10) (2022-08-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools
