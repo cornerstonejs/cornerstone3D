@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.22.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.11...@cornerstonejs/tools@0.22.0) (2022-08-23)
+
+
+### Features
+
+* camera sync canvas relative ([#167](https://github.com/cornerstonejs/cornerstone3D-beta/issues/167)) ([2fd6c98](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2fd6c9830eb6e9da10960de0c25702b06716382a))
+
+
+
+
+
 ## [0.21.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.21.10...@cornerstonejs/tools@0.21.11) (2022-08-23)
 
 
