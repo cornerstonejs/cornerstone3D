@@ -22,6 +22,7 @@ interface DerivedVolumeOptions {
   volumeId: string;
   targetBuffer?: {
     type: 'Float32Array' | 'Uint8Array';
+    sharedArrayBuffer?: boolean;
   };
 }
 interface LocalVolumeOptions {
@@ -252,7 +253,13 @@ export function createAndCacheDerivedVolume(
     throw new Error(Events.CACHE_SIZE_EXCEEDED);
   }
 
-  const volumeScalarData = new TypedArray(scalarLength);
+  let volumeScalarData;
+  if (targetBuffer.sharedArrayBuffer) {
+    const buffer = new SharedArrayBuffer(numBytes);
+    volumeScalarData = new TypedArray(buffer);
+  } else {
+    volumeScalarData = new TypedArray(scalarLength);
+  }
 
   // Todo: handle more than one component for segmentation (RGB)
   const scalarArray = vtkDataArray.newInstance({
