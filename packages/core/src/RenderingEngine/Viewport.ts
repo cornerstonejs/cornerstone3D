@@ -3,7 +3,7 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import { vec3, mat4 } from 'gl-matrix';
+import { vec2, vec3, mat4 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
@@ -66,6 +66,10 @@ class Viewport implements IViewport {
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
   protected hasPixelSpacing = true;
+  /** The camera that is initially defined on the reset for
+   * the relative pan/zoom
+   */
+  protected initialCamera: ICamera;
 
   constructor(props: ViewportInput) {
     this.id = props.id;
@@ -298,8 +302,6 @@ class Viewport implements IViewport {
       }
 
       actor.setUserMatrix(mat);
-
-      this.getRenderingEngine().render();
     });
 
     this.getRenderingEngine().render();
@@ -536,9 +538,14 @@ class Viewport implements IViewport {
    * is reset for the current view.
    * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
    * @param resetZoom - If true, the camera zoom is reset to the default zoom
+   * @param resetOffsets - If true, the pan/zoom initial offsets are reset.
    * @returns boolean
    */
-  protected resetCamera(resetPan = true, resetZoom = true): boolean {
+  protected resetCamera(
+    resetPan = true,
+    resetZoom = true,
+    resetOffsets = true
+  ): boolean {
     const renderer = this.getRenderer();
     const previousCamera = _cloneDeep(this.getCamera());
 
@@ -623,11 +630,7 @@ class Viewport implements IViewport {
       activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1]);
     }
 
-    let focalPointToSet = focalPoint;
-
-    if (!resetPan) {
-      focalPointToSet = previousCamera.focalPoint;
-    }
+    const focalPointToSet = resetPan ? focalPoint : previousCamera.focalPoint;
 
     activeCamera.setFocalPoint(
       focalPointToSet[0],
@@ -661,14 +664,15 @@ class Viewport implements IViewport {
       RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
     );
 
+    if (this.flipHorizontal || this.flipVertical) {
+      this.flip({ flipHorizontal: false, flipVertical: false });
+    }
+    this.resetInitialOffsets(!!resetOffsets);
+
     const RESET_CAMERA_EVENT = {
       type: 'ResetCameraEvent',
       renderer,
     };
-
-    if (this.flipHorizontal || this.flipVertical) {
-      this.flip({ flipHorizontal: false, flipVertical: false });
-    }
 
     // Here to let parallel/distributed compositing intercept
     // and do the right thing.
@@ -680,6 +684,103 @@ class Viewport implements IViewport {
     );
 
     return true;
+  }
+
+  /**
+   * Resets the stored initial offset values for
+   * zoom and pan.  These values are the offset
+   * values used to allow the getPan and getZoom
+   * to return [0,0] and 1 for the initial values.
+   * @param resetOffsets can be passed to skip resetting, ie a no-op on this call
+   */
+  protected resetInitialOffsets(resetOffsets = true) {
+    if (!resetOffsets) {
+      return;
+    }
+    this.initialCamera = this.getCamera();
+  }
+
+  /**
+   * Helper function to return the current canvas pan value.
+   *
+   * @returns a Point2 containing the current pan values
+   * on the canvas,
+   * computed from the current camera, where the initial pan
+   * value is [0,0].
+   */
+  public getPan(): Point2 {
+    const activeCamera = this.getVtkActiveCamera();
+    const focalPoint = activeCamera.getFocalPoint() as Point3;
+
+    const zero3 = this.canvasToWorld([0, 0]);
+    const initialCanvasFocal = this.worldToCanvas(
+      <Point3>vec3.subtract(vec3.create(), this.initialCamera.focalPoint, zero3)
+    );
+    const currentCanvasFocal = this.worldToCanvas(
+      <Point3>vec3.subtract(vec3.create(), focalPoint, zero3)
+    );
+    const result = <Point2>(
+      vec2.subtract(vec2.create(), initialCanvasFocal, currentCanvasFocal)
+    );
+    return result;
+  }
+
+  /**
+   * Sets the canvas pan value relative to the initial view position of 0,0
+   * Modifies the camera to perform the pan.
+   */
+  public setPan(pan: Point2, resetOffsets = false) {
+    const previousCamera = this.getCamera();
+    const { focalPoint, position } = previousCamera;
+    const zero3 = this.canvasToWorld([0, 0]);
+    const delta2 = vec2.subtract(vec2.create(), pan, this.getPan());
+    if (Math.abs(delta2[0]) < 1 && Math.abs(delta2[1]) < 1 && !resetOffsets) {
+      return;
+    }
+    const delta = vec3.subtract(
+      vec3.create(),
+      this.canvasToWorld(<Point2>delta2),
+      zero3
+    );
+    const newFocal = vec3.subtract(vec3.create(), focalPoint, delta);
+    const newPosition = vec3.subtract(vec3.create(), position, delta);
+    this.setCamera({
+      ...previousCamera,
+      focalPoint: newFocal as Point3,
+      position: newPosition as Point3,
+      resetOffsets,
+    });
+  }
+
+  /**
+   * Returns a current zoom level relative to the initial parallel scale
+   * originally applied to the image.  That is, on initial display,
+   * the zoom level is 1.  Computed as a function of the camera.
+   */
+  public getZoom() {
+    const activeCamera = this.getVtkActiveCamera();
+    const { parallelScale: initialParallelScale } = this.initialCamera;
+    return initialParallelScale / activeCamera.getParallelScale();
+  }
+
+  public getImagePosition() {
+    const activeCamera = this.getVtkActiveCamera();
+  }
+
+  /** Zooms the image using parallel scale by updating the camera value.
+   * @param value is the relative parallel scale to apply.  It is relative
+   * to the initial offsets value.
+   * @param resetOffsets can be set to true to reset the zoom to the specified
+   *    value as a "1" value.
+   */
+  public setZoom(value: number, resetOffsets = false) {
+    const camera = this.getCamera();
+    const { parallelScale: initialParallelScale } = this.initialCamera;
+    const parallelScale = initialParallelScale / value;
+    if (camera.parallelScale === parallelScale && !resetOffsets) {
+      return;
+    }
+    this.setCamera({ ...camera, parallelScale, resetOffsets });
   }
 
   /**
@@ -776,6 +877,7 @@ class Viewport implements IViewport {
       viewAngle,
       flipHorizontal,
       flipVertical,
+      resetOffsets,
     } = cameraInterface;
 
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
@@ -820,6 +922,8 @@ class Viewport implements IViewport {
       const renderer = this.getRenderer();
       renderer.resetCameraClippingRange();
     }
+
+    this.resetInitialOffsets(!!resetOffsets);
 
     this.triggerCameraModifiedEventIfNecessary(
       previousCamera,
