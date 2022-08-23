@@ -23,8 +23,8 @@ enum MouseBindings {
 
 enum KeyboardBindings {
   Shift = 16,
-  Ctrl = 18,
-  Alt = 17,
+  Ctrl = 17,
+  Alt = 18,
 }
 
 export { MouseBindings, KeyboardBindings };

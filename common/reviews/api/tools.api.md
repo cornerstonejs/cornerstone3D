@@ -2506,9 +2506,9 @@ type JumpToSliceOptions = {
 // @public (undocumented)
 enum KeyboardBindings {
     // (undocumented)
-    Alt = 17,
+    Alt = 18,
     // (undocumented)
-    Ctrl = 18,
+    Ctrl = 17,
     // (undocumented)
     Shift = 16
 }
