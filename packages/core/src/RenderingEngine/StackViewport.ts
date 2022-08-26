@@ -1808,9 +1808,6 @@ class StackViewport extends Viewport implements IStackViewport {
       imageIdIndex
     );
 
-    // update the target imageIdIndex for it to not interfere
-    // with the scroll event
-    this.targetImageIdIndex = imageIdIndex;
     return imageId;
   }
 
