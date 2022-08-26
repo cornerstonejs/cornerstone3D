@@ -31,7 +31,6 @@ import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorld
 import {
   pointInEllipse,
   getCanvasEllipseCorners,
-  getCanvasEllipseCenter,
 } from '../../utilities/math/ellipse';
 import {
   resetElementCursor,
@@ -881,7 +880,7 @@ class EllipticalROITool extends AnnotationTool {
         Math.abs(canvasCorners[0][1] - canvasCorners[1][1]) / 2 // vertical radius
       );
       if (centerPointRadius && minRadius > 3 * centerPointRadius) {
-        const centerPoint = getCanvasEllipseCenter(canvasCoordinates);
+        const centerPoint = this._getCanvasEllipseCenter(canvasCoordinates);
         drawCircleSvg(
           svgDrawingHelper,
           annotationUID,
@@ -1167,6 +1166,20 @@ class EllipticalROITool extends AnnotationTool {
 
     return inEllipse;
   }
+
+  /**
+   * It takes the canvas coordinates of the ellipse corners and returns the center point of it
+   *
+   * @param ellipseCanvasPoints - The coordinates of the ellipse in the canvas.
+   * @returns center point.
+   */
+  _getCanvasEllipseCenter(ellipseCanvasPoints: Types.Point2[]) : Types.Point2 {
+    const [bottom, top, left, right] = ellipseCanvasPoints;
+    const topLeft = [left[0], top[1]];
+    const bottomRight = [right[0], bottom[1]];
+    return [(topLeft[0] + bottomRight[0]) / 2, (topLeft[1] + bottomRight[1]) / 2] as Types.Point2;
+  }
+
 }
 
 EllipticalROITool.toolName = 'EllipticalROI';
