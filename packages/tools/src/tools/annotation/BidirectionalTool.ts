@@ -109,7 +109,6 @@ class BidirectionalTool extends AnnotationTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        shadow: true,
         preventHandleOutsideImage: false,
       },
     }
@@ -993,6 +992,7 @@ class BidirectionalTool extends AnnotationTool {
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
+      const shadow = this.getStyle('shadow', styleSpecifier, annotation);
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
@@ -1061,6 +1061,7 @@ class BidirectionalTool extends AnnotationTool {
           color,
           lineDash,
           lineWidth,
+          shadow,
         }
       );
 
@@ -1075,6 +1076,7 @@ class BidirectionalTool extends AnnotationTool {
           color,
           lineDash,
           lineWidth,
+          shadow,
         }
       );
 

@@ -34,6 +34,7 @@ class ToolStyle {
       colorLocked: 'rgb(255, 255, 0)',
       lineWidth: '1',
       lineDash: '',
+      shadow: true,
       textBoxFontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
       textBoxFontSize: '14px',
       textBoxColor: 'rgb(255, 255, 0)',
@@ -43,6 +44,7 @@ class ToolStyle {
       textBoxBackground: '',
       textBoxLinkLineWidth: '1',
       textBoxLinkLineDash: '2,3',
+      textBoxShadow: true,
     };
 
     this._initializeConfig(defaultConfig);
