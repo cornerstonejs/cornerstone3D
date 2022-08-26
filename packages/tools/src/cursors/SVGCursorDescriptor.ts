@@ -339,27 +339,27 @@ const CursorSVG = {
    * Segmentation Cursors
    */
 
-  segmentationFreeHandEraseInside: extend(BASE, {
+  SegmentationFreeHandEraseInside: extend(BASE, {
     iconContent: `${SCISSOR_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationFreeHandFillInside: extend(BASE, {
+  SegmentationFreeHandFillInside: extend(BASE, {
     iconContent: `${SCISSOR_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationFreeHandEraseOutside: extend(BASE, {
+  SegmentationFreeHandEraseOutside: extend(BASE, {
     iconContent: `${SCISSOR_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationFreeHandFillOutside: extend(BASE, {
+  SegmentationFreeHandFillOutside: extend(BASE, {
     iconContent: `${SCISSOR_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
-  segmentationRectangleEraseInside: extend(BASE, {
+  SegmentationRectangleEraseInside: extend(BASE, {
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
