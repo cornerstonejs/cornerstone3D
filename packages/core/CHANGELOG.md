@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.15.0...@cornerstonejs/core@0.15.1) (2022-08-26)
+
+
+### Bug Fixes
+
+* shadow for annotations and stack viewport targetImageIdIndex bug ([#189](https://github.com/cornerstonejs/cornerstone3D-beta/issues/189)) ([be70be7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/be70be70a543fffb18f7d05c69e16d5c0255a57e))
+
+
+
+
+
 # [0.15.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.14.7...@cornerstonejs/core@0.15.0) (2022-08-23)
 
 
