@@ -417,8 +417,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // todo: some tools rely on the modality
     this.modality = modality;
 
-    let imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-    imagePlaneModule = this._getImagePlaneModule(imagePlaneModule);
+    let imagePlaneModule = this._getImagePlaneModule(imageId);
 
     // Todo: for now, it gives error for getImageData
     if (!this.useCPURendering) {
@@ -1304,7 +1303,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const [xSpacing, ySpacing] = imageData.getSpacing();
     const [xVoxels, yVoxels] = imageData.getDimensions();
-    const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId);
+    const imagePlaneModule = this._getImagePlaneModule(image.imageId);
     const direction = imageData.getDirection();
     const rowCosines = direction.slice(0, 3);
     const columnCosines = direction.slice(3, 6);
@@ -1315,8 +1314,6 @@ class StackViewport extends Viewport implements IStackViewport {
       ySpacing !== image.columnPixelSpacing ||
       xVoxels !== image.columns ||
       yVoxels !== image.rows ||
-      !imagePlaneModule.rowCosines ||
-      !imagePlaneModule.columnCosines ||
       !isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) ||
       !isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines)
     ) {
@@ -1332,7 +1329,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param image - Cornerstone Image object
    */
   private _updateVTKImageDataFromCornerstoneImage(image: IImage): void {
-    const imagePlaneModule = metaData.get('imagePlaneModule', image.imageId);
+    const imagePlaneModule = this._getImagePlaneModule(image.imageId);
     let origin = imagePlaneModule.imagePositionPatient;
 
     if (origin == null) {
@@ -1811,6 +1808,9 @@ class StackViewport extends Viewport implements IStackViewport {
       imageIdIndex
     );
 
+    // update the target imageIdIndex for it to not interfere
+    // with the scroll event
+    this.targetImageIdIndex = imageIdIndex;
     return imageId;
   }
 
@@ -1922,7 +1922,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
-      return;
+      return this.getCurrentImageId();
     }
 
     // Otherwise, get the imageId and attempt to display it
@@ -2459,9 +2459,9 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   // create default values for imagePlaneModule if values are undefined
-  private _getImagePlaneModule(
-    imagePlaneModule: ImagePlaneModule
-  ): ImagePlaneModule {
+  private _getImagePlaneModule(imageId: string): ImagePlaneModule {
+    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };

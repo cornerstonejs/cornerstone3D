@@ -108,7 +108,6 @@ class LengthTool extends AnnotationTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        shadow: true,
         preventHandleOutsideImage: false,
       },
     }
@@ -609,9 +608,11 @@ class LengthTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
+      // Todo: move these into annotationTool class
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
+      const shadow = this.getStyle('shadow', styleSpecifier, annotation);
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -677,6 +678,7 @@ class LengthTool extends AnnotationTool {
           color,
           width: lineWidth,
           lineDash,
+          shadow,
         }
       );
 

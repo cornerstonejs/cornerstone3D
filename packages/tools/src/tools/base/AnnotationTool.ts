@@ -442,6 +442,7 @@ abstract class AnnotationTool extends BaseTool {
       ),
       fontSize: this.getStyle('textBoxFontSize', specifications, annotation),
       color: this.getStyle('textBoxColor', specifications, annotation),
+      shadow: this.getStyle('textBoxShadow', specifications, annotation),
       background: this.getStyle(
         'textBoxBackground',
         specifications,

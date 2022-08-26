@@ -18,12 +18,13 @@ export default function drawLine(
     return;
   }
 
-  const { color, width, lineWidth, lineDash } = Object.assign(
+  const { color, width, lineWidth, lineDash, shadow } = Object.assign(
     {
       color: 'dodgerblue',
       width: '2',
       lineWidth: undefined,
       lineDash: undefined,
+      shadow: undefined,
     },
     options
   );
@@ -34,6 +35,7 @@ export default function drawLine(
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
   const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
+  const dropShadowStyle = shadow ? 'filter:url(#shadow);' : '';
 
   const attributes = {
     x1: `${start[0]}`,
@@ -41,6 +43,7 @@ export default function drawLine(
     x2: `${end[0]}`,
     y2: `${end[1]}`,
     stroke: color,
+    style: dropShadowStyle,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };
