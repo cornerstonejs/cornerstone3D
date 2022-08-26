@@ -1117,10 +1117,50 @@ declare namespace cursors {
         elementCursor,
         registerCursor,
         CursorNames,
+        CursorSVG,
         setCursorForElement
     }
 }
 export { cursors }
+
+// @public (undocumented)
+const CursorSVG: {
+    Angle: SVGCursorDescriptor;
+    ArrowAnnotate: SVGCursorDescriptor;
+    Bidirectional: SVGCursorDescriptor;
+    CobbAngle: SVGCursorDescriptor;
+    CircleROI: SVGCursorDescriptor;
+    EllipticalROI: SVGCursorDescriptor;
+    FreehandROI: SVGCursorDescriptor;
+    FreehandROISculptor: SVGCursorDescriptor;
+    Length: SVGCursorDescriptor;
+    Probe: SVGCursorDescriptor;
+    RectangleROI: SVGCursorDescriptor;
+    TextMarker: SVGCursorDescriptor;
+    Crosshairs: SVGCursorDescriptor;
+    Eraser: SVGCursorDescriptor;
+    Magnify: SVGCursorDescriptor;
+    Pan: SVGCursorDescriptor;
+    Rotate: SVGCursorDescriptor;
+    StackScroll: SVGCursorDescriptor;
+    WindowLevelRegion: SVGCursorDescriptor;
+    WindowLevel: SVGCursorDescriptor;
+    Zoom: SVGCursorDescriptor;
+    segmentationFreeHandEraseInside: SVGCursorDescriptor;
+    segmentationFreeHandFillInside: SVGCursorDescriptor;
+    segmentationFreeHandEraseOutside: SVGCursorDescriptor;
+    segmentationFreeHandFillOutside: SVGCursorDescriptor;
+    segmentationRectangleEraseInside: SVGCursorDescriptor;
+    RectangleScissor: SVGCursorDescriptor;
+    'RectangleScissor.FILL_INSIDE': SVGCursorDescriptor;
+    'RectangleScissor.FILL_OUTSIDE': SVGCursorDescriptor;
+    'RectangleScissor.ERASE_OUTSIDE': SVGCursorDescriptor;
+    'RectangleScissor.ERASE_INSIDE': SVGCursorDescriptor;
+    CircleScissor: SVGCursorDescriptor;
+    'CircleScissor.FILL_INSIDE': SVGCursorDescriptor;
+    'CircleScissor.ERASE_OUTSIDE': SVGCursorDescriptor;
+    'CircleScissor.FILL_OUTSIDE': SVGCursorDescriptor;
+};
 
 // @public (undocumented)
 interface CustomEvent_2<T = any> extends Event {
