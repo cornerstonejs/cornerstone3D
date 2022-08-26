@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.15.1...@cornerstonejs/core@0.15.2) (2022-08-26)
+
+
+### Bug Fixes
+
+* revert the stack viewport setting of targetImageIndex ([#192](https://github.com/cornerstonejs/cornerstone3D-beta/issues/192)) ([0cf057e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0cf057ee45a7b154ecd5ac067c719ac52403f382))
+
+
+
+
+
 ## [0.15.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.15.0...@cornerstonejs/core@0.15.1) (2022-08-26)
 
 
