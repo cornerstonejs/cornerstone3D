@@ -18,6 +18,7 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
+  drawCircle as drawCircleSvg,
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
@@ -30,6 +31,7 @@ import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorld
 import {
   pointInEllipse,
   getCanvasEllipseCorners,
+  getCanvasEllipseCenter,
 } from '../../utilities/math/ellipse';
 import {
   resetElementCursor,
@@ -125,6 +127,9 @@ class EllipticalROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        centerPointRadius: 0, // Radius of the circle to draw  at the center
+                              // point of the ellipse.
+                              // Set this zero(0) in order not to draw the circle.
       },
     }
   ) {
@@ -757,6 +762,8 @@ class EllipticalROITool extends AnnotationTool {
         getCanvasEllipseCorners(canvasCoordinates)
       );
 
+      const { centerPointRadius } = this.configuration;
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -867,6 +874,27 @@ class EllipticalROITool extends AnnotationTool {
           lineWidth,
         }
       );
+
+      // draw center point, if "centerPointRadius" configuration is valid.
+      const minRadius = Math.min(
+        Math.abs(canvasCorners[0][0] - canvasCorners[1][0]) / 2, // horizontal radius
+        Math.abs(canvasCorners[0][1] - canvasCorners[1][1]) / 2 // vertical radius
+      );
+      if (centerPointRadius && minRadius > 3 * centerPointRadius) {
+        const centerPoint = getCanvasEllipseCenter(canvasCoordinates);
+        drawCircleSvg(
+          svgDrawingHelper,
+          annotationUID,
+          ellipseUID,
+          centerPoint,
+          centerPointRadius,
+          {
+            color,
+            lineDash,
+            lineWidth,
+          }
+        );
+      }
 
       renderStatus = true;
 
