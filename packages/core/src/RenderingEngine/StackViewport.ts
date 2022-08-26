@@ -1808,6 +1808,9 @@ class StackViewport extends Viewport implements IStackViewport {
       imageIdIndex
     );
 
+    // update the target imageIdIndex for it to not interfere
+    // with the scroll event
+    this.targetImageIdIndex = imageIdIndex;
     return imageId;
   }
 
@@ -1919,7 +1922,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
-      return;
+      return this.getCurrentImageId();
     }
 
     // Otherwise, get the imageId and attempt to display it
