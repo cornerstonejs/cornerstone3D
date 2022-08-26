@@ -1146,11 +1146,11 @@ const CursorSVG: {
     WindowLevelRegion: SVGCursorDescriptor;
     WindowLevel: SVGCursorDescriptor;
     Zoom: SVGCursorDescriptor;
-    segmentationFreeHandEraseInside: SVGCursorDescriptor;
-    segmentationFreeHandFillInside: SVGCursorDescriptor;
-    segmentationFreeHandEraseOutside: SVGCursorDescriptor;
-    segmentationFreeHandFillOutside: SVGCursorDescriptor;
-    segmentationRectangleEraseInside: SVGCursorDescriptor;
+    SegmentationFreeHandEraseInside: SVGCursorDescriptor;
+    SegmentationFreeHandFillInside: SVGCursorDescriptor;
+    SegmentationFreeHandEraseOutside: SVGCursorDescriptor;
+    SegmentationFreeHandFillOutside: SVGCursorDescriptor;
+    SegmentationRectangleEraseInside: SVGCursorDescriptor;
     RectangleScissor: SVGCursorDescriptor;
     'RectangleScissor.FILL_INSIDE': SVGCursorDescriptor;
     'RectangleScissor.FILL_OUTSIDE': SVGCursorDescriptor;
