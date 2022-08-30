@@ -18,6 +18,7 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
+  drawCircle as drawCircleSvg,
   drawEllipse as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
@@ -78,6 +79,9 @@ const { transformWorldToIndex } = csUtils;
  * ToolState manager and can be accessed from the ToolState by calling getAnnotations
  * or similar methods.
  *
+ * Changing tool configuration (see below) you can make the tool to draw the center
+ * point circle with a given radius.
+ *
  * ```js
  * cornerstoneTools.addTool(EllipticalROITool)
  *
@@ -94,6 +98,11 @@ const { transformWorldToIndex } = csUtils;
  *     },
  *   ],
  * })
+ *
+ * // draw a circle at the center point with 4px radius.
+ * toolGroup.setToolConfiguration(EllipticalROITool.toolName, {
+ *   centerPointRadius: 4,
+ * });
  * ```
  *
  * Read more in the Docs section of the website.
@@ -125,6 +134,9 @@ class EllipticalROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        // Radius of the circle to draw  at the center point of the ellipse.
+        // Set this zero(0) in order not to draw the circle.
+        centerPointRadius: 0,
       },
     }
   ) {
@@ -757,6 +769,8 @@ class EllipticalROITool extends AnnotationTool {
         getCanvasEllipseCorners(canvasCoordinates)
       );
 
+      const { centerPointRadius } = this.configuration;
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -867,6 +881,29 @@ class EllipticalROITool extends AnnotationTool {
           lineWidth,
         }
       );
+
+      // draw center point, if "centerPointRadius" configuration is valid.
+      if (centerPointRadius > 0) {
+        const minRadius = Math.min(
+          Math.abs(canvasCorners[0][0] - canvasCorners[1][0]) / 2, // horizontal radius
+          Math.abs(canvasCorners[0][1] - canvasCorners[1][1]) / 2 // vertical radius
+        );
+        if (minRadius > 3 * centerPointRadius) {
+          const centerPoint = this._getCanvasEllipseCenter(canvasCoordinates);
+          drawCircleSvg(
+            svgDrawingHelper,
+            annotationUID,
+            ellipseUID,
+            centerPoint,
+            centerPointRadius,
+            {
+              color,
+              lineDash,
+              lineWidth,
+            }
+          );
+        }
+      }
 
       renderStatus = true;
 
@@ -1138,6 +1175,22 @@ class EllipticalROITool extends AnnotationTool {
       1.0;
 
     return inEllipse;
+  }
+
+  /**
+   * It takes the canvas coordinates of the ellipse corners and returns the center point of it
+   *
+   * @param ellipseCanvasPoints - The coordinates of the ellipse in the canvas.
+   * @returns center point.
+   */
+  _getCanvasEllipseCenter(ellipseCanvasPoints: Types.Point2[]): Types.Point2 {
+    const [bottom, top, left, right] = ellipseCanvasPoints;
+    const topLeft = [left[0], top[1]];
+    const bottomRight = [right[0], bottom[1]];
+    return [
+      (topLeft[0] + bottomRight[0]) / 2,
+      (topLeft[1] + bottomRight[1]) / 2,
+    ] as Types.Point2;
   }
 }
 
