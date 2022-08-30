@@ -2584,5 +2584,5 @@ class CrosshairsTool extends AnnotationTool {
   }
 }
 
-CrosshairsTool.toolName = 'Crosshairs;';
+CrosshairsTool.toolName = 'Crosshairs';
 export default CrosshairsTool;
