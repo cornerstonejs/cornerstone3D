@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.22.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.22.2...@cornerstonejs/tools@0.22.3) (2022-08-30)
+
+
+### Bug Fixes
+
+* toolName typo for Crosshairs tool ([#193](https://github.com/cornerstonejs/cornerstone3D-beta/issues/193)) ([46d13bc](https://github.com/cornerstonejs/cornerstone3D-beta/commit/46d13bcb047c2b71c17b0246359d9494fbd8fb89))
+
+
+
+
+
 ## [0.22.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.22.1...@cornerstonejs/tools@0.22.2) (2022-08-26)
 
 **Note:** Version bump only for package @cornerstonejs/tools
