@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.23.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.22.3...@cornerstonejs/tools@0.23.0) (2022-08-30)
+
+
+### Features
+
+* draw center point of the ellipticalROI tool and make it configurable ([#191](https://github.com/cornerstonejs/cornerstone3D-beta/issues/191)) ([b0ad00c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b0ad00ce263d55214e1b3d61e51e319c63d11c42)), closes [#190](https://github.com/cornerstonejs/cornerstone3D-beta/issues/190) [#190](https://github.com/cornerstonejs/cornerstone3D-beta/issues/190) [#190](https://github.com/cornerstonejs/cornerstone3D-beta/issues/190) [#190](https://github.com/cornerstonejs/cornerstone3D-beta/issues/190) [#190](https://github.com/cornerstonejs/cornerstone3D-beta/issues/190) [#190](https://github.com/cornerstonejs/cornerstone3D-beta/issues/190)
+
+
+
+
+
 ## [0.22.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.22.2...@cornerstonejs/tools@0.22.3) (2022-08-30)
 
 
