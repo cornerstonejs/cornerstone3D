@@ -126,9 +126,9 @@ class EllipticalROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
-        centerPointRadius: 0, // Radius of the circle to draw  at the center
-                              // point of the ellipse.
-                              // Set this zero(0) in order not to draw the circle.
+        // Radius of the circle to draw  at the center point of the ellipse.
+        // Set this zero(0) in order not to draw the circle.
+        centerPointRadius: 0,
       },
     }
   ) {
@@ -875,24 +875,26 @@ class EllipticalROITool extends AnnotationTool {
       );
 
       // draw center point, if "centerPointRadius" configuration is valid.
-      const minRadius = Math.min(
-        Math.abs(canvasCorners[0][0] - canvasCorners[1][0]) / 2, // horizontal radius
-        Math.abs(canvasCorners[0][1] - canvasCorners[1][1]) / 2 // vertical radius
-      );
-      if (centerPointRadius && minRadius > 3 * centerPointRadius) {
-        const centerPoint = this._getCanvasEllipseCenter(canvasCoordinates);
-        drawCircleSvg(
-          svgDrawingHelper,
-          annotationUID,
-          ellipseUID,
-          centerPoint,
-          centerPointRadius,
-          {
-            color,
-            lineDash,
-            lineWidth,
-          }
+      if (centerPointRadius > 0) {
+        const minRadius = Math.min(
+          Math.abs(canvasCorners[0][0] - canvasCorners[1][0]) / 2, // horizontal radius
+          Math.abs(canvasCorners[0][1] - canvasCorners[1][1]) / 2 // vertical radius
         );
+        if (minRadius > 3 * centerPointRadius) {
+          const centerPoint = this._getCanvasEllipseCenter(canvasCoordinates);
+          drawCircleSvg(
+            svgDrawingHelper,
+            annotationUID,
+            ellipseUID,
+            centerPoint,
+            centerPointRadius,
+            {
+              color,
+              lineDash,
+              lineWidth,
+            }
+          );
+        }
       }
 
       renderStatus = true;
@@ -1173,13 +1175,15 @@ class EllipticalROITool extends AnnotationTool {
    * @param ellipseCanvasPoints - The coordinates of the ellipse in the canvas.
    * @returns center point.
    */
-  _getCanvasEllipseCenter(ellipseCanvasPoints: Types.Point2[]) : Types.Point2 {
+  _getCanvasEllipseCenter(ellipseCanvasPoints: Types.Point2[]): Types.Point2 {
     const [bottom, top, left, right] = ellipseCanvasPoints;
     const topLeft = [left[0], top[1]];
     const bottomRight = [right[0], bottom[1]];
-    return [(topLeft[0] + bottomRight[0]) / 2, (topLeft[1] + bottomRight[1]) / 2] as Types.Point2;
+    return [
+      (topLeft[0] + bottomRight[0]) / 2,
+      (topLeft[1] + bottomRight[1]) / 2,
+    ] as Types.Point2;
   }
-
 }
 
 EllipticalROITool.toolName = 'EllipticalROI';
