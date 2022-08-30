@@ -79,6 +79,9 @@ const { transformWorldToIndex } = csUtils;
  * ToolState manager and can be accessed from the ToolState by calling getAnnotations
  * or similar methods.
  *
+ * Changing tool configuration (see below) you can make the tool to draw the center
+ * point circle with a given radius.
+ *
  * ```js
  * cornerstoneTools.addTool(EllipticalROITool)
  *
@@ -95,6 +98,11 @@ const { transformWorldToIndex } = csUtils;
  *     },
  *   ],
  * })
+ *
+ * // draw a circle at the center point with 4px radius.
+ * toolGroup.setToolConfiguration(EllipticalROITool.toolName, {
+ *   centerPointRadius: 4,
+ * });
  * ```
  *
  * Read more in the Docs section of the website.
