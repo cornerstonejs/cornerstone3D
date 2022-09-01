@@ -34,8 +34,6 @@ export default interface IVolumeViewport extends IViewport {
 
   /**
    * Checks if the viewport has a volume actor with the given volumeId
-   * @param volumeId - the volumeId to look for
-   * @returns Boolean indicating if the volume is present in the viewport
    */
   hasVolumeId: (volumeId: string) => boolean;
 
@@ -128,9 +126,6 @@ export default interface IVolumeViewport extends IViewport {
    * Note: since the volume viewport supports fusion, to get the
    * image data for a specific volume, use the optional volumeId
    * argument.
-   *
-   * @param volumeId - The volumeId of the volume to get the image for.
-   * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
    */
   getImageData(volumeId?: string): IImageData | undefined;
 }
