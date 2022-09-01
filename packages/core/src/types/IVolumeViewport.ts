@@ -31,6 +31,20 @@ export default interface IVolumeViewport extends IViewport {
    * If so, it uses the origin and focalPoint to calculate the slice index.
    */
   getCurrentImageIdIndex: () => number;
+
+  /**
+   * Checks if the viewport has a volume actor with the given volumeId
+   * @param volumeId - the volumeId to look for
+   * @returns Boolean indicating if the volume is present in the viewport
+   */
+  hasVolumeId: (volumeId: string) => boolean;
+
+  /**
+   * if the volume viewport has imageURI (no loader schema)
+   * in one of its volume actors
+   */
+  hasImageURI: (imageURI: string) => boolean;
+
   /**
    * Uses viewport camera and volume actor to decide if the viewport
    * is looking at the volume in the direction of acquisition (imageIds).
@@ -111,6 +125,12 @@ export default interface IVolumeViewport extends IViewport {
    * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
+   * Note: since the volume viewport supports fusion, to get the
+   * image data for a specific volume, use the optional volumeId
+   * argument.
+   *
+   * @param volumeId - The volumeId of the volume to get the image for.
+   * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
    */
-  getImageData(): IImageData | undefined;
+  getImageData(volumeId?: string): IImageData | undefined;
 }

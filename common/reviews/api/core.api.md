@@ -583,13 +583,16 @@ function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera:
 };
 
 // @public (undocumented)
+function getViewportsWithImageURI(imageURI: string, renderingEngineId?: string): Array<Viewport_2>;
+
+// @public (undocumented)
+function getViewportsWithVolumeId(volumeId: string, renderingEngineId?: string): Array<IVolumeViewport>;
+
+// @public (undocumented)
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 
 // @public (undocumented)
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
-
-// @public (undocumented)
-function getVolumeViewportsContainingVolumeId(volumeId: string, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
 interface ICache {
@@ -1153,6 +1156,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getImageIds: () => string[];
     // (undocumented)
+    getImageURIIndex: (imageURI: string) => number;
+    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer(): any;
@@ -1375,13 +1380,17 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    getImageData(): IImageData | undefined;
+    getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getProperties: () => any;
     // (undocumented)
     getSlabThickness(): number;
+    // (undocumented)
+    hasImageURI: (imageURI: string) => boolean;
+    // (undocumented)
+    hasVolumeId: (volumeId: string) => boolean;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -1707,6 +1716,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
+    getImageURIIndex: (imageURI: string) => number;
+    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer(): any;
@@ -1894,7 +1905,7 @@ declare namespace utilities {
         getVolumeActorCorners,
         indexWithinDimensions,
         getVolumeViewportsContainingSameVolumes,
-        getVolumeViewportsContainingVolumeId,
+        getViewportsWithVolumeId,
         transformWorldToIndex,
         loadImageToCanvas,
         renderToCanvas,
@@ -1903,7 +1914,8 @@ declare namespace utilities {
         getSliceRange,
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
-        isImageActor
+        isImageActor,
+        getViewportsWithImageURI
     }
 }
 export { utilities }
@@ -2167,11 +2179,15 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    getImageData(): IImageData | undefined;
+    getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getSlabThickness(): number;
+    // (undocumented)
+    hasImageURI: (imageURI: string) => boolean;
+    // (undocumented)
+    hasVolumeId(volumeId: string): boolean;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)

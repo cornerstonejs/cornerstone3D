@@ -830,6 +830,7 @@ interface IStackViewport extends IViewport {
     getFrameOfReferenceUID: () => string;
     getImageData(): IImageData | CPUIImageData;
     getImageIds: () => string[];
+    getImageURIIndex: (imageURI: string) => number;
     getProperties: () => StackViewportProperties;
     getRenderer(): any;
     hasImageId: (imageId: string) => boolean;
@@ -991,11 +992,13 @@ interface IVolumeViewport extends IViewport {
     getCurrentImageIdIndex: () => number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
-    getImageData(): IImageData | undefined;
+    getImageData(volumeId?: string): IImageData | undefined;
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getProperties: () => any;
     getSlabThickness(): number;
+    hasImageURI: (imageURI: string) => boolean;
+    hasVolumeId: (volumeId: string) => boolean;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setBlendMode(

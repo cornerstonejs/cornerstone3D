@@ -7,7 +7,7 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
-  getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -605,6 +605,13 @@ class ProbeTool extends AnnotationTool {
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!image) {
+        continue;
+      }
+
       const { dimensions, scalarData, imageData, metadata } = image;
 
       const modality = metadata.Modality;
@@ -625,10 +632,15 @@ class ProbeTool extends AnnotationTool {
         // Index[2] for stackViewport is always 0, but for visualization
         // we reset it to be imageId index
         if (targetId.startsWith('imageId:')) {
-          const renderingEngine = getRenderingEngine(renderingEngineId);
-          const viewports = renderingEngine.getStackViewports();
           const imageId = targetId.split('imageId:')[1];
-          const viewport = viewports.find((vp) => vp.hasImageId(imageId));
+          const imageURI = csUtils.imageIdToURI(imageId);
+          const viewports = utilities.getViewportsWithImageURI(
+            imageURI,
+            renderingEngineId
+          );
+
+          const viewport = viewports[0];
+
           index[2] = viewport.getCurrentImageIdIndex();
         }
 

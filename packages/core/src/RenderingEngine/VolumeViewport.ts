@@ -28,7 +28,7 @@ import { RENDERING_DEFAULTS } from '../constants';
 import { Events, BlendModes } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
-import { triggerEvent } from '../utilities';
+import { imageIdToURI, triggerEvent } from '../utilities';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 
 const EPSILON = 1e-3;
@@ -541,23 +541,46 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
+   * Checks if the viewport has a volume actor with the given volumeId
+   * @param volumeId - the volumeId to look for
+   * @returns Boolean indicating if the volume is present in the viewport
+   */
+  public hasVolumeId(volumeId: string): boolean {
+    // Note: this assumes that the uid of the volume is the same as the volumeId
+    // which is not guaranteed to be the case for SEG.
+    const actorEntries = this.getActors();
+    return actorEntries.some((actorEntry) => {
+      return actorEntry.uid === volumeId;
+    });
+  }
+
+  /**
    * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
+   * Note: since the volume viewport supports fusion, to get the
+   * image data for a specific volume, use the optional volumeId
+   * argument.
    *
+   * @param volumeId - The volumeId of the volume to get the image for.
    * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
    */
-  public getImageData(): IImageData | undefined {
+  public getImageData(volumeId?: string): IImageData | undefined {
     const defaultActor = this.getDefaultActor();
-
     if (!defaultActor) {
       return;
     }
 
-    const { actor } = defaultActor;
+    const { uid: defaultActorUID } = defaultActor;
+    volumeId = volumeId ?? defaultActorUID;
+
+    const { actor } = this.getActor(volumeId);
+
     if (!actor.isA('vtkVolume')) {
       return;
     }
+
+    const volume = cache.getVolume(volumeId);
 
     const vtkImageData = actor.getMapper().getInputData();
     return {
@@ -567,7 +590,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       direction: vtkImageData.getDirection(),
       scalarData: vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
-      metadata: undefined,
+      metadata: {
+        Modality: volume.metadata.Modality,
+      },
       scaling: undefined,
       hasPixelSpacing: true,
     };
@@ -726,6 +751,24 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public getCurrentImageIdIndex = (): number | undefined => {
     return this._getImageIdIndex();
+  };
+
+  public hasImageURI = (imageURI: string): boolean => {
+    const volumeActors = this.getActors().filter(({ actor }) =>
+      actor.isA('vtkVolume')
+    );
+
+    return volumeActors.some(({ uid }) => {
+      const volume = cache.getVolume(uid);
+
+      if (!volume || !volume.imageIds) {
+        return false;
+      }
+
+      const volumeImageURIs = volume.imageIds.map(imageIdToURI);
+
+      return volumeImageURIs.includes(imageURI);
+    });
   };
 
   /**

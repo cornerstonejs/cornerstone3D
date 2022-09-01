@@ -1211,6 +1211,13 @@ class BidirectionalTool extends AnnotationTool {
 
       const image = this.getTargetIdImage(targetId, renderingEngine);
 
+      // If image does not exists for the targetId, skip. This can be due
+      // to various reasons such as if the target was a volumeViewport, and
+      // the volumeViewport has been decached in the meantime.
+      if (!image) {
+        continue;
+      }
+
       const { imageData, dimensions, hasPixelSpacing } = image;
 
       const dist1 = this._calculateLength(worldPos1, worldPos2);
