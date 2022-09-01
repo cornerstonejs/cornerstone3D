@@ -168,6 +168,10 @@
         "name": "Shared Tool State",
         "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."
       },
+      "stackToVolumeWithAnnotations": {
+        "name": "StackViewport <--> VolumeViewport ",
+        "description": "Demonstrates how annotations are preserved and rendered correctly even when a stack viewport is converted to a volume viewport and vice versa. This is an advanced usage for MPR"
+      },
       "volumeViewportSynchronization": {
         "name": "Volume Viewport Synchronization",
         "description": "Demonstrates how to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
