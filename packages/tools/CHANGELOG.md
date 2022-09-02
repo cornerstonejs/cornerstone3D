@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.23.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.23.0...@cornerstonejs/tools@0.23.1) (2022-09-02)
+
+
+### Bug Fixes
+
+* zoomTool should not consume the preMouse event ([#196](https://github.com/cornerstonejs/cornerstone3D-beta/issues/196)) ([8ec505a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8ec505a3e2b55d74f5ad3af6159e83398017b87b))
+
+
+
+
+
 # [0.23.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.22.3...@cornerstonejs/tools@0.23.0) (2022-08-30)
 
 
