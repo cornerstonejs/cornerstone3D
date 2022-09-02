@@ -71,7 +71,12 @@ class ZoomTool extends BaseTool {
 
     this.dirVec = dirVec as Types.Point3;
 
-    return true;
+    // we should not return true here, returning true in the preMouseDownCallback
+    // means that the event is handled by the tool and no other methods
+    // can claim the event, which will result in a bug where having Zoom on primary
+    // and clicking on an annotation will not manipulate the annotation, but will
+    // instead zoom the image (which is not what we want), so we return false here
+    return false;
   };
 
   // Takes ICornerstoneEvent, Mouse or Touch
