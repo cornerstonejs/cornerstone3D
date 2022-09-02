@@ -69,10 +69,6 @@ export default interface IStackViewport extends IViewport {
   getCurrentImageId: () => string;
 
   /**
-   * returns the index of the imageURI in the imageIds array
-   */
-  getImageURIIndex: (imageURI: string) => number;
-  /**
    * Custom rendering pipeline for the rendering for the CPU fallback
    */
   customRenderViewportToCanvas: () => {

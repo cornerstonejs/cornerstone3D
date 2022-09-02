@@ -753,6 +753,16 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     return this._getImageIdIndex();
   };
 
+  /*
+   * Checking if the imageURI is in the volumes that are being
+   * rendered by the viewport. imageURI is the imageId without the schema
+   * for instance for the imageId of streaming-wadors:http://..., the http://... is the imageURI.
+   * Why we don't check the imageId is because the same image can be shown in
+   * another viewport (StackViewport) with a different schema
+   *
+   * @param imageURI - The imageURI to check
+   * @returns True if the imageURI is in the volumes that are being rendered by the viewport
+   */
   public hasImageURI = (imageURI: string): boolean => {
     const volumeActors = this.getActors().filter(({ actor }) =>
       actor.isA('vtkVolume')

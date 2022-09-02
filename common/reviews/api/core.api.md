@@ -1156,8 +1156,6 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getImageIds: () => string[];
     // (undocumented)
-    getImageURIIndex: (imageURI: string) => number;
-    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getRenderer(): any;
@@ -1715,8 +1713,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     getImageData(): IImageData | CPUIImageData;
     // (undocumented)
     getImageIds: () => Array<string>;
-    // (undocumented)
-    getImageURIIndex: (imageURI: string) => number;
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)

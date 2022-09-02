@@ -2217,15 +2217,6 @@ class StackViewport extends Viewport implements IStackViewport {
     return this.targetImageIdIndex;
   };
 
-  /* A function that takes an imageURI as an argument and returns
-   *  the index of that imageURI in the imageIds array.
-   * @param imageURI - the imageURI to search for
-   */
-  public getImageURIIndex = (imageURI: string): number => {
-    const imageURIs = this.imageIds.map(imageIdToURI);
-    return imageURIs.indexOf(imageURI);
-  };
-
   /**
    * Returns the list of image Ids for the current viewport
    * @returns list of strings for image Ids
