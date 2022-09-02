@@ -16,7 +16,7 @@ import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInN
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
-import getVolumeViewportsContainingVolumeId from './getVolumeViewportsContainingVolumeId';
+import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
 import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvas from './renderToCanvas';
@@ -26,6 +26,7 @@ import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
 import isImageActor from './isImageActor';
+import getViewportsWithImageURI from './getViewportsWithImageURI';
 
 // name spaces
 import * as planar from './planar';
@@ -52,7 +53,7 @@ export {
   getVolumeActorCorners,
   indexWithinDimensions,
   getVolumeViewportsContainingSameVolumes,
-  getVolumeViewportsContainingVolumeId,
+  getViewportsWithVolumeId,
   transformWorldToIndex,
   loadImageToCanvas,
   renderToCanvas,
@@ -62,4 +63,5 @@ export {
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
   isImageActor,
+  getViewportsWithImageURI,
 };

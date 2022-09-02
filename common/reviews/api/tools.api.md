@@ -2512,11 +2512,13 @@ interface IVolumeViewport extends IViewport {
     getCurrentImageIdIndex: () => number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
-    getImageData(): IImageData | undefined;
+    getImageData(volumeId?: string): IImageData | undefined;
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getProperties: () => any;
     getSlabThickness(): number;
+    hasImageURI: (imageURI: string) => boolean;
+    hasVolumeId: (volumeId: string) => boolean;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     setBlendMode(

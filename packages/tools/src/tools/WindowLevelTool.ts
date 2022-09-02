@@ -60,11 +60,10 @@ class WindowLevelTool extends BaseTool {
       const actorEntry = viewport.getActor(volumeId);
       volumeActor = actorEntry.actor as Types.VolumeActor;
       rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
-      viewportsContainingVolumeUID =
-        utilities.getVolumeViewportsContainingVolumeId(
-          volumeId,
-          renderingEngine.id
-        );
+      viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
+        volumeId,
+        renderingEngine.id
+      );
       [lower, upper] = rgbTransferFunction.getRange();
       const volume = cache.getVolume(volumeId);
       modality = volume.metadata.Modality;

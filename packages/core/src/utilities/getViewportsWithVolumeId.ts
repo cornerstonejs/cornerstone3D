@@ -10,7 +10,7 @@ import {
  *
  * @returns VolumeViewport viewports array
  */
-function getVolumeViewportsContainingVolumeId(
+function getViewportsWithVolumeId(
   volumeId: string,
   renderingEngineId?: string
 ): Array<IVolumeViewport> {
@@ -22,20 +22,17 @@ function getVolumeViewportsContainingVolumeId(
     renderingEngines = getRenderingEngines();
   }
 
-  const sameVolumeViewports = [];
+  const targetViewports = [];
 
   renderingEngines.forEach((renderingEngine) => {
     const viewports = renderingEngine.getVolumeViewports();
-    const filteredViewports = viewports.filter((vp) => {
-      const actorEntries = vp.getActors();
-      return actorEntries.some(
-        (actorEntry) => actorEntry.actor && actorEntry.uid === volumeId
-      );
-    });
-    sameVolumeViewports.push(...filteredViewports);
+    const filteredViewports = viewports.filter((vp) =>
+      vp.hasVolumeId(volumeId)
+    );
+    targetViewports.push(...filteredViewports);
   });
 
-  return sameVolumeViewports;
+  return targetViewports;
 }
 
-export default getVolumeViewportsContainingVolumeId;
+export default getViewportsWithVolumeId;

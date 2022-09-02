@@ -67,6 +67,7 @@ export default interface IStackViewport extends IViewport {
    * Returns the currently rendered imageId
    */
   getCurrentImageId: () => string;
+
   /**
    * Custom rendering pipeline for the rendering for the CPU fallback
    */
