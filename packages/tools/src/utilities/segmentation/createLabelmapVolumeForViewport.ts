@@ -9,7 +9,7 @@ import type { Types } from '@cornerstonejs/core';
 
 /**
  * Create a new 3D segmentation volume from the default imageData presented in
- * the first viewport of the toolGroup. It looks at the metadata of the imageData
+ * the first actor of the viewport. It looks at the metadata of the imageData
  * to determine the volume dimensions and spacing if particular options are not provided.
  *
  * @param viewportId - The Id of the viewport from which to derive the volume from.

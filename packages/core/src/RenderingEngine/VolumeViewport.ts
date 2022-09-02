@@ -282,6 +282,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
+        referenceId: volumeId,
       });
     }
 
@@ -350,6 +351,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
+        // although the actor UID is defined, we need to use the volumeId for the
+        // referenceId, since the actor UID is used to reference the actor in the
+        // viewport, however, the actor is created from its volumeId
+        // and if later we need to grab the referenced volume from cache,
+        // we can use the referenceId to get the volume from the cache
+        referenceId: volumeId,
       });
     }
 

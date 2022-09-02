@@ -41,7 +41,6 @@ async function addVolumesToViewports(
   });
 
   await Promise.all(addVolumePromises);
-
   return;
 }
 

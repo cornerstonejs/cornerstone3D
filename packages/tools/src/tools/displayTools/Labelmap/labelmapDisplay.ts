@@ -35,7 +35,7 @@ const labelMapConfigCache = new Map();
  * @param representationInput - The segmentation representation input
  * @param toolGroupSpecificConfig - The configuration object for toolGroup
  *
- * @returns The UID of the new segementation representation
+ * @returns The UID of the new segmentation representation
  */
 async function addSegmentationRepresentation(
   toolGroupId: string,
@@ -82,7 +82,6 @@ async function addSegmentationRepresentation(
     // Since setting configuration on toolGroup will trigger a segmentationRepresentation
     // update event, we don't want to trigger the event twice, so we suppress
     // the first one
-    const suppressEvents = true;
     const currentToolGroupConfig =
       SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
 
@@ -347,6 +346,11 @@ async function _addLabelmapToToolGroupViewports(
   const toolGroup = getToolGroup(toolGroupId) as IToolGroup;
   const { viewportsInfo } = toolGroup;
 
+  if (viewportsInfo.length === 0) {
+    console.warn(`No viewports found for toolGroupId: ${toolGroupId}`);
+    return;
+  }
+
   for (const viewportInfo of viewportsInfo) {
     const { viewportId, renderingEngineId } = viewportInfo;
     const enabledElement = getEnabledElementByIds(
@@ -361,7 +365,7 @@ async function _addLabelmapToToolGroupViewports(
     }
 
     const { viewport } = enabledElement;
-    addLabelmapToElement(
+    await addLabelmapToElement(
       viewport.element,
       volumeId,
       segmentationRepresentationUID

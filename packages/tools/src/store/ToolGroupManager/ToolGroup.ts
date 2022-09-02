@@ -140,10 +140,15 @@ export default class ToolGroup implements IToolGroup {
 
     const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id;
 
-    this.viewportsInfo.push({
-      viewportId,
-      renderingEngineId: renderingEngineUIDToUse,
-    });
+    // Don't overwrite if it already exists
+    if (
+      !this.viewportsInfo.some(({ viewportId: vpId }) => vpId === viewportId)
+    ) {
+      this.viewportsInfo.push({
+        viewportId,
+        renderingEngineId: renderingEngineUIDToUse,
+      });
+    }
 
     // Handle the newly added viewport's mouse cursor
     const activeToolName = this.getActivePrimaryMouseButtonTool();
