@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.23.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.23.1...@cornerstonejs/tools@0.23.2) (2022-09-02)
+
+
+### Bug Fixes
+
+* annotations throwing error when stack and volume viewports are converted ([#195](https://github.com/cornerstonejs/cornerstone3D-beta/issues/195)) ([ed23f05](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ed23f05b23063769942328f9e6797d792767ec49))
+
+
+
+
+
 ## [0.23.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.23.0...@cornerstonejs/tools@0.23.1) (2022-09-02)
 
 

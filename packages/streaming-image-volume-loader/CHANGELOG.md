@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.23](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.4.22...@cornerstonejs/streaming-image-volume-loader@0.4.23) (2022-09-02)
+
+
+### Bug Fixes
+
+* annotations throwing error when stack and volume viewports are converted ([#195](https://github.com/cornerstonejs/cornerstone3D-beta/issues/195)) ([ed23f05](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ed23f05b23063769942328f9e6797d792767ec49))
+
+
+
+
+
 ## [0.4.22](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.4.21...@cornerstonejs/streaming-image-volume-loader@0.4.22) (2022-08-26)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
