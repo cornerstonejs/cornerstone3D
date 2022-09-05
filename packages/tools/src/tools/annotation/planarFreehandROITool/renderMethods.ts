@@ -52,6 +52,10 @@ function renderContour(
   svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
 ): void {
+  // prevent drawing or further calculation in case viewport data is not ready yet
+  if (!enabledElement?.viewport?.getImageData()) {
+    return;
+  }
   // Check if the contour is an open contour
   if (annotation.data.isOpenContour) {
     // If its an open contour, check i its a U-shaped contour
@@ -211,6 +215,11 @@ function renderOpenUShapedContour(
   const { polyline, openUShapeContourVectorToPeak } = annotation.data;
 
   this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
+
+  // prevent rendering u shape in case openUShapeContourVectorToPeak is not set yet
+  if (!openUShapeContourVectorToPeak) {
+    return;
+  }
 
   const firstCanvasPoint = viewport.worldToCanvas(polyline[0]);
   const lastCanvasPoint = viewport.worldToCanvas(polyline[polyline.length - 1]);
