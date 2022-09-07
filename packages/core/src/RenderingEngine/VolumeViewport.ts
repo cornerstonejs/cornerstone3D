@@ -19,19 +19,40 @@ import type {
   IImageData,
   IVolumeInput,
   ActorEntry,
+  IImageVolume,
   FlipDirection,
   VolumeViewportProperties,
+  OrientationVectors,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { RENDERING_DEFAULTS } from '../constants';
-import { Events, BlendModes } from '../enums';
+import { Events, BlendModes, OrientationAxis } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { imageIdToURI, triggerEvent } from '../utilities';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
+import deepFreeze from '../utilities/deepFreeze';
 
 const EPSILON = 1e-3;
+
+const ORIENTATION = {
+  axial: {
+    sliceNormal: <Point3>[0, 0, -1],
+    viewUp: <Point3>[0, -1, 0],
+  },
+  sagittal: {
+    sliceNormal: <Point3>[1, 0, 0],
+    viewUp: <Point3>[0, 0, 1],
+  },
+  coronal: {
+    sliceNormal: <Point3>[0, 1, 0],
+    viewUp: <Point3>[0, 0, 1],
+  },
+};
+
+// Note: Object.freeze is only shallow, so we need to deepFreeze
+deepFreeze(ORIENTATION);
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -45,6 +66,7 @@ const EPSILON = 1e-3;
 class VolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
+  private _useAcquisitionPlaneForCamera = false;
 
   constructor(props: ViewportInput) {
     super(props);
@@ -75,16 +97,23 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     this.initializeVolumeNewImageEventDispatcher();
 
-    const { sliceNormal, viewUp } = this.defaultOptions.orientation;
+    const { orientation } = this.options;
 
-    camera.setDirectionOfProjection(
-      -sliceNormal[0],
-      -sliceNormal[1],
-      -sliceNormal[2]
-    );
-    camera.setViewUpFrom(viewUp);
+    if (orientation) {
+      const { sliceNormal, viewUp } = this._getOrientationVectors(orientation);
 
-    this.resetCamera();
+      camera.setDirectionOfProjection(
+        -sliceNormal[0],
+        -sliceNormal[1],
+        -sliceNormal[2]
+      );
+      camera.setViewUpFrom(viewUp);
+
+      this.resetCamera();
+      return;
+    }
+
+    this._useAcquisitionPlaneForCamera = true;
   }
 
   static get useCustomRenderingPipeline(): boolean {
@@ -220,6 +249,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       );
     }
 
+    if (this._useAcquisitionPlaneForCamera) {
+      this._setOrientationToAcquisitionPlane(firstImageVolume);
+      this._useAcquisitionPlaneForCamera = false;
+    }
+
     const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID;
 
     await this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID);
@@ -271,6 +305,19 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
+    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
+
+    if (!firstImageVolume) {
+      throw new Error(
+        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
+      );
+    }
+
+    if (this._useAcquisitionPlaneForCamera) {
+      this._setOrientationToAcquisitionPlane(firstImageVolume);
+      this._useAcquisitionPlaneForCamera = false;
+    }
+
     const volumeActors = [];
 
     await this._isValidVolumeInputArray(
@@ -330,6 +377,119 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     if (immediate) {
       this.render();
     }
+  }
+
+  /**
+   * It sets the orientation for the camera, the orientation can be one of the
+   * following: axial, sagittal, coronal, default. Use the Enums.OrientationAxis
+   * to set the orientation. The "default" orientation is the orientation that
+   * the volume was acquired in (scan axis)
+   *
+   * @param orientation - The orientation to set the camera to.
+   * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
+   */
+  public setOrientation(orientation: OrientationAxis, immediate = true): void {
+    let viewPlaneNormal, viewUp;
+
+    if (Object.keys(ORIENTATION).includes(orientation)) {
+      ({ sliceNormal: viewPlaneNormal, viewUp } = ORIENTATION[orientation]);
+    } else if (orientation === 'default') {
+      ({ sliceNormal: viewPlaneNormal, viewUp } =
+        this._getAcquisitionPlaneOrientation());
+    } else {
+      throw new Error(
+        `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
+      );
+    }
+
+    this.setCamera({
+      viewPlaneNormal,
+      viewUp,
+    });
+
+    this.resetCamera();
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  private _getOrientationVectors(
+    orientation: OrientationAxis | OrientationVectors
+  ): OrientationVectors {
+    if (typeof orientation === 'object') {
+      if (orientation.sliceNormal && orientation.viewUp) {
+        return orientation;
+      } else {
+        throw new Error(
+          'Invalid orientation object. It must contain sliceNormal and viewUp'
+        );
+      }
+    } else if (
+      typeof orientation === 'string' &&
+      Object.keys(ORIENTATION).includes(orientation)
+    ) {
+      return ORIENTATION[orientation];
+    } else if (orientation === 'default') {
+      return this._getAcquisitionPlaneOrientation();
+    } else {
+      throw new Error(
+        `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
+          ORIENTATION
+        ).join(', ')}`
+      );
+    }
+  }
+
+  private _getAcquisitionPlaneOrientation(): OrientationVectors {
+    const actorEntry = this.getDefaultActor();
+
+    if (!actorEntry) {
+      throw new Error(
+        'Cannot get acquisition plane orientation, no actor in viewport'
+      );
+    }
+
+    // Todo: fix this after we add the volumeId reference to actorEntry later
+    // in the segmentation refactor
+    const volumeId = actorEntry.uid;
+
+    const imageVolume = cache.getVolume(volumeId);
+
+    if (!imageVolume) {
+      throw new Error(
+        `imageVolume with id: ${volumeId} does not exist in cache`
+      );
+    }
+
+    const { direction } = imageVolume;
+    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
+    const viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
+
+    return {
+      sliceNormal: viewPlaneNormal,
+      viewUp,
+    };
+  }
+
+  private _setOrientationToAcquisitionPlane(imageVolume: IImageVolume): void {
+    let viewPlaneNormal, viewUp;
+
+    if (imageVolume) {
+      const { direction } = imageVolume;
+      viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
+      viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
+    } else {
+      ({ sliceNormal: viewPlaneNormal, viewUp } =
+        this._getAcquisitionPlaneOrientation());
+    }
+
+    this.setCamera({
+      viewPlaneNormal,
+      viewUp,
+    });
+
+    this.resetCamera();
   }
 
   private async _isValidVolumeInputArray(
