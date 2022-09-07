@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.23.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.23.2...@cornerstonejs/tools@0.23.3) (2022-09-05)
+
+
+### Bug Fixes
+
+* wrong ushape calculation when loading SR/freehand from server ([#199](https://github.com/cornerstonejs/cornerstone3D-beta/issues/199)) ([ce0c5c9](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ce0c5c9b1c2ef7df9d571c113f37571261cad26f))
+
+
+
+
+
 ## [0.23.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.23.1...@cornerstonejs/tools@0.23.2) (2022-09-02)
 
 
