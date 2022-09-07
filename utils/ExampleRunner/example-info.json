@@ -149,6 +149,10 @@
       "polyDataActorManipulationTools": {
         "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport (Pan, Zoom, Rotate) by mouse events"
+      },
+      "segmentToRTSS": {
+        "name": "Example with Converting Basic Segmentation to RTSS Contour",
+        "description": "Demonstrates conversion of manual segmentation data to RTSS Contour (outputs final to console)"
       }
     },
     "tools-advanced": {

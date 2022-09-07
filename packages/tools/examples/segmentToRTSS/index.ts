@@ -50,8 +50,8 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic manual segmentation tools',
-  'Here we demonstrate manual segmentation tools'
+  'Basic manual segmentation tools with RTSS conversion',
+  'Here we demonstrate manual segmentation tools with RTSS conversion'
 );
 
 const size = '500px';
