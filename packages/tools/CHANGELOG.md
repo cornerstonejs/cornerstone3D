@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.24.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.24.0...@cornerstonejs/tools@0.24.1) (2022-09-08)
+
+
+### Bug Fixes
+
+* drag probe appearing unnecessarily on all viewports ([#204](https://github.com/cornerstonejs/cornerstone3D-beta/issues/204)) ([c292c05](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c292c05eecf17a6edbdcab5aa5a604304ef3d2e5))
+
+
+
+
+
 # [0.24.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.23.3...@cornerstonejs/tools@0.24.0) (2022-09-08)
 
 
