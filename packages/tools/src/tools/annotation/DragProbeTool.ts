@@ -9,6 +9,7 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import {
+  Annotation,
   EventTypes,
   PublicToolProps,
   SVGDrawingHelper,
@@ -71,9 +72,10 @@ class DragProbeTool extends ProbeTool {
       viewUp
     );
 
-    const annotation = {
+    const annotation: Annotation = {
       invalidated: true,
       highlighted: true,
+      isVisible: true,
       metadata: {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
@@ -117,6 +119,15 @@ class DragProbeTool extends ProbeTool {
     const { viewport } = enabledElement;
 
     if (!this.editData) {
+      return renderStatus;
+    }
+
+    const annotations = this.filterInteractableAnnotationsForElement(
+      viewport.element,
+      [this.editData.annotation]
+    );
+
+    if (!annotations?.length) {
       return renderStatus;
     }
 
