@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.5.20...docs@0.6.0) (2022-09-08)
+
+
+### Features
+
+* orientation on volumeViewport can be optional ([#203](https://github.com/cornerstonejs/cornerstone3D-beta/issues/203)) ([749dcb5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/749dcb59414c1aff2dffdca582fb3df0e4ca5ed7))
+
+
+
+
+
 ## [0.5.20](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.5.19...docs@0.5.20) (2022-09-05)
 
 **Note:** Version bump only for package docs
