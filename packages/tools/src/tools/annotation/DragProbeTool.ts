@@ -9,7 +9,6 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import {
-  Annotation,
   EventTypes,
   PublicToolProps,
   SVGDrawingHelper,
@@ -72,7 +71,7 @@ class DragProbeTool extends ProbeTool {
       viewUp
     );
 
-    const annotation: Annotation = {
+    const annotation: ProbeAnnotation = {
       invalidated: true,
       highlighted: true,
       isVisible: true,
