@@ -766,7 +766,7 @@ interface CPUFallbackEnabledElement {
     invalid?: boolean;
     // (undocumented)
     metadata?: {
-        direction?: Float32Array;
+        direction?: Point9;
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
@@ -946,7 +946,7 @@ type CPUFallbackViewportDisplayedArea = {
 // @public (undocumented)
 type CPUIImageData = {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Point9;
     spacing: Point3;
     origin: Point3;
     imageData: CPUImageData;
@@ -972,7 +972,7 @@ type CPUImageData = {
     getWorldToIndex?: () => Point3;
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
-    getDirection?: () => Float32Array;
+    getDirection?: () => Point9;
     getScalarData?: () => number[];
     getDimensions?: () => Point3;
 };
@@ -1994,7 +1994,7 @@ interface IImage {
 // @public
 interface IImageData {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Point9;
     hasPixelSpacing?: boolean;
     imageData: vtkImageData;
     metadata: { Modality: string };
@@ -2027,7 +2027,7 @@ interface IImageVolume {
     imageIdIndex: number
     ) => IImageLoadObject;
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Point9;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
@@ -2449,7 +2449,7 @@ interface IViewportId {
 // @public
 interface IVolume {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Point9;
     imageData?: vtkImageData;
     metadata: Metadata;
     origin: Point3;
@@ -2526,6 +2526,8 @@ interface IVolumeViewport extends IViewport {
     filterActorUIDs?: Array<string>,
     immediate?: boolean
     ): void;
+    // (undocumented)
+    setOrientation(orientation: OrientationAxis): void;
     setProperties(
         { voiRange }: VolumeViewportProperties,
     volumeId?: string,
@@ -2936,18 +2938,18 @@ type NormalizedMouseEventDetail = {
 // @public (undocumented)
 type NormalizedMouseEventType = Types_2.CustomEventType<NormalizedMouseEventDetail>;
 
-// @public (undocumented)
-type Orientation = {
-    sliceNormal: Point3;
-    viewUp: Point3;
-};
-
 declare namespace orientation_2 {
     export {
         getOrientationStringLPS,
         invertOrientationStringLPS
     }
 }
+
+// @public
+type OrientationVectors = {
+    sliceNormal: Point3;
+    viewUp: Point3;
+};
 
 // @public (undocumented)
 export class PanTool extends BaseTool {
@@ -3090,6 +3092,19 @@ type Point3 = [number, number, number];
 
 // @public
 type Point4 = [number, number, number, number];
+
+// @public
+type Point9 = [
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number
+];
 
 // @public (undocumented)
 const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2.Point2, proximity: number) => boolean;
@@ -4367,7 +4382,7 @@ declare namespace viewportFilters {
 // @public
 type ViewportInputOptions = {
     background?: [number, number, number];
-    orientation?: Orientation;
+    orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
 };
 

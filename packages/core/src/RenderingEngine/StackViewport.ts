@@ -37,6 +37,7 @@ import {
   EventTypes,
   IStackViewport,
   VolumeActor,
+  Point9,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -82,7 +83,7 @@ interface ImageDataMetaData {
   bitsAllocated: number;
   numComps: number;
   origin: Point3;
-  direction: Float32Array;
+  direction: Point9;
   dimensions: Point3;
   spacing: Point3;
   numVoxels: number;
@@ -281,7 +282,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private getImageDataCPU(): CPUIImageData | undefined {
-    const { metadata, image } = this._cpuFallbackEnabledElement;
+    const { metadata } = this._cpuFallbackEnabledElement;
 
     const spacing = metadata.spacing;
 
@@ -289,7 +290,7 @@ class StackViewport extends Viewport implements IStackViewport {
       dimensions: metadata.dimensions,
       spacing,
       origin: metadata.origin,
-      direction: metadata.direction as Float32Array,
+      direction: metadata.direction,
       metadata: { Modality: this.modality },
       scaling: this.scaling,
       imageData: {
@@ -657,8 +658,8 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // focalPoint and position of CPU camera is just a placeholder since
     // tools need focalPoint to be defined
-    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x);
-    let viewUp = direction.slice(3, 6).map((x) => -x);
+    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
+    let viewUp = direction.slice(3, 6).map((x) => -x) as Point3;
 
     // If camera is rotated, we need the correct rotated viewUp along the
     // viewPlaneNormal vector
@@ -672,7 +673,7 @@ class StackViewport extends Viewport implements IStackViewport {
         vec3.create(),
         viewUp,
         rotationMatrix
-      ) as Float32Array;
+      ) as Point3;
     }
 
     const canvasCenter: Point2 = [
@@ -1153,11 +1154,11 @@ class StackViewport extends Viewport implements IStackViewport {
       bitsAllocated: imagePixelModule.bitsAllocated,
       numComps,
       origin,
-      direction: new Float32Array([
+      direction: [
         ...rowCosineVec,
         ...colCosineVec,
         ...scanAxisNormal,
-      ]),
+      ] as Point9,
       dimensions: [xVoxels, yVoxels, zVoxels],
       spacing: [xSpacing, ySpacing, zSpacing],
       numVoxels: xVoxels * yVoxels * zVoxels,
@@ -1172,7 +1173,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageDataDirection - vtkImageData direction
    * @returns viewplane normal and viewUp of the camera
    */
-  private _getCameraOrientation(imageDataDirection: Float32Array): {
+  private _getCameraOrientation(imageDataDirection: Point9): {
     viewPlaneNormal: Point3;
     viewUp: Point3;
   } {
@@ -2073,8 +2074,8 @@ class StackViewport extends Viewport implements IStackViewport {
     const worldPos = vec3.fromValues(0, 0, 0);
 
     // Calculate size of spacing vector in normal direction
-    const iVector = direction.slice(0, 3);
-    const jVector = direction.slice(3, 6);
+    const iVector = direction.slice(0, 3) as Point3;
+    const jVector = direction.slice(3, 6) as Point3;
 
     // Calculate the world coordinate of the pixel
     vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
@@ -2087,8 +2088,8 @@ class StackViewport extends Viewport implements IStackViewport {
     // world to pixel
     const { spacing, direction, origin } = this.getImageData();
 
-    const iVector = direction.slice(0, 3);
-    const jVector = direction.slice(3, 6);
+    const iVector = direction.slice(0, 3) as Point3;
+    const jVector = direction.slice(3, 6) as Point3;
 
     const diff = vec3.subtract(vec3.create(), worldPos, origin);
 

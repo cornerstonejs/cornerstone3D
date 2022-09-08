@@ -12,17 +12,14 @@ const {
   Enums,
   imageLoader,
   metaData,
-  utilities,
   setVolumesForViewports,
   eventTarget,
   volumeLoader,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { unregisterAllImageLoaders } = imageLoader;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -40,7 +37,6 @@ const { SegmentationRepresentations } = csToolsEnums;
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } = testUtils;
 
 const viewportId1 = 'AXIAL';
-const AXIAL = 'AXIAL';
 
 const renderingEngineId = 'renderingEngine-segmentationConfigController_test';
 const toolGroupId = 'toolGroupId-segmentationConfigController_test';
@@ -61,7 +57,7 @@ function createViewport(
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION[orientation],
+      orientation,
       background: [1, 0, 1], // pinkish background
     },
   });
@@ -117,7 +113,10 @@ describe('Segmentation Controller --', () => {
     });
 
     it('should be able to load a segmentation with a toolGroup specific config', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const toolGroupSpecificConfig = {

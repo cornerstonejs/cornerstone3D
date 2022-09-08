@@ -13,7 +13,6 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'POLYDATA_SAGITTAL';
@@ -77,7 +76,7 @@ async function run() {
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };

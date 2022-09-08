@@ -23,7 +23,6 @@ const {
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
-const { ORIENTATION } = CONSTANTS;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'POLYDATA_SAGITTAL_ORTHO';
@@ -155,7 +154,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -164,7 +163,7 @@ async function run() {
       type: ViewportType.PERSPECTIVE,
       element: element2,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0, 0.2, 0.2],
       },
     },

@@ -19,9 +19,9 @@ export default function getSpacingInNormalDirection(
   const { direction, spacing } = imageVolume;
 
   // Calculate size of spacing vector in normal direction
-  const iVector = direction.slice(0, 3);
-  const jVector = direction.slice(3, 6);
-  const kVector = direction.slice(6, 9);
+  const iVector = direction.slice(0, 3) as Point3;
+  const jVector = direction.slice(3, 6) as Point3;
+  const kVector = direction.slice(6, 9) as Point3;
 
   const dotProducts = [
     vec3.dot(iVector, <vec3>viewPlaneNormal),

@@ -13,11 +13,9 @@ const {
   metaData,
   volumeLoader,
   setVolumesForViewports,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { Events, ViewportType, InterpolationType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const { registerVolumeLoader } = volumeLoader;
 const { StackScrollMouseWheelTool, ToolGroupManager } = csTools3d;
@@ -35,8 +33,6 @@ const toolGroupId = 'stackscrollmousetool';
 
 const viewportId = 'VIEWPORT22';
 
-const AXIAL = 'AXIAL';
-
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
 
 function createViewport(renderingEngine, viewportType, width, height) {
@@ -53,7 +49,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
       element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION[AXIAL],
+        orientation: Enums.OrientationAxis.AXIAL,
       },
     },
   ]);

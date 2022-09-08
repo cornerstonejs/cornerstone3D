@@ -1,5 +1,5 @@
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
-import { IVolume, Metadata, Point3, IImageVolume } from '../../types';
+import { IVolume, Metadata, Point3, IImageVolume, Point9 } from '../../types';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -10,7 +10,7 @@ export class ImageVolume implements IImageVolume {
   /** Dimensions of the volume */
   dimensions: Point3;
   /** volume direction in world space */
-  direction: Float32Array;
+  direction: Point9;
   /** volume metadata */
   metadata: Metadata;
   /** volume origin, Note this is an opinionated origin for the volume */

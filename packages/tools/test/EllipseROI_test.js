@@ -12,11 +12,9 @@ const {
   eventTarget,
   volumeLoader,
   setVolumesForViewports,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   EllipticalROITool,
@@ -55,7 +53,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
       element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION[AXIAL],
+        orientation: Enums.OrientationAxis.AXIAL,
       },
     },
   ]);

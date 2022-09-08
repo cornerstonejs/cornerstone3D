@@ -13,16 +13,13 @@ const {
   metaData,
   imageLoader,
   volumeLoader,
-  utilities,
   setVolumesForViewports,
   eventTarget,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -50,8 +47,6 @@ const toolGroupId = 'toolGroupId-segmentationSegmentIndexController_test';
 
 const viewportId1 = 'AXIAL';
 
-const AXIAL = 'AXIAL';
-
 function createViewport(
   renderingEngine,
   orientation,
@@ -68,7 +63,7 @@ function createViewport(
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION[orientation],
+      orientation,
       background: [1, 0, 1], // pinkish background
     },
   });
@@ -122,7 +117,10 @@ describe('Segmentation Index Controller --', () => {
     });
 
     it('should be able to segment different indices using rectangle scissor', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -259,7 +257,10 @@ describe('Segmentation Index Controller --', () => {
     });
 
     it('should be able to change the segment index when drawing segmentations', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -424,7 +425,10 @@ describe('Segmentation Index Controller --', () => {
     });
 
     it('should be able to lock a segment', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';

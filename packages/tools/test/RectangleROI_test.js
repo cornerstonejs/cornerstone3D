@@ -12,11 +12,9 @@ const {
   metaData,
   volumeLoader,
   setVolumesForViewports,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   RectangleROITool,
@@ -39,8 +37,6 @@ const renderingEngineId = utilities.uuidv4();
 
 const viewportId = 'VIEWPORT';
 
-const AXIAL = 'AXIAL';
-
 function createViewport(renderingEngine, viewportType, width, height) {
   const element = document.createElement('div');
 
@@ -55,7 +51,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
       element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION[AXIAL],
+        orientation: Enums.OrientationAxis.AXIAL,
       },
     },
   ]);

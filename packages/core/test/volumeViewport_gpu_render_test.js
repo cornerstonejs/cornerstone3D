@@ -30,11 +30,9 @@ const {
   volumeLoader,
   utilities,
   setVolumesForViewports,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { ViewportType, Events } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const { registerVolumeLoader } = volumeLoader;
 const { unregisterAllImageLoaders } = imageLoader;
@@ -44,10 +42,6 @@ const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } = testUtils;
 const renderingEngineId = utilities.uuidv4();
 
 const viewportId = 'VIEWPORT';
-
-const AXIAL = 'AXIAL';
-const SAGITTAL = 'SAGITTAL';
-const CORONAL = 'CORONAL';
 
 function createViewport(
   renderingEngine,
@@ -67,7 +61,7 @@ function createViewport(
       type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
-        orientation: ORIENTATION[orientation],
+        orientation,
         background: [1, 0, 1], // pinkish background
       },
     },
@@ -94,7 +88,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully render a sphere source', function (done) {
-      const element = createViewport(this.renderingEngine, SAGITTAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.SAGITTAL
+      );
       this.DOMElements.push(element);
 
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -160,7 +157,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a volume: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -197,7 +197,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a volume: linear', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -255,7 +258,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a volume: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, SAGITTAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.SAGITTAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -292,7 +298,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a volume: linear', function (done) {
-      const element = createViewport(this.renderingEngine, SAGITTAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.SAGITTAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -352,7 +361,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a volume: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -392,7 +404,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a volume: linear', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -450,7 +465,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully use setVolumesForViewports API to load image', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -489,7 +507,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('Should be able to filter viewports based on volumeId', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -530,7 +551,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully use renderViewports API to load image', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -570,7 +594,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully use renderViewport API to load image', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -609,7 +636,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully debug the offscreen canvas', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -646,7 +676,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully render frameOfReference', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -713,7 +746,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a color volume: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1';
@@ -754,7 +790,10 @@ describe('Volume Viewport GPU -- ', () => {
     });
 
     it('should successfully load a volume: linear', function (done) {
-      const element = createViewport(this.renderingEngine, CORONAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_1';

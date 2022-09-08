@@ -11,14 +11,11 @@ const {
   volumeLoader,
   setVolumesForViewports,
   imageLoader,
-  CONSTANTS,
 } = cornerstone3D;
 
-const { utilities: toolsUtilities } = csTools3d;
 const { transformWorldToIndex } = utilities;
 
 const { Events, ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const { unregisterAllImageLoaders } = imageLoader;
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
@@ -69,7 +66,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
       element: element1,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION.AXIAL,
+        orientation: Enums.OrientationAxis.AXIAL,
       },
     },
     {
@@ -78,7 +75,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
       element: element2,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
       },
     },
     {
@@ -87,7 +84,7 @@ function createViewports(renderingEngine, viewportType, width, height) {
       element: element3,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION.CORONAL,
+        orientation: Enums.OrientationAxis.CORONAL,
       },
     },
   ]);

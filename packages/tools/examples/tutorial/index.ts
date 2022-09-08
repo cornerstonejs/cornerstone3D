@@ -28,9 +28,6 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
-
 // ============================= //
 // ======== Set up page ======== //
 setTitleAndDescription(

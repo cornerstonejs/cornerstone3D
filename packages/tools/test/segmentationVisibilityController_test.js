@@ -12,17 +12,14 @@ const {
   metaData,
   volumeLoader,
   Enums,
-  utilities,
   setVolumesForViewports,
   eventTarget,
   imageLoader,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -43,8 +40,6 @@ const toolGroupId = 'toolGroupId-segmentationSphereScissor_test';
 
 const viewportId1 = 'AXIAL';
 
-const AXIAL = 'AXIAL';
-
 function createViewport(
   renderingEngine,
   orientation,
@@ -61,7 +56,7 @@ function createViewport(
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION[orientation],
+      orientation,
       background: [1, 0, 1], // pinkish background
     },
   });
@@ -115,7 +110,10 @@ describe('Segmentation Controller --', () => {
     });
 
     it('should be able to load two segmentations on the toolGroup', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -198,7 +196,7 @@ describe('Segmentation Controller --', () => {
     // Todo: we don't have the ability to initially change the colorLUT of the segmentation representation yet
 
     // it('should be able to load two segmentations on the toolGroup with different colorIndices', function (done) {
-    //   const element = createViewport(this.renderingEngine, AXIAL)
+    //   const element = createViewport(this.renderingEngine, Enums.OrientationAxis.AXIAL)
     //   this.DOMElements.push(element)
 
     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
@@ -263,7 +261,7 @@ describe('Segmentation Controller --', () => {
     // })
 
     // it('should be able to load two segmentations on the toolGroup and make one invisible', function (done) {
-    //   const element = createViewport(this.renderingEngine, AXIAL)
+    //   const element = createViewport(this.renderingEngine, Enums.OrientationAxis.AXIAL)
 
     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
     //   const seg1VolumeID =
