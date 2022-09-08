@@ -29,7 +29,8 @@
     "test": "karma start",
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
-    "lint": "eslint --quiet -c .eslintrc.json packages/**/src"
+    "lint": "eslint --quiet -c .eslintrc.json packages/**/src",
+    "webpack:watch": "lerna run webpack:watch"
   },
   "devDependencies": {
     "@babel/core": "^7.16.12",
