@@ -177,13 +177,13 @@ class StackViewport extends Viewport implements IStackViewport {
       const camera = vtkCamera.newInstance();
       renderer.setActiveCamera(camera);
 
-      const sliceNormal = <Point3>[0, 0, -1];
+      const viewPlaneNormal = <Point3>[0, 0, -1];
       const viewUp = <Point3>[0, -1, 0];
 
       camera.setDirectionOfProjection(
-        -sliceNormal[0],
-        -sliceNormal[1],
-        -sliceNormal[2]
+        -viewPlaneNormal[0],
+        -viewPlaneNormal[1],
+        -viewPlaneNormal[2]
       );
       camera.setViewUp(...viewUp);
       camera.setParallelProjection(true);

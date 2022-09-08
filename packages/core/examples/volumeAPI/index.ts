@@ -201,7 +201,6 @@ addDropdownToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    // TODO -> Maybe we should rename sliceNormal to viewPlaneNormal everywhere?
     let viewUp;
     let viewPlaneNormal;
 

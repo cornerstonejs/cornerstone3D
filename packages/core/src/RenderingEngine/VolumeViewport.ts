@@ -38,15 +38,15 @@ const EPSILON = 1e-3;
 
 const ORIENTATION = {
   axial: {
-    sliceNormal: <Point3>[0, 0, -1],
+    viewPlaneNormal: <Point3>[0, 0, -1],
     viewUp: <Point3>[0, -1, 0],
   },
   sagittal: {
-    sliceNormal: <Point3>[1, 0, 0],
+    viewPlaneNormal: <Point3>[1, 0, 0],
     viewUp: <Point3>[0, 0, 1],
   },
   coronal: {
-    sliceNormal: <Point3>[0, 1, 0],
+    viewPlaneNormal: <Point3>[0, 1, 0],
     viewUp: <Point3>[0, 0, 1],
   },
 };
@@ -100,12 +100,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const { orientation } = this.options;
 
     if (orientation) {
-      const { sliceNormal, viewUp } = this._getOrientationVectors(orientation);
+      const { viewPlaneNormal, viewUp } =
+        this._getOrientationVectors(orientation);
 
       camera.setDirectionOfProjection(
-        -sliceNormal[0],
-        -sliceNormal[1],
-        -sliceNormal[2]
+        -viewPlaneNormal[0],
+        -viewPlaneNormal[1],
+        -viewPlaneNormal[2]
       );
       camera.setViewUpFrom(viewUp);
 
@@ -392,10 +393,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     let viewPlaneNormal, viewUp;
 
     if (Object.keys(ORIENTATION).includes(orientation)) {
-      ({ sliceNormal: viewPlaneNormal, viewUp } = ORIENTATION[orientation]);
+      ({ viewPlaneNormal, viewUp } = ORIENTATION[orientation]);
     } else if (orientation === 'default') {
-      ({ sliceNormal: viewPlaneNormal, viewUp } =
-        this._getAcquisitionPlaneOrientation());
+      ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
     } else {
       throw new Error(
         `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
@@ -418,11 +418,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     orientation: OrientationAxis | OrientationVectors
   ): OrientationVectors {
     if (typeof orientation === 'object') {
-      if (orientation.sliceNormal && orientation.viewUp) {
+      if (orientation.viewPlaneNormal && orientation.viewUp) {
         return orientation;
       } else {
         throw new Error(
-          'Invalid orientation object. It must contain sliceNormal and viewUp'
+          'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
         );
       }
     } else if (
@@ -467,7 +467,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
 
     return {
-      sliceNormal: viewPlaneNormal,
+      viewPlaneNormal,
       viewUp,
     };
   }
@@ -480,8 +480,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
       viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
     } else {
-      ({ sliceNormal: viewPlaneNormal, viewUp } =
-        this._getAcquisitionPlaneOrientation());
+      ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
     }
 
     this.setCamera({

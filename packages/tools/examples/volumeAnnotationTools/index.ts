@@ -155,7 +155,7 @@ async function run() {
           viewUp: <Types.Point3>[
             -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
           ],
-          sliceNormal: <Types.Point3>[
+          viewPlaneNormal: <Types.Point3>[
             -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
           ],
         },

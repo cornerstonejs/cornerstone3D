@@ -258,7 +258,7 @@ class RenderingEngine implements IRenderingEngine {
    *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('customOrientationDiv'),
    *     defaultOptions: {
-   *       orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
+   *       orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
    *     },
    *   },
    * ])

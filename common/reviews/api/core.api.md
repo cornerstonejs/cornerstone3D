@@ -1475,7 +1475,7 @@ enum OrientationAxis {
 
 // @public (undocumented)
 type OrientationVectors = {
-    sliceNormal: Point3;
+    viewPlaneNormal: Point3;
     viewUp: Point3;
 };
 

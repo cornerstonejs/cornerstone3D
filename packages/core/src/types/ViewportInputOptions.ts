@@ -7,7 +7,7 @@ import OrientationVectors from './OrientationVectors';
 type ViewportInputOptions = {
   /** background color */
   background?: [number, number, number];
-  /** orientation of the viewport - e.g., Axial, Coronal, Sagittal, or custom oblique with sliceNormal and viewUp */
+  /** orientation of the viewport - e.g., Axial, Coronal, Sagittal, or custom oblique with viewPlaneNormal and viewUp */
   orientation?: OrientationAxis | OrientationVectors;
   /** whether the events should be suppressed and not fired*/
   suppressEvents?: boolean;

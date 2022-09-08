@@ -57,7 +57,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustom,
           defaultOptions: {
-            orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
+            orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
           },
         },
       ]);
@@ -155,7 +155,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustomOrientation,
           defaultOptions: {
-            orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
+            orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
           },
         },
       ];

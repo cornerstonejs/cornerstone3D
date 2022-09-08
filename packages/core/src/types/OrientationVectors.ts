@@ -3,7 +3,7 @@ import { Point3 } from '../types';
 /**
  * - `viewUp` - An array of three floating point numbers describing a vector
  *  that represents the up direction for the view.
- * - `sliceNormal` - The direction of the projection
+ * - `viewPlaneNormal` - The direction of the projection
  *
  * see [Axial vs Sagittal vs Coronal](https://faculty.washington.edu/chudler/slice.html)
  * see {@link https://kitware.github.io/vtk-js/api/Rendering_Core_Camera.html | VTK.js: Rendering_Core_Camera}
@@ -19,7 +19,7 @@ import { Point3 } from '../types';
  *    defaultOptions: {
  *      orientation: {
  *       viewUp: [0, 0, 1],
- *      sliceNormal: [1, 0, 0],
+ *      viewPlaneNormal: [1, 0, 0],
  *     },
  *      background: [1, 0, 0],
  *    },
@@ -28,7 +28,7 @@ import { Point3 } from '../types';
  */
 type OrientationVectors = {
   /** Slice Normal for the viewport - the normal that points in the opposite direction of the slice normal out of screen and is negative of direction of projection */
-  sliceNormal: Point3;
+  viewPlaneNormal: Point3;
   /** viewUp direction for the viewport - the vector that points from bottom to top of the viewport */
   viewUp: Point3;
 };

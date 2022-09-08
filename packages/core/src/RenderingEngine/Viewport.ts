@@ -58,9 +58,9 @@ class Viewport implements IViewport {
   sHeight: number;
   /** a Map containing the actor uid and actors */
   _actors: Map<string, any>;
-  /** Default options for the viewport which includes orientation, sliceNormal and backgroundColor */
+  /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
   readonly defaultOptions: any;
-  /** options for the viewport which includes orientation, sliceNormal and backgroundColor */
+  /** options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
   options: ViewportInputOptions;
   private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */

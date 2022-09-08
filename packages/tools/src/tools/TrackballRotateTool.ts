@@ -7,7 +7,7 @@ import { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 
 /**
- * Tool that rotates the camera in the plane defined by the sliceNormal and the viewUp.
+ * Tool that rotates the camera in the plane defined by the viewPlaneNormal and the viewUp.
  */
 class TrackballRotateTool extends BaseTool {
   static toolName;
