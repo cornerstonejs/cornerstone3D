@@ -72,7 +72,7 @@ const viewportInput = [
     element: element1,
     type: ViewportType.ORTHOGRAPHIC,
     defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
+      orientation: Enums.OrientationAxis.AXIAL,
     },
   },
   {
@@ -80,7 +80,7 @@ const viewportInput = [
     element: element2,
     type: ViewportType.ORTHOGRAPHIC,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
     },
   },
 ];
@@ -155,7 +155,7 @@ const viewportInput = [
     element: element1,
     type: ViewportType.ORTHOGRAPHIC,
     defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
+      orientation: Enums.OrientationAxis.AXIAL,
     },
   },
   {
@@ -163,7 +163,7 @@ const viewportInput = [
     element: element2,
     type: ViewportType.ORTHOGRAPHIC,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
     },
   },
 ];

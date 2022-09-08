@@ -65,7 +65,7 @@ const ctAxial = {
   type: ViewportType.ORTHOGRAPHIC,
   element,
   defaultOptions: {
-    orientation: ORIENTATION.AXIAL,
+    orientation: Enums.OrientationAxis.AXIAL,
   },
 };
 
@@ -74,7 +74,7 @@ const ptAxial = {
   type: ViewportType.ORTHOGRAPHIC,
   element,
   defaultOptions: {
-    orientation: ORIENTATION.AXIAL,
+    orientation: Enums.OrientationAxis.AXIAL,
     background: [1, 1, 1],
   },
 };
