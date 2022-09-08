@@ -5,7 +5,7 @@ import type { Types } from '@cornerstonejs/core';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
 
 /**
- * Tool that pans the camera in the plane defined by the sliceNormal and the viewUp.
+ * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.
  */
 class PanTool extends BaseTool {
   static toolName;

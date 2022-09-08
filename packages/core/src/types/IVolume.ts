@@ -1,6 +1,7 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type Point3 from './Point3';
 import type Metadata from './Metadata';
+import Mat3 from './Mat3';
 
 /**
  * Cornerstone ImageVolume interface.
@@ -17,7 +18,7 @@ interface IVolume {
   /** volume origin */
   origin: Point3;
   /** volume direction */
-  direction: Float32Array;
+  direction: Mat3;
   /** volume scalarData */
   scalarData: Float32Array | Uint8Array;
   /** volume size in bytes */

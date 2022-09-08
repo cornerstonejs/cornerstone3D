@@ -151,7 +151,7 @@ const viewportInputArray = [
     type: ViewportType.ORTHOGRAPHIC,
     element: element1,
     defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
+      orientation: Enums.OrientationAxis.AXIAL,
     },
   },
   {
@@ -159,7 +159,7 @@ const viewportInputArray = [
     type: ViewportType.ORTHOGRAPHIC,
     element: element2,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
     },
   },
   {
@@ -167,7 +167,7 @@ const viewportInputArray = [
     type: ViewportType.ORTHOGRAPHIC,
     element: element3,
     defaultOptions: {
-      orientation: ORIENTATION.CORONAL,
+      orientation: Enums.OrientationAxis.CORONAL,
     },
   },
 ];
@@ -311,7 +311,7 @@ const viewportInputArray = [
     type: ViewportType.ORTHOGRAPHIC,
     element: element1,
     defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
+      orientation: Enums.OrientationAxis.AXIAL,
     },
   },
   {
@@ -319,7 +319,7 @@ const viewportInputArray = [
     type: ViewportType.ORTHOGRAPHIC,
     element: element2,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
     },
   },
   {
@@ -327,7 +327,7 @@ const viewportInputArray = [
     type: ViewportType.ORTHOGRAPHIC,
     element: element3,
     defaultOptions: {
-      orientation: ORIENTATION.CORONAL,
+      orientation: Enums.OrientationAxis.CORONAL,
     },
   },
 ];

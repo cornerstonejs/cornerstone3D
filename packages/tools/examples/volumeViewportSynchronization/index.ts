@@ -4,7 +4,6 @@ import {
   Enums,
   volumeLoader,
   setVolumesForViewports,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -31,7 +30,6 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 const { MouseBindings } = csToolsEnums;
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
@@ -222,7 +220,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -231,7 +229,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -240,7 +238,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },

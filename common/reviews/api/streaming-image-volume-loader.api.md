@@ -116,7 +116,7 @@ interface CPUFallbackEnabledElement {
     invalid?: boolean;
     // (undocumented)
     metadata?: {
-        direction?: Float32Array;
+        direction?: Mat3;
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
@@ -296,7 +296,7 @@ type CPUFallbackViewportDisplayedArea = {
 // @public (undocumented)
 type CPUIImageData = {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     spacing: Point3;
     origin: Point3;
     imageData: CPUImageData;
@@ -322,7 +322,7 @@ type CPUImageData = {
     getWorldToIndex?: () => Point3;
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
-    getDirection?: () => Float32Array;
+    getDirection?: () => Mat3;
     getScalarData?: () => number[];
     getDimensions?: () => Point3;
 };
@@ -598,7 +598,7 @@ interface IImage {
 // @public
 interface IImageData {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     hasPixelSpacing?: boolean;
     imageData: vtkImageData;
     metadata: { Modality: string };
@@ -631,7 +631,7 @@ interface IImageVolume {
     imageIdIndex: number
     ) => IImageLoadObject;
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
@@ -928,7 +928,7 @@ interface IViewportId {
 // @public
 interface IVolume {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     imageData?: vtkImageData;
     metadata: Metadata;
     origin: Point3;
@@ -1005,6 +1005,8 @@ interface IVolumeViewport extends IViewport {
     filterActorUIDs?: Array<string>,
     immediate?: boolean
     ): void;
+    // (undocumented)
+    setOrientation(orientation: OrientationAxis): void;
     setProperties(
         { voiRange }: VolumeViewportProperties,
     volumeId?: string,
@@ -1025,6 +1027,19 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public
+type Mat3 = [
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number
+];
+
+// @public
 type Metadata = {
     BitsAllocated: number;
     BitsStored: number;
@@ -1043,8 +1058,20 @@ type Metadata = {
 };
 
 // @public (undocumented)
-type Orientation = {
-    sliceNormal: Point3;
+enum OrientationAxis {
+    // (undocumented)
+    ACQUISITION = 'acquisition',
+    // (undocumented)
+    AXIAL = 'axial',
+    // (undocumented)
+    CORONAL = 'coronal',
+    // (undocumented)
+    SAGITTAL = 'sagittal',
+}
+
+// @public
+type OrientationVectors = {
+    viewPlaneNormal: Point3;
     viewUp: Point3;
 };
 
@@ -1207,7 +1234,7 @@ type TransformMatrix2D = [number, number, number, number, number, number];
 // @public
 type ViewportInputOptions = {
     background?: [number, number, number];
-    orientation?: Orientation;
+    orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
 };
 

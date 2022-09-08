@@ -12,16 +12,13 @@ const {
   metaData,
   volumeLoader,
   imageLoader,
-  utilities,
   setVolumesForViewports,
   eventTarget,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { unregisterAllImageLoaders } = imageLoader;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -49,9 +46,6 @@ const toolGroupId = 'toolGroupId-segmentationRectangleScissor_test';
 const viewportId1 = 'AXIAL';
 const viewportId2 = 'SAGITTAL';
 
-const AXIAL = 'AXIAL';
-const SAGITTAL = 'SAGITTAL';
-
 function createViewport(
   renderingEngine,
   orientation,
@@ -68,7 +62,7 @@ function createViewport(
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION[orientation],
+      orientation,
       background: [1, 0, 1], // pinkish background
     },
   });
@@ -122,7 +116,10 @@ describe('Segmentation Tools --', () => {
     });
 
     it('should be able to create a new segmentation from a viewport', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -182,7 +179,10 @@ describe('Segmentation Tools --', () => {
     });
 
     it('should be able to edit the segmentation data with the rectangle scissor', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -321,10 +321,13 @@ describe('Segmentation Tools --', () => {
     });
 
     it('should be able to edit the segmentation data with the rectangle scissor with two viewports to render', function (done) {
-      const element1 = createViewport(this.renderingEngine, AXIAL);
+      const element1 = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       const element2 = createViewport(
         this.renderingEngine,
-        SAGITTAL,
+        Enums.OrientationAxis.SAGITTAL,
         viewportId2
       );
       this.DOMElements.push(element1);

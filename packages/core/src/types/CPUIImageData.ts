@@ -1,4 +1,4 @@
-import { Point3, Scaling, IImage } from '../types';
+import { Point3, Scaling, Mat3 } from '../types';
 
 type CPUImageData = {
   worldToIndex?: (point: Point3) => Point3;
@@ -7,7 +7,7 @@ type CPUImageData = {
   getIndexToWorld?: () => Point3;
   /** Last spacing is always EPSILON */
   getSpacing?: () => Point3;
-  getDirection?: () => Float32Array;
+  getDirection?: () => Mat3;
   getScalarData?: () => number[];
   /** Last index is always 1 */
   getDimensions?: () => Point3;
@@ -15,7 +15,7 @@ type CPUImageData = {
 
 type CPUIImageData = {
   dimensions: Point3;
-  direction: Float32Array;
+  direction: Mat3;
   spacing: Point3;
   origin: Point3;
   imageData: CPUImageData;

@@ -4,7 +4,7 @@ import { IViewport } from './IViewport';
 import { IVolumeInput } from './IVolumeInput';
 import FlipDirection from './FlipDirection';
 import IImageData from './IImageData';
-import { BlendModes } from '../enums';
+import { BlendModes, OrientationAxis } from '../enums';
 import { VolumeViewportProperties } from '.';
 
 /**
@@ -128,4 +128,6 @@ export default interface IVolumeViewport extends IViewport {
    * argument.
    */
   getImageData(volumeId?: string): IImageData | undefined;
+
+  setOrientation(orientation: OrientationAxis): void;
 }

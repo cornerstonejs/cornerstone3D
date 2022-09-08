@@ -4,7 +4,6 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -22,7 +21,6 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
 
@@ -144,24 +142,20 @@ addDropdownToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    // TODO -> Maybe we should rename sliceNormal to viewPlaneNormal everywhere?
     let viewUp;
     let viewPlaneNormal;
 
     switch (selectedValue) {
       case orientationOptions.axial:
-        viewUp = ORIENTATION.AXIAL.viewUp;
-        viewPlaneNormal = ORIENTATION.AXIAL.sliceNormal;
+        viewport.setOrientation(Enums.OrientationAxis.AXIAL);
 
         break;
       case orientationOptions.sagittal:
-        viewUp = ORIENTATION.SAGITTAL.viewUp;
-        viewPlaneNormal = ORIENTATION.SAGITTAL.sliceNormal;
+        viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
 
         break;
       case orientationOptions.coronal:
-        viewUp = ORIENTATION.CORONAL.viewUp;
-        viewPlaneNormal = ORIENTATION.CORONAL.sliceNormal;
+        viewport.setOrientation(Enums.OrientationAxis.CORONAL);
 
         break;
       case orientationOptions.oblique:
@@ -171,16 +165,11 @@ addDropdownToToolbar({
           -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
         ];
 
+        viewport.setCamera({ viewUp, viewPlaneNormal });
+        viewport.resetCamera();
         break;
-      default:
-        throw new Error('undefined orientation option');
     }
 
-    // TODO -> Maybe we should have a helper for this on the viewport
-    // Set the new orientation
-    viewport.setCamera({ viewUp, viewPlaneNormal });
-    // Reset the camera after the normal changes
-    viewport.resetCamera();
     viewport.render();
   },
 });
@@ -222,7 +211,7 @@ async function run() {
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };

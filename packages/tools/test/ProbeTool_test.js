@@ -12,11 +12,9 @@ const {
   Enums,
   volumeLoader,
   setVolumesForViewports,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ProbeTool,
@@ -39,8 +37,6 @@ const renderingEngineId = utilities.uuidv4();
 
 const viewportId = 'VIEWPORT';
 
-const AXIAL = 'AXIAL';
-
 const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
 
 function createViewport(renderingEngine, viewportType, width, height) {
@@ -57,7 +53,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
       element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION[AXIAL],
+        orientation: Enums.OrientationAxis.AXIAL,
       },
     },
   ]);

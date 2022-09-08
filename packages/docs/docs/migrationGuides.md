@@ -72,7 +72,7 @@ renderingEngine.setViewports([
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
+      orientation: Enums.OrientationAxis.AXIAL,
     },
   },
 ]);
@@ -83,7 +83,7 @@ renderingEngine.enableElement({
   type: ViewportType.ORTHOGRAPHIC,
   element,
   defaultOptions: {
-    orientation: ORIENTATION.AXIAL,
+    orientation: Enums.OrientationAxis.AXIAL,
   },
 });
 

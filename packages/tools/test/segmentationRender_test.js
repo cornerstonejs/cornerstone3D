@@ -15,16 +15,13 @@ const {
   metaData,
   imageLoader,
   volumeLoader,
-  utilities,
   setVolumesForViewports,
   eventTarget,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -49,10 +46,6 @@ const viewportUID3 = 'CORONAL';
 
 const LABELMAP = SegmentationRepresentations.Labelmap;
 
-const AXIAL = 'AXIAL';
-const SAGITTAL = 'SAGITTAL';
-const CORONAL = 'CORONAL';
-
 function createViewport(
   renderingEngine,
   orientation,
@@ -69,7 +62,7 @@ function createViewport(
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION[orientation],
+      orientation,
       background: [1, 0, 1], // pinkish background
     },
   });
@@ -118,7 +111,10 @@ describe('Segmentation Render -- ', () => {
     });
 
     it('should successfully render a segmentation on a volume', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -177,9 +173,21 @@ describe('Segmentation Render -- ', () => {
     });
 
     it('should successfully render a segmentation on a volume with more than one viewport', function (done) {
-      const el1 = createViewport(this.renderingEngine, AXIAL, viewportId1);
-      const el2 = createViewport(this.renderingEngine, SAGITTAL, viewportId2);
-      const el3 = createViewport(this.renderingEngine, CORONAL, viewportUID3);
+      const el1 = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL,
+        viewportId1
+      );
+      const el2 = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.SAGITTAL,
+        viewportId2
+      );
+      const el3 = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.CORONAL,
+        viewportUID3
+      );
 
       this.DOMElements.push(el1);
       this.DOMElements.push(el2);
@@ -268,7 +276,11 @@ describe('Segmentation Render -- ', () => {
     });
 
     it('should successfully render two segmentations on a viewport', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, viewportId1);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL,
+        viewportId1
+      );
       this.DOMElements.push(element);
 
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
@@ -345,7 +357,11 @@ describe('Segmentation Render -- ', () => {
     });
 
     it('should successfully render a segmentation with toolGroup specific config', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, viewportId1);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL,
+        viewportId1
+      );
       this.DOMElements.push(element);
 
       const customToolGroupSegConfig = {

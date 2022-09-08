@@ -10,13 +10,11 @@ const {
   metaData,
   volumeLoader,
   imageLoader,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
 const { registerVolumeLoader } = volumeLoader;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ProbeTool,
@@ -103,7 +101,7 @@ describe('ToolGroup Manager: ', () => {
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
         {
@@ -112,7 +110,7 @@ describe('ToolGroup Manager: ', () => {
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
       ]);
@@ -173,7 +171,7 @@ describe('ToolGroup Manager: ', () => {
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
         {
@@ -182,7 +180,7 @@ describe('ToolGroup Manager: ', () => {
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
       ]);
@@ -218,7 +216,7 @@ describe('ToolGroup Manager: ', () => {
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
         {
@@ -227,7 +225,7 @@ describe('ToolGroup Manager: ', () => {
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
       ]);
@@ -264,7 +262,7 @@ describe('ToolGroup Manager: ', () => {
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
         {
@@ -273,7 +271,7 @@ describe('ToolGroup Manager: ', () => {
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
       ]);
@@ -301,7 +299,7 @@ describe('ToolGroup Manager: ', () => {
           element: element1,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
         {
@@ -310,7 +308,7 @@ describe('ToolGroup Manager: ', () => {
           element: element2,
           defaultOptions: {
             background: [1, 0, 1], // pinkish background
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
       ]);

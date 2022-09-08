@@ -26,7 +26,6 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -119,9 +118,9 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   const highResDimensions = highResSegmentationVolume.dimensions;
   const highResSpacing = highResSegmentationVolume.spacing;
 
-  const direction = new Float32Array(9);
+  const direction = [];
 
-  for (let i = 0; i < direction.length; i++) {
+  for (let i = 0; i < 9; i++) {
     direction[i] = highResSegmentationVolume.direction[i];
   }
 
@@ -142,7 +141,7 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
       highResSpacing[2],
     ] as Types.Point3,
     origin: [...highResSegmentationVolume.origin] as Types.Point3,
-    direction,
+    direction: direction as Types.Mat3,
   };
 
   const lowResSegmentationVolume = await volumeLoader.createLocalVolume(
@@ -250,7 +249,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: ORIENTATION.AXIAL,
+        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -259,7 +258,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: ORIENTATION.AXIAL,
+        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },

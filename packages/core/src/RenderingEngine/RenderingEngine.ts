@@ -19,7 +19,7 @@ import type {
   InternalViewportInput,
   NormalizedViewportInput,
 } from '../types/IViewport';
-import ORIENTATION from '../constants/orientation';
+import { OrientationAxis } from '../enums';
 
 type ViewportDisplayCoords = {
   sxStartDisplayCoords: number;
@@ -117,7 +117,7 @@ class RenderingEngine implements IRenderingEngine {
    *  type: ViewportType.ORTHOGRAPHIC,
    *  element,
    *  defaultOptions: {
-   *    orientation: ORIENTATION[orientation],
+   *    orientation: Enums.OrientationAxis.AXIAL,
    *    background: [1, 0, 1],
    *  },
    * })
@@ -242,7 +242,7 @@ class RenderingEngine implements IRenderingEngine {
    *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('axialDiv'),
    *     defaultOptions: {
-   *       orientation: ORIENTATION.AXIAL,
+   *       orientation: Enums.OrientationAxis.AXIAL,
    *     },
    *   },
    *   {
@@ -250,7 +250,7 @@ class RenderingEngine implements IRenderingEngine {
    *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('sagittalDiv'),
    *     defaultOptions: {
-   *       orientation: ORIENTATION.SAGITTAL,
+   *       orientation: Enums.OrientationAxis.SAGITTAL,
    *     },
    *   },
    *   {
@@ -258,7 +258,7 @@ class RenderingEngine implements IRenderingEngine {
    *     type: ViewportType.ORTHOGRAPHIC,
    *     element: document.getElementById('customOrientationDiv'),
    *     defaultOptions: {
-   *       orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
+   *       orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
    *     },
    *   },
    * ])
@@ -507,7 +507,7 @@ class RenderingEngine implements IRenderingEngine {
       if (type === ViewportType.ORTHOGRAPHIC) {
         options = {
           ...options,
-          orientation: ORIENTATION.AXIAL,
+          orientation: OrientationAxis.AXIAL,
         };
       }
     }

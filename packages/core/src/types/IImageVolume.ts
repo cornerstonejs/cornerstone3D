@@ -1,5 +1,5 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Metadata, Point3, IImageLoadObject } from '../types';
+import { Metadata, Point3, IImageLoadObject, Mat3 } from '../types';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -11,7 +11,7 @@ interface IImageVolume {
   /** volume dimensions */
   dimensions: Point3;
   /** volume direction */
-  direction: Float32Array;
+  direction: Mat3;
   /** volume metadata */
   metadata: Metadata;
   /** volume origin - set to the imagePositionPatient of the last image in the volume */

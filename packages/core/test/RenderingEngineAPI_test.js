@@ -4,7 +4,6 @@ import * as cornerstone3D from '../src/index';
 const { RenderingEngine, cache, utilities, Enums, CONSTANTS } = cornerstone3D;
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const renderingEngineId = utilities.uuidv4();
 
@@ -42,7 +41,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementAxial,
           defaultOptions: {
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
         {
@@ -50,7 +49,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementSagittal,
           defaultOptions: {
-            orientation: ORIENTATION.SAGITTAL,
+            orientation: Enums.OrientationAxis.SAGITTAL,
           },
         },
         {
@@ -58,7 +57,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustom,
           defaultOptions: {
-            orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
+            orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
           },
         },
       ]);
@@ -97,23 +96,6 @@ describe('RenderingEngineAPI -- ', () => {
       this.renderingEngine.destroy();
       const response = this.renderingEngine.destroy();
       expect(response).toBeUndefined();
-    });
-
-    it('Take an orientation given by AXIAL as well as set manually by sliceNormal and viewUp', function () {
-      const AxialViewport = this.renderingEngine.getViewport(axialViewportId);
-      const CustomOrientationViewport = this.renderingEngine.getViewport(
-        customOrientationViewportId
-      );
-
-      const DefaultOptions1 = AxialViewport.defaultOptions;
-      const Orientation1 = DefaultOptions1.orientation;
-      const DefaultOptions2 = CustomOrientationViewport.defaultOptions;
-      const Orientation2 = DefaultOptions2.orientation;
-
-      expect(Orientation1.viewUp.length).toEqual(3);
-      expect(Orientation1.sliceNormal.length).toEqual(3);
-      expect(Orientation2.viewUp.length).toEqual(3);
-      expect(Orientation2.sliceNormal.length).toEqual(3);
     });
   });
 
@@ -157,7 +139,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementAxial,
           defaultOptions: {
-            orientation: ORIENTATION.AXIAL,
+            orientation: Enums.OrientationAxis.AXIAL,
           },
         },
         {
@@ -165,7 +147,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementSagittal,
           defaultOptions: {
-            orientation: ORIENTATION.SAGITTAL,
+            orientation: Enums.OrientationAxis.SAGITTAL,
           },
         },
         {
@@ -173,7 +155,7 @@ describe('RenderingEngineAPI -- ', () => {
           type: ViewportType.ORTHOGRAPHIC,
           element: this.elementCustomOrientation,
           defaultOptions: {
-            orientation: { sliceNormal: [0, 0, 1], viewUp: [0, 1, 0] },
+            orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
           },
         },
       ];
@@ -193,7 +175,7 @@ describe('RenderingEngineAPI -- ', () => {
         viewportId: axialViewportId,
         type: ViewportType.ORTHOGRAPHIC,
         defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
+          orientation: Enums.OrientationAxis.AXIAL,
         },
       };
 
@@ -209,7 +191,7 @@ describe('RenderingEngineAPI -- ', () => {
         type: ViewportType.ORTHOGRAPHIC,
         element: this.elementAxial,
         defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
+          orientation: Enums.OrientationAxis.AXIAL,
         },
       };
 
@@ -228,7 +210,7 @@ describe('RenderingEngineAPI -- ', () => {
         type: ViewportType.STACK,
         element: this.elementAxial,
         defaultOptions: {
-          orientation: ORIENTATION.AXIAL,
+          orientation: Enums.OrientationAxis.AXIAL,
         },
       };
 

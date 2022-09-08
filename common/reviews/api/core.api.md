@@ -84,7 +84,6 @@ const colormapsData: CPUFallbackColormapsData;
 
 declare namespace CONSTANTS {
     export {
-        ORIENTATION,
         colormapsData as CPU_COLORMAPS,
         RENDERING_DEFAULTS
     }
@@ -152,7 +151,7 @@ interface CPUFallbackEnabledElement {
     invalid?: boolean;
     // (undocumented)
     metadata?: {
-        direction?: Float32Array;
+        direction?: Mat3;
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
@@ -332,7 +331,7 @@ type CPUFallbackViewportDisplayedArea = {
 // @public (undocumented)
 type CPUIImageData = {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     spacing: Point3;
     origin: Point3;
     imageData: CPUImageData;
@@ -360,7 +359,7 @@ type CPUImageData = {
     getWorldToIndex?: () => Point3;
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
-    getDirection?: () => Float32Array;
+    getDirection?: () => Mat3;
     getScalarData?: () => number[];
     getDimensions?: () => Point3;
 };
@@ -420,7 +419,8 @@ declare namespace Enums {
         BlendModes,
         InterpolationType,
         RequestType,
-        ViewportType
+        ViewportType,
+        OrientationAxis
     }
 }
 export { Enums }
@@ -786,7 +786,7 @@ interface IImageData {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Float32Array;
+    direction: Mat3;
     // (undocumented)
     hasPixelSpacing?: boolean;
     // (undocumented)
@@ -832,7 +832,7 @@ interface IImageVolume {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Float32Array;
+    direction: Mat3;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
@@ -1002,7 +1002,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Float32Array;
+    direction: Mat3;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
@@ -1307,7 +1307,7 @@ interface IVolume {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Float32Array;
+    direction: Mat3;
     // (undocumented)
     imageData?: vtkImageData;
     // (undocumented)
@@ -1396,6 +1396,8 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
+    setOrientation(orientation: OrientationAxis): void;
+    // (undocumented)
     setProperties({ voiRange }: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
@@ -1424,6 +1426,19 @@ function loadImageToCanvas(canvas: HTMLCanvasElement, imageId: string, requestTy
 
 // @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
+
+// @public (undocumented)
+type Mat3 = [
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number
+];
 
 // @public (undocumented)
 type Metadata = {
@@ -1460,11 +1475,20 @@ const metadataProvider: {
 };
 
 // @public (undocumented)
-const ORIENTATION: Record<string, Orientation>;
+enum OrientationAxis {
+    // (undocumented)
+    ACQUISITION = "acquisition",
+    // (undocumented)
+    AXIAL = "axial",
+    // (undocumented)
+    CORONAL = "coronal",
+    // (undocumented)
+    SAGITTAL = "sagittal"
+}
 
 // @public (undocumented)
-type Orientation = {
-    sliceNormal: Point3;
+type OrientationVectors = {
+    viewPlaneNormal: Point3;
     viewUp: Point3;
 };
 
@@ -1847,10 +1871,11 @@ declare namespace Types {
         IVolumeInput,
         VolumeInputCallback,
         Metadata,
-        Orientation,
+        OrientationVectors,
         Point2,
         Point3,
         Point4,
+        Mat3,
         Plane,
         ViewportInputOptions,
         VOIRange,
@@ -2049,7 +2074,7 @@ export class Viewport implements IViewport {
 // @public (undocumented)
 type ViewportInputOptions = {
     background?: [number, number, number];
-    orientation?: Orientation;
+    orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
 };
 
@@ -2190,6 +2215,8 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
+    // (undocumented)
+    setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
     setProperties({ voiRange }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)

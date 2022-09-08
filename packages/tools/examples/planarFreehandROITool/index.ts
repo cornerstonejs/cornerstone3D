@@ -30,7 +30,6 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 const { MouseBindings } = csToolsEnums;
 const { selection } = annotation;
 const defaultFrameOfReferenceSpecificAnnotationManager =
@@ -230,7 +229,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },

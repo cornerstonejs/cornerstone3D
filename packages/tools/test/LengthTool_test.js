@@ -12,11 +12,9 @@ const {
   metaData,
   volumeLoader,
   setVolumesForViewports,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   LengthTool,
@@ -38,8 +36,6 @@ const {
 const renderingEngineId = utilities.uuidv4();
 
 const viewportId = 'VIEWPORT';
-
-const AXIAL = 'AXIAL';
 
 function calculateLength(pos1, pos2) {
   const dx = pos1[0] - pos2[0];
@@ -63,7 +59,7 @@ function createViewport(renderingEngine, viewportType, width, height) {
       element,
       defaultOptions: {
         background: [1, 0, 1], // pinkish background
-        orientation: ORIENTATION[AXIAL],
+        orientation: Enums.OrientationAxis.AXIAL,
       },
     },
   ]);

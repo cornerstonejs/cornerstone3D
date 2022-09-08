@@ -38,7 +38,6 @@ const {
 const { selection } = annotation;
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -293,7 +292,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: ORIENTATION.AXIAL,
+        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -302,7 +301,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -311,7 +310,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
-        orientation: ORIENTATION.CORONAL,
+        orientation: Enums.OrientationAxis.CORONAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },

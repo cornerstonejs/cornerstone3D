@@ -21,7 +21,6 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 // Define unique ids for the volumes
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
@@ -105,7 +104,7 @@ async function run() {
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };

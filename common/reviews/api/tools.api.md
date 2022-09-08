@@ -766,7 +766,7 @@ interface CPUFallbackEnabledElement {
     invalid?: boolean;
     // (undocumented)
     metadata?: {
-        direction?: Float32Array;
+        direction?: Mat3;
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
@@ -946,7 +946,7 @@ type CPUFallbackViewportDisplayedArea = {
 // @public (undocumented)
 type CPUIImageData = {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     spacing: Point3;
     origin: Point3;
     imageData: CPUImageData;
@@ -972,7 +972,7 @@ type CPUImageData = {
     getWorldToIndex?: () => Point3;
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
-    getDirection?: () => Float32Array;
+    getDirection?: () => Mat3;
     getScalarData?: () => number[];
     getDimensions?: () => Point3;
 };
@@ -1994,7 +1994,7 @@ interface IImage {
 // @public
 interface IImageData {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     hasPixelSpacing?: boolean;
     imageData: vtkImageData;
     metadata: { Modality: string };
@@ -2027,7 +2027,7 @@ interface IImageVolume {
     imageIdIndex: number
     ) => IImageLoadObject;
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
@@ -2449,7 +2449,7 @@ interface IViewportId {
 // @public
 interface IVolume {
     dimensions: Point3;
-    direction: Float32Array;
+    direction: Mat3;
     imageData?: vtkImageData;
     metadata: Metadata;
     origin: Point3;
@@ -2526,6 +2526,8 @@ interface IVolumeViewport extends IViewport {
     filterActorUIDs?: Array<string>,
     immediate?: boolean
     ): void;
+    // (undocumented)
+    setOrientation(orientation: OrientationAxis): void;
     setProperties(
         { voiRange }: VolumeViewportProperties,
     volumeId?: string,
@@ -2751,6 +2753,19 @@ export class MagnifyTool extends BaseTool {
     static toolName: any;
 }
 
+// @public
+type Mat3 = [
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number
+];
+
 declare namespace math {
     export {
         vec2,
@@ -2936,18 +2951,18 @@ type NormalizedMouseEventDetail = {
 // @public (undocumented)
 type NormalizedMouseEventType = Types_2.CustomEventType<NormalizedMouseEventDetail>;
 
-// @public (undocumented)
-type Orientation = {
-    sliceNormal: Point3;
-    viewUp: Point3;
-};
-
 declare namespace orientation_2 {
     export {
         getOrientationStringLPS,
         invertOrientationStringLPS
     }
 }
+
+// @public
+type OrientationVectors = {
+    viewPlaneNormal: Point3;
+    viewUp: Point3;
+};
 
 // @public (undocumented)
 export class PanTool extends BaseTool {
@@ -4367,7 +4382,7 @@ declare namespace viewportFilters {
 // @public
 type ViewportInputOptions = {
     background?: [number, number, number];
-    orientation?: Orientation;
+    orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
 };
 

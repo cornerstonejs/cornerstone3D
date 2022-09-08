@@ -87,7 +87,7 @@
         "description": "Demonstrates the various tool modes for annotation tools (active, passive, enabled, disabled)"
       },
       "local": {
-        "name": "DICOM P10 from the local file system" ,
+        "name": "DICOM P10 from the local file system",
         "description": "Provides an interface to load a DICOM P10 image from your local file system to the Cornerstone3D"
       },
       "stackAnnotationTools": {
@@ -149,6 +149,10 @@
       "polyDataActorManipulationTools": {
         "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport (Pan, Zoom, Rotate) by mouse events"
+      },
+      "volumeViewportOrientation": {
+        "name": "Volume Viewport Orientation",
+        "description": "Demonstrates you can switch between different orientation of a volume viewport"
       }
     },
     "tools-advanced": {

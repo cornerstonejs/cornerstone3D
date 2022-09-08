@@ -20,7 +20,6 @@ console.warn(
 );
 
 const { ViewportType, BlendModes } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -142,7 +141,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -151,7 +150,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: ORIENTATION.CORONAL,
+        orientation: Enums.OrientationAxis.CORONAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -160,7 +159,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
-        orientation: ORIENTATION.SAGITTAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },

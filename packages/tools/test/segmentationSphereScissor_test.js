@@ -12,16 +12,13 @@ const {
   metaData,
   imageLoader,
   volumeLoader,
-  utilities,
   setVolumesForViewports,
   eventTarget,
-  CONSTANTS,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 
 const {
   ToolGroupManager,
@@ -50,10 +47,6 @@ const viewportId1 = 'AXIAL';
 const viewportId2 = 'SAGITTAL';
 const viewportUID3 = 'CORONAL';
 
-const AXIAL = 'AXIAL';
-const SAGITTAL = 'SAGITTAL';
-const CORONAL = 'CORONAL';
-
 function createViewport(
   renderingEngine,
   orientation,
@@ -70,7 +63,7 @@ function createViewport(
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: ORIENTATION[orientation],
+      orientation,
       background: [1, 0, 1], // pinkish background
     },
   });
@@ -124,15 +117,18 @@ describe('Segmentation Tools --', () => {
     });
 
     it('should be able to edit the segmentation data with the sphere scissor', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL);
+      const element = createViewport(
+        this.renderingEngine,
+        Enums.OrientationAxis.AXIAL
+      );
       const element2 = createViewport(
         this.renderingEngine,
-        SAGITTAL,
+        Enums.OrientationAxis.SAGITTAL,
         viewportId2
       );
       const element3 = createViewport(
         this.renderingEngine,
-        CORONAL,
+        Enums.OrientationAxis.CORONAL,
         viewportUID3
       );
       this.DOMElements.push(element);

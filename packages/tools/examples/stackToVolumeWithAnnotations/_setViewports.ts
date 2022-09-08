@@ -11,7 +11,6 @@ import { StreamingImageVolume } from '@cornerstonejs/streaming-image-volume-load
 import { Types as cstTypes } from '@cornerstonejs/tools';
 
 const { ViewportType } = Enums;
-const { ORIENTATION } = CONSTANTS;
 const VOLUME_LOADER_SCHEME = 'streaming-wadors';
 
 function _convertVolumeToStackViewport(
@@ -84,7 +83,7 @@ async function _convertStackToVolumeViewport(
       type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
-        orientation: ORIENTATION.AXIAL,
+        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0.2, 0.4, 0.2],
       },
     },

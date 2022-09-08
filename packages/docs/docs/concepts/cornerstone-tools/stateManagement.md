@@ -12,7 +12,7 @@ const annotations = {
   myFrameOfReferenceUID: {
     myToolID: [
       {
-        sliceNormal: [0, 0, 1], // The normal on which the tool was drawn
+        viewPlaneNormal: [0, 0, 1], // The normal on which the tool was drawn
         toolUID: 'someUniqueIdentifier.1.231.4.12.5', // A unique identifier for this annotations.
         FrameOfReferenceUID: 'myFrameOfReference.1.2.3',
         toolName: 'myToolID', // properties specific to that annotation.
@@ -28,7 +28,7 @@ Where an individual annotations entry will look something like this:
 // Example length annotation entry:
 
 const annotation = {
-  sliceNormal: [0, 0, 1], // Drawn on an axial plane.
+  viewPlaneNormal: [0, 0, 1], // Drawn on an axial plane.
   uid: 'someUniqueIdentifier.1.231.4.12.5', // A unique identifier for this annotations.
   FrameOfReferenceUID: 'myFrameOfReference.1.2.3', // The FrameOfReferenceUID
   toolName: LengthTool.toolName, // The tool name
@@ -42,7 +42,7 @@ const annotation = {
 };
 ```
 
-Annotation may have properties specific to their own tools, but must contain sliceNormal, UID and tool. Developers will be able to interact with the annotations manager with the following API:
+Annotation may have properties specific to their own tools, but must contain viewPlaneNormal, UID and tool. Developers will be able to interact with the annotations manager with the following API:
 
 ```js
 // Adds annotation

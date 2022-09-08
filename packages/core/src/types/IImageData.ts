@@ -1,5 +1,5 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Point3, Scaling, IImage } from '../types';
+import { Point3, Scaling, Mat3 } from '../types';
 
 /**
  * IImageData of an image, which stores actual scalarData and metaData about the image.
@@ -9,7 +9,7 @@ interface IImageData {
   /** image dimensions */
   dimensions: Point3;
   /** image direction */
-  direction: Float32Array;
+  direction: Mat3;
   /** image spacing */
   spacing: Point3;
   /** image origin */

@@ -58,9 +58,9 @@ class Viewport implements IViewport {
   sHeight: number;
   /** a Map containing the actor uid and actors */
   _actors: Map<string, any>;
-  /** Default options for the viewport which includes orientation, sliceNormal and backgroundColor */
+  /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
   readonly defaultOptions: any;
-  /** options for the viewport which includes orientation, sliceNormal and backgroundColor */
+  /** options for the viewport which includes orientation axis and backgroundColor */
   options: ViewportInputOptions;
   private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
@@ -991,11 +991,13 @@ class Viewport implements IViewport {
         slabThickness = actorEntry.slabThickness;
       }
 
+      const { viewPlaneNormal, focalPoint } = updatedCamera;
+
       this.setOrientationOfClippingPlanes(
         vtkPlanes,
         slabThickness,
-        updatedCamera.viewPlaneNormal,
-        updatedCamera.focalPoint
+        viewPlaneNormal,
+        focalPoint
       );
     });
   }
@@ -1022,7 +1024,11 @@ class Viewport implements IViewport {
     vtkMath.subtract(focalPoint, scaledDistance, newOrigin1);
     vtkPlanes[0].setOrigin(newOrigin1);
 
-    vtkPlanes[1].setNormal(vtkMath.multiplyScalar(viewPlaneNormal, -1));
+    vtkPlanes[1].setNormal(
+      -viewPlaneNormal[0],
+      -viewPlaneNormal[1],
+      -viewPlaneNormal[2]
+    );
     const newOrigin2 = <Point3>[0, 0, 0];
     vtkMath.add(focalPoint, scaledDistance, newOrigin2);
     vtkPlanes[1].setOrigin(newOrigin2);

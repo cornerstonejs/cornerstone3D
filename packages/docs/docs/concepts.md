@@ -25,7 +25,7 @@ const viewport = {
   type: ViewportType.ORTHOGRAPHIC,
   canvas: document.querySelector('.target-canvas'),
   defaultOptions: {
-    orientation: ORIENTATION.AXIAL,
+    orientation: Enums.OrientationAxis.AXIAL,
     background: [Math.random(), Math.random(), Math.random()],
   },
 };

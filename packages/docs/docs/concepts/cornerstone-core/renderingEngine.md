@@ -77,7 +77,7 @@ const viewportInput = [
     type: ViewportType.ORTHOGRAPHIC,
     element: htmlElement1,
     defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
+      orientation: Enums.OrientationAxis.AXIAL,
     },
   },
   // CT Volume Viewport - Sagittal
@@ -86,7 +86,7 @@ const viewportInput = [
     type: ViewportType.ORTHOGRAPHIC,
     element: htmlElement2,
     defaultOptions: {
-      orientation: ORIENTATION.SAGITTAL,
+      orientation: Enums.OrientationAxis.SAGITTAL,
     },
   },
   // CT Axial Stack Viewport
@@ -95,7 +95,7 @@ const viewportInput = [
     type: ViewportType.STACK,
     element: htmlElement3,
     defaultOptions: {
-      orientation: ORIENTATION.AXIAL,
+      orientation: Enums.OrientationAxis.AXIAL,
     },
   },
 ];
@@ -115,7 +115,7 @@ const viewport = {
   type: ViewportType.ORTHOGRAPHIC,
   element: element1,
   defaultOptions: {
-    orientation: ORIENTATION.AXIAL,
+    orientation: Enums.OrientationAxis.AXIAL,
   },
 };
 

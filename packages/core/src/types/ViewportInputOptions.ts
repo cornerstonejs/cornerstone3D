@@ -1,4 +1,5 @@
-import Orientation from './Orientation';
+import { OrientationAxis } from '../enums';
+import OrientationVectors from './OrientationVectors';
 
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.
@@ -6,8 +7,8 @@ import Orientation from './Orientation';
 type ViewportInputOptions = {
   /** background color */
   background?: [number, number, number];
-  /** orientation of the viewport - e.g., Axial, Coronal, Sagittal, or custom oblique with sliceNormal and viewUp */
-  orientation?: Orientation;
+  /** orientation of the viewport which can be either an Enum for axis Enums.OrientationAxis.[AXIAL|SAGITTAL|CORONAL|DEFAULT] or an object with viewPlaneNormal and viewUp */
+  orientation?: OrientationAxis | OrientationVectors;
   /** whether the events should be suppressed and not fired*/
   suppressEvents?: boolean;
 };
