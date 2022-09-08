@@ -60,7 +60,7 @@ class Viewport implements IViewport {
   _actors: Map<string, any>;
   /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
   readonly defaultOptions: any;
-  /** options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
+  /** options for the viewport which includes orientation axis and backgroundColor */
   options: ViewportInputOptions;
   private _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
