@@ -118,9 +118,9 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   const highResDimensions = highResSegmentationVolume.dimensions;
   const highResSpacing = highResSegmentationVolume.spacing;
 
-  const direction = new Float32Array(9);
+  const direction = [];
 
-  for (let i = 0; i < direction.length; i++) {
+  for (let i = 0; i < 9; i++) {
     direction[i] = highResSegmentationVolume.direction[i];
   }
 
@@ -141,7 +141,7 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
       highResSpacing[2],
     ] as Types.Point3,
     origin: [...highResSegmentationVolume.origin] as Types.Point3,
-    direction,
+    direction: direction as Types.Point9,
   };
 
   const lowResSegmentationVolume = await volumeLoader.createLocalVolume(
