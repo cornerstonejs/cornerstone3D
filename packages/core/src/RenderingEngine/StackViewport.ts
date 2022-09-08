@@ -37,7 +37,7 @@ import {
   EventTypes,
   IStackViewport,
   VolumeActor,
-  Point9,
+  Mat3,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -83,7 +83,7 @@ interface ImageDataMetaData {
   bitsAllocated: number;
   numComps: number;
   origin: Point3;
-  direction: Point9;
+  direction: Mat3;
   dimensions: Point3;
   spacing: Point3;
   numVoxels: number;
@@ -1154,11 +1154,7 @@ class StackViewport extends Viewport implements IStackViewport {
       bitsAllocated: imagePixelModule.bitsAllocated,
       numComps,
       origin,
-      direction: [
-        ...rowCosineVec,
-        ...colCosineVec,
-        ...scanAxisNormal,
-      ] as Point9,
+      direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal] as Mat3,
       dimensions: [xVoxels, yVoxels, zVoxels],
       spacing: [xSpacing, ySpacing, zSpacing],
       numVoxels: xVoxels * yVoxels * zVoxels,
@@ -1173,7 +1169,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageDataDirection - vtkImageData direction
    * @returns viewplane normal and viewUp of the camera
    */
-  private _getCameraOrientation(imageDataDirection: Point9): {
+  private _getCameraOrientation(imageDataDirection: Mat3): {
     viewPlaneNormal: Point3;
     viewUp: Point3;
   } {

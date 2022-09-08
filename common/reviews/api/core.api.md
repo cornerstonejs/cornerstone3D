@@ -151,7 +151,7 @@ interface CPUFallbackEnabledElement {
     invalid?: boolean;
     // (undocumented)
     metadata?: {
-        direction?: Point9;
+        direction?: Mat3;
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
@@ -331,7 +331,7 @@ type CPUFallbackViewportDisplayedArea = {
 // @public (undocumented)
 type CPUIImageData = {
     dimensions: Point3;
-    direction: Point9;
+    direction: Mat3;
     spacing: Point3;
     origin: Point3;
     imageData: CPUImageData;
@@ -359,7 +359,7 @@ type CPUImageData = {
     getWorldToIndex?: () => Point3;
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
-    getDirection?: () => Point9;
+    getDirection?: () => Mat3;
     getScalarData?: () => number[];
     getDimensions?: () => Point3;
 };
@@ -786,7 +786,7 @@ interface IImageData {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Point9;
+    direction: Mat3;
     // (undocumented)
     hasPixelSpacing?: boolean;
     // (undocumented)
@@ -832,7 +832,7 @@ interface IImageVolume {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Point9;
+    direction: Mat3;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
@@ -1002,7 +1002,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Point9;
+    direction: Mat3;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
@@ -1307,7 +1307,7 @@ interface IVolume {
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
-    direction: Point9;
+    direction: Mat3;
     // (undocumented)
     imageData?: vtkImageData;
     // (undocumented)
@@ -1428,6 +1428,19 @@ function loadImageToCanvas(canvas: HTMLCanvasElement, imageId: string, requestTy
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
 
 // @public (undocumented)
+type Mat3 = [
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number
+];
+
+// @public (undocumented)
 type Metadata = {
     BitsAllocated: number;
     BitsStored: number;
@@ -1464,11 +1477,11 @@ const metadataProvider: {
 // @public (undocumented)
 enum OrientationAxis {
     // (undocumented)
+    ACQUISITION = "acquisition",
+    // (undocumented)
     AXIAL = "axial",
     // (undocumented)
     CORONAL = "coronal",
-    // (undocumented)
-    DEFAULT = "default",
     // (undocumented)
     SAGITTAL = "sagittal"
 }
@@ -1501,19 +1514,6 @@ type Point3 = [number, number, number];
 
 // @public (undocumented)
 type Point4 = [number, number, number, number];
-
-// @public (undocumented)
-type Point9 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
 
 // @public (undocumented)
 type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
@@ -1875,7 +1875,7 @@ declare namespace Types {
         Point2,
         Point3,
         Point4,
-        Point9,
+        Mat3,
         Plane,
         ViewportInputOptions,
         VOIRange,

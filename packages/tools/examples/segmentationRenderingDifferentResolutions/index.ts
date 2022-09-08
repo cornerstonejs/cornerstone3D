@@ -141,7 +141,7 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
       highResSpacing[2],
     ] as Types.Point3,
     origin: [...highResSegmentationVolume.origin] as Types.Point3,
-    direction: direction as Types.Point9,
+    direction: direction as Types.Mat3,
   };
 
   const lowResSegmentationVolume = await volumeLoader.createLocalVolume(

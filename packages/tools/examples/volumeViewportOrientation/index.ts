@@ -49,7 +49,7 @@ content.appendChild(element);
 
 addDropdownToToolbar({
   options: {
-    values: ['axial', 'sagittal', 'coronal', 'default'],
+    values: ['axial', 'sagittal', 'coronal', 'acquisition'],
     defaultValue: 'axial',
   },
   onSelectedValueChange: (selectedValue) => {

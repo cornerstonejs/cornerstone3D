@@ -1,6 +1,6 @@
 import Point2 from './Point2';
 import Point3 from './Point3';
-import Point9 from './Point9';
+import Mat3 from './Mat3';
 import IImage from './IImage';
 import CPUFallbackViewport from './CPUFallbackViewport';
 import CPUFallbackTransform from './CPUFallbackTransform';
@@ -25,7 +25,7 @@ interface CPUFallbackEnabledElement {
   invalid?: boolean;
   needsRedraw?: boolean;
   metadata?: {
-    direction?: Point9;
+    direction?: Mat3;
     /** Last index is always 1 for CPU */
     dimensions?: Point3;
     /** Last spacing is always EPSILON for CPU */

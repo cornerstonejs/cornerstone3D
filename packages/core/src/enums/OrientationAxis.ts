@@ -2,7 +2,7 @@ enum OrientationAxis {
   AXIAL = 'axial',
   CORONAL = 'coronal',
   SAGITTAL = 'sagittal',
-  DEFAULT = 'default',
+  ACQUISITION = 'acquisition',
 }
 
 export default OrientationAxis;

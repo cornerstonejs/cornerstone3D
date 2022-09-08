@@ -19,7 +19,7 @@ import type OrientationVectors from './OrientationVectors';
 import type Point2 from './Point2';
 import type Point3 from './Point3';
 import type Point4 from './Point4';
-import type Point9 from './Point9';
+import type Mat3 from './Mat3';
 import type Plane from './Plane';
 import type IStreamingImageVolume from './IStreamingImageVolume';
 import type ViewportInputOptions from './ViewportInputOptions';
@@ -99,7 +99,7 @@ export type {
   Point2,
   Point3,
   Point4,
-  Point9,
+  Mat3,
   Plane,
   ViewportInputOptions,
   VOIRange,

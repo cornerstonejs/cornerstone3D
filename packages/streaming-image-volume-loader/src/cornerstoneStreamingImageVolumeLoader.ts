@@ -78,7 +78,7 @@ function cornerstoneStreamingImageVolumeLoader(
     ...rowCosineVec,
     ...colCosineVec,
     ...scanAxisNormal,
-  ] as Types.Point9;
+  ] as Types.Mat3;
   const signed = PixelRepresentation === 1;
 
   // Check if it fits in the cache before we allocate data

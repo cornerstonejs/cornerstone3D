@@ -1,7 +1,7 @@
 /**
- * This represents 9 numbers in a vector
+ * This represents a 3x3 matrix of numbers
  */
-type Point9 = [
+type Mat3 = [
   number,
   number,
   number,
@@ -13,4 +13,4 @@ type Point9 = [
   number
 ];
 
-export default Point9;
+export default Mat3;

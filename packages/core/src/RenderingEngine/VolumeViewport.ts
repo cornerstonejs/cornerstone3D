@@ -66,7 +66,7 @@ deepFreeze(ORIENTATION);
 class VolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
-  private _useAcquisitionPlaneForCamera = false;
+  private _useAcquisitionPlaneForViewPlane = false;
 
   constructor(props: ViewportInput) {
     super(props);
@@ -114,7 +114,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       return;
     }
 
-    this._useAcquisitionPlaneForCamera = true;
+    this._useAcquisitionPlaneForViewPlane = true;
   }
 
   static get useCustomRenderingPipeline(): boolean {
@@ -250,9 +250,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       );
     }
 
-    if (this._useAcquisitionPlaneForCamera) {
-      this._setOrientationToAcquisitionPlane(firstImageVolume);
-      this._useAcquisitionPlaneForCamera = false;
+    if (this._useAcquisitionPlaneForViewPlane) {
+      this._setViewPlaneToAcquisitionPlane(firstImageVolume);
+      this._useAcquisitionPlaneForViewPlane = false;
     }
 
     const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID;
@@ -314,9 +314,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       );
     }
 
-    if (this._useAcquisitionPlaneForCamera) {
-      this._setOrientationToAcquisitionPlane(firstImageVolume);
-      this._useAcquisitionPlaneForCamera = false;
+    if (this._useAcquisitionPlaneForViewPlane) {
+      this._setViewPlaneToAcquisitionPlane(firstImageVolume);
+      this._useAcquisitionPlaneForViewPlane = false;
     }
 
     const volumeActors = [];
@@ -394,7 +394,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     if (Object.keys(ORIENTATION).includes(orientation)) {
       ({ viewPlaneNormal, viewUp } = ORIENTATION[orientation]);
-    } else if (orientation === 'default') {
+    } else if (orientation === 'acquisition') {
       ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
     } else {
       throw new Error(
@@ -430,7 +430,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       Object.keys(ORIENTATION).includes(orientation)
     ) {
       return ORIENTATION[orientation];
-    } else if (orientation === 'default') {
+    } else if (orientation === 'acquisition') {
       return this._getAcquisitionPlaneOrientation();
     } else {
       throw new Error(
@@ -472,7 +472,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     };
   }
 
-  private _setOrientationToAcquisitionPlane(imageVolume: IImageVolume): void {
+  private _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {
     let viewPlaneNormal, viewUp;
 
     if (imageVolume) {

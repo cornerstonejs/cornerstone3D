@@ -116,7 +116,7 @@ interface CPUFallbackEnabledElement {
     invalid?: boolean;
     // (undocumented)
     metadata?: {
-        direction?: Point9;
+        direction?: Mat3;
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
@@ -296,7 +296,7 @@ type CPUFallbackViewportDisplayedArea = {
 // @public (undocumented)
 type CPUIImageData = {
     dimensions: Point3;
-    direction: Point9;
+    direction: Mat3;
     spacing: Point3;
     origin: Point3;
     imageData: CPUImageData;
@@ -322,7 +322,7 @@ type CPUImageData = {
     getWorldToIndex?: () => Point3;
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
-    getDirection?: () => Point9;
+    getDirection?: () => Mat3;
     getScalarData?: () => number[];
     getDimensions?: () => Point3;
 };
@@ -598,7 +598,7 @@ interface IImage {
 // @public
 interface IImageData {
     dimensions: Point3;
-    direction: Point9;
+    direction: Mat3;
     hasPixelSpacing?: boolean;
     imageData: vtkImageData;
     metadata: { Modality: string };
@@ -631,7 +631,7 @@ interface IImageVolume {
     imageIdIndex: number
     ) => IImageLoadObject;
     dimensions: Point3;
-    direction: Point9;
+    direction: Mat3;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds?: Array<string>;
@@ -928,7 +928,7 @@ interface IViewportId {
 // @public
 interface IVolume {
     dimensions: Point3;
-    direction: Point9;
+    direction: Mat3;
     imageData?: vtkImageData;
     metadata: Metadata;
     origin: Point3;
@@ -1027,6 +1027,19 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public
+type Mat3 = [
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number,
+number
+];
+
+// @public
 type Metadata = {
     BitsAllocated: number;
     BitsStored: number;
@@ -1047,11 +1060,11 @@ type Metadata = {
 // @public (undocumented)
 enum OrientationAxis {
     // (undocumented)
+    ACQUISITION = 'acquisition',
+    // (undocumented)
     AXIAL = 'axial',
     // (undocumented)
     CORONAL = 'coronal',
-    // (undocumented)
-    DEFAULT = 'default',
     // (undocumented)
     SAGITTAL = 'sagittal',
 }
@@ -1073,19 +1086,6 @@ type Point3 = [number, number, number];
 
 // @public
 type Point4 = [number, number, number, number];
-
-// @public
-type Point9 = [
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number,
-number
-];
 
 // @public
 type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;

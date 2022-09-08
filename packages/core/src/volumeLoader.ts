@@ -12,7 +12,7 @@ import Events from './enums/Events';
 import eventTarget from './eventTarget';
 import triggerEvent from './utilities/triggerEvent';
 import { uuidv4 } from './utilities';
-import { Point3, Metadata, EventTypes, Point9 } from './types';
+import { Point3, Metadata, EventTypes, Mat3 } from './types';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -30,7 +30,7 @@ interface LocalVolumeOptions {
   dimensions: Point3;
   spacing: Point3;
   origin: Point3;
-  direction: Point9;
+  direction: Mat3;
 }
 
 function createInternalVTKRepresentation({
