@@ -21,6 +21,7 @@ const {
   LengthTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
+  ZoomTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -49,6 +50,10 @@ viewportGrid.style.flexDirection = 'row';
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
+element1.oncontextmenu = () => false;
+element2.oncontextmenu = () => false;
+element3.oncontextmenu = () => false;
+
 element1.style.width = size;
 element1.style.height = size;
 element2.style.width = size;
@@ -80,6 +85,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -88,6 +94,7 @@ async function run() {
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(LengthTool.toolName, { configuration: { volumeId } });
+  toolGroup.addTool(ZoomTool.toolName, { configuration: { volumeId } });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -96,6 +103,14 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   });
