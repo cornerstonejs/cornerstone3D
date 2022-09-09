@@ -91,11 +91,10 @@ class Cache implements ICache {
   /**
    * Deletes the imageId from the image cache
    *
-   * @param imageId - imageId
+   * @param imageURI - imageURI
    *
    */
-  private _decacheImage = (imageId: string) => {
-    const imageURI = idToURI(imageId);
+  private _decacheImage = (imageURI: string) => {
     const { imageLoadObject } = this._imageCache.get(imageURI);
 
     // Cancel any in-progress loading
@@ -107,7 +106,7 @@ class Cache implements ICache {
       imageLoadObject.decache();
     }
 
-    this._imageCache.delete(imageId);
+    this._imageCache.delete(imageURI);
   };
 
   /**
@@ -116,8 +115,7 @@ class Cache implements ICache {
    * @param volumeId - volumeId
    *
    */
-  private _decacheVolume = (volumeId: string) => {
-    const volumeURI = idToURI(volumeId);
+  private _decacheVolume = (volumeURI: string) => {
     const cachedVolume = this._volumeCache.get(volumeURI);
     const { volumeLoadObject } = cachedVolume;
 
@@ -137,7 +135,7 @@ class Cache implements ICache {
       volume.vtkOpenGLTexture.releaseGraphicsResources()
     }*/
 
-    this._volumeCache.delete(volumeId);
+    this._volumeCache.delete(volumeURI);
   };
 
   /**
@@ -161,6 +159,7 @@ class Cache implements ICache {
         break;
       }
 
+      const { imageId } = this._imageCache.get(imageURI);
       this.removeImageLoadObject(imageId);
 
       triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, { imageId });
@@ -177,11 +176,14 @@ class Cache implements ICache {
 
     /* eslint-disable no-constant-condition */
     while (true) {
-      const { value: volumeId, done } = volumeIterator.next();
+      const { value: volumeURI, done } = volumeIterator.next();
 
       if (done) {
         break;
       }
+
+      const cachedVolume = this._volumeCache.get(volumeURI);
+      const { volumeId } = cachedVolume;
 
       this.removeVolumeLoadObject(volumeId);
 
@@ -288,29 +290,6 @@ class Cache implements ICache {
     // number of bytes
   }
 
-  /**
-   * Returns the cached image from the imageCache for the requested imageId.
-   * It first strips the imageId to remove the data loading scheme.
-   *
-   * @param imageId - Image ID
-   * @returns cached image
-   */
-  public getCachedImageBasedOnImageURI(
-    imageId: string
-  ): ICachedImage | undefined {
-    const imageURIToUse = imageIdToURI(imageId);
-
-    const cachedImageIds = Array.from(this._imageCache.keys());
-    const foundImageId = cachedImageIds.find((imageId) => {
-      return imageIdToURI(imageId) === imageURIToUse;
-    });
-
-    if (!foundImageId) {
-      return;
-    }
-
-    return this._imageCache.get(foundImageId);
-  }
   /**
    * Puts a n
    *
@@ -454,7 +433,8 @@ class Cache implements ICache {
    * @returns boolean
    */
   public isImageIdCached(imageId: string): boolean {
-    const cachedImage = this._imageCache.get(imageId);
+    const imageURI = idToURI(imageId);
+    const cachedImage = this._imageCache.get(imageURI);
 
     if (!cachedImage) {
       return false;
@@ -474,25 +454,25 @@ class Cache implements ICache {
     volume: IImageVolume;
     imageIdIndex: number;
   } {
-    const volumeIds = Array.from(this._volumeCache.keys());
-    const imageIdToUse = idToURI(imageId);
+    const volumeURIs = Array.from(this._volumeCache.keys());
+    const imageURI = idToURI(imageId);
 
-    for (const volumeId of volumeIds) {
-      const cachedVolume = this._volumeCache.get(volumeId);
+    for (const volumeURI of volumeURIs) {
+      const cachedVolume = this._volumeCache.get(volumeURI);
 
       if (!cachedVolume.volume) {
         return;
       }
 
-      let { imageIds } = cachedVolume.volume;
+      const { imageIds } = cachedVolume.volume;
 
       if (!imageIds || imageIds.length === 0) {
         continue;
       }
 
-      imageIds = imageIds.map((id) => idToURI(id));
+      const volumeImageURIs = imageIds.map((id) => idToURI(id));
 
-      const imageIdIndex = imageIds.indexOf(imageIdToUse);
+      const imageIdIndex = volumeImageURIs.indexOf(imageURI);
       if (imageIdIndex > -1) {
         return { volume: cachedVolume.volume, imageIdIndex };
       }
@@ -658,28 +638,20 @@ class Cache implements ICache {
   };
 
   /**
-   * It returns the image that has been cached for the given imageId
+   * It returns the image object that has been cached for the given imageId
    * if it exists in the cache.
    *
    * @param imageId - Image ID
    * @returns the cached image
    */
-  public getImage = (imageId: string): IImage | undefined => {
+  public getImageObject = (imageId: string): ICachedImage | undefined => {
     if (imageId === undefined) {
-      throw new Error('getImage: imageId must not be undefined');
+      throw new Error('getImageObject: imageId must not be undefined');
     }
 
     const imageURI = idToURI(imageId);
-    const cachedImage = this._imageCache.get(imageURI);
 
-    if (cachedImage === undefined) {
-      return;
-    }
-
-    // Bump time stamp for cached image (not used for anything for now)
-    cachedImage.timeStamp = Date.now();
-
-    return cachedImage.image;
+    return this._imageCache.get(imageURI);
   };
 
   /**
@@ -746,7 +718,7 @@ class Cache implements ICache {
     };
 
     triggerEvent(eventTarget, Events.VOLUME_CACHE_VOLUME_REMOVED, eventDetails);
-    this._decacheVolume(volumeId);
+    this._decacheVolume(volumeURI);
   };
 
   /**
