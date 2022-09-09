@@ -251,23 +251,18 @@ export default class StreamingImageVolume extends ImageVolume {
       imageId: string,
       scalingParameters
     ) => {
-      // Check if there is a cached image for the same imageURI (different
-      // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
+      const imageLoadObject = cache.getImageLoadObject(imageId);
 
-      if (!cachedImage || !cachedImage.image) {
+      // if there was no on going request for this imageId, just update
+      if (!imageLoadObject) {
         return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
       }
-      const imageScalarData = this._scaleIfNecessary(
-        cachedImage.image,
-        scalingParameters
-      );
-      // todo add scaling and slope
+
       const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData;
       const TypedArray = this.scalarData.constructor;
       let byteOffset = bytesPerImage * imageIdIndex;
 
-      //    create a view on the volume arraybuffer
+      // create a view on the volume arraybuffer
       const bytePerPixel = bytesPerImage / pixelsPerImage;
 
       if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
@@ -280,8 +275,13 @@ export default class StreamingImageVolume extends ImageVolume {
         byteOffset,
         pixelsPerImage
       );
-      cachedImage.imageLoadObject.promise
+
+      imageLoadObject.promise
         .then((image) => {
+          const imageScalarData = this._scaleIfNecessary(
+            image,
+            scalingParameters
+          );
           volumeBufferView.set(imageScalarData);
           updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
         })

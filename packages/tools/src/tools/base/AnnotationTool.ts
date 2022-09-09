@@ -233,7 +233,7 @@ abstract class AnnotationTool extends BaseTool {
 
     const calibratedIndexToWorld = calibratedImageData.getIndexToWorld();
 
-    const imageURI = utilities.imageIdToURI(imageId);
+    const imageURI = utilities.idToURI(imageId);
     const stateManager = getViewportSpecificAnnotationManager(element);
     const framesOfReference = stateManager.getFramesOfReference();
 
@@ -252,7 +252,7 @@ abstract class AnnotationTool extends BaseTool {
       // for this specific tool
       toolSpecificAnnotations.forEach((annotation) => {
         // if the annotation is drawn on the same imageId
-        const referencedImageURI = utilities.imageIdToURI(
+        const referencedImageURI = utilities.idToURI(
           annotation.metadata.referencedImageId
         );
 

@@ -73,7 +73,7 @@ async function _convertStackToVolumeViewport(
 
   let imageIds = viewport.getImageIds();
   imageIds = imageIds.map((imageId) => {
-    const imageURI = utilities.imageIdToURI(imageId);
+    const imageURI = utilities.idToURI(imageId);
     return `${VOLUME_LOADER_SCHEME}:${imageURI}`;
   });
 

@@ -27,12 +27,12 @@ function addInstance(imageId, dicomJSONDatasetOrP10ArrayBuffer) {
     naturalizedDataset = dicomJSONDataset;
   }
 
-  const imageURI = csUtils.imageIdToURI(imageId);
+  const imageURI = csUtils.idToURI(imageId);
   metadataHeadersPerImageId[imageURI] = naturalizedDataset;
 }
 
 function get(query, imageId) {
-  const imageURI = csUtils.imageIdToURI(imageId);
+  const imageURI = csUtils.idToURI(imageId);
 
   if (query === INSTANCE) {
     return metadataHeadersPerImageId[imageURI];

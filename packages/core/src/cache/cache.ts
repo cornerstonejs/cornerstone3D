@@ -8,7 +8,7 @@ import {
   ICachedVolume,
   EventTypes,
 } from '../types';
-import { triggerEvent, imageIdToURI } from '../utilities';
+import { triggerEvent, idToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 
@@ -95,7 +95,8 @@ class Cache implements ICache {
    *
    */
   private _decacheImage = (imageId: string) => {
-    const { imageLoadObject } = this._imageCache.get(imageId);
+    const imageURI = idToURI(imageId);
+    const { imageLoadObject } = this._imageCache.get(imageURI);
 
     // Cancel any in-progress loading
     if (imageLoadObject.cancelFn) {
@@ -116,7 +117,8 @@ class Cache implements ICache {
    *
    */
   private _decacheVolume = (volumeId: string) => {
-    const cachedVolume = this._volumeCache.get(volumeId);
+    const volumeURI = idToURI(volumeId);
+    const cachedVolume = this._volumeCache.get(volumeURI);
     const { volumeLoadObject } = cachedVolume;
 
     // Cancel any in-progress loading
@@ -153,7 +155,7 @@ class Cache implements ICache {
 
     /* eslint-disable no-constant-condition */
     while (true) {
-      const { value: imageId, done } = imageIterator.next();
+      const { value: imageURI, done } = imageIterator.next();
 
       if (done) {
         break;
@@ -287,6 +289,32 @@ class Cache implements ICache {
   }
 
   /**
+   * Returns the cached image from the imageCache for the requested imageId.
+   * It first strips the imageId to remove the data loading scheme.
+   *
+   * @param imageId - Image ID
+   * @returns cached image
+   */
+  public getCachedImageBasedOnImageURI(
+    imageId: string
+  ): ICachedImage | undefined {
+    const imageURIToUse = imageIdToURI(imageId);
+
+    const cachedImageIds = Array.from(this._imageCache.keys());
+    const foundImageId = cachedImageIds.find((imageId) => {
+      return imageIdToURI(imageId) === imageURIToUse;
+    });
+
+    if (!foundImageId) {
+      return;
+    }
+
+    return this._imageCache.get(foundImageId);
+  }
+  /**
+   * Puts a n
+   *
+  /**
    * Puts a new image load object into the cache
    *
    * First, it creates a CachedImage object and put it inside the imageCache for
@@ -317,8 +345,11 @@ class Cache implements ICache {
       );
     }
 
-    if (this._imageCache.has(imageId)) {
-      throw new Error('putImageLoadObject: imageId already in cache');
+    const imageURI = idToURI(imageId);
+    const imageLoaderId = imageId.split(':')[0];
+
+    if (this._imageCache.has(imageURI)) {
+      throw new Error('putImageLoadObject: imageURI already exists in cache');
     }
 
     if (
@@ -337,13 +368,14 @@ class Cache implements ICache {
       imageLoadObject,
       timeStamp: Date.now(),
       sizeInBytes: 0,
+      imageLoaderId,
     };
 
-    this._imageCache.set(imageId, cachedImage);
+    this._imageCache.set(imageURI, cachedImage);
 
     return imageLoadObject.promise
       .then((image: IImage) => {
-        if (!this._imageCache.get(imageId)) {
+        if (!this._imageCache.get(imageURI)) {
           // If the image has been purged before being loaded, we stop here.
           console.warn(
             'The image was purged from the cache before it completed loading.'
@@ -400,7 +432,9 @@ class Cache implements ICache {
     if (imageId === undefined) {
       throw new Error('getImageLoadObject: imageId must not be undefined');
     }
-    const cachedImage = this._imageCache.get(imageId);
+
+    const imageURI = idToURI(imageId);
+    const cachedImage = this._imageCache.get(imageURI);
 
     if (cachedImage === undefined) {
       return;
@@ -441,7 +475,7 @@ class Cache implements ICache {
     imageIdIndex: number;
   } {
     const volumeIds = Array.from(this._volumeCache.keys());
-    const imageIdToUse = imageIdToURI(imageId);
+    const imageIdToUse = idToURI(imageId);
 
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId);
@@ -456,7 +490,7 @@ class Cache implements ICache {
         continue;
       }
 
-      imageIds = imageIds.map((id) => imageIdToURI(id));
+      imageIds = imageIds.map((id) => idToURI(id));
 
       const imageIdIndex = imageIds.indexOf(imageIdToUse);
       if (imageIdIndex > -1) {
@@ -465,29 +499,6 @@ class Cache implements ICache {
     }
   }
 
-  /**
-   * Returns the cached image from the imageCache for the requested imageId.
-   * It first strips the imageId to remove the data loading scheme.
-   *
-   * @param imageId - Image ID
-   * @returns cached image
-   */
-  public getCachedImageBasedOnImageURI(
-    imageId: string
-  ): ICachedImage | undefined {
-    const imageURIToUse = imageIdToURI(imageId);
-
-    const cachedImageIds = Array.from(this._imageCache.keys());
-    const foundImageId = cachedImageIds.find((imageId) => {
-      return imageIdToURI(imageId) === imageURIToUse;
-    });
-
-    if (!foundImageId) {
-      return;
-    }
-
-    return this._imageCache.get(foundImageId);
-  }
   /**
    * Puts a new image load object into the cache
    *
@@ -516,9 +527,13 @@ class Cache implements ICache {
         'putVolumeLoadObject: volumeLoadObject.promise must not be undefined'
       );
     }
-    if (this._volumeCache.has(volumeId)) {
+
+    const volumeURI = idToURI(volumeId);
+    const volumeLoaderId = volumeId.split(':')[0];
+
+    if (this._volumeCache.has(volumeURI)) {
       throw new Error(
-        `putVolumeLoadObject: volumeId:${volumeId} already in cache`
+        `putVolumeLoadObject: volumeURI:${volumeURI} already exists in the cache`
       );
     }
     if (
@@ -539,13 +554,14 @@ class Cache implements ICache {
       volumeLoadObject,
       timeStamp: Date.now(),
       sizeInBytes: 0,
+      volumeLoaderId,
     };
 
-    this._volumeCache.set(volumeId, cachedVolume);
+    this._volumeCache.set(volumeURI, cachedVolume);
 
     return volumeLoadObject.promise
       .then((volume: IImageVolume) => {
-        if (!this._volumeCache.get(volumeId)) {
+        if (!this._volumeCache.get(volumeURI)) {
           // If the image has been purged before being loaded, we stop here.
           console.warn(
             'The image was purged from the cache before it completed loading.'
@@ -589,7 +605,7 @@ class Cache implements ICache {
         );
       })
       .catch((error) => {
-        this._volumeCache.delete(volumeId);
+        this._volumeCache.delete(volumeURI);
         throw error;
       });
   }
@@ -604,7 +620,9 @@ class Cache implements ICache {
     if (volumeId === undefined) {
       throw new Error('getVolumeLoadObject: volumeId must not be undefined');
     }
-    const cachedVolume = this._volumeCache.get(volumeId);
+
+    const volumeURI = idToURI(volumeId);
+    const cachedVolume = this._volumeCache.get(volumeURI);
 
     if (cachedVolume === undefined) {
       return;
@@ -622,11 +640,12 @@ class Cache implements ICache {
    * @param volumeId - Volume ID
    * @returns Volume
    */
-  public getVolume = (volumeId: string): IImageVolume => {
+  public getVolume = (volumeId: string): IImageVolume | undefined => {
     if (volumeId === undefined) {
       throw new Error('getVolume: volumeId must not be undefined');
     }
-    const cachedVolume = this._volumeCache.get(volumeId);
+    const volumeURI = idToURI(volumeId);
+    const cachedVolume = this._volumeCache.get(volumeURI);
 
     if (cachedVolume === undefined) {
       return;
@@ -636,6 +655,31 @@ class Cache implements ICache {
     cachedVolume.timeStamp = Date.now();
 
     return cachedVolume.volume;
+  };
+
+  /**
+   * It returns the image that has been cached for the given imageId
+   * if it exists in the cache.
+   *
+   * @param imageId - Image ID
+   * @returns the cached image
+   */
+  public getImage = (imageId: string): IImage | undefined => {
+    if (imageId === undefined) {
+      throw new Error('getImage: imageId must not be undefined');
+    }
+
+    const imageURI = idToURI(imageId);
+    const cachedImage = this._imageCache.get(imageURI);
+
+    if (cachedImage === undefined) {
+      return;
+    }
+
+    // Bump time stamp for cached image (not used for anything for now)
+    cachedImage.timeStamp = Date.now();
+
+    return cachedImage.image;
   };
 
   /**
@@ -651,7 +695,9 @@ class Cache implements ICache {
     if (imageId === undefined) {
       throw new Error('removeImageLoadObject: imageId must not be undefined');
     }
-    const cachedImage = this._imageCache.get(imageId);
+
+    const imageURI = idToURI(imageId);
+    const cachedImage = this._imageCache.get(imageURI);
 
     if (cachedImage === undefined) {
       throw new Error(
@@ -682,7 +728,9 @@ class Cache implements ICache {
     if (volumeId === undefined) {
       throw new Error('removeVolumeLoadObject: volumeId must not be undefined');
     }
-    const cachedVolume = this._volumeCache.get(volumeId);
+
+    const volumeURI = idToURI(volumeId);
+    const cachedVolume = this._volumeCache.get(volumeURI);
 
     if (cachedVolume === undefined) {
       throw new Error(
@@ -736,8 +784,8 @@ class Cache implements ICache {
  * if so
  * - We allocate the image in image cache, and if necessary oldest images
  * are decached to match the maximumCacheSize criteria
- * - If a volume contains that imageId, copy it over using TypedArray's set method.
- * If no volumes contain the imageId, the image is fetched by image loaders
+ * - If a volume contains that imageURI, copy it over using TypedArray's set method.
+ * If no volumes contain the imageURi, the image is fetched by image loaders
  *
  * If not (cache is mostly/completely full with volumes)
  * - throw that the cache does not have enough working space to allocate the image

@@ -8,6 +8,7 @@ interface ICachedImage {
   sharedCacheKey?: string;
   timeStamp: number;
   sizeInBytes: number;
+  imageLoaderId: string;
 }
 
 export default ICachedImage;

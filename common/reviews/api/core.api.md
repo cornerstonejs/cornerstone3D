@@ -889,7 +889,7 @@ type ImageCacheImageRemovedEventDetail = {
 };
 
 // @public (undocumented)
-function imageIdToURI(imageId: string): string;
+function idToURI(imageId: string): string;
 
 // @public (undocumented)
 type ImageLoadedEvent = CustomEvent_2<ImageLoadedEventDetail>;
@@ -1909,7 +1909,7 @@ declare namespace utilities {
         invertRgbTransferFunction,
         scaleRGBTransferFunction as scaleRgbTransferFunction,
         triggerEvent,
-        imageIdToURI,
+        idToURI,
         metadataProvider as calibratedPixelSpacingMetadataProvider,
         uuidv4,
         planar,

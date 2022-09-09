@@ -469,12 +469,9 @@ class ProbeTool extends AnnotationTool {
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
                 // showing it currently
-                const referencedImageURI =
-                  csUtils.imageIdToURI(referencedImageId);
+                const referencedImageURI = csUtils.idToURI(referencedImageId);
                 const hasImageURI = vp.hasImageURI(referencedImageURI);
-                const currentImageURI = csUtils.imageIdToURI(
-                  vp.getCurrentImageId()
-                );
+                const currentImageURI = csUtils.idToURI(vp.getCurrentImageId());
                 return hasImageURI && currentImageURI !== referencedImageURI;
               });
 
@@ -633,7 +630,7 @@ class ProbeTool extends AnnotationTool {
         // we reset it to be imageId index
         if (targetId.startsWith('imageId:')) {
           const imageId = targetId.split('imageId:')[1];
-          const imageURI = csUtils.imageIdToURI(imageId);
+          const imageURI = csUtils.idToURI(imageId);
           const viewports = utilities.getViewportsWithImageURI(
             imageURI,
             renderingEngineId

@@ -7,6 +7,7 @@ interface ICachedVolume {
   loaded: boolean;
   timeStamp: number;
   sizeInBytes: number;
+  volumeLoaderId: string;
 }
 
 export default ICachedVolume;
