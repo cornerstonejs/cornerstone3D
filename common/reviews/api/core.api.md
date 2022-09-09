@@ -621,6 +621,8 @@ interface ICachedImage {
     // (undocumented)
     imageId: string;
     // (undocumented)
+    imageLoaderId: string;
+    // (undocumented)
     imageLoadObject: IImageLoadObject;
     // (undocumented)
     loaded: boolean;
@@ -644,6 +646,8 @@ interface ICachedVolume {
     volume?: IImageVolume;
     // (undocumented)
     volumeId: string;
+    // (undocumented)
+    volumeLoaderId: string;
     // (undocumented)
     volumeLoadObject: IVolumeLoadObject;
 }
@@ -671,6 +675,9 @@ interface ICamera {
     // (undocumented)
     viewUp?: Point3;
 }
+
+// @public (undocumented)
+function idToURI(id: string): string;
 
 // @public (undocumented)
 interface IEnabledElement {
@@ -887,9 +894,6 @@ type ImageCacheImageRemovedEvent = CustomEvent_2<ImageCacheImageRemovedEventDeta
 type ImageCacheImageRemovedEventDetail = {
     imageId: string;
 };
-
-// @public (undocumented)
-function idToURI(imageId: string): string;
 
 // @public (undocumented)
 type ImageLoadedEvent = CustomEvent_2<ImageLoadedEventDetail>;

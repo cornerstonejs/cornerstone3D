@@ -1869,6 +1869,8 @@ interface ICachedImage {
     // (undocumented)
     imageId: string;
     // (undocumented)
+    imageLoaderId: string;
+    // (undocumented)
     imageLoadObject: IImageLoadObject;
     // (undocumented)
     loaded: boolean;
@@ -1892,6 +1894,8 @@ interface ICachedVolume {
     volume?: IImageVolume;
     // (undocumented)
     volumeId: string;
+    // (undocumented)
+    volumeLoaderId: string;
     // (undocumented)
     volumeLoadObject: IVolumeLoadObject;
 }
