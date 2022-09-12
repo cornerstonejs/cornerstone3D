@@ -320,12 +320,15 @@ class NumContentItem extends ContentItem {
                     "Option 'unit' is required for NumContentItem with 'value'."
                 );
             }
+            if (options.unit.constructor !== CodedConcept) {
+                throw new Error("Option 'unit' must have type CodedConcept.");
+            }
             const item = {};
             item.NumericValue = options.value;
             if (isFloat(options.value)) {
                 item.FloatingPointValue = options.value;
             }
-            item.MeasurementUnitsCodeSequence = options.unit;
+            item.MeasurementUnitsCodeSequence = [options.unit];
             this.MeasuredValueSequence = [item];
         } else if (options.qualifier !== undefined) {
             if (
