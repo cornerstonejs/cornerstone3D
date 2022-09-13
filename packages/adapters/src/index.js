@@ -41,7 +41,7 @@ import adapters from "./adapters/index.js";
 import utilities from "./utilities/index.js";
 import sr from "./sr/index.js";
 
-import { cleanTags } from "./anonymizer.js";
+import { cleanTags, getTagsNameToEmpty } from "./anonymizer.js";
 
 let data = {
     BitArray,
@@ -80,7 +80,8 @@ let normalizers = {
 };
 
 let anonymizer = {
-    cleanTags
+    cleanTags,
+    getTagsNameToEmpty
 };
 
 const dcmjs = {
