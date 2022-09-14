@@ -68,7 +68,7 @@ npm run build
 npm test
 ```
 
-## For Maintainers
+## For Maintainers and Contributors
 
 Publish new version automatically from commit:
 
@@ -79,6 +79,9 @@ Use the following "Commit Message Format" when drafting commit messages. If you'
 Note: Be wary of `BREAKING_CHANGE` in commit message descriptions, as this can force a major version bump.
 
 Be sure to use lower case for the first letter of your semantic commit message, so use `fix` not `Fix` or `feat` not `Feat`.
+
+### Optional Tooling
+
 It is advised to use the git-cz, i.e.:
 
 - install git-cz
