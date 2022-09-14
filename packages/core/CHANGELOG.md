@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.1...@cornerstonejs/core@0.16.2) (2022-09-14)
+
+
+### Bug Fixes
+
+* annotation hidden on horizontal and vertical ([#205](https://github.com/cornerstonejs/cornerstone3D-beta/issues/205)) ([9e825fd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9e825fd3d37ecfdf1722da9cd2fd6a1a75995459))
+
+
+
+
+
 ## [0.16.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.0...@cornerstonejs/core@0.16.1) (2022-09-08)
 
 
