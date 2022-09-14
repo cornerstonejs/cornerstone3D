@@ -4,7 +4,7 @@ import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
 import getMinMax from './getMinMax';
 import getRuntimeId from './getRuntimeId';
-import imageIdToURI from './imageIdToURI';
+import idToURI from './idToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import isEqual from './isEqual';
 import isOpposite from './isOpposite';
@@ -36,7 +36,7 @@ export {
   csUtils as invertRgbTransferFunction,
   scaleRgbTransferFunction,
   triggerEvent,
-  imageIdToURI,
+  idToURI,
   calibratedPixelSpacingMetadataProvider,
   uuidv4,
   planar,

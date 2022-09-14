@@ -30,7 +30,7 @@ import { RENDERING_DEFAULTS } from '../constants';
 import { Events, BlendModes, OrientationAxis } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
-import { imageIdToURI, triggerEvent } from '../utilities';
+import { idToURI, triggerEvent } from '../utilities';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import deepFreeze from '../utilities/deepFreeze';
 
@@ -934,7 +934,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         return false;
       }
 
-      const volumeImageURIs = volume.imageIds.map(imageIdToURI);
+      const volumeImageURIs = volume.imageIds.map(idToURI);
 
       return volumeImageURIs.includes(imageURI);
     });

@@ -76,7 +76,9 @@ function loadImageFromCacheOrVolume(
   imageId: string,
   options: ImageLoaderOptions
 ): IImageLoadObject {
-  // 1. Check inside the image cache for imageId
+  // 1. Check inside the image cache for imageId. This also
+  // search inside the imageCache for the imageId that has the same URI
+  // which had been cached if the volume was converted to an image
   let imageLoadObject = cache.getImageLoadObject(imageId);
   if (imageLoadObject !== undefined) {
     return imageLoadObject;
@@ -91,15 +93,7 @@ function loadImageFromCacheOrVolume(
     imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
     return imageLoadObject;
   }
-  // 3. If no volume found, we search inside the imageCache for the imageId
-  // that has the same URI which had been cached if the volume was converted
-  // to an image
-  const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-  if (cachedImage) {
-    imageLoadObject = cachedImage.imageLoadObject;
-    return imageLoadObject;
-  }
-  // 4. if not in image cache nor inside the volume cache, we request the
+  // 3. if not in image cache nor inside the volume cache, we request the
   // image loaders to load it
   imageLoadObject = loadImageFromImageLoader(imageId, options);
 

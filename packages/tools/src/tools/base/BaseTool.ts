@@ -143,7 +143,7 @@ abstract class BaseTool implements IBaseTool {
   ): Types.IImageData | Types.CPUIImageData | Types.IImageVolume {
     if (targetId.startsWith('imageId:')) {
       const imageId = targetId.split('imageId:')[1];
-      const imageURI = utilities.imageIdToURI(imageId);
+      const imageURI = utilities.idToURI(imageId);
       const viewports = utilities.getViewportsWithImageURI(
         imageURI,
         renderingEngine.id

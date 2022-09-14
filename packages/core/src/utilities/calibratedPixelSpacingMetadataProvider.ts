@@ -1,4 +1,4 @@
-import imageIdToURI from './imageIdToURI';
+import idToURI from './idToURI';
 
 const state = {}; // Calibrated pixel spacing per imageId
 
@@ -14,7 +14,7 @@ const metadataProvider = {
    * @param payload - the payload composed of new calibrated pixel spacings
    */
   add: (imageId: string, payload: [number, number]): void => {
-    const imageURI = imageIdToURI(imageId);
+    const imageURI = idToURI(imageId);
     if (!state[imageURI]) {
       state[imageURI] = {};
     }
@@ -29,7 +29,7 @@ const metadataProvider = {
    */
   get: (type: string, imageId: string): [number, number] => {
     if (type === 'calibratedPixelSpacing') {
-      const imageURI = imageIdToURI(imageId);
+      const imageURI = idToURI(imageId);
       return state[imageURI];
     }
   },

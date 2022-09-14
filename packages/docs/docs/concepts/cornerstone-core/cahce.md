@@ -59,3 +59,9 @@ Check if there is enough unallocated + volatile space to allocate the volume:
 
 2. If not (cache is mostly/completely full with volumes)
    - Throw that the cache does not have enough working space to allocate the volume.
+
+## Caching based on URI
+
+As discussed in the previous section, we have switched into using URIs instead of Ids (the second part of the Id - the part without the loaderId)
+for the caching optimizations. However, the surface API still uses Ids. The conversion from Id to URI is done
+internally by the Cache itself.
