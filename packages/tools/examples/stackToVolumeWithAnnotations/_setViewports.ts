@@ -3,7 +3,6 @@ import {
   Enums,
   volumeLoader,
   setVolumesForViewports,
-  CONSTANTS,
   utilities,
   cache,
 } from '@cornerstonejs/core';

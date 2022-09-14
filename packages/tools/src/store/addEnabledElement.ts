@@ -75,13 +75,11 @@ function _createSvgAnnotationLayer(): SVGElement {
   const filter = document.createElementNS(svgns, 'filter');
   const feOffset = document.createElementNS(svgns, 'feOffset');
   const feColorMatrix = document.createElementNS(svgns, 'feColorMatrix');
-  const feGaussianBlur = document.createElementNS(svgns, 'feGaussianBlur');
   const feBlend = document.createElementNS(svgns, 'feBlend');
 
   //
   filter.setAttribute('id', 'shadow');
-  filter.setAttribute('width', '110%');
-  filter.setAttribute('height', '110%');
+  filter.setAttribute('filterUnits', 'userSpaceOnUse');
 
   //
   feOffset.setAttribute('result', 'offOut');
@@ -92,25 +90,19 @@ function _createSvgAnnotationLayer(): SVGElement {
   //
   feColorMatrix.setAttribute('result', 'matrixOut');
   feColorMatrix.setAttribute('in', 'offOut');
-  feColorMatrix.setAttribute('type', 'matrix');
+  feColorMatrix.setAttribute('in2', 'matrix');
   feColorMatrix.setAttribute(
     'values',
     '0.2 0 0 0 0 0 0.2 0 0 0 0 0 0.2 0 0 0 0 0 1 0'
   );
 
   //
-  feGaussianBlur.setAttribute('result', 'blurOut');
-  feGaussianBlur.setAttribute('in', 'matrixOut');
-  feGaussianBlur.setAttribute('stdDeviation', '0.25');
-
-  //
   feBlend.setAttribute('in', 'SourceGraphic');
-  feBlend.setAttribute('in2', 'blurOut');
+  feBlend.setAttribute('in2', 'matrixOut');
   feBlend.setAttribute('mode', 'normal');
 
   filter.appendChild(feOffset);
   filter.appendChild(feColorMatrix);
-  filter.appendChild(feGaussianBlur);
   filter.appendChild(feBlend);
   defs.appendChild(filter);
   svgLayer.appendChild(defs);

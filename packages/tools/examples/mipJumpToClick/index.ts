@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   Types,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,

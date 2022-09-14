@@ -3,7 +3,6 @@ import {
   Types,
   volumeLoader,
   Enums,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
