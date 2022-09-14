@@ -241,9 +241,15 @@ export function getTagsNameToEmpty() {
 
 export function cleanTags(
     dict,
-    tagNamesToReplace,
+    tagNamesToReplace = undefined,
     customTagNamesToEmpty = undefined
 ) {
+    if (tagNamesToReplace == undefined) {
+        tagNamesToReplace = {
+            "00100010": "ANON^PATIENT",
+            "00100020": "ANON^ID"
+        };
+    }
     var tags =
         customTagNamesToEmpty != undefined
             ? customTagNamesToEmpty
