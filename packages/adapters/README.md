@@ -80,6 +80,8 @@ Note: Be wary of `BREAKING_CHANGE` in commit message descriptions, as this can f
 
 Be sure to use lower case for the first letter of your semantic commit message, so use `fix` not `Fix` or `feat` not `Feat`.
 
+Note: a new package version will be published only if the commit comes from a PR.
+
 ### Optional Tooling
 
 It is advised to use the git-cz, i.e.:
@@ -97,8 +99,6 @@ git-cz --non-interactive --type=fix --subject="commit message"
 ```
 
 More info at [git-cz](https://www.npmjs.com/package/git-cz).
-
-Note: a new package version will be published only if the commit comes from a PR.
 
 ## Community Participation
 
