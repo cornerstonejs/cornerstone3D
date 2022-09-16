@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.2...@cornerstonejs/core@0.16.3) (2022-09-16)
+
+
+### Bug Fixes
+
+* **rgba:** Handle rgba to rgb conversion based on length ([#220](https://github.com/cornerstonejs/cornerstone3D-beta/issues/220)) ([d56dd8a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d56dd8a7b23579f2a87cd3487b6b73b40a89648b))
+
+
+
+
+
 ## [0.16.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.1...@cornerstonejs/core@0.16.2) (2022-09-14)
 
 
