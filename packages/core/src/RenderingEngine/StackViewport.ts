@@ -64,6 +64,7 @@ import {
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
+import isRgbaSourceRgbDest from './helpers/isRgbaSourceRgbDest';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1341,7 +1342,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const scalars = this._imageData.getPointData().getScalars();
     const scalarData = scalars.getData() as Uint8Array | Float32Array;
 
-    if (image.rgba || pixelData.length * 3 == scalarData.byteLength * 4) {
+    if (image.rgba || isRgbaSourceRgbDest(pixelData, scalarData.byteLength)) {
       if (!image.rgba) {
         console.warn('rgba not specified but data looks rgba ish', image);
       }
