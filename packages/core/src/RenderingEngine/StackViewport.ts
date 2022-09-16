@@ -1341,7 +1341,10 @@ class StackViewport extends Viewport implements IStackViewport {
     const scalars = this._imageData.getPointData().getScalars();
     const scalarData = scalars.getData() as Uint8Array | Float32Array;
 
-    if (image.rgba) {
+    if (image.rgba || pixelData.length * 3 == scalarData.byteLength * 4) {
+      if (!image.rgba) {
+        console.warn('rgba not specified but data looks rgba ish', image);
+      }
       // if image is already cached with rgba for any reason (cpu fallback),
       // we need to convert it to rgb for the pixel data set
       // RGB case
