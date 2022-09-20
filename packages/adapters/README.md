@@ -36,9 +36,9 @@ _Parts of DICOM that dcmjs *will* focus on:_
 
 _Parts of DICOM that dcmjs *will not* focus on:_
 
-- DIMSE (legacy networking like C-STORE, C-FIND, C-MOVE, etc). See the [dcmjs-dimse project](https://github.com/PantelisGeorgiadis/dcmjs-dimse) for that.
+- DIMSE (legacy networking like C-STORE, C-FIND, C-MOVE, etc). See the [dcmjs-dimse](https://github.com/PantelisGeorgiadis/dcmjs-dimse) project for that.
 - Physical Media (optical disks). See [this FAQ](https://www.dclunie.com/medical-image-faq/html/index.html) if you need to work with those.
-- Image processing. See [dcmjs-imaging](https://github.com/PantelisGeorgiadis/dcmjs-imaging) for this.
+- Image rendering. See [dcmjs-imaging](https://github.com/PantelisGeorgiadis/dcmjs-imaging) for this.
 
 # Usage
 

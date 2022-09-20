@@ -1,4 +1,5 @@
 import { ReadBufferStream } from "./BufferStream.js";
+import { DeflatedReadBufferStream } from "./BufferStream.js";
 import { Tag } from "./Tag.js";
 import { DicomMetaDictionary } from "./DicomMetaDictionary.js";
 import { DicomDict } from "./DicomDict.js";
@@ -6,6 +7,7 @@ import { ValueRepresentation } from "./ValueRepresentation.js";
 
 const IMPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2";
 const EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1";
+const DEFLATED_EXPLICIT_LITTLE_ENDIAN = "1.2.840.10008.1.2.1.99";
 const EXPLICIT_BIG_ENDIAN = "1.2.840.10008.1.2.2";
 const singleVRs = ["SQ", "OF", "OW", "OB", "UN", "LT"];
 
@@ -203,10 +205,18 @@ class DicomMessage {
 
         //read header buffer
         var metaStream = stream.more(metaLength);
-
         var metaHeader = DicomMessage._read(metaStream, useSyntax, options);
+
         //get the syntax
         var mainSyntax = metaHeader["00020010"].Value[0];
+
+        //in case of deflated dataset, decompress and continue
+        if (mainSyntax === DEFLATED_EXPLICIT_LITTLE_ENDIAN) {
+            stream = new DeflatedReadBufferStream(stream, {
+                noCopy: options.noCopy
+            });
+        }
+
         mainSyntax = DicomMessage._normalizeSyntax(mainSyntax);
         var objects = DicomMessage._read(stream, mainSyntax, options);
 

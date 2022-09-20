@@ -53,7 +53,8 @@
     "gl-matrix": "^3.1.0",
     "lodash.clonedeep": "^4.5.0",
     "loglevelnext": "^3.0.1",
-    "ndarray": "^1.0.19"
+    "ndarray": "^1.0.19",
+    "pako": "^2.0.4"
   },
   "husky": {
     "hooks": {

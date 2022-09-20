@@ -1,6 +1,7 @@
 // Data
 import { BitArray } from "./bitArray.js";
 import { ReadBufferStream } from "./BufferStream.js";
+import { DeflatedReadBufferStream } from "./BufferStream.js";
 import { WriteBufferStream } from "./BufferStream.js";
 import { DicomDict } from "./DicomDict.js";
 import { DicomMessage } from "./DicomMessage.js";
@@ -46,6 +47,7 @@ import { cleanTags, getTagsNameToEmpty } from "./anonymizer.js";
 let data = {
     BitArray,
     ReadBufferStream,
+    DeflatedReadBufferStream,
     WriteBufferStream,
     DicomDict,
     DicomMessage,

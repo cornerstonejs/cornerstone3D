@@ -622,6 +622,31 @@ it("Writes encapsulated OB data which has an odd length with a padding byte in i
     ]);
 });
 
+it("test_deflated", async () => {
+    const url =
+        "https://github.com/dcmjs-org/data/releases/download/deflate-transfer-syntax/deflate_tests.zip";
+    const unzipPath = await getZippedTestDataset(url, "deflate_tests.zip", "deflate_tests");
+    const deflatedPath = path.join(unzipPath, "deflate_tests");
+
+    const expected = [
+        { file: "image_dfl", tags: { Modality: "OT", Rows: 512, Columns: 512 }},
+        { file: "report_dfl", tags: { Modality: "SR", VerificationFlag: "UNVERIFIED", ContentDate: "20001110" }},
+        { file: "wave_dfl", tags: { Modality: "ECG", SynchronizationTrigger: "NO TRIGGER", ContentDate: "19991223" }}
+    ];
+    
+    expected.forEach(e => {
+        const buffer = fs.readFileSync(path.join(deflatedPath, e.file));
+        const dicomDict = DicomMessage.readFile(buffer.buffer.slice(
+            buffer.byteOffset,
+            buffer.byteOffset + buffer.byteLength
+          ));
+        const dataset = DicomMetaDictionary.naturalizeDataset(dicomDict.dict);
+        Object.keys(e.tags).forEach(t => {
+            expect(dataset[t]).toEqual(e.tags[t]);
+        });
+    });
+});
+
 describe("With a SpecificCharacterSet tag", () => {
     it("Reads a long string in the '' character set", async () => {
         expect(readEncodedLongString("", [0x68, 0x69])).toEqual("hi");

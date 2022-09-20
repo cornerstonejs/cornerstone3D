@@ -1,3 +1,5 @@
+import pako from "pako";
+
 function toInt(val) {
     if (isNaN(val)) {
         throw new Error("Not a number: " + val);
@@ -423,6 +425,15 @@ class ReadBufferStream extends BufferStream {
     }
 }
 
+class DeflatedReadBufferStream extends ReadBufferStream {
+    constructor(stream, options) {
+        const inflatedBuffer = pako.inflateRaw(
+            stream.getBuffer(stream.offset, stream.size)
+        );
+        super(inflatedBuffer.buffer, stream.littleEndian, options);
+    }
+}
+
 class WriteBufferStream extends BufferStream {
     constructor(buffer, littleEndian) {
         super(buffer, littleEndian);
@@ -431,4 +442,5 @@ class WriteBufferStream extends BufferStream {
 }
 
 export { ReadBufferStream };
+export { DeflatedReadBufferStream };
 export { WriteBufferStream };
