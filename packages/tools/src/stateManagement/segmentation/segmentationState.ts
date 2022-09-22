@@ -16,6 +16,8 @@ import type {
 
 import { getDefaultRepresentationConfig } from '../../utilities/segmentation';
 import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
+import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
+import { SegmentationRepresentations } from '../../enums';
 
 /**
  * It returns the defaultSegmentationStateManager.
@@ -63,7 +65,6 @@ function addSegmentation(
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
   const segmentation = normalizeSegmentationInput(segmentationInput);
-  _initializeDefaultConfig(segmentation);
 
   segmentationStateManager.addSegmentation(segmentation);
 
@@ -272,6 +273,16 @@ function removeSegmentationRepresentation(
 }
 
 /**
+ * Add a color LUT to the segmentation state manager
+ * @param colorLUT - The color LUT array to add.
+ * @param index - The index of the color LUT to add.
+ */
+function removeColorLUT(colorLUTIndex: number): void {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.removeColorLUT(colorLUTIndex);
+}
+
+/**
  * Get the color lut for a given index
  * @param index - The index of the color lut to retrieve.
  * @returns A ColorLUT array.
@@ -305,6 +316,19 @@ function _initializeDefaultConfig(segmentation: Segmentation) {
   setGlobalConfig(newGlobalConfig, suppressEvents);
 }
 
+// Initialize the default configuration
+// Note: when we get other representations, we should set their default representations too.
+const defaultLabelmapConfig = getDefaultLabelmapConfig();
+
+const newGlobalConfig: SegmentationRepresentationConfig = {
+  renderInactiveSegmentations: true,
+  representations: {
+    [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
+  },
+};
+
+setGlobalConfig(newGlobalConfig, true);
+
 export {
   // state manager
   getDefaultSegmentationStateManager,
@@ -328,4 +352,5 @@ export {
   // color
   addColorLUT,
   getColorLUT,
+  removeColorLUT,
 };

@@ -97,7 +97,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     const { orientation } = this.options;
 
-    if (orientation) {
+    // if the camera is set to be acquisition axis then we need to skip
+    // it for now until the volume is set
+    if (orientation && orientation !== OrientationAxis.ACQUISITION) {
       const { viewPlaneNormal, viewUp } =
         this._getOrientationVectors(orientation);
 
@@ -435,8 +437,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       Object.keys(ORIENTATION).includes(orientation)
     ) {
       return ORIENTATION[orientation];
-    } else if (orientation === 'acquisition') {
-      return this._getAcquisitionPlaneOrientation();
     } else {
       throw new Error(
         `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
@@ -450,10 +450,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry) {
-      throw new Error(
-        'Cannot get acquisition plane orientation, no actor in viewport'
-      );
+      return;
     }
+
+    // throw new Error(
+    //     'Cannot get acquisition plane orientation, no actor in viewport'
+    //   );
+    // }
 
     // Todo: fix this after we add the volumeId reference to actorEntry later
     // in the segmentation refactor
@@ -759,7 +762,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       scalarData: vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
       metadata: {
-        Modality: volume.metadata.Modality,
+        Modality: volume?.metadata?.Modality,
       },
       scaling: volume.scaling,
       hasPixelSpacing: true,

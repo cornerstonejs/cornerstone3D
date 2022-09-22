@@ -339,6 +339,14 @@ export default class SegmentationStateManager {
   }
 
   /**
+   * Removes a color LUT to the state.
+   * @param colorLUTIndex - The index of the color LUT table to remove.
+   */
+  removeColorLUT(colorLUTIndex: number): void {
+    delete this.state.colorLUT[colorLUTIndex];
+  }
+
+  /**
    * It handles the active segmentation representation based on the active status of the
    * segmentation representation that was added or removed.
    *
@@ -399,4 +407,5 @@ export default class SegmentationStateManager {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+window.seg = defaultSegmentationStateManager;
 export { defaultSegmentationStateManager };
