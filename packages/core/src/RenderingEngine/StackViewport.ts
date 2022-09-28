@@ -620,11 +620,14 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param cameraInterface - The camera interface that will be used to
    * render the scene.
    */
-  public setCamera(cameraInterface: ICamera): void {
+  public setCamera(
+    cameraInterface: ICamera,
+    storeAsInitialCamera = false
+  ): void {
     if (this.useCPURendering) {
       this.setCameraCPU(cameraInterface);
     } else {
-      super.setCamera(cameraInterface);
+      super.setCamera(cameraInterface, storeAsInitialCamera);
     }
   }
 
