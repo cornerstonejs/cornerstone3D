@@ -254,7 +254,7 @@ export async function createAndCacheDerivedVolume(
   }
 
   let volumeScalarData;
-  if (targetBuffer.sharedArrayBuffer) {
+  if (targetBuffer?.sharedArrayBuffer) {
     const buffer = new SharedArrayBuffer(numBytes);
     volumeScalarData = new TypedArray(buffer);
   } else {

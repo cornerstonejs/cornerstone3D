@@ -11,7 +11,6 @@ const defaultLabelmapConfig: LabelmapConfig = {
   // Todo: not supported yet
   // outlineAlpha: 0.7,
   // outlineAlphaInactive: 0.35,
-  // Fill inside the render maps
 };
 
 function getDefaultLabelmapConfig(): LabelmapConfig {

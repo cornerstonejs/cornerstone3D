@@ -4,6 +4,14 @@ import createMergedLabelmapForIndex from './createMergedLabelmapForIndex';
 import isValidRepresentationConfig from './isValidRepresentationConfig';
 import getDefaultRepresentationConfig from './getDefaultRepresentationConfig';
 import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
+import {
+  getBrushThresholdForToolGroup,
+  setBrushThresholdForToolGroup,
+} from './brushThresholdForToolGroup';
+import {
+  getBrushSizeForToolGroup,
+  setBrushSizeForToolGroup,
+} from './brushSizeForToolGroup';
 
 export {
   thresholdVolumeByRange,
@@ -12,4 +20,8 @@ export {
   getDefaultRepresentationConfig,
   createLabelmapVolumeForViewport,
   rectangleROIThresholdVolumeByRange,
+  getBrushSizeForToolGroup,
+  setBrushSizeForToolGroup,
+  getBrushThresholdForToolGroup,
+  setBrushThresholdForToolGroup,
 };

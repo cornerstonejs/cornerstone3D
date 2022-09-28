@@ -7,9 +7,11 @@ import {
 } from './triggerSegmentationEvents';
 import type {
   ColorLUT,
+  RepresentationConfig,
   Segmentation,
   SegmentationPublicInput,
   SegmentationRepresentationConfig,
+  SegmentSpecificRepresentationConfig,
   ToolGroupSpecificRepresentation,
   ToolGroupSpecificRepresentations,
 } from '../../types/SegmentationStateTypes';
@@ -149,6 +151,86 @@ function setToolGroupSpecificConfig(
 
   if (!suppressEvents) {
     triggerSegmentationRepresentationModified(toolGroupId);
+  }
+}
+
+/**
+ * It sets the segmentation representation specific config for all the segments
+ * inside the segmentation.
+ * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+ * @param config  - The new configuration for the segmentation representation it is an object with keys of
+ * different representation types, and values of the configuration for each representation type.
+ */
+function setSegmentationRepresentationSpecificConfig(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  config: RepresentationConfig,
+  suppressEvents = false
+): void {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.setSegmentationRepresentationSpecificConfig(
+    toolGroupId,
+    segmentationRepresentationUID,
+    config
+  );
+
+  if (!suppressEvents) {
+    triggerSegmentationRepresentationModified(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+  }
+}
+
+/**
+ * It returns the segmentation representation specific config which is the same for all the segments
+ * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+ * @returns - The segmentation representation specific config.
+ */
+function getSegmentationRepresentationSpecificConfig(
+  toolGroupId: string,
+  segmentationRepresentationUID: string
+): RepresentationConfig {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getSegmentationRepresentationSpecificConfig(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+}
+
+function getSegmentSpecificRepresentationConfig(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  segmentIndex: number
+): RepresentationConfig {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getSegmentSpecificConfig(
+    toolGroupId,
+    segmentationRepresentationUID,
+    segmentIndex
+  );
+}
+
+function setSegmentSpecificRepresentationConfig(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  config: SegmentSpecificRepresentationConfig,
+  suppressEvents = false
+): void {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.setSegmentSpecificConfig(
+    toolGroupId,
+    segmentationRepresentationUID,
+    config
+  );
+
+  // Todo: this can be even more performant if we create a new event for
+  // triggering a specific segment config change.
+  if (!suppressEvents) {
+    triggerSegmentationRepresentationModified(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
   }
 }
 
@@ -346,6 +428,10 @@ export {
   setToolGroupSpecificConfig,
   getGlobalConfig,
   setGlobalConfig,
+  getSegmentationRepresentationSpecificConfig,
+  setSegmentationRepresentationSpecificConfig,
+  getSegmentSpecificRepresentationConfig,
+  setSegmentSpecificRepresentationConfig,
   // helpers
   getToolGroupsWithSegmentation,
   getSegmentationRepresentationByUID,

@@ -10,6 +10,8 @@ import type {
   ToolGroupSpecificRepresentation,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentations,
+  RepresentationConfig,
+  SegmentSpecificRepresentationConfig,
 } from '../../types/SegmentationStateTypes';
 
 /* A default initial state for the segmentation manager. */
@@ -291,6 +293,74 @@ export default class SegmentationStateManager {
     }
 
     return toolGroupStateWithConfig.config;
+  }
+
+  getSegmentationRepresentationSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string
+  ): RepresentationConfig {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    return segmentationRepresentation.segmentationRepresentationSpecificConfig;
+  }
+
+  setSegmentationRepresentationSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string,
+    config: RepresentationConfig
+  ): void {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    segmentationRepresentation.segmentationRepresentationSpecificConfig =
+      config;
+  }
+
+  getSegmentSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string,
+    segmentIndex: number
+  ): RepresentationConfig {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    return segmentationRepresentation.segmentSpecificConfig[segmentIndex];
+  }
+
+  setSegmentSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string,
+    config: SegmentSpecificRepresentationConfig
+  ): void {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    segmentationRepresentation.segmentSpecificConfig = config;
   }
 
   /**
