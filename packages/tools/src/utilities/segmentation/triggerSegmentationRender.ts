@@ -5,14 +5,14 @@ import {
   Enums,
   Types,
 } from '@cornerstonejs/core';
-import { Events as csToolsEvents } from '../enums';
+import { Events as csToolsEvents } from '../../enums';
 import {
   getToolGroup,
   getToolGroupForViewport,
-} from '../store/ToolGroupManager';
+} from '../../store/ToolGroupManager';
 
-import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool';
-import { SegmentationRenderedEventDetail } from '../types/EventTypes';
+import SegmentationDisplayTool from '../../tools/displayTools/SegmentationDisplayTool';
+import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 
 /**
  * SegmentationRenderingEngine is a class that is responsible for rendering

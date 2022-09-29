@@ -1,6 +1,6 @@
 import { cache } from '@cornerstonejs/core';
 
-import triggerSegmentationRender from '../../utilities/triggerSegmentationRender';
+import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import { SegmentationDataModifiedEventType } from '../../types/EventTypes';
