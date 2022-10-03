@@ -109,7 +109,8 @@ async function addSegmentationRepresentation(
  */
 function removeSegmentationRepresentation(
   toolGroupId: string,
-  segmentationRepresentationUID: string
+  segmentationRepresentationUID: string,
+  immediate = false
 ): void {
   _removeLabelmapFromToolGroupViewports(
     toolGroupId,
@@ -119,6 +120,17 @@ function removeSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
   );
+
+  if (immediate) {
+    const viewportsInfo = getToolGroup(toolGroupId).getViewportsInfo();
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      enabledElement.viewport.render();
+    });
+  }
 }
 
 /**
@@ -257,8 +269,6 @@ function _setLabelmapColorAndOpacity(
         segmentColor[1] / MAX_NUMBER_COLORS,
         segmentColor[2] / MAX_NUMBER_COLORS
       );
-
-      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
     }
 
     if (forceOpacityUpdate) {
@@ -272,11 +282,13 @@ function _setLabelmapColorAndOpacity(
       } else {
         ofun.addPointLong(segmentIndex, 0.01, 0.5, 1.0);
       }
-
-      ofun.setClamping(false);
-      volumeActor.getProperty().setScalarOpacity(0, ofun);
     }
   }
+
+  volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+  ofun.setClamping(false);
+  volumeActor.getProperty().setScalarOpacity(0, ofun);
 
   volumeActor.getProperty().setInterpolationTypeToNearest();
 
@@ -356,7 +368,7 @@ function _needsTransferFunctionUpdate(
       renderOutline,
       outlineWidth,
       segmentColor,
-      segmentsHidden,
+      segmentsHidden: new Set(segmentsHidden), // Create a copy
     });
 
     return {
@@ -385,7 +397,7 @@ function _needsTransferFunctionUpdate(
     oldRenderFill !== renderFill ||
     oldRenderOutline !== renderOutline ||
     oldOutlineWidth !== outlineWidth ||
-    oldSegmentsHidden !== segmentsHidden;
+    oldSegmentsHidden.has(segmentIndex) !== segmentsHidden.has(segmentIndex);
 
   // update the cache
   labelMapConfigCache.set(cacheUID, {
@@ -394,7 +406,7 @@ function _needsTransferFunctionUpdate(
     renderOutline,
     outlineWidth,
     segmentColor,
-    segmentsHidden,
+    segmentsHidden: new Set(segmentsHidden), // Create a copy
   });
 
   return {

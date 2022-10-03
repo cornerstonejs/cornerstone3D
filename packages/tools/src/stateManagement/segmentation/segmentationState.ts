@@ -337,15 +337,18 @@ function removeSegmentation(segmentationId: string): void {
  * data belongs to.
  * @param segmentationRepresentationUID - The uid of the segmentation representation to remove.
  * remove.
+ * @param - immediate - If true, the viewports will be updated immediately.
  */
 function removeSegmentationRepresentation(
   toolGroupId: string,
-  segmentationRepresentationUID: string
+  segmentationRepresentationUID: string,
+  immediate = false
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.removeSegmentationRepresentation(
     toolGroupId,
-    segmentationRepresentationUID
+    segmentationRepresentationUID,
+    immediate
   );
 
   triggerSegmentationRepresentationRemoved(

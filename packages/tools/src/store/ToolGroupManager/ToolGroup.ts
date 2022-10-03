@@ -51,7 +51,7 @@ export default class ToolGroup implements IToolGroup {
    * Returns the toolGroup viewports info which is an array of {viewportId, renderingEngineId}
    */
   getViewportsInfo(): Array<Types.IViewportId> {
-    return Object.assign({}, this.viewportsInfo);
+    return this.viewportsInfo.slice();
   }
 
   /**
