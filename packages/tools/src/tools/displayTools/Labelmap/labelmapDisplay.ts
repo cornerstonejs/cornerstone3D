@@ -22,7 +22,6 @@ import {
 import addLabelmapToElement from './addLabelmapToElement';
 
 import { deepMerge } from '../../../utilities';
-import { IToolGroup } from '../../../types';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 
 const MAX_NUMBER_COLORS = 255;
@@ -43,17 +42,7 @@ async function addSegmentationRepresentation(
   toolGroupSpecificConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
   const { segmentationId } = representationInput;
-  const segmentation = SegmentationState.getSegmentation(segmentationId);
-  const { volumeId } =
-    segmentation.representationData[Representations.Labelmap];
   const segmentationRepresentationUID = utilities.uuidv4();
-
-  // only add the labelmap to ToolGroup viewports if it is not already added
-  await _addLabelmapToToolGroupViewports(
-    toolGroupId,
-    volumeId,
-    segmentationRepresentationUID
-  );
 
   // Todo: make these configurable during representation input by user
   const segmentsHidden = new Set() as Set<number>;
@@ -139,11 +128,11 @@ function removeSegmentationRepresentation(
  * @param segmentationId - The id of the segmentation to be rendered.
  * @param configuration - The configuration object for the labelmap.
  */
-function render(
-  viewport: Types.IViewport,
+async function render(
+  viewport: Types.IVolumeViewport,
   representation: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
-): void {
+): Promise<void> {
   const {
     colorLUTIndex,
     active,
@@ -165,13 +154,20 @@ function render(
     throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
-  const actorEntry = viewport.getActor(segmentationRepresentationUID);
+  let actorEntry = viewport.getActor(segmentationRepresentationUID);
+
   if (!actorEntry) {
-    console.warn(
-      'No actor found for actorUID: ',
+    const segmentation = SegmentationState.getSegmentation(segmentationId);
+    const { volumeId } =
+      segmentation.representationData[Representations.Labelmap];
+    // only add the labelmap to ToolGroup viewports if it is not already added
+    await _addLabelmapToViewport(
+      viewport,
+      volumeId,
       segmentationRepresentationUID
     );
-    return;
+
+    actorEntry = viewport.getActor(segmentationRepresentationUID);
   }
 
   const { cfun, ofun } = renderingConfig;
@@ -432,35 +428,47 @@ function _removeLabelmapFromToolGroupViewports(
   }
 }
 
-async function _addLabelmapToToolGroupViewports(
-  toolGroupId: string,
+async function _addLabelmapToViewport(
+  viewport: Types.IVolumeViewport,
   volumeId: string,
   segmentationRepresentationUID: string
 ): Promise<void> {
-  const toolGroup = getToolGroup(toolGroupId) as IToolGroup;
-  const { viewportsInfo } = toolGroup;
-
-  for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineId } = viewportInfo;
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-
-    if (!enabledElement) {
-      throw new Error(
-        `No enabled element found for rendering engine: ${renderingEngineId} and viewport: ${viewportId}`
-      );
-    }
-
-    const { viewport } = enabledElement;
-    addLabelmapToElement(
-      viewport.element,
-      volumeId,
-      segmentationRepresentationUID
-    );
-  }
+  await addLabelmapToElement(
+    viewport.element,
+    volumeId,
+    segmentationRepresentationUID
+  );
 }
+
+// async function _addLabelmapToToolGroupViewports(
+//   toolGroupId: string,
+//   volumeId: string,
+//   segmentationRepresentationUID: string
+// ): Promise<void> {
+//   const toolGroup = getToolGroup(toolGroupId) as IToolGroup;
+//   const { viewportsInfo } = toolGroup;
+
+//   for (const viewportInfo of viewportsInfo) {
+//     const { viewportId, renderingEngineId } = viewportInfo;
+//     const enabledElement = getEnabledElementByIds(
+//       viewportId,
+//       renderingEngineId
+//     );
+
+//     if (!enabledElement) {
+//       throw new Error(
+//         `No enabled element found for rendering engine: ${renderingEngineId} and viewport: ${viewportId}`
+//       );
+//     }
+
+//     const { viewport } = enabledElement;
+//     addLabelmapToElement(
+//       viewport.element,
+//       volumeId,
+//       segmentationRepresentationUID
+//     );
+//   }
+// }
 
 export default {
   render,
