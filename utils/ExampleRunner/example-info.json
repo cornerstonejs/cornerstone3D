@@ -187,6 +187,10 @@
       "rectangleROIThreshold": {
         "name": "Rectangle ROI Threshold Segmentation",
         "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
+      },
+      "cancelAnnotationDrawing": {
+        "name": "Cancel Annotation Drawing",
+        "description": "Demonstrates how to use the keyboard (ESC) key to cancel annotation drawing."
       }
     }
   }
