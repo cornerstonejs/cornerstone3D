@@ -17,7 +17,7 @@ class ArrowAnnotate {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, SCOORDGroup } =
+        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -77,7 +77,8 @@ class ArrowAnnotate {
                 textBox: {
                     hasMoved: false
                 }
-            }
+            },
+            frameNumber: ReferencedFrameNumber
         };
 
         return state;

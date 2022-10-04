@@ -14,7 +14,7 @@ class Probe {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, SCOORDGroup } =
+        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -45,7 +45,8 @@ class Probe {
                 textBox: {
                     hasMoved: false
                 }
-            }
+            },
+            frameNumber: ReferencedFrameNumber
         };
 
         return state;

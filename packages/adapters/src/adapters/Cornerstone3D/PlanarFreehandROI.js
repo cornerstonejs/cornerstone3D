@@ -19,7 +19,7 @@ class PlanarFreehandROI {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, SCOORDGroup } =
+        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -73,7 +73,8 @@ class PlanarFreehandROI {
                 textBox: {
                     hasMoved: false
                 }
-            }
+            },
+            frameNumber: ReferencedFrameNumber
         };
 
         return state;
