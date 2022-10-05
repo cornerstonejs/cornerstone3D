@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.24.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.24.5...@cornerstonejs/tools@0.24.6) (2022-10-05)
+
+
+### Bug Fixes
+
+* stackScroll should honor invert configuration ([#234](https://github.com/cornerstonejs/cornerstone3D-beta/issues/234)) ([aa8f1c4](https://github.com/cornerstonejs/cornerstone3D-beta/commit/aa8f1c4de6837b3438ef62ae48d3412b4d3847bf))
+
+
+
+
+
 ## [0.24.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.24.4...@cornerstonejs/tools@0.24.5) (2022-10-05)
 
 **Note:** Version bump only for package @cornerstonejs/tools
