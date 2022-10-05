@@ -19,7 +19,6 @@ import {
 import cache, { ImageVolume } from './cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
-import { setMaxSimultaneousRequests } from './requestPool/getMaxSimultaneousRequests';
 
 import getEnabledElement, {
   getEnabledElementByIds,
@@ -97,7 +96,6 @@ export {
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
   imageLoadPoolManager,
-  setMaxSimultaneousRequests,
   // CPU Rendering
   getShouldUseCPURendering,
   setUseCPURendering,
