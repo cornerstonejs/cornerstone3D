@@ -38,8 +38,9 @@ class StackScrollTool extends BaseTool {
   _dragCallback(evt: EventTypes.MouseDragEventType) {
     const { deltaPoints, viewportId, renderingEngineId } = evt.detail;
     const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
+
     const targetId = this.getTargetId(viewport);
-    const { debounceIfNotLoaded } = this.configuration;
+    const { debounceIfNotLoaded, invert } = this.configuration;
 
     const deltaPointY = deltaPoints.canvas[1];
 
@@ -59,7 +60,7 @@ class StackScrollTool extends BaseTool {
       const imageIdIndexOffset = Math.round(deltaY / pixelsPerImage);
 
       scroll(viewport, {
-        delta: imageIdIndexOffset,
+        delta: invert ? -imageIdIndexOffset : imageIdIndexOffset,
         volumeId,
         debounceLoading: debounceIfNotLoaded,
       });
