@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.4...@cornerstonejs/core@0.16.5) (2022-10-05)
+
+
+### Bug Fixes
+
+* resetCamera should reset the rotation as well ([#236](https://github.com/cornerstonejs/cornerstone3D-beta/issues/236)) ([a347c93](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a347c9338252fb3843737b605d610f2d51b2c547))
+
+
+
+
+
 ## [0.16.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.3...@cornerstonejs/core@0.16.4) (2022-10-05)
 
 
