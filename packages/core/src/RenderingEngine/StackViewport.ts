@@ -1671,9 +1671,16 @@ class StackViewport extends Viewport implements IStackViewport {
       this.panCache[1] = this.cameraPosOnRender[1] - cameraProps.position[1];
       this.panCache[2] = this.cameraPosOnRender[2] - cameraProps.position[2];
 
+      // store rotation cache since reset camera will reset it
+      const rotationCache = this.rotationCache;
+
       // Reset the camera to point to the new slice location, reset camera doesn't
       // modify the direction of projection and viewUp
       this.resetCameraNoEvent();
+
+      // restore the rotation cache for the new slice
+      this.setRotation(rotationCache, rotationCache);
+
       const { position } = this.getCamera();
       this.cameraPosOnRender = position;
 
@@ -1854,6 +1861,12 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private resetCameraGPU(resetPan, resetZoom): boolean {
+    // Todo: we need to make the rotation a camera properties so that
+    // we can reset it there, right now it is not possible to reset the rotation
+    // without this
+    this.getVtkActiveCamera().roll(this.rotationCache);
+
+    // reset other properties
     return super.resetCamera(resetPan, resetZoom);
   }
 
