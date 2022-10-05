@@ -1764,7 +1764,7 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     setColormap(colormap: CPUFallbackColormapData): void;
     // (undocumented)
