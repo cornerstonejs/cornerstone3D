@@ -1345,7 +1345,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const scalars = this._imageData.getPointData().getScalars();
     const scalarData = scalars.getData() as Uint8Array | Float32Array;
 
-    if (image.rgba || isRgbaSourceRgbDest(pixelData, scalarData.byteLength)) {
+    if (image.rgba || isRgbaSourceRgbDest(pixelData, scalarData)) {
       if (!image.rgba) {
         console.warn('rgba not specified but data looks rgba ish', image);
       }
