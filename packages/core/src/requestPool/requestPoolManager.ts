@@ -120,6 +120,29 @@ class RequestPoolManager {
   }
 
   /**
+   * This function sets the maximum number of requests for a given request type.
+   * @param type - The type of request you want to set the max number
+   * of requests for it can be either of interaction, prefetch, or thumbnail.
+   * @param maxNumRequests - The maximum number of requests that can be
+   * made at a time.
+   */
+  public setMaxSimultaneousRequests(
+    type: RequestType,
+    maxNumRequests: number
+  ): void {
+    this.maxNumRequests[type] = maxNumRequests;
+  }
+
+  /**
+   * It returns the maximum number of requests of a given type that can be made
+   * @param type - The type of request.
+   * @returns The maximum number of requests of a given type.
+   */
+  public getMaxSimultaneousRequests(type: RequestType): number {
+    return this.maxNumRequests[type];
+  }
+
+  /**
    * Stops further fetching of the requests, all the ongoing requests will still
    * be retrieved
    */

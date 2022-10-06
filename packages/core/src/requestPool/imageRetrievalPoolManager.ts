@@ -1,4 +1,5 @@
 import { RequestPoolManager } from './requestPoolManager';
+import RequestType from '../enums/RequestType';
 
 /**
  * ImageRetrievalPoolManager
@@ -10,11 +11,15 @@ import { RequestPoolManager } from './requestPoolManager';
  */
 const imageRetrievalPoolManager = new RequestPoolManager('imageRetrievalPool');
 
-imageRetrievalPoolManager.maxNumRequests = {
-  interaction: 200,
-  thumbnail: 200,
-  prefetch: 200,
-};
+imageRetrievalPoolManager.setMaxSimultaneousRequests(
+  RequestType.Interaction,
+  200
+);
+imageRetrievalPoolManager.setMaxSimultaneousRequests(
+  RequestType.Thumbnail,
+  200
+);
+imageRetrievalPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 200);
 imageRetrievalPoolManager.grabDelay = 0;
 
 export default imageRetrievalPoolManager;

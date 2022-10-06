@@ -1646,9 +1646,6 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-export function setMaxSimultaneousRequests(newMaxSimultaneousRequests: any): void;
-
-// @public (undocumented)
 export class Settings {
     constructor(base?: Settings);
     // (undocumented)

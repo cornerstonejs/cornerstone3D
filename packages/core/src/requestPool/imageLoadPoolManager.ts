@@ -1,4 +1,5 @@
 import { RequestPoolManager } from './requestPoolManager';
+import RequestType from '../enums/RequestType';
 
 /**
  * You can use the imageLoadPoolManager to load images, by providing a `requestFn`
@@ -33,11 +34,10 @@ import { RequestPoolManager } from './requestPoolManager';
  */
 const imageLoadPoolManager = new RequestPoolManager('imageLoadPool');
 
-imageLoadPoolManager.maxNumRequests = {
-  interaction: 1000,
-  thumbnail: 1000,
-  prefetch: 1000,
-};
 imageLoadPoolManager.grabDelay = 0;
+
+imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 1000);
+imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 1000);
+imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 1000);
 
 export default imageLoadPoolManager;
