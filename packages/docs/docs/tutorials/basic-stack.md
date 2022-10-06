@@ -58,7 +58,7 @@ const viewport = renderingEngine.getViewport(viewportId);
 
 viewport.setStack(imageIds, 60);
 
-viewport.render()
+viewport.render();
 ```
 
 :::note Tip
@@ -69,6 +69,17 @@ the second argument of `setStack`.
 ## Final code
 
 ```js
+// Get Cornerstone imageIds and fetch metadata into RAM
+const imageIds = await createImageIdsAndCacheMetaData({
+  StudyInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  SeriesInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+  wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  type: 'STACK',
+});
+
+// Final code
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.style.width = '500px';
@@ -92,7 +103,7 @@ const viewport = renderingEngine.getViewport(viewportInput.viewportId);
 
 viewport.setStack(imageIds, 60);
 
-viewport.render()
+viewport.render();
 ```
 
 You should see the following:
@@ -106,7 +117,6 @@ Learn more about:
 - [imageId](../concepts/cornerstone-core/imageId.md)
 - [rendering engine](../concepts/cornerstone-core/renderingEngine.md)
 - [viewport](../concepts/cornerstone-core/viewports.md)
-
 
 For advanced usage of Stack Viewport, please visit <a href="/live-examples/stackAPI.html" target="_blank">StackViewport API</a> example page.
 

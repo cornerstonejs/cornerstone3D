@@ -115,6 +115,16 @@ renderingEngine.renderViewports([viewportId1, viewportId2]);
 ## Final code
 
 ```js
+// Get Cornerstone imageIds and fetch metadata into RAM
+const imageIds = await createImageIdsAndCacheMetaData({
+  StudyInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  SeriesInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+  wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  type: 'VOLUME',
+});
+
 const content = document.getElementById('content');
 
 const viewportGrid = document.createElement('div');
@@ -144,7 +154,9 @@ const renderingEngine = new RenderingEngine(renderingEngineId);
 const volumeId = 'cornerStreamingImageVolume: myVolume';
 
 // Define a volume in memory
-const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
+const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  imageIds,
+});
 
 const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
@@ -190,32 +202,6 @@ You should be able to see:
 ![](../assets/tutorial-basic-volume-1.png)
 
 </div>
-
-We can apply a `window/level` callback on the viewports when they load via the `setVolumesForViewports` API.
-
-```js
-setVolumesForViewports(
-  renderingEngine,
-  [
-    {
-      volumeId,
-      callback: ({ volumeActor }) => {
-        // set the windowLevel after the volumeActor is created
-        volumeActor
-          .getProperty()
-          .getRGBTransferFunction(0)
-          .setMappingRange(-180, 220);
-      },
-    },
-  ],
-  [viewportId1, viewportId2]
-);
-```
-
-<div style={{width:"75%"}}>
-
-
-![](../assets/tutorial-basic-volume-2.png)
 
 </div>
 

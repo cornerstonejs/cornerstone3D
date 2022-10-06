@@ -1,3 +1,9 @@
+/**
+ * WARNING
+ * DO NOT REMOVE ANY OF THE BELOW IMPORT STATEMENTS
+ * SOME ARE USED FOR SOME OF THE TUTORIALS, AND WILL BREAK IF REMOVED
+ */
+
 import {
   RenderingEngine,
   Types,
@@ -34,22 +40,13 @@ setTitleAndDescription(
   'The playground for you to copy paste the codes in the tutorials and run it'
 );
 
+const { ViewportType } = Enums;
 /**
  * Runs the demo
  */
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-    type: 'VOLUME',
-  });
 
   /**
    *
