@@ -203,8 +203,6 @@ You should be able to see:
 
 </div>
 
-</div>
-
 ## Read more
 
 Learn more about:
