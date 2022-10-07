@@ -11,6 +11,7 @@ import {
   getDefaultAnnotationManager,
   getViewportSpecificAnnotationManager,
   getAnnotation,
+  getNumberOfAnnotations,
 } from './annotation/annotationState';
 
 import {
@@ -26,6 +27,7 @@ export {
   annotationSelection,
   getAnnotations,
   addAnnotation,
+  getNumberOfAnnotations,
   removeAnnotation,
   getDefaultAnnotationManager,
   getViewportSpecificAnnotationManager,

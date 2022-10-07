@@ -12,7 +12,8 @@ export default function drawRect(
   rectangleUID: string,
   start: Types.Point2,
   end: Types.Point2,
-  options = {}
+  options = {},
+  dataId = ''
 ): void {
   const {
     color,
@@ -57,6 +58,10 @@ export default function drawRect(
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const svgRectElement = document.createElementNS(svgns, 'rect');
+
+    if (dataId !== '') {
+      svgRectElement.setAttribute('data-id', dataId);
+    }
 
     _setNewAttributesIfValid(attributes, svgRectElement);
 

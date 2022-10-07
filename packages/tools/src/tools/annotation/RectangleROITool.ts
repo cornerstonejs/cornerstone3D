@@ -752,6 +752,7 @@ class RectangleROITool extends AnnotationTool {
         );
       }
 
+      const dataId = `${annotationUID}-rect`;
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
@@ -763,7 +764,8 @@ class RectangleROITool extends AnnotationTool {
           color,
           lineDash,
           lineWidth,
-        }
+        },
+        dataId
       );
 
       renderStatus = true;

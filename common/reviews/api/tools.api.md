@@ -40,7 +40,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-function addAnnotation(element: HTMLDivElement, annotation: Annotation): void;
+function addAnnotation(element: HTMLDivElement, annotation: Annotation): string;
 
 // @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
@@ -1298,7 +1298,7 @@ declare namespace drawing_2 {
 }
 
 // @public (undocumented)
-function drawLine(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, lineUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
+function drawLine(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, lineUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}, dataId?: string): void;
 
 // @public (undocumented)
 function drawLinkedTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, textBoxUID: string, textLines: Array<string>, textBoxPosition: Types_2.Point2, annotationAnchorPoints: Array<Types_2.Point2>, textBox: unknown, options?: {}): SVGRect;
@@ -1313,7 +1313,7 @@ function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string,
 }): void;
 
 // @public (undocumented)
-function drawRect(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
+function drawRect(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}, dataId?: string): void;
 
 // @public (undocumented)
 function drawTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
@@ -1660,6 +1660,10 @@ class FrameOfReferenceSpecificAnnotationManager {
     // (undocumented)
     getFramesOfReference: () => Array<string>;
     // (undocumented)
+    getNumberOfAnnotations: (toolName: string, frameOfReferenceUID?: string) => number;
+    // (undocumented)
+    getNumberOfAnnotationsInFrameOfReference: (toolName: string, frameOfReferenceUID: string) => number;
+    // (undocumented)
     _imageVolumeModifiedHandler: (evt: Types_2.EventTypes.ImageVolumeModifiedEvent) => void;
     // (undocumented)
     removeAllAnnotations: () => void;
@@ -1770,6 +1774,9 @@ function getGlobalRepresentationConfig(representationType: SegmentationRepresent
 
 // @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
+function getNumberOfAnnotations(toolName: string, frameOfReferenceUID?: string): number;
 
 // @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
@@ -3955,6 +3962,7 @@ type StackViewportScrollEventDetail = {
 declare namespace state {
     export {
         getAnnotations,
+        getNumberOfAnnotations,
         addAnnotation,
         getAnnotation,
         removeAnnotation,
