@@ -1765,6 +1765,15 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this.initialVOIRange = voiRange;
+
+    if (this.voiApplied && typeof voiRange === 'undefined') {
+      // There are some cases when different frames within the same multi-frame
+      // file are not hitting the actor cache because above
+      // this.__checkVTKImageDataMatchesCornerstoneImage() call results in
+      // "false".
+      // In that case we want to keep the applied VOI range.
+      voiRange = this.voiRange;
+    }
     this.setProperties({ voiRange });
 
     // At the moment it appears that vtkImageSlice actors do not automatically
