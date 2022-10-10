@@ -50,7 +50,7 @@ function _drawTextGroup(
   svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   textUID: string,
-  textLines: Array<string>,
+  textLines: Array<string> = [''],
   position: Types.Point2,
   options: any
 ): SVGRect {
