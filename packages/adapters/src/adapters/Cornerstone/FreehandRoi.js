@@ -43,7 +43,7 @@ class FreehandRoi {
         return state;
     }
 
-    static getTID300RepresentationArguments(/*tool*/) {
+    static getTID300RepresentationArguments(tool) {
         const { handles, finding, findingSites, cachedStats = {} } = tool;
         const { points } = handles;
         const { area = 0, perimeter = 0 } = cachedStats;
