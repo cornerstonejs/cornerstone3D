@@ -13,6 +13,7 @@
   "scripts": {
     "api-check": "lerna run api-check --stream",
     "build": "lerna run build --stream",
+    "build:umd": "lerna run build:umd --stream",
     "build:update-api": "lerna run build:update-api --stream",
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",

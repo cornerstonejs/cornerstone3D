@@ -734,7 +734,8 @@ class LengthTool extends AnnotationTool {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { length, unit } = cachedVolumeStats;
 
-    if (length === undefined) {
+    // Can be null on load
+    if (length === undefined || length === null || isNaN(length)) {
       return;
     }
 
