@@ -1,4 +1,5 @@
 import TID300Measurement from "./TID300Measurement.js";
+import Point from "./Point.js";
 import Length from "./Length.js";
 import CobbAngle from "./CobbAngle";
 import Bidirectional from "./Bidirectional.js";
@@ -63,6 +64,7 @@ import Ellipse from "./Ellipse.js";
 //
 const TID300 = {
     TID300Measurement,
+    Point,
     Length,
     CobbAngle,
     Bidirectional,
