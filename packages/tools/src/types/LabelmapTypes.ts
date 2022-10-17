@@ -19,6 +19,8 @@ export type LabelmapConfig = {
   fillAlpha?: number;
   /** alpha of the fill when inactive */
   fillAlphaInactive?: number;
+  /** alpha of outline for active segmentation */
+  outlineOpacity?: number;
 };
 
 /**

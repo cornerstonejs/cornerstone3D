@@ -21,13 +21,9 @@ function removeSegmentationsFromToolGroup(
     getSegmentationRepresentations(toolGroupId);
 
   if (
-    !segmentationRepresentationUIDs ||
-    segmentationRepresentationUIDs.length === 0
+    !toolGroupSegRepresentations ||
+    toolGroupSegRepresentations.length === 0
   ) {
-    console.warn(
-      'removeSegmentationsFromToolGroup: No segmentationRepresentations found for toolGroupId: ',
-      toolGroupId
-    );
     return;
   }
 

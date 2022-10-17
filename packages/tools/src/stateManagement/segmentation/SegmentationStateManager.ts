@@ -13,15 +13,25 @@ import type {
   RepresentationConfig,
   SegmentSpecificRepresentationConfig,
 } from '../../types/SegmentationStateTypes';
+import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
+import { SegmentationRepresentations } from '../../enums';
+
+// Initialize the default configuration
+// Note: when we get other representations, we should set their default representations too.
+const defaultLabelmapConfig = getDefaultLabelmapConfig();
+
+const newGlobalConfig: SegmentationRepresentationConfig = {
+  renderInactiveSegmentations: true,
+  representations: {
+    [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
+  },
+};
 
 /* A default initial state for the segmentation manager. */
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
   segmentations: [],
-  globalConfig: {
-    renderInactiveSegmentations: true,
-    representations: {},
-  },
+  globalConfig: newGlobalConfig,
   toolGroups: {},
 };
 
@@ -201,6 +211,7 @@ export default class SegmentationStateManager {
    * Remove a segmentation representation from the toolGroup
    * @param toolGroupId - The Id of the tool group
    * @param segmentationRepresentationUID - the uid of the segmentation representation to remove
+   * @param immediate - If true, the viewport will be updated immediately.
    */
   removeSegmentationRepresentation(
     toolGroupId: string,
@@ -477,5 +488,4 @@ export default class SegmentationStateManager {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
-window.seg = defaultSegmentationStateManager;
 export { defaultSegmentationStateManager };

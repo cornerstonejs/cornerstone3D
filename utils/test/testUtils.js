@@ -58,7 +58,11 @@ function compareImages(imageDataURL, baseline, outputName) {
           console.log(diff);
           // Todo: we should store the diff image somewhere
 
-          reject(new Error(`mismatch of ${mismatch} between images for ${outputName}`));
+          reject(
+            new Error(
+              `mismatch of ${mismatch} between images for ${outputName}`
+            )
+          );
           // reject(new Error(`mismatch between images for ${outputName}\n mismatch: ${mismatch}\n ${baseline.default}\n ${imageDataURL}\n ${diff}`));
         } else {
           resolve();

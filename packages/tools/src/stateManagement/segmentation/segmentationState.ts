@@ -16,10 +16,7 @@ import type {
   ToolGroupSpecificRepresentations,
 } from '../../types/SegmentationStateTypes';
 
-import { getDefaultRepresentationConfig } from '../../utilities/segmentation';
 import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
-import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
-import { SegmentationRepresentations } from '../../enums';
 
 /**
  * It returns the defaultSegmentationStateManager.
@@ -341,14 +338,12 @@ function removeSegmentation(segmentationId: string): void {
  */
 function removeSegmentationRepresentation(
   toolGroupId: string,
-  segmentationRepresentationUID: string,
-  immediate = false
+  segmentationRepresentationUID: string
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.removeSegmentationRepresentation(
     toolGroupId,
-    segmentationRepresentationUID,
-    immediate
+    segmentationRepresentationUID
   );
 
   triggerSegmentationRepresentationRemoved(
@@ -387,32 +382,6 @@ function addColorLUT(colorLUT: ColorLUT, index: number): void {
   segmentationStateManager.addColorLUT(colorLUT, index);
   // Todo: trigger event color LUT added
 }
-
-function _initializeDefaultConfig(segmentation: Segmentation) {
-  const suppressEvents = true;
-  const defaultConfig = getDefaultRepresentationConfig(segmentation);
-
-  const newGlobalConfig: SegmentationRepresentationConfig = {
-    renderInactiveSegmentations: true,
-    representations: {
-      [segmentation.type]: defaultConfig,
-    },
-  };
-  setGlobalConfig(newGlobalConfig, suppressEvents);
-}
-
-// Initialize the default configuration
-// Note: when we get other representations, we should set their default representations too.
-const defaultLabelmapConfig = getDefaultLabelmapConfig();
-
-const newGlobalConfig: SegmentationRepresentationConfig = {
-  renderInactiveSegmentations: true,
-  representations: {
-    [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
-  },
-};
-
-setGlobalConfig(newGlobalConfig, true);
 
 export {
   // state manager

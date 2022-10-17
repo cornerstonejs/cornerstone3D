@@ -231,7 +231,7 @@ function _setLabelmapColorAndOpacity(
   // Note: right now outlineWidth and renderOutline are not configurable
   // at the segment level, so we don't need to check for segment specific
   // configuration in the loop, Todo: make them configurable at the segment level
-  const { outlineWidth, renderOutline } = _getLabelmapConfig(
+  const { outlineWidth, renderOutline, outlineOpacity } = _getLabelmapConfig(
     toolGroupLabelmapConfig,
     segmentationRepresentationLabelmapConfig,
     isActiveLabelmap
@@ -293,6 +293,7 @@ function _setLabelmapColorAndOpacity(
   volumeActor.getProperty().setInterpolationTypeToNearest();
 
   volumeActor.getProperty().setUseLabelOutline(renderOutline);
+  volumeActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
   volumeActor.getProperty().setLabelOutlineThickness(outlineWidth);
 
   // Set visibility based on whether actor visibility is specifically asked
@@ -329,12 +330,14 @@ function _getLabelmapConfig(
     : configToUse.renderFillInactive;
 
   const renderOutline = configToUse.renderOutline;
+  const outlineOpacity = configToUse.outlineOpacity;
 
   return {
     fillAlpha,
     outlineWidth,
     renderFill,
     renderOutline,
+    outlineOpacity,
   };
 }
 
