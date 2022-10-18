@@ -123,10 +123,6 @@ function playClip(
       return;
     }
 
-    // Loop around if we go outside the stack
-    if (newImageIdIndex >= imageCount) {
-      newImageIdIndex = 0;
-    }
 
     if (newImageIdIndex < 0) {
       newImageIdIndex = imageCount - 1;
