@@ -99,6 +99,10 @@ function playClip(
   // This function encapsulates the frame rendering logic...
   const playClipAction = () => {
     // Hoisting of context variables
+   const stackData = {
+            targetImageIdIndex: viewport.getTargetImageIdIndex(),
+            imageIds: viewport.getImageIds(),
+        };
     let newImageIdIndex = stackData.targetImageIdIndex;
 
     const imageCount = stackData.imageIds.length;
@@ -123,6 +127,10 @@ function playClip(
       return;
     }
 
+    // Loop around if we go outside the stack
+    if (newImageIdIndex >= imageCount) {
+      newImageIdIndex = 0;
+    }
 
     if (newImageIdIndex < 0) {
       newImageIdIndex = imageCount - 1;
