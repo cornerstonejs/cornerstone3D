@@ -290,6 +290,11 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     this._setVolumeActors(volumeActors);
 
+    triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
+      viewportId: this.id,
+      volumeActors,
+    });
+
     if (immediate) {
       this.render();
     }

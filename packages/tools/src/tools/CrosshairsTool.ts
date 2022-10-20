@@ -233,16 +233,39 @@ class CrosshairsTool extends AnnotationTool {
     };
   };
 
+  _getViewportsInfo = () => {
+    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
+
+    return viewports;
+  };
+
   onSetToolActive() {
-    this.init();
+    const viewportsInfo = this._getViewportsInfo();
+
+    // Upon new setVolumes on viewports we need to update the crosshairs
+    // reference points in the new space, so we subscribe to the event
+    // and update the reference points accordingly.
+    this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+    this._subscribeToViewportNewVolumeSet(viewportsInfo);
+    this.init(viewportsInfo);
   }
 
   onSetToolPassive() {
-    this.init();
+    const viewportsInfo = this._getViewportsInfo();
+
+    this.init(viewportsInfo);
   }
 
   onSetToolEnabled() {
-    this.init();
+    const viewportsInfo = this._getViewportsInfo();
+
+    this.init(viewportsInfo);
+  }
+
+  onSetToolDisabled() {
+    const viewportsInfo = this._getViewportsInfo();
+
+    this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
   }
 
   /**
@@ -252,19 +275,17 @@ class CrosshairsTool extends AnnotationTool {
    * will be an exact point in space; however, with two viewports, because the
    * intersection of two planes is a line, it assumes the last view is between the centre
    * of the two rendering viewports.
-   * @param viewports Array of viewportInputs which each item containing {viewportId, renderingEngineId}
+   * @param viewportsInfo Array of viewportInputs which each item containing {viewportId, renderingEngineId}
    */
-  init = (): void => {
-    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-
-    if (!viewports.length || viewports.length === 1) {
+  init = (viewportsInfo): void => {
+    if (!viewportsInfo.length || viewportsInfo.length === 1) {
       throw new Error(
         'For crosshairs to operate, at least two viewports must be given.'
       );
     }
 
     // Todo: handle two same view viewport, or more than 3 viewports
-    const [firstViewport, secondViewport, thirdViewport] = viewports;
+    const [firstViewport, secondViewport, thirdViewport] = viewportsInfo;
 
     // Initialize first viewport
     const { normal: normal1, point: point1 } =
@@ -299,6 +320,17 @@ class CrosshairsTool extends AnnotationTool {
     // Calculating the intersection of 3 planes
     // prettier-ignore
     this.toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane)
+
+    // assuming all viewports are in the same rendering engine
+    const { renderingEngine } = getEnabledElementByIds(
+      viewportsInfo[0].viewportId,
+      viewportsInfo[0].renderingEngineId
+    );
+
+    triggerAnnotationRenderForViewportIds(
+      renderingEngine,
+      viewportsInfo.map(({ viewportId }) => viewportId)
+    );
   };
 
   /**
@@ -1322,6 +1354,41 @@ class CrosshairsTool extends AnnotationTool {
 
     return renderStatus;
   };
+
+  _onNewVolume = (e: any) => {
+    const viewportsInfo = this._getViewportsInfo();
+    this.init(viewportsInfo);
+  };
+
+  _unsubscribeToViewportNewVolumeSet(viewportsInfo) {
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const { viewport } = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      const { element } = viewport;
+
+      element.removeEventListener(
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        this._onNewVolume
+      );
+    });
+  }
+
+  _subscribeToViewportNewVolumeSet(viewports) {
+    viewports.forEach(({ viewportId, renderingEngineId }) => {
+      const { viewport } = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      const { element } = viewport;
+
+      element.addEventListener(
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        this._onNewVolume
+      );
+    });
+  }
 
   _autoPanViewportIfNecessary(
     viewportId: string,

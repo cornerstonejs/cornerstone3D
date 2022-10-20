@@ -76,6 +76,11 @@ enum Events {
    */
   IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
   /**
+   * Triggers on element when a new voluem is set on the volume viewport
+   */
+  VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
+
+  /**
    * Triggers on the eventTarget when the volume has successfully loaded by volumeLoaders
    *
    * Make use of {@link EventTypes.VolumeLoadedEvent | VolumeLoaded Event Type } for typing your event listeners for VOLUME_LOADED event,
