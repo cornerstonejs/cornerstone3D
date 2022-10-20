@@ -71,6 +71,8 @@ export class ImageVolume implements IImageVolume {
       this.referencedVolumeId = props.referencedVolumeId;
     }
   }
+
+  cancelLoading: () => void;
 }
 
 export default ImageVolume;

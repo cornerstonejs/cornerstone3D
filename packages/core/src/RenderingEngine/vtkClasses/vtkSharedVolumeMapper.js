@@ -14,6 +14,12 @@ import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
  */
 function vtkSharedVolumeMapper(publicAPI, model) {
   model.classHierarchy.push('vtkSharedVolumeMapper');
+
+  const superDelete = publicAPI.delete;
+  publicAPI.delete = () => {
+    model.scalarTexture = null;
+    superDelete();
+  };
 }
 
 // ----------------------------------------------------------------------------

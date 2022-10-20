@@ -255,6 +255,11 @@ export default class StreamingImageVolume extends ImageVolume {
       // data loader scheme)
       const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
 
+      // check if we are still loading the volume and we have not canceled loading
+      if (!loadStatus.loading) {
+        return;
+      }
+
       if (!cachedImage || !cachedImage.image) {
         return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
       }

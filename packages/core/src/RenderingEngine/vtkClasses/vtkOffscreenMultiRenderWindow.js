@@ -54,9 +54,15 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
     model.rendererMap[id] = renderer;
   };
 
+  publicAPI.destroy = () => {
+    const rwi = model.renderWindow.getInteractor();
+    rwi.delete();
+  };
+
   publicAPI.removeRenderer = (id) => {
     const renderer = publicAPI.getRenderer(id);
     model.renderWindow.removeRenderer(renderer);
+    renderer.delete();
     delete model.rendererMap[id];
   };
 
@@ -98,6 +104,7 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
   // Properly release GL context
   publicAPI.delete = macro.chain(
     publicAPI.setContainer,
+    publicAPI.destroy,
     model.openGLRenderWindow.delete,
     publicAPI.delete
   );

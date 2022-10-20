@@ -176,7 +176,7 @@ class Viewport implements IViewport {
   protected applyFlipTx = (worldPos: Point3): Point3 => {
     const actorEntry = this.getDefaultActor();
 
-    if (!actorEntry) {
+    if (!actorEntry || !actorEntry.actor) {
       return worldPos;
     }
 
