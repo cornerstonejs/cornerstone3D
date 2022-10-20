@@ -626,6 +626,8 @@ interface IImageLoadObject {
 
 // @public
 interface IImageVolume {
+    // (undocumented)
+    cancelLoading?: () => void;
     convertToCornerstoneImage?: (
     imageId: string,
     imageIdIndex: number
@@ -1187,7 +1189,7 @@ type StackViewportScrollEventDetail = {
 export class StreamingImageVolume extends ImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
-    cancelLoading(): void;
+    cancelLoading: () => void;
     // (undocumented)
     clearLoadCallbacks(): void;
     // (undocumented)

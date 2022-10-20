@@ -101,7 +101,7 @@ export default class StreamingImageVolume extends ImageVolume {
    * and filters any imageLoad request in the requestPoolManager that has the same
    * volumeId
    */
-  public cancelLoading(): void {
+  public cancelLoading = () => {
     const { loadStatus } = this;
 
     if (!loadStatus || !loadStatus.loading) {
@@ -124,7 +124,7 @@ export default class StreamingImageVolume extends ImageVolume {
     // requests to ensure requests we no longer need are
     // no longer sent.
     imageLoadPoolManager.filterRequests(filterFunction);
-  }
+  };
 
   /**
    * Clear the load callbacks

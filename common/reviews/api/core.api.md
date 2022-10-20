@@ -828,6 +828,8 @@ interface IImageLoadObject {
 // @public (undocumented)
 interface IImageVolume {
     // (undocumented)
+    cancelLoading?: () => void;
+    // (undocumented)
     convertToCornerstoneImage?: (imageId: string, imageIdIndex: number) => IImageLoadObject;
     // (undocumented)
     dimensions: Point3;
@@ -999,6 +1001,8 @@ function imageToWorldCoords(imageId: string, imageCoords: Point2): Point3 | unde
 // @public (undocumented)
 export class ImageVolume implements IImageVolume {
     constructor(props: IVolume);
+    // (undocumented)
+    cancelLoading: () => void;
     // (undocumented)
     dimensions: Point3;
     // (undocumented)
