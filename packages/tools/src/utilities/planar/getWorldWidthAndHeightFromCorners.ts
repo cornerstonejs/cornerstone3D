@@ -21,11 +21,9 @@ export default function getWorldWidthAndHeightFromCorners(
   topLeftWorld: Types.Point3,
   bottomRightWorld: Types.Point3
 ): { worldWidth: number; worldHeight: number } {
-  let viewRight = vec3.create();
+  const viewRight = vec3.create();
 
   vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
-
-  viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
 
   const pos1 = vec3.fromValues(...topLeftWorld);
   const pos2 = vec3.fromValues(...bottomRightWorld);

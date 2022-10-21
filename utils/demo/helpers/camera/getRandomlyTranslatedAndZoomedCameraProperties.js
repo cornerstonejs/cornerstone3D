@@ -16,8 +16,6 @@ export default function getRandomlyTranslatedAndZoomedCameraProperties(
 
   vec3.cross(viewRight, viewUp, viewPlaneNormal);
 
-  viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
-
   const randomPanX = maxTranslateInMM * (2.0 * Math.random() - 1);
   const randomPanY = maxTranslateInMM * (2.0 * Math.random() - 1);
 
