@@ -876,10 +876,6 @@ class Viewport implements IViewport {
     cameraInterface: ICamera,
     storeAsInitialCamera = false
   ): void {
-    if (this.id === 'viewport-0' && cameraInterface.focalPoint) {
-      console.log('setCamera', cameraInterface.focalPoint);
-    }
-
     const vtkCamera = this.getVtkActiveCamera();
     const previousCamera = _cloneDeep(this.getCamera());
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);

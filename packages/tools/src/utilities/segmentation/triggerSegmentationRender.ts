@@ -31,6 +31,14 @@ class SegmentationRenderingEngine {
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
 
+  public removeToolGroup(toolGroupId) {
+    this._needsRender.delete(toolGroupId);
+
+    if (this._needsRender.size === 0) {
+      this._reset();
+    }
+  }
+
   public renderToolGroupSegmentations(toolGroupId): void {
     this._setToolGroupSegmentationToBeRenderedNextFrame([toolGroupId]);
   }

@@ -330,7 +330,10 @@ function _getLabelmapConfig(
     : configToUse.renderFillInactive;
 
   const renderOutline = configToUse.renderOutline;
-  const outlineOpacity = configToUse.outlineOpacity;
+
+  const outlineOpacity = isActiveLabelmap
+    ? configToUse.outlineOpacity
+    : configToUse.outlineOpacityInactive;
 
   return {
     fillAlpha,

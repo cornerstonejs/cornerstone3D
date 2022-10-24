@@ -46,7 +46,7 @@ const onSegmentationDataModified = function (
     // Trigger modified on the imageData to update the image
     imageData.modified();
     toolGroupIds =
-      SegmentationState.getToolGroupsWithSegmentation(segmentationId);
+      SegmentationState.getToolGroupIdsWithSegmentation(segmentationId);
   } else {
     throw new Error(
       `onSegmentationDataModified: representationType ${type} not supported yet`

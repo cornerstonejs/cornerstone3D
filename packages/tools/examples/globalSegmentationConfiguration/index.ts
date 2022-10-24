@@ -104,6 +104,14 @@ addSliderToToolbar({
   },
 });
 addSliderToToolbar({
+  title: 'outline alpha active',
+  range: [0, 100],
+  defaultValue: 100,
+  onSelectedValueChange: (value) => {
+    setConfigValue('outlineOpacity', value / 100);
+  },
+});
+addSliderToToolbar({
   title: 'outline width inactive',
   range: [1, 5],
   defaultValue: 1,

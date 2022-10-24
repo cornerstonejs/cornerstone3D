@@ -9,8 +9,7 @@ const defaultLabelmapConfig: LabelmapConfig = {
   fillAlpha: 0.7,
   fillAlphaInactive: 0.65,
   outlineOpacity: 1,
-  // Todo: not supported yet
-  // outlineOpacityInactive: 0.35,
+  outlineOpacityInactive: 0.85,
 };
 
 function getDefaultLabelmapConfig(): LabelmapConfig {
@@ -29,7 +28,8 @@ function isValidLabelmapConfig(config): boolean {
     typeof config.renderFillInactive === 'boolean' &&
     typeof config.fillAlpha === 'number' &&
     typeof config.fillAlphaInactive === 'number' &&
-    typeof config.outlineOpacity === 'number'
+    typeof config.outlineOpacity === 'number' &&
+    typeof config.outlineOpacityInactive === 'number'
   );
 }
 
