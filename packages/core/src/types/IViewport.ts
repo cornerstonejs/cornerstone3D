@@ -86,6 +86,9 @@ interface IViewport {
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
+
+  /** suspend event triggering until the end of any nested calling to absorb */
+  absorb<T>(callback: () => T): T;
 }
 
 /**

@@ -180,8 +180,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    */
   public setProperties(
     { voiRange }: VolumeViewportProperties = {},
-    volumeId?: string,
-    suppressEvents = false
+    volumeId?: string
   ): void {
     if (volumeId !== undefined && !this.getActor(volumeId)) {
       return;
@@ -216,16 +215,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     // Todo: later when we have more properties, refactor the setVoiRange code below
     const { lower, upper } = voiRange;
     volumeActor.getProperty().getRGBTransferFunction(0).setRange(lower, upper);
-
-    if (!suppressEvents) {
-      const eventDetail: VoiModifiedEventDetail = {
-        viewportId: this.id,
-        range: voiRange,
-        volumeId: volumeId,
-      };
-
-      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
-    }
+    this.triggerVOIModified(voiRange, volumeId);
   }
 
   /**
@@ -238,9 +228,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async setVolumes(
-    volumeInputArray: Array<IVolumeInput>,
-    immediate = false,
-    suppressEvents = false
+    volumeInputArray: Array<IVolumeInput>
   ): Promise<void> {
     const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
 
@@ -267,11 +255,14 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     for (let i = 0; i < volumeInputArray.length; i++) {
       const { volumeId, actorUID, slabThickness } = volumeInputArray[i];
 
-      const actor = await createVolumeActor(
-        volumeInputArray[i],
-        this.element,
-        this.id,
-        suppressEvents
+      const actor = await createVolumeActor(volumeInputArray[i]);
+      const voiRange = actor.getProperty().getRGBTransferFunction(0).getRange;
+      this.triggerVOIModified(
+        {
+          lower: voiRange[0],
+          upper: voiRange[1],
+        },
+        volumeId
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -288,10 +279,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     this._setVolumeActors(volumeActors);
-
-    if (immediate) {
-      this.render();
-    }
+    this.render();
   }
 
   /**
@@ -302,9 +290,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
-    immediate = false,
-    suppressEvents = false
+    volumeInputArray: Array<IVolumeInput>
   ): Promise<void> {
     const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
 
@@ -330,12 +316,14 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     for (let i = 0; i < volumeInputArray.length; i++) {
       const { volumeId, visibility, actorUID, slabThickness } =
         volumeInputArray[i];
-
-      const actor = await createVolumeActor(
-        volumeInputArray[i],
-        this.element,
-        this.id,
-        suppressEvents
+      const actor = await createVolumeActor(volumeInputArray[i]);
+      const voiRange = actor.getProperty().getRGBTransferFunction(0).getRange;
+      this.triggerVOIModified(
+        {
+          lower: voiRange[0],
+          upper: voiRange[1],
+        },
+        volumeId
       );
 
       if (visibility === false) {
@@ -354,13 +342,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         slabThickness,
       });
     }
-
     this.addActors(volumeActors);
-
-    if (immediate) {
-      // render
-      this.render();
-    }
+    this.render();
   }
 
   /**
@@ -661,25 +644,27 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
    * the slab thickness to (if not provided, all actors will be affected).
    */
   public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
-    let actorEntries = this.getActors();
+    this.absorb((): void => {
+      let actorEntries = this.getActors();
 
-    if (filterActorUIDs && filterActorUIDs.length > 0) {
-      actorEntries = actorEntries.filter((actorEntry) => {
-        return filterActorUIDs.includes(actorEntry.uid);
-      });
-    }
-
-    actorEntries.forEach((actorEntry) => {
-      const { actor } = actorEntry;
-
-      if (actor.isA('vtkVolume')) {
-        actorEntry.slabThickness = slabThickness;
+      if (filterActorUIDs && filterActorUIDs.length > 0) {
+        actorEntries = actorEntries.filter((actorEntry) => {
+          return filterActorUIDs.includes(actorEntry.uid);
+        });
       }
-    });
 
-    const currentCamera = this.getCamera();
-    this.updateClippingPlanesForActors(currentCamera);
-    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
+      actorEntries.forEach((actorEntry) => {
+        const { actor } = actorEntry;
+
+        if (actor.isA('vtkVolume')) {
+          actorEntry.slabThickness = slabThickness;
+        }
+      });
+
+      const currentCamera = this.getCamera();
+      this.updateClippingPlanesForActors(currentCamera);
+      this.triggerCameraModifiedEventIfNecessary();
+    });
   }
 
   /**

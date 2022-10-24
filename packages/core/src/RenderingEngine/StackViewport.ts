@@ -542,19 +542,16 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param interpolationType - Changes the interpolation type (1:linear, 0: nearest)
    * @param rotation - image rotation in degrees
    */
-  public setProperties(
-    {
-      voiRange,
-      invert,
-      interpolationType,
-      rotation,
-    }: StackViewportProperties = {},
-    suppressEvents = false
-  ): void {
+  public setProperties({
+    voiRange,
+    invert,
+    interpolationType,
+    rotation,
+  }: StackViewportProperties = {}): void {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi
     if (typeof voiRange !== 'undefined' || !this.voiApplied) {
-      this.setVOI(voiRange, suppressEvents);
+      this.setVOI(voiRange);
     }
 
     if (typeof invert !== 'undefined') {
@@ -644,16 +641,12 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _setPropertiesFromCache(): void {
-    const suppressEvents = true;
-    this.setProperties(
-      {
-        voiRange: this.voiRange,
-        rotation: this.rotation,
-        interpolationType: this.interpolationType,
-        invert: this.invert,
-      },
-      suppressEvents
-    );
+    this.setProperties({
+      voiRange: this.voiRange,
+      rotation: this.rotation,
+      interpolationType: this.interpolationType,
+      invert: this.invert,
+    });
   }
 
   private getCameraCPU(): Partial<ICamera> {
@@ -780,16 +773,7 @@ class StackViewport extends Viewport implements IStackViewport {
       this._cpuFallbackEnabledElement
     );
 
-    const eventDetail: EventTypes.CameraModifiedEventDetail = {
-      previousCamera,
-      camera: this.getCamera(),
-      element: this.element,
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-      rotation: this.rotation,
-    };
-
-    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+    this.triggerCameraModifiedEventIfNecessary();
   }
 
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
@@ -806,37 +790,24 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOI(voiRange: VOIRange, suppressEvents?: boolean): void {
+  private setVOI(voiRange: VOIRange): void {
     if (this.useCPURendering) {
-      this.setVOICPU(voiRange, suppressEvents);
+      this.setVOICPU(voiRange);
       return;
     }
 
-    this.setVOIGPU(voiRange, suppressEvents);
+    this.setVOIGPU(voiRange);
   }
 
   private setRotation(rotationCache: number, rotation: number): void {
-    const previousCamera = this.getCamera();
-
-    if (this.useCPURendering) {
-      this.setRotationCPU(rotationCache, rotation);
-    } else {
-      this.setRotationGPU(rotationCache, rotation);
-    }
-
-    // New camera after rotation
-    const camera = this.getCamera();
-
-    const eventDetail: EventTypes.CameraModifiedEventDetail = {
-      previousCamera,
-      camera,
-      element: this.element,
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-      rotation: this.rotation,
-    };
-
-    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+    this.absorb((): void => {
+      if (this.useCPURendering) {
+        this.setRotationCPU(rotationCache, rotation);
+      } else {
+        this.setRotationGPU(rotationCache, rotation);
+      }
+      this.triggerCameraModifiedEventIfNecessary();
+    });
   }
 
   private setInterpolationType(interpolationType: InterpolationType): void {
@@ -949,7 +920,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOICPU(voiRange: VOIRange, suppressEvents?: boolean): void {
+  private setVOICPU(voiRange: VOIRange): void {
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
     if (!viewport || !image) {
@@ -988,14 +959,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.voiApplied = true;
     this.voiRange = voiRange;
-    const eventDetail: VoiModifiedEventDetail = {
-      viewportId: this.id,
-      range: voiRange,
-    };
-
-    if (!suppressEvents) {
-      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
-    }
+    this.triggerVOIModified(this.voiRange);
   }
 
   private setVOIGPU(voiRange: VOIRange, suppressEvents?: boolean): void {
@@ -1029,15 +993,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this.voiApplied = true;
     this.voiRange = voiRangeToUse;
-
-    if (!suppressEvents) {
-      const eventDetail: VoiModifiedEventDetail = {
-        viewportId: this.id,
-        range: voiRangeToUse,
-      };
-
-      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
-    }
+    this.triggerVOIModified(this.voiRange);
   }
 
   /**
@@ -1557,11 +1513,11 @@ class StackViewport extends Viewport implements IStackViewport {
         };
 
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
-        this._updateActorToDisplayImageId(image);
-
-        // Trigger the image to be drawn on the next animation frame
-        this.render();
-
+        this.absorb((): void => {
+          this._updateActorToDisplayImageId(image);
+          // Trigger the image to be drawn on the next animation frame
+          this.render();
+        });
         // Update the viewport's currentImageIdIndex to reflect the newly
         // rendered image
         this.currentImageIdIndex = imageIdIndex;
@@ -1742,7 +1698,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // modify the direction of projection and viewUp
     this.resetCameraNoEvent();
 
-    this.triggerCameraEvent(this.getCamera(), previousCameraProps);
+    this.triggerCameraModifiedEventIfNecessary();
 
     // This is necessary to initialize the clipping range and it is not related
     // to our custom slabThickness.
@@ -1846,26 +1802,28 @@ class StackViewport extends Viewport implements IStackViewport {
     return true;
   }
 
-  private resetCameraCPU(resetPan, resetZoom) {
-    const { image } = this._cpuFallbackEnabledElement;
+  private resetCameraCPU(resetPan, resetZoom): void {
+    this.absorb((): void => {
+      const { image } = this._cpuFallbackEnabledElement;
 
-    if (!image) {
-      return;
-    }
+      if (!image) {
+        return;
+      }
 
-    resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
+      resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
 
-    const { scale } = this._cpuFallbackEnabledElement.viewport;
+      const { scale } = this._cpuFallbackEnabledElement.viewport;
 
-    // canvas center is the focal point
-    const { clientWidth, clientHeight } = this.element;
-    const center: Point2 = [clientWidth / 2, clientHeight / 2];
+      // canvas center is the focal point
+      const { clientWidth, clientHeight } = this.element;
+      const center: Point2 = [clientWidth / 2, clientHeight / 2];
 
-    const centerWorld = this.canvasToWorldCPU(center);
+      const centerWorld = this.canvasToWorldCPU(center);
 
-    this.setCameraCPU({
-      focalPoint: centerWorld,
-      scale,
+      this.setCameraCPU({
+        focalPoint: centerWorld,
+        scale,
+      });
     });
   }
 
@@ -2002,9 +1960,7 @@ class StackViewport extends Viewport implements IStackViewport {
       focalPoint: newFocal,
     });
 
-    const camera = this.getCamera();
-
-    this.triggerCameraEvent(camera, previousCamera);
+    this.triggerCameraModifiedEventIfNecessary();
 
     // Invoking render
     const RESET_CAMERA_EVENT = {
@@ -2013,22 +1969,6 @@ class StackViewport extends Viewport implements IStackViewport {
     };
 
     renderer.invokeEvent(RESET_CAMERA_EVENT);
-  }
-
-  private triggerCameraEvent(camera: ICamera, previousCamera: ICamera) {
-    // Finally emit event for the full camera change cause during load image.
-    const eventDetail: EventTypes.CameraModifiedEventDetail = {
-      previousCamera,
-      camera,
-      element: this.element,
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-    };
-
-    if (!this.suppressEvents) {
-      // For crosshairs to adapt to new viewport size
-      triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-    }
   }
 
   private triggerCalibrationEvent() {

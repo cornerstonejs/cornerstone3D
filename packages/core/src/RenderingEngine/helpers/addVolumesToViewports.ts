@@ -16,9 +16,7 @@ import type { IVolumeInput, IRenderingEngine } from '../../types';
 async function addVolumesToViewports(
   renderingEngine: IRenderingEngine,
   volumeInputs: Array<IVolumeInput>,
-  viewportIds: Array<string>,
-  immediateRender = false,
-  suppressEvents = false
+  viewportIds: Array<string>
 ): Promise<void> {
   // Check if all viewports are volumeViewports
   viewportIds.forEach((viewportId) => {
@@ -37,7 +35,7 @@ async function addVolumesToViewports(
   const addVolumePromises = viewportIds.map(async (viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId) as VolumeViewport;
 
-    await viewport.addVolumes(volumeInputs, immediateRender, suppressEvents);
+    await viewport.addVolumes(volumeInputs);
   });
 
   await Promise.all(addVolumePromises);

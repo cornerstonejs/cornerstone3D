@@ -23,6 +23,15 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
+import { fail } from 'assert';
+import { VoiModifiedEventDetail } from '../types/EventTypes';
+
+enum AbsorbedFlags {
+  None = 0,
+  CameraChanged = 1 << 1,
+  VOIChanged = 1 << 2,
+  Render = 1 << 3,
+}
 
 /**
  * An object representing a single viewport, which is a camera
@@ -71,6 +80,17 @@ class Viewport implements IViewport {
    */
   protected initialCamera: ICamera;
 
+  /** internal counter used to suspend event buble up */
+  private absorberCount: number;
+  /** internal fieldset to store event to trigger when releasing lock */
+  private absorbedFlags: AbsorbedFlags;
+  /** initial camera for absorbed CameraChanged event */
+  private absorbedCamera: ICamera;
+  private readonly absorbedVOIVolumeId: Map<
+    string | undefined,
+    { lower: number; upper: number }
+  >;
+
   constructor(props: ViewportInput) {
     this.id = props.id;
     this.renderingEngineId = props.renderingEngineId;
@@ -94,6 +114,8 @@ class Viewport implements IViewport {
       ? props.defaultOptions.suppressEvents
       : false;
     this.options = _cloneDeep(props.defaultOptions);
+    this.absorberCount = 0;
+    this.absorbedVOIVolumeId = new Map();
   }
 
   getFrameOfReferenceUID: () => string;
@@ -135,9 +157,12 @@ class Viewport implements IViewport {
    * Renders the `Viewport` using the `RenderingEngine`.
    */
   public render(): void {
-    const renderingEngine = this.getRenderingEngine();
-
-    renderingEngine.renderViewport(this.id);
+    if (this.absorberCount <= 0) {
+      const renderingEngine = this.getRenderingEngine();
+      renderingEngine.renderViewport(this.id);
+    } else {
+      this.absorbedFlags |= AbsorbedFlags.Render;
+    }
   }
 
   /**
@@ -542,13 +567,22 @@ class Viewport implements IViewport {
    *   be detected for pan/zoom values)
    * @returns boolean
    */
-  protected resetCamera(
+  public resetCamera(
+    resetPan = true,
+    resetZoom = true,
+    storeAsInitialCamera = true
+  ): boolean {
+    return this.absorb((): boolean =>
+      this._resetCamera(resetPan, resetZoom, storeAsInitialCamera)
+    );
+  }
+
+  private _resetCamera(
     resetPan = true,
     resetZoom = true,
     storeAsInitialCamera = true
   ): boolean {
     const renderer = this.getRenderer();
-    const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds();
     const focalPoint = <Point3>[0, 0, 0];
@@ -631,7 +665,7 @@ class Viewport implements IViewport {
       activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1]);
     }
 
-    const focalPointToSet = resetPan ? focalPoint : previousCamera.focalPoint;
+    const focalPointToSet = resetPan ? focalPoint : this.getCamera().focalPoint;
 
     activeCamera.setFocalPoint(
       focalPointToSet[0],
@@ -682,10 +716,7 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    this.triggerCameraModifiedEventIfNecessary(
-      previousCamera,
-      this.getCamera()
-    );
+    this.triggerCameraModifiedEventIfNecessary();
 
     return true;
   }
@@ -879,9 +910,17 @@ class Viewport implements IViewport {
     cameraInterface: ICamera,
     storeAsInitialCamera = false
   ): void {
+    this.absorb((): void =>
+      this._setCamera(cameraInterface, storeAsInitialCamera)
+    );
+  }
+
+  private _setCamera(
+    cameraInterface: ICamera,
+    storeAsInitialCamera = false
+  ): void {
     const vtkCamera = this.getVtkActiveCamera();
-    const previousCamera = _cloneDeep(this.getCamera());
-    const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
+    const updatedCamera = Object.assign({}, this.getCamera(), cameraInterface);
     const {
       viewUp,
       viewPlaneNormal,
@@ -940,10 +979,7 @@ class Viewport implements IViewport {
       this.setInitialCamera(updatedCamera);
     }
 
-    this.triggerCameraModifiedEventIfNecessary(
-      previousCamera,
-      this.getCamera()
-    );
+    this.triggerCameraModifiedEventIfNecessary();
   }
 
   /**
@@ -951,21 +987,21 @@ class Viewport implements IViewport {
    * @param cameraInterface - ICamera
    * @param cameraInterface - ICamera
    */
-  public triggerCameraModifiedEventIfNecessary(
-    previousCamera: ICamera,
-    updatedCamera: ICamera
-  ): void {
-    if (!this._suppressCameraModifiedEvents && !this.suppressEvents) {
+  protected triggerCameraModifiedEventIfNecessary(): void {
+    if (this.absorberCount != 0) {
+      this.absorbedFlags |= AbsorbedFlags.CameraChanged;
+    } else if (!this.suppressEvents) {
+      const newCamera: ICamera = _cloneDeep(this.getCamera());
       const eventDetail: EventTypes.CameraModifiedEventDetail = {
-        previousCamera,
-        camera: updatedCamera,
+        previousCamera: this.absorbedCamera,
+        camera: newCamera,
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
         rotation: this.rotation,
       };
-
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+      this.absorbedCamera = newCamera;
     }
   }
 
@@ -1145,6 +1181,65 @@ class Viewport implements IViewport {
       [p6, p8],
       [p7, p8],
     ];
+  }
+
+  public triggerVOIModified(
+    voi: { lower: number; upper: number },
+    volumeId?: string
+  ): void {
+    if (this.absorberCount > 0) {
+      this.absorbedVOIVolumeId.set(volumeId, voi);
+      this.absorbedFlags |= AbsorbedFlags.VOIChanged;
+    } else {
+      const voiModifiedEventDetail: VoiModifiedEventDetail = {
+        viewportId: this.id,
+        range: {
+          lower: voi.lower,
+          upper: voi.upper,
+        },
+        volumeId,
+      };
+      triggerEvent(this.element, Events.VOI_MODIFIED, voiModifiedEventDetail);
+    }
+  }
+
+  absorb<T>(callback: () => T): T {
+    if (this.absorberCount == 0) {
+      this.absorbedFlags = AbsorbedFlags.None;
+      this.absorbedCamera = _cloneDeep(this.getCamera());
+    }
+    this.absorberCount++;
+    try {
+      return callback();
+    } finally {
+      this.absorberCount--;
+      if (this.absorberCount <= 0) {
+        if (
+          (this.absorbedFlags & AbsorbedFlags.CameraChanged) ==
+          AbsorbedFlags.CameraChanged
+        ) {
+          this.triggerCameraModifiedEventIfNecessary();
+        }
+        if (
+          (this.absorbedFlags & AbsorbedFlags.VOIChanged) ==
+          AbsorbedFlags.VOIChanged
+        ) {
+          this.absorbedVOIVolumeId.forEach(
+            (voi: { lower: number; upper: number }, volumeId?: string): void =>
+              this.triggerVOIModified(voi, volumeId)
+          );
+          this.absorbedVOIVolumeId.clear();
+        }
+        if (
+          (this.absorbedFlags & AbsorbedFlags.Render) ==
+          AbsorbedFlags.Render
+        ) {
+          this.render();
+        }
+        this.absorbedFlags = AbsorbedFlags.None;
+        this.absorberCount = 0;
+      }
+    }
   }
 }
 
