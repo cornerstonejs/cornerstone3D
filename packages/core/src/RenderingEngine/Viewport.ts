@@ -252,20 +252,38 @@ class Viewport implements IViewport {
     vec3.scaleAndAdd(center, center, jVector, (size[1] / 2.0) * spacing[1]);
     vec3.scaleAndAdd(center, center, kVector, (size[2] / 2.0) * spacing[2]);
 
+    const imageToWorld: mat4 = [
+      direction[0],
+      direction[1],
+      direction[2],
+      0, //
+      direction[3],
+      direction[4],
+      direction[5],
+      0, //
+      direction[6],
+      direction[7],
+      direction[8],
+      0, //
+      0,
+      0,
+      0,
+      1, //
+    ];
+    const worldToImage: mat4 = mat4.transpose(
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6],
+      imageToWorld
+    );
+
     let flipHTx, flipVTx;
 
     const transformToOriginTx = vtkMatrixBuilder
       .buildFromRadian()
-      .identity()
       .translate(center[0], center[1], center[2])
-      .rotateFromDirections(jVector, [0, 1, 0])
-      .rotateFromDirections(iVector, [1, 0, 0]);
-
+      .multiply(imageToWorld);
     const transformBackFromOriginTx = vtkMatrixBuilder
       .buildFromRadian()
-      .identity()
-      .rotateFromDirections([1, 0, 0], iVector)
-      .rotateFromDirections([0, 1, 0], jVector)
+      .multiply(worldToImage)
       .translate(-center[0], -center[1], -center[2]);
 
     if (flipH) {
