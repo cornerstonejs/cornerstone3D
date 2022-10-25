@@ -9,6 +9,7 @@ const { createUint8SharedArray, createFloat32SharedArray } = utilities;
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
   cancel: () => void;
+  decache: () => void;
 }
 
 /**
@@ -135,7 +136,7 @@ function cornerstoneStreamingImageVolumeLoader(
       break;
   }
 
-  const streamingImageVolume = new StreamingImageVolume(
+  let streamingImageVolume = new StreamingImageVolume(
     // ImageVolume properties
     {
       volumeId,
@@ -164,6 +165,11 @@ function cornerstoneStreamingImageVolumeLoader(
     promise: Promise.resolve(streamingImageVolume),
     cancel: () => {
       streamingImageVolume.cancelLoading();
+    },
+    decache: () => {
+      streamingImageVolume.vtkOpenGLTexture.delete();
+      streamingImageVolume.scalarData = null;
+      streamingImageVolume = null;
     },
   };
 }

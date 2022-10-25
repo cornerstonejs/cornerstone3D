@@ -325,7 +325,7 @@ export function createLocalVolume(
   const cachedVolume = cache.getVolume(volumeId);
 
   if (cachedVolume) {
-    return cachedVolume;
+    return cachedVolume as ImageVolume;
   }
 
   const scalarLength = dimensions[0] * dimensions[1] * dimensions[2];

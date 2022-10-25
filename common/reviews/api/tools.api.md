@@ -2022,6 +2022,8 @@ interface IImageLoadObject {
 
 // @public
 interface IImageVolume {
+    // (undocumented)
+    cancelLoading?: () => void;
     convertToCornerstoneImage?: (
     imageId: string,
     imageIdIndex: number

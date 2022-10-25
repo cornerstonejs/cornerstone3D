@@ -451,16 +451,22 @@ class RenderingEngine implements IRenderingEngine {
       return;
     }
 
-    this._reset();
-    renderingEngineCache.delete(this.id);
-
+    // remove vtk rendered first before resetting the viewport
     if (!this.useCPURendering) {
+      const viewports = this._getViewportsAsArray();
+      viewports.forEach((vp) => {
+        this.offscreenMultiRenderWindow.removeRenderer(vp.id);
+      });
+
       // Free up WebGL resources
       this.offscreenMultiRenderWindow.delete();
 
       // Make sure all references go stale and are garbage collected.
       delete this.offscreenMultiRenderWindow;
     }
+
+    this._reset();
+    renderingEngineCache.delete(this.id);
 
     this.hasBeenDestroyed = true;
   }
@@ -1225,7 +1231,7 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @param viewport - The `Viewport` to render.
    */
-  private _resetViewport(viewport) {
+  private _resetViewport(viewport: IStackViewport | IVolumeViewport) {
     const renderingEngineId = this.id;
 
     const { element, canvas, id: viewportId } = viewport;

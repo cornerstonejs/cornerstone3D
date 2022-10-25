@@ -117,23 +117,24 @@ class Cache implements ICache {
    */
   private _decacheVolume = (volumeId: string) => {
     const cachedVolume = this._volumeCache.get(volumeId);
-    const { volumeLoadObject } = cachedVolume;
+    const { volumeLoadObject, volume } = cachedVolume;
 
-    // Cancel any in-progress loading
+    if (volume.cancelLoading) {
+      volume.cancelLoading();
+    }
+
+    if (volume.imageData) {
+      volume.imageData = null;
+    }
+
     if (volumeLoadObject.cancelFn) {
+      // Cancel any in-progress loading
       volumeLoadObject.cancelFn();
     }
 
     if (volumeLoadObject.decache) {
       volumeLoadObject.decache();
     }
-
-    // Clear texture memory (it will probably only be released at garbage collection of the DOM element, but might as well try)
-    // TODO We need to actually check if this particular scalar is used.
-    // TODO: Put this in the volume loader's decache function?
-    /*if (volume && volume.vtkOpenGLTexture) {
-      volume.vtkOpenGLTexture.releaseGraphicsResources()
-    }*/
 
     this._volumeCache.delete(volumeId);
   };

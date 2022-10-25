@@ -52,6 +52,9 @@ interface IImageVolume {
     imageId: string,
     imageIdIndex: number
   ) => IImageLoadObject;
+
+  //cancel load
+  cancelLoading?: () => void;
 }
 
 export default IImageVolume;
