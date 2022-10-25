@@ -8866,10 +8866,10 @@ detab@2.0.4:
   dependencies:
     repeat-string "^1.5.4"
 
-detect-gpu@^4.0.7:
-  version "4.0.24"
-  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-4.0.24.tgz#3b8e4e56a5ed0b764884a10c537efd033ce31b9b"
-  integrity sha512-lSL8+a+aCvjsqoHKAHF1rcMOkczYk2lUVimgndZqxL/lf1zMtjcGX8ArF8cJqn5OW4Ga2xi5wY2CV/zLYFYl9Q==
+detect-gpu@^4.0.45:
+  version "4.0.45"
+  resolved "https://registry.npmjs.org/detect-gpu/-/detect-gpu-4.0.45.tgz#e7dd7eabfacc7a91826163cb15c2d9ec1146a362"
+  integrity sha512-9ui1lsRVHheFMIYF1cgxwhgaUULi/ZOTtEJDf7jvn6cWT0iOsBR78xmcfcpXp+OySbZJw8jHs8+JKz+UeIsi+w==
   dependencies:
     webgl-constants "^1.1.1"
 
