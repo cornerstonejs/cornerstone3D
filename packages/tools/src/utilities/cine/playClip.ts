@@ -2,10 +2,10 @@ import {
   utilities,
   getEnabledElement,
   StackViewport,
-} from "@cornerstonejs/core";
-import CINE_EVENTS from "./events";
-import { addToolState, getToolState } from "./state";
-import { CINETypes } from "../../types";
+} from '@cornerstonejs/core';
+import CINE_EVENTS from './events';
+import { addToolState, getToolState } from './state';
+import { CINETypes } from '../../types';
 
 const { triggerEvent } = utilities;
 
@@ -26,14 +26,14 @@ function playClip(
   let playClipIsTimeVarying;
 
   if (element === undefined) {
-    throw new Error("playClip: element must not be undefined");
+    throw new Error('playClip: element must not be undefined');
   }
 
   const enabledElement = getEnabledElement(element);
 
   if (!enabledElement) {
     throw new Error(
-      "playClip: element must be a valid Cornerstone enabled element"
+      'playClip: element must be a valid Cornerstone enabled element'
     );
   }
 
@@ -41,7 +41,7 @@ function playClip(
 
   if (!(viewport instanceof StackViewport)) {
     throw new Error(
-      "playClip: element must be a stack viewport, volume viewport playClip not yet implemented"
+      'playClip: element must be a stack viewport, volume viewport playClip not yet implemented'
     );
   }
 
@@ -99,11 +99,12 @@ function playClip(
   // This function encapsulates the frame rendering logic...
   const playClipAction = () => {
     // Hoisting of context variables
+    let newImageIdIndex = stackData.targetImageIdIndex;
+    
     const stackData = {
       targetImageIdIndex: viewport.getTargetImageIdIndex(),
       imageIds: viewport.getImageIds(),
     };
-    let newImageIdIndex = stackData.targetImageIdIndex;
 
     const imageCount = stackData.imageIds.length;
 
@@ -211,7 +212,7 @@ function _getPlayClipTimeouts(vector: number[], speed: number) {
   // Initialize time varying to false
   let isTimeVarying = false;
 
-  if (typeof speed !== "number" || speed <= 0) {
+  if (typeof speed !== 'number' || speed <= 0) {
     speed = 1;
   }
 
@@ -252,7 +253,7 @@ function _getPlayClipTimeouts(vector: number[], speed: number) {
 function _stopClipWithData(playClipData) {
   const id = playClipData.intervalId;
 
-  if (typeof id !== "undefined") {
+  if (typeof id !== 'undefined') {
     playClipData.intervalId = undefined;
     if (playClipData.usingFrameTimeVector) {
       clearTimeout(id);
