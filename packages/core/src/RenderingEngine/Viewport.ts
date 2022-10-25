@@ -1065,7 +1065,10 @@ class Viewport implements IViewport {
     transform = vtkMatrixBuilder
       .buildFromDegree()
       .identity()
-      .rotateFromDirections(viewRight, [1, 0, 0]);
+      .rotateFromDirections(
+        [viewRight[0], viewRight[1], viewRight[2]],
+        [1, 0, 0]
+      );
 
     viewRightCorners.forEach((pt) => transform.apply(pt));
 
