@@ -54,7 +54,7 @@ Loading a volume is possible by using the `volumeLoader` API.
 ```js
 // note we need to add the cornerstoneStreamingImageVolume: to
 // use the streaming volume loader
-const volumeId = 'cornerStreamingImageVolume: myVolume';
+const volumeId = 'cornerstoneStreamingImageVolume: myVolume';
 
 // Define a volume in memory
 const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
@@ -151,7 +151,7 @@ const renderingEngine = new RenderingEngine(renderingEngineId);
 
 // note we need to add the cornerstoneStreamingImageVolume: to
 // use the streaming volume loader
-const volumeId = 'cornerStreamingImageVolume: myVolume';
+const volumeId = 'cornerstoneStreamingImageVolume: myVolume';
 
 // Define a volume in memory
 const volume = await volumeLoader.createAndCacheVolume(volumeId, {
