@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.9...@cornerstonejs/core@0.16.10) (2022-10-25)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+
+
+
+
 ## [0.16.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.8...@cornerstonejs/core@0.16.9) (2022-10-25)
 
 
