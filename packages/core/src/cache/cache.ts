@@ -123,6 +123,10 @@ class Cache implements ICache {
       volume.cancelLoading();
     }
 
+    if (volume.imageData) {
+      volume.imageData = null;
+    }
+
     if (volumeLoadObject.cancelFn) {
       // Cancel any in-progress loading
       volumeLoadObject.cancelFn();
