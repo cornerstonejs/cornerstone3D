@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.13](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.6.12...docs@0.6.13) (2022-10-25)
+
+
+### Bug Fixes
+
+* typo cornerStreaming --> cornerstoneStreaming ([#260](https://github.com/cornerstonejs/cornerstone3D-beta/issues/260)) ([78ff266](https://github.com/cornerstonejs/cornerstone3D-beta/commit/78ff2660c3ad7785d89af0cfe55d38dbbae0e6f4))
+
+
+
+
+
 ## [0.6.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.6.11...docs@0.6.12) (2022-10-11)
 
 **Note:** Version bump only for package docs
