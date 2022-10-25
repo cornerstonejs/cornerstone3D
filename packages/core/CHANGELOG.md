@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.8...@cornerstonejs/core@0.16.9) (2022-10-25)
+
+
+### Bug Fixes
+
+* fixes the memory leak for volumes ([#253](https://github.com/cornerstonejs/cornerstone3D-beta/issues/253)) ([c863126](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c863126fc1df3fa989e15da1a7eae43cf94b24d0))
+
+
+
+
+
 ## [0.16.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.7...@cornerstonejs/core@0.16.8) (2022-10-07)
 
 **Note:** Version bump only for package @cornerstonejs/core
