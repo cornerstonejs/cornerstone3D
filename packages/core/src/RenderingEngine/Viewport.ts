@@ -244,11 +244,11 @@ class Viewport implements IViewport {
     const transformToOriginTx = vtkMatrixBuilder
       .buildFromRadian()
       .multiply(imageData.getIndexToWorld())
-      .translate(size[0] / 2, size[1] / 2, 0);
+      .translate((size[0] - 1) / 2.0, (size[1] - 1) / 2.0, 0);
 
     const transformBackFromOriginTx = vtkMatrixBuilder
       .buildFromRadian()
-      .translate(-size[0] / 2, -size[1] / 2, 0)
+      .translate(-(size[0] - 1) / 2.0, -(size[1] - 1) / 2.0, 0)
       .multiply(imageData.getWorldToIndex());
     if (flipH) {
       this.flipHorizontal = flipHorizontal;
