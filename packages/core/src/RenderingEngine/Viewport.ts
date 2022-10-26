@@ -237,55 +237,19 @@ class Viewport implements IViewport {
     // proper scaling (flipping), they should be transformed to the origin and
     // then flipped. The following code does this transformation.
 
-    const origin = imageData.getOrigin();
-    const direction = imageData.getDirection();
-    const spacing = imageData.getSpacing();
     const size = imageData.getDimensions();
-
-    const iVector = direction.slice(0, 3);
-    const jVector = direction.slice(3, 6);
-    const kVector = direction.slice(6, 9);
-
-    // finding the center of the image
-    const center = vec3.create();
-    vec3.scaleAndAdd(center, origin, iVector, (size[0] / 2.0) * spacing[0]);
-    vec3.scaleAndAdd(center, center, jVector, (size[1] / 2.0) * spacing[1]);
-    vec3.scaleAndAdd(center, center, kVector, (size[2] / 2.0) * spacing[2]);
-
-    const imageToWorld: mat4 = [
-      direction[0],
-      direction[1],
-      direction[2],
-      0, //
-      direction[3],
-      direction[4],
-      direction[5],
-      0, //
-      direction[6],
-      direction[7],
-      direction[8],
-      0, //
-      0,
-      0,
-      0,
-      1, //
-    ];
-    const worldToImage: mat4 = mat4.transpose(
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6],
-      imageToWorld
-    );
 
     let flipHTx, flipVTx;
 
     const transformToOriginTx = vtkMatrixBuilder
       .buildFromRadian()
-      .translate(center[0], center[1], center[2])
-      .multiply(imageToWorld);
+      .multiply(imageData.getIndexToWorld())
+      .translate(size[0] / 2, size[1] / 2, 0);
+
     const transformBackFromOriginTx = vtkMatrixBuilder
       .buildFromRadian()
-      .multiply(worldToImage)
-      .translate(-center[0], -center[1], -center[2]);
-
+      .translate(-size[0] / 2, -size[1] / 2, 0)
+      .multiply(imageData.getWorldToIndex());
     if (flipH) {
       this.flipHorizontal = flipHorizontal;
       flipHTx = vtkMatrixBuilder
