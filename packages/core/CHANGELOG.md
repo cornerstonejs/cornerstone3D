@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.10...@cornerstonejs/core@0.16.11) (2022-10-27)
+
+
+### Bug Fixes
+
+* volume viewport getCurrentImageId ([#265](https://github.com/cornerstonejs/cornerstone3D-beta/issues/265)) ([30e4a5d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/30e4a5d812a9d800887dfdc940a73149e5687ab8))
+
+
+
+
+
 ## [0.16.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.9...@cornerstonejs/core@0.16.10) (2022-10-25)
 
 **Note:** Version bump only for package @cornerstonejs/core
