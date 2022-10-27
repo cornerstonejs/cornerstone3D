@@ -573,7 +573,6 @@ class Viewport implements IViewport {
     // Reset the perspective zoom factors, otherwise subsequent zooms will cause
     // the view angle to become very small and cause bad depth sorting.
     // todo: parallel projection only
-    activeCamera.setViewAngle(90.0);
 
     focalPoint[0] = (bounds[0] + bounds[1]) / 2.0;
     focalPoint[1] = (bounds[2] + bounds[3]) / 2.0;
@@ -624,53 +623,44 @@ class Viewport implements IViewport {
     radius = Math.sqrt(radius) * 0.5;
 
     const distance = 1.1 * radius;
-    // const distance = radius / Math.sin(angle * 0.5)
 
-    // check view-up vector against view plane normal
-    if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
-      activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1]);
-    }
+    const viewUpToSet: Point3 =
+      Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999
+        ? [-viewUp[2], viewUp[0], viewUp[1]]
+        : viewUp;
 
     const focalPointToSet = resetPan ? focalPoint : previousCamera.focalPoint;
 
-    activeCamera.setFocalPoint(
-      focalPointToSet[0],
-      focalPointToSet[1],
-      focalPointToSet[2]
-    );
-    activeCamera.setPosition(
+    const positionToSet: Point3 = [
       focalPointToSet[0] + distance * viewPlaneNormal[0],
       focalPointToSet[1] + distance * viewPlaneNormal[1],
-      focalPointToSet[2] + distance * viewPlaneNormal[2]
-    );
+      focalPointToSet[2] + distance * viewPlaneNormal[2],
+    ];
 
     renderer.resetCameraClippingRange(bounds);
 
-    if (resetZoom) {
-      activeCamera.setParallelScale(parallelScale);
-    }
-
-    // update reasonable world to physical values
-    activeCamera.setPhysicalScale(radius);
-
-    // TODO: The PhysicalXXX stuff are used for VR only, do we need this?
-    activeCamera.setPhysicalTranslation(
-      -focalPointToSet[0],
-      -focalPointToSet[1],
-      -focalPointToSet[2]
-    );
-
-    activeCamera.setClippingRange(
+    const clippingRangeToUse: Point2 = [
       -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
-      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-    );
+      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+    ];
 
-    if (this.flipHorizontal || this.flipVertical) {
-      this.flip({ flipHorizontal: false, flipVertical: false });
-    }
+    this.setCamera({
+      parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,
+      focalPoint: focalPointToSet,
+      position: positionToSet,
+      viewAngle: 90,
+      viewUp: viewUpToSet,
+      physicalScale: radius,
+      physicalTranslation: focalPointToSet.map((v) => -v),
+      clippingRange: clippingRangeToUse,
+      flipHorizontal: this.flipHorizontal ? false : undefined,
+      flipVertical: this.flipVertical ? false : undefined,
+    });
+
+    const modifiedCamera = _cloneDeep(this.getCamera());
 
     if (storeAsInitialCamera) {
-      this.setInitialCamera(this.getCamera());
+      this.setInitialCamera(modifiedCamera);
     }
 
     const RESET_CAMERA_EVENT = {
@@ -682,10 +672,7 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    this.triggerCameraModifiedEventIfNecessary(
-      previousCamera,
-      this.getCamera()
-    );
+    this.triggerCameraModifiedEventIfNecessary(previousCamera, modifiedCamera);
 
     return true;
   }
@@ -891,6 +878,9 @@ class Viewport implements IViewport {
       viewAngle,
       flipHorizontal,
       flipVertical,
+      physicalScale,
+      physicalTranslation,
+      clippingRange,
     } = cameraInterface;
 
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
@@ -923,6 +913,19 @@ class Viewport implements IViewport {
 
     if (viewAngle !== undefined) {
       vtkCamera.setViewAngle(viewAngle);
+    }
+
+    if (physicalScale !== undefined) {
+      vtkCamera.setPhysicalScale(physicalScale);
+    }
+
+    if (physicalTranslation !== undefined) {
+      // TODO: The PhysicalXXX stuff are used for VR only, do we need this?
+      vtkCamera.setPhysicalTranslation(...physicalTranslation);
+    }
+
+    if (clippingRange !== undefined) {
+      vtkCamera.setClippingRange(clippingRange);
     }
 
     // update clippingPlanes if volume viewports
