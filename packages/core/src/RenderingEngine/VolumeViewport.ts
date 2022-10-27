@@ -951,7 +951,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   public getCurrentImageId = (): string | undefined => {
     const index = this._getImageIdIndex();
 
-    if (!index) {
+    if (isNaN(index)) {
       return;
     }
 
