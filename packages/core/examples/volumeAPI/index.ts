@@ -7,6 +7,7 @@ import {
   utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
+import { utilities as cstUtils } from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -322,6 +323,12 @@ async function run() {
 
   // Render the image
   viewport.render();
+
+  window.viewport = viewport;
+
+  setTimeout(() => {
+    cstUtils.scroll(viewport, { delta: 20 });
+  }, 1000);
 }
 
 run();

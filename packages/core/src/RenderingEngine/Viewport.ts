@@ -237,24 +237,33 @@ class Viewport implements IViewport {
     // proper scaling (flipping), they should be transformed to the origin and
     // then flipped. The following code does this transformation.
 
-    const size = imageData.getDimensions();
+    const { focalPoint, viewPlaneNormal, viewUp } = this.getCamera();
 
+    const viewRight = vec3.create();
+    vec3.cross(viewRight, viewPlaneNormal, viewUp);
+
+    const center = focalPoint;
     let flipHTx, flipVTx;
 
     const transformToOriginTx = vtkMatrixBuilder
       .buildFromRadian()
-      .multiply(imageData.getIndexToWorld())
-      .translate(size[0] / 2.0, size[1] / 2.0, 0);
+      .identity()
+      .translate(-center[0], -center[1], -center[2])
+      .rotateFromDirections(viewUp, [0, 1, 0])
+      .rotateFromDirections(viewRight, [1, 0, 0]);
 
     const transformBackFromOriginTx = vtkMatrixBuilder
       .buildFromRadian()
-      .translate(-size[0] / 2.0, -size[1] / 2.0, 0)
-      .multiply(imageData.getWorldToIndex());
+      .identity()
+      .rotateFromDirections([1, 0, 0], viewRight)
+      .rotateFromDirections([0, 1, 0], viewUp)
+      .translate(center[0], center[1], center[2]);
 
     if (flipH) {
       this.flipHorizontal = flipHorizontal;
       flipHTx = vtkMatrixBuilder
         .buildFromRadian()
+        .identity()
         .multiply(transformToOriginTx.getMatrix())
         .scale(-1, 1, 1)
         .multiply(transformBackFromOriginTx.getMatrix());
@@ -264,6 +273,7 @@ class Viewport implements IViewport {
       this.flipVertical = flipVertical;
       flipVTx = vtkMatrixBuilder
         .buildFromRadian()
+        .identity()
         .multiply(transformToOriginTx.getMatrix())
         .scale(1, -1, 1)
         .multiply(transformBackFromOriginTx.getMatrix());
@@ -275,6 +285,8 @@ class Viewport implements IViewport {
       const actor = actorEntry.actor;
 
       const mat = actor.getUserMatrix();
+
+      console.debug(mat);
 
       if (flipHTx) {
         mat4.multiply(mat, mat, flipHTx.getMatrix());
