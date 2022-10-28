@@ -158,7 +158,9 @@ class EllipticalROITool extends AnnotationTool {
    *
    */
   addNewAnnotation = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt:
+      | EventTypes.MouseDownActivateEventType
+      | EventTypes.TouchStartActivateEventType
   ): EllipticalROIAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
@@ -306,7 +308,7 @@ class EllipticalROITool extends AnnotationTool {
   };
 
   toolSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
     annotation: EllipticalROIAnnotation,
     interactionType: InteractionTypes
   ): void => {
@@ -339,7 +341,7 @@ class EllipticalROITool extends AnnotationTool {
   };
 
   handleSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
     annotation: EllipticalROIAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -409,7 +411,11 @@ class EllipticalROITool extends AnnotationTool {
   };
 
   _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+    evt:
+      | EventTypes.MouseUpEventType
+      | EventTypes.MouseClickEventType
+      | EventTypes.TouchTapEventType
+      | EventTypes.TouchEndEventType
   ) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -460,7 +466,9 @@ class EllipticalROITool extends AnnotationTool {
     }
   };
 
-  _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
+  _mouseDragDrawCallback = (
+    evt: MouseMoveEventType | MouseDragEventType | EventTypes.TouchDragEventType
+  ) => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -497,7 +505,9 @@ class EllipticalROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  _mouseDragModifyCallback = (evt: MouseDragEventType) => {
+  _mouseDragModifyCallback = (
+    evt: MouseDragEventType | EventTypes.TouchDragEventType
+  ) => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -668,8 +678,9 @@ class EllipticalROITool extends AnnotationTool {
     element.addEventListener(Events.MOUSE_DRAG, this._mouseDragModifyCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragModifyCallback)
+    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._mouseDragModifyCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   _deactivateModify = (element) => {
@@ -682,11 +693,12 @@ class EllipticalROITool extends AnnotationTool {
     );
     element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(
-    //   Events.TOUCH_DRAG,
-    //   this._mouseDragModifyCallback
-    // )
+    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._mouseDragModifyCallback
+    );
+    element.removeEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   _activateDraw = (element) => {
@@ -697,8 +709,9 @@ class EllipticalROITool extends AnnotationTool {
     element.addEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
+    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   _deactivateDraw = (element) => {
@@ -709,8 +722,9 @@ class EllipticalROITool extends AnnotationTool {
     element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
+    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   /**

@@ -51,7 +51,9 @@ class DragProbeTool extends ProbeTool {
   }
 
   postMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt:
+      | EventTypes.MouseDownActivateEventType
+      | EventTypes.TouchStartActivateEventType
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;

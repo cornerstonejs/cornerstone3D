@@ -22,7 +22,9 @@ const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
  * Activates the open contour edit event loop.
  */
 function activateOpenContourEdit(
-  evt: EventTypes.MouseDownActivateEventType,
+  evt:
+    | EventTypes.MouseDownActivateEventType
+    | EventTypes.TouchStartActivateEventType,
   annotation: Annotation,
   viewportIdsToRender: string[]
 ): void {
@@ -71,6 +73,18 @@ function activateOpenContourEdit(
     this.mouseUpOpenContourEditCallback
   );
 
+  element.addEventListener(
+    Events.TOUCH_END,
+    this.mouseUpOpenContourEditCallback
+  );
+  element.addEventListener(
+    Events.TOUCH_DRAG,
+    this.mouseDragOpenContourEditCallback
+  );
+  element.addEventListener(
+    Events.TOUCH_TAP,
+    this.mouseUpOpenContourEditCallback
+  );
   hideElementCursor(element);
 }
 
@@ -93,6 +107,18 @@ function deactivateOpenContourEdit(element: HTMLDivElement) {
     this.mouseUpOpenContourEditCallback
   );
 
+  element.removeEventListener(
+    Events.TOUCH_END,
+    this.mouseUpOpenContourEditCallback
+  );
+  element.removeEventListener(
+    Events.TOUCH_DRAG,
+    this.mouseDragOpenContourEditCallback
+  );
+  element.removeEventListener(
+    Events.TOUCH_TAP,
+    this.mouseUpOpenContourEditCallback
+  );
   resetElementCursor(element);
 }
 
@@ -102,7 +128,7 @@ function deactivateOpenContourEdit(element: HTMLDivElement) {
  * the edit line past the end of the open contour.
  */
 function mouseDragOpenContourEditCallback(
-  evt: EventTypes.MouseDragEventType
+  evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
 ): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
@@ -175,7 +201,10 @@ function mouseDragOpenContourEditCallback(
  * open contour end edit loop.
  */
 function openContourEditOverwriteEnd(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  evt:
+    | EventTypes.MouseDragEventType
+    | EventTypes.MouseMoveEventType
+    | EventTypes.TouchDragEventType
 ): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
@@ -214,7 +243,7 @@ function openContourEditOverwriteEnd(
  * open contour's `prevCanvasPoint`s.
  */
 function checkIfShouldOverwriteAnEnd(
-  evt: EventTypes.MouseDragEventType
+  evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
 ): boolean {
   const eventDetail = evt.detail;
   const { currentPoints, lastPoints } = eventDetail;
@@ -456,7 +485,10 @@ function fuseEditPointsWithOpenContour(
  * On a second crossing, apply edit, and start a new edit from the crossing.
  */
 function finishEditOpenOnSecondCrossing(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  evt:
+    | EventTypes.MouseDragEventType
+    | EventTypes.MouseMoveEventType
+    | EventTypes.TouchDragEventType
 ): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
@@ -495,7 +527,11 @@ function finishEditOpenOnSecondCrossing(
  * Completes the edit of the open contour when the mouse button is released.
  */
 function mouseUpOpenContourEditCallback(
-  evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  evt:
+    | EventTypes.MouseUpEventType
+    | EventTypes.MouseClickEventType
+    | EventTypes.TouchTapEventType
+    | EventTypes.TouchEndEventType
 ): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;

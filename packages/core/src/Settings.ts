@@ -292,3 +292,4 @@ function deepSet(context, key, value) {
  * Initial Settings for the repository
  */
 Settings.getDefaultSettings().set('useCursors', true);
+Settings.getDefaultSettings().set('debug', false);

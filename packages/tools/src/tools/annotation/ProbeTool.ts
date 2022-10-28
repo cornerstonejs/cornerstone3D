@@ -138,7 +138,9 @@ class ProbeTool extends AnnotationTool {
    *
    */
   addNewAnnotation = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt:
+      | EventTypes.MouseDownActivateEventType
+      | EventTypes.TouchStartActivateEventType
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
@@ -232,7 +234,7 @@ class ProbeTool extends AnnotationTool {
   }
 
   handleSelectedCallback(
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
     annotation: ProbeAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -267,7 +269,11 @@ class ProbeTool extends AnnotationTool {
   }
 
   _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+    evt:
+      | EventTypes.MouseUpEventType
+      | EventTypes.MouseClickEventType
+      | EventTypes.TouchTapEventType
+      | EventTypes.TouchEndEventType
   ) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -371,8 +377,9 @@ class ProbeTool extends AnnotationTool {
     element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   _deactivateModify = (element) => {
@@ -382,8 +389,9 @@ class ProbeTool extends AnnotationTool {
     element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   /**

@@ -2,7 +2,6 @@ import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { getEnabledElement, Types } from '@cornerstonejs/core';
 import { BaseTool } from './base';
-
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
 
 /**
@@ -12,7 +11,7 @@ import { EventTypes, PublicToolProps, ToolProps } from '../types';
  */
 class ZoomTool extends BaseTool {
   static toolName;
-  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  touchDragCallback: (evt: EventTypes.TouchDragEventType) => void;
   mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
@@ -27,30 +26,29 @@ class ZoomTool extends BaseTool {
         zoomToCenter: false,
         minZoomScale: 0.1,
         maxZoomScale: 30,
+        pinchToZoom: true,
+        pan: true,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
     this.initialMousePosWorld = [0, 0, 0];
     this.dirVec = [0, 0, 0];
-
-    /**
-     * Will only fire two cornerstone events:
-     * - TOUCH_DRAG
-     * - MOUSE_DRAG
-     *
-     * Given that the tool is active and has matching bindings for the
-     * underlying touch/mouse event.
-     */
-    this.touchDragCallback = this._dragCallback.bind(this);
+    if (this.configuration.pinchToZoom) {
+      this.touchDragCallback = this._pinchCallback.bind(this);
+    } else {
+      this.touchDragCallback = this._dragCallback.bind(this);
+    }
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
   preMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt:
+      | EventTypes.MouseDownActivateEventType
+      | EventTypes.TouchStartActivateEventType
   ): boolean => {
     const eventData = evt.detail;
-    const { currentPoints, element } = eventData;
+    const { element, currentPoints } = eventData;
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
 
@@ -79,8 +77,50 @@ class ZoomTool extends BaseTool {
     return false;
   };
 
+  preTouchStartCallback = (
+    evt: EventTypes.TouchStartActivateEventType
+  ): boolean => {
+    if (!this.configuration.pinchToZoom) {
+      return this.preMouseDownCallback(evt);
+    }
+  };
+
+  _pinchCallback(evt: EventTypes.TouchDragEventType) {
+    if (evt.detail.currentPointsList.length > 1) {
+      const { element, currentPoints } = evt.detail;
+      const enabledElement = getEnabledElement(element);
+      const { viewport } = enabledElement;
+      const camera = viewport.getCamera();
+      const worldPos = currentPoints.world;
+      const { focalPoint } = camera;
+      this.initialMousePosWorld = worldPos;
+      // The direction vector from the clicked location to the focal point
+      // which would act as the vector to translate the image (if zoomToCenter is false)
+      let dirVec = vec3.fromValues(
+        focalPoint[0] - worldPos[0],
+        focalPoint[1] - worldPos[1],
+        focalPoint[2] - worldPos[2]
+      );
+      dirVec = vec3.normalize(vec3.create(), dirVec);
+
+      this.dirVec = dirVec as Types.Point3;
+      if (camera.parallelProjection) {
+        this._dragParallelProjection(evt, viewport, camera, true);
+      } else {
+        this._dragPerspectiveProjection(evt, viewport, camera, true);
+      }
+      viewport.render();
+    }
+
+    if (this.configuration.pan) {
+      this._panCallback(evt);
+    }
+  }
+
   // Takes ICornerstoneEvent, Mouse or Touch
-  _dragCallback(evt: EventTypes.MouseDragEventType) {
+  _dragCallback(
+    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
+  ) {
     const { element } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
@@ -97,17 +137,20 @@ class ZoomTool extends BaseTool {
   }
 
   _dragParallelProjection = (
-    evt: EventTypes.MouseDragEventType,
+    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType,
     viewport: Types.IStackViewport | Types.IVolumeViewport,
-    camera: Types.ICamera
+    camera: Types.ICamera,
+    pinch = false
   ): void => {
     const { element, deltaPoints } = evt.detail;
+    const deltaY = pinch
+      ? (evt as EventTypes.TouchDragEventType).detail.deltaDistance.canvas
+      : deltaPoints.canvas[1];
 
     const size = [element.clientWidth, element.clientHeight];
     const { parallelScale, focalPoint, position } = camera;
 
     const zoomScale = 1.5 / size[1];
-    const deltaY = deltaPoints.canvas[1];
     const k = deltaY * zoomScale;
 
     let parallelScaleToSet = (1.0 - k) * parallelScale;
@@ -183,8 +226,17 @@ class ZoomTool extends BaseTool {
     });
   };
 
-  _dragPerspectiveProjection = (evt, viewport, camera) => {
+  _dragPerspectiveProjection = (
+    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType,
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    camera: Types.ICamera,
+    pinch = false
+  ): void => {
     const { element, deltaPoints } = evt.detail;
+    const deltaY = pinch
+      ? (evt as EventTypes.TouchDragEventType).detail.deltaDistance.canvas
+      : deltaPoints.canvas[1];
+
     const size = [element.clientWidth, element.clientHeight];
     const { position, focalPoint, viewPlaneNormal } = camera;
 
@@ -196,8 +248,6 @@ class ZoomTool extends BaseTool {
       -viewPlaneNormal[1],
       -viewPlaneNormal[2],
     ];
-
-    const deltaY = deltaPoints.canvas[1];
 
     const k = deltaY * zoomScale;
 
@@ -215,6 +265,35 @@ class ZoomTool extends BaseTool {
 
     viewport.setCamera({ position, focalPoint });
   };
+
+  _panCallback(
+    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
+  ) {
+    const { element, deltaPoints } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+
+    const deltaPointsWorld = deltaPoints.world;
+    const camera = enabledElement.viewport.getCamera();
+    const { focalPoint, position } = camera;
+
+    const updatedPosition = <Types.Point3>[
+      position[0] - deltaPointsWorld[0],
+      position[1] - deltaPointsWorld[1],
+      position[2] - deltaPointsWorld[2],
+    ];
+
+    const updatedFocalPoint = <Types.Point3>[
+      focalPoint[0] - deltaPointsWorld[0],
+      focalPoint[1] - deltaPointsWorld[1],
+      focalPoint[2] - deltaPointsWorld[2],
+    ];
+
+    enabledElement.viewport.setCamera({
+      focalPoint: updatedFocalPoint,
+      position: updatedPosition,
+    });
+    enabledElement.viewport.render();
+  }
 }
 
 ZoomTool.toolName = 'Zoom';

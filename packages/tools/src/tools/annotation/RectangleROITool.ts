@@ -135,7 +135,9 @@ class RectangleROITool extends AnnotationTool {
    *
    */
   addNewAnnotation = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt:
+      | EventTypes.MouseDownActivateEventType
+      | EventTypes.TouchStartActivateEventType
   ): RectangleROIAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
@@ -264,7 +266,7 @@ class RectangleROITool extends AnnotationTool {
   };
 
   toolSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
     annotation: RectangleROIAnnotation,
     interactionType: InteractionTypes
   ): void => {
@@ -297,7 +299,7 @@ class RectangleROITool extends AnnotationTool {
   };
 
   handleSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
     annotation: RectangleROIAnnotation,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -342,7 +344,11 @@ class RectangleROITool extends AnnotationTool {
   };
 
   _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+    evt:
+      | EventTypes.MouseUpEventType
+      | EventTypes.MouseClickEventType
+      | EventTypes.TouchTapEventType
+      | EventTypes.TouchEndEventType
   ) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -389,7 +395,10 @@ class RectangleROITool extends AnnotationTool {
   };
 
   _mouseDragCallback = (
-    evt: EventTypes.MouseMoveEventType | EventTypes.MouseDragEventType
+    evt:
+      | EventTypes.MouseMoveEventType
+      | EventTypes.MouseDragEventType
+      | EventTypes.TouchDragEventType
   ) => {
     this.isDrawing = true;
 
@@ -548,8 +557,9 @@ class RectangleROITool extends AnnotationTool {
     element.addEventListener(Events.MOUSE_MOVE, this._mouseDragCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   /**
@@ -563,8 +573,9 @@ class RectangleROITool extends AnnotationTool {
     element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   /**
@@ -577,8 +588,9 @@ class RectangleROITool extends AnnotationTool {
     element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   /**
@@ -591,8 +603,9 @@ class RectangleROITool extends AnnotationTool {
     element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   /**

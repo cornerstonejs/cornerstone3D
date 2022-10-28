@@ -94,7 +94,9 @@ class AngleTool extends AnnotationTool {
    *
    */
   addNewAnnotation = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt:
+      | EventTypes.MouseDownActivateEventType
+      | EventTypes.TouchStartActivateEventType
   ): AngleAnnotation => {
     if (this.angleStartedNotYetCompleted) {
       return;
@@ -319,7 +321,11 @@ class AngleTool extends AnnotationTool {
   }
 
   _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+    evt:
+      | EventTypes.MouseUpEventType
+      | EventTypes.MouseClickEventType
+      | EventTypes.TouchEndEventType
+      | EventTypes.TouchTapEventType
   ) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -376,7 +382,10 @@ class AngleTool extends AnnotationTool {
   };
 
   _mouseDragCallback = (
-    evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+    evt:
+      | EventTypes.MouseDragEventType
+      | EventTypes.MouseMoveEventType
+      | EventTypes.TouchDragEventType
   ) => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
@@ -483,8 +492,18 @@ class AngleTool extends AnnotationTool {
       this._mouseUpCallback as EventListener
     );
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._mouseUpCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._mouseUpCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._mouseDragCallback as EventListener
+    );
   };
 
   _deactivateModify = (element: HTMLDivElement) => {
@@ -502,9 +521,18 @@ class AngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._mouseUpCallback as EventListener
     );
-
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._mouseDragCallback as EventListener
+    );
   };
 
   _activateDraw = (element: HTMLDivElement) => {
@@ -527,8 +555,18 @@ class AngleTool extends AnnotationTool {
       this._mouseUpCallback as EventListener
     );
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._mouseUpCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._mouseUpCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._mouseDragCallback as EventListener
+    );
   };
 
   _deactivateDraw = (element: HTMLDivElement) => {
@@ -551,8 +589,18 @@ class AngleTool extends AnnotationTool {
       this._mouseUpCallback as EventListener
     );
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._mouseDragCallback as EventListener
+    );
   };
 
   /**

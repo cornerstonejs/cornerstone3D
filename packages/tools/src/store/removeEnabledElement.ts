@@ -2,6 +2,7 @@ import { getEnabledElement, Types } from '@cornerstonejs/core';
 import {
   mouseEventListeners,
   wheelEventListener,
+  touchEventListeners,
   keyEventListener,
 } from '../eventListeners';
 import {
@@ -10,7 +11,7 @@ import {
   mouseToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
-  //   touchToolEventDispatcher,
+  touchToolEventDispatcher,
 } from '../eventDispatchers';
 // ~~
 
@@ -46,6 +47,7 @@ function removeEnabledElement(
   // Listeners
   mouseEventListeners.disable(element);
   wheelEventListener.disable(element);
+  touchEventListeners.disable(element);
   keyEventListener.disable(element);
   // labelmap
 
@@ -56,7 +58,7 @@ function removeEnabledElement(
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(element);
   keyboardToolEventDispatcher.disable(element);
-  // touchToolEventDispatcher.disable(canvas);
+  touchToolEventDispatcher.disable(element);
 
   // State
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?

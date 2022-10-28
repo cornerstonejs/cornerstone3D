@@ -222,28 +222,21 @@ enum Events {
   // Todo: not implemented yet
   // KEY_PRESS = 'CORNERSTONE_TOOLS_KEY_PRESS',
 
-  ///////////////////////////////////////
-  //   Touch Events - Not Implemented yet
-  ///////////////////////////////////////
-  /**
+  //////////////////////
+  //   Touch Events   //
+  //////////////////////
+  // The event flow looks like the following
+  // Touch Start -> (optional) Touch Press -> Touch Drag -> (optional) Touch Swipe -> Touch End
+  // Touch Tap
+  // mousedown
+  // mousedown, Touch Start, and Tap are mutually exclusive events
   TOUCH_START = 'CORNERSTONE_TOOLS_TOUCH_START',
-  TOUCH_START_ACTIVE = 'CORNERSTONE_TOOLS_TOUCH_START_ACTIVE',
-  TOUCH_END = 'CORNERSTONE_TOOLS_TOUCH_END',
-  TOUCH_DRAG = 'CORNERSTONE_TOOLS_TOUCH_DRAG',
-  TOUCH_DRAG_END = 'CORNERSTONE_TOOLS_TOUCH_DRAG_END',
-  // http://hammerjs.github.io/recognizer-pinch/
-  TOUCH_PINCH = 'CORNERSTONE_TOOLS_TOUCH_PINCH',
-  // http://hammerjs.github.io/recognizer-rotate/
-  TOUCH_ROTATE = 'CORNERSTONE_TOOLS_TOUCH_ROTATE',
-  // http://hammerjs.github.io/recognizer-press/
+  TOUCH_START_ACTIVATE = 'CORNERSTONE_TOOLS_TOUCH_START_ACTIVATE',
   TOUCH_PRESS = 'CORNERSTONE_TOOLS_TOUCH_PRESS',
-  // http://hammerjs.github.io/recognizer-tap/
-  TAP = 'CORNERSTONE_TOOLS_TAP',
-  DOUBLE_TAP = 'CORNERSTONE_TOOLS_DOUBLE_TAP',
-  MULTI_TOUCH_START = 'CORNERSTONE_TOOLS_MULTI_TOUCH_START',
-  MULTI_TOUCH_START_ACTIVE = 'CORNERSTONE_TOOLS_MULTI_TOUCH_START_ACTIVE',
-  MULTI_TOUCH_DRAG = 'CORNERSTONE_TOOLS_MULTI_TOUCH_DRAG',
-  */
+  TOUCH_DRAG = 'CORNERSTONE_TOOLS_TOUCH_DRAG',
+  TOUCH_END = 'CORNERSTONE_TOOLS_TOUCH_END',
+  TOUCH_TAP = 'CORNERSTONE_TOOLS_TAP',
+  TOUCH_SWIPE = 'CORNERSTONE_TOOLS_SWIPE',
 }
 
 export default Events;

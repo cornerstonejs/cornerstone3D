@@ -12,7 +12,9 @@ const { getSubPixelSpacingAndXYDirections } = polyline;
  * that the tool thinks we are mid draw, and then jumps into the drawing loop.
  */
 function activateOpenContourEndEdit(
-  evt: EventTypes.MouseDownActivateEventType,
+  evt:
+    | EventTypes.MouseDownActivateEventType
+    | EventTypes.TouchStartActivateEventType,
   annotation: Annotation,
   viewportIdsToRender: string[]
 ): void {
@@ -56,6 +58,9 @@ function activateOpenContourEndEdit(
   element.addEventListener(Events.MOUSE_UP, this.mouseUpDrawCallback);
   element.addEventListener(Events.MOUSE_DRAG, this.mouseDragDrawCallback);
   element.addEventListener(Events.MOUSE_CLICK, this.mouseUpDrawCallback);
+  element.addEventListener(Events.TOUCH_END, this.mouseUpDrawCallback);
+  element.addEventListener(Events.TOUCH_DRAG, this.mouseDragDrawCallback);
+  element.addEventListener(Events.TOUCH_TAP, this.mouseUpDrawCallback);
 
   hideElementCursor(element);
 }

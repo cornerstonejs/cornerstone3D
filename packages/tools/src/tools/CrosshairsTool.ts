@@ -367,8 +367,10 @@ class CrosshairsTool extends AnnotationTool {
    * @returns Crosshairs annotation
    */
   addNewAnnotation = (
-    evt: EventTypes.MouseDownActivateEventType,
-    interactionType: string
+    evt:
+      | EventTypes.MouseDownActivateEventType
+      | EventTypes.TouchStartActivateEventType,
+    interactionType = 'mouse'
   ): CrosshairsAnnotation => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -469,7 +471,7 @@ class CrosshairsTool extends AnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
     annotation: Annotation,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -516,7 +518,7 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   toolSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
     annotation: Annotation,
     interactionType: InteractionTypes
   ): void => {
@@ -1902,8 +1904,9 @@ class CrosshairsTool extends AnnotationTool {
     element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   _deactivateModify = (element) => {
@@ -1913,12 +1916,17 @@ class CrosshairsTool extends AnnotationTool {
     element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._mouseUpCallback);
   };
 
   _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+    evt:
+      | EventTypes.MouseUpEventType
+      | EventTypes.MouseClickEventType
+      | EventTypes.TouchEndEventType
+      | EventTypes.TouchTapEventType
   ) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -1945,7 +1953,9 @@ class CrosshairsTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  _mouseDragCallback = (evt: MouseDragEventType) => {
+  _mouseDragCallback = (
+    evt: MouseDragEventType | EventTypes.TouchDragEventType
+  ) => {
     const eventDetail = evt.detail;
     const delta = eventDetail.deltaPoints.world;
 
