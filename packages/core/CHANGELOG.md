@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.11...@cornerstonejs/core@0.16.12) (2022-10-28)
+
+
+### Bug Fixes
+
+* viewRight was calculated wrong for tools ([#255](https://github.com/cornerstonejs/cornerstone3D-beta/issues/255)) ([cf536df](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cf536df66c05b4c4385ad18ad814d1dac1c8ad77))
+
+
+
+
+
 ## [0.16.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.10...@cornerstonejs/core@0.16.11) (2022-10-27)
 
 

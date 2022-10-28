@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.25.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.24.17...@cornerstonejs/tools@0.25.0) (2022-10-28)
+
+
+### Bug Fixes
+
+* viewRight was calculated wrong for tools ([#255](https://github.com/cornerstonejs/cornerstone3D-beta/issues/255)) ([cf536df](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cf536df66c05b4c4385ad18ad814d1dac1c8ad77))
+
+
+### Features
+
+* add data id to length and rectangle svg for e2e tests ([#240](https://github.com/cornerstonejs/cornerstone3D-beta/issues/240)) ([3c4e023](https://github.com/cornerstonejs/cornerstone3D-beta/commit/3c4e02305423c59ddcad5d2551cd2ca629738eea))
+
+
+
+
+
 ## [0.24.17](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.24.16...@cornerstonejs/tools@0.24.17) (2022-10-27)
 
 **Note:** Version bump only for package @cornerstonejs/tools
