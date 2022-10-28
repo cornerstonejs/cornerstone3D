@@ -230,82 +230,55 @@ class Viewport implements IViewport {
       return;
     }
 
-    // In Cornerstone gpu rendering pipeline, the images are positioned
-    // in the space according to their origin, and direction (even StackViewport
-    // with one slice only). In order to flip the images, we need to flip them
-    // around their center axis (either horizontal or vertical). Since the images
-    // are positioned in the space according to their origin and direction, for a
-    // proper scaling (flipping), they should be transformed to the origin and
-    // then flipped. The following code does this transformation.
+    const { viewPlaneNormal, viewUp, focalPoint, position } = this.getCamera();
 
-    const origin = imageData.getOrigin();
-    const direction = imageData.getDirection();
-    const spacing = imageData.getSpacing();
-    const size = imageData.getDimensions();
+    const viewRight = vec3.create();
+    vec3.cross(viewRight, viewPlaneNormal, viewUp);
 
-    const iVector = direction.slice(0, 3);
-    const jVector = direction.slice(3, 6);
-    const kVector = direction.slice(6, 9);
+    let viewUpToSet = vec3.create();
+    vec3.copy(viewUpToSet, viewUp);
 
-    // finding the center of the image
-    const center = vec3.create();
-    vec3.scaleAndAdd(center, origin, iVector, (size[0] / 2.0) * spacing[0]);
-    vec3.scaleAndAdd(center, center, jVector, (size[1] / 2.0) * spacing[1]);
-    vec3.scaleAndAdd(center, center, kVector, (size[2] / 2.0) * spacing[2]);
+    let viewPlaneNormalToSet = vec3.create();
+    viewPlaneNormalToSet = vec3.negate(viewPlaneNormalToSet, viewPlaneNormal);
 
-    let flipHTx, flipVTx;
+    const positionToSet = vec3.create();
 
-    const transformToOriginTx = vtkMatrixBuilder
-      .buildFromRadian()
-      .identity()
-      .translate(center[0], center[1], center[2])
-      .rotateFromDirections(jVector, [0, 1, 0])
-      .rotateFromDirections(iVector, [1, 0, 0]);
+    // for both flip horizontal and vertical we need to move the camera to the
+    // other side of the image
+    const distance = vec3.distance(position, focalPoint);
 
-    const transformBackFromOriginTx = vtkMatrixBuilder
-      .buildFromRadian()
-      .identity()
-      .rotateFromDirections([1, 0, 0], iVector)
-      .rotateFromDirections([0, 1, 0], jVector)
-      .translate(-center[0], -center[1], -center[2]);
+    vec3.scaleAndAdd(
+      positionToSet,
+      position,
+      viewPlaneNormalToSet,
+      2 * distance
+    );
 
+    // Flipping horizontal mean that the camera should move
+    // to the other side of the image but looking at the
+    // same direction and same focal point
     if (flipH) {
-      this.flipHorizontal = flipHorizontal;
-      flipHTx = vtkMatrixBuilder
-        .buildFromRadian()
-        .multiply(transformToOriginTx.getMatrix())
-        .scale(-1, 1, 1)
-        .multiply(transformBackFromOriginTx.getMatrix());
+      this.setCamera({
+        viewPlaneNormal: viewPlaneNormalToSet as Point3,
+        position: positionToSet as Point3,
+        focalPoint,
+      });
     }
 
+    // Flipping vertical mean that the camera should negate the view up
+    // and also move to the other side of the image but looking at the
     if (flipV) {
-      this.flipVertical = flipVertical;
-      flipVTx = vtkMatrixBuilder
-        .buildFromRadian()
-        .multiply(transformToOriginTx.getMatrix())
-        .scale(1, -1, 1)
-        .multiply(transformBackFromOriginTx.getMatrix());
+      viewUpToSet = vec3.negate(viewUpToSet, viewUp);
+
+      this.setCamera({
+        focalPoint,
+        viewPlaneNormal: viewPlaneNormalToSet as Point3,
+        viewUp: viewUpToSet as Point3,
+        position: positionToSet as Point3,
+      });
     }
 
-    const actorEntries = this.getActors();
-
-    actorEntries.forEach((actorEntry) => {
-      const actor = actorEntry.actor;
-
-      const mat = actor.getUserMatrix();
-
-      if (flipHTx) {
-        mat4.multiply(mat, mat, flipHTx.getMatrix());
-      }
-
-      if (flipVTx) {
-        mat4.multiply(mat, mat, flipVTx.getMatrix());
-      }
-
-      actor.setUserMatrix(mat);
-    });
-
-    this.getRenderingEngine().render();
+    this.render();
   }
 
   private getDefaultImageData(): any {
