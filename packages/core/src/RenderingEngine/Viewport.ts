@@ -656,7 +656,7 @@ class Viewport implements IViewport {
       viewAngle: 90,
       viewUp: viewUpToSet,
       physicalScale: radius,
-      physicalTranslation: focalPointToSet.map((v) => -v),
+      physicalTranslation: focalPointToSet.map((v) => -v) as Point3,
       clippingRange: clippingRangeToUse,
       flipHorizontal: this.flipHorizontal ? false : undefined,
       flipVertical: this.flipVertical ? false : undefined,

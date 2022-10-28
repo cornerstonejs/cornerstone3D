@@ -502,11 +502,14 @@ interface ICachedVolume {
 
 // @public
 interface ICamera {
+    clippingRange?: Point2;
     flipHorizontal?: boolean;
     flipVertical?: boolean;
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
+    physicalScale?: number;
+    physicalTranslation?: Point3;
     position?: Point3;
     scale?: number;
     viewAngle?: number;
@@ -1001,7 +1004,11 @@ interface IVolumeViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     hasVolumeId: (volumeId: string) => boolean;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(
+    resetPan?: boolean,
+    resetZoom?: boolean,
+    resetToCenter?: boolean
+    ): boolean;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
