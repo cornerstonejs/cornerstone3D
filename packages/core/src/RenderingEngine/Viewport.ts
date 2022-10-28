@@ -241,27 +241,67 @@ class Viewport implements IViewport {
     let viewPlaneNormalToSet = vec3.create();
     viewPlaneNormalToSet = vec3.negate(viewPlaneNormalToSet, viewPlaneNormal);
 
-    const positionToSet = vec3.create();
-
     // for both flip horizontal and vertical we need to move the camera to the
     // other side of the image
     const distance = vec3.distance(position, focalPoint);
 
-    vec3.scaleAndAdd(
-      positionToSet,
-      position,
-      viewPlaneNormalToSet,
-      2 * distance
-    );
+    // If the pan has been applied, we need to be able
+    // apply the pan back
+    const resetFocalPoint = vec3.create();
+    const dimensions = imageData.getDimensions();
+    const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+
+    const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
+    imageData.indexToWorld(idx, resetFocalPoint);
+
+    // what is the difference right now between the rested focal point and
+    // the current focal point
+    // Todo: this needs to be retrieved from the function that considers maintainFrame
+    // just now trying it on stack Viewport
+    const panDir = vec3.create();
+    vec3.subtract(panDir, focalPoint, resetFocalPoint);
+
+    const panValue = vec3.length(panDir);
+
+    const getPanDir = (mirrorVec) => {
+      const panDirMirror = vec3.create();
+      vec3.scale(panDirMirror, mirrorVec, 2 * vec3.dot(panDir, mirrorVec));
+      vec3.subtract(panDirMirror, panDirMirror, panDir);
+      vec3.normalize(panDirMirror, panDirMirror);
+
+      return panDirMirror;
+    };
 
     // Flipping horizontal mean that the camera should move
     // to the other side of the image but looking at the
     // same direction and same focal point
     if (flipH) {
+      // we need to apply the pan value to the new focal point but in the direction
+      // that is mirrored on the viewUp for the flip horizontal and
+      // viewRight for the flip vertical
+      const newFocalPoint = vec3.create();
+
+      // mirror the pan direction based on the viewUp
+      const panDirMirror = getPanDir(viewUpToSet);
+
+      // move focal point from the resetFocalPoint to the newFocalPoint
+      // based on the panDirMirror and panValue
+      vec3.scaleAndAdd(newFocalPoint, resetFocalPoint, panDirMirror, panValue);
+
+      // move the camera position also the same way as the focal point
+      const newPosition = vec3.create();
+
+      vec3.scaleAndAdd(
+        newPosition,
+        newFocalPoint,
+        viewPlaneNormalToSet,
+        distance
+      );
+
       this.setCamera({
         viewPlaneNormal: viewPlaneNormalToSet as Point3,
-        position: positionToSet as Point3,
-        focalPoint,
+        position: newPosition as Point3,
+        focalPoint: newFocalPoint as Point3,
       });
     }
 
@@ -270,11 +310,27 @@ class Viewport implements IViewport {
     if (flipV) {
       viewUpToSet = vec3.negate(viewUpToSet, viewUp);
 
+      // we need to apply the pan value to the new focal point but in the direction
+      const panDirMirror = getPanDir(viewRight);
+
+      const newFocalPoint = vec3.create();
+
+      vec3.scaleAndAdd(newFocalPoint, resetFocalPoint, panDirMirror, panValue);
+
+      const newPosition = vec3.create();
+
+      vec3.scaleAndAdd(
+        newPosition,
+        newFocalPoint,
+        viewPlaneNormalToSet,
+        distance
+      );
+
       this.setCamera({
-        focalPoint,
+        focalPoint: newFocalPoint as Point3,
         viewPlaneNormal: viewPlaneNormalToSet as Point3,
         viewUp: viewUpToSet as Point3,
-        position: positionToSet as Point3,
+        position: newPosition as Point3,
       });
     }
 
