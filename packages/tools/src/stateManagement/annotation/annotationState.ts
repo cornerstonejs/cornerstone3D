@@ -67,7 +67,10 @@ function getAnnotations(
  * @param element - HTMLDivElement
  * @param annotation - The annotation that is being added to the annotations manager.
  */
-function addAnnotation(element: HTMLDivElement, annotation: Annotation): void {
+function addAnnotation(
+  element: HTMLDivElement,
+  annotation: Annotation
+): string {
   const annotationManager = getViewportSpecificAnnotationManager(element);
 
   if (annotation.annotationUID === undefined) {
@@ -89,6 +92,29 @@ function addAnnotation(element: HTMLDivElement, annotation: Annotation): void {
   };
 
   triggerEvent(eventTarget, eventType, eventDetail);
+
+  return annotation.annotationUID;
+}
+
+/**
+ * Get the number of annotations for a given tool in the specified frame of reference.
+ * If no frame of reference is specified, it will return the number of annotations
+ * for all frames of reference.
+ *
+ * @param toolName - The name of the tool
+ * @param frameOfReferenceUID - The frame of reference UID
+ *
+ * @returns The number of annotations for a given frame of reference and tool name.
+ */
+function getNumberOfAnnotations(
+  toolName: string,
+  frameOfReferenceUID?: string
+): number {
+  const annotationManager = getDefaultAnnotationManager();
+  return annotationManager.getNumberOfAnnotations(
+    toolName,
+    frameOfReferenceUID
+  );
 }
 
 /**
@@ -157,6 +183,7 @@ function removeAllAnnotations(element?: HTMLDivElement): void {
 
 export {
   getAnnotations,
+  getNumberOfAnnotations,
   addAnnotation,
   getAnnotation,
   removeAnnotation,

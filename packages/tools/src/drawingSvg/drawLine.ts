@@ -11,7 +11,8 @@ export default function drawLine(
   lineUID: string,
   start: Types.Point2,
   end: Types.Point2,
-  options = {}
+  options = {},
+  dataId = ''
 ): void {
   // if length is NaN return
   if (isNaN(start[0]) || isNaN(start[1]) || isNaN(end[0]) || isNaN(end[1])) {
@@ -55,6 +56,10 @@ export default function drawLine(
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const newLine = document.createElementNS(svgns, 'line');
+
+    if (dataId !== '') {
+      newLine.setAttribute('data-id', dataId);
+    }
 
     _setNewAttributesIfValid(attributes, newLine);
 

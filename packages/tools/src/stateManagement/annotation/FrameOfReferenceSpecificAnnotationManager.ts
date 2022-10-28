@@ -151,6 +151,59 @@ export default class FrameOfReferenceSpecificAnnotationManager {
     return toolSpecificAnnotations[index];
   };
 
+  getNumberOfAnnotationsInFrameOfReference = (
+    toolName: string,
+    frameOfReferenceUID: string
+  ): number => {
+    const annotations =
+      this.getFrameOfReferenceAnnotations(frameOfReferenceUID);
+
+    if (!annotations) {
+      return 0;
+    }
+
+    const toolSpecificAnnotations = annotations[toolName];
+
+    if (!toolSpecificAnnotations) {
+      return 0;
+    }
+
+    return toolSpecificAnnotations.length;
+  };
+
+  /**
+   * A function that returns the number of annotations for a given tool in the
+   * specific frame of reference. IF no frame of reference is provided, it will
+   * return the number of annotations for the tool in all frames of references
+   *
+   * @param toolName - The name of the tool to retrieve data for.
+   * @param frameOfReferenceUID - The UID of the FrameOfReference to retrieve data for.
+   *
+   * @returns The number of annotations for a given tool in the state
+   */
+  getNumberOfAnnotations = (
+    toolName: string,
+    frameOfReferenceUID?: string
+  ): number => {
+    if (frameOfReferenceUID) {
+      return this.getNumberOfAnnotationsInFrameOfReference(
+        toolName,
+        frameOfReferenceUID
+      );
+    }
+
+    const framesOfReference = this.getFramesOfReference();
+
+    return framesOfReference.reduce((acc, frameOfReferenceUID) => {
+      const numberOfAnnotations = this.getNumberOfAnnotationsInFrameOfReference(
+        toolName,
+        frameOfReferenceUID
+      );
+
+      return acc + numberOfAnnotations;
+    }, 0);
+  };
+
   /**
    * Adds an instance of `Annotation` to the `annotations`.
    *
