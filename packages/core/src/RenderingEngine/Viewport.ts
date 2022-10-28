@@ -1132,30 +1132,27 @@ class Viewport implements IViewport {
       const oldFocalPoint = oldCamera.focalPoint;
       const oldViewPlaneNormal = oldCamera.viewPlaneNormal;
 
-      const vectorFromOldFocalPointToCenteredFocalPoint = <Point3>[
-        centeredFocalPoint[0] - oldFocalPoint[0],
-        centeredFocalPoint[1] - oldFocalPoint[1],
-        centeredFocalPoint[2] - oldFocalPoint[2],
-      ];
+      const vectorFromOldFocalPointToCenteredFocalPoint = vec3.create();
+      vec3.subtract(
+        vectorFromOldFocalPointToCenteredFocalPoint,
+        centeredFocalPoint,
+        oldFocalPoint
+      );
 
-      const distanceAlongViewPlaneNormal = vtkMath.dot(
+      const distanceFromOldFocalPointToCenteredFocalPoint = vec3.dot(
         vectorFromOldFocalPointToCenteredFocalPoint,
         oldViewPlaneNormal
       );
 
-      const scaledViewPlaneNormal = <Point3>[
-        oldViewPlaneNormal[0] * distanceAlongViewPlaneNormal,
-        oldViewPlaneNormal[1] * distanceAlongViewPlaneNormal,
-        oldViewPlaneNormal[2] * distanceAlongViewPlaneNormal,
-      ];
+      const newFocalPoint = vec3.create();
+      vec3.scaleAndAdd(
+        newFocalPoint,
+        centeredFocalPoint,
+        oldViewPlaneNormal,
+        -1 * distanceFromOldFocalPointToCenteredFocalPoint
+      );
 
-      const newFocalPoint = <Point3>[
-        centeredFocalPoint[0] - scaledViewPlaneNormal[0],
-        centeredFocalPoint[1] - scaledViewPlaneNormal[1],
-        centeredFocalPoint[2] - scaledViewPlaneNormal[2],
-      ];
-
-      return newFocalPoint;
+      return [newFocalPoint[0], newFocalPoint[1], newFocalPoint[2]];
     }
 
     if (!resetPan && !resetToCenter) {
