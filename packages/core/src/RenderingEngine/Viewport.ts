@@ -636,10 +636,6 @@ class Viewport implements IViewport {
       { resetPan, resetToCenter }
     );
 
-    if (this.type === 'stack') {
-      console.debug(focalPointToSet);
-    }
-
     const positionToSet: Point3 = [
       focalPointToSet[0] + distance * viewPlaneNormal[0],
       focalPointToSet[1] + distance * viewPlaneNormal[1],
@@ -1117,11 +1113,17 @@ class Viewport implements IViewport {
     previousCamera: ICamera,
     { resetPan, resetToCenter }: { resetPan: boolean; resetToCenter: boolean }
   ): Point3 {
-    if (resetToCenter) {
+    if (resetToCenter && resetPan) {
       return centeredFocalPoint;
     }
 
-    if (resetPan) {
+    if (resetToCenter && !resetPan) {
+      return hasNaNValues(previousCamera.focalPoint)
+        ? centeredFocalPoint
+        : previousCamera.focalPoint;
+    }
+
+    if (!resetToCenter && resetPan) {
       // this is an interesting case that means the reset camera should not
       // change the slice (default behavior is to go to the center of the
       // image), and rather just reset the pan on the slice that is currently
@@ -1156,20 +1158,13 @@ class Viewport implements IViewport {
       return newFocalPoint;
     }
 
-    if (!resetPan) {
+    if (!resetPan && !resetToCenter) {
       // this means the reset camera should not change the slice and should not
       // touch the pan either.
       return hasNaNValues(previousCamera.focalPoint)
         ? centeredFocalPoint
         : previousCamera.focalPoint;
     }
-
-    // the last option is a very uncommon use case to reset the camera to
-    // the center of the image, but keep the pan? This is not supported
-    // yet
-    return hasNaNValues(previousCamera.focalPoint)
-      ? centeredFocalPoint
-      : previousCamera.focalPoint;
   }
 
   /**
