@@ -99,12 +99,6 @@ class WindowLevelTool extends BaseTool {
       });
     }
 
-    const eventDetail: Types.EventTypes.VoiModifiedEventDetail = {
-      volumeId,
-      viewportId,
-      range: newRange,
-    };
-
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
         voiRange: newRange,
@@ -113,11 +107,9 @@ class WindowLevelTool extends BaseTool {
       viewport.render();
       return;
     }
-
-    // Only trigger event for volume since the stack event is triggered inside
     // the stackViewport, Todo: we need the setProperties API on the volume viewport
-    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail);
     rgbTransferFunction.setRange(newRange.lower, newRange.upper);
+    viewport.triggerVOIModified(newRange, volumeId);
 
     viewportsContainingVolumeUID.forEach((vp) => {
       vp.render();

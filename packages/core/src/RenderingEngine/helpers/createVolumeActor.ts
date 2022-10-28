@@ -24,10 +24,7 @@ interface createVolumeActorInterface {
  * @returns A promise that resolves to a VolumeActor.
  */
 async function createVolumeActor(
-  props: createVolumeActorInterface,
-  element: HTMLDivElement,
-  viewportId: string,
-  suppressEvents = false
+  props: createVolumeActorInterface
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -62,34 +59,7 @@ async function createVolumeActor(
     callback({ volumeActor, volumeId });
   }
 
-  if (!suppressEvents) {
-    triggerVOIModified(element, viewportId, volumeActor, volumeId);
-  }
-
   return volumeActor;
-}
-
-function triggerVOIModified(
-  element: HTMLDivElement,
-  viewportId: string,
-  volumeActor: VolumeActor,
-  volumeId: string
-) {
-  const voiRange = volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .getRange();
-
-  const voiModifiedEventDetail: VoiModifiedEventDetail = {
-    viewportId,
-    range: {
-      lower: voiRange[0],
-      upper: voiRange[1],
-    },
-    volumeId,
-  };
-
-  triggerEvent(element, Events.VOI_MODIFIED, voiModifiedEventDetail);
 }
 
 export default createVolumeActor;
