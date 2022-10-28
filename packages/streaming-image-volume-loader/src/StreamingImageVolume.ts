@@ -695,13 +695,13 @@ export default class StreamingImageVolume extends ImageVolume {
 
       // 2. Convert each imageId to a cornerstone Image object which is
       // resolved inside the promise of imageLoadObject
-      const imageLodObject = this.convertToCornerstoneImage(
+      const imageLoadObject = this.convertToCornerstoneImage(
         imageId,
         imageIdIndex
       );
 
       // 3. Caching the image
-      cache.putImageLoadObject(imageId, imageLodObject).catch((err) => {
+      cache.putImageLoadObject(imageId, imageLoadObject).catch((err) => {
         console.error(err);
       });
 
