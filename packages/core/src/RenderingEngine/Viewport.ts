@@ -9,7 +9,7 @@ import _cloneDeep from 'lodash.clonedeep';
 import Events from '../enums/Events';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import { triggerEvent, planar, isImageActor } from '../utilities';
+import { triggerEvent, planar, isImageActor, hasNaNValues } from '../utilities';
 import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
@@ -545,6 +545,7 @@ class Viewport implements IViewport {
   protected resetCamera(
     resetPan = true,
     resetZoom = true,
+    resetToCenter = true,
     storeAsInitialCamera = true
   ): boolean {
     const renderer = this.getRenderer();
@@ -629,7 +630,15 @@ class Viewport implements IViewport {
         ? [-viewUp[2], viewUp[0], viewUp[1]]
         : viewUp;
 
-    const focalPointToSet = resetPan ? focalPoint : previousCamera.focalPoint;
+    const focalPointToSet = this._getFocalPointForResetCamera(
+      focalPoint,
+      previousCamera,
+      { resetPan, resetToCenter }
+    );
+
+    if (this.type === 'stack') {
+      console.debug(focalPointToSet);
+    }
 
     const positionToSet: Point3 = [
       focalPointToSet[0] + distance * viewPlaneNormal[0],
@@ -1101,6 +1110,66 @@ class Viewport implements IViewport {
       [bounds[1], bounds[3], bounds[4]],
       [bounds[1], bounds[3], bounds[5]],
     ];
+  }
+
+  _getFocalPointForResetCamera(
+    centeredFocalPoint: Point3,
+    previousCamera: ICamera,
+    { resetPan, resetToCenter }: { resetPan: boolean; resetToCenter: boolean }
+  ): Point3 {
+    if (resetToCenter) {
+      return centeredFocalPoint;
+    }
+
+    if (resetPan) {
+      // this is an interesting case that means the reset camera should not
+      // change the slice (default behavior is to go to the center of the
+      // image), and rather just reset the pan on the slice that is currently
+      // being viewed
+      const oldCamera = previousCamera;
+      const oldFocalPoint = oldCamera.focalPoint;
+      const oldViewPlaneNormal = oldCamera.viewPlaneNormal;
+
+      const vectorFromOldFocalPointToCenteredFocalPoint = <Point3>[
+        centeredFocalPoint[0] - oldFocalPoint[0],
+        centeredFocalPoint[1] - oldFocalPoint[1],
+        centeredFocalPoint[2] - oldFocalPoint[2],
+      ];
+
+      const distanceAlongViewPlaneNormal = vtkMath.dot(
+        vectorFromOldFocalPointToCenteredFocalPoint,
+        oldViewPlaneNormal
+      );
+
+      const scaledViewPlaneNormal = <Point3>[
+        oldViewPlaneNormal[0] * distanceAlongViewPlaneNormal,
+        oldViewPlaneNormal[1] * distanceAlongViewPlaneNormal,
+        oldViewPlaneNormal[2] * distanceAlongViewPlaneNormal,
+      ];
+
+      const newFocalPoint = <Point3>[
+        centeredFocalPoint[0] - scaledViewPlaneNormal[0],
+        centeredFocalPoint[1] - scaledViewPlaneNormal[1],
+        centeredFocalPoint[2] - scaledViewPlaneNormal[2],
+      ];
+
+      return newFocalPoint;
+    }
+
+    if (!resetPan) {
+      // this means the reset camera should not change the slice and should not
+      // touch the pan either.
+      return hasNaNValues(previousCamera.focalPoint)
+        ? centeredFocalPoint
+        : previousCamera.focalPoint;
+    }
+
+    // the last option is a very uncommon use case to reset the camera to
+    // the center of the image, but keep the pan? This is not supported
+    // yet
+    return hasNaNValues(previousCamera.focalPoint)
+      ? centeredFocalPoint
+      : previousCamera.focalPoint;
   }
 
   /**

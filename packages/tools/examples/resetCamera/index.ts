@@ -227,7 +227,8 @@ async function run() {
   const volumeViewport = <Types.IVolumeViewport>(
     renderingEngine.getViewport(viewportIdVolume)
   );
-  window.viewport = volumeViewport;
+  window.stackViewport = stackViewport;
+  window.volumeViewport = volumeViewport;
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

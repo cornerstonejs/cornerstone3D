@@ -566,8 +566,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  public resetCamera(resetPan = true, resetZoom = true): boolean {
-    super.resetCamera(resetPan, resetZoom);
+  public resetCamera(
+    resetPan = true,
+    resetZoom = true,
+    resetToCenter = true
+  ): boolean {
+    super.resetCamera(resetPan, resetZoom, resetToCenter);
     const activeCamera = this.getVtkActiveCamera();
     // Set large numbers to ensure everything is always rendered
     if (activeCamera.getParallelProjection()) {
