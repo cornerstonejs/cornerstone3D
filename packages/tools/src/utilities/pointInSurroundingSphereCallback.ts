@@ -152,10 +152,9 @@ function _computeBoundsIJKWithCamera(
     camera.viewPlaneNormal[1],
     camera.viewPlaneNormal[2]
   );
-  let viewRight = vec3.create();
+  const viewRight = vec3.create();
 
   vec3.cross(viewRight, viewUp, viewPlaneNormal);
-  viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
 
   // we need to find the bounding box of the sphere in the image, e.g., the
   // topLeftWorld and bottomRightWorld points of the bounding box.

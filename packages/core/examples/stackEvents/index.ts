@@ -189,11 +189,9 @@ addButtonToToolbar({
     const newParallelScale = parallelScale * randomModifier;
 
     // Move the camera in plane by some random number
-    let viewRight = vec3.create(); // Get the X direction of the viewport
+    const viewRight = vec3.create(); // Get the X direction of the viewport
 
     vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
-
-    viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
 
     const randomPanX = 50 * (2.0 * Math.random() - 1);
     const randomPanY = 50 * (2.0 * Math.random() - 1);

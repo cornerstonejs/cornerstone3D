@@ -1038,11 +1038,9 @@ class Viewport implements IViewport {
     const viewUpCorners = this._getCorners(bounds);
     const viewRightCorners = this._getCorners(bounds);
 
-    let viewRight = vec3.create();
+    const viewRight = vec3.create();
 
     vec3.cross(viewRight, viewUp, viewPlaneNormal);
-
-    viewRight = [-viewRight[0], -viewRight[1], -viewRight[2]];
 
     let transform = vtkMatrixBuilder
       .buildFromDegree()
@@ -1067,7 +1065,10 @@ class Viewport implements IViewport {
     transform = vtkMatrixBuilder
       .buildFromDegree()
       .identity()
-      .rotateFromDirections(viewRight, [1, 0, 0]);
+      .rotateFromDirections(
+        [viewRight[0], viewRight[1], viewRight[2]],
+        [1, 0, 0]
+      );
 
     viewRightCorners.forEach((pt) => transform.apply(pt));
 
