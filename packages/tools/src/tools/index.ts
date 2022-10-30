@@ -19,6 +19,7 @@ import EllipticalROITool from './annotation/EllipticalROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
+import CursorCrosshairSyncTool from './CursorCrosshairSync';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -55,6 +56,7 @@ export {
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   AngleTool,
+  CursorCrosshairSyncTool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools

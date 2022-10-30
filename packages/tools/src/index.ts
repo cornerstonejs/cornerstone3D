@@ -48,6 +48,7 @@ import {
   BrushTool,
   AngleTool,
   MagnifyTool,
+  CursorCrosshairSyncTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -83,6 +84,7 @@ export {
   ArrowAnnotateTool,
   AngleTool,
   MagnifyTool,
+  CursorCrosshairSyncTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
