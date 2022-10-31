@@ -297,7 +297,7 @@ class CursorCrosshairSyncTool extends AnnotationTool {
   }
 
   /**
-   * Simply draws a circle at the current mouse position
+   * Simply draws a circle at the current mouse position if element is is not the one being hovered over
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.

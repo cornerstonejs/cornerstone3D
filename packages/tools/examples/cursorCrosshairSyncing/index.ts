@@ -8,6 +8,8 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addDropdownToToolbar,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -34,7 +36,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Cursor corsshair syncing example',
-  'This example shows how to sync the crosshair cursors between two viewports.'
+  'This example shows how to sync the crosshair cursors between 3 viewports (2 Stack viewports and 1 Volume viewport with slightly different orientation.'
 );
 
 const size = '500px';
@@ -61,11 +63,45 @@ viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
+const toolGroupId = 'STACK_TOOL_GROUP_ID';
+
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Left Click to draw length measurements on any viewport.\n Use the mouse wheel to scroll through the stack.';
+  'Simply move the mouse over the viewports to see the correlating positions in the other viewports.';
 
 content.append(instructions);
+
+addDropdownToToolbar({
+  options: {
+    values: ['positionSync on', 'positionSync off'],
+    defaultValue: 'positionSync on',
+  },
+  onSelectedValueChange: (newPositionSync) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    if (toolGroup) {
+      toolGroup.setToolConfiguration(CursorCrosshairSyncTool.toolName, {
+        positionSync: newPositionSync === 'positionSync on',
+      });
+    }
+  },
+});
+
+addSliderToToolbar({
+  title: ' displayThreshold: 5 ',
+  range: [0, 100],
+  defaultValue: 5,
+  updateLabelOnChange(value, label) {
+    label.innerText = ` displayThreshold: ${value} `;
+  },
+  onSelectedValueChange: (newDisplayThreshold) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    if (toolGroup) {
+      toolGroup.setToolConfiguration(CursorCrosshairSyncTool.toolName, {
+        displayThreshold: newDisplayThreshold,
+      });
+    }
+  },
+});
 // ============================= //
 
 /**
@@ -74,8 +110,6 @@ content.append(instructions);
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(CursorCrosshairSyncTool);
