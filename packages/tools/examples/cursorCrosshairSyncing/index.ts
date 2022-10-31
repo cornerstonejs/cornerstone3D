@@ -47,13 +47,17 @@ viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
+const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
 element2.style.width = size;
 element2.style.height = size;
+element3.style.height = size;
+element3.style.width = size;
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
@@ -84,6 +88,10 @@ async function run() {
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(CursorCrosshairSyncTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+
+  toolGroup?.setToolConfiguration(CursorCrosshairSyncTool.toolName, {
+    positionSync: true,
+  });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -125,7 +133,7 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportIds = ['CT_AXIAL_VOLUME', 'CT_AXIAL_STACK'];
+  const viewportIds = ['CT_AXIAL_VOLUME', 'CT_AXIAL_STACK', 'CT_AXIAL_STACK2'];
 
   const viewportInputArray = [
     {
@@ -141,6 +149,14 @@ async function run() {
       viewportId: viewportIds[1],
       type: ViewportType.STACK,
       element: element2,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+    {
+      viewportId: viewportIds[2],
+      type: ViewportType.STACK,
+      element: element3,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
@@ -166,14 +182,24 @@ async function run() {
     renderingEngine.getViewport(viewportIds[1])
   );
 
+  const stackViewport2 = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportIds[2])
+  );
+
   // Set the stack on the stackViewport
   stackViewport.setStack(smallStackImageIds);
+  stackViewport2.setStack(smallStackImageIds);
 
   // Set the volume to load
   volume.load();
 
   // Set the volume on the viewport
-  volumeViewport.setVolumes([{ volumeId }]);
+  volumeViewport.setVolumes([{ volumeId }]).then(() => {
+    volumeViewport.setCamera({
+      viewPlaneNormal: [0, 0.1, -1],
+      viewUp: [0, 1, 0],
+    });
+  });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
