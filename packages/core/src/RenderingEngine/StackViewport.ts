@@ -1875,8 +1875,10 @@ class StackViewport extends Viewport implements IStackViewport {
     // without this
     this.getVtkActiveCamera().roll(this.rotationCache);
 
-    // reset other properties
-    return super.resetCamera(resetPan, resetZoom);
+    // For stack Viewport we since we have only one slice
+    // it should be enough to reset the camera to the center of the image
+    const resetToCenter = true;
+    return super.resetCamera(resetPan, resetZoom, resetToCenter);
   }
 
   /**

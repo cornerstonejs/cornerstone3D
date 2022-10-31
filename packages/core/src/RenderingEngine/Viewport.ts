@@ -10,6 +10,7 @@ import Events from '../enums/Events';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
 import { triggerEvent, planar, isImageActor } from '../utilities';
+import hasNaNValues from '../utilities/hasNaNValues';
 import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
@@ -545,6 +546,7 @@ class Viewport implements IViewport {
   protected resetCamera(
     resetPan = true,
     resetZoom = true,
+    resetToCenter = true,
     storeAsInitialCamera = true
   ): boolean {
     const renderer = this.getRenderer();
@@ -573,7 +575,6 @@ class Viewport implements IViewport {
     // Reset the perspective zoom factors, otherwise subsequent zooms will cause
     // the view angle to become very small and cause bad depth sorting.
     // todo: parallel projection only
-    activeCamera.setViewAngle(90.0);
 
     focalPoint[0] = (bounds[0] + bounds[1]) / 2.0;
     focalPoint[1] = (bounds[2] + bounds[3]) / 2.0;
@@ -624,53 +625,53 @@ class Viewport implements IViewport {
     radius = Math.sqrt(radius) * 0.5;
 
     const distance = 1.1 * radius;
-    // const distance = radius / Math.sin(angle * 0.5)
 
-    // check view-up vector against view plane normal
-    if (Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999) {
-      activeCamera.setViewUp(-viewUp[2], viewUp[0], viewUp[1]);
-    }
+    const viewUpToSet: Point3 =
+      Math.abs(vtkMath.dot(viewUp, viewPlaneNormal)) > 0.999
+        ? [-viewUp[2], viewUp[0], viewUp[1]]
+        : viewUp;
 
-    const focalPointToSet = resetPan ? focalPoint : previousCamera.focalPoint;
-
-    activeCamera.setFocalPoint(
-      focalPointToSet[0],
-      focalPointToSet[1],
-      focalPointToSet[2]
+    const focalPointToSet = this._getFocalPointForResetCamera(
+      focalPoint,
+      previousCamera,
+      { resetPan, resetToCenter }
     );
-    activeCamera.setPosition(
+
+    const positionToSet: Point3 = [
       focalPointToSet[0] + distance * viewPlaneNormal[0],
       focalPointToSet[1] + distance * viewPlaneNormal[1],
-      focalPointToSet[2] + distance * viewPlaneNormal[2]
-    );
+      focalPointToSet[2] + distance * viewPlaneNormal[2],
+    ];
 
     renderer.resetCameraClippingRange(bounds);
 
-    if (resetZoom) {
-      activeCamera.setParallelScale(parallelScale);
-    }
+    const clippingRangeToUse: Point2 = [
+      -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+    ];
 
-    // update reasonable world to physical values
     activeCamera.setPhysicalScale(radius);
-
-    // TODO: The PhysicalXXX stuff are used for VR only, do we need this?
     activeCamera.setPhysicalTranslation(
       -focalPointToSet[0],
       -focalPointToSet[1],
       -focalPointToSet[2]
     );
 
-    activeCamera.setClippingRange(
-      -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
-      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-    );
+    this.setCamera({
+      parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,
+      focalPoint: focalPointToSet,
+      position: positionToSet,
+      viewAngle: 90,
+      viewUp: viewUpToSet,
+      clippingRange: clippingRangeToUse,
+      flipHorizontal: this.flipHorizontal ? false : undefined,
+      flipVertical: this.flipVertical ? false : undefined,
+    });
 
-    if (this.flipHorizontal || this.flipVertical) {
-      this.flip({ flipHorizontal: false, flipVertical: false });
-    }
+    const modifiedCamera = _cloneDeep(this.getCamera());
 
     if (storeAsInitialCamera) {
-      this.setInitialCamera(this.getCamera());
+      this.setInitialCamera(modifiedCamera);
     }
 
     const RESET_CAMERA_EVENT = {
@@ -682,10 +683,7 @@ class Viewport implements IViewport {
     // and do the right thing.
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
-    this.triggerCameraModifiedEventIfNecessary(
-      previousCamera,
-      this.getCamera()
-    );
+    this.triggerCameraModifiedEventIfNecessary(previousCamera, modifiedCamera);
 
     return true;
   }
@@ -891,6 +889,7 @@ class Viewport implements IViewport {
       viewAngle,
       flipHorizontal,
       flipVertical,
+      clippingRange,
     } = cameraInterface;
 
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
@@ -923,6 +922,10 @@ class Viewport implements IViewport {
 
     if (viewAngle !== undefined) {
       vtkCamera.setViewAngle(viewAngle);
+    }
+
+    if (clippingRange !== undefined) {
+      vtkCamera.setClippingRange(clippingRange);
     }
 
     // update clippingPlanes if volume viewports
@@ -1099,6 +1102,62 @@ class Viewport implements IViewport {
       [bounds[1], bounds[3], bounds[4]],
       [bounds[1], bounds[3], bounds[5]],
     ];
+  }
+
+  _getFocalPointForResetCamera(
+    centeredFocalPoint: Point3,
+    previousCamera: ICamera,
+    { resetPan, resetToCenter }: { resetPan: boolean; resetToCenter: boolean }
+  ): Point3 {
+    if (resetToCenter && resetPan) {
+      return centeredFocalPoint;
+    }
+
+    if (resetToCenter && !resetPan) {
+      return hasNaNValues(previousCamera.focalPoint)
+        ? centeredFocalPoint
+        : previousCamera.focalPoint;
+    }
+
+    if (!resetToCenter && resetPan) {
+      // this is an interesting case that means the reset camera should not
+      // change the slice (default behavior is to go to the center of the
+      // image), and rather just reset the pan on the slice that is currently
+      // being viewed
+      const oldCamera = previousCamera;
+      const oldFocalPoint = oldCamera.focalPoint;
+      const oldViewPlaneNormal = oldCamera.viewPlaneNormal;
+
+      const vectorFromOldFocalPointToCenteredFocalPoint = vec3.create();
+      vec3.subtract(
+        vectorFromOldFocalPointToCenteredFocalPoint,
+        centeredFocalPoint,
+        oldFocalPoint
+      );
+
+      const distanceFromOldFocalPointToCenteredFocalPoint = vec3.dot(
+        vectorFromOldFocalPointToCenteredFocalPoint,
+        oldViewPlaneNormal
+      );
+
+      const newFocalPoint = vec3.create();
+      vec3.scaleAndAdd(
+        newFocalPoint,
+        centeredFocalPoint,
+        oldViewPlaneNormal,
+        -1 * distanceFromOldFocalPointToCenteredFocalPoint
+      );
+
+      return [newFocalPoint[0], newFocalPoint[1], newFocalPoint[2]];
+    }
+
+    if (!resetPan && !resetToCenter) {
+      // this means the reset camera should not change the slice and should not
+      // touch the pan either.
+      return hasNaNValues(previousCamera.focalPoint)
+        ? centeredFocalPoint
+        : previousCamera.focalPoint;
+    }
   }
 
   /**

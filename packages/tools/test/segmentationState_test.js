@@ -235,12 +235,10 @@ describe('Segmentation State -- ', () => {
         );
       });
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_REPRESENTATION_MODIFIED,
-        (evt) => {
-          done();
-        }
-      );
+      // wait for segmentation rendered event
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
+        done();
+      });
 
       this.segToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
