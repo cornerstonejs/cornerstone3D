@@ -326,6 +326,7 @@ class CursorCrosshairSyncTool extends AnnotationTool {
       return renderStatus;
     }
 
+    //the viewport change from updateStackPosition might not be applied yet, so sometimes the annotation might not be immediately visible
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
