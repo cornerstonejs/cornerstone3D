@@ -508,8 +508,6 @@ interface ICamera {
     focalPoint?: Point3;
     parallelProjection?: boolean;
     parallelScale?: number;
-    physicalScale?: number;
-    physicalTranslation?: Point3;
     position?: Point3;
     scale?: number;
     viewAngle?: number;

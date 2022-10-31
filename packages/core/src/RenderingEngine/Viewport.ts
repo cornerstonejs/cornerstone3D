@@ -9,7 +9,8 @@ import _cloneDeep from 'lodash.clonedeep';
 import Events from '../enums/Events';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import { triggerEvent, planar, isImageActor, hasNaNValues } from '../utilities';
+import { triggerEvent, planar, isImageActor } from '../utilities';
+import hasNaNValues from '../utilities/hasNaNValues';
 import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
@@ -649,14 +650,19 @@ class Viewport implements IViewport {
       RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
     ];
 
+    activeCamera.setPhysicalScale(radius);
+    activeCamera.setPhysicalTranslation(
+      -focalPointToSet[0],
+      -focalPointToSet[1],
+      -focalPointToSet[2]
+    );
+
     this.setCamera({
       parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,
       focalPoint: focalPointToSet,
       position: positionToSet,
       viewAngle: 90,
       viewUp: viewUpToSet,
-      physicalScale: radius,
-      physicalTranslation: focalPointToSet.map((v) => -v) as Point3,
       clippingRange: clippingRangeToUse,
       flipHorizontal: this.flipHorizontal ? false : undefined,
       flipVertical: this.flipVertical ? false : undefined,
@@ -883,8 +889,6 @@ class Viewport implements IViewport {
       viewAngle,
       flipHorizontal,
       flipVertical,
-      physicalScale,
-      physicalTranslation,
       clippingRange,
     } = cameraInterface;
 
@@ -918,15 +922,6 @@ class Viewport implements IViewport {
 
     if (viewAngle !== undefined) {
       vtkCamera.setViewAngle(viewAngle);
-    }
-
-    if (physicalScale !== undefined) {
-      vtkCamera.setPhysicalScale(physicalScale);
-    }
-
-    if (physicalTranslation !== undefined) {
-      // TODO: The PhysicalXXX stuff are used for VR only, do we need this?
-      vtkCamera.setPhysicalTranslation(...physicalTranslation);
     }
 
     if (clippingRange !== undefined) {

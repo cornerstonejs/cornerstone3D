@@ -29,10 +29,6 @@ interface ICamera {
   flipHorizontal?: boolean;
   /** flip Vertical */
   flipVertical?: boolean;
-  /** physical scale */
-  physicalScale?: number;
-  /** physical translation */
-  physicalTranslation?: Point3;
   /** clipping range */
   clippingRange?: Point2;
 }

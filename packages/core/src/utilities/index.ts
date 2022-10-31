@@ -27,7 +27,6 @@ import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
 import isImageActor from './isImageActor';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
-import hasNaNValues from './hasNaNValues';
 
 // name spaces
 import * as planar from './planar';
@@ -65,5 +64,4 @@ export {
   getImageSliceDataForVolumeViewport,
   isImageActor,
   getViewportsWithImageURI,
-  hasNaNValues,
 };

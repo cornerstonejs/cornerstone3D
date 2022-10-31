@@ -595,9 +595,6 @@ function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
-function hasNaNValues(input: number[] | number): boolean;
-
-// @public (undocumented)
 interface ICache {
     // (undocumented)
     getCacheSize: () => number;
@@ -665,10 +662,6 @@ interface ICamera {
     parallelProjection?: boolean;
     // (undocumented)
     parallelScale?: number;
-    // (undocumented)
-    physicalScale?: number;
-    // (undocumented)
-    physicalTranslation?: Point3;
     // (undocumented)
     position?: Point3;
     // (undocumented)
@@ -1946,8 +1939,7 @@ declare namespace utilities {
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
         isImageActor,
-        getViewportsWithImageURI,
-        hasNaNValues
+        getViewportsWithImageURI
     }
 }
 export { utilities }
