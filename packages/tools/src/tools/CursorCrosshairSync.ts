@@ -61,6 +61,32 @@ class CursorCrosshairSyncTool extends AnnotationTool {
     super(toolProps, defaultToolProps);
   }
 
+  /**
+   * Overwritten mouseMoveCallback since we want to keep track of the current mouse position and redraw on mouseMove
+   * @virtual Event handler for Cornerstone MOUSE_MOVE event.
+   *
+   *
+   * @param evt - The normalized mouse event
+   * @param filteredAnnotations - The annotations to check for hover interactions
+   * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
+   */
+  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): boolean => {
+    const { detail } = evt;
+    const { element, currentPoints } = detail;
+    this.setMouseOverElement(element);
+    this._currentMouseWorldPosition = currentPoints.world;
+    //also need canvas postion for recalculating world position on stack change
+    this._currentCanvasPosition = currentPoints.canvas;
+
+    const annotation = this.getActiveAnnotation(element);
+    if (annotation === null) {
+      this.addNewAnnotation(evt);
+      return false;
+    }
+    this.updateAnnotationPosition(element, annotation);
+    return false;
+  };
+
   //image change event seems to fire before image is rendered, so in order to get correct world position we need to wait for next render event
   handleImageChange = (
     evt:
@@ -92,7 +118,7 @@ class CursorCrosshairSyncTool extends AnnotationTool {
     );
   };
 
-  //attach render listener to mouse over element to trigger rerenders when stack changes
+  //when the mouse is moved over a div, attach an event listener to this div to update the world position of the annotation when stack is scrolled
   setMouseOverElement(element: HTMLDivElement | null): void {
     if (element === this._mouseOverElement) return;
     const previousElement = this._mouseOverElement;
@@ -120,32 +146,6 @@ class CursorCrosshairSyncTool extends AnnotationTool {
     }
   }
 
-  /**
-   * Overwritten mouseMoveCallback since we want to keep track of the current mouse position and redraw on mouseMove
-   * @virtual Event handler for Cornerstone MOUSE_MOVE event.
-   *
-   *
-   * @param evt - The normalized mouse event
-   * @param filteredAnnotations - The annotations to check for hover interactions
-   * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
-   */
-  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): boolean => {
-    const { detail } = evt;
-    const { element, currentPoints } = detail;
-    this.setMouseOverElement(element);
-    this._currentMouseWorldPosition = currentPoints.world;
-    //also need canvas postion for recalculating world position on stack change
-    this._currentCanvasPosition = currentPoints.canvas;
-
-    const annotation = this.getActiveAnnotation(element);
-    if (annotation === null) {
-      this.addNewAnnotation(evt);
-      return false;
-    }
-    this.updateAnnotationPosition(element, annotation);
-    return false;
-  };
-
   getActiveAnnotation(element: HTMLDivElement): null | Annotation {
     const annotations = getAnnotations(element, this.getToolName());
     if (annotations === undefined || annotations.length === 0) {
@@ -160,6 +160,28 @@ class CursorCrosshairSyncTool extends AnnotationTool {
       });
     }
     return targetAnnotation;
+  }
+
+  //updates the position of the annotation to match the currently set world position
+  updateAnnotationPosition(
+    element: HTMLDivElement,
+    annotation: Annotation
+  ): void {
+    const worldPos = this._currentMouseWorldPosition;
+    if (!worldPos) return;
+    if (!annotation.data?.handles?.points) return;
+    annotation.data.handles.points = [[...worldPos]];
+    annotation.invalidated = true;
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName(),
+      false
+    );
+    const enabledElement = getEnabledElement(element);
+    if (!enabledElement) return;
+    const { renderingEngine } = enabledElement;
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   }
 
   /**
@@ -253,7 +275,7 @@ class CursorCrosshairSyncTool extends AnnotationTool {
     return;
   };
 
-  // For now always display annotation
+  //display annotation if current viewing plane has a max distance of "displayThreshold" from the annotation
   filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
     annotations: Annotations
@@ -272,28 +294,6 @@ class CursorCrosshairSyncTool extends AnnotationTool {
     const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
     const distance = planeDistanceToPoint(plane, worldPos);
     return distance < this.configuration.displayThreshold ? [annotation] : [];
-  }
-
-  //updates the position of the annotation to match the currently set world position
-  updateAnnotationPosition(
-    element: HTMLDivElement,
-    annotation: Annotation
-  ): void {
-    const worldPos = this._currentMouseWorldPosition;
-    if (!worldPos) return;
-    if (!annotation.data?.handles?.points) return;
-    annotation.data.handles.points = [[...worldPos]];
-    annotation.invalidated = true;
-
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName(),
-      false
-    );
-    const enabledElement = getEnabledElement(element);
-    if (!enabledElement) return;
-    const { renderingEngine } = enabledElement;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   }
 
   /**
@@ -404,7 +404,8 @@ class CursorCrosshairSyncTool extends AnnotationTool {
 
       if (!closestState) return;
       const { index } = closestState;
-      viewport.setImageIdIndex(index);
+      if (index !== viewport.getCurrentImageIdIndex())
+        viewport.setImageIdIndex(index);
     } else if (viewport instanceof VolumeViewport) {
       const { focalPoint, viewPlaneNormal } = viewport.getCamera();
       if (!focalPoint || !viewPlaneNormal) return;
