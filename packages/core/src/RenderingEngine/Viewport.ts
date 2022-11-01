@@ -230,82 +230,111 @@ class Viewport implements IViewport {
       return;
     }
 
-    // In Cornerstone gpu rendering pipeline, the images are positioned
-    // in the space according to their origin, and direction (even StackViewport
-    // with one slice only). In order to flip the images, we need to flip them
-    // around their center axis (either horizontal or vertical). Since the images
-    // are positioned in the space according to their origin and direction, for a
-    // proper scaling (flipping), they should be transformed to the origin and
-    // then flipped. The following code does this transformation.
+    const { viewPlaneNormal, viewUp, focalPoint, position } = this.getCamera();
 
-    const origin = imageData.getOrigin();
-    const direction = imageData.getDirection();
-    const spacing = imageData.getSpacing();
-    const size = imageData.getDimensions();
+    const viewRight = vec3.create();
+    vec3.cross(viewRight, viewPlaneNormal, viewUp);
 
-    const iVector = direction.slice(0, 3);
-    const jVector = direction.slice(3, 6);
-    const kVector = direction.slice(6, 9);
+    let viewUpToSet = vec3.create();
+    vec3.copy(viewUpToSet, viewUp);
 
-    // finding the center of the image
-    const center = vec3.create();
-    vec3.scaleAndAdd(center, origin, iVector, (size[0] / 2.0) * spacing[0]);
-    vec3.scaleAndAdd(center, center, jVector, (size[1] / 2.0) * spacing[1]);
-    vec3.scaleAndAdd(center, center, kVector, (size[2] / 2.0) * spacing[2]);
+    let viewPlaneNormalToSet = vec3.create();
+    viewPlaneNormalToSet = vec3.negate(viewPlaneNormalToSet, viewPlaneNormal);
 
-    let flipHTx, flipVTx;
+    // for both flip horizontal and vertical we need to move the camera to the
+    // other side of the image
+    const distance = vec3.distance(position, focalPoint);
 
-    const transformToOriginTx = vtkMatrixBuilder
-      .buildFromRadian()
-      .identity()
-      .translate(center[0], center[1], center[2])
-      .rotateFromDirections(jVector, [0, 1, 0])
-      .rotateFromDirections(iVector, [1, 0, 0]);
+    // If the pan has been applied, we need to be able
+    // apply the pan back
+    const resetFocalPoint = vec3.create();
+    const dimensions = imageData.getDimensions();
+    const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
-    const transformBackFromOriginTx = vtkMatrixBuilder
-      .buildFromRadian()
-      .identity()
-      .rotateFromDirections([1, 0, 0], iVector)
-      .rotateFromDirections([0, 1, 0], jVector)
-      .translate(-center[0], -center[1], -center[2]);
+    const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
+    imageData.indexToWorld(idx, resetFocalPoint);
 
+    // what is the difference right now between the rested focal point and
+    // the current focal point
+    // Todo: this needs to be retrieved from the function that considers maintainFrame
+    // just now trying it on stack Viewport
+    const panDir = vec3.create();
+    vec3.subtract(panDir, focalPoint, resetFocalPoint);
+
+    const panValue = vec3.length(panDir);
+
+    const getPanDir = (mirrorVec) => {
+      const panDirMirror = vec3.create();
+      vec3.scale(panDirMirror, mirrorVec, 2 * vec3.dot(panDir, mirrorVec));
+      vec3.subtract(panDirMirror, panDirMirror, panDir);
+      vec3.normalize(panDirMirror, panDirMirror);
+
+      return panDirMirror;
+    };
+
+    // Flipping horizontal mean that the camera should move
+    // to the other side of the image but looking at the
+    // same direction and same focal point
     if (flipH) {
-      this.flipHorizontal = flipHorizontal;
-      flipHTx = vtkMatrixBuilder
-        .buildFromRadian()
-        .multiply(transformToOriginTx.getMatrix())
-        .scale(-1, 1, 1)
-        .multiply(transformBackFromOriginTx.getMatrix());
+      // we need to apply the pan value to the new focal point but in the direction
+      // that is mirrored on the viewUp for the flip horizontal and
+      // viewRight for the flip vertical
+      const newFocalPoint = vec3.create();
+
+      // mirror the pan direction based on the viewUp
+      const panDirMirror = getPanDir(viewUpToSet);
+
+      // move focal point from the resetFocalPoint to the newFocalPoint
+      // based on the panDirMirror and panValue
+      vec3.scaleAndAdd(newFocalPoint, resetFocalPoint, panDirMirror, panValue);
+
+      // move the camera position also the same way as the focal point
+      const newPosition = vec3.create();
+
+      vec3.scaleAndAdd(
+        newPosition,
+        newFocalPoint,
+        viewPlaneNormalToSet,
+        distance
+      );
+
+      this.setCamera({
+        viewPlaneNormal: viewPlaneNormalToSet as Point3,
+        position: newPosition as Point3,
+        focalPoint: newFocalPoint as Point3,
+      });
     }
 
+    // Flipping vertical mean that the camera should negate the view up
+    // and also move to the other side of the image but looking at the
     if (flipV) {
-      this.flipVertical = flipVertical;
-      flipVTx = vtkMatrixBuilder
-        .buildFromRadian()
-        .multiply(transformToOriginTx.getMatrix())
-        .scale(1, -1, 1)
-        .multiply(transformBackFromOriginTx.getMatrix());
+      viewUpToSet = vec3.negate(viewUpToSet, viewUp);
+
+      // we need to apply the pan value to the new focal point but in the direction
+      const panDirMirror = getPanDir(viewRight);
+
+      const newFocalPoint = vec3.create();
+
+      vec3.scaleAndAdd(newFocalPoint, resetFocalPoint, panDirMirror, panValue);
+
+      const newPosition = vec3.create();
+
+      vec3.scaleAndAdd(
+        newPosition,
+        newFocalPoint,
+        viewPlaneNormalToSet,
+        distance
+      );
+
+      this.setCamera({
+        focalPoint: newFocalPoint as Point3,
+        viewPlaneNormal: viewPlaneNormalToSet as Point3,
+        viewUp: viewUpToSet as Point3,
+        position: newPosition as Point3,
+      });
     }
 
-    const actorEntries = this.getActors();
-
-    actorEntries.forEach((actorEntry) => {
-      const actor = actorEntry.actor;
-
-      const mat = actor.getUserMatrix();
-
-      if (flipHTx) {
-        mat4.multiply(mat, mat, flipHTx.getMatrix());
-      }
-
-      if (flipVTx) {
-        mat4.multiply(mat, mat, flipVTx.getMatrix());
-      }
-
-      actor.setUserMatrix(mat);
-    });
-
-    this.getRenderingEngine().render();
+    this.render();
   }
 
   private getDefaultImageData(): any {

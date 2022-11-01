@@ -946,7 +946,7 @@ describe('renderingCore -- Stack', () => {
       }
     });
 
-    it('Should be able to flip a stack viewport horizontally and rotate it', function (done) {
+    it('Should be able to flip a stack viewport vertically and rotate it', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
@@ -971,9 +971,9 @@ describe('renderingCore -- Stack', () => {
             rotation: 90,
           });
 
-          vp.setCamera({ flipHorizontal: true });
-
           vp.render();
+
+          vp.setCamera({ flipVertical: true });
         });
       } catch (e) {
         done.fail(e);
