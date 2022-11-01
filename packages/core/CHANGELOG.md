@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.17.0...@cornerstonejs/core@0.18.0) (2022-11-01)
+
+
+### Features
+
+* flip viewports via camera api instead of actor ([#271](https://github.com/cornerstonejs/cornerstone3D-beta/issues/271)) ([7c99f76](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7c99f76fe10f9dac2f2221f9cdc134c90ebbe115))
+
+
+
+
+
 # [0.17.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.12...@cornerstonejs/core@0.17.0) (2022-10-31)
 
 
