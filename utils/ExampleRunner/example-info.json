@@ -153,6 +153,10 @@
       "volumeViewportOrientation": {
         "name": "Volume Viewport Orientation",
         "description": "Demonstrates you can switch between different orientation of a volume viewport"
+      },
+      "cursorCrosshairSyncing": {
+        "name": "Cursor Crosshair Syncing",
+        "description": "Demonstrates how to sync the cursor between multiple viewports"
       }
     },
     "tools-advanced": {
