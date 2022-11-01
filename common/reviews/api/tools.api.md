@@ -4254,6 +4254,9 @@ export class TrackballRotateTool extends BaseTool {
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
+function triggerAnnotationRender(element: HTMLDivElement): void;
+
+// @public (undocumented)
 function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
 
 // @public
@@ -4363,6 +4366,7 @@ declare namespace utilities {
         calibrateImageSpacing,
         segmentation_2 as segmentation,
         triggerAnnotationRenderForViewportIds,
+        triggerAnnotationRender,
         pointInShapeCallback,
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,

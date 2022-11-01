@@ -11,6 +11,7 @@ import isObject from './isObject';
 import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
 
 import pointInShapeCallback from './pointInShapeCallback';
@@ -47,6 +48,7 @@ export {
   calibrateImageSpacing,
   segmentation,
   triggerAnnotationRenderForViewportIds,
+  triggerAnnotationRender,
   pointInShapeCallback,
   pointInSurroundingSphereCallback,
   getAnnotationNearPoint,
