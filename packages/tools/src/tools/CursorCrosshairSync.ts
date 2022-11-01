@@ -14,7 +14,7 @@ import {
   removeAnnotation,
 } from '../stateManagement/annotation/annotationState';
 import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
-import { drawCircle as drawCircleSvg } from '../drawingSvg';
+import { drawCircle as drawCircleSvg, drawLine } from '../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import {
   EventTypes,
@@ -28,7 +28,6 @@ import { CursorCrosshairSync } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { StyleSpecifier } from '../types/AnnotationStyle';
-import { Point3 } from 'core/src/types';
 import { vec3 } from 'gl-matrix';
 
 /**
@@ -370,20 +369,47 @@ class CursorCrosshairSyncTool extends AnnotationTool {
         continue;
       }
 
-      const ellipseUID = '0';
-      drawCircleSvg(
+      const crosshairUIDs = {
+        upper: 'upper',
+        right: 'right',
+        lower: 'lower',
+        left: 'left',
+      };
+      const [x, y] = canvasCoordinates[0];
+      const centerSpace = 7;
+      const lineLength = 7;
+      drawLine(
         svgDrawingHelper,
         annotationUID,
-        ellipseUID,
-        canvasCoordinates[0],
-        5,
-        {
-          color,
-          lineDash,
-          lineWidth,
-        }
+        crosshairUIDs.upper,
+        [x, y - (centerSpace / 2 + lineLength)],
+        [x, y - centerSpace / 2],
+        { color, lineDash, lineWidth }
       );
-
+      drawLine(
+        svgDrawingHelper,
+        annotationUID,
+        crosshairUIDs.lower,
+        [x, y + (centerSpace / 2 + lineLength)],
+        [x, y + centerSpace / 2],
+        { color, lineDash, lineWidth }
+      );
+      drawLine(
+        svgDrawingHelper,
+        annotationUID,
+        crosshairUIDs.right,
+        [x + (centerSpace / 2 + lineLength), y],
+        [x + centerSpace / 2, y],
+        { color, lineDash, lineWidth }
+      );
+      drawLine(
+        svgDrawingHelper,
+        annotationUID,
+        crosshairUIDs.left,
+        [x - (centerSpace / 2 + lineLength), y],
+        [x - centerSpace / 2, y],
+        { color, lineDash, lineWidth }
+      );
       renderStatus = true;
     }
 
@@ -431,7 +457,7 @@ class CursorCrosshairSyncTool extends AnnotationTool {
         vec3.create(),
         vec3.fromValues(...focalPoint),
         scaledPlaneNormal
-      ) as Point3;
+      ) as Types.Point3;
       //TODO: make check if new focal point is within bounds of volume
       const isInBounds = true;
       if (isInBounds) {
@@ -499,10 +525,10 @@ function calculateMinimalDistanceForStackViewport(
 }
 
 function getPlaneMetadata(imageId: string): null | {
-  rowCosines: Point3;
-  columnCosines: Point3;
-  imagePositionPatient: Point3;
-  planeNormal: Point3;
+  rowCosines: Types.Point3;
+  columnCosines: Types.Point3;
+  imagePositionPatient: Types.Point3;
+  planeNormal: Types.Point3;
 } {
   const targetImagePlane = metaData.get('imagePlaneModule', imageId);
 
@@ -528,9 +554,9 @@ function getPlaneMetadata(imageId: string): null | {
     columnCosines,
     imagePositionPatient,
   }: {
-    rowCosines: Point3;
-    columnCosines: Point3;
-    imagePositionPatient: Point3;
+    rowCosines: Types.Point3;
+    columnCosines: Types.Point3;
+    imagePositionPatient: Types.Point3;
   } = targetImagePlane;
 
   const rowVec = vec3.set(vec3.create(), ...rowCosines);
@@ -543,7 +569,7 @@ function getPlaneMetadata(imageId: string): null | {
 // assumes plane in A+B+C=D
 function planeDistanceToPoint(
   plane: Types.Plane,
-  point: Point3,
+  point: Types.Point3,
   signed = false
 ) {
   const [A, B, C, D] = plane;
