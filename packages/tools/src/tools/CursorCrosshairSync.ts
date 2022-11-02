@@ -117,6 +117,11 @@ class CursorCrosshairSyncTool extends AnnotationTool {
     );
   };
 
+  //remove event listener for mouse over element when tool is deactivated
+  onSetToolDisabled(): void {
+    this.setMouseOverElement(null);
+  }
+
   //when the mouse is moved over a div, attach an event listener to this div to update the world position of the annotation when stack is scrolled
   setMouseOverElement(element: HTMLDivElement | null): void {
     if (element === this._mouseOverElement) return;
