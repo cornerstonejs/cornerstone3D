@@ -10,6 +10,7 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -86,6 +87,34 @@ addDropdownToToolbar({
   },
 });
 
+addDropdownToToolbar({
+  options: {
+    values: ['tool enabled', 'tool disabled', 'tool passive', 'tool active'],
+    defaultValue: 'tool active',
+  },
+  onSelectedValueChange: (newState) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    if (toolGroup) {
+      switch (newState) {
+        case 'tool enabled':
+          toolGroup.setToolEnabled(CursorCrosshairSyncTool.toolName);
+          break;
+        case 'tool disabled':
+          toolGroup.setToolDisabled(CursorCrosshairSyncTool.toolName);
+          break;
+        case 'tool passive':
+          toolGroup.setToolPassive(CursorCrosshairSyncTool.toolName);
+          break;
+        case 'tool active':
+          toolGroup.setToolActive(CursorCrosshairSyncTool.toolName);
+          break;
+        default:
+          throw new Error('unhandled selector value');
+      }
+    }
+  },
+});
+
 addSliderToToolbar({
   title: ' displayThreshold: 5 ',
   range: [0, 100],
@@ -129,13 +158,7 @@ async function run() {
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(CursorCrosshairSyncTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
+  toolGroup.setToolActive(CursorCrosshairSyncTool.toolName);
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
