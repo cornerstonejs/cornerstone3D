@@ -39,7 +39,7 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Crosshairs',
-  'Here we demonstrate crosshairs linking three orthogonal views of the same data'
+  'Here we demonstrate crosshairs linking three orthogonal views of the same data. You can select the blend mode that will be used if you modify the slab thickness of the crosshairs by dragging the control points.'
 );
 
 const size = '500px';
@@ -267,6 +267,8 @@ async function run() {
     ],
     [viewportId1, viewportId2, viewportId3]
   );
+
+  window.viewport = renderingEngine.getViewport(viewportId1);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);

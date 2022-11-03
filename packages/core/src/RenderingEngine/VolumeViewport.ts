@@ -26,15 +26,13 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { RENDERING_DEFAULTS } from '../constants';
+import { RENDERING_DEFAULTS, EPSILON } from '../constants';
 import { Events, BlendModes, OrientationAxis } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { imageIdToURI, triggerEvent } from '../utilities';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import deepFreeze from '../utilities/deepFreeze';
-
-const EPSILON = 1e-3;
 
 const ORIENTATION = {
   axial: {

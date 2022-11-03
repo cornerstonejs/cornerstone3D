@@ -1,7 +1,11 @@
 import { vec3 } from 'gl-matrix';
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { CONSTANTS } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { Annotations, Annotation } from '../../types';
+
+const { EPSILON } = CONSTANTS;
+
+const PARALLEL_THRESHOLD = 1 - EPSILON;
 
 /**
  * given some `Annotations`, and the slice defined by the camera's normal
@@ -19,13 +23,28 @@ export default function filterAnnotationsWithinSlice(
   spacingInNormalDirection: number
 ): Annotations {
   const { viewPlaneNormal } = camera;
-  const annotationsWithSameNormal = annotations.filter((td: Annotation) => {
-    const annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
-    return csUtils.isEqual(annotationViewPlaneNormal, viewPlaneNormal);
-  });
+
+  // The reason we use parallel normals instead of actual orientation is that
+  // flipped action is done through camera API, so we can't rely on the
+  // orientation (viewplaneNormal and viewUp) since even the same image and
+  // same slice if flipped will have different orientation, but still rendering
+  // the same slice. Instead, we choose to use the parallel normals to filter
+  // the annotations and later we fine tune it with the annotation within slice
+  // logic down below.
+  const annotationsWithParallelNormals = annotations.filter(
+    (td: Annotation) => {
+      const annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+
+      const isParallel =
+        Math.abs(vec3.dot(viewPlaneNormal, annotationViewPlaneNormal)) >
+        PARALLEL_THRESHOLD;
+
+      return annotationViewPlaneNormal && isParallel;
+    }
+  );
 
   // No in plane annotations.
-  if (!annotationsWithSameNormal.length) {
+  if (!annotationsWithParallelNormals.length) {
     return [];
   }
 
@@ -37,7 +56,7 @@ export default function filterAnnotationsWithinSlice(
 
   const annotationsWithinSlice = [];
 
-  for (const annotation of annotationsWithSameNormal) {
+  for (const annotation of annotationsWithParallelNormals) {
     const data = annotation.data;
     const point = data.handles.points[0];
 
