@@ -189,29 +189,6 @@ class Viewport implements IViewport {
       return;
     }
 
-    let flipH = false;
-    let flipV = false;
-
-    if (
-      typeof flipHorizontal !== 'undefined' &&
-      ((flipHorizontal && !this.flipHorizontal) ||
-        (!flipHorizontal && this.flipHorizontal))
-    ) {
-      flipH = true;
-    }
-
-    if (
-      typeof flipVertical !== 'undefined' &&
-      ((flipVertical && !this.flipVertical) ||
-        (!flipVertical && this.flipVertical))
-    ) {
-      flipV = true;
-    }
-
-    if (!flipH && !flipV) {
-      return;
-    }
-
     const { viewPlaneNormal, viewUp, focalPoint, position } = this.getCamera();
 
     const viewRight = vec3.create();
@@ -583,9 +560,12 @@ class Viewport implements IViewport {
       bounds[5] = bounds[5] - spc[2] / 2;
     }
 
+    // fix the flip right away, since we rely on the viewPlaneNormal and
+    // viewUp for later. Basically, we need to flip back if flipHorizontal
+    // is true or flipVertical is true
     this.setCamera({
-      flipHorizontal: this.flipHorizontal,
-      flipVertical: this.flipVertical,
+      flipHorizontal: false,
+      flipVertical: false,
     });
 
     const activeCamera = this.getVtkActiveCamera();
@@ -910,8 +890,31 @@ class Viewport implements IViewport {
       clippingRange,
     } = cameraInterface;
 
-    if (flipHorizontal !== undefined || flipVertical !== undefined) {
-      this.flip({ flipHorizontal, flipVertical });
+    // Note: Flip camera should be two separate calls since
+    // for flip, we need to flip the viewportNormal, and if
+    // flipHorizontal, and flipVertical are both true, that would
+    // the logic would be incorrect. So instead, we handle flip Horizontal
+    // and flipVertical separately.
+    if (flipHorizontal !== undefined) {
+      // flip if not flipped but requested to flip OR if flipped but requested to
+      // not flip
+      const flipH =
+        (flipHorizontal && !this.flipHorizontal) ||
+        (!flipHorizontal && this.flipHorizontal);
+
+      if (flipH) {
+        this.flip({ flipHorizontal: flipH });
+      }
+    }
+
+    if (flipVertical !== undefined) {
+      const flipV =
+        (flipVertical && !this.flipVertical) ||
+        (!flipVertical && this.flipVertical);
+
+      if (flipV) {
+        this.flip({ flipVertical: flipV });
+      }
     }
 
     if (viewUp !== undefined) {
