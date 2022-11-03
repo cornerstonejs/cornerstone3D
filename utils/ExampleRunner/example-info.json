@@ -166,6 +166,10 @@
         "name": "Volume Viewport Orientation",
         "description": "Demonstrates you can switch between different orientation of a volume viewport"
       },
+      "volumeViewport3D": {
+        "name": "3D Volume Rendering",
+        "description": "Here we demonstrate how to 3D render a volume."
+      },
       "referenceCursors": {
         "name": "Referencing Cursors",
         "description": "Demonstrates how to synchronize the cursor between multiple viewports"
