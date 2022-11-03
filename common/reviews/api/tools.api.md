@@ -1635,6 +1635,9 @@ function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.
 function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, FrameOfReferenceUID: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
+function filterViewportsWithParallelNormals(viewports: any, camera: any, EPS?: number): any;
+
+// @public (undocumented)
 function filterViewportsWithToolEnabled(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
@@ -1837,7 +1840,7 @@ function getToolGroupsWithSegmentation(segmentationId: string): string[];
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 
 // @public (undocumented)
-function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireSameOrientation?: boolean): string[];
+function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
 
 // @public (undocumented)
 function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLDivElement): FrameOfReferenceSpecificAnnotationManager;
@@ -4394,7 +4397,8 @@ declare namespace viewportFilters {
     export {
         filterViewportsWithToolEnabled,
         filterViewportsWithFrameOfReferenceUID,
-        getViewportIdsWithToolToRender
+        getViewportIdsWithToolToRender,
+        filterViewportsWithParallelNormals
     }
 }
 
