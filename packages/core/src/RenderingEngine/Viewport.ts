@@ -174,24 +174,6 @@ class Viewport implements IViewport {
     }
   }
 
-  protected applyFlipTx = (worldPos: Point3): Point3 => {
-    const actorEntry = this.getDefaultActor();
-
-    if (!actorEntry || !actorEntry.actor) {
-      return worldPos;
-    }
-
-    const actor = actorEntry.actor;
-    const mat = actor.getMatrix();
-
-    const newPos = vec3.create();
-    const matT = mat4.create();
-    mat4.transpose(matT, mat);
-    vec3.transformMat4(newPos, worldPos, matT);
-
-    return [newPos[0], newPos[1], newPos[2]];
-  };
-
   /**
    * Flip the viewport on horizontal or vertical axis, this method
    * works with vtk-js backed rendering pipeline.
@@ -275,7 +257,7 @@ class Viewport implements IViewport {
     // Flipping horizontal mean that the camera should move
     // to the other side of the image but looking at the
     // same direction and same focal point
-    if (flipH) {
+    if (flipHorizontal) {
       // we need to apply the pan value to the new focal point but in the direction
       // that is mirrored on the viewUp for the flip horizontal and
       // viewRight for the flip vertical
@@ -303,11 +285,13 @@ class Viewport implements IViewport {
         position: newPosition as Point3,
         focalPoint: newFocalPoint as Point3,
       });
+
+      this.flipHorizontal = !this.flipHorizontal;
     }
 
     // Flipping vertical mean that the camera should negate the view up
     // and also move to the other side of the image but looking at the
-    if (flipV) {
+    if (flipVertical) {
       viewUpToSet = vec3.negate(viewUpToSet, viewUp);
 
       // we need to apply the pan value to the new focal point but in the direction
@@ -332,6 +316,8 @@ class Viewport implements IViewport {
         viewUp: viewUpToSet as Point3,
         position: newPosition as Point3,
       });
+
+      this.flipVertical = !this.flipVertical;
     }
 
     this.render();
@@ -597,6 +583,11 @@ class Viewport implements IViewport {
       bounds[5] = bounds[5] - spc[2] / 2;
     }
 
+    this.setCamera({
+      flipHorizontal: this.flipHorizontal,
+      flipVertical: this.flipVertical,
+    });
+
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const viewUp = <Point3>activeCamera.getViewUp();
@@ -693,8 +684,6 @@ class Viewport implements IViewport {
       viewAngle: 90,
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
-      flipHorizontal: this.flipHorizontal ? false : undefined,
-      flipVertical: this.flipVertical ? false : undefined,
     });
 
     const modifiedCamera = _cloneDeep(this.getCamera());
@@ -886,8 +875,8 @@ class Viewport implements IViewport {
     return {
       viewUp: <Point3>vtkCamera.getViewUp(),
       viewPlaneNormal: <Point3>vtkCamera.getViewPlaneNormal(),
-      position: <Point3>this.applyFlipTx(vtkCamera.getPosition() as Point3),
-      focalPoint: <Point3>this.applyFlipTx(vtkCamera.getFocalPoint() as Point3),
+      position: <Point3>vtkCamera.getPosition(),
+      focalPoint: <Point3>vtkCamera.getFocalPoint(),
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
@@ -938,11 +927,11 @@ class Viewport implements IViewport {
     }
 
     if (position !== undefined) {
-      vtkCamera.setPosition(...this.applyFlipTx(position));
+      vtkCamera.setPosition(...position);
     }
 
     if (focalPoint !== undefined) {
-      vtkCamera.setFocalPoint(...this.applyFlipTx(focalPoint));
+      vtkCamera.setFocalPoint(...focalPoint);
     }
 
     if (parallelScale !== undefined) {

@@ -784,7 +784,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
-     * NOTE: this is necessary because we want the coordinate trasformation
+     * NOTE: this is necessary because we want the coordinate transformation
      * respect to the view plane (plane orthogonal to the camera and passing to
      * the focal point).
      *
@@ -826,7 +826,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1];
 
-    let worldCoord = openGLRenderWindow.displayToWorld(
+    const worldCoord = openGLRenderWindow.displayToWorld(
       displayCoord[0],
       displayCoord[1],
       0,
@@ -835,7 +835,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     vtkCamera.setIsPerformingCoordinateTransformation(false);
 
-    worldCoord = this.applyFlipTx(worldCoord);
     return worldCoord;
   };
 
@@ -881,7 +880,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
     const displayCoord = openGLRenderWindow.worldToDisplay(
-      ...this.applyFlipTx(worldPos),
+      ...worldPos,
       renderer
     );
 
