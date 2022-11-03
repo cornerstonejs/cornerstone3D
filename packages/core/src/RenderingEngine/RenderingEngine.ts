@@ -5,6 +5,7 @@ import { triggerEvent, uuidv4 } from '../utilities';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
+import BaseVolumeViewport from './BaseVolumeViewport';
 import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
@@ -380,8 +381,8 @@ class RenderingEngine implements IRenderingEngine {
 
     const isVolumeViewport = (
       viewport: IStackViewport | IVolumeViewport
-    ): viewport is VolumeViewport => {
-      return viewport instanceof VolumeViewport;
+    ): viewport is BaseVolumeViewport => {
+      return viewport instanceof BaseVolumeViewport;
     };
 
     return viewports.filter(isVolumeViewport);

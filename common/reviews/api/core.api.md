@@ -42,6 +42,55 @@ function addProvider(provider: (type: string, query: any) => any, priority?: num
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
+export abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
+    constructor(props: ViewportInput);
+    // (undocumented)
+    addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
+    // (undocumented)
+    canvasToWorld: (canvasPos: Point2) => Point3;
+    // (undocumented)
+    flip(flipDirection: FlipDirection): void;
+    // (undocumented)
+    getBounds(): number[];
+    // (undocumented)
+    getCurrentImageId: () => string;
+    // (undocumented)
+    getCurrentImageIdIndex: () => number;
+    // (undocumented)
+    getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getImageData(volumeId?: string): IImageData | undefined;
+    // (undocumented)
+    getIntensityFromWorld(point: Point3): number;
+    // (undocumented)
+    getSlabThickness(): number;
+    // (undocumented)
+    hasImageURI: (imageURI: string) => boolean;
+    // (undocumented)
+    hasVolumeId(volumeId: string): boolean;
+    // (undocumented)
+    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
+    // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    // (undocumented)
+    setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
+    // (undocumented)
+    setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
+    // (undocumented)
+    setProperties({ voiRange }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    // (undocumented)
+    setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void;
+    // (undocumented)
+    setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
+    // (undocumented)
+    useCPURendering: boolean;
+    // (undocumented)
+    static get useCustomRenderingPipeline(): boolean;
+    // (undocumented)
+    worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+// @public (undocumented)
 enum BlendModes {
     // (undocumented)
     AVERAGE_INTENSITY_BLEND = 3,
@@ -2231,34 +2280,18 @@ type VolumeNewImageEventDetail = {
 };
 
 // @public (undocumented)
-export class VolumeViewport extends Viewport implements IVolumeViewport {
+export class VolumeViewport extends BaseVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
     addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
-    // (undocumented)
-    canvasToWorld: (canvasPos: Point2) => Point3;
-    // (undocumented)
-    flip(flipDirection: FlipDirection): void;
-    // (undocumented)
-    getBounds(): number[];
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)
     getCurrentImageIdIndex: () => number | undefined;
     // (undocumented)
-    getFrameOfReferenceUID: () => string;
-    // (undocumented)
-    getImageData(volumeId?: string): IImageData | undefined;
-    // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
     getSlabThickness(): number;
-    // (undocumented)
-    hasImageURI: (imageURI: string) => boolean;
-    // (undocumented)
-    hasVolumeId(volumeId: string): boolean;
-    // (undocumented)
-    removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
@@ -2266,17 +2299,9 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
-    // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
-    // (undocumented)
-    useCPURendering: boolean;
-    // (undocumented)
-    static get useCustomRenderingPipeline(): boolean;
-    // (undocumented)
-    worldToCanvas: (worldPos: Point3) => Point2;
 }
 
 // @public (undocumented)
