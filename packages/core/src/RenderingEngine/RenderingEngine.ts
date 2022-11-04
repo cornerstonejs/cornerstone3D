@@ -225,9 +225,8 @@ class RenderingEngine implements IRenderingEngine {
     // This is because we are only resizing the offscreen canvas to deal with the element
     // which was removed, and do not wish to alter the current state of any other currently enabled element
     const immediate = true;
-    const resetPan = false;
-    const resetZoom = false;
-    this.resize(immediate, resetPan, resetZoom);
+    const keepCamera = true;
+    this.resize(immediate, keepCamera);
   }
 
   /**
@@ -304,11 +303,9 @@ class RenderingEngine implements IRenderingEngine {
    * This is left as an app level concern as one might want to debounce the changes, or the like.
    *
    * @param immediate - Whether all of the viewports should be rendered immediately.
-   * @param resetPan - Whether the viewport should reset its pan.
-   * @param resetZoom - Whether the viewport should reset its zoom.
-   * its zoom gets reset upon resize.
+   * @param keepCamera - Whether to keep the camera for other viewports while resizing the offscreen canvas
    */
-  public resize(immediate = true, resetPan = true, resetZoom = true): void {
+  public resize(immediate = true, keepCamera = true): void {
     this._throwIfDestroyed();
     // 1. Get the viewports' canvases
     const viewports = this._getViewportsAsArray();
@@ -324,17 +321,11 @@ class RenderingEngine implements IRenderingEngine {
       }
     });
 
-    this._resizeVTKViewports(
-      vtkDrivenViewports,
-      resetPan,
-      resetZoom,
-      immediate
-    );
+    this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
 
     this._resizeUsingCustomResizeHandler(
       customRenderingViewports,
-      resetPan,
-      resetZoom,
+      keepCamera,
       immediate
     );
   }
@@ -540,8 +531,7 @@ class RenderingEngine implements IRenderingEngine {
 
   private _resizeUsingCustomResizeHandler(
     customRenderingViewports: StackViewport[],
-    resetPan = true,
-    resetZoom = true,
+    keepCamera = true,
     immediate = true
   ) {
     // 1. If viewport has a custom resize method, call it here.
@@ -551,7 +541,12 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     customRenderingViewports.forEach((vp) => {
-      vp.resetCamera(resetPan, resetZoom);
+      const prevCamera = vp.getCamera();
+      vp.resetCamera();
+
+      if (keepCamera) {
+        vp.setCamera(prevCamera);
+      }
     });
 
     // 2. If render is immediate: Render all
@@ -562,8 +557,7 @@ class RenderingEngine implements IRenderingEngine {
 
   private _resizeVTKViewports(
     vtkDrivenViewports: Array<IStackViewport | IVolumeViewport>,
-    resetPan = true,
-    resetZoom = true,
+    keepCamera = true,
     immediate = true
   ) {
     const canvasesDrivenByVtkJs = vtkDrivenViewports.map((vp) => vp.canvas);
@@ -583,7 +577,12 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      vp.resetCamera(resetPan, resetZoom);
+      const prevCamera = vp.getCamera();
+      vp.resetCamera();
+
+      if (keepCamera) {
+        vp.setCamera(prevCamera);
+      }
     });
 
     // 4. If render is immediate: Render all
