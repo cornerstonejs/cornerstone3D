@@ -40,6 +40,7 @@ import {
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   CrosshairsTool,
+  ReferenceLinesTool,
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,
@@ -76,6 +77,7 @@ export {
   // Annotation Tools
   LengthTool,
   CrosshairsTool,
+  ReferenceLinesTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,

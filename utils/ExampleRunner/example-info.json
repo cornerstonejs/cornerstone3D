@@ -172,6 +172,10 @@
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
       },
+      "referenceLines": {
+        "name": "Reference Lines",
+        "description": "Demonstrate reference line tool for rendering viewports location with respect to each other"
+      },
       "petCT": {
         "name": "PET-CT Fusion + MIPLayout",
         "description": "PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold"
