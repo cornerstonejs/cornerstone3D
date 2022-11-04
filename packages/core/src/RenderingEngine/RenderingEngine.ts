@@ -577,6 +577,12 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
+      const canvas = getOrCreateCanvas(vp.element);
+      const rect = canvas.getBoundingClientRect();
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+
       const prevCamera = vp.getCamera();
       vp.resetCamera();
 
