@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.19.0...@cornerstonejs/core@0.19.1) (2022-11-04)
+
+
+### Bug Fixes
+
+* volume scaling should be returned in getImageData ([#282](https://github.com/cornerstonejs/cornerstone3D-beta/issues/282)) ([4df3f71](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4df3f7110de1a12dbeb0fea1260e4bb9e85320fa))
+
+
+
+
+
 # [0.19.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.18.1...@cornerstonejs/core@0.19.0) (2022-11-04)
 
 
