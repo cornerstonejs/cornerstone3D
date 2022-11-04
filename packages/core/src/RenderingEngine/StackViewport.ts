@@ -2175,7 +2175,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // set clipping range back to original to be able
     vtkCamera.setClippingRange(crange[0], crange[1]);
 
-    return worldCoord;
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
   private worldToCanvasGPU = (worldPos: Point3) => {

@@ -542,6 +542,15 @@ class Viewport implements IViewport {
     storeAsInitialCamera = true
   ): boolean {
     const renderer = this.getRenderer();
+
+    // fix the flip right away, since we rely on the viewPlaneNormal and
+    // viewUp for later. Basically, we need to flip back if flipHorizontal
+    // is true or flipVertical is true
+    this.setCamera({
+      flipHorizontal: false,
+      flipVertical: false,
+    });
+
     const previousCamera = _cloneDeep(this.getCamera());
 
     const bounds = renderer.computeVisiblePropBounds();
@@ -559,14 +568,6 @@ class Viewport implements IViewport {
       bounds[4] = bounds[4] + spc[2] / 2;
       bounds[5] = bounds[5] - spc[2] / 2;
     }
-
-    // fix the flip right away, since we rely on the viewPlaneNormal and
-    // viewUp for later. Basically, we need to flip back if flipHorizontal
-    // is true or flipVertical is true
-    this.setCamera({
-      flipHorizontal: false,
-      flipVertical: false,
-    });
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();

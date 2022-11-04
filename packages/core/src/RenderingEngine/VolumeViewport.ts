@@ -833,7 +833,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     vtkCamera.setIsPerformingCoordinateTransformation(false);
 
-    return worldCoord;
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
   /**
