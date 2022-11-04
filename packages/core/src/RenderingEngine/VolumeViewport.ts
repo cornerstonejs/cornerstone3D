@@ -754,7 +754,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       metadata: {
         Modality: volume.metadata.Modality,
       },
-      scaling: undefined,
+      scaling: volume.scaling,
       hasPixelSpacing: true,
     };
   }
