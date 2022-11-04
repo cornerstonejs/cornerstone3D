@@ -268,8 +268,6 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  window.viewport = renderingEngine.getViewport(viewportId1);
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
