@@ -2165,7 +2165,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1];
 
-    let worldCoord = openGLRenderWindow.displayToWorld(
+    const worldCoord = openGLRenderWindow.displayToWorld(
       displayCoord[0],
       displayCoord[1],
       0,
@@ -2175,9 +2175,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // set clipping range back to original to be able
     vtkCamera.setClippingRange(crange[0], crange[1]);
 
-    worldCoord = this.applyFlipTx(worldCoord);
-
-    return worldCoord;
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
   private worldToCanvasGPU = (worldPos: Point3) => {
@@ -2199,7 +2197,7 @@ class StackViewport extends Viewport implements IStackViewport {
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
     const displayCoord = openGLRenderWindow.worldToDisplay(
-      ...this.applyFlipTx(worldPos),
+      ...worldPos,
       renderer
     );
 

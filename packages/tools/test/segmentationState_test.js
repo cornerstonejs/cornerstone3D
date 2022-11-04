@@ -158,10 +158,15 @@ describe('Segmentation State -- ', () => {
           expect(segRepresentation.segmentationId).toBe(segVolumeId);
           expect(segRepresentation.type).toBe(LABELMAP);
           expect(segRepresentation.config).toBeDefined();
-
-          done();
         }
       );
+
+      // wait for segmentation render to call done to ensure
+      // all events have been fired and we don't get errors for rendering while
+      // the data is decached
+      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
+        done();
+      });
 
       this.segToolGroup.addViewport(vp.id, this.renderingEngine.id);
 

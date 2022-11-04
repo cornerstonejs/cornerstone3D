@@ -85,7 +85,8 @@ const colormapsData: CPUFallbackColormapsData;
 declare namespace CONSTANTS {
     export {
         colormapsData as CPU_COLORMAPS,
-        RENDERING_DEFAULTS
+        RENDERING_DEFAULTS,
+        EPSILON
     }
 }
 export { CONSTANTS }
@@ -424,6 +425,9 @@ declare namespace Enums {
     }
 }
 export { Enums }
+
+// @public (undocumented)
+const EPSILON = 0.001;
 
 // @public (undocumented)
 export enum EVENTS {
@@ -1956,8 +1960,6 @@ export class Viewport implements IViewport {
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
-    // (undocumented)
-    protected applyFlipTx: (worldPos: Point3) => Point3;
     // (undocumented)
     readonly canvas: HTMLCanvasElement;
     // (undocumented)
