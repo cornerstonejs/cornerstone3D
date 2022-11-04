@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "0.6.23",
+  "version": "0.6.24",
   "private": true,
   "scripts": {
     "preinstall": "node preinstall.js",
@@ -27,9 +27,9 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.18.1",
-    "@cornerstonejs/streaming-image-volume-loader": "^0.5.16",
-    "@cornerstonejs/tools": "^0.26.3",
+    "@cornerstonejs/core": "^0.19.0",
+    "@cornerstonejs/streaming-image-volume-loader": "^0.5.17",
+    "@cornerstonejs/tools": "^0.26.4",
     "@docusaurus/core": "2.0.0-rc.1",
     "@docusaurus/module-type-aliases": "2.0.0-rc.1",
     "@docusaurus/preset-classic": "2.0.0-rc.1",

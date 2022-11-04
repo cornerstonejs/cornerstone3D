@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.19.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.18.1...@cornerstonejs/core@0.19.0) (2022-11-04)
+
+
+### Features
+
+* rendering engine should not reset camera on resize ([#273](https://github.com/cornerstonejs/cornerstone3D-beta/issues/273)) ([f1fe501](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f1fe5015eaac736d1a16670e53849ab3d19baddf))
+
+
+
+
+
 ## [0.18.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.18.0...@cornerstonejs/core@0.18.1) (2022-11-04)
 
 
