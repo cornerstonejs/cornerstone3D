@@ -10,7 +10,6 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
-  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -22,12 +21,11 @@ console.warn(
 const {
   ToolGroupManager,
   StackScrollMouseWheelTool,
-  CursorCrosshairSyncTool,
+  ReferenceCursors,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -80,7 +78,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (newPositionSync) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
     if (toolGroup) {
-      toolGroup.setToolConfiguration(CursorCrosshairSyncTool.toolName, {
+      toolGroup.setToolConfiguration(ReferenceCursors.toolName, {
         positionSync: newPositionSync === 'positionSync on',
       });
     }
@@ -97,16 +95,16 @@ addDropdownToToolbar({
     if (toolGroup) {
       switch (newState) {
         case 'tool enabled':
-          toolGroup.setToolEnabled(CursorCrosshairSyncTool.toolName);
+          toolGroup.setToolEnabled(ReferenceCursors.toolName);
           break;
         case 'tool disabled':
-          toolGroup.setToolDisabled(CursorCrosshairSyncTool.toolName);
+          toolGroup.setToolDisabled(ReferenceCursors.toolName);
           break;
         case 'tool passive':
-          toolGroup.setToolPassive(CursorCrosshairSyncTool.toolName);
+          toolGroup.setToolPassive(ReferenceCursors.toolName);
           break;
         case 'tool active':
-          toolGroup.setToolActive(CursorCrosshairSyncTool.toolName);
+          toolGroup.setToolActive(ReferenceCursors.toolName);
           break;
         default:
           throw new Error('unhandled selector value');
@@ -125,7 +123,7 @@ addSliderToToolbar({
   onSelectedValueChange: (newDisplayThreshold) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
     if (toolGroup) {
-      toolGroup.setToolConfiguration(CursorCrosshairSyncTool.toolName, {
+      toolGroup.setToolConfiguration(ReferenceCursors.toolName, {
         displayThreshold: newDisplayThreshold,
       });
     }
@@ -141,7 +139,7 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(CursorCrosshairSyncTool);
+  cornerstoneTools.addTool(ReferenceCursors);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -149,16 +147,16 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(CursorCrosshairSyncTool.toolName);
+  toolGroup.addTool(ReferenceCursors.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
-  toolGroup?.setToolConfiguration(CursorCrosshairSyncTool.toolName, {
+  toolGroup?.setToolConfiguration(ReferenceCursors.toolName, {
     positionSync: true,
   });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(CursorCrosshairSyncTool.toolName);
+  toolGroup.setToolActive(ReferenceCursors.toolName);
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
