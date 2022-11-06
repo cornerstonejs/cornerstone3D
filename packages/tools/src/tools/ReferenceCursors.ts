@@ -23,7 +23,7 @@ import {
   Annotation,
   Annotations,
 } from '../types';
-import { CursorCrosshairSync } from '../types/ToolSpecificAnnotationTypes';
+import { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { StyleSpecifier } from '../types/AnnotationStyle';
@@ -41,7 +41,7 @@ class ReferenceCursors extends AnnotationTool {
   isDrawing = false;
   isHandleOutsideImage = false;
   _elementWithCursor: null | HTMLDivElement = null;
-  _currentMouseWorldPosition: null | Types.Point3 = null;
+  _currentCursorWorldPosition: null | Types.Point3 = null;
   _currentCanvasPosition: null | Types.Point2 = null;
 
   constructor(
@@ -148,10 +148,11 @@ class ReferenceCursors extends AnnotationTool {
   mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): boolean => {
     const { detail } = evt;
     const { element, currentPoints } = detail;
-    this.attachElementListener(element);
-    this._currentMouseWorldPosition = currentPoints.world;
-    //also need canvas postion for recalculating world position on stack change
+
+    //save current positions and current element the curser is hovering over
+    this._currentCursorWorldPosition = currentPoints.world;
     this._currentCanvasPosition = currentPoints.canvas;
+    this._elementWithCursor = element;
 
     const annotation = this.getActiveAnnotation(element);
     if (annotation === null) {
@@ -161,69 +162,6 @@ class ReferenceCursors extends AnnotationTool {
     this.updateAnnotationPosition(element, annotation);
     return false;
   };
-
-  //image change event seems to fire before image is rendered, so in order to get correct world position we need to wait for next render event
-  handleImageChange = (
-    evt:
-      | Types.EventTypes.StackViewportScrollEvent
-      | Types.EventTypes.VolumeNewImageEvent
-  ): void => {
-    const element = evt.target as HTMLDivElement;
-    element.addEventListener(
-      Enums.Events.IMAGE_RENDERED,
-      () => {
-        if (!this) return;
-        const viewport = getEnabledElement(element)?.viewport;
-        if (!viewport) return;
-        const renderingEngine = viewport.getRenderingEngine();
-        if (!renderingEngine) return;
-
-        //calculate new world position from chached canvas position
-        const activeAnnotation = this.getActiveAnnotation(element);
-
-        if (!this._currentCanvasPosition || !activeAnnotation) return;
-        const worldPos = viewport.canvasToWorld(this._currentCanvasPosition);
-        this._currentMouseWorldPosition = worldPos;
-
-        this.updateAnnotationPosition(element, activeAnnotation);
-      },
-      {
-        once: true,
-      }
-    );
-  };
-
-  //remove event listener for mouse over element when tool is deactivated
-  onSetToolDisabled(): void {
-    this.attachElementListener(null);
-  }
-
-  //when the mouse is moved over a div, attach an event listener to this div to update the world position of the annotation when stack is scrolled
-  attachElementListener(element: HTMLDivElement | null): void {
-    if (element === this._elementWithCursor) return;
-    const previousElement = this._elementWithCursor;
-    this._elementWithCursor = element;
-    if (previousElement) {
-      previousElement.removeEventListener(
-        Enums.Events.VOLUME_NEW_IMAGE,
-        this.handleImageChange as EventListener
-      );
-      previousElement.removeEventListener(
-        Enums.Events.STACK_VIEWPORT_SCROLL,
-        this.handleImageChange as EventListener
-      );
-    }
-    if (element) {
-      element.addEventListener(
-        Enums.Events.VOLUME_NEW_IMAGE,
-        this.handleImageChange as EventListener
-      );
-      element.addEventListener(
-        Enums.Events.STACK_VIEWPORT_SCROLL,
-        this.handleImageChange as EventListener
-      );
-    }
-  }
 
   //custom addAnnotations to make sure there is never more than one cursor Annotation
   _addAnnotation(
@@ -244,12 +182,18 @@ class ReferenceCursors extends AnnotationTool {
     return targetAnnotation;
   }
 
-  //updates the position of the annotation to match the currently set world position
+  /**
+   * updates the position of the annotation to match the currently set world position
+   *
+   * we need the immediate option here because we are calling this during a render and if we call triggerAnnotationRender
+   * during a render the whole annotation tool stops responding
+   */
   updateAnnotationPosition(
     element: HTMLDivElement,
-    annotation: Annotation
+    annotation: Annotation,
+    immediate = true
   ): void {
-    const worldPos = this._currentMouseWorldPosition;
+    const worldPos = this._currentCursorWorldPosition;
     if (!worldPos) return;
     if (!annotation.data?.handles?.points) return;
     annotation.data.handles.points = [[...worldPos]];
@@ -263,11 +207,17 @@ class ReferenceCursors extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     if (!enabledElement) return;
     const { renderingEngine } = enabledElement;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    const call = () =>
+      triggerAnnotationRenderForViewportIds(
+        renderingEngine,
+        viewportIdsToRender
+      );
+    if (immediate) call();
+    else setTimeout(call);
   }
 
   isPointNearTool = (): boolean => {
-    //not reevant for tool
+    //not relevant for tool
     return false;
   };
 
@@ -305,7 +255,9 @@ class ReferenceCursors extends AnnotationTool {
   }
 
   /**
-   * Simply draws a circle at the current mouse position if element is is not the one being hovered over
+   * Draws the cursor representation on the enabledElement
+   * Checks if a stack change has happened and updates annotation in that case
+   * Triggers syncing of stack position between the elementWithCursor and all other elements
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
@@ -317,6 +269,38 @@ class ReferenceCursors extends AnnotationTool {
     let renderStatus = false;
     const { viewport } = enabledElement;
 
+    const elementWithCursor = this._elementWithCursor;
+    const enabledCursorElement = getEnabledElement(elementWithCursor);
+    const cachedMouseWorldPosition = this._currentCursorWorldPosition;
+    const currentCanvasPostion = this._currentCanvasPosition;
+
+    if (
+      !elementWithCursor ||
+      !cachedMouseWorldPosition ||
+      !currentCanvasPostion ||
+      !enabledCursorElement
+    )
+      return renderStatus;
+
+    const annotation = this.getActiveAnnotation(elementWithCursor);
+    if (!annotation) return renderStatus;
+
+    // since annotation is rendered when viewport stack state changes, we can check here if the cursor position stil corresponds
+    // to the last saved worldPosition and update the annotation in case of a change(this will trigger a rerender and stack syncing if the viewport is scrolled without a mouse move)
+    if (enabledElement.viewportId === enabledCursorElement.viewportId) {
+      const currentCursorWorldPosition =
+        viewport.canvasToWorld(currentCanvasPostion);
+      if (
+        !currentCursorWorldPosition.every(
+          (val, ind) => val === cachedMouseWorldPosition[ind]
+        )
+      ) {
+        this._currentCursorWorldPosition = currentCursorWorldPosition;
+        this.updateAnnotationPosition(elementWithCursor, annotation, false);
+      }
+    }
+
+    //update stack position if position sync is enabled
     if (
       this.configuration.positionSync &&
       this._elementWithCursor !== viewport.element
@@ -349,7 +333,7 @@ class ReferenceCursors extends AnnotationTool {
     };
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as CursorCrosshairSync;
+      const annotation = annotations[i] as ReferenceCursor;
       const { annotationUID, data } = annotation;
       const { handles } = data;
       const { points } = handles;
@@ -426,7 +410,7 @@ class ReferenceCursors extends AnnotationTool {
   updateStackPosition(
     viewport: Types.IStackViewport | Types.IVolumeViewport
   ): void {
-    const currentMousePosition = this._currentMouseWorldPosition;
+    const currentMousePosition = this._currentCursorWorldPosition;
 
     if (!currentMousePosition || currentMousePosition.some((e) => isNaN(e)))
       return;
@@ -476,7 +460,7 @@ class ReferenceCursors extends AnnotationTool {
   }
 }
 
-ReferenceCursors.toolName = 'CursorCrosshairSync';
+ReferenceCursors.toolName = 'ReferenceCursors';
 export default ReferenceCursors;
 
 //assumes that imageIds are sorted by slice location

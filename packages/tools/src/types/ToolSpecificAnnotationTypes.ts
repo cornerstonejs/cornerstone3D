@@ -257,7 +257,7 @@ export interface AngleAnnotation extends Annotation {
   };
 }
 
-export interface CursorCrosshairSync extends Annotation {
+export interface ReferenceCursor extends Annotation {
   data: {
     handles: {
       points: [Types.Point3];
