@@ -1,30 +1,18 @@
-import {
-  utilities,
-  getEnabledElement,
-  VolumeViewport,
-  StackViewport,
-  cache,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { vec4, vec2 } from 'gl-matrix';
+import { vec2 } from 'gl-matrix';
 
 import AnnotationDisplayTool from './AnnotationDisplayTool';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import { getViewportSpecificAnnotationManager } from '../../stateManagement/annotation/annotationState';
 import {
   Annotation,
   Annotations,
   EventTypes,
   ToolHandle,
   InteractionTypes,
-  SVGDrawingHelper,
 } from '../../types';
-import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
-import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
-import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
-import { getState } from '../../stateManagement/annotation/config';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
