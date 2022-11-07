@@ -9,6 +9,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -37,7 +38,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Reference Lies',
-  'Here we demonstrate the usage of reference lines tool.'
+  'Here we demonstrate the usage of reference lines tool. Below, you will see 4 viewports, three volume viewports with background of purple and a stack viewport on the right most with background of red. You can use the dropdown to change the source viewport for the reference lines. Source viewport is the viewport that will get projected on the other viewports views. If the views are parallel no reference lines will get rendered.'
 );
 
 const size = '500px';
@@ -51,9 +52,11 @@ viewportGrid.style.flexDirection = 'row';
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
+const element4 = document.createElement('div');
 element1.oncontextmenu = () => false;
 element2.oncontextmenu = () => false;
 element3.oncontextmenu = () => false;
+element4.oncontextmenu = () => false;
 
 element1.style.width = size;
 element1.style.height = size;
@@ -61,10 +64,13 @@ element2.style.width = size;
 element2.style.height = size;
 element3.style.width = size;
 element3.style.height = size;
+element4.style.width = size;
+element4.style.height = size;
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
+viewportGrid.appendChild(element4);
 
 content.appendChild(viewportGrid);
 
@@ -75,6 +81,29 @@ instructions.innerText =
 content.append(instructions);
 // ============================= //
 
+// Create the viewports
+const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_OBLIQUE', 'CT_STACK'];
+let selectedViewportId = viewportIds[0];
+let toolGroup;
+
+addDropdownToToolbar({
+  options: { values: viewportIds, defaultValue: selectedViewportId },
+  onSelectedValueChange: (newSelectedId) => {
+    selectedViewportId = newSelectedId as string;
+
+    // change config of the reference lines tool
+
+    toolGroup.setToolConfiguration(
+      ReferenceLinesTool.toolName,
+      {
+        sourceViewportId: selectedViewportId,
+      },
+      true // overwrite
+    );
+
+    toolGroup.setToolEnabled(ReferenceLinesTool.toolName);
+  },
+});
 /**
  * Runs the demo
  */
@@ -92,25 +121,19 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(ReferenceLinesTool.toolName, {
-    configuration: { volumeId },
+    sourceViewportId: selectedViewportId,
   });
-  toolGroup.addTool(ZoomTool.toolName, { configuration: { volumeId } });
+  toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(ReferenceLinesTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
+  toolGroup.setToolEnabled(ReferenceLinesTool.toolName);
 
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
@@ -144,16 +167,19 @@ async function run() {
     type: 'VOLUME',
   });
 
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const stackImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    type: 'STACK',
+  });
+
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportIds = [
-    'CT_AXIAL_STACK',
-    'CT_SAGITTAL_STACK',
-    'CT_OBLIQUE_STACK',
-  ];
 
   const viewportInputArray = [
     {
@@ -191,6 +217,14 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
+    {
+      viewportId: viewportIds[3],
+      type: ViewportType.STACK,
+      element: element4,
+      defaultOptions: {
+        background: <Types.Point3>[0.5, 0, 0.2],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
@@ -208,7 +242,17 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+  setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    viewportIds.slice(0, 3)
+  );
+
+  const stackViewport = renderingEngine.getViewport(
+    viewportIds[3]
+  ) as Types.IStackViewport;
+
+  stackViewport.setStack(stackImageIds);
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
