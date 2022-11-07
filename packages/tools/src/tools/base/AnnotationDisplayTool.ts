@@ -7,20 +7,11 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { vec4, vec2 } from 'gl-matrix';
+import { vec4 } from 'gl-matrix';
 
 import BaseTool from './BaseTool';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { getViewportSpecificAnnotationManager } from '../../stateManagement/annotation/annotationState';
-import {
-  Annotation,
-  Annotations,
-  EventTypes,
-  ToolHandle,
-  InteractionTypes,
-  SVGDrawingHelper,
-} from '../../types';
+import { Annotation, Annotations, SVGDrawingHelper } from '../../types';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
