@@ -164,7 +164,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName, { configuration: { volumeId } });
+  toolGroup.addTool(WindowLevelTool.toolName, { volumeId });
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
