@@ -55,5 +55,3 @@ export {
   state,
   state as default,
 };
-
-window.state = state;
