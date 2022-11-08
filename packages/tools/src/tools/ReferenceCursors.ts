@@ -381,7 +381,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
         viewport
       );
 
-      if (!closestIndex) return;
+      if (closestIndex === null) return;
       if (closestIndex !== viewport.getCurrentImageIdIndex())
         viewport.setImageIdIndex(closestIndex);
     } else if (viewport instanceof VolumeViewport) {
