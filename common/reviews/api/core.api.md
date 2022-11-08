@@ -85,7 +85,8 @@ const colormapsData: CPUFallbackColormapsData;
 declare namespace CONSTANTS {
     export {
         colormapsData as CPU_COLORMAPS,
-        RENDERING_DEFAULTS
+        RENDERING_DEFAULTS,
+        EPSILON
     }
 }
 export { CONSTANTS }
@@ -426,6 +427,9 @@ declare namespace Enums {
 export { Enums }
 
 // @public (undocumented)
+const EPSILON = 0.001;
+
+// @public (undocumented)
 export enum EVENTS {
     // (undocumented)
     CACHE_SIZE_EXCEEDED = "CACHE_SIZE_EXCEEDED",
@@ -650,6 +654,8 @@ interface ICachedVolume {
 
 // @public (undocumented)
 interface ICamera {
+    // (undocumented)
+    clippingRange?: Point2;
     // (undocumented)
     flipHorizontal?: boolean;
     // (undocumented)
@@ -1396,7 +1402,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -1610,7 +1616,7 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     renderViewports(viewportIds: Array<string>): void;
     // (undocumented)
-    resize(immediate?: boolean, resetPan?: boolean, resetZoom?: boolean): void;
+    resize(immediate?: boolean, keepCamera?: boolean): void;
     // (undocumented)
     setViewports(publicViewportInputEntries: Array<PublicViewportInput>): void;
 }
@@ -1955,8 +1961,6 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
-    protected applyFlipTx: (worldPos: Point3) => Point3;
-    // (undocumented)
     readonly canvas: HTMLCanvasElement;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -1990,6 +1994,11 @@ export class Viewport implements IViewport {
     getDefaultActor(): ActorEntry;
     // (undocumented)
     _getEdges(bounds: Array<number>): Array<[number[], number[]]>;
+    // (undocumented)
+    _getFocalPointForResetCamera(centeredFocalPoint: Point3, previousCamera: ICamera, { resetPan, resetToCenter }: {
+        resetPan: boolean;
+        resetToCenter: boolean;
+    }): Point3;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
@@ -2027,7 +2036,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    protected resetCamera(resetPan?: boolean, resetZoom?: boolean, storeAsInitialCamera?: boolean): boolean;
+    protected resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, storeAsInitialCamera?: boolean): boolean;
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)
@@ -2213,7 +2222,7 @@ export class VolumeViewport extends Viewport implements IVolumeViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)

@@ -3,6 +3,71 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.27.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.26.5...@cornerstonejs/tools@0.27.0) (2022-11-07)
+
+
+### Features
+
+* add annotation display Tool ([#283](https://github.com/cornerstonejs/cornerstone3D-beta/issues/283)) ([e4a0324](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e4a0324840f8f5ac29f9db292e8df0c59ee69322))
+
+
+
+
+
+## [0.26.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.26.4...@cornerstonejs/tools@0.26.5) (2022-11-04)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
+## [0.26.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.26.3...@cornerstonejs/tools@0.26.4) (2022-11-04)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
+## [0.26.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.26.2...@cornerstonejs/tools@0.26.3) (2022-11-04)
+
+
+### Bug Fixes
+
+* resetCamera and annotations for flipped viewports ([#278](https://github.com/cornerstonejs/cornerstone3D-beta/issues/278)) ([cabefce](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cabefcefcba463abb1ea9bf346a2f755b2494aed))
+
+
+
+
+
+## [0.26.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.26.1...@cornerstonejs/tools@0.26.2) (2022-11-01)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
+## [0.26.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.26.0...@cornerstonejs/tools@0.26.1) (2022-11-01)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
+# [0.26.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.25.0...@cornerstonejs/tools@0.26.0) (2022-10-31)
+
+
+### Features
+
+* reset to center option for reset camera ([#269](https://github.com/cornerstonejs/cornerstone3D-beta/issues/269)) ([9539f6c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9539f6c56e2bd3b06f4c6b40fd6b4478d806bee3))
+
+
+
+
+
 # [0.25.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.24.17...@cornerstonejs/tools@0.25.0) (2022-10-28)
 
 

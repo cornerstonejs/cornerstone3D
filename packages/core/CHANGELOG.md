@@ -3,6 +3,61 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.19.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.19.0...@cornerstonejs/core@0.19.1) (2022-11-04)
+
+
+### Bug Fixes
+
+* volume scaling should be returned in getImageData ([#282](https://github.com/cornerstonejs/cornerstone3D-beta/issues/282)) ([4df3f71](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4df3f7110de1a12dbeb0fea1260e4bb9e85320fa))
+
+
+
+
+
+# [0.19.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.18.1...@cornerstonejs/core@0.19.0) (2022-11-04)
+
+
+### Features
+
+* rendering engine should not reset camera on resize ([#273](https://github.com/cornerstonejs/cornerstone3D-beta/issues/273)) ([f1fe501](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f1fe5015eaac736d1a16670e53849ab3d19baddf))
+
+
+
+
+
+## [0.18.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.18.0...@cornerstonejs/core@0.18.1) (2022-11-04)
+
+
+### Bug Fixes
+
+* resetCamera and annotations for flipped viewports ([#278](https://github.com/cornerstonejs/cornerstone3D-beta/issues/278)) ([cabefce](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cabefcefcba463abb1ea9bf346a2f755b2494aed))
+
+
+
+
+
+# [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.17.0...@cornerstonejs/core@0.18.0) (2022-11-01)
+
+
+### Features
+
+* flip viewports via camera api instead of actor ([#271](https://github.com/cornerstonejs/cornerstone3D-beta/issues/271)) ([7c99f76](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7c99f76fe10f9dac2f2221f9cdc134c90ebbe115))
+
+
+
+
+
+# [0.17.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.12...@cornerstonejs/core@0.17.0) (2022-10-31)
+
+
+### Features
+
+* reset to center option for reset camera ([#269](https://github.com/cornerstonejs/cornerstone3D-beta/issues/269)) ([9539f6c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9539f6c56e2bd3b06f4c6b40fd6b4478d806bee3))
+
+
+
+
+
 ## [0.16.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.16.11...@cornerstonejs/core@0.16.12) (2022-10-28)
 
 

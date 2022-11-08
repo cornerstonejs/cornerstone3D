@@ -307,31 +307,21 @@ enum AnnotationStyleStates {
 }
 
 // @public (undocumented)
-export abstract class AnnotationTool extends BaseTool {
+export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract addNewAnnotation(evt: EventTypes_2.MouseDownActivateEventType, interactionType: InteractionTypes): Annotation;
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
-    // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
     getLinkedTextBoxStyle(specifications: StyleSpecifier, annotation?: Annotation): Record<string, unknown>;
-    // (undocumented)
-    protected getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
-    // (undocumented)
-    getStyle(property: string, specifications: StyleSpecifier, annotation?: Annotation): unknown;
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
     // (undocumented)
     abstract isPointNearTool(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredAnnotations?: Annotations) => boolean;
-    // (undocumented)
-    onImageSpacingCalibrated: (evt: Types_2.EventTypes.ImageSpacingCalibratedEvent) => void;
-    // (undocumented)
-    abstract renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): any;
     // (undocumented)
     static toolName: any;
     // (undocumented)
@@ -1635,6 +1625,9 @@ function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.
 function filterViewportsWithFrameOfReferenceUID(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, FrameOfReferenceUID: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
+function filterViewportsWithParallelNormals(viewports: any, camera: any, EPS?: number): any;
+
+// @public (undocumented)
 function filterViewportsWithToolEnabled(viewports: Array<Types_2.IStackViewport | Types_2.IVolumeViewport>, toolName: string): Array<Types_2.IStackViewport | Types_2.IVolumeViewport>;
 
 // @public (undocumented)
@@ -1837,7 +1830,7 @@ function getToolGroupsWithSegmentation(segmentationId: string): string[];
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 
 // @public (undocumented)
-function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireSameOrientation?: boolean): string[];
+function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
 
 // @public (undocumented)
 function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLDivElement): FrameOfReferenceSpecificAnnotationManager;
@@ -1905,6 +1898,7 @@ interface ICachedVolume {
 
 // @public
 interface ICamera {
+    clippingRange?: Point2;
     flipHorizontal?: boolean;
     flipVertical?: boolean;
     focalPoint?: Point3;
@@ -2529,7 +2523,11 @@ interface IVolumeViewport extends IViewport {
     hasImageURI: (imageURI: string) => boolean;
     hasVolumeId: (volumeId: string) => boolean;
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(
+    resetPan?: boolean,
+    resetZoom?: boolean,
+    resetToCenter?: boolean
+    ): boolean;
     setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: Array<string>,
@@ -4249,6 +4247,9 @@ export class TrackballRotateTool extends BaseTool {
 type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
+function triggerAnnotationRender(element: HTMLDivElement): void;
+
+// @public (undocumented)
 function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
 
 // @public
@@ -4358,6 +4359,7 @@ declare namespace utilities {
         calibrateImageSpacing,
         segmentation_2 as segmentation,
         triggerAnnotationRenderForViewportIds,
+        triggerAnnotationRender,
         pointInShapeCallback,
         pointInSurroundingSphereCallback,
         getAnnotationNearPoint,
@@ -4385,7 +4387,8 @@ declare namespace viewportFilters {
     export {
         filterViewportsWithToolEnabled,
         filterViewportsWithFrameOfReferenceUID,
-        getViewportIdsWithToolToRender
+        getViewportIdsWithToolToRender,
+        filterViewportsWithParallelNormals
     }
 }
 

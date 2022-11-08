@@ -99,7 +99,11 @@ export default interface IVolumeViewport extends IViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+  resetCamera(
+    resetPan?: boolean,
+    resetZoom?: boolean,
+    resetToCenter?: boolean
+  ): boolean;
   /**
    * Sets the blendMode for actors of the viewport.
    */

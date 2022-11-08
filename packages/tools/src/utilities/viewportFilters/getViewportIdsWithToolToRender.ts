@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID';
 import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled';
-import filterViewportsWithSameOrientation from './filterViewportsWithSameOrientation';
+import filterViewportsWithParallelNormals from './filterViewportsWithParallelNormals';
 
 /**
  * Given a cornerstone3D enabled `element`, and a `toolName`, find all viewportIds
@@ -10,14 +10,14 @@ import filterViewportsWithSameOrientation from './filterViewportsWithSameOrienta
  *
  * @param element - The target cornerstone3D enabled element.
  * @param toolName - The string toolName.
- * @param requireSameOrientation - If true, only return viewports matching the orientation of the original viewport
+ * @param requireParallelNormals - If true, only return viewports that have parallel normals.
  *
  * @returns An array of viewportIds.
  */
 export default function getViewportIdsWithToolToRender(
   element: HTMLDivElement,
   toolName: string,
-  requireSameOrientation = true
+  requireParallelNormals = true
 ): string[] {
   const enabledElement = getEnabledElement(element);
   const { renderingEngine, FrameOfReferenceUID } = enabledElement;
@@ -32,8 +32,8 @@ export default function getViewportIdsWithToolToRender(
 
   const viewport = renderingEngine.getViewport(enabledElement.viewportId);
 
-  if (requireSameOrientation) {
-    viewports = filterViewportsWithSameOrientation(
+  if (requireParallelNormals) {
+    viewports = filterViewportsWithParallelNormals(
       viewports,
       viewport.getCamera()
     );

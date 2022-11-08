@@ -102,6 +102,10 @@
         "name": "Annotation Selection and Locking",
         "description": "Demonstrates how to toggle the Locked and Selected states for Annotations"
       },
+      "resetCamera": {
+        "name": "Viewports Reset Camera",
+        "description": "Demonstrates various options that are available for resetting camera on viewports"
+      },
       "annotationVisibility": {
         "name": "Annotation changing visibility",
         "description": "Demonstrates how to toggle the Visibility state for Annotations"

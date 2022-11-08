@@ -93,8 +93,8 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(LengthTool.toolName, { configuration: { volumeId } });
-  toolGroup.addTool(ZoomTool.toolName, { configuration: { volumeId } });
+  toolGroup.addTool(LengthTool.toolName, { volumeId });
+  toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
