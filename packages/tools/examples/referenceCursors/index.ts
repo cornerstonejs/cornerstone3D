@@ -71,7 +71,7 @@ const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Simply move the mouse over the viewports to see the correlating positions in the other viewports.';
+  'Simply move the mouse over the viewports to see the correlating positions in the other viewports';
 
 content.append(instructions);
 
