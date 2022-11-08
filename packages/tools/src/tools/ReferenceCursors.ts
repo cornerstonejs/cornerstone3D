@@ -1,11 +1,9 @@
-import { AnnotationTool } from './base';
 import {
   getEnabledElement,
   metaData,
   StackViewport,
   VolumeViewport,
   utilities,
-  Enums,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
@@ -28,12 +26,14 @@ import { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import { vec3 } from 'gl-matrix';
+import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
 /**
  * CursorCrosshairSyncTool is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
  * Also when positionSync is enabled, it will try to sync viewports so that the cursor can be displayed in the correct position in all viewports.
  */
-class ReferenceCursors extends AnnotationTool {
+class ReferenceCursors extends AnnotationDisplayTool {
   static toolName;
   touchDragCallback: any;
   mouseDragCallback: any;
@@ -60,16 +60,36 @@ class ReferenceCursors extends AnnotationTool {
   }
 
   /**
+   * Overwritten mouseMoveCallback since we want to keep track of the current mouse position and redraw on mouseMove
+   * @virtual Event handler for Cornerstone MOUSE_MOVE event.
    *
-   * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
    *
+   * @param evt - The normalized mouse event
+   * @param filteredAnnotations - The annotations to check for hover interactions
+   * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
    */
-  addNewAnnotation = (evt: EventTypes.MouseMoveEventType): Annotation => {
-    const eventDetail = evt.detail;
-    const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
+  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): boolean => {
+    const { detail } = evt;
+    const { element, currentPoints } = detail;
 
+    //save current positions and current element the curser is hovering over
+    this._currentCursorWorldPosition = currentPoints.world;
+    this._currentCanvasPosition = currentPoints.canvas;
+    this._elementWithCursor = element;
+
+    const annotation = this.getActiveAnnotation(element);
+    if (annotation === null) {
+      this.createInitialAnnotation(currentPoints.world, element);
+      return false;
+    }
+    this.updateAnnotationPosition(element, annotation);
+    return false;
+  };
+
+  createInitialAnnotation = (
+    worldPos: Types.Point3,
+    element: HTMLDivElement
+  ): void => {
     const enabledElement = getEnabledElement(element);
     if (!enabledElement) throw new Error('No enabled element found');
     const { viewport, renderingEngine } = enabledElement;
@@ -118,10 +138,7 @@ class ReferenceCursors extends AnnotationTool {
 
     const annotationId = this._addAnnotation(element, annotation);
 
-    if (annotationId === null) {
-      const currentAnnotation = this.getActiveAnnotation(element);
-      return currentAnnotation;
-    }
+    if (annotationId === null) return;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -129,38 +146,7 @@ class ReferenceCursors extends AnnotationTool {
       false
     );
 
-    evt.preventDefault();
-
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
-
-    return annotation;
-  };
-
-  /**
-   * Overwritten mouseMoveCallback since we want to keep track of the current mouse position and redraw on mouseMove
-   * @virtual Event handler for Cornerstone MOUSE_MOVE event.
-   *
-   *
-   * @param evt - The normalized mouse event
-   * @param filteredAnnotations - The annotations to check for hover interactions
-   * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
-   */
-  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): boolean => {
-    const { detail } = evt;
-    const { element, currentPoints } = detail;
-
-    //save current positions and current element the curser is hovering over
-    this._currentCursorWorldPosition = currentPoints.world;
-    this._currentCanvasPosition = currentPoints.canvas;
-    this._elementWithCursor = element;
-
-    const annotation = this.getActiveAnnotation(element);
-    if (annotation === null) {
-      this.addNewAnnotation(evt);
-      return false;
-    }
-    this.updateAnnotationPosition(element, annotation);
-    return false;
   };
 
   //custom addAnnotations to make sure there is never more than one cursor Annotation
@@ -184,14 +170,10 @@ class ReferenceCursors extends AnnotationTool {
 
   /**
    * updates the position of the annotation to match the currently set world position
-   *
-   * we need the immediate option here because we are calling this during a render and if we call triggerAnnotationRender
-   * during a render the whole annotation tool stops responding
    */
   updateAnnotationPosition(
     element: HTMLDivElement,
-    annotation: Annotation,
-    immediate = true
+    annotation: Annotation
   ): void {
     const worldPos = this._currentCursorWorldPosition;
     if (!worldPos) return;
@@ -207,30 +189,40 @@ class ReferenceCursors extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     if (!enabledElement) return;
     const { renderingEngine } = enabledElement;
-    const call = () =>
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
-    if (immediate) call();
-    else setTimeout(call);
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   }
 
-  isPointNearTool = (): boolean => {
-    //not relevant for tool
-    return false;
-  };
+  //checks if we need to update the annotation position due to camera changes
+  onCameraModified = (evt): void => {
+    const eventDetail = evt.detail;
+    const { element, previousCamera, camera } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const viewport = enabledElement.viewport as
+      | Types.IVolumeViewport
+      | Types.IStackViewport;
 
-  handleSelectedCallback = (): void => {
-    return;
-  };
+    //only react to changes for element with cursor, otherwise would cause infinite loop
+    if (element !== this._elementWithCursor) return;
+    //check if camera moved along its normal
+    const oldFocalPoint = previousCamera.focalPoint;
+    const cameraNormal = camera.viewPlaneNormal;
+    const newFocalPoint = camera.focalPoint;
 
-  toolSelectedCallback = (): void => {
-    return;
-  };
+    const deltaCameraFocalPoint: Types.Point3 = [0, 0, 0];
+    vtkMath.subtract(newFocalPoint, oldFocalPoint, deltaCameraFocalPoint);
+    //check if focal point changed
+    if (deltaCameraFocalPoint.reduce((a, b) => a + b, 0) === 0) return;
+    //if nomrmal is perpendicular to focal point change, then we are not moving along the normal
+    const dotProduct = vtkMath.dot(deltaCameraFocalPoint, cameraNormal);
+    //dot product is 0 -> perpendicular
+    if (Math.abs(dotProduct) < 1e-2) return;
 
-  cancel = (): void => {
-    return;
+    //need to update the position of the annotation since camera changed
+    if (!this._currentCanvasPosition) return;
+
+    const newWorldPos = viewport.canvasToWorld(this._currentCanvasPosition);
+    this._currentCursorWorldPosition = newWorldPos;
+    this.updateAnnotationPosition(element, this.getActiveAnnotation(element));
   };
 
   //display annotation if current viewing plane has a max distance of "displayThreshold" from the annotation
@@ -250,14 +242,13 @@ class ReferenceCursors extends AnnotationTool {
     if (!(points instanceof Array) || points.length !== 1) return [];
     const worldPos = points[0];
     const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
-    const distance = planeDistanceToPoint(plane, worldPos);
+    const distance = utilities.planar.planeDistanceToPoint(plane, worldPos);
     return distance < this.configuration.displayThreshold ? [annotation] : [];
   }
 
   /**
    * Draws the cursor representation on the enabledElement
    * Checks if a stack change has happened and updates annotation in that case
-   * Triggers syncing of stack position between the elementWithCursor and all other elements
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
@@ -269,43 +260,12 @@ class ReferenceCursors extends AnnotationTool {
     let renderStatus = false;
     const { viewport } = enabledElement;
 
-    const elementWithCursor = this._elementWithCursor;
-    const enabledCursorElement = getEnabledElement(elementWithCursor);
-    const cachedMouseWorldPosition = this._currentCursorWorldPosition;
-    const currentCanvasPostion = this._currentCanvasPosition;
-
-    if (
-      !elementWithCursor ||
-      !cachedMouseWorldPosition ||
-      !currentCanvasPostion ||
-      !enabledCursorElement
-    )
-      return renderStatus;
-
-    const annotation = this.getActiveAnnotation(elementWithCursor);
-    if (!annotation) return renderStatus;
-
-    // since annotation is rendered when viewport stack state changes, we can check here if the cursor position stil corresponds
-    // to the last saved worldPosition and update the annotation in case of a change(this will trigger a rerender and stack syncing if the viewport is scrolled without a mouse move)
-    if (enabledElement.viewportId === enabledCursorElement.viewportId) {
-      const currentCursorWorldPosition =
-        viewport.canvasToWorld(currentCanvasPostion);
-      if (
-        !currentCursorWorldPosition.every(
-          (val, ind) => val === cachedMouseWorldPosition[ind]
-        )
-      ) {
-        this._currentCursorWorldPosition = currentCursorWorldPosition;
-        this.updateAnnotationPosition(elementWithCursor, annotation, false);
-      }
-    }
-
     //update stack position if position sync is enabled
     if (
       this.configuration.positionSync &&
       this._elementWithCursor !== viewport.element
     ) {
-      this.updateStackPosition(viewport);
+      this.updateViewportImage(viewport);
     }
 
     const { element } = viewport;
@@ -407,28 +367,28 @@ class ReferenceCursors extends AnnotationTool {
     return renderStatus;
   };
 
-  updateStackPosition(
+  updateViewportImage(
     viewport: Types.IStackViewport | Types.IVolumeViewport
   ): void {
     const currentMousePosition = this._currentCursorWorldPosition;
 
     if (!currentMousePosition || currentMousePosition.some((e) => isNaN(e)))
       return;
+
     if (viewport instanceof StackViewport) {
-      const closestState = calculateMinimalDistanceForStackViewport(
+      const closestIndex = utilities.getClosestStackImageIndexForPoint(
         currentMousePosition,
         viewport
       );
 
-      if (!closestState) return;
-      const { index } = closestState;
-      if (index !== viewport.getCurrentImageIdIndex())
-        viewport.setImageIdIndex(index);
+      if (!closestIndex) return;
+      if (closestIndex !== viewport.getCurrentImageIdIndex())
+        viewport.setImageIdIndex(closestIndex);
     } else if (viewport instanceof VolumeViewport) {
       const { focalPoint, viewPlaneNormal } = viewport.getCamera();
       if (!focalPoint || !viewPlaneNormal) return;
       const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
-      const currentDistance = planeDistanceToPoint(
+      const currentDistance = utilities.planar.planeDistanceToPoint(
         plane,
         currentMousePosition,
         true
@@ -462,111 +422,3 @@ class ReferenceCursors extends AnnotationTool {
 
 ReferenceCursors.toolName = 'ReferenceCursors';
 export default ReferenceCursors;
-
-//assumes that imageIds are sorted by slice location
-function calculateMinimalDistanceForStackViewport(
-  point: Types.Point3,
-  viewport: Types.IStackViewport
-): { distance: number; index: number } | null {
-  const imageIds = viewport.getImageIds();
-  const currentImageIdIndex = viewport.getCurrentImageIdIndex();
-
-  if (imageIds.length === 0) return null;
-
-  const getDistance = (imageId: string): null | number => {
-    const planeMetadata = getPlaneMetadata(imageId);
-    if (!planeMetadata) return null;
-    const plane = utilities.planar.planeEquation(
-      planeMetadata.planeNormal,
-      planeMetadata.imagePositionPatient
-    );
-    const distance = planeDistanceToPoint(plane, point);
-    return distance;
-  };
-
-  const closestStack = {
-    distance: getDistance(imageIds[currentImageIdIndex]) ?? Infinity,
-    index: currentImageIdIndex,
-  };
-
-  //check higher indices
-  const higherImageIds = imageIds.slice(currentImageIdIndex + 1);
-
-  for (let i = 0; i < higherImageIds.length; i++) {
-    const id = higherImageIds[i];
-    const distance = getDistance(id);
-    if (distance === null) continue;
-    if (distance <= closestStack.distance) {
-      closestStack.distance = distance;
-      closestStack.index = i + currentImageIdIndex + 1;
-    } else break;
-  }
-  //check lower indices
-  const lowerImageIds = imageIds.slice(0, currentImageIdIndex);
-  for (let i = lowerImageIds.length - 1; i >= 0; i--) {
-    const id = lowerImageIds[i];
-    const distance = getDistance(id);
-    if (distance === null || distance === closestStack.distance) continue;
-    if (distance < closestStack.distance) {
-      closestStack.distance = distance;
-      closestStack.index = i;
-    } else break;
-  }
-  return closestStack.distance === Infinity ? null : closestStack;
-}
-
-function getPlaneMetadata(imageId: string): null | {
-  rowCosines: Types.Point3;
-  columnCosines: Types.Point3;
-  imagePositionPatient: Types.Point3;
-  planeNormal: Types.Point3;
-} {
-  const targetImagePlane = metaData.get('imagePlaneModule', imageId);
-
-  if (
-    !targetImagePlane ||
-    !(
-      targetImagePlane.rowCosines instanceof Array &&
-      targetImagePlane.rowCosines.length === 3
-    ) ||
-    !(
-      targetImagePlane.columnCosines instanceof Array &&
-      targetImagePlane.columnCosines.length === 3
-    ) ||
-    !(
-      targetImagePlane.imagePositionPatient instanceof Array &&
-      targetImagePlane.imagePositionPatient.length === 3
-    )
-  ) {
-    return null;
-  }
-  const {
-    rowCosines,
-    columnCosines,
-    imagePositionPatient,
-  }: {
-    rowCosines: Types.Point3;
-    columnCosines: Types.Point3;
-    imagePositionPatient: Types.Point3;
-  } = targetImagePlane;
-
-  const rowVec = vec3.set(vec3.create(), ...rowCosines);
-  const colVec = vec3.set(vec3.create(), ...columnCosines);
-  const planeNormal = vec3.cross(vec3.create(), rowVec, colVec) as Types.Point3;
-
-  return { rowCosines, columnCosines, imagePositionPatient, planeNormal };
-}
-
-// assumes plane in A+B+C=D
-function planeDistanceToPoint(
-  plane: Types.Plane,
-  point: Types.Point3,
-  signed = false
-) {
-  const [A, B, C, D] = plane;
-  const [x, y, z] = point;
-  const distance =
-    Math.abs(A * x + B * y + C * z - D) / Math.sqrt(A * A + B * B + C * C);
-  const sign = signed ? Math.sign(A * x + B * y + C * z - D) : 1;
-  return sign * distance;
-}

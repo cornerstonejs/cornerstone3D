@@ -22,6 +22,8 @@ const {
   ToolGroupManager,
   StackScrollMouseWheelTool,
   ReferenceCursors,
+  PanTool,
+  ZoomTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -51,10 +53,13 @@ const element2 = document.createElement('div');
 const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
+element1.oncontextmenu = (e) => e.preventDefault();
 element2.style.width = size;
 element2.style.height = size;
+element2.oncontextmenu = (e) => e.preventDefault();
 element3.style.height = size;
 element3.style.width = size;
+element3.oncontextmenu = (e) => e.preventDefault();
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
@@ -141,6 +146,8 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(ReferenceCursors);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -149,6 +156,8 @@ async function run() {
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(ReferenceCursors.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
 
   toolGroup?.setToolConfiguration(ReferenceCursors.toolName, {
     positionSync: true,
@@ -160,6 +169,12 @@ async function run() {
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const volumeImageIds = await createImageIdsAndCacheMetaData({
