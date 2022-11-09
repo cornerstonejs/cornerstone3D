@@ -2,6 +2,7 @@
   "name": "docs",
   "version": "0.6.26",
   "private": true,
+  "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "scripts": {
     "preinstall": "node preinstall.js",
     "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 yarn run prep-examples && docusaurus build",
