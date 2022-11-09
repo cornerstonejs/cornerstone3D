@@ -220,8 +220,6 @@ class CrosshairsTool extends AnnotationTool {
       },
     };
 
-    resetElementCursor(element);
-
     addAnnotation(element, annotation);
 
     return {
@@ -247,19 +245,20 @@ class CrosshairsTool extends AnnotationTool {
     // and update the reference points accordingly.
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
     this._subscribeToViewportNewVolumeSet(viewportsInfo);
-    this.init(viewportsInfo);
+
+    this.computeToolCenter(viewportsInfo);
   }
 
   onSetToolPassive() {
     const viewportsInfo = this._getViewportsInfo();
 
-    this.init(viewportsInfo);
+    this.computeToolCenter(viewportsInfo);
   }
 
   onSetToolEnabled() {
     const viewportsInfo = this._getViewportsInfo();
 
-    this.init(viewportsInfo);
+    this.computeToolCenter(viewportsInfo);
   }
 
   onSetToolDisabled() {
@@ -277,7 +276,7 @@ class CrosshairsTool extends AnnotationTool {
    * of the two rendering viewports.
    * @param viewportsInfo Array of viewportInputs which each item containing {viewportId, renderingEngineId}
    */
-  init = (viewportsInfo): void => {
+  computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo.length || viewportsInfo.length === 1) {
       throw new Error(
         'For crosshairs to operate, at least two viewports must be given.'
@@ -510,21 +509,14 @@ class CrosshairsTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
+    const { renderingEngine, viewportId } = enabledElement;
     const viewport = enabledElement.viewport as Types.IVolumeViewport;
-
-    const requireSameOrientation = false;
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName(),
-      requireSameOrientation
-    );
 
     const annotations = getAnnotations(element, this.getToolName());
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 
-    // viewport Annotation
+    // viewport that the camera modified is originating from
     const viewportAnnotation =
       filteredToolAnnotations[0] as CrosshairsAnnotation;
 
@@ -536,7 +528,7 @@ class CrosshairsTool extends AnnotationTool {
     //    have the same camera in case of translation
     // -- Update the crosshair center in world coordinates in annotation.
     // This is necessary because other tools can modify the position of the slices,
-    // e.g. stackscroll tool at wheel scroll. So we update the coordinates of the center always here.
+    // e.g. stackScroll tool at wheel scroll. So we update the coordinates of the center always here.
     // NOTE: rotation and slab thickness handles are created/updated in renderTool.
     const currentCamera = viewport.getCamera();
     const oldCameraPosition = viewportAnnotation.metadata.cameraPosition;
@@ -573,23 +565,31 @@ class CrosshairsTool extends AnnotationTool {
       viewportDraggableRotatable
     ) {
       // Is camera Modified a TRANSLATION or ROTATION?
-      let IsTranslation = true;
+      let isRotation = false;
+
+      // This is guaranteed to be the same diff for both position and focal point
+      // if the camera is modified by pan, zoom, or scroll BUT for rotation of
+      // crosshairs handles it will be different.
+      const cameraModifiedSameForPosAndFocalPoint = csUtils.isEqual(
+        deltaCameraPosition,
+        deltaCameraFocalPoint,
+        1e-3
+      );
 
       // NOTE: it is a translation if the the focal point and camera position shifts are the same
-      if (!csUtils.isEqual(deltaCameraPosition, deltaCameraFocalPoint, 1e-3)) {
-        IsTranslation = false;
+      if (!cameraModifiedSameForPosAndFocalPoint) {
+        isRotation = true;
       }
 
-      // TRANSLATION
-      // NOTE1: if it's a panning don't update the crosshair center
-      // NOTE2: rotation handles are updates in renderTool
-      if (
-        IsTranslation &&
+      const cameraModifiedInPlane =
         Math.abs(
           vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
-        ) > 1e-2
-      ) {
-        // update center of the crosshair
+        ) < 1e-2;
+
+      // TRANSLATION
+      // NOTE1: if the camera modified is a result of a pan or zoom don't update the crosshair center
+      // NOTE2: rotation handles are updates in renderTool
+      if (!isRotation && !cameraModifiedInPlane) {
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
         this.toolCenter[2] += deltaCameraPosition[2];
@@ -611,6 +611,13 @@ class CrosshairsTool extends AnnotationTool {
         this._autoPanViewportIfNecessary(viewportId, renderingEngine);
       });
     }
+
+    const requireSameOrientation = false;
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName(),
+      requireSameOrientation
+    );
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
@@ -1357,7 +1364,7 @@ class CrosshairsTool extends AnnotationTool {
 
   _onNewVolume = (e: any) => {
     const viewportsInfo = this._getViewportsInfo();
-    this.init(viewportsInfo);
+    this.computeToolCenter(viewportsInfo);
   };
 
   _unsubscribeToViewportNewVolumeSet(viewportsInfo) {
