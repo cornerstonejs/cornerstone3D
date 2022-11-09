@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.5.19](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.5.18...@cornerstonejs/streaming-image-volume-loader@0.5.19) (2022-11-09)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
 ## [0.5.18](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.5.17...@cornerstonejs/streaming-image-volume-loader@0.5.18) (2022-11-04)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
