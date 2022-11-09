@@ -21,6 +21,7 @@ type Actor = vtkActor;
 type ActorEntry = {
     uid: string;
     actor: Actor | VolumeActor | ImageActor;
+    referenceId?: string;
     slabThickness?: number;
 };
 
@@ -86,6 +87,7 @@ declare namespace CONSTANTS {
     export {
         colormapsData as CPU_COLORMAPS,
         RENDERING_DEFAULTS,
+        _default as MPR_CAMERA_VALUES,
         EPSILON
     }
 }
@@ -366,7 +368,7 @@ type CPUImageData = {
 };
 
 // @public (undocumented)
-function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): ImageVolume;
+function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<ImageVolume>;
 
 // @public (undocumented)
 function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
@@ -393,6 +395,9 @@ interface CustomEvent_2<T = any> extends Event {
     // (undocumented)
     initCustomEvent(typeArg: string, canBubbleArg: boolean, cancelableArg: boolean, detailArg: T): void;
 }
+
+// @public (undocumented)
+const _default: any;
 
 // @public (undocumented)
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
@@ -436,6 +441,8 @@ export enum EVENTS {
     // (undocumented)
     CAMERA_MODIFIED = "CORNERSTONE_CAMERA_MODIFIED",
     // (undocumented)
+    CAMERA_RESET = "CORNERSTONE_CAMERA_RESET",
+    // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
     // (undocumented)
     ELEMENT_ENABLED = "CORNERSTONE_ELEMENT_ENABLED",
@@ -476,7 +483,9 @@ export enum EVENTS {
     // (undocumented)
     VOLUME_LOADED_FAILED = "CORNERSTONE_VOLUME_LOADED_FAILED",
     // (undocumented)
-    VOLUME_NEW_IMAGE = "CORNERSTONE_VOLUME_NEW_IMAGE"
+    VOLUME_NEW_IMAGE = "CORNERSTONE_VOLUME_NEW_IMAGE",
+    // (undocumented)
+    VOLUME_VIEWPORT_NEW_VOLUME = "CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME"
 }
 
 // @public (undocumented)

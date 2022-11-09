@@ -171,11 +171,6 @@ function cornerstoneStreamingImageVolumeLoader(
     cancel: () => {
       streamingImageVolume.cancelLoading();
     },
-    decache: () => {
-      streamingImageVolume.vtkOpenGLTexture.delete();
-      streamingImageVolume.scalarData = null;
-      streamingImageVolume = null;
-    },
   };
 }
 

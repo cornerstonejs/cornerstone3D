@@ -33,9 +33,9 @@ async function addLabelmapToElement(
 
   // Todo: Right now we use MIP blend mode for the labelmap, since the
   // composite blend mode has a non linear behavior regarding fill and line
-  // opacity. This should be changed to a custom labelmap blendmode which does
+  // opacity. This should be changed to a custom labelmap blendMode which does
   // what composite does, but with a linear behavior.
-  const volumeInputs: Types.IVolumeInput = [
+  const volumeInputs: Types.IVolumeInput[] = [
     {
       volumeId,
       actorUID: segmentationRepresentationUID,

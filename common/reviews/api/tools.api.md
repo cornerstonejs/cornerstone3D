@@ -26,6 +26,7 @@ type Actor = vtkActor;
 type ActorEntry = {
     uid: string;
     actor: Actor | VolumeActor | ImageActor;
+    referenceId?: string;
     slabThickness?: number;
 };
 
@@ -195,7 +196,7 @@ declare namespace annotation {
         config,
         locking,
         selection,
-        state,
+        state_2 as state,
         visibility,
         FrameOfReferenceSpecificAnnotationManager
     }
@@ -658,7 +659,8 @@ declare namespace color {
     export {
         getColorForSegmentIndex,
         addColorLUT_2 as addColorLUT,
-        setColorLUT
+        setColorLUT,
+        setColorForSegmentIndex
     }
 }
 
@@ -682,7 +684,11 @@ declare namespace config_2 {
         getToolGroupSpecificConfig_2 as getToolGroupSpecificConfig,
         setGlobalConfig_2 as setGlobalConfig,
         setGlobalRepresentationConfig,
-        setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig
+        setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig,
+        setSegmentSpecificConfig,
+        getSegmentSpecificConfig,
+        setSegmentationRepresentationSpecificConfig_2 as setSegmentationRepresentationSpecificConfig,
+        getSegmentationRepresentationSpecificConfig_2 as getSegmentationRepresentationSpecificConfig
     }
 }
 
@@ -1024,6 +1030,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _checkIfViewportsRenderingSameScene: (viewport: any, otherViewport: any) => boolean;
     // (undocumented)
+    computeToolCenter: (viewportsInfo: any) => void;
+    // (undocumented)
     _deactivateModify: (element: any) => void;
     // (undocumented)
     editData: {
@@ -1052,9 +1060,9 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _getSlabThicknessHandleNearImagePoint(viewport: any, annotation: any, canvasCoords: any, proximity: any): any;
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType?: string) => void;
+    _getViewportsInfo: () => Types_2.IViewportId[];
     // (undocumented)
-    init: () => void;
+    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
     initializeViewport: ({ renderingEngineId, viewportId, }: Types_2.IViewportId) => {
         normal: Types_2.Point3;
@@ -1075,7 +1083,11 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     onCameraModified: (evt: any) => void;
     // (undocumented)
+    _onNewVolume: (e: any) => void;
+    // (undocumented)
     onSetToolActive(): void;
+    // (undocumented)
+    onSetToolDisabled(): void;
     // (undocumented)
     onSetToolEnabled(): void;
     // (undocumented)
@@ -1089,11 +1101,15 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     setSlabThickness(viewport: any, slabThickness: any): void;
     // (undocumented)
+    _subscribeToViewportNewVolumeSet(viewports: any): void;
+    // (undocumented)
     toolCenter: Types_2.Point3;
     // (undocumented)
     static toolName: any;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes) => void;
+    // (undocumented)
+    _unsubscribeToViewportNewVolumeSet(viewportsInfo: any): void;
 }
 
 // @public (undocumented)
@@ -1787,10 +1803,22 @@ function getSegmentationRepresentationByUID(toolGroupId: string, segmentationRep
 function getSegmentationRepresentations(toolGroupId: string): ToolGroupSpecificRepresentations | [];
 
 // @public (undocumented)
+function getSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string): RepresentationConfig;
+
+// @public (undocumented)
+function getSegmentationRepresentationSpecificConfig_2(toolGroupId: string, segmentationRepresentationUID: string): RepresentationConfig;
+
+// @public (undocumented)
 function getSegmentations(): Segmentation[] | [];
 
 // @public (undocumented)
 function getSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string): boolean | undefined;
+
+// @public (undocumented)
+function getSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
+
+// @public (undocumented)
+function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
@@ -1818,13 +1846,13 @@ function getToolGroup(toolGroupId: string): IToolGroup | undefined;
 function getToolGroupForViewport(viewportId: string, renderingEngineId: string): IToolGroup | undefined;
 
 // @public (undocumented)
+function getToolGroupIdsWithSegmentation(segmentationId: string): string[];
+
+// @public (undocumented)
 function getToolGroupSpecificConfig(toolGroupId: string): SegmentationRepresentationConfig;
 
 // @public (undocumented)
 function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresentationConfig;
-
-// @public (undocumented)
-function getToolGroupsWithSegmentation(segmentationId: string): string[];
 
 // @public (undocumented)
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
@@ -2318,6 +2346,9 @@ interface IStreamingVolumeProperties {
 function isValidRepresentationConfig(representationType: string, config: RepresentationConfig): boolean;
 
 // @public (undocumented)
+function isViewportPreScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string): boolean;
+
+// @public (undocumented)
 interface ISynchronizerEventHandler {
     // (undocumented)
     (synchronizer: Synchronizer, sourceViewport: Types_2.IViewportId, targetViewport: Types_2.IViewportId, sourceEvent: any): void;
@@ -2564,6 +2595,9 @@ type JumpToSliceOptions = {
 };
 
 // @public (undocumented)
+function jumpToWorld(viewport: Types_2.IVolumeViewport, jumpWorld: Types_2.Point3): true | undefined;
+
+// @public (undocumented)
 enum KeyboardBindings {
     // (undocumented)
     Alt = 18,
@@ -2600,6 +2634,8 @@ type LabelmapConfig = {
     renderFillInactive?: boolean;
     fillAlpha?: number;
     fillAlphaInactive?: number;
+    outlineOpacity?: number;
+    outlineOpacityInactive?: number;
 };
 
 // @public (undocumented)
@@ -3564,13 +3600,16 @@ function removeAllAnnotations(element?: HTMLDivElement): void;
 function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
 
 // @public (undocumented)
+function removeColorLUT(colorLUTIndex: number): void;
+
+// @public (undocumented)
 function removeSegmentation(segmentationId: string): void;
 
 // @public (undocumented)
 function removeSegmentationRepresentation(toolGroupId: string, segmentationRepresentationUID: string): void;
 
 // @public (undocumented)
-function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationRepresentationUIDs?: string[] | undefined): void;
+function removeSegmentationsFromToolGroup(toolGroupId: string, segmentationRepresentationUIDs?: string[] | undefined, immediate?: boolean): void;
 
 // @public (undocumented)
 export function removeTool(ToolClass: any): void;
@@ -3629,7 +3668,7 @@ type Segmentation = {
 
 declare namespace segmentation {
     export {
-        state_2 as state,
+        state_3 as state,
         addSegmentations,
         activeSegmentation,
         addSegmentationRepresentations,
@@ -3649,7 +3688,8 @@ declare namespace segmentation_2 {
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
-        rectangleROIThresholdVolumeByRange
+        rectangleROIThresholdVolumeByRange,
+        triggerSegmentationRender
     }
 }
 
@@ -3792,6 +3832,9 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
 
 // @public (undocumented)
+function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Color): void;
+
+// @public (undocumented)
 function setColorLUT(toolGroupId: string, segmentationRepresentationUID: string, colorLUTIndex: number): void;
 
 // @public (undocumented)
@@ -3813,10 +3856,22 @@ function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig)
 function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
 
 // @public (undocumented)
+function setSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
+
+// @public (undocumented)
+function setSegmentationRepresentationSpecificConfig_2(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig): void;
+
+// @public (undocumented)
 function setSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string, visibility: boolean): void;
 
 // @public (undocumented)
 function setSegmentIndexLocked(segmentationId: string, segmentIndex: number, locked?: boolean): void;
+
+// @public (undocumented)
+function setSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: SegmentSpecificRepresentationConfig): void;
+
+// @public (undocumented)
+function setSegmentSpecificRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, config: SegmentSpecificRepresentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
 type SetToolBindingsType = {
@@ -3828,6 +3883,9 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 
 // @public (undocumented)
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
+
+// @public (undocumented)
+function setVisibilityForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, visibility: boolean): void;
 
 // @public (undocumented)
 function showAllAnnotations(): void;
@@ -3959,7 +4017,10 @@ type StackViewportScrollEventDetail = {
     direction: number;
 };
 
-declare namespace state {
+// @public (undocumented)
+export let state: ICornerstoneTools3dState;
+
+declare namespace state_2 {
     export {
         getAnnotations,
         getNumberOfAnnotations,
@@ -3972,7 +4033,7 @@ declare namespace state {
     }
 }
 
-declare namespace state_2 {
+declare namespace state_3 {
     export {
         getDefaultSegmentationStateManager,
         getSegmentation,
@@ -3986,10 +4047,15 @@ declare namespace state_2 {
         setToolGroupSpecificConfig,
         getGlobalConfig,
         setGlobalConfig,
-        getToolGroupsWithSegmentation,
+        getSegmentationRepresentationSpecificConfig,
+        setSegmentationRepresentationSpecificConfig,
+        getSegmentSpecificRepresentationConfig,
+        setSegmentSpecificRepresentationConfig,
+        getToolGroupIdsWithSegmentation,
         getSegmentationRepresentationByUID,
         addColorLUT,
-        getColorLUT
+        getColorLUT,
+        removeColorLUT
     }
 }
 
@@ -4164,6 +4230,8 @@ export { ToolGroupManager }
 // @public (undocumented)
 type ToolGroupSpecificLabelmapRepresentation = ToolGroupSpecificRepresentationState & {
     config: LabelmapRenderingConfig;
+    segmentationRepresentationSpecificConfig?: RepresentationConfig;
+    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
 };
 
 // @public (undocumented)
@@ -4291,6 +4359,9 @@ function triggerSegmentationModified(segmentationId?: string): void;
 function triggerSegmentationRemoved(segmentationId: string): void;
 
 // @public (undocumented)
+function triggerSegmentationRender(toolGroupId: string): void;
+
+// @public (undocumented)
 function triggerSegmentationRepresentationModified(toolGroupId: string, segmentationRepresentationUID?: string): void;
 
 // @public (undocumented)
@@ -4365,6 +4436,7 @@ declare namespace utilities {
         getAnnotationNearPoint,
         getAnnotationNearPointOnEnabledElement,
         jumpToSlice,
+        viewport,
         cine,
         clip_2 as clip,
         boundingBox,
@@ -4380,6 +4452,14 @@ declare namespace vec2 {
     export {
         findClosestPoint,
         clip as liangBarksyClip
+    }
+}
+
+declare namespace viewport {
+    export {
+        isViewportPreScaled,
+        jumpToSlice,
+        jumpToWorld
     }
 }
 
@@ -4411,7 +4491,8 @@ declare namespace visibility {
 declare namespace visibility_2 {
     export {
         setSegmentationVisibility,
-        getSegmentationVisibility
+        getSegmentationVisibility,
+        setVisibilityForSegmentIndex
     }
 }
 

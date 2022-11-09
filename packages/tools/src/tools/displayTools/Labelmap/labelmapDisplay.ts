@@ -293,6 +293,8 @@ function _setLabelmapColorAndOpacity(
   volumeActor.getProperty().setInterpolationTypeToNearest();
 
   volumeActor.getProperty().setUseLabelOutline(renderOutline);
+
+  // @ts-ignore: setLabelOutlineWidth is not in the vtk.d.ts appraently
   volumeActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
   volumeActor.getProperty().setLabelOutlineThickness(outlineWidth);
 
