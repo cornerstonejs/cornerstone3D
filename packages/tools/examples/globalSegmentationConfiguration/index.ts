@@ -108,7 +108,7 @@ addSliderToToolbar({
   range: [0, 100],
   defaultValue: 100,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineOpacity', value / 100);
+    setConfigValue('outlineOpacity', Number(value) / 100);
   },
 });
 addSliderToToolbar({
