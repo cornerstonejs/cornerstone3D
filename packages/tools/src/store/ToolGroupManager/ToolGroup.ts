@@ -192,6 +192,39 @@ export default class ToolGroup implements IToolGroup {
     }
   }
 
+  setToolMode(
+    toolName: string,
+    mode: ToolModes,
+    options = {} as SetToolBindingsType
+  ): void {
+    if (!toolName) {
+      console.warn('setToolMode: toolName must be defined');
+      return;
+    }
+
+    if (mode === ToolModes.Active) {
+      this.setToolActive(toolName, options);
+      return;
+    }
+
+    if (mode === ToolModes.Passive) {
+      this.setToolPassive(toolName);
+      return;
+    }
+
+    if (mode === ToolModes.Enabled) {
+      this.setToolEnabled(toolName);
+      return;
+    }
+
+    if (mode === ToolModes.Disabled) {
+      this.setToolDisabled(toolName);
+      return;
+    }
+
+    console.warn('setToolMode: mode must be defined');
+  }
+
   /**
    * Set the tool mode on the toolGroup to be Active. This means the tool
    * can be actively used by the defined bindings (e.g., Mouse primary click)

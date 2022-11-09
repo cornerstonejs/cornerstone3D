@@ -56,7 +56,10 @@ function setGlobalRepresentationConfig(
     ...globalConfig,
     representations: {
       ...globalConfig.representations,
-      [representationType]: config,
+      [representationType]: {
+        ...globalConfig.representations[representationType],
+        ...config,
+      },
     },
   });
 }
