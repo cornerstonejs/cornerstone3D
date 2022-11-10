@@ -47,8 +47,11 @@ class AnnotationRenderingEngine {
    * Remove the viewport's HTMLDivElement from subsequent annotation renders
    * @param viewportId - Viewport Unique identifier
    */
-  public removeViewportElement(viewportId: string) {
+  public removeViewportElement(viewportId: string, element: HTMLDivElement) {
     this._viewportElements.delete(viewportId);
+
+    // delete element from needsRender if element exist
+    this._needsRender.delete(element);
 
     // Reset the request animation frame if no enabled elements
     if (this._viewportElements.size === 0) {
@@ -103,9 +106,14 @@ class AnnotationRenderingEngine {
   };
 
   private _setViewportsToBeRenderedNextFrame(elements: HTMLDivElement[]) {
+    const elementsEnabled = [...this._viewportElements.values()];
+
     // Add the viewports to the set of flagged viewports
     elements.forEach((element) => {
-      this._needsRender.add(element);
+      // only enabledElement need to render
+      if (elementsEnabled.indexOf(element) !== -1) {
+        this._needsRender.add(element);
+      }
     });
 
     // Render any flagged viewports

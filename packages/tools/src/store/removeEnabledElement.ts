@@ -41,7 +41,7 @@ function removeEnabledElement(
   }
 
   // Remove this element from the annotation rendering engine
-  annotationRenderingEngine.removeViewportElement(viewportId);
+  annotationRenderingEngine.removeViewportElement(viewportId, element);
 
   // Listeners
   mouseEventListeners.disable(element);
