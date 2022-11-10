@@ -993,6 +993,9 @@ function createLabelmapVolumeForViewport(input: {
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
+function createStackImageSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler): Synchronizer;
 
 // @public (undocumented)
@@ -4101,7 +4104,8 @@ declare namespace synchronizers {
     export {
         createCameraPositionSynchronizer,
         createVOISynchronizer,
-        createZoomPanSynchronizer
+        createZoomPanSynchronizer,
+        createStackImageSynchronizer
     }
 }
 export { synchronizers }
