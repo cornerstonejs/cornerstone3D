@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.27.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.27.1...@cornerstonejs/tools@0.27.2) (2022-11-10)
+
+
+### Bug Fixes
+
+* limit disabled element not need to render for annotations ([#289](https://github.com/cornerstonejs/cornerstone3D-beta/issues/289)) ([8232ed0](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8232ed00ee42ab3fd837ab2c5a75b2128c8f87a6))
+
+
+
+
+
 ## [0.27.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.27.0...@cornerstonejs/tools@0.27.1) (2022-11-09)
 
 **Note:** Version bump only for package @cornerstonejs/tools
