@@ -1,9 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import {
-  utilities as csUtils,
-  getRenderingEngines,
-  CONSTANTS,
-} from '@cornerstonejs/core';
+import { getRenderingEngines, CONSTANTS, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { addAnnotation } from '../stateManagement/annotation/annotationState';
@@ -11,7 +7,6 @@ import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import throttle from '../utilities/throttle';
 
 import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
@@ -35,8 +30,8 @@ class ReferenceLines extends AnnotationDisplayTool {
   public mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
   editData: {
-    renderingEngine: Types.IRenderingEngine;
-    sourceViewport: Types.IVolumeViewport;
+    renderingEngine: any;
+    sourceViewport: any;
     annotation: ReferenceLineAnnotation;
   } | null = {} as any;
   isDrawing: boolean;
@@ -60,7 +55,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     // );
   }
 
-  _init = () => {
+  _init = (): void => {
     const renderingEngines = getRenderingEngines();
     const renderingEngine = renderingEngines[0];
 
@@ -76,17 +71,20 @@ class ReferenceLines extends AnnotationDisplayTool {
       this.configuration.sourceViewportId
     ) as Types.IVolumeViewport;
 
+    if (!sourceViewport || !sourceViewport.getImageData()) {
+      return;
+    }
+
     const { canvas, element } = sourceViewport;
 
     const { viewUp, viewPlaneNormal } = sourceViewport.getCamera();
 
+    window.sourceViewport = sourceViewport;
+
     // topLeft, topRight, bottomLeft and bottomRight
-    const sourceViewportCanvasCornersInWorld = [
-      sourceViewport.canvasToWorld([0, 0]),
-      sourceViewport.canvasToWorld([canvas.width, 0]),
-      sourceViewport.canvasToWorld([0, canvas.height]),
-      sourceViewport.canvasToWorld([canvas.width, canvas.height]),
-    ];
+
+    const sourceViewportCanvasCornersInWorld =
+      utilities.getViewportImageCornersInWorld(sourceViewport);
 
     let annotation = this.editData.annotation;
 
@@ -129,11 +127,11 @@ class ReferenceLines extends AnnotationDisplayTool {
     );
   };
 
-  onSetToolEnabled = () => {
+  onSetToolEnabled = (): void => {
     this._init();
   };
 
-  onCameraModified = (evt) => {
+  onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
     // If the camera is modified, we need to update the reference lines
     // we really don't care which viewport triggered the
     // camera modification, since we want to update all of them
@@ -158,6 +156,10 @@ class ReferenceLines extends AnnotationDisplayTool {
 
     let renderStatus = false;
 
+    if (!sourceViewport) {
+      return renderStatus;
+    }
+
     if (sourceViewport.id === targetViewport.id) {
       // If the source viewport is the same as the current viewport, we don't need to render
       return renderStatus;
@@ -179,7 +181,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     const bottomLeft = annotation.data.handles.points[2];
     const bottomRight = annotation.data.handles.points[3];
 
-    const { focalPoint, viewPlaneNormal, viewUp } = targetViewport.getCamera();
+    const { focalPoint, viewPlaneNormal } = targetViewport.getCamera();
     const { viewPlaneNormal: sourceViewPlaneNormal } =
       sourceViewport.getCamera();
 
@@ -191,41 +193,48 @@ class ReferenceLines extends AnnotationDisplayTool {
     const targetViewportPlane = planeEquation(viewPlaneNormal, focalPoint);
 
     // check if the topLeft and bottomLeft line is parallel to the viewUp
+    const pointSet1 = [topLeft, bottomLeft, topRight, bottomRight];
+    const pointSet2 = [topLeft, topRight, bottomLeft, bottomRight];
 
-    const point1 = topLeft;
-    const point2 = bottomLeft;
-    const point3 = topRight;
-    const point4 = bottomRight;
+    let pointSetToUse = pointSet1;
 
-    let topBottomVec = vec3.subtract(vec3.create(), point2, point1);
+    let topBottomVec = vec3.subtract(vec3.create(), pointSet1[0], pointSet1[1]);
     topBottomVec = vec3.normalize(vec3.create(), topBottomVec);
 
-    let topRightVec = vec3.subtract(vec3.create(), point3, point1);
+    let topRightVec = vec3.subtract(vec3.create(), pointSet1[2], pointSet1[0]);
     topRightVec = vec3.normalize(vec3.create(), topRightVec);
 
-    let lineStartWorld = linePlaneIntersection(
-      point1,
-      point2,
+    const newNormal = vec3.cross(vec3.create(), topBottomVec, topRightVec);
+
+    if (this.isParallel(newNormal, viewPlaneNormal)) {
+      return renderStatus;
+    }
+
+    // check if it is perpendicular to the viewPlaneNormal which means
+    // the line does not intersect the viewPlaneNormal
+    if (this.isPerpendicular(topBottomVec, viewPlaneNormal)) {
+      // 'use pointSet2';
+      pointSetToUse = pointSet2;
+    }
+
+    const lineStartWorld = linePlaneIntersection(
+      pointSetToUse[0],
+      pointSetToUse[1],
       targetViewportPlane
     );
 
-    let lineEndWorld;
+    const lineEndWorld = linePlaneIntersection(
+      pointSetToUse[2],
+      pointSetToUse[3],
+      targetViewportPlane
+    );
 
-    if (lineStartWorld.some((value) => isNaN(value))) {
-      lineStartWorld = linePlaneIntersection(
-        point1,
-        point3,
-        targetViewportPlane
-      );
-
-      if (lineStartWorld.some((value) => isNaN(value))) {
-        return renderStatus;
-      }
-
-      lineEndWorld = linePlaneIntersection(point2, point4, targetViewportPlane);
-    } else {
-      lineEndWorld = linePlaneIntersection(point3, point4, targetViewportPlane);
-    }
+    // console.debug('***********');
+    // console.debug('viewportId', targetViewport.id);
+    // console.debug('lineStartWorld', lineStartWorld);
+    // console.debug('lineEndWorld', lineEndWorld);
+    // console.debug(Math.abs(vec3.dot(topBottomVec, viewPlaneNormal)));
+    // console.debug('***********');
 
     const { annotationUID } = annotation;
 
@@ -261,12 +270,12 @@ class ReferenceLines extends AnnotationDisplayTool {
     return renderStatus;
   };
 
-  isPerpendicular = (vec1, vec2) => {
+  isPerpendicular = (vec1: Types.Point3, vec2: Types.Point3): boolean => {
     const dot = vec3.dot(vec1, vec2);
     return Math.abs(dot) < EPSILON;
   };
 
-  isParallel(vec1, vec2) {
+  isParallel(vec1: Types.Point3, vec2: Types.Point3): boolean {
     return Math.abs(vec3.dot(vec1, vec2)) > 1 - EPSILON;
   }
 }

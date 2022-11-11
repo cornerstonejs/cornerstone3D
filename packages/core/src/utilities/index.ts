@@ -29,6 +29,7 @@ import isImageActor from './isImageActor';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
 import calculateViewportsSpatialRegistration from './calculateViewportsSpatialRegistration';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
+import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 
 // name spaces
 import * as planar from './planar';
@@ -68,4 +69,5 @@ export {
   getViewportsWithImageURI,
   calculateViewportsSpatialRegistration,
   spatialRegistrationMetadataProvider,
+  getViewportImageCornersInWorld,
 };
