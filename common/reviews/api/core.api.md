@@ -4,7 +4,7 @@
 
 ```ts
 
-import type { mat4 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
@@ -36,9 +36,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-function addProvider(provider: (type: string, imageId: string) => {
-    any: any;
-}, priority?: number): void;
+function addProvider(provider: (type: string, query: any) => any, priority?: number): void;
 
 // @public (undocumented)
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
@@ -57,6 +55,9 @@ enum BlendModes {
 
 // @public (undocumented)
 export const cache: Cache_2;
+
+// @public (undocumented)
+function calculateViewportsSpatialRegistration(viewport1: IStackViewport, viewport2: IStackViewport): void;
 
 // @public (undocumented)
 type CameraModifiedEvent = CustomEvent_2<CameraModifiedEventDetail>;
@@ -557,7 +558,7 @@ export function getEnabledElements(): IEnabledElement[];
 function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): ImageSliceData;
 
 // @public (undocumented)
-function getMetaData(type: string, imageId: string): any;
+function getMetaData(type: string, query: string): any;
 
 // @public (undocumented)
 function getMinMax(storedPixelData: number[]): {
@@ -1575,7 +1576,7 @@ function registerVolumeLoader(scheme: string, volumeLoader: Types.VolumeLoaderFn
 function removeAllProviders(): void;
 
 // @public (undocumented)
-function removeProvider(provider: (type: string, imageId: string) => {
+function removeProvider(provider: (type: string, query: any) => {
     any: any;
 }): void;
 
@@ -1703,6 +1704,12 @@ export function setVolumesForViewports(renderingEngine: IRenderingEngine, volume
 function snapFocalPointToSlice(focalPoint: Point3, position: Point3, sliceRange: ActorSliceRange, viewPlaneNormal: Point3, spacingInNormalDirection: number, deltaFrames: number): {
     newFocalPoint: Point3;
     newPosition: Point3;
+};
+
+// @public (undocumented)
+const spatialRegistrationMetadataProvider: {
+    add: (query: string[], payload: mat4) => void;
+    get: (type: string, query: string[]) => mat4;
 };
 
 // @public (undocumented)
@@ -1952,7 +1959,9 @@ declare namespace utilities {
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
         isImageActor,
-        getViewportsWithImageURI
+        getViewportsWithImageURI,
+        calculateViewportsSpatialRegistration,
+        spatialRegistrationMetadataProvider
     }
 }
 export { utilities }

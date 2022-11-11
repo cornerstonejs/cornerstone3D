@@ -195,6 +195,8 @@ describe('Synchronizer Manager: ', () => {
           [viewportId2]
         );
       });
+
+      this.renderingEngine.render();
     } catch (e) {
       done.fail(e);
     }
