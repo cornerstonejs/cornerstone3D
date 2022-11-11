@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.21.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.20.0...@cornerstonejs/core@0.21.0) (2022-11-11)
+
+
+### Features
+
+* add reference lines tool ([#292](https://github.com/cornerstonejs/cornerstone3D-beta/issues/292)) ([c56df91](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c56df91a64ec005656f940dd3728f476152fa917))
+
+
+
+
+
 # [0.20.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.19.2...@cornerstonejs/core@0.20.0) (2022-11-11)
 
 
