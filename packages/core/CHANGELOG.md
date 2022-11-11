@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.20.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.19.2...@cornerstonejs/core@0.20.0) (2022-11-11)
+
+
+### Features
+
+* Add segmentSpecificConfiguration and add outlineOpacity config for Segmentation ([#285](https://github.com/cornerstonejs/cornerstone3D-beta/issues/285)) ([92fb495](https://github.com/cornerstonejs/cornerstone3D-beta/commit/92fb49594cfc3219f761e905ba765acaddbe1e1a))
+* add stack synchronization within or across studies ([#291](https://github.com/cornerstonejs/cornerstone3D-beta/issues/291)) ([f38bec0](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f38bec06713265cee361fc905539aa5ed841e707))
+
+
+
+
+
 ## [0.19.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.19.1...@cornerstonejs/core@0.19.2) (2022-11-09)
 
 **Note:** Version bump only for package @cornerstonejs/core

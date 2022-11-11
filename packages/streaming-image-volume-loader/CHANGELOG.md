@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.5.19...@cornerstonejs/streaming-image-volume-loader@0.6.0) (2022-11-11)
+
+
+### Features
+
+* Add segmentSpecificConfiguration and add outlineOpacity config for Segmentation ([#285](https://github.com/cornerstonejs/cornerstone3D-beta/issues/285)) ([92fb495](https://github.com/cornerstonejs/cornerstone3D-beta/commit/92fb49594cfc3219f761e905ba765acaddbe1e1a))
+
+
+
+
+
 ## [0.5.19](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.5.18...@cornerstonejs/streaming-image-volume-loader@0.5.19) (2022-11-09)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
