@@ -135,7 +135,7 @@ class ReferenceLines extends AnnotationDisplayTool {
 
   onCameraModified = (evt) => {
     // If the camera is modified, we need to update the reference lines
-    // we really don't really care which viewport triggered the
+    // we really don't care which viewport triggered the
     // camera modification, since we want to update all of them
     // with respect to the targetViewport
     this._init();

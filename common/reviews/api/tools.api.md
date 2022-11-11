@@ -3591,6 +3591,50 @@ export class RectangleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
+interface ReferenceLineAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+        };
+    };
+}
+
+// @public (undocumented)
+export class ReferenceLinesTool extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    editData: {
+        sourceViewport: any;
+        annotation: any;
+    } | null;
+    // (undocumented)
+    _init: () => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isParallel(vec1: any, vec2: any): boolean;
+    // (undocumented)
+    isPerpendicular: (vec1: any, vec2: any) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    onCameraModified: (evt: any) => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 function registerCursor(toolName: string, iconContent: string, viewBox: {
     x: number;
     y: number;
@@ -4287,7 +4331,8 @@ declare namespace ToolSpecificAnnotationTypes {
         RectangleROIStartEndThresholdAnnotation,
         PlanarFreehandROIAnnotation,
         ArrowAnnotation,
-        AngleAnnotation
+        AngleAnnotation,
+        ReferenceLineAnnotation
     }
 }
 
