@@ -75,13 +75,8 @@ class ReferenceLines extends AnnotationDisplayTool {
       return;
     }
 
-    const { canvas, element } = sourceViewport;
-
+    const { element } = sourceViewport;
     const { viewUp, viewPlaneNormal } = sourceViewport.getCamera();
-
-    window.sourceViewport = sourceViewport;
-
-    // topLeft, topRight, bottomLeft and bottomRight
 
     const sourceViewportCanvasCornersInWorld =
       utilities.getViewportImageCornersInWorld(sourceViewport);
@@ -199,12 +194,16 @@ class ReferenceLines extends AnnotationDisplayTool {
     let pointSetToUse = pointSet1;
 
     let topBottomVec = vec3.subtract(vec3.create(), pointSet1[0], pointSet1[1]);
-    topBottomVec = vec3.normalize(vec3.create(), topBottomVec);
+    topBottomVec = vec3.normalize(vec3.create(), topBottomVec) as Types.Point3;
 
     let topRightVec = vec3.subtract(vec3.create(), pointSet1[2], pointSet1[0]);
     topRightVec = vec3.normalize(vec3.create(), topRightVec);
 
-    const newNormal = vec3.cross(vec3.create(), topBottomVec, topRightVec);
+    const newNormal = vec3.cross(
+      vec3.create(),
+      topBottomVec,
+      topRightVec
+    ) as Types.Point3;
 
     if (this.isParallel(newNormal, viewPlaneNormal)) {
       return renderStatus;
