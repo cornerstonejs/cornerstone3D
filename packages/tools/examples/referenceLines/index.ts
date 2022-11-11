@@ -37,7 +37,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Reference Lies',
+  'Reference Lines',
   'Here we demonstrate the usage of reference lines tool. \
    Below, you will see 5 viewports, representing a prostate MRI scan. \
    The viewports contain Stack Viewports in purple backGround, and a volume \
