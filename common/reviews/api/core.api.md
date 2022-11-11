@@ -594,6 +594,9 @@ function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera:
 };
 
 // @public (undocumented)
+function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];
+
+// @public (undocumented)
 function getViewportsWithImageURI(imageURI: string, renderingEngineId?: string): Array<Viewport_2>;
 
 // @public (undocumented)
@@ -1961,7 +1964,8 @@ declare namespace utilities {
         isImageActor,
         getViewportsWithImageURI,
         calculateViewportsSpatialRegistration,
-        spatialRegistrationMetadataProvider
+        spatialRegistrationMetadataProvider,
+        getViewportImageCornersInWorld
     }
 }
 export { utilities }
