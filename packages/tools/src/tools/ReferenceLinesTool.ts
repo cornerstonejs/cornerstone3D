@@ -1,5 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import { getRenderingEngines, CONSTANTS, utilities } from '@cornerstonejs/core';
+import {
+  getRenderingEngines,
+  CONSTANTS,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { addAnnotation } from '../stateManagement/annotation/annotationState';
@@ -12,10 +16,6 @@ import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
-import {
-  linePlaneIntersection,
-  planeEquation,
-} from '../../../core/src/utilities/planar';
 
 const { EPSILON } = CONSTANTS;
 
@@ -79,7 +79,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     const { viewUp, viewPlaneNormal } = sourceViewport.getCamera();
 
     const sourceViewportCanvasCornersInWorld =
-      utilities.getViewportImageCornersInWorld(sourceViewport);
+      csUtils.getViewportImageCornersInWorld(sourceViewport);
 
     let annotation = this.editData.annotation;
 
@@ -185,7 +185,10 @@ class ReferenceLines extends AnnotationDisplayTool {
       return renderStatus;
     }
 
-    const targetViewportPlane = planeEquation(viewPlaneNormal, focalPoint);
+    const targetViewportPlane = csUtils.planar.planeEquation(
+      viewPlaneNormal,
+      focalPoint
+    );
 
     // check if the topLeft and bottomLeft line is parallel to the viewUp
     const pointSet1 = [topLeft, bottomLeft, topRight, bottomRight];
@@ -216,25 +219,17 @@ class ReferenceLines extends AnnotationDisplayTool {
       pointSetToUse = pointSet2;
     }
 
-    const lineStartWorld = linePlaneIntersection(
+    const lineStartWorld = csUtils.planar.linePlaneIntersection(
       pointSetToUse[0],
       pointSetToUse[1],
       targetViewportPlane
     );
 
-    const lineEndWorld = linePlaneIntersection(
+    const lineEndWorld = csUtils.planar.linePlaneIntersection(
       pointSetToUse[2],
       pointSetToUse[3],
       targetViewportPlane
     );
-
-    // console.debug('***********');
-    // console.debug('viewportId', targetViewport.id);
-    // console.debug('lineStartWorld', lineStartWorld);
-    // console.debug('lineEndWorld', lineEndWorld);
-    // console.debug(Math.abs(vec3.dot(topBottomVec, viewPlaneNormal)));
-    // console.debug('***********');
-
     const { annotationUID } = annotation;
 
     styleSpecifier.annotationUID = annotationUID;

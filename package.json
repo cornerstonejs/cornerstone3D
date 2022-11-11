@@ -20,6 +20,7 @@
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
     "serve-static-examples": "npx serve .static-examples",
+    "build:all": "lerna run build:all",
     "dev": "yarn run all-examples",
     "docs": "lerna run docs",
     "docs:watch": "lerna run docs:watch",

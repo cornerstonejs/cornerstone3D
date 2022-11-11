@@ -3605,8 +3605,9 @@ export class ReferenceLinesTool extends AnnotationDisplayTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     editData: {
+        renderingEngine: any;
         sourceViewport: any;
-        annotation: any;
+        annotation: ReferenceLineAnnotation;
     } | null;
     // (undocumented)
     _init: () => void;
@@ -3615,13 +3616,13 @@ export class ReferenceLinesTool extends AnnotationDisplayTool {
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    isParallel(vec1: any, vec2: any): boolean;
+    isParallel(vec1: Types_2.Point3, vec2: Types_2.Point3): boolean;
     // (undocumented)
-    isPerpendicular: (vec1: any, vec2: any) => boolean;
+    isPerpendicular: (vec1: Types_2.Point3, vec2: Types_2.Point3) => boolean;
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    onCameraModified: (evt: any) => void;
+    onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
