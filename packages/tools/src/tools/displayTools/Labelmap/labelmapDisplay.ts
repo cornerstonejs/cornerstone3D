@@ -106,11 +106,12 @@ async function addSegmentationRepresentation(
  * SegmentationStateManager.
  * @param toolGroup - the tool group that contains the viewports
  * @param segmentationRepresentationUID - The uid of the segmentation representation
+ * @param renderImmediate - If true, there will be a render call after the labelmap is removed
  */
 function removeSegmentationRepresentation(
   toolGroupId: string,
   segmentationRepresentationUID: string,
-  immediate = false
+  renderImmediate = false
 ): void {
   _removeLabelmapFromToolGroupViewports(
     toolGroupId,
@@ -121,7 +122,7 @@ function removeSegmentationRepresentation(
     segmentationRepresentationUID
   );
 
-  if (immediate) {
+  if (renderImmediate) {
     const viewportsInfo = getToolGroup(toolGroupId).getViewportsInfo();
     viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
       const enabledElement = getEnabledElementByIds(
@@ -294,7 +295,7 @@ function _setLabelmapColorAndOpacity(
 
   volumeActor.getProperty().setUseLabelOutline(renderOutline);
 
-  // @ts-ignore: setLabelOutlineWidth is not in the vtk.d.ts appraently
+  // @ts-ignore: setLabelOutlineWidth is not in the vtk.d.ts apparently
   volumeActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
   volumeActor.getProperty().setLabelOutlineThickness(outlineWidth);
 
@@ -459,36 +460,6 @@ async function _addLabelmapToViewport(
     segmentationRepresentationUID
   );
 }
-
-// async function _addLabelmapToToolGroupViewports(
-//   toolGroupId: string,
-//   volumeId: string,
-//   segmentationRepresentationUID: string
-// ): Promise<void> {
-//   const toolGroup = getToolGroup(toolGroupId) as IToolGroup;
-//   const { viewportsInfo } = toolGroup;
-
-//   for (const viewportInfo of viewportsInfo) {
-//     const { viewportId, renderingEngineId } = viewportInfo;
-//     const enabledElement = getEnabledElementByIds(
-//       viewportId,
-//       renderingEngineId
-//     );
-
-//     if (!enabledElement) {
-//       throw new Error(
-//         `No enabled element found for rendering engine: ${renderingEngineId} and viewport: ${viewportId}`
-//       );
-//     }
-
-//     const { viewport } = enabledElement;
-//     addLabelmapToElement(
-//       viewport.element,
-//       volumeId,
-//       segmentationRepresentationUID
-//     );
-//   }
-// }
 
 export default {
   render,

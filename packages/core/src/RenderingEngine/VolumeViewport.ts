@@ -439,11 +439,6 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       return;
     }
 
-    // throw new Error(
-    //     'Cannot get acquisition plane orientation, no actor in viewport'
-    //   );
-    // }
-
     // Todo: fix this after we add the volumeId reference to actorEntry later
     // in the segmentation refactor
     const volumeId = actorEntry.uid;

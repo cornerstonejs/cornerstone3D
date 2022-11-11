@@ -87,7 +87,7 @@ declare namespace CONSTANTS {
     export {
         colormapsData as CPU_COLORMAPS,
         RENDERING_DEFAULTS,
-        _default as MPR_CAMERA_VALUES,
+        mprCameraValues as MPR_CAMERA_VALUES,
         EPSILON
     }
 }
@@ -395,9 +395,6 @@ interface CustomEvent_2<T = any> extends Event {
     // (undocumented)
     initCustomEvent(typeArg: string, canBubbleArg: boolean, cancelableArg: boolean, detailArg: T): void;
 }
-
-// @public (undocumented)
-const _default: any;
 
 // @public (undocumented)
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
@@ -1492,6 +1489,9 @@ const metadataProvider: {
     add: (imageId: string, payload: [number, number]) => void;
     get: (type: string, imageId: string) => [number, number];
 };
+
+// @public (undocumented)
+const mprCameraValues: any;
 
 // @public (undocumented)
 enum OrientationAxis {

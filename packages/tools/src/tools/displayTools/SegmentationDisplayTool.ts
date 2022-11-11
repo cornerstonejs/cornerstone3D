@@ -152,7 +152,7 @@ class SegmentationDisplayTool extends BaseTool {
       }
     );
 
-    Promise.all(segmentationRenderList).then(() => {
+    Promise.allSettled(segmentationRenderList).then(() => {
       // for all viewports in the toolGroup trigger a re-render
       toolGroupViewports.forEach((viewport) => {
         viewport.render();

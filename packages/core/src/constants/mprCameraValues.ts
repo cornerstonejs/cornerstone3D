@@ -16,4 +16,5 @@ const MPR_CAMERA_VALUES = {
 };
 
 // Note: Object.freeze is only shallow, so we need to deepFreeze
-export default deepFreeze(MPR_CAMERA_VALUES);
+const mprCameraValues = deepFreeze(MPR_CAMERA_VALUES);
+export default mprCameraValues;
