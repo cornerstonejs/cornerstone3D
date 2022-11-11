@@ -27,7 +27,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "peerDependencies": {
-    "@kitware/vtk.js": "24.18.7",
+    "@kitware/vtk.js": "25.9.0",
     "gl-matrix": "^3.4.3"
   },
   "dependencies": {
@@ -35,7 +35,7 @@
     "lodash.clonedeep": "4.5.0"
   },
   "devDependencies": {
-    "@kitware/vtk.js": "24.18.7",
+    "@kitware/vtk.js": "25.9.0",
     "detect-gpu": "^4.0.45",
     "gl-matrix": "^3.4.3",
     "resemblejs": "^4.1.0"

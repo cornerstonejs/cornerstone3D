@@ -6,12 +6,10 @@ const defaultLabelmapConfig: LabelmapConfig = {
   outlineWidthInactive: 2,
   renderFill: true,
   renderFillInactive: true,
-  fillAlpha: 0.9,
-  fillAlphaInactive: 0.85,
-  // Todo: not supported yet
-  // outlineAlpha: 0.7,
-  // outlineAlphaInactive: 0.35,
-  // Fill inside the render maps
+  fillAlpha: 0.7,
+  fillAlphaInactive: 0.65,
+  outlineOpacity: 1,
+  outlineOpacityInactive: 0.85,
 };
 
 function getDefaultLabelmapConfig(): LabelmapConfig {
@@ -29,7 +27,9 @@ function isValidLabelmapConfig(config): boolean {
     typeof config.renderFill === 'boolean' &&
     typeof config.renderFillInactive === 'boolean' &&
     typeof config.fillAlpha === 'number' &&
-    typeof config.fillAlphaInactive === 'number'
+    typeof config.fillAlphaInactive === 'number' &&
+    typeof config.outlineOpacity === 'number' &&
+    typeof config.outlineOpacityInactive === 'number'
   );
 }
 

@@ -1,4 +1,9 @@
-import { getEnabledElement, addVolumesToViewports } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  addVolumesToViewports,
+  Types,
+  Enums,
+} from '@cornerstonejs/core';
 
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
@@ -26,11 +31,16 @@ async function addLabelmapToElement(
   const immediateRender = false;
   const suppressEvents = true;
 
-  const volumeInputs = [
+  // Todo: Right now we use MIP blend mode for the labelmap, since the
+  // composite blend mode has a non linear behavior regarding fill and line
+  // opacity. This should be changed to a custom labelmap blendMode which does
+  // what composite does, but with a linear behavior.
+  const volumeInputs: Types.IVolumeInput[] = [
     {
       volumeId,
       actorUID: segmentationRepresentationUID,
       visibility,
+      blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
     },
   ];
 

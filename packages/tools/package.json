@@ -31,7 +31,7 @@
     "lodash.get": "^4.4.2"
   },
   "peerDependencies": {
-    "@kitware/vtk.js": "24.18.7",
+    "@kitware/vtk.js": "25.9.0",
     "@types/d3-array": "^3.0.3",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.0.3",
@@ -39,7 +39,7 @@
     "gl-matrix": "^3.4.3"
   },
   "devDependencies": {
-    "@kitware/vtk.js": "24.18.7"
+    "@kitware/vtk.js": "25.9.0"
   },
   "contributors": [
     {

@@ -21,7 +21,7 @@ async function addVolumesToViewports(
   suppressEvents = false
 ): Promise<void> {
   // Check if all viewports are volumeViewports
-  viewportIds.forEach((viewportId) => {
+  for (const viewportId of viewportIds) {
     const viewport = renderingEngine.getViewport(viewportId);
 
     if (!viewport) {
@@ -30,9 +30,13 @@ async function addVolumesToViewports(
 
     // if not instance of VolumeViewport, throw
     if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('addVolumesToViewports only supports VolumeViewport');
+      console.warn(
+        `Viewport with Id ${viewportId} is not a VolumeViewport. Cannot add volume to this viewport.`
+      );
+
+      return;
     }
-  });
+  }
 
   const addVolumePromises = viewportIds.map(async (viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId) as VolumeViewport;
@@ -41,7 +45,6 @@ async function addVolumesToViewports(
   });
 
   await Promise.all(addVolumePromises);
-
   return;
 }
 

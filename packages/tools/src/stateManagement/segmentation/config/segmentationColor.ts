@@ -100,4 +100,33 @@ function getColorForSegmentIndex(
   return colorLUT[segmentIndex];
 }
 
-export { getColorForSegmentIndex, addColorLUT, setColorLUT };
+function setColorForSegmentIndex(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  segmentIndex: number,
+  color: Color
+): void {
+  // Get the reference to the color in the colorLUT.
+  const colorReference = getColorForSegmentIndex(
+    toolGroupId,
+    segmentationRepresentationUID,
+    segmentIndex
+  );
+
+  // Modify the values by reference
+  for (let i = 0; i < color.length; i++) {
+    colorReference[i] = color[i];
+  }
+
+  triggerSegmentationRepresentationModified(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+}
+
+export {
+  getColorForSegmentIndex,
+  addColorLUT,
+  setColorLUT,
+  setColorForSegmentIndex,
+};

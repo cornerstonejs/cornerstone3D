@@ -1,6 +1,6 @@
 import { SegmentationModifiedEventType } from '../../types/EventTypes';
 import {
-  getToolGroupsWithSegmentation,
+  getToolGroupIdsWithSegmentation,
   getSegmentationRepresentations,
 } from '../../stateManagement/segmentation/segmentationState';
 import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -14,7 +14,7 @@ const segmentationModifiedListener = function (
 ): void {
   const { segmentationId } = evt.detail;
 
-  const toolGroupIds = getToolGroupsWithSegmentation(segmentationId);
+  const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
 
   toolGroupIds.forEach((toolGroupId) => {
     const segRepresentations = getSegmentationRepresentations(toolGroupId);

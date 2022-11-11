@@ -2,6 +2,7 @@ import { init, destroy } from './init';
 import {
   addTool,
   removeTool,
+  state,
   ToolGroupManager,
   SynchronizerManager,
   Synchronizer,
@@ -97,6 +98,7 @@ export {
   Synchronizer,
   SynchronizerManager,
   Types,
+  state,
   // ToolGroups
   ToolGroupManager,
   // Enums

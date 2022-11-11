@@ -5,14 +5,14 @@ import {
   Enums,
   Types,
 } from '@cornerstonejs/core';
-import { Events as csToolsEvents } from '../enums';
+import { Events as csToolsEvents } from '../../enums';
 import {
   getToolGroup,
   getToolGroupForViewport,
-} from '../store/ToolGroupManager';
+} from '../../store/ToolGroupManager';
 
-import SegmentationDisplayTool from '../tools/displayTools/SegmentationDisplayTool';
-import { SegmentationRenderedEventDetail } from '../types/EventTypes';
+import SegmentationDisplayTool from '../../tools/displayTools/SegmentationDisplayTool';
+import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 
 /**
  * SegmentationRenderingEngine is a class that is responsible for rendering
@@ -30,6 +30,14 @@ class SegmentationRenderingEngine {
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
+
+  public removeToolGroup(toolGroupId) {
+    this._needsRender.delete(toolGroupId);
+
+    if (this._needsRender.size === 0) {
+      this._reset();
+    }
+  }
 
   public renderToolGroupSegmentations(toolGroupId): void {
     this._setToolGroupSegmentationToBeRenderedNextFrame([toolGroupId]);
