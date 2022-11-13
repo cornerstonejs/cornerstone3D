@@ -107,13 +107,6 @@ class ToolStyle {
       annotationSpecificStyles = this.config.annotations;
     }
 
-    if (annotationSpecificStyles[annotationUID]) {
-      console.warn(
-        'overriding annotation styles for annotationUID:',
-        annotationUID
-      );
-    }
-
     annotationSpecificStyles[annotationUID] = styles;
   }
 
@@ -133,10 +126,6 @@ class ToolStyle {
       };
 
       viewportSpecificStyles = this.config.viewports;
-    }
-
-    if (viewportSpecificStyles[viewportId]) {
-      console.warn('overriding viewport styles for viewportId:', viewportId);
     }
 
     viewportSpecificStyles[viewportId] = styles;
@@ -159,10 +148,6 @@ class ToolStyle {
       };
 
       toolGroupSpecificStyles = this.config.toolGroups;
-    }
-
-    if (toolGroupSpecificStyles[toolGroupId]) {
-      console.warn('overriding toolGroup styles for toolGroupId:', toolGroupId);
     }
 
     toolGroupSpecificStyles[toolGroupId] = styles;

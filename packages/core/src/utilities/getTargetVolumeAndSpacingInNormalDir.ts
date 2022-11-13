@@ -33,7 +33,13 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     return { spacingInNormalDirection: null, imageVolume: null };
   }
   const numVolumeActors = volumeActors.length;
-  const imageVolumes = volumeActors.map((va) => cache.getVolume(va.uid));
+
+  const imageVolumes = volumeActors.map((va) => {
+    // prefer the referenceUID if it is set, since it can be a derived actor
+    // and the uid does not necessarily match the volumeId
+    const uid = va.referenceId ?? va.uid;
+    return cache.getVolume(uid);
+  });
 
   // If a volumeId is defined, set that volume as the target
   if (targetVolumeId) {
@@ -57,11 +63,6 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 
   for (let i = 0; i < numVolumeActors; i++) {
     const imageVolume = imageVolumes[i];
-
-    // TODO: Hacky workaround for undefined volumes created by Seg
-    if (!imageVolume) {
-      continue;
-    }
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,

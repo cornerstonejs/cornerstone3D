@@ -2,6 +2,7 @@ import { init, destroy } from './init';
 import {
   addTool,
   removeTool,
+  state,
   ToolGroupManager,
   SynchronizerManager,
   Synchronizer,
@@ -39,6 +40,7 @@ import {
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   CrosshairsTool,
+  ReferenceLinesTool,
   RectangleScissorsTool,
   CircleScissorsTool,
   SphereScissorsTool,
@@ -75,6 +77,7 @@ export {
   // Annotation Tools
   LengthTool,
   CrosshairsTool,
+  ReferenceLinesTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -97,6 +100,7 @@ export {
   Synchronizer,
   SynchronizerManager,
   Types,
+  state,
   // ToolGroups
   ToolGroupManager,
   // Enums

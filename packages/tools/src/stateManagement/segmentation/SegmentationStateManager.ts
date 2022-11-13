@@ -10,16 +10,28 @@ import type {
   ToolGroupSpecificRepresentation,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentations,
+  RepresentationConfig,
+  SegmentSpecificRepresentationConfig,
 } from '../../types/SegmentationStateTypes';
+import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
+import { SegmentationRepresentations } from '../../enums';
+
+// Initialize the default configuration
+// Note: when we get other representations, we should set their default representations too.
+const defaultLabelmapConfig = getDefaultLabelmapConfig();
+
+const newGlobalConfig: SegmentationRepresentationConfig = {
+  renderInactiveSegmentations: true,
+  representations: {
+    [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
+  },
+};
 
 /* A default initial state for the segmentation manager. */
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
   segmentations: [],
-  globalConfig: {
-    renderInactiveSegmentations: true,
-    representations: {},
-  },
+  globalConfig: newGlobalConfig,
   toolGroups: {},
 };
 
@@ -199,6 +211,7 @@ export default class SegmentationStateManager {
    * Remove a segmentation representation from the toolGroup
    * @param toolGroupId - The Id of the tool group
    * @param segmentationRepresentationUID - the uid of the segmentation representation to remove
+   * @param immediate - If true, the viewport will be updated immediately.
    */
   removeSegmentationRepresentation(
     toolGroupId: string,
@@ -293,6 +306,74 @@ export default class SegmentationStateManager {
     return toolGroupStateWithConfig.config;
   }
 
+  getSegmentationRepresentationSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string
+  ): RepresentationConfig {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    return segmentationRepresentation.segmentationRepresentationSpecificConfig;
+  }
+
+  setSegmentationRepresentationSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string,
+    config: RepresentationConfig
+  ): void {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    segmentationRepresentation.segmentationRepresentationSpecificConfig =
+      config;
+  }
+
+  getSegmentSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string,
+    segmentIndex: number
+  ): RepresentationConfig {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    return segmentationRepresentation.segmentSpecificConfig[segmentIndex];
+  }
+
+  setSegmentSpecificConfig(
+    toolGroupId: string,
+    segmentationRepresentationUID: string,
+    config: SegmentSpecificRepresentationConfig
+  ): void {
+    const segmentationRepresentation = this.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    segmentationRepresentation.segmentSpecificConfig = config;
+  }
+
   /**
    * Set the segmentation representations config for a given tool group. It will create a new
    * tool group specific config if one does not exist.
@@ -336,6 +417,14 @@ export default class SegmentationStateManager {
     }
 
     this.state.colorLUT[lutIndex] = colorLUT;
+  }
+
+  /**
+   * Removes a color LUT to the state.
+   * @param colorLUTIndex - The index of the color LUT table to remove.
+   */
+  removeColorLUT(colorLUTIndex: number): void {
+    delete this.state.colorLUT[colorLUTIndex];
   }
 
   /**

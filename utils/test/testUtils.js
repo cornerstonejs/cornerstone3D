@@ -55,10 +55,13 @@ function compareImages(imageDataURL, baseline, outputName) {
         if (mismatch > 1) {
           console.log('mismatch of ' + mismatch + '%');
           const diff = data.getImageDataUrl();
-          console.log(diff);
           // Todo: we should store the diff image somewhere
-
-          reject(new Error(`mismatch of ${mismatch} between images for ${outputName}`));
+          reject(
+            new Error(
+              `mismatch of ${mismatch} between images for ${outputName},
+              the diff image is: \n\n ${diff} \n\n`
+            )
+          );
           // reject(new Error(`mismatch between images for ${outputName}\n mismatch: ${mismatch}\n ${baseline.default}\n ${imageDataURL}\n ${diff}`));
         } else {
           resolve();

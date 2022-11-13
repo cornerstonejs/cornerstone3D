@@ -11,7 +11,13 @@ import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 
 interface createVolumeActorInterface {
   volumeId: string;
-  callback?: ({ volumeActor: VolumeActor, volumeId: string }) => void;
+  callback?: ({
+    volumeActor,
+    volumeId,
+  }: {
+    volumeActor: VolumeActor;
+    volumeId: string;
+  }) => void;
   blendMode?: BlendModes;
 }
 
@@ -78,6 +84,7 @@ function triggerVOIModified(
   const voiRange = volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
+    // @ts-ignore: vtk d ts problem
     .getRange();
 
   const voiModifiedEventDetail: VoiModifiedEventDetail = {

@@ -10,22 +10,20 @@ import {
  * Remove the segmentation representation (representation) from the viewports of the toolGroup.
  * @param toolGroupId - The Id of the toolGroup to remove the segmentation from.
  * @param segmentationRepresentationUIDs - The UIDs of the segmentation representations to remove.
+ * @param immediate - if True the viewport will be re-rendered immediately.
  */
 function removeSegmentationsFromToolGroup(
   toolGroupId: string,
-  segmentationRepresentationUIDs?: string[] | undefined
+  segmentationRepresentationUIDs?: string[] | undefined,
+  immediate?: boolean
 ): void {
   const toolGroupSegRepresentations =
     getSegmentationRepresentations(toolGroupId);
 
   if (
-    !segmentationRepresentationUIDs ||
-    segmentationRepresentationUIDs.length === 0
+    !toolGroupSegRepresentations ||
+    toolGroupSegRepresentations.length === 0
   ) {
-    console.warn(
-      'removeSegmentationsFromToolGroup: No segmentationRepresentations found for toolGroupId: ',
-      toolGroupId
-    );
     return;
   }
 
@@ -55,13 +53,14 @@ function removeSegmentationsFromToolGroup(
   }
 
   segRepresentationUIDsToRemove.forEach((segmentationDataUID) => {
-    _removeSegmentation(toolGroupId, segmentationDataUID);
+    _removeSegmentation(toolGroupId, segmentationDataUID, immediate);
   });
 }
 
 function _removeSegmentation(
   toolGroupId: string,
-  segmentationRepresentationUID: string
+  segmentationRepresentationUID: string,
+  immediate?: boolean
 ): void {
   const segmentationRepresentation = getSegmentationRepresentationByUID(
     toolGroupId,
@@ -73,7 +72,8 @@ function _removeSegmentation(
   if (type === SegmentationRepresentations.Labelmap) {
     labelmapDisplay.removeSegmentationRepresentation(
       toolGroupId,
-      segmentationRepresentationUID
+      segmentationRepresentationUID,
+      immediate
     );
   } else {
     throw new Error(`The representation ${type} is not supported yet`);

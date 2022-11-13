@@ -16,6 +16,9 @@ export type Color = [number, number, number, number];
  */
 export type ColorLUT = Array<Color>;
 
+export type SegmentSpecificRepresentationConfig = {
+  [key: number]: RepresentationConfig;
+};
 /**
  * Segmentation Config
  */
@@ -115,6 +118,9 @@ export type ToolGroupSpecificRepresentationState = {
 export type ToolGroupSpecificLabelmapRepresentation =
   ToolGroupSpecificRepresentationState & {
     config: LabelmapRenderingConfig;
+    // Todo: we need to merge all these configs into one to make it easier
+    segmentationRepresentationSpecificConfig?: RepresentationConfig;
+    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
   };
 
 export type ToolGroupSpecificRepresentation =

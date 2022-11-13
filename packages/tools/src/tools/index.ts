@@ -9,6 +9,7 @@ import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
 import MagnifyTool from './MagnifyTool';
+import ReferenceLinesTool from './ReferenceLinesTool';
 //
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
@@ -47,6 +48,7 @@ export {
   MIPJumpToClickTool,
   // Annotation Tools
   CrosshairsTool,
+  ReferenceLinesTool,
   BidirectionalTool,
   LengthTool,
   ProbeTool,

@@ -22,6 +22,7 @@ interface DerivedVolumeOptions {
   volumeId: string;
   targetBuffer?: {
     type: 'Float32Array' | 'Uint8Array';
+    sharedArrayBuffer?: boolean;
   };
 }
 interface LocalVolumeOptions {
@@ -204,10 +205,10 @@ export async function createAndCacheVolume(
  *
  * @returns ImageVolume
  */
-export function createAndCacheDerivedVolume(
+export async function createAndCacheDerivedVolume(
   referencedVolumeId: string,
   options: DerivedVolumeOptions
-): ImageVolume {
+): Promise<ImageVolume> {
   const referencedVolume = cache.getVolume(referencedVolumeId);
 
   if (!referencedVolume) {
@@ -252,7 +253,13 @@ export function createAndCacheDerivedVolume(
     throw new Error(Events.CACHE_SIZE_EXCEEDED);
   }
 
-  const volumeScalarData = new TypedArray(scalarLength);
+  let volumeScalarData;
+  if (targetBuffer?.sharedArrayBuffer) {
+    const buffer = new SharedArrayBuffer(numBytes);
+    volumeScalarData = new TypedArray(buffer);
+  } else {
+    volumeScalarData = new TypedArray(scalarLength);
+  }
 
   // Todo: handle more than one component for segmentation (RGB)
   const scalarArray = vtkDataArray.newInstance({
@@ -285,7 +292,8 @@ export function createAndCacheDerivedVolume(
   const volumeLoadObject = {
     promise: Promise.resolve(derivedVolume),
   };
-  cache.putVolumeLoadObject(volumeId, volumeLoadObject);
+
+  await cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
   return derivedVolume;
 }
