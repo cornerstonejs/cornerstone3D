@@ -50,6 +50,7 @@ import {
   BrushTool,
   AngleTool,
   MagnifyTool,
+  ReferenceLines,
 } from './tools';
 
 import * as Enums from './enums';
@@ -86,6 +87,7 @@ export {
   ArrowAnnotateTool,
   AngleTool,
   MagnifyTool,
+  ReferenceLines,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
