@@ -380,6 +380,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       worldPosition[2] += worldPosDelta[2];
 
       textBox.hasMoved = true;
+      annotation.invalidated = true;
     } else if (handleIndex === undefined) {
       // Drag mode - moving handle
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
