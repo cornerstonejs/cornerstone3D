@@ -20,6 +20,7 @@ import EllipticalROITool from './annotation/EllipticalROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
+import ReferenceLines from './ReferenceLinesTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -67,4 +68,5 @@ export {
   RectangleROIStartEndThresholdTool,
   BrushTool,
   MagnifyTool,
+  ReferenceLines,
 };
