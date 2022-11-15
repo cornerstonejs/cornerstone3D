@@ -14,6 +14,78 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 
 const VOLUME = 'volume';
 
+ function convertMultiframeImageIds(imageIds)
+ {
+   const newImageIds = [];
+   imageIds.forEach((imageId) => {
+     const imageIdFrameless = imageId.slice(0, imageId.indexOf('/frames/')+8);
+     const frame = parseInt(imageId.slice(imageId.indexOf('/frames/')+9));
+ 
+     const instanceMetaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+     if (instanceMetaData)
+     {
+      const NumberOfFrames = cornerstoneWADOImageLoader.wadors.metaDataManager.getValue(instanceMetaData['00280008']);
+      if (NumberOfFrames)
+      {
+        for (let i = 0; i < NumberOfFrames; i++) 
+        {
+            const newMetadata = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageIdFrameless + (i+1));
+            const newImageId = imageIdFrameless + (i+1);
+            if (newMetadata)
+               newImageIds.push(newImageId);
+        }
+      }
+      else
+        newImageIds.push(imageId);
+ 
+     }
+   });
+   return newImageIds;    
+ }
+ 
+ function prepareDataset(instanceMetaData)
+ {
+   const instance = DicomMetaDictionary.naturalizeDataset(JSON.parse(JSON.stringify(instanceMetaData)));
+   const perFrame = instance.PerFrameFunctionalGroupsSequence.map(
+         (frameInfo) =>
+         {
+             return DicomMetaDictionary.denaturalizeDataset(frameInfo);
+         }
+   )
+   const shared = instance.SharedFunctionalGroupsSequence.map(
+         (sharedInfo) =>
+         {
+             return DicomMetaDictionary.denaturalizeDataset(sharedInfo);
+         }
+   )
+   
+   const metadata = {...instanceMetaData, '52009230':perFrame, '52009229':shared};
+   metadata['00280008'] = instance.NumberOfFrames;
+   return metadata;
+ }
+
+function storeImageId(imageId, instanceMetaData)
+{
+  cornerstoneWADOImageLoader.wadors.metaDataManager.add(
+    imageId,
+    instanceMetaData
+  );
+
+  WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
+
+  // Add calibrated pixel spacing
+  const metadata = DicomMetaDictionary.naturalizeDataset(JSON.parse(JSON.stringify(instanceMetaData)));
+  const pixelSpacing = getPixelSpacingInformation(metadata);
+
+  if (pixelSpacing)
+  {
+    calibratedPixelSpacingMetadataProvider.add(
+      imageId,
+      pixelSpacing.map((s) => parseFloat(s))
+    );
+  }
+}
+
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
@@ -24,7 +96,7 @@ const VOLUME = 'volume';
  * @returns {string[]} An array of imageIds for instances in the study.
  */
 
-export default async function createImageIdsAndCacheMetaData({
+ export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
   wadoRsRoot,
@@ -43,7 +115,7 @@ export default async function createImageIdsAndCacheMetaData({
   const instances = await client.retrieveSeriesMetadata(studySearchOptions);
   const modality = instances[0][MODALITY].Value[0];
 
-  const imageIds = instances.map((instanceMetaData) => {
+  let imageIds = instances.map((instanceMetaData) => {
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
@@ -60,26 +132,10 @@ export default async function createImageIdsAndCacheMetaData({
       '/instances/' +
       SOPInstanceUID +
       '/frames/1';
-
-    cornerstoneWADOImageLoader.wadors.metaDataManager.add(
-      imageId,
-      instanceMetaData
-    );
-
-    WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
-
-    // Add calibrated pixel spacing
-    const m = JSON.parse(JSON.stringify(instanceMetaData));
-    const instance = DicomMetaDictionary.naturalizeDataset(m);
-    const pixelSpacing = getPixelSpacingInformation(instance);
-
-    calibratedPixelSpacingMetadataProvider.add(
-      imageId,
-      pixelSpacing.map((s) => parseFloat(s))
-    );
-
     return imageId;
   });
+
+  imageIds = convertMultiframeImageIds(imageIds);
 
   // we don't want to add non-pet
   // Note: for 99% of scanners SUV calculation is consistent bw slices
