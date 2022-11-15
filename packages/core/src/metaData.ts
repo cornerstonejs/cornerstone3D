@@ -11,7 +11,7 @@ const providers = [];
  * @category MetaData
  */
 export function addProvider(
-  provider: (type: string, imageId: string) => { any },
+  provider: (type: string, query: any) => any,
   priority = 0
 ): void {
   let i;
@@ -38,7 +38,7 @@ export function addProvider(
  * @category MetaData
  */
 export function removeProvider(
-  provider: (type: string, imageId: string) => { any }
+  provider: (type: string, query: any) => { any }
 ): void {
   for (let i = 0; i < providers.length; i++) {
     if (providers[i].provider === provider) {
@@ -65,15 +65,15 @@ export function removeAllProviders(): void {
  * until one responds
  *
  * @param type -  The type of metadata requested from the metadata store
- * @param imageId - The Cornerstone Image Object's imageId
+ * @param query - The query for the metadata store, often imageId
  *
  * @returns The metadata retrieved from the metadata store
  * @category MetaData
  */
-function getMetaData(type: string, imageId: string): any {
+function getMetaData(type: string, query: string): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, imageId);
+    const result = providers[i].provider(type, query);
 
     if (result !== undefined) {
       return result;

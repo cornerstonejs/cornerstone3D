@@ -26,31 +26,12 @@ import type {
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { RENDERING_DEFAULTS, EPSILON } from '../constants';
+import { RENDERING_DEFAULTS, MPR_CAMERA_VALUES, EPSILON } from '../constants';
 import { Events, BlendModes, OrientationAxis } from '../enums';
 import eventTarget from '../eventTarget';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { imageIdToURI, triggerEvent } from '../utilities';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
-import deepFreeze from '../utilities/deepFreeze';
-
-const ORIENTATION = {
-  axial: {
-    viewPlaneNormal: <Point3>[0, 0, -1],
-    viewUp: <Point3>[0, -1, 0],
-  },
-  sagittal: {
-    viewPlaneNormal: <Point3>[1, 0, 0],
-    viewUp: <Point3>[0, 0, 1],
-  },
-  coronal: {
-    viewPlaneNormal: <Point3>[0, 1, 0],
-    viewUp: <Point3>[0, 0, 1],
-  },
-};
-
-// Note: Object.freeze is only shallow, so we need to deepFreeze
-deepFreeze(ORIENTATION);
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -97,7 +78,9 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
     const { orientation } = this.options;
 
-    if (orientation) {
+    // if the camera is set to be acquisition axis then we need to skip
+    // it for now until the volume is set
+    if (orientation && orientation !== OrientationAxis.ACQUISITION) {
       const { viewPlaneNormal, viewUp } =
         this._getOrientationVectors(orientation);
 
@@ -282,10 +265,16 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
+        referenceId: volumeId,
       });
     }
 
     this._setVolumeActors(volumeActors);
+
+    triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
+      viewportId: this.id,
+      volumeActors,
+    });
 
     if (immediate) {
       this.render();
@@ -350,6 +339,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
+        // although the actor UID is defined, we need to use the volumeId for the
+        // referenceId, since the actor UID is used to reference the actor in the
+        // viewport, however, the actor is created from its volumeId
+        // and if later we need to grab the referenced volume from cache,
+        // we can use the referenceId to get the volume from the cache
+        referenceId: volumeId,
       });
     }
 
@@ -390,8 +385,8 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
   public setOrientation(orientation: OrientationAxis, immediate = true): void {
     let viewPlaneNormal, viewUp;
 
-    if (Object.keys(ORIENTATION).includes(orientation)) {
-      ({ viewPlaneNormal, viewUp } = ORIENTATION[orientation]);
+    if (MPR_CAMERA_VALUES[orientation]) {
+      ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
     } else if (orientation === 'acquisition') {
       ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
     } else {
@@ -425,15 +420,13 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       }
     } else if (
       typeof orientation === 'string' &&
-      Object.keys(ORIENTATION).includes(orientation)
+      MPR_CAMERA_VALUES[orientation]
     ) {
-      return ORIENTATION[orientation];
-    } else if (orientation === 'acquisition') {
-      return this._getAcquisitionPlaneOrientation();
+      return MPR_CAMERA_VALUES[orientation];
     } else {
       throw new Error(
         `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
-          ORIENTATION
+          MPR_CAMERA_VALUES
         ).join(', ')}`
       );
     }
@@ -443,9 +436,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry) {
-      throw new Error(
-        'Cannot get acquisition plane orientation, no actor in viewport'
-      );
+      return;
     }
 
     // Todo: fix this after we add the volumeId reference to actorEntry later
@@ -752,7 +743,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       scalarData: vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
       metadata: {
-        Modality: volume.metadata.Modality,
+        Modality: volume?.metadata?.Modality,
       },
       scaling: volume.scaling,
       hasPixelSpacing: true,

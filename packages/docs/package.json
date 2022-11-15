@@ -1,7 +1,8 @@
 {
   "name": "docs",
-  "version": "0.6.26",
+  "version": "0.7.2",
   "private": true,
+  "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "scripts": {
     "preinstall": "node preinstall.js",
     "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 yarn run prep-examples && docusaurus build",
@@ -27,13 +28,13 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.19.1",
-    "@cornerstonejs/streaming-image-volume-loader": "^0.5.18",
-    "@cornerstonejs/tools": "^0.27.0",
+    "@cornerstonejs/core": "^0.21.0",
+    "@cornerstonejs/streaming-image-volume-loader": "^0.6.1",
+    "@cornerstonejs/tools": "^0.29.1",
     "@docusaurus/core": "2.0.0-rc.1",
     "@docusaurus/module-type-aliases": "2.0.0-rc.1",
     "@docusaurus/preset-classic": "2.0.0-rc.1",
-    "@kitware/vtk.js": "24.18.7",
+    "@kitware/vtk.js": "25.9.0",
     "@mdx-js/react": "^1.6.21",
     "@svgr/webpack": "^6.2.1",
     "clsx": "^1.1.1",

@@ -25,6 +25,13 @@ enum Events {
    */
   CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
   /**
+   * Triggers on the HTML element when the viewport camera resets
+   *
+   * Make use of {@link EventTypes.CameraResetEvent | CameraReset Event Type } for typing your event listeners for CAMERA_RESET event,
+   * and see what event detail is included in {@link EventTypes.CameraResetEventDetail | CameraReset Event Detail }
+   */
+  CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
+  /**
    * Triggers on the HTML element when viewport modifies its VOI
    *
    * Make use of {@link EventTypes.VoiModifiedEvent | VoiModified Event Type } for typing your event listeners for VOI_MODIFIED event,
@@ -75,6 +82,11 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ImageLoadedFailedEventDetail | ImageLoadedFailed Event Detail }
    */
   IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
+  /**
+   * Triggers on element when a new voluem is set on the volume viewport
+   */
+  VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
+
   /**
    * Triggers on the eventTarget when the volume has successfully loaded by volumeLoaders
    *

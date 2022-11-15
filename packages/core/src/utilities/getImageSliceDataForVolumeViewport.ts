@@ -21,7 +21,13 @@ function getImageSliceDataForVolumeViewport(
   }
 
   const { viewPlaneNormal, focalPoint } = camera;
-  const actorEntry = viewport.getActor(imageVolume.volumeId);
+
+  const actorEntry = viewport
+    .getActors()
+    .find(
+      (a) =>
+        a.referenceId === imageVolume.volumeId || a.uid === imageVolume.volumeId
+    );
 
   if (!actorEntry) {
     console.warn('No actor found for with actorUID of', imageVolume.volumeId);

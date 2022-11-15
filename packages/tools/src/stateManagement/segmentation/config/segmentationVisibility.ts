@@ -1,6 +1,7 @@
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
 import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 
 /**
  * Set the visibility of a segmentation representation for a given tool group. It fires
@@ -68,4 +69,36 @@ function getSegmentationVisibility(
   return segmentationData.visibility;
 }
 
-export { setSegmentationVisibility, getSegmentationVisibility };
+function setVisibilityForSegmentIndex(
+  toolGroupId: string,
+  segmentationRepresentationUID: string,
+  segmentIndex: number,
+  visibility: boolean
+): void {
+  const segRepresentation =
+    SegmentationState.getSegmentationRepresentationByUID(
+      toolGroupId,
+      segmentationRepresentationUID
+    );
+
+  if (!segRepresentation) {
+    return;
+  }
+
+  if (visibility) {
+    segRepresentation.segmentsHidden.delete(segmentIndex);
+  } else {
+    segRepresentation.segmentsHidden.add(segmentIndex);
+  }
+
+  triggerSegmentationRepresentationModified(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+}
+
+export {
+  setSegmentationVisibility,
+  getSegmentationVisibility,
+  setVisibilityForSegmentIndex,
+};

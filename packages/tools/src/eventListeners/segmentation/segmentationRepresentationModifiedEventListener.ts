@@ -1,4 +1,4 @@
-import triggerSegmentationRender from '../../utilities/triggerSegmentationRender';
+import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 import { SegmentationRepresentationModifiedEventType } from '../../types/EventTypes';
 
 /** A function that listens to the `segmentationStateModified` event and triggers
