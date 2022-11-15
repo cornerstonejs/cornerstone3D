@@ -7,6 +7,10 @@ import {
   setGlobalConfig,
   setGlobalRepresentationConfig,
   setToolGroupSpecificConfig,
+  setSegmentSpecificConfig,
+  getSegmentSpecificConfig,
+  setSegmentationRepresentationSpecificConfig,
+  getSegmentationRepresentationSpecificConfig,
 } from './segmentationConfig';
 
 export {
@@ -18,4 +22,8 @@ export {
   setGlobalConfig,
   setGlobalRepresentationConfig,
   setToolGroupSpecificConfig,
+  setSegmentSpecificConfig,
+  getSegmentSpecificConfig,
+  setSegmentationRepresentationSpecificConfig,
+  getSegmentationRepresentationSpecificConfig,
 };

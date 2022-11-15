@@ -12,7 +12,12 @@ export type ImageActor = vtkImageSlice;
  * is retrieved from viewport when calling viewport.getActor(s)
  */
 export type ActorEntry = {
+  /** actor UID */
   uid: string;
+  /** actual actor object */
   actor: Actor | VolumeActor | ImageActor;
+  /** the id of the reference volume from which this actor is derived or created*/
+  referenceId?: string;
+  /** slab thickness for the actor */
   slabThickness?: number;
 };

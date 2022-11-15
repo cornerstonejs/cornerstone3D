@@ -3,6 +3,49 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.7.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.7.1...docs@0.7.2) (2022-11-14)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.7.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.7.0...docs@0.7.1) (2022-11-11)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+# [0.7.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.6.28...docs@0.7.0) (2022-11-11)
+
+
+### Features
+
+* Add segmentSpecificConfiguration and add outlineOpacity config for Segmentation ([#285](https://github.com/cornerstonejs/cornerstone3D-beta/issues/285)) ([92fb495](https://github.com/cornerstonejs/cornerstone3D-beta/commit/92fb49594cfc3219f761e905ba765acaddbe1e1a))
+
+
+
+
+
+## [0.6.28](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.6.27...docs@0.6.28) (2022-11-10)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
+## [0.6.27](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.6.26...docs@0.6.27) (2022-11-09)
+
+**Note:** Version bump only for package docs
+
+
+
+
+
 ## [0.6.26](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.6.25...docs@0.6.26) (2022-11-07)
 
 **Note:** Version bump only for package docs

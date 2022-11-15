@@ -1,5 +1,5 @@
 import { BaseTool } from '../base';
-import { getEnabledElementByIds } from '@cornerstonejs/core';
+import { getEnabledElementByIds, Types } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
 import { labelmapDisplay } from './Labelmap';
@@ -109,6 +109,13 @@ class SegmentationDisplayTool extends BaseTool {
     const toolGroupSegmentationRepresentations =
       getSegmentationRepresentations(toolGroupId);
 
+    if (
+      !toolGroupSegmentationRepresentations ||
+      toolGroupSegmentationRepresentations.length === 0
+    ) {
+      return;
+    }
+
     // toolGroup Viewports
     const toolGroupViewports = toolGroup.viewportsInfo.map(
       ({ renderingEngineId, viewportId }) => {
@@ -124,25 +131,32 @@ class SegmentationDisplayTool extends BaseTool {
     );
 
     // Render each segmentationData, in each viewport in the toolGroup
-    toolGroupSegmentationRepresentations.forEach(
+    const segmentationRenderList = toolGroupSegmentationRepresentations.map(
       (representation: ToolGroupSpecificRepresentation) => {
         const config = this._getMergedRepresentationsConfig(toolGroupId);
 
-        toolGroupViewports.forEach((viewport) => {
+        const viewportsRenderList = [];
+        for (const viewport of toolGroupViewports) {
           if (representation.type == Representations.Labelmap) {
-            labelmapDisplay.render(viewport, representation, config);
-          } else {
-            throw new Error(
-              `Render for ${representation.type} is not supported yet`
+            viewportsRenderList.push(
+              labelmapDisplay.render(
+                viewport as Types.IVolumeViewport,
+                representation,
+                config
+              )
             );
           }
-        });
+        }
+
+        return viewportsRenderList;
       }
     );
 
-    // for all viewports in the toolGroup trigger a re-render
-    toolGroupViewports.forEach((viewport) => {
-      viewport.render();
+    Promise.allSettled(segmentationRenderList).then(() => {
+      // for all viewports in the toolGroup trigger a re-render
+      toolGroupViewports.forEach((viewport) => {
+        viewport.render();
+      });
     });
   };
 

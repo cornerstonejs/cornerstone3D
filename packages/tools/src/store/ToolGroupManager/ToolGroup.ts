@@ -51,7 +51,7 @@ export default class ToolGroup implements IToolGroup {
    * Returns the toolGroup viewports info which is an array of {viewportId, renderingEngineId}
    */
   getViewportsInfo(): Array<Types.IViewportId> {
-    return Object.assign({}, this.viewportsInfo);
+    return this.viewportsInfo.slice();
   }
 
   /**
@@ -140,10 +140,15 @@ export default class ToolGroup implements IToolGroup {
 
     const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id;
 
-    this.viewportsInfo.push({
-      viewportId,
-      renderingEngineId: renderingEngineUIDToUse,
-    });
+    // Don't overwrite if it already exists
+    if (
+      !this.viewportsInfo.some(({ viewportId: vpId }) => vpId === viewportId)
+    ) {
+      this.viewportsInfo.push({
+        viewportId,
+        renderingEngineId: renderingEngineUIDToUse,
+      });
+    }
 
     // Handle the newly added viewport's mouse cursor
     const activeToolName = this.getActivePrimaryMouseButtonTool();
@@ -185,6 +190,39 @@ export default class ToolGroup implements IToolGroup {
         this.viewportsInfo.splice(indices[i], 1);
       }
     }
+  }
+
+  setToolMode(
+    toolName: string,
+    mode: ToolModes,
+    options = {} as SetToolBindingsType
+  ): void {
+    if (!toolName) {
+      console.warn('setToolMode: toolName must be defined');
+      return;
+    }
+
+    if (mode === ToolModes.Active) {
+      this.setToolActive(toolName, options);
+      return;
+    }
+
+    if (mode === ToolModes.Passive) {
+      this.setToolPassive(toolName);
+      return;
+    }
+
+    if (mode === ToolModes.Enabled) {
+      this.setToolEnabled(toolName);
+      return;
+    }
+
+    if (mode === ToolModes.Disabled) {
+      this.setToolDisabled(toolName);
+      return;
+    }
+
+    console.warn('setToolMode: mode must be defined');
   }
 
   /**

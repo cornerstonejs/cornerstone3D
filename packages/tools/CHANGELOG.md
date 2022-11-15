@@ -3,6 +3,59 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.29.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.0...@cornerstonejs/tools@0.29.1) (2022-11-14)
+
+
+### Bug Fixes
+
+* reference line exports and add cpu demo ([#297](https://github.com/cornerstonejs/cornerstone3D-beta/issues/297)) ([e20d0b2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e20d0b25c5ff0aafab4fa541b38815b4bee412b2))
+
+
+
+
+
+# [0.29.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.28.0...@cornerstonejs/tools@0.29.0) (2022-11-11)
+
+
+### Features
+
+* add reference lines tool ([#292](https://github.com/cornerstonejs/cornerstone3D-beta/issues/292)) ([c56df91](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c56df91a64ec005656f940dd3728f476152fa917))
+
+
+
+
+
+# [0.28.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.27.2...@cornerstonejs/tools@0.28.0) (2022-11-11)
+
+
+### Features
+
+* Add segmentSpecificConfiguration and add outlineOpacity config for Segmentation ([#285](https://github.com/cornerstonejs/cornerstone3D-beta/issues/285)) ([92fb495](https://github.com/cornerstonejs/cornerstone3D-beta/commit/92fb49594cfc3219f761e905ba765acaddbe1e1a))
+* add stack synchronization within or across studies ([#291](https://github.com/cornerstonejs/cornerstone3D-beta/issues/291)) ([f38bec0](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f38bec06713265cee361fc905539aa5ed841e707))
+
+
+
+
+
+## [0.27.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.27.1...@cornerstonejs/tools@0.27.2) (2022-11-10)
+
+
+### Bug Fixes
+
+* limit disabled element not need to render for annotations ([#289](https://github.com/cornerstonejs/cornerstone3D-beta/issues/289)) ([8232ed0](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8232ed00ee42ab3fd837ab2c5a75b2128c8f87a6))
+
+
+
+
+
+## [0.27.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.27.0...@cornerstonejs/tools@0.27.1) (2022-11-09)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+
+
+
+
 # [0.27.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.26.5...@cornerstonejs/tools@0.27.0) (2022-11-07)
 
 

@@ -123,7 +123,7 @@ describe('Segmentation Controller --', () => {
         representations: {
           [SegmentationRepresentations.Labelmap]: {
             renderOutline: false,
-            fillAlpha: 0.999,
+            fillAlpha: 0.7,
           },
         },
       };
