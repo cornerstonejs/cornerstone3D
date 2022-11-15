@@ -743,3 +743,25 @@ describe("With a SpecificCharacterSet tag", () => {
         return readResult["00080080"].Value[0];
     }
 });
+
+it("Reads and writes numbers with NaN and Infinity values of tags with type FD (double float)", () => {
+    const dicomDict = new DicomDict({
+        TransferSynxtaxUID: EXPLICIT_LITTLE_ENDIAN
+    });
+
+    dicomDict.dict = DicomMetaDictionary.denaturalizeDataset({
+        LongitudinalTemporalOffsetFromEvent: NaN,
+        SequenceOfUltrasoundRegions: [{ PhysicalDeltaX: Infinity }]
+    });
+
+    const part10Buffer = dicomDict.write();
+    const dicomData = dcmjs.data.DicomMessage.readFile(part10Buffer);
+    const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+        dicomData.dict
+    );
+
+    expect(dataset.LongitudinalTemporalOffsetFromEvent).toEqual(NaN);
+    expect(dataset.SequenceOfUltrasoundRegions[0].PhysicalDeltaX).toEqual(
+        Infinity
+    );
+});

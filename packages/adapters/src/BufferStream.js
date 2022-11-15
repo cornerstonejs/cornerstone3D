@@ -9,9 +9,7 @@ function toInt(val) {
 }
 
 function toFloat(val) {
-    if (isNaN(val)) {
-        throw new Error("Not a number: " + val);
-    } else if (typeof val == "string") {
+    if (typeof val == "string") {
         return parseFloat(val);
     } else return val;
 }
