@@ -92,6 +92,21 @@ addDropdownToToolbar({
 
 addDropdownToToolbar({
   options: {
+    values: ['disableCursor on', 'disableCursor off'],
+    defaultValue: 'disableCursor on',
+  },
+  onSelectedValueChange: (newDisableCursor) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    if (toolGroup) {
+      toolGroup.setToolConfiguration(ReferenceCursors.toolName, {
+        disableCursor: newDisableCursor === 'disableCursor on',
+      });
+    }
+  },
+});
+
+addDropdownToToolbar({
+  options: {
     values: ['tool enabled', 'tool disabled', 'tool passive', 'tool active'],
     defaultValue: 'tool active',
   },
@@ -161,19 +176,7 @@ async function run() {
 
   toolGroup?.setToolConfiguration(ReferenceCursors.toolName, {
     positionSync: true,
-  });
-
-  // Set the initial state of the tools, here we set one tool active on left click.
-  // This means left click will draw that tool.
-  toolGroup.setToolActive(ReferenceCursors.toolName);
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
+    disableCursor: true,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
@@ -270,6 +273,21 @@ async function run() {
       viewUp: [0, 1, 0],
     });
   });
+
+  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // hook instead of mouse buttons, it does not need to assign any mouse button.
+  // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
+  });
+
+  // Set the initial state of the tools, here we set one tool active on left click.
+  // This means left click will draw that tool.
+  toolGroup.setToolActive(ReferenceCursors.toolName);
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

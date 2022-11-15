@@ -1,9 +1,9 @@
 import {
   getEnabledElement,
-  metaData,
   StackViewport,
   VolumeViewport,
   utilities,
+  getEnabledElementByIds,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
@@ -28,10 +28,22 @@ import { StyleSpecifier } from '../types/AnnotationStyle';
 import { vec3 } from 'gl-matrix';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import {
+  hideElementCursor,
+  resetElementCursor,
+} from '../cursors/elementCursor';
+import { getToolGroup } from '../store/ToolGroupManager';
 
 /**
  * CursorCrosshairSyncTool is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
  * Also when positionSync is enabled, it will try to sync viewports so that the cursor can be displayed in the correct position in all viewports.
+ *
+ * Configuration:
+ * - positionSync: boolean, if true, it will try to sync viewports so that the cursor can be displayed in the correct position in all viewports.
+ * - disableCursor: boolean, if true, it will hide the cursor in all viewports. You need to disable and reactivate the tool for this to apply.
+ * - displayThreshold: number, if the distance of the cursor in a viewport is bigger than this threshold the cursor will not be displayed.
+ *
+ * Only uses Active and Disabled state
  */
 class ReferenceCursors extends AnnotationDisplayTool {
   static toolName;
@@ -43,6 +55,8 @@ class ReferenceCursors extends AnnotationDisplayTool {
   _elementWithCursor: null | HTMLDivElement = null;
   _currentCursorWorldPosition: null | Types.Point3 = null;
   _currentCanvasPosition: null | Types.Point2 = null;
+  //need to keep track if this was enabled when tool was enabled because we need to know if we should reset cursors
+  _disableCursorEnabled = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -53,10 +67,12 @@ class ReferenceCursors extends AnnotationDisplayTool {
         preventHandleOutsideImage: false,
         displayThreshold: 5,
         positionSync: true,
+        disableCursor: false,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
+    this._disableCursorEnabled = this.configuration.disableCursor;
   }
 
   /**
@@ -85,6 +101,30 @@ class ReferenceCursors extends AnnotationDisplayTool {
     this.updateAnnotationPosition(element, annotation);
     return false;
   };
+
+  onSetToolActive(): void {
+    if (!this._disableCursorEnabled) return;
+    const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
+    if (!viewportIds) return;
+    const enabledElements = viewportIds.map((e) =>
+      getEnabledElementByIds(e.viewportId, e.renderingEngineId)
+    );
+
+    enabledElements.forEach((element) => {
+      if (element) hideElementCursor(element.viewport.element);
+    });
+  }
+  onSetToolDisabled(): void {
+    if (!this._disableCursorEnabled) return;
+    const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
+    if (!viewportIds) return;
+    const enabledElements = viewportIds.map((e) =>
+      getEnabledElementByIds(e.viewportId, e.renderingEngineId)
+    );
+    enabledElements.forEach((element) => {
+      if (element) resetElementCursor(element.viewport.element);
+    });
+  }
 
   createInitialAnnotation = (
     worldPos: Types.Point3,
@@ -193,7 +233,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
   }
 
   //checks if we need to update the annotation position due to camera changes
-  onCameraModified = (evt): void => {
+  onCameraModified = (evt: any): void => {
     const eventDetail = evt.detail;
     const { element, previousCamera, camera } = eventDetail;
     const enabledElement = getEnabledElement(element);
@@ -260,11 +300,10 @@ class ReferenceCursors extends AnnotationDisplayTool {
     let renderStatus = false;
     const { viewport } = enabledElement;
 
+    const isElementWithCursor = this._elementWithCursor === viewport.element;
+
     //update stack position if position sync is enabled
-    if (
-      this.configuration.positionSync &&
-      this._elementWithCursor !== viewport.element
-    ) {
+    if (this.configuration.positionSync && !isElementWithCursor) {
       this.updateViewportImage(viewport);
     }
 
@@ -301,7 +340,14 @@ class ReferenceCursors extends AnnotationDisplayTool {
       if (!annotationUID) return renderStatus;
       styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
+      const lineWidthBase = parseFloat(
+        this.getStyle('lineWidth', styleSpecifier, annotation) as string
+      );
+
+      const lineWidth =
+        typeof lineWidthBase === 'number' && isElementWithCursor
+          ? lineWidthBase
+          : lineWidthBase;
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
 
@@ -327,8 +373,8 @@ class ReferenceCursors extends AnnotationDisplayTool {
         left: 'left',
       };
       const [x, y] = canvasCoordinates[0];
-      const centerSpace = 7;
-      const lineLength = 7;
+      const centerSpace = isElementWithCursor ? 20 : 7;
+      const lineLength = isElementWithCursor ? 5 : 7;
       drawLine(
         svgDrawingHelper,
         annotationUID,
