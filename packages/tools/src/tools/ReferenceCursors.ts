@@ -103,6 +103,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
   };
 
   onSetToolActive(): void {
+    this._disableCursorEnabled = this.configuration.disableCursor;
     if (!this._disableCursorEnabled) return;
     const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
     if (!viewportIds) return;

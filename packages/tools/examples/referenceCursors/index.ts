@@ -34,6 +34,8 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
+const initialDisableCursor = false;
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Cursor corsshair syncing example',
@@ -93,7 +95,9 @@ addDropdownToToolbar({
 addDropdownToToolbar({
   options: {
     values: ['disableCursor on', 'disableCursor off'],
-    defaultValue: 'disableCursor on',
+    defaultValue: initialDisableCursor
+      ? 'disableCursor on'
+      : 'disableCursor off',
   },
   onSelectedValueChange: (newDisableCursor) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -176,7 +180,7 @@ async function run() {
 
   toolGroup?.setToolConfiguration(ReferenceCursors.toolName, {
     positionSync: true,
-    disableCursor: true,
+    disableCursor: initialDisableCursor,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
