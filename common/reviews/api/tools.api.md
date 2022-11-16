@@ -3591,6 +3591,63 @@ export class RectangleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
+interface ReferenceCursor extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: [Types_2.Point3];
+        };
+    };
+}
+
+// @public (undocumented)
+export class ReferenceCursors extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _addAnnotation(element: HTMLDivElement, annotation: Annotation): string | null;
+    // (undocumented)
+    createInitialAnnotation: (worldPos: Types_2.Point3, element: HTMLDivElement) => void;
+    // (undocumented)
+    _currentCanvasPosition: null | Types_2.Point2;
+    // (undocumented)
+    _currentCursorWorldPosition: null | Types_2.Point3;
+    // (undocumented)
+    _disableCursorEnabled: boolean;
+    // (undocumented)
+    _elementWithCursor: null | HTMLDivElement;
+    // (undocumented)
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations;
+    // (undocumented)
+    getActiveAnnotation(element: HTMLDivElement): null | Annotation;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => boolean;
+    // (undocumented)
+    onCameraModified: (evt: any) => void;
+    // (undocumented)
+    onSetToolActive(): void;
+    // (undocumented)
+    onSetToolDisabled(): void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: any;
+    // (undocumented)
+    updateAnnotationPosition(element: HTMLDivElement, annotation: Annotation): void;
+    // (undocumented)
+    updateViewportImage(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): void;
+}
+
+// @public (undocumented)
 interface ReferenceLineAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -4335,6 +4392,7 @@ declare namespace ToolSpecificAnnotationTypes {
         PlanarFreehandROIAnnotation,
         ArrowAnnotation,
         AngleAnnotation,
+        ReferenceCursor,
         ReferenceLineAnnotation
     }
 }

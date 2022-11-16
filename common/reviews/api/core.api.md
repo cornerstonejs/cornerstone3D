@@ -546,6 +546,9 @@ type FlipDirection = {
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3, viewUp: Point3): string;
 
 // @public (undocumented)
+function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
+
+// @public (undocumented)
 export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
@@ -1519,12 +1522,16 @@ declare namespace planar {
     export {
         linePlaneIntersection,
         planeEquation,
-        threePlaneIntersection
+        threePlaneIntersection,
+        planeDistanceToPoint
     }
 }
 
 // @public (undocumented)
 type Plane = [number, number, number, number];
+
+// @public (undocumented)
+function planeDistanceToPoint(plane: Plane, point: Point3, signed?: boolean): number;
 
 // @public (undocumented)
 function planeEquation(normal: Point3, point: Point3 | vec3): Plane;
@@ -1963,6 +1970,7 @@ declare namespace utilities {
         getImageSliceDataForVolumeViewport,
         isImageActor,
         getViewportsWithImageURI,
+        getClosestStackImageIndexForPoint,
         calculateViewportsSpatialRegistration,
         spatialRegistrationMetadataProvider,
         getViewportImageCornersInWorld

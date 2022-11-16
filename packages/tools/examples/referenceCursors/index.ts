@@ -39,7 +39,7 @@ const initialDisableCursor = false;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Cursor corsshair syncing example',
-  'This example shows how to sync the crosshair cursors between 3 viewports (2 Stack viewports and 1 Volume viewport with a slightly different orientation).'
+  'This example shows how to sync the crosshair cursors between 3 viewports (2 Stack viewports and 1 Volume viewport with a slightly different orientation). To disable orther cursors, set disableCursor to on and then disable and reactivate the tool.'
 );
 
 const size = '500px';
@@ -280,7 +280,7 @@ async function run() {
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
