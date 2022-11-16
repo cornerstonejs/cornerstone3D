@@ -196,16 +196,12 @@ class Synchronizer {
     });
   }
 
-  private async fireEvent(
-    sourceViewport: Types.IViewportId,
-    sourceEvent: any
-  ): Promise<void> {
+  private fireEvent(sourceViewport: Types.IViewportId, sourceEvent: any): void {
     if (this.isDisabled() || this._ignoreFiredEvents) {
       return;
     }
 
     this._ignoreFiredEvents = true;
-
     try {
       for (let i = 0; i < this._targetViewports.length; i++) {
         const targetViewport = this._targetViewports[i];
@@ -216,23 +212,7 @@ class Synchronizer {
           continue;
         }
 
-        // Note: since the eventHandlers for synchronizers can be async (e.g. scroll,
-        // or new image set), we need to make sure that each handler has completed
-        // before we move to the next one. If the callback is async and we don't await
-        // here, then we will just finish all the handlers (while the async ones are
-        // still running), and later we set the ignoreFireEvents flag to false, which
-        // lets the targetViewports fire events again. This means that the async handlers
-        // will fire again, and we will have multiple handlers running at the same time.
-        // so just await here to make sure we don't have this unnecessary
-        // eventHandler running.
-        // Note: this might be very slow if the eventHandlers are very slow, so
-        // we might need to find a better way to do this.
-        await this._eventHandler(
-          this,
-          sourceViewport,
-          targetViewport,
-          sourceEvent
-        );
+        this._eventHandler(this, sourceViewport, targetViewport, sourceEvent);
       }
     } catch (ex) {
       console.warn(`Synchronizer, for: ${this._eventName}`, ex);
