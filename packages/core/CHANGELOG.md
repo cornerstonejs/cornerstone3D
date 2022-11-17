@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.0...@cornerstonejs/core@0.21.1) (2022-11-17)
+
+
+### Bug Fixes
+
+* adjust canvas, not only off screen renderer on resize ([#279](https://github.com/cornerstonejs/cornerstone3D-beta/issues/279)) ([1959ac7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1959ac7866305510855753f054678eac95e9c015))
+
+
+
+
+
 # [0.21.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.20.0...@cornerstonejs/core@0.21.0) (2022-11-11)
 
 
