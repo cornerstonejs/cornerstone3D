@@ -1310,17 +1310,16 @@ class StackViewport extends Viewport implements IStackViewport {
     const columnCosines = direction.slice(3, 6);
 
     // using spacing, size, and direction only for now
-    if (
-      xSpacing !== image.rowPixelSpacing ||
-      ySpacing !== image.columnPixelSpacing ||
-      xVoxels !== image.columns ||
-      yVoxels !== image.rows ||
-      !isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) ||
-      !isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines)
-    ) {
-      return false;
-    }
-    return true;
+    return (
+      (xSpacing === image.rowPixelSpacing ||
+        (image.rowPixelSpacing === null && xSpacing === 1.0)) &&
+      (ySpacing === image.columnPixelSpacing ||
+        (image.columnPixelSpacing === null && ySpacing === 1.0)) &&
+      xVoxels === image.columns &&
+      yVoxels === image.rows &&
+      isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
+      isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines)
+    );
   }
 
   /**
