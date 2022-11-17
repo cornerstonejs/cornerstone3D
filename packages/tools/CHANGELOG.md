@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.29.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.1...@cornerstonejs/tools@0.29.2) (2022-11-16)
+
+
+### Bug Fixes
+
+* revert synchronizer event firing being unnecessary async ([#299](https://github.com/cornerstonejs/cornerstone3D-beta/issues/299)) ([1e244d1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1e244d11778d74b66df671f936138c73adb5a699))
+
+
+
+
+
+## [0.29.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.0...@cornerstonejs/tools@0.29.1) (2022-11-14)
+
+
+### Bug Fixes
+
+* reference line exports and add cpu demo ([#297](https://github.com/cornerstonejs/cornerstone3D-beta/issues/297)) ([e20d0b2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e20d0b25c5ff0aafab4fa541b38815b4bee412b2))
+
+
+
+
+
 # [0.29.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.28.0...@cornerstonejs/tools@0.29.0) (2022-11-11)
 
 

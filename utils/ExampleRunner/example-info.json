@@ -90,6 +90,10 @@
         "name": "DICOM P10 from the local file system",
         "description": "Provides an interface to load a DICOM P10 image from your local file system to the Cornerstone3D"
       },
+      "local (CPU)": {
+        "name": "DICOM P10 from the local file system using CPU",
+        "description": "Cornerstone3D uses WebGL for rendering by default (if available) and a fallback to CPU. This example force rendering on CPU for debugging purposes."
+      },
       "stackAnnotationTools": {
         "name": "Stack Annotation Tools",
         "description": "Demonstrates usage of various annotation tools (Probe, Rectangle ROI, Elliptical ROI, Bidirectional measurements) on a Stack Viewport."
