@@ -396,12 +396,21 @@ class BidirectionalTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      newAnnotation,
+      hasMoved,
+      movingTextBox,
+    } = this.editData;
     const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
       return;
+    }
+
+    if (movingTextBox) {
+      annotation.invalidated = true;
     }
 
     annotation.highlighted = false;
@@ -606,7 +615,6 @@ class BidirectionalTool extends AnnotationTool {
       worldPosition[2] += worldPosDelta[2];
 
       textBox.hasMoved = true;
-      annotation.invalidated = true;
     } else if (handleIndex === undefined) {
       // Moving tool
       const { deltaPoints } = eventDetail;
