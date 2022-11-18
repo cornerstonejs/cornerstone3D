@@ -17,10 +17,9 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
   };
 
   // Make the request for the DICOM P10 SOP Instance
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    xhr.open('get', url, true);
+  const xhr = new XMLHttpRequest();
+  const promise = new Promise((resolve, reject) => {
+    options.open(xhr, url, defaultHeaders, params);
     const beforeSendHeaders = options.beforeSend(
       xhr,
       imageId,
@@ -164,6 +163,10 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
     };
     xhr.send();
   });
+
+  promise.xhr = xhr;
+
+  return promise;
 }
 
 export default xhrRequest;

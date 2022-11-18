@@ -240,40 +240,38 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
             imageFrame.imageData = imageData;
             imageFrame.pixelData = imageData.data;
           }
-        } else {
-          if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
-            // If we don't need the RGBA but the decoding is done with RGBA (the case
-            // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
-            // we need to remove the A channel from pixel data
-            const colorBuffer = new Uint8ClampedArray(
-              (imageFrame.pixelData.length / 4) * 3
-            );
+        } else if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
+          // If we don't need the RGBA but the decoding is done with RGBA (the case
+          // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
+          // we need to remove the A channel from pixel data
+          const colorBuffer = new Uint8ClampedArray(
+            (imageFrame.pixelData.length / 4) * 3
+          );
 
-            // remove the A from the RGBA of the imageFrame
-            imageFrame.pixelData = removeAFromRGBA(
-              imageFrame.pixelData,
-              colorBuffer
-            );
-          } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
-            canvas.height = imageFrame.rows;
-            canvas.width = imageFrame.columns;
+          // remove the A from the RGBA of the imageFrame
+          imageFrame.pixelData = removeAFromRGBA(
+            imageFrame.pixelData,
+            colorBuffer
+          );
+        } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          canvas.height = imageFrame.rows;
+          canvas.width = imageFrame.columns;
 
-            const context = canvas.getContext('2d');
+          const context = canvas.getContext('2d');
 
-            const imageData = context.createImageData(
-              imageFrame.columns,
-              imageFrame.rows
-            );
+          const imageData = context.createImageData(
+            imageFrame.columns,
+            imageFrame.rows
+          );
 
-            convertColorSpace(imageFrame, imageData.data, true);
+          convertColorSpace(imageFrame, imageData.data, true);
 
-            const colorBuffer = new imageData.data.constructor(
-              (imageData.data.length / 4) * 3
-            );
+          const colorBuffer = new imageData.data.constructor(
+            (imageData.data.length / 4) * 3
+          );
 
-            // remove the A from the RGBA of the imageFrame
-            imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
-          }
+          // remove the A from the RGBA of the imageFrame
+          imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
         }
 
         // calculate smallest and largest PixelValue of the converted pixelData

@@ -1,5 +1,6 @@
 import external from '../../externalModules.js';
 import { xhrRequest } from '../internal/index.js';
+import dataSetFromPartialContent from './dataset-from-partial-content.js';
 
 /**
  * This object supports loading of DICOM P10 dataset from a uri and caching it so it can be accessed
@@ -24,6 +25,30 @@ function get(uri) {
   }
 
   return loadedDataSets[uri].dataSet;
+}
+
+function update(uri, dataSet) {
+  const loadedDataSet = loadedDataSets[uri];
+
+  if (!loadedDataSet) {
+    console.error(`No loaded dataSet for uri ${uri}`);
+
+    return;
+  }
+  // Update dataset
+  cacheSizeInBytes -= loadedDataSet.dataSet.byteArray.length;
+  loadedDataSet.dataSet = dataSet;
+  cacheSizeInBytes += dataSet.byteArray.length;
+
+  external.cornerstone.triggerEvent(
+    external.cornerstone.events,
+    'datasetscachechanged',
+    {
+      uri,
+      action: 'updated',
+      cacheInfo: getInfo(),
+    }
+  );
 }
 
 // loads the dicom dataset from the wadouri sp
@@ -53,14 +78,45 @@ function load(uri, loadRequest = xhrRequest, imageId) {
   // handle success and failure of the XHR request load
   const promise = new Promise((resolve, reject) => {
     loadDICOMPromise
-      .then(function (dicomPart10AsArrayBuffer /* , xhr*/) {
+      .then(async function (dicomPart10AsArrayBuffer) {
+        const partialContent = {
+          isPartialContent: false,
+          fileTotalLength: null,
+        };
+
+        // Allow passing extra data with the loader promise so as not to change
+        // the API
+        if (!(dicomPart10AsArrayBuffer instanceof ArrayBuffer)) {
+          if (!dicomPart10AsArrayBuffer.arrayBuffer) {
+            return reject(
+              new Error(
+                'If not returning ArrayBuffer, must return object with `arrayBuffer` parameter'
+              )
+            );
+          }
+          partialContent.isPartialContent =
+            dicomPart10AsArrayBuffer.flags.isPartialContent;
+          partialContent.fileTotalLength =
+            dicomPart10AsArrayBuffer.flags.fileTotalLength;
+          dicomPart10AsArrayBuffer = dicomPart10AsArrayBuffer.arrayBuffer;
+        }
+
         const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
 
         // Reject the promise if parsing the dicom file fails
         let dataSet;
 
         try {
-          dataSet = dicomParser.parseDicom(byteArray);
+          if (partialContent.isPartialContent) {
+            // This dataSet object will include a fetchMore function,
+            dataSet = await dataSetFromPartialContent(byteArray, loadRequest, {
+              uri,
+              imageId,
+              fileTotalLength: partialContent.fileTotalLength,
+            });
+          } else {
+            dataSet = dicomParser.parseDicom(byteArray);
+          }
         } catch (error) {
           return reject(error);
         }
@@ -139,4 +195,5 @@ export default {
   getInfo,
   purge,
   get,
+  update,
 };

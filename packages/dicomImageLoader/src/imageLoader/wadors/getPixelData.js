@@ -36,10 +36,24 @@ function getPixelData(uri, imageId, mediaType = 'application/octet-stream') {
 
   return new Promise((resolve, reject) => {
     const loadPromise = xhrRequest(uri, imageId, headers);
+    const { xhr } = loadPromise;
 
-    loadPromise.then(function (imageFrameAsArrayBuffer /* , xhr*/) {
+    loadPromise.then(function (imageFrameAsArrayBuffer) {
       // request succeeded, Parse the multi-part mime response
       const response = new Uint8Array(imageFrameAsArrayBuffer);
+
+      const contentType = xhr.getResponseHeader('Content-Type');
+
+      if (contentType.indexOf('multipart') === -1) {
+        resolve({
+          contentType,
+          imageFrame: {
+            pixelData: response,
+          },
+        });
+
+        return;
+      }
 
       // First look for the multipart mime header
       const tokenIndex = findIndexOfString(response, '\r\n\r\n');

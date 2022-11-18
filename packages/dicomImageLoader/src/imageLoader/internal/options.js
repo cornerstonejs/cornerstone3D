@@ -1,4 +1,8 @@
 let options = {
+  // callback to open the object
+  open(xhr, url) {
+    xhr.open('get', url, true);
+  },
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
   beforeSend(/* xhr, imageId */) {},
   // callback allowing modification of the xhr response before creating image objects
