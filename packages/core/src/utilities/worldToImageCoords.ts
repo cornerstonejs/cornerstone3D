@@ -58,17 +58,6 @@ function worldToImageCoords(
     columnDistance / columnPixelSpacing,
   ];
 
-  if (
-    imageCoords[0] < 0 ||
-    imageCoords[0] >= columns ||
-    imageCoords[1] < 0 ||
-    imageCoords[1] >= rows
-  ) {
-    throw new Error(
-      `The image coordinates are outside of the image, imageCoords: ${imageCoords}`
-    );
-  }
-
   return imageCoords as Point2;
 }
 
