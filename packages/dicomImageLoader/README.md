@@ -191,6 +191,10 @@ _How do I create imageIds that work with this image loader?_
 
 See the documentation [here](docs/ImageIds.md)
 
+# What Transfer Syntaxes are supported?
+
+See [transfer syntaxes](docs/TransferSyntaxes.md)
+
 # Copyright
 
 Copyright 2016 Chris Hafey [chafey@gmail.com](mailto:chafey@gmail.com)
