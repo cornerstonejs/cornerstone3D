@@ -140,6 +140,11 @@ class SegmentationRenderingEngine {
 
       const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
+      if (!toolGroup) {
+        console.warn('toolGroup has been destroyed');
+        return;
+      }
+
       const eventDetail: SegmentationRenderedEventDetail = {
         toolGroupId: toolGroup.id,
         viewportId,

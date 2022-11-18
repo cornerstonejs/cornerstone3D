@@ -107,6 +107,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const volumeNewImageCleanUpBound = volumeNewImageCleanUp.bind(this);
 
     function volumeNewImageHandler(cameraEvent) {
+      const { viewportId } = cameraEvent.detail;
+
+      if (viewportId !== this.id || this.hasBeenDisabled) {
+        return;
+      }
+
       const viewportImageData = this.getImageData();
 
       if (!viewportImageData) {
