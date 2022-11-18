@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.1...@cornerstonejs/core@0.21.2) (2022-11-18)
+
+
+### Bug Fixes
+
+* **worldToImage:** Not throw out of bounds in worldToImage ([#302](https://github.com/cornerstonejs/cornerstone3D-beta/issues/302)) ([ffb20f7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ffb20f715c768b8f590b103cd18acc2bc2068adf))
+
+
+
+
+
 ## [0.21.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.0...@cornerstonejs/core@0.21.1) (2022-11-17)
 
 
