@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.2...@cornerstonejs/core@0.21.3) (2022-11-19)
+
+
+### Bug Fixes
+
+* don't reset display pipeline when spacing is missing ([#301](https://github.com/cornerstonejs/cornerstone3D-beta/issues/301)) ([e12fcf3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e12fcf3c361db0f927fd5fdd448686fef8893b36))
+
+
+
+
+
 ## [0.21.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.1...@cornerstonejs/core@0.21.2) (2022-11-18)
 
 
