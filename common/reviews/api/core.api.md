@@ -1277,6 +1277,8 @@ interface IViewport {
     // (undocumented)
     getZoom(): number;
     // (undocumented)
+    hasBeenDisabled: boolean;
+    // (undocumented)
     id: string;
     // (undocumented)
     options: ViewportInputOptions;
@@ -2035,6 +2037,8 @@ export class Viewport implements IViewport {
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
     getZoom(): number;
+    // (undocumented)
+    hasBeenDisabled: boolean;
     // (undocumented)
     protected hasPixelSpacing: boolean;
     // (undocumented)
