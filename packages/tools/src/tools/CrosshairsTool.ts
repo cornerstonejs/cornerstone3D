@@ -265,6 +265,33 @@ class CrosshairsTool extends AnnotationTool {
     const viewportsInfo = this._getViewportsInfo();
 
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+
+    // Crosshairs annotations in the state
+    // has no value when the tool is disabled
+    // since viewports can change (zoom, pan, scroll)
+    // between disabled and enabled/active states.
+    // so we just remove the annotations from the state
+    viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+      const { element } = viewport;
+
+      const annotations = getAnnotations(element, this.getToolName());
+
+      if (annotations?.length) {
+        annotations.forEach((annotation) => {
+          removeAnnotation(annotation.annotationUID, element);
+        });
+      }
+    });
   }
 
   /**

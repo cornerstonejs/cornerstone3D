@@ -210,6 +210,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 5. Remove the requested viewport from the rendering engine
     this._removeViewport(viewportId);
+    viewport.isDisabled = true;
 
     // 6. Avoid rendering for the disabled viewport
     this._needsRender.delete(viewportId);
