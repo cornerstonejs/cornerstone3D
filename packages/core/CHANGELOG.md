@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.3...@cornerstonejs/core@0.21.4) (2022-11-21)
+
+
+### Bug Fixes
+
+* annotation rendering engine on viewport removal ([#303](https://github.com/cornerstonejs/cornerstone3D-beta/issues/303)) ([aeb205e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/aeb205e56e0d2068258c278863aa3d7447331a43))
+
+
+
+
+
 ## [0.21.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.2...@cornerstonejs/core@0.21.3) (2022-11-19)
 
 
