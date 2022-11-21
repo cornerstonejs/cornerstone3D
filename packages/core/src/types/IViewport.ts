@@ -36,7 +36,7 @@ interface IViewport {
   /** Suppress events */
   suppressEvents: boolean;
   /** if the viewport has been disabled */
-  hasBeenDisabled: boolean;
+  isDisabled: boolean;
   /** frameOfReferenceUID the viewport's default actor is rendering */
   getFrameOfReferenceUID: () => string;
   /** method to convert canvas to world coordinates */

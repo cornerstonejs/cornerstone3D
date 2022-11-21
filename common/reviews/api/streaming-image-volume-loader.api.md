@@ -904,8 +904,8 @@ interface IViewport {
     getRenderer(): void;
     getRenderingEngine(): any;
     getZoom(): number;
-    hasBeenDisabled: boolean;
     id: string;
+    isDisabled: boolean;
     options: ViewportInputOptions;
     removeAllActors(): void;
     render(): void;

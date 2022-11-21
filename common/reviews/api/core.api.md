@@ -1277,9 +1277,9 @@ interface IViewport {
     // (undocumented)
     getZoom(): number;
     // (undocumented)
-    hasBeenDisabled: boolean;
-    // (undocumented)
     id: string;
+    // (undocumented)
+    isDisabled: boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -2038,13 +2038,13 @@ export class Viewport implements IViewport {
     // (undocumented)
     getZoom(): number;
     // (undocumented)
-    hasBeenDisabled: boolean;
-    // (undocumented)
     protected hasPixelSpacing: boolean;
     // (undocumented)
     readonly id: string;
     // (undocumented)
     protected initialCamera: ICamera;
+    // (undocumented)
+    isDisabled: boolean;
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)

@@ -109,7 +109,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     function volumeNewImageHandler(cameraEvent) {
       const { viewportId } = cameraEvent.detail;
 
-      if (viewportId !== this.id || this.hasBeenDisabled) {
+      if (viewportId !== this.id || this.isDisabled) {
         return;
       }
 
