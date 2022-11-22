@@ -2456,6 +2456,7 @@ interface IViewport {
     getRenderingEngine(): any;
     getZoom(): number;
     id: string;
+    isDisabled: boolean;
     options: ViewportInputOptions;
     removeAllActors(): void;
     render(): void;

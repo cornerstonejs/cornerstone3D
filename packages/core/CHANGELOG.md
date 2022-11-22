@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.21.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.3...@cornerstonejs/core@0.21.4) (2022-11-21)
+
+
+### Bug Fixes
+
+* annotation rendering engine on viewport removal ([#303](https://github.com/cornerstonejs/cornerstone3D-beta/issues/303)) ([aeb205e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/aeb205e56e0d2068258c278863aa3d7447331a43))
+
+
+
+
+
+## [0.21.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.2...@cornerstonejs/core@0.21.3) (2022-11-19)
+
+
+### Bug Fixes
+
+* don't reset display pipeline when spacing is missing ([#301](https://github.com/cornerstonejs/cornerstone3D-beta/issues/301)) ([e12fcf3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e12fcf3c361db0f927fd5fdd448686fef8893b36))
+
+
+
+
+
+## [0.21.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.1...@cornerstonejs/core@0.21.2) (2022-11-18)
+
+
+### Bug Fixes
+
+* **worldToImage:** Not throw out of bounds in worldToImage ([#302](https://github.com/cornerstonejs/cornerstone3D-beta/issues/302)) ([ffb20f7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ffb20f715c768b8f590b103cd18acc2bc2068adf))
+
+
+
+
+
+## [0.21.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.0...@cornerstonejs/core@0.21.1) (2022-11-17)
+
+
+### Bug Fixes
+
+* adjust canvas, not only off screen renderer on resize ([#279](https://github.com/cornerstonejs/cornerstone3D-beta/issues/279)) ([1959ac7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1959ac7866305510855753f054678eac95e9c015))
+
+
+
+
+
 # [0.21.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.20.0...@cornerstonejs/core@0.21.0) (2022-11-11)
 
 

@@ -107,7 +107,10 @@ function findAnnotationNearPointByTool(
     const { element } = enabledElement.viewport;
     for (const annotation of annotations) {
       const referencedImageId = annotation.metadata?.referencedImageId;
-      if (currentId && referencedImageId && currentId !== referencedImageId) {
+      if (
+        (currentId && referencedImageId && currentId !== referencedImageId) ||
+        !tool.isPointNearTool
+      ) {
         continue;
       }
 

@@ -1279,6 +1279,8 @@ interface IViewport {
     // (undocumented)
     id: string;
     // (undocumented)
+    isDisabled: boolean;
+    // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
     removeAllActors(): void;
@@ -2041,6 +2043,8 @@ export class Viewport implements IViewport {
     readonly id: string;
     // (undocumented)
     protected initialCamera: ICamera;
+    // (undocumented)
+    isDisabled: boolean;
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)

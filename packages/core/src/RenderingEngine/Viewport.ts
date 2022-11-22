@@ -48,6 +48,7 @@ class Viewport implements IViewport {
   protected flipHorizontal = false;
   protected flipVertical = false;
   protected rotation = 0;
+  public isDisabled: boolean;
 
   /** sx of viewport on the offscreen canvas */
   sx: number;
@@ -95,6 +96,7 @@ class Viewport implements IViewport {
       ? props.defaultOptions.suppressEvents
       : false;
     this.options = _cloneDeep(props.defaultOptions);
+    this.isDisabled = false;
   }
 
   getFrameOfReferenceUID: () => string;
