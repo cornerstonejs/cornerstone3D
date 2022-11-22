@@ -15,7 +15,7 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 
 const VOLUME = 'volume';
 
- /**
+/**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
  *
@@ -25,7 +25,7 @@ const VOLUME = 'volume';
  * @returns {string[]} An array of imageIds for instances in the study.
  */
 
- export default async function createImageIdsAndCacheMetaData({
+export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
   wadoRsRoot,
@@ -63,36 +63,33 @@ const VOLUME = 'volume';
       '/frames/1';
 
     cornerstoneWADOImageLoader.wadors.metaDataManager.add(
-        imageId,
-        instanceMetaData
+      imageId,
+      instanceMetaData
     );
     return imageId;
   });
   // if the image ids represent multiframe information, creates a new list with one image id per frame
   // if not multiframe data available, just returns the same list given
   imageIds = convertMultiframeImageIds(imageIds);
-  imageIds.forEach(
-       (imageId) => {
-          const instanceMetaData = cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
-          if (instanceMetaData)
-          {
-            const data = JSON.parse(JSON.stringify(instanceMetaData));
-            WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
-        
-            // Add calibrated pixel spacing
-            const metadata = DicomMetaDictionary.naturalizeDataset(JSON.parse(JSON.stringify(instanceMetaData)));
-            const pixelSpacing = getPixelSpacingInformation(metadata);
-          
-            if (pixelSpacing)
-            {
-              calibratedPixelSpacingMetadataProvider.add(
-                imageId,
-                pixelSpacing.map((s) => parseFloat(s))
-              );
-            }  
-          }
-       }
-  )
+  imageIds.forEach((imageId) => {
+    let instanceMetaData =
+      cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+    instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
+    if (instanceMetaData) {
+      WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
+
+      // Add calibrated pixel spacing
+      const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
+      const pixelSpacing = getPixelSpacingInformation(metadata);
+
+      if (pixelSpacing) {
+        calibratedPixelSpacingMetadataProvider.add(
+          imageId,
+          pixelSpacing.map((s) => parseFloat(s))
+        );
+      }
+    }
+  });
 
   // we don't want to add non-pet
   // Note: for 99% of scanners SUV calculation is consistent bw slices
