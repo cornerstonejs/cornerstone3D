@@ -1,4 +1,4 @@
-import { vec2, vec3 } from 'gl-matrix';
+import { vec2, vec3, mat2, mat3, mat2d } from 'gl-matrix';
 import {
   getEnabledElement,
   triggerEvent,
@@ -51,6 +51,7 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
+window.temp100 = false;
 
 /**
  * BidirectionalTool let you draw annotations that measures the length and
@@ -543,7 +544,8 @@ class BidirectionalTool extends AnnotationTool {
     };
 
     // ~~ calculate worldPos of our short axis handles
-    // 1/3 distance between long points
+    // short axis is perpendicular to long axis, and we set its length to be 2/3 of long axis
+    // (meaning each)
     const dist = vec2.distance(canvasCoordPoints[0], canvasCoordPoints[1]);
 
     const shortAxisDistFromCenter = dist / 3;
@@ -619,7 +621,7 @@ class BidirectionalTool extends AnnotationTool {
       });
       annotation.invalidated = true;
     } else {
-      this._mouseDragModifyHandle(evt);
+      this._handleDragModify(evt);
       annotation.invalidated = true;
     }
 
@@ -630,12 +632,12 @@ class BidirectionalTool extends AnnotationTool {
    * Mouse dragging a handle callback
    * @param evt - mouse drag event
    */
-  _mouseDragModifyHandle = (evt) => {
+  _handleDragModify = (evt) => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const { annotation, handleIndex } = this.editData;
+    const { annotation, handleIndex: movingHandleIndex } = this.editData;
     const { data } = annotation;
 
     // Moving handle
@@ -646,7 +648,7 @@ class BidirectionalTool extends AnnotationTool {
       viewport.worldToCanvas(data.handles.points[2]),
       viewport.worldToCanvas(data.handles.points[3]),
     ];
-    // Which line is long? Which line is short?
+
     const firstLineSegment = {
       start: {
         x: canvasCoordHandlesCurrent[0][0],
@@ -672,16 +674,38 @@ class BidirectionalTool extends AnnotationTool {
     const proposedPoint = <Types.Point3>[...worldPos];
     const proposedCanvasCoord = viewport.worldToCanvas(proposedPoint);
 
-    if (handleIndex === 0 || handleIndex === 1) {
-      const fixedHandleIndex = handleIndex === 0 ? 1 : 0;
+    if (movingHandleIndex === 0 || movingHandleIndex === 1) {
+      const fixedHandleIndex = movingHandleIndex === 0 ? 1 : 0;
 
-      const fixedCanvasCoord = canvasCoordHandlesCurrent[fixedHandleIndex];
+      const fixedHandleCanvasCoord =
+        canvasCoordHandlesCurrent[fixedHandleIndex];
+
+      const fixedHandleToProposedCoordVec = vec2.set(
+        vec2.create(),
+        proposedCanvasCoord[0] - fixedHandleCanvasCoord[0],
+        proposedCanvasCoord[1] - fixedHandleCanvasCoord[1]
+      );
+
+      const fixedHandleToOldCoordVec = vec2.set(
+        vec2.create(),
+        canvasCoordHandlesCurrent[movingHandleIndex][0] -
+          fixedHandleCanvasCoord[0],
+        canvasCoordHandlesCurrent[movingHandleIndex][1] -
+          fixedHandleCanvasCoord[1]
+      );
+
+      // normalize vector
+      vec2.normalize(
+        fixedHandleToProposedCoordVec,
+        fixedHandleToProposedCoordVec
+      );
+      vec2.normalize(fixedHandleToOldCoordVec, fixedHandleToOldCoordVec);
 
       // Check whether this
       const proposedFirstLineSegment = {
         start: {
-          x: fixedCanvasCoord[0],
-          y: fixedCanvasCoord[1],
+          x: fixedHandleCanvasCoord[0],
+          y: fixedHandleCanvasCoord[1],
         },
         end: {
           x: proposedCanvasCoord[0],
@@ -689,6 +713,11 @@ class BidirectionalTool extends AnnotationTool {
         },
       };
 
+      // Note: this is the case when we are modifying the long axis line segment
+      // and we make it shorter and shorter until its second half size becomes zero
+      // which basically means that any more modification would make the long axis
+      // second half disappear. In this case, we just bail out and do not update
+      // since we don't want to disrupt the bidirectional shape.
       if (
         this._movingLongAxisWouldPutItThroughShortAxis(
           proposedFirstLineSegment,
@@ -698,67 +727,57 @@ class BidirectionalTool extends AnnotationTool {
         return;
       }
 
-      // --> We need to preserve this distance
-      const intersectionPoint = lineSegment.intersectLine(
-        [secondLineSegment.start.x, secondLineSegment.start.y],
-        [secondLineSegment.end.x, secondLineSegment.end.y],
-        [firstLineSegment.start.x, firstLineSegment.start.y],
-        [firstLineSegment.end.x, firstLineSegment.end.y]
+      const centerOfRotation = fixedHandleCanvasCoord;
+
+      const angle = Math.atan2(
+        fixedHandleToOldCoordVec[0] * fixedHandleToProposedCoordVec[1] -
+          fixedHandleToOldCoordVec[1] * fixedHandleToProposedCoordVec[0],
+        fixedHandleToOldCoordVec[0] * fixedHandleToProposedCoordVec[0] +
+          fixedHandleToOldCoordVec[1] * fixedHandleToProposedCoordVec[1]
       );
 
-      const intersectionCoord = vec2.create();
+      let firstPointX = canvasCoordHandlesCurrent[2][0];
+      let firstPointY = canvasCoordHandlesCurrent[2][1];
 
-      vec2.set(intersectionCoord, intersectionPoint[0], intersectionPoint[1]);
+      let secondPointX = canvasCoordHandlesCurrent[3][0];
+      let secondPointY = canvasCoordHandlesCurrent[3][1];
 
-      // 1. distance from intersection point to start handle?
-      const distFromLeftHandle = vec2.distance(
-        <vec2>canvasCoordHandlesCurrent[2],
-        intersectionCoord
-      );
+      firstPointX -= centerOfRotation[0];
+      firstPointY -= centerOfRotation[1];
 
-      // 2. distance from intersection point to end handle?
-      const distFromRightHandle = vec2.distance(
-        <vec2>canvasCoordHandlesCurrent[3],
-        intersectionCoord
-      );
+      secondPointX -= centerOfRotation[0];
+      secondPointY -= centerOfRotation[1];
 
-      // 3. distance from long's opposite handle and intersect point
-      // Need new intersect x/y
-      const distIntersectAndFixedPoint = Math.abs(
-        vec2.distance(<vec2>fixedCanvasCoord, intersectionCoord)
-      );
+      const rotatedFirstPoint =
+        firstPointX * Math.cos(angle) - firstPointY * Math.sin(angle);
+      const rotatedFirstPointY =
+        firstPointX * Math.sin(angle) + firstPointY * Math.cos(angle);
 
-      // Find inclination of perpindicular
-      // Should use proposed point to find new inclination
-      const dx = fixedCanvasCoord[0] - proposedCanvasCoord[0];
-      const dy = fixedCanvasCoord[1] - proposedCanvasCoord[1];
-      const length = Math.sqrt(dx * dx + dy * dy);
-      const vectorX = dx / length;
-      const vectorY = dy / length;
+      const rotatedSecondPoint =
+        secondPointX * Math.cos(angle) - secondPointY * Math.sin(angle);
+      const rotatedSecondPointY =
+        secondPointX * Math.sin(angle) + secondPointY * Math.cos(angle);
 
-      // Find new intersection point
-      // --> fixedPoint, magnitude in perpendicular
-      // minus if right
-      // add if left
-      const intersectX =
-        fixedCanvasCoord[0] - distIntersectAndFixedPoint * vectorX;
-      const intersectY =
-        fixedCanvasCoord[1] - distIntersectAndFixedPoint * vectorY;
+      firstPointX = rotatedFirstPoint + centerOfRotation[0];
+      firstPointY = rotatedFirstPointY + centerOfRotation[1];
 
-      // short points 1/4 distance from center of long points
-      // Flip signs depending on grabbed handle
-      const mod = handleIndex === 0 ? -1 : 1;
-      const leftX = intersectX + distFromLeftHandle * vectorY * mod;
-      const leftY = intersectY - distFromLeftHandle * vectorX * mod;
-      const rightX = intersectX - distFromRightHandle * vectorY * mod;
-      const rightY = intersectY + distFromRightHandle * vectorX * mod;
+      secondPointX = rotatedSecondPoint + centerOfRotation[0];
+      secondPointY = rotatedSecondPointY + centerOfRotation[1];
 
-      data.handles.points[handleIndex] = proposedPoint;
-      data.handles.points[2] = viewport.canvasToWorld([leftX, leftY]);
-      data.handles.points[3] = viewport.canvasToWorld([rightX, rightY]);
+      const newFirstPoint = viewport.canvasToWorld([firstPointX, firstPointY]);
+      const newSecondPoint = viewport.canvasToWorld([
+        secondPointX,
+        secondPointY,
+      ]);
+
+      // the fixed handle is the one that is not being moved so we
+      // don't need to update it
+      data.handles.points[movingHandleIndex] = proposedPoint;
+      data.handles.points[2] = newFirstPoint;
+      data.handles.points[3] = newSecondPoint;
     } else {
       // Translation manipulator
-      const translateHandleIndex = handleIndex === 2 ? 3 : 2;
+      const translateHandleIndex = movingHandleIndex === 2 ? 3 : 2;
 
       // does not rotate, but can translate entire line (other end of short)
       const proposedCanvasCoordPoint = {
@@ -783,14 +802,18 @@ class BidirectionalTool extends AnnotationTool {
       const dy =
         canvasCoordsCurrent.longLineSegment.start.y -
         canvasCoordsCurrent.longLineSegment.end.y;
+
       const length = Math.sqrt(dx * dx + dy * dy);
       const vectorX = dx / length;
       const vectorY = dy / length;
-      // Create a helper line to find the intesection point in the long line
-      const highNumber = Number.MAX_SAFE_INTEGER;
-      // Get the multiplier
-      // +1 or -1 depending on which perp end we grabbed (and if it was "fixed" end)
-      const mod = handleIndex === 0 || handleIndex === 3 ? 1 : -1;
+
+      // Creates a helper line with the same inclination as the perpendicular line
+      // but having the start point as the proposed point.
+      // This line will start in the proposed point and will grow in the long line
+      // direction trying to cross it to enable finding the intersection point
+      // between the long line and this new perpendicular line.
+      const highNumber = 1000; //Number.MAX_SAFE_INTEGER;
+      const mod = movingHandleIndex === 0 || movingHandleIndex === 3 ? 1 : -1;
       const multiplier = mod * highNumber;
       const helperLine = {
         start: proposedCanvasCoordPoint, // could be start or end
@@ -799,6 +822,17 @@ class BidirectionalTool extends AnnotationTool {
           y: proposedCanvasCoordPoint.y + vectorX * multiplier * -1,
         },
       };
+
+      console.debug('helperLine.start', helperLine.start);
+      console.debug('helperLine.end', helperLine.end);
+      console.debug(
+        'longLineSegment.start',
+        canvasCoordsCurrent.longLineSegment.start
+      );
+      console.debug(
+        'longLineSegment.end',
+        canvasCoordsCurrent.longLineSegment.end
+      );
 
       const newIntersectionPoint = lineSegment.intersectLine(
         [
@@ -813,6 +847,7 @@ class BidirectionalTool extends AnnotationTool {
         [helperLine.end.x, helperLine.end.y]
       );
 
+      console.debug('newIntersectionPoint', newIntersectionPoint);
       // short-circuit
       if (newIntersectionPoint === undefined) {
         return;
@@ -844,7 +879,7 @@ class BidirectionalTool extends AnnotationTool {
         translatedHandleCoords.x,
         translatedHandleCoords.y,
       ]);
-      data.handles.points[handleIndex] = proposedPoint;
+      data.handles.points[movingHandleIndex] = proposedPoint;
     }
   };
 
