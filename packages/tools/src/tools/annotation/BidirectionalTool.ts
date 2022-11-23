@@ -784,6 +784,7 @@ class BidirectionalTool extends AnnotationTool {
         x: proposedCanvasCoord[0],
         y: proposedCanvasCoord[1],
       };
+
       const canvasCoordsCurrent = {
         longLineSegment: {
           start: firstLineSegment.start,
@@ -795,90 +796,55 @@ class BidirectionalTool extends AnnotationTool {
         },
       };
 
-      // get incline of other line (should not change w/ this movement)
-      const dx =
-        canvasCoordsCurrent.longLineSegment.start.x -
-        canvasCoordsCurrent.longLineSegment.end.x;
-      const dy =
-        canvasCoordsCurrent.longLineSegment.start.y -
-        canvasCoordsCurrent.longLineSegment.end.y;
-
-      const length = Math.sqrt(dx * dx + dy * dy);
-      const vectorX = dx / length;
-      const vectorY = dy / length;
-
-      // Creates a helper line with the same inclination as the perpendicular line
-      // but having the start point as the proposed point.
-      // This line will start in the proposed point and will grow in the long line
-      // direction trying to cross it to enable finding the intersection point
-      // between the long line and this new perpendicular line.
-      const highNumber = 1000; //Number.MAX_SAFE_INTEGER;
-      const mod = movingHandleIndex === 0 || movingHandleIndex === 3 ? 1 : -1;
-      const multiplier = mod * highNumber;
-      const helperLine = {
-        start: proposedCanvasCoordPoint, // could be start or end
-        end: {
-          x: proposedCanvasCoordPoint.x + vectorY * multiplier,
-          y: proposedCanvasCoordPoint.y + vectorX * multiplier * -1,
-        },
-      };
-
-      console.debug('helperLine.start', helperLine.start);
-      console.debug('helperLine.end', helperLine.end);
-      console.debug(
-        'longLineSegment.start',
-        canvasCoordsCurrent.longLineSegment.start
-      );
-      console.debug(
-        'longLineSegment.end',
-        canvasCoordsCurrent.longLineSegment.end
-      );
-
-      const newIntersectionPoint = lineSegment.intersectLine(
-        [
-          canvasCoordsCurrent.longLineSegment.start.x,
-          canvasCoordsCurrent.longLineSegment.start.y,
-        ],
+      const longLineSegmentVec = vec2.subtract(
+        vec2.create(),
         [
           canvasCoordsCurrent.longLineSegment.end.x,
           canvasCoordsCurrent.longLineSegment.end.y,
         ],
-        [helperLine.start.x, helperLine.start.y],
-        [helperLine.end.x, helperLine.end.y]
+        [
+          canvasCoordsCurrent.longLineSegment.start.x,
+          canvasCoordsCurrent.longLineSegment.start.y,
+        ]
       );
 
-      console.debug('newIntersectionPoint', newIntersectionPoint);
-      // short-circuit
-      if (newIntersectionPoint === undefined) {
-        return;
-      }
-
-      // 1. distance from intersection point to start handle?
-      const distFromTranslateHandle = vec2.distance(
-        <vec2>canvasCoordHandlesCurrent[translateHandleIndex],
-        [newIntersectionPoint[0], newIntersectionPoint[1]]
+      const longLineSegmentVecNormalized = vec2.normalize(
+        vec2.create(),
+        longLineSegmentVec
       );
 
-      // isStart if index is 0 or 2
-      const shortLineSegment = {
-        start: {
-          x: newIntersectionPoint[0] + vectorY * distFromTranslateHandle,
-          y: newIntersectionPoint[1] + vectorX * distFromTranslateHandle * -1,
-        },
-        end: {
-          x: newIntersectionPoint[0] + vectorY * distFromTranslateHandle * -1,
-          y: newIntersectionPoint[1] + vectorX * distFromTranslateHandle,
-        },
-      };
-      const translatedHandleCoords =
-        translateHandleIndex === 2
-          ? shortLineSegment.start
-          : shortLineSegment.end;
+      const proposedToCurrentVec = vec2.subtract(
+        vec2.create(),
+        [proposedCanvasCoord[0], proposedCanvasCoord[1]],
+        [
+          canvasCoordHandlesCurrent[movingHandleIndex][0],
+          canvasCoordHandlesCurrent[movingHandleIndex][1],
+        ]
+      );
 
-      data.handles.points[translateHandleIndex] = viewport.canvasToWorld([
-        translatedHandleCoords.x,
-        translatedHandleCoords.y,
-      ]);
+      const movementLength = vec2.length(proposedToCurrentVec);
+
+      const angle = Math.atan2(
+        longLineSegmentVecNormalized[0] * proposedToCurrentVec[1] -
+          longLineSegmentVecNormalized[1] * proposedToCurrentVec[0],
+        longLineSegmentVecNormalized[0] * proposedToCurrentVec[0] +
+          longLineSegmentVecNormalized[1] * proposedToCurrentVec[1]
+      );
+
+      const movementAlongLineSegmentLength = Math.cos(angle) * movementLength;
+
+      const newTranslatedPoint = vec2.scaleAndAdd(
+        vec2.create(),
+        [
+          canvasCoordHandlesCurrent[translateHandleIndex][0],
+          canvasCoordHandlesCurrent[translateHandleIndex][1],
+        ],
+        longLineSegmentVecNormalized,
+        movementAlongLineSegmentLength
+      );
+
+      data.handles.points[translateHandleIndex] =
+        viewport.canvasToWorld(newTranslatedPoint);
       data.handles.points[movingHandleIndex] = proposedPoint;
     }
   };
