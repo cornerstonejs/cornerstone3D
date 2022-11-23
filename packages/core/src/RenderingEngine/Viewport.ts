@@ -191,7 +191,8 @@ class Viewport implements IViewport {
       return;
     }
 
-    const { viewPlaneNormal, viewUp, focalPoint, position } = this.getCamera();
+    const camera = this.getCamera();
+    const { viewPlaneNormal, viewUp, focalPoint, position } = camera;
 
     const viewRight = vec3.create();
     vec3.cross(viewRight, viewPlaneNormal, viewUp);
@@ -208,12 +209,18 @@ class Viewport implements IViewport {
 
     // If the pan has been applied, we need to be able
     // apply the pan back
-    const resetFocalPoint = vec3.create();
     const dimensions = imageData.getDimensions();
     const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
+    const centeredFocalPoint = vec3.create();
     const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
-    imageData.indexToWorld(idx, resetFocalPoint);
+    imageData.indexToWorld(idx, centeredFocalPoint);
+
+    const resetFocalPoint = this._getFocalPointForResetCamera(
+      centeredFocalPoint as Point3,
+      camera,
+      { resetPan: true, resetToCenter: false }
+    );
 
     // what is the difference right now between the rested focal point and
     // the current focal point
@@ -1131,7 +1138,7 @@ class Viewport implements IViewport {
   _getFocalPointForResetCamera(
     centeredFocalPoint: Point3,
     previousCamera: ICamera,
-    { resetPan, resetToCenter }: { resetPan: boolean; resetToCenter: boolean }
+    { resetPan = true, resetToCenter = true }
   ): Point3 {
     if (resetToCenter && resetPan) {
       return centeredFocalPoint;

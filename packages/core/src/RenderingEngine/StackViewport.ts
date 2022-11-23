@@ -138,7 +138,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Helpers
   private _imageData: vtkImageDataType;
-  private cameraPosOnRender: Point3;
+  private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
   private panCache: Point3;
   private voiApplied = false;
@@ -197,7 +197,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
     this.panCache = [0, 0, 0];
-    this.cameraPosOnRender = [0, 0, 0];
+    this.cameraFocalPointOnRender = [0, 0, 0];
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
@@ -1666,9 +1666,12 @@ class StackViewport extends Viewport implements IStackViewport {
       // it in the space 3) restore the pan, zoom props.
       const cameraProps = this.getCamera();
 
-      this.panCache[0] = this.cameraPosOnRender[0] - cameraProps.position[0];
-      this.panCache[1] = this.cameraPosOnRender[1] - cameraProps.position[1];
-      this.panCache[2] = this.cameraPosOnRender[2] - cameraProps.position[2];
+      this.panCache[0] =
+        this.cameraFocalPointOnRender[0] - cameraProps.focalPoint[0];
+      this.panCache[1] =
+        this.cameraFocalPointOnRender[1] - cameraProps.focalPoint[1];
+      this.panCache[2] =
+        this.cameraFocalPointOnRender[2] - cameraProps.focalPoint[2];
 
       // store rotation cache since reset camera will reset it
       const rotationCache = this.rotationCache;
@@ -1680,8 +1683,8 @@ class StackViewport extends Viewport implements IStackViewport {
       // restore the rotation cache for the new slice
       this.setRotation(rotationCache, rotationCache);
 
-      const { position } = this.getCamera();
-      this.cameraPosOnRender = position;
+      const { focalPoint } = this.getCamera();
+      this.cameraFocalPointOnRender = focalPoint;
 
       // This is necessary to initialize the clipping range and it is not related
       // to our custom slabThickness.
@@ -1796,8 +1799,8 @@ class StackViewport extends Viewport implements IStackViewport {
     actor.getProperty().setRGBTransferFunction(0, cfun);
 
     // Saving position of camera on render, to cache the panning
-    const { position } = this.getCamera();
-    this.cameraPosOnRender = position;
+    const { focalPoint } = this.getCamera();
+    this.cameraFocalPointOnRender = focalPoint;
     this.stackInvalidated = false;
 
     if (this._publishCalibratedEvent) {
@@ -1997,10 +2000,17 @@ class StackViewport extends Viewport implements IStackViewport {
     ];
 
     // Restoring previous state x,y and scale, keeping the new z
+    // we need to break the flip operations since they also work on the
+    // camera position and focal point
     this.setCameraNoEvent({
       parallelScale: prevScale,
       position: newPosition,
       focalPoint: newFocal,
+    });
+
+    this.setCameraNoEvent({
+      flipHorizontal: previousCamera.flipHorizontal,
+      flipVertical: previousCamera.flipVertical,
     });
 
     const camera = this.getCamera();
