@@ -1221,7 +1221,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
         break;
       default:
-        console.debug('bit allocation not implemented');
+        console.log('bit allocation not implemented');
     }
 
     const scalarArray = vtkDataArray.newInstance({

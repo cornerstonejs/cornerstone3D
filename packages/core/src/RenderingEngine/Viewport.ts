@@ -222,10 +222,6 @@ class Viewport implements IViewport {
       { resetPan: true, resetToCenter: false }
     );
 
-    // what is the difference right now between the rested focal point and
-    // the current focal point
-    // Todo: this needs to be retrieved from the function that considers maintainFrame
-    // just now trying it on stack Viewport
     const panDir = vec3.create();
     vec3.subtract(panDir, focalPoint, resetFocalPoint);
 
@@ -555,10 +551,10 @@ class Viewport implements IViewport {
     // fix the flip right away, since we rely on the viewPlaneNormal and
     // viewUp for later. Basically, we need to flip back if flipHorizontal
     // is true or flipVertical is true
-    this.setCamera({
-      flipHorizontal: false,
-      flipVertical: false,
-    });
+    // this.setCamera({
+    //   flipHorizontal: false,
+    //   flipVertical: false,
+    // });
 
     const previousCamera = _cloneDeep(this.getCamera());
 
