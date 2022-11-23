@@ -274,8 +274,6 @@ class ProbeTool extends AnnotationTool {
 
     const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
 
-    annotation.highlighted = false;
-
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 

@@ -347,7 +347,6 @@ class LengthTool extends AnnotationTool {
       return;
     }
 
-    annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
