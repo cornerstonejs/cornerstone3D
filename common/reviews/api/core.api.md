@@ -2020,8 +2020,8 @@ export class Viewport implements IViewport {
     _getEdges(bounds: Array<number>): Array<[number[], number[]]>;
     // (undocumented)
     _getFocalPointForResetCamera(centeredFocalPoint: Point3, previousCamera: ICamera, { resetPan, resetToCenter }: {
-        resetPan: boolean;
-        resetToCenter: boolean;
+        resetPan?: boolean;
+        resetToCenter?: boolean;
     }): Point3;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
