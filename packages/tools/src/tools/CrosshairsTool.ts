@@ -1924,7 +1924,6 @@ class CrosshairsTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    this.editData.annotation.highlighted = false;
     this.editData.annotation.data.handles.activeOperation = null;
     this.editData.annotation.data.activeViewportIds = [];
 
