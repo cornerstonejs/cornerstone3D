@@ -35,7 +35,7 @@ import {
 import { getToolGroup } from '../store/ToolGroupManager';
 
 /**
- * CursorCrosshairSyncTool is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
+ * ReferenceCursors is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
  * Also when positionSync is enabled, it will try to sync viewports so that the cursor can be displayed in the correct position in all viewports.
  *
  * Configuration:
@@ -460,8 +460,8 @@ class ReferenceCursors extends AnnotationDisplayTool {
       const isInBounds = true;
       if (isInBounds) {
         viewport.setCamera({ focalPoint: newFocalPoint });
-        const renderingeEngine = viewport.getRenderingEngine();
-        if (renderingeEngine) renderingeEngine.renderViewport(viewport.id);
+        const renderingEngine = viewport.getRenderingEngine();
+        if (renderingEngine) renderingEngine.renderViewport(viewport.id);
       }
     }
   }
