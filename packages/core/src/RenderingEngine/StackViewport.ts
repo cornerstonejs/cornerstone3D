@@ -1697,7 +1697,11 @@ class StackViewport extends Viewport implements IStackViewport {
 
       // We shouldn't restore the focalPoint, position and parallelScale after reset
       // if it is the first render or we have completely re-created the vtkImageData
-      this._restoreCameraProps(cameraProps, previousCameraProps, panCache);
+      this._restoreCameraProps(
+        cameraProps,
+        previousCameraProps,
+        panCache as Point3
+      );
 
       // Restore rotation for the new slice of the image
       this.rotationCache = 0;
