@@ -1664,11 +1664,11 @@ class StackViewport extends Viewport implements IStackViewport {
       // it in the space 3) restore the pan, zoom props.
       const cameraProps = this.getCamera();
 
-      const panCache: Point3 = [
-        this.cameraFocalPointOnRender[0] - cameraProps.focalPoint[0],
-        this.cameraFocalPointOnRender[1] - cameraProps.focalPoint[1],
-        this.cameraFocalPointOnRender[2] - cameraProps.focalPoint[2],
-      ];
+      const panCache = vec3.subtract(
+        vec3.create(),
+        this.cameraFocalPointOnRender,
+        cameraProps.focalPoint
+      );
 
       // store rotation cache since reset camera will reset it
       const rotationCache = this.rotationCache;
@@ -1992,25 +1992,16 @@ class StackViewport extends Viewport implements IStackViewport {
     // get the focalPoint and position after the reset
     const { position, focalPoint } = this.getCamera();
 
-    const newPosition = <Point3>[
-      position[0] - panCache[0],
-      position[1] - panCache[1],
-      position[2] - panCache[2],
-    ];
-
-    const newFocal = <Point3>[
-      focalPoint[0] - panCache[0],
-      focalPoint[1] - panCache[1],
-      focalPoint[2] - panCache[2],
-    ];
+    const newPosition = vec3.subtract(vec3.create(), position, panCache);
+    const newFocal = vec3.subtract(vec3.create(), focalPoint, panCache);
 
     // Restoring previous state x,y and scale, keeping the new z
     // we need to break the flip operations since they also work on the
     // camera position and focal point
     this.setCameraNoEvent({
       parallelScale: prevScale,
-      position: newPosition,
-      focalPoint: newFocal,
+      position: newPosition as Point3,
+      focalPoint: newFocal as Point3,
     });
 
     const camera = this.getCamera();
