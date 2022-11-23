@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.29.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.6...@cornerstonejs/tools@0.29.7) (2022-11-23)
+
+
+### Bug Fixes
+
+* mouse-up should not unhighlight annotations ([#305](https://github.com/cornerstonejs/cornerstone3D-beta/issues/305)) ([0ca9653](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0ca96533d253c35534c9820e4174b54270483d5e))
+
+
+
+
+
 ## [0.29.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.5...@cornerstonejs/tools@0.29.6) (2022-11-21)
 
 
