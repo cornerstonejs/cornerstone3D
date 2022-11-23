@@ -165,6 +165,10 @@
       "volumeViewportOrientation": {
         "name": "Volume Viewport Orientation",
         "description": "Demonstrates you can switch between different orientation of a volume viewport"
+      },
+      "referenceCursors": {
+        "name": "Referencing Cursors",
+        "description": "Demonstrates how to synchronize the cursor between multiple viewports"
       }
     },
     "tools-advanced": {
