@@ -337,14 +337,23 @@ class LengthTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      newAnnotation,
+      hasMoved,
+      movingTextBox,
+    } = this.editData;
     const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
       // when user starts the drawing by click, and moving the mouse, instead
       // of click and drag
       return;
+    }
+
+    if (movingTextBox) {
+      annotation.invalidated = true;
     }
 
     annotation.highlighted = false;

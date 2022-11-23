@@ -414,12 +414,21 @@ class EllipticalROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      newAnnotation,
+      hasMoved,
+      movingTextBox,
+    } = this.editData;
     const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
       return;
+    }
+
+    if (movingTextBox) {
+      annotation.invalidated = true;
     }
 
     annotation.highlighted = false;
