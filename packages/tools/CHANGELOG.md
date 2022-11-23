@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.30.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.8...@cornerstonejs/tools@0.30.0) (2022-11-23)
+
+
+### Features
+
+* add referenceCursors tool ([#275](https://github.com/cornerstonejs/cornerstone3D-beta/issues/275)) ([3303246](https://github.com/cornerstonejs/cornerstone3D-beta/commit/3303246836c81efb51e5d5e70c1a8801fbcb019a))
+
+
+
+
+
 ## [0.29.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.7...@cornerstonejs/tools@0.29.8) (2022-11-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools
