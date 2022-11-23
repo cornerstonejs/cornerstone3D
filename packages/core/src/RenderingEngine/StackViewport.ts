@@ -140,7 +140,6 @@ class StackViewport extends Viewport implements IStackViewport {
   private _imageData: vtkImageDataType;
   private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
-  private panCache: Point3;
   private voiApplied = false;
   private rotationCache = 0;
   private _publishCalibratedEvent = false;
@@ -196,7 +195,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.imageIds = [];
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
-    this.panCache = [0, 0, 0];
     this.cameraFocalPointOnRender = [0, 0, 0];
     this.resetCamera();
 
@@ -1666,12 +1664,11 @@ class StackViewport extends Viewport implements IStackViewport {
       // it in the space 3) restore the pan, zoom props.
       const cameraProps = this.getCamera();
 
-      this.panCache[0] =
-        this.cameraFocalPointOnRender[0] - cameraProps.focalPoint[0];
-      this.panCache[1] =
-        this.cameraFocalPointOnRender[1] - cameraProps.focalPoint[1];
-      this.panCache[2] =
-        this.cameraFocalPointOnRender[2] - cameraProps.focalPoint[2];
+      const panCache: Point3 = [
+        this.cameraFocalPointOnRender[0] - cameraProps.focalPoint[0],
+        this.cameraFocalPointOnRender[1] - cameraProps.focalPoint[1],
+        this.cameraFocalPointOnRender[2] - cameraProps.focalPoint[2],
+      ];
 
       // store rotation cache since reset camera will reset it
       const rotationCache = this.rotationCache;
@@ -1683,6 +1680,13 @@ class StackViewport extends Viewport implements IStackViewport {
       // restore the rotation cache for the new slice
       this.setRotation(rotationCache, rotationCache);
 
+      // set the flip back to the previous value since the restore camera props
+      // rely on the correct flip value
+      this.setCameraNoEvent({
+        flipHorizontal: previousCameraProps.flipHorizontal,
+        flipVertical: previousCameraProps.flipVertical,
+      });
+
       const { focalPoint } = this.getCamera();
       this.cameraFocalPointOnRender = focalPoint;
 
@@ -1693,7 +1697,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
       // We shouldn't restore the focalPoint, position and parallelScale after reset
       // if it is the first render or we have completely re-created the vtkImageData
-      this._restoreCameraProps(cameraProps, previousCameraProps);
+      this._restoreCameraProps(cameraProps, previousCameraProps, panCache);
 
       // Restore rotation for the new slice of the image
       this.rotationCache = 0;
@@ -1980,7 +1984,8 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   private _restoreCameraProps(
     { parallelScale: prevScale }: ICamera,
-    previousCamera: ICamera
+    previousCamera: ICamera,
+    panCache: Point3
   ): void {
     const renderer = this.getRenderer();
 
@@ -1988,15 +1993,15 @@ class StackViewport extends Viewport implements IStackViewport {
     const { position, focalPoint } = this.getCamera();
 
     const newPosition = <Point3>[
-      position[0] - this.panCache[0],
-      position[1] - this.panCache[1],
-      position[2] - this.panCache[2],
+      position[0] - panCache[0],
+      position[1] - panCache[1],
+      position[2] - panCache[2],
     ];
 
     const newFocal = <Point3>[
-      focalPoint[0] - this.panCache[0],
-      focalPoint[1] - this.panCache[1],
-      focalPoint[2] - this.panCache[2],
+      focalPoint[0] - panCache[0],
+      focalPoint[1] - panCache[1],
+      focalPoint[2] - panCache[2],
     ];
 
     // Restoring previous state x,y and scale, keeping the new z
@@ -2006,11 +2011,6 @@ class StackViewport extends Viewport implements IStackViewport {
       parallelScale: prevScale,
       position: newPosition,
       focalPoint: newFocal,
-    });
-
-    this.setCameraNoEvent({
-      flipHorizontal: previousCamera.flipHorizontal,
-      flipVertical: previousCamera.flipVertical,
     });
 
     const camera = this.getCamera();

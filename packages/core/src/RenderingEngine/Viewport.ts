@@ -551,10 +551,10 @@ class Viewport implements IViewport {
     // fix the flip right away, since we rely on the viewPlaneNormal and
     // viewUp for later. Basically, we need to flip back if flipHorizontal
     // is true or flipVertical is true
-    // this.setCamera({
-    //   flipHorizontal: false,
-    //   flipVertical: false,
-    // });
+    this.setCamera({
+      flipHorizontal: false,
+      flipVertical: false,
+    });
 
     const previousCamera = _cloneDeep(this.getCamera());
 
