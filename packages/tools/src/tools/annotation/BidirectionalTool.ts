@@ -51,7 +51,6 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
-window.temp100 = false;
 
 /**
  * BidirectionalTool let you draw annotations that measures the length and
@@ -729,25 +728,27 @@ class BidirectionalTool extends AnnotationTool {
 
       const centerOfRotation = fixedHandleCanvasCoord;
 
-      const angle = Math.atan2(
-        fixedHandleToOldCoordVec[0] * fixedHandleToProposedCoordVec[1] -
-          fixedHandleToOldCoordVec[1] * fixedHandleToProposedCoordVec[0],
-        fixedHandleToOldCoordVec[0] * fixedHandleToProposedCoordVec[0] +
-          fixedHandleToOldCoordVec[1] * fixedHandleToProposedCoordVec[1]
+      const angle = this._getSignedAngle(
+        fixedHandleToOldCoordVec,
+        fixedHandleToProposedCoordVec
       );
 
+      // rotate handles around the center of rotation, first translate to origin,
+      // then rotate, then translate back
       let firstPointX = canvasCoordHandlesCurrent[2][0];
       let firstPointY = canvasCoordHandlesCurrent[2][1];
 
       let secondPointX = canvasCoordHandlesCurrent[3][0];
       let secondPointY = canvasCoordHandlesCurrent[3][1];
 
+      // translate to origin
       firstPointX -= centerOfRotation[0];
       firstPointY -= centerOfRotation[1];
 
       secondPointX -= centerOfRotation[0];
       secondPointY -= centerOfRotation[1];
 
+      // rotate
       const rotatedFirstPoint =
         firstPointX * Math.cos(angle) - firstPointY * Math.sin(angle);
       const rotatedFirstPointY =
@@ -758,12 +759,14 @@ class BidirectionalTool extends AnnotationTool {
       const rotatedSecondPointY =
         secondPointX * Math.sin(angle) + secondPointY * Math.cos(angle);
 
+      // translate back
       firstPointX = rotatedFirstPoint + centerOfRotation[0];
       firstPointY = rotatedFirstPointY + centerOfRotation[1];
 
       secondPointX = rotatedSecondPoint + centerOfRotation[0];
       secondPointY = rotatedSecondPointY + centerOfRotation[1];
 
+      // update handles
       const newFirstPoint = viewport.canvasToWorld([firstPointX, firstPointY]);
       const newSecondPoint = viewport.canvasToWorld([
         secondPointX,
@@ -778,12 +781,6 @@ class BidirectionalTool extends AnnotationTool {
     } else {
       // Translation manipulator
       const translateHandleIndex = movingHandleIndex === 2 ? 3 : 2;
-
-      // does not rotate, but can translate entire line (other end of short)
-      const proposedCanvasCoordPoint = {
-        x: proposedCanvasCoord[0],
-        y: proposedCanvasCoord[1],
-      };
 
       const canvasCoordsCurrent = {
         longLineSegment: {
@@ -824,11 +821,9 @@ class BidirectionalTool extends AnnotationTool {
 
       const movementLength = vec2.length(proposedToCurrentVec);
 
-      const angle = Math.atan2(
-        longLineSegmentVecNormalized[0] * proposedToCurrentVec[1] -
-          longLineSegmentVecNormalized[1] * proposedToCurrentVec[0],
-        longLineSegmentVecNormalized[0] * proposedToCurrentVec[0] +
-          longLineSegmentVecNormalized[1] * proposedToCurrentVec[1]
+      const angle = this._getSignedAngle(
+        longLineSegmentVecNormalized,
+        proposedToCurrentVec
       );
 
       const movementAlongLineSegmentLength = Math.cos(angle) * movementLength;
@@ -843,8 +838,49 @@ class BidirectionalTool extends AnnotationTool {
         movementAlongLineSegmentLength
       );
 
-      data.handles.points[translateHandleIndex] =
-        viewport.canvasToWorld(newTranslatedPoint);
+      // don't update if it passes through the other line segment
+      if (
+        this._movingLongAxisWouldPutItThroughShortAxis(
+          {
+            start: {
+              x: proposedCanvasCoord[0],
+              y: proposedCanvasCoord[1],
+            },
+            end: {
+              x: newTranslatedPoint[0],
+              y: newTranslatedPoint[1],
+            },
+          },
+          {
+            start: {
+              x: canvasCoordsCurrent.longLineSegment.start.x,
+              y: canvasCoordsCurrent.longLineSegment.start.y,
+            },
+            end: {
+              x: canvasCoordsCurrent.longLineSegment.end.x,
+              y: canvasCoordsCurrent.longLineSegment.end.y,
+            },
+          }
+        )
+      ) {
+        return;
+      }
+
+      const intersectionPoint = lineSegment.intersectLine(
+        [proposedCanvasCoord[0], proposedCanvasCoord[1]],
+        [newTranslatedPoint[0], newTranslatedPoint[1]],
+        [firstLineSegment.start.x, firstLineSegment.start.y],
+        [firstLineSegment.end.x, firstLineSegment.end.y]
+      );
+
+      // don't update if it doesn't intersect
+      if (!intersectionPoint) {
+        return;
+      }
+
+      data.handles.points[translateHandleIndex] = viewport.canvasToWorld(
+        newTranslatedPoint as Types.Point2
+      );
       data.handles.points[movingHandleIndex] = proposedPoint;
     }
   };
@@ -1132,7 +1168,7 @@ class BidirectionalTool extends AnnotationTool {
   };
 
   _movingLongAxisWouldPutItThroughShortAxis = (
-    proposedFirstLineSegment,
+    firstLineSegment,
     secondLineSegment
   ) => {
     const vectorInSecondLineDirection = vec2.create();
@@ -1162,8 +1198,8 @@ class BidirectionalTool extends AnnotationTool {
     const proposedIntersectionPoint = lineSegment.intersectLine(
       [extendedSecondLineSegment.start.x, extendedSecondLineSegment.start.y],
       [extendedSecondLineSegment.end.x, extendedSecondLineSegment.end.y],
-      [proposedFirstLineSegment.start.x, proposedFirstLineSegment.start.y],
-      [proposedFirstLineSegment.end.x, proposedFirstLineSegment.end.y]
+      [firstLineSegment.start.x, firstLineSegment.start.y],
+      [firstLineSegment.end.x, firstLineSegment.end.y]
     );
 
     const wouldPutThroughShortAxis = !proposedIntersectionPoint;
@@ -1268,6 +1304,13 @@ class BidirectionalTool extends AnnotationTool {
       csUtils.indexWithinDimensions(index2, dimensions) &&
       csUtils.indexWithinDimensions(index3, dimensions) &&
       csUtils.indexWithinDimensions(index4, dimensions)
+    );
+  };
+
+  _getSignedAngle = (vector1, vector2) => {
+    return Math.atan2(
+      vector1[0] * vector2[1] - vector1[1] * vector2[0],
+      vector1[0] * vector2[0] + vector1[1] * vector2[1]
     );
   };
 }
