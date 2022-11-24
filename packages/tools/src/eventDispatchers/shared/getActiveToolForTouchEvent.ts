@@ -1,6 +1,7 @@
 import { ToolGroupManager } from '../../store';
 import { MouseBindings, ToolModes } from '../../enums';
 import { EventTypes } from '../../types';
+import getMouseModifier from './getMouseModifier';
 
 const { Active } = ToolModes;
 
@@ -31,19 +32,24 @@ export default function getActiveToolForTouchEvent(
 
   const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
 
+  const numTouchPoints = Object.keys(touchEvent.touches).length;
+
+  // If any keyboard modifier key is also pressed
+  const modifierKey = getMouseModifier(touchEvent);
+
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j];
     const toolOptions = toolGroup.toolOptions[toolName];
 
     const correctBinding =
       toolOptions.bindings.length &&
+      // MouseBindings.Primary is an alias for numTouchPoints===1
       toolOptions.bindings.some(
         (binding) =>
-          binding.numTouchPoints === Object.keys(touchEvent.touches).length ||
-          binding.mouseButton === MouseBindings.Primary
-        // MouseBindings.Primary is hard coded for setActiveTool by OHIF when using the
-        // ./store/ToolGroupManager/ToolGroup.setToolActive API
-        //
+          (binding.numTouchPoints === numTouchPoints ||
+            (numTouchPoints === 1 &&
+              binding.mouseButton === MouseBindings.Primary)) &&
+          binding.modifierKey === modifierKey
       );
 
     if (toolOptions.mode === Active && correctBinding) {

@@ -46,12 +46,13 @@ export default function getActiveToolForMouseEvent(
     // it uses the primary button
     const correctBinding =
       toolOptions.bindings.length &&
-      toolOptions.bindings.some(
-        (binding) =>
+      toolOptions.bindings.some((binding) => {
+        return (
           binding.mouseButton ===
             (mouseEvent ? mouseEvent.buttons : MouseBindings.Primary) &&
           binding.modifierKey === modifierKey
-      );
+        );
+      });
 
     if (toolOptions.mode === Active && correctBinding) {
       return toolGroup.getToolInstance(toolName);
