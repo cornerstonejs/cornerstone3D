@@ -1,6 +1,6 @@
 import dicomParser from 'dicom-parser';
 import * as cornerstone from '@cornerstonejs/core';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneWADOImageLoader from '@cornerstonejs/dicom-image-loader';
 
 export default function initCornerstoneWADOImageLoader() {
   cornerstoneWADOImageLoader.external.cornerstone = cornerstone;

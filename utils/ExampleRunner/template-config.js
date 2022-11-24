@@ -34,29 +34,26 @@ module.exports = {
   plugins: [
     new ESLintPlugin(),
     new HtmlWebpackPlugin({
-      template: '${root.replace(
-        /\\/g,
-        '/'
-      )}/utils/ExampleRunner/template.html',
+      template: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/template.html',
     }),
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
     }),
-    new CopyPlugin({
-      patterns: [
-        {
-          from:
-            '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
-          to: '${destPath.replace(/\\/g, '/')}',
-        },
-      ],
-    }),
+    // new CopyPlugin({
+    //   patterns: [
+    //     {
+    //       from:
+    //         '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
+    //       to: '${destPath.replace(/\\/g, '/')}',
+    //     },
+    //   ],
+    // }),
     // new BundleAnalyzerPlugin()
   ],
-  entry: path.join('${exampleBasePath.replace(
+  entry: path.join('${exampleBasePath.replace(/\\/g, '/')}', '${relPath.replace(
     /\\/g,
     '/'
-  )}', '${relPath.replace(/\\/g, '/')}'),
+  )}'),
   output: {
     path: '${destPath.replace(/\\/g, '/')}',
     filename: '${name}.js',
@@ -74,7 +71,7 @@ module.exports = {
       )}',
       // We use this alias and the CopyPlugin to support using the dynamic-import version
       // of WADO Image Loader
-      'cornerstone-wado-image-loader': 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+      // ''@cornerstonejs/dicom-image-loader'': 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

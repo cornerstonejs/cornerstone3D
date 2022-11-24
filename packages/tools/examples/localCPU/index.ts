@@ -1,5 +1,5 @@
 import { RenderingEngine, Types, Enums, metaData } from '@cornerstonejs/core';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneWADOImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import htmlSetup from '../local/htmlSetup';
 import uids from '../local/uids';

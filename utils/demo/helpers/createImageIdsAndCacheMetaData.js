@@ -3,7 +3,7 @@ import dcmjs from 'dcmjs';
 import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
 import { utilities } from '@cornerstonejs/core';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneWADOImageLoader from '@cornerstonejs/dicom-image-loader';
 
 import WADORSHeaderProvider from './WADORSHeaderProvider';
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';

@@ -42,10 +42,10 @@ module.exports = (env, argv, { DIST_DIR }) => {
     resolve: {
       modules: [path.resolve(PROJECT_ROOT, './node_modules'), SRC_PATH],
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
-      alias: {
-        'cornerstone-wado-image-loader':
-          'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
-      },
+      // alias: {
+      //   ''@cornerstonejs/dicom-image-loader'':
+      //     'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+      // },
       fallback: {
         fs: false,
         path: require.resolve('path-browserify'),
@@ -70,7 +70,7 @@ module.exports = (env, argv, { DIST_DIR }) => {
       // Show build progress
       new webpack.ProgressPlugin(),
       // Clear dist between builds
-      new CleanWebpackPlugin()
+      new CleanWebpackPlugin(),
     ],
   };
 

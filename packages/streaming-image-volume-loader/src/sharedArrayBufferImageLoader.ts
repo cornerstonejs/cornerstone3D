@@ -4,7 +4,7 @@ import {
   decodeImageFrame,
   getImageFrame,
   external,
-} from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js';
+} from '@cornerstonejs/dicom-image-loader';
 
 function getImageRetrievalPool() {
   return external.cornerstone.imageRetrievalPoolManager;

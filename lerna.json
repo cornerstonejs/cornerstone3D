@@ -3,7 +3,8 @@
   "packages": [
     "packages/core",
     "packages/tools",
-    "packages/streaming-image-volume-loader"
+    "packages/streaming-image-volume-loader",
+    "packages/dicom-image-loader"
   ],
   "npmClient": "yarn",
   "useWorkspaces": true,
