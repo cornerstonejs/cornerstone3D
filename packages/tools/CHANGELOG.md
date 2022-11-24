@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.30.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.0...@cornerstonejs/tools@0.30.1) (2022-11-24)
+
+
+### Bug Fixes
+
+* ZoomTool fix for polyData actors with no imageData ([#308](https://github.com/cornerstonejs/cornerstone3D-beta/issues/308)) ([1350eca](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1350eca3cdc8d456642c6497dd2b2460a3584c7e))
+
+
+
+
+
 # [0.30.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.29.8...@cornerstonejs/tools@0.30.0) (2022-11-23)
 
 
