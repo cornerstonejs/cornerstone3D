@@ -41,7 +41,6 @@ const cornerstoneWADOImageLoader = {
   isColorImage,
   isJPEGBaseline8BitColor,
   webWorkerManager,
-  version,
   internal,
   external,
 };
@@ -65,7 +64,6 @@ export {
   isColorImage,
   isJPEGBaseline8BitColor,
   webWorkerManager,
-  version,
   internal,
   external,
 };
