@@ -635,7 +635,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
 
       const mapper = actor.getMapper();
       // @ts-ignore vtk incorrect typing
-      mapper.setBlendMode(blendMode);
+      if (mapper.setBlendMode) mapper.setBlendMode(blendMode);
     });
 
     if (immediate) {

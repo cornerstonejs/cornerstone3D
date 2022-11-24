@@ -15,6 +15,10 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -39,7 +43,7 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Crosshairs',
-  'Here we demonstrate crosshairs linking three orthogonal views of the same data. You can select the blend mode that will be used if you modify the slab thickness of the crosshairs by dragging the control points.'
+  'Here we demonstrate crosshairs linking three orthogonal views of the same data'
 );
 
 const size = '500px';
@@ -134,6 +138,33 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return index !== -1;
 }
 
+function getSphereActor({
+  center,
+  radius,
+  phiResolution,
+  thetaResolution,
+  opacity,
+  edgeVisibility,
+}) {
+  const sphereSource = vtkSphereSource.newInstance({
+    center,
+    radius,
+    phiResolution,
+    thetaResolution,
+  });
+
+  const actor = vtkActor.newInstance();
+  const mapper = vtkMapper.newInstance();
+
+  actor.getProperty().setEdgeVisibility(edgeVisibility);
+  actor.getProperty().setOpacity(opacity);
+
+  mapper.setInputConnection(sphereSource.getOutputPort());
+  actor.setMapper(mapper);
+
+  return actor;
+}
+
 const blendModeOptions = {
   MIP: 'Maximum Intensity Projection',
   MINIP: 'Minimum Intensity Projection',
@@ -202,18 +233,15 @@ async function run() {
   cornerstoneTools.addTool(CrosshairsTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-    type: 'VOLUME',
-  });
+  const StudyInstanceUID =
+    '1.2.840.113619.2.278.3.3523880722.420.1464584245.596';
 
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
+    SeriesInstanceUID: '1.2.840.113619.2.278.3.3523880722.420.1464584245.665',
+    wadoRsRoot: 'http://localhost/dicom-web',
+    type: 'VOLUME',
   });
 
   // Instantiate a rendering engine
@@ -252,6 +280,36 @@ async function run() {
   ];
 
   renderingEngine.setViewports(viewportInputArray);
+  const viewportIds = [viewportId1, viewportId2, viewportId3];
+  const displaySphere = true;
+  if (displaySphere) {
+    setTimeout(() => {
+      const toolCenter = [0, -10, -20];
+      const actor = getSphereActor({
+        center: toolCenter,
+        radius: 300,
+        phiResolution: 20,
+        thetaResolution: 20,
+        opacity: 1,
+        edgeVisibility: true,
+      });
+      viewportIds.forEach((viewportId) => {
+        const viewport = renderingEngine.getViewport(viewportId);
+        viewport.addActor({ uid: 'spherePolyData', actor });
+        // Render the image
+        viewport.render();
+        renderingEngine.render();
+      }, 3000);
+
+      renderingEngine.render();
+    });
+  }
+  renderingEngine.renderViewports(viewportIds);
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
 
   // Set the volume to load
   volume.load();
@@ -297,7 +355,7 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.renderViewports(viewportIds);
 }
 
 run();

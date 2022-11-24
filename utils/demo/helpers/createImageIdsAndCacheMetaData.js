@@ -79,6 +79,7 @@ export default async function createImageIdsAndCacheMetaData({
       WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
 
       // Add calibrated pixel spacing
+      instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
       const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
       const pixelSpacing = getPixelSpacingInformation(metadata);
 
