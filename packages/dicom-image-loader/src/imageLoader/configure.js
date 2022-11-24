@@ -1,4 +1,4 @@
-import { setOptions } from './internal/index.js';
+import { setOptions } from './internal/index';
 
 function configure(options) {
   setOptions(options);

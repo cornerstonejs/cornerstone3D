@@ -1,5 +1,5 @@
-import external from '../../externalModules.js';
-import { getOptions } from './options.js';
+import external from '../../externalModules';
+import { getOptions } from './options';
 
 function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
   const { cornerstone } = external;

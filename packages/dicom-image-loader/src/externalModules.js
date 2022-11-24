@@ -1,5 +1,5 @@
 /* eslint import/extensions:0 */
-import registerLoaders from './imageLoader/registerLoaders.js';
+import registerLoaders from './imageLoader/registerLoaders';
 
 let cornerstone;
 

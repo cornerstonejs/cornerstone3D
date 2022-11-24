@@ -1,5 +1,5 @@
-import getValue from './getValue.js';
-import getNumberValue from './getNumberValue.js';
+import getValue from './getValue';
+import getNumberValue from './getNumberValue';
 
 export default function getOverlayPlaneModule(metaData) {
   const overlays = [];

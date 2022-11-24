@@ -1,5 +1,5 @@
-import wadors from './wadors/index.js';
-import wadouri from './wadouri/index.js';
+import wadors from './wadors/index';
+import wadouri from './wadouri/index';
 
 /**
  * Register the WADO-URI and WADO-RS image loaders and metaData providers

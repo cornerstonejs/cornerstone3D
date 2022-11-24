@@ -1,5 +1,5 @@
 // https://emscripten.org/docs/api_reference/module.html
-import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.js';
+import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
 
 // Webpack asset/resource copies this to our output folder
 

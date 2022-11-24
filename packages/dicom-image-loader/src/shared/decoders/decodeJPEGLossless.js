@@ -11,7 +11,7 @@ export function initialize(decodeConfig) {
   }
 
   return new Promise((resolve, reject) => {
-    import('../../../codecs/jpegLossless.js').then((jpeg) => {
+    import('../../../codecs/jpegLossless').then((jpeg) => {
       local.jpeg = jpeg;
       resolve();
     }, reject);

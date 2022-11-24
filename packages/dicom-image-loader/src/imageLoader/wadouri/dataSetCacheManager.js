@@ -1,5 +1,5 @@
-import external from '../../externalModules.js';
-import { xhrRequest } from '../internal/index.js';
+import external from '../../externalModules';
+import { xhrRequest } from '../internal/index';
 
 /**
  * This object supports loading of DICOM P10 dataset from a uri and caching it so it can be accessed

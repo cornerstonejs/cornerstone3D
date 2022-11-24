@@ -84,9 +84,9 @@ module.exports = {
       },
     ],
   },
-  // experiments: {
-  //   asyncWebAssembly: true,
-  // },
+  experiments: {
+    asyncWebAssembly: true,
+  },
   plugins: [new webpack.ProgressPlugin()],
   // plugins: [new webpack.ProgressPlugin(), new BundleAnalyzerPlugin()],
 };

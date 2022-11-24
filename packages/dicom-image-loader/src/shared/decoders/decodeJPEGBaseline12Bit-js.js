@@ -11,7 +11,7 @@ export function initialize(decodeConfig) {
   }
 
   return new Promise((resolve, reject) => {
-    import('../../../codecs/jpeg.js').then(({ JpegImage }) => {
+    import('../../../codecs/jpeg').then(({ JpegImage }) => {
       local.JpegImage = JpegImage;
       resolve();
     }, reject);

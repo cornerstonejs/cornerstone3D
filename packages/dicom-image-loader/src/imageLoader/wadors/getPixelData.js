@@ -1,5 +1,5 @@
-import { xhrRequest } from '../internal/index.js';
-import findIndexOfString from './findIndexOfString.js';
+import { xhrRequest } from '../internal/index';
+import findIndexOfString from './findIndexOfString';
 
 function findBoundary(header) {
   for (let i = 0; i < header.length; i++) {

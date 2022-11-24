@@ -1,14 +1,14 @@
 /* eslint-disable complexity */
-import decodeLittleEndian from './decoders/decodeLittleEndian.js';
-import decodeBigEndian from './decoders/decodeBigEndian.js';
-import decodeRLE from './decoders/decodeRLE.js';
-import decodeJPEGBaseline8Bit from './decoders/decodeJPEGBaseline8Bit.js';
-// import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit.js';
-import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit-js.js';
-import decodeJPEGLossless from './decoders/decodeJPEGLossless.js';
-import decodeJPEGLS from './decoders/decodeJPEGLS.js';
-import decodeJPEG2000 from './decoders/decodeJPEG2000.js';
-import scaleArray from './scaling/scaleArray.js';
+import decodeLittleEndian from './decoders/decodeLittleEndian';
+import decodeBigEndian from './decoders/decodeBigEndian';
+import decodeRLE from './decoders/decodeRLE';
+import decodeJPEGBaseline8Bit from './decoders/decodeJPEGBaseline8Bit';
+// import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit';
+import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit-js';
+import decodeJPEGLossless from './decoders/decodeJPEGLossless';
+import decodeJPEGLS from './decoders/decodeJPEGLS';
+import decodeJPEG2000 from './decoders/decodeJPEG2000';
+import scaleArray from './scaling/scaleArray';
 
 function decodeImageFrame(
   imageFrame,
@@ -220,7 +220,6 @@ function postProcessDecodedPixels(imageFrame, options, start) {
   }
 
   if (options.preScale.enabled) {
-    debugger;
     const scalingParameters = options.preScale.scalingParameters;
 
     if (!scalingParameters) {

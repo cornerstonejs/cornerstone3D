@@ -1,5 +1,5 @@
-import getEncapsulatedImageFrame from './getEncapsulatedImageFrame.js';
-import getUncompressedImageFrame from './getUncompressedImageFrame.js';
+import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
+import getUncompressedImageFrame from './getUncompressedImageFrame';
 
 function getPixelData(dataSet, frameIndex = 0) {
   const pixelDataElement =

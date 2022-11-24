@@ -1,12 +1,12 @@
-import external from '../externalModules.js';
-import getImageFrame from './getImageFrame.js';
-import decodeImageFrame from './decodeImageFrame.js';
-import isColorImageFn from './isColorImage.js';
-import convertColorSpace from './convertColorSpace.js';
-import getMinMax from '../shared/getMinMax.js';
-import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor.js';
-import { getOptions } from './internal/options.js';
-import getScalingParameters from './getScalingParameters.js';
+import external from '../externalModules';
+import getImageFrame from './getImageFrame';
+import decodeImageFrame from './decodeImageFrame';
+import isColorImageFn from './isColorImage';
+import convertColorSpace from './convertColorSpace';
+import getMinMax from '../shared/getMinMax';
+import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
+import { getOptions } from './internal/options';
+import getScalingParameters from './getScalingParameters';
 
 let lastImageIdDrawn = '';
 

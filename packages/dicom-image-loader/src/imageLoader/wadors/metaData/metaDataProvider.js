@@ -1,9 +1,9 @@
-import external from '../../../externalModules.js';
-import getNumberValues from './getNumberValues.js';
-import getValue from './getValue.js';
-import getNumberValue from './getNumberValue.js';
-import getOverlayPlaneModule from './getOverlayPlaneModule.js';
-import metaDataManager from '../metaDataManager.js';
+import external from '../../../externalModules';
+import getNumberValues from './getNumberValues';
+import getValue from './getValue';
+import getNumberValue from './getNumberValue';
+import getOverlayPlaneModule from './getOverlayPlaneModule';
+import metaDataManager from '../metaDataManager';
 
 function metaDataProvider(type, imageId) {
   const { dicomParser } = external;

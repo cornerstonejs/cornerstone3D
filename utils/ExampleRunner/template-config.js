@@ -5,6 +5,9 @@ const csToolsBasePath = path.resolve('../tools/src/index');
 const csStreamingBasePath = path.resolve(
   '../streaming-image-volume-loader/src/index'
 );
+const csDICOMImageLoader = path.resolve(
+  '../dicom-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js'
+);
 
 module.exports = function buildConfig(
   name,
@@ -39,15 +42,15 @@ module.exports = {
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
     }),
-    // new CopyPlugin({
-    //   patterns: [
-    //     {
-    //       from:
-    //         '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
-    //       to: '${destPath.replace(/\\/g, '/')}',
-    //     },
-    //   ],
-    // }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from:
+            '../../../packages/dicom-image-loader/dist/dynamic-import',
+          to: '${destPath.replace(/\\/g, '/')}',
+        },
+      ],
+    }),
     // new BundleAnalyzerPlugin()
   ],
   entry: path.join('${exampleBasePath.replace(/\\/g, '/')}', '${relPath.replace(
@@ -71,7 +74,11 @@ module.exports = {
       )}',
       // We use this alias and the CopyPlugin to support using the dynamic-import version
       // of WADO Image Loader
-      // ''@cornerstonejs/dicom-image-loader'': 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+      // '@cornerstonejs/dicom-image-loader': '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+      '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoader.replace(
+        /\\/g,
+        '/'
+      )}',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -90,6 +97,9 @@ module.exports = {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin"
     }
+  },
+  experiments: {
+    asyncWebAssembly: true,
   },
   /*optimization: {
     minimize: false,

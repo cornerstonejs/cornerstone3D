@@ -1,9 +1,9 @@
-import createImage from '../createImage.js';
-import parseImageId from './parseImageId.js';
-import dataSetCacheManager from './dataSetCacheManager.js';
-import loadFileRequest from './loadFileRequest.js';
-import getPixelData from './getPixelData.js';
-import { xhrRequest } from '../internal/index.js';
+import createImage from '../createImage';
+import parseImageId from './parseImageId';
+import dataSetCacheManager from './dataSetCacheManager';
+import loadFileRequest from './loadFileRequest';
+import getPixelData from './getPixelData';
+import { xhrRequest } from '../internal/index';
 
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache(imageLoadObject, imageId) {

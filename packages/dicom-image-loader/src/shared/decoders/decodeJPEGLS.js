@@ -1,4 +1,4 @@
-import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode.js';
+import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
 // import charlsFactory from '@cornerstonejs/codec-charls/dist/debug/charlswasm.js';
 
 // Webpack asset/resource copies this to our output folder

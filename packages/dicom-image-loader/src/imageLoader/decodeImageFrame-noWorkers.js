@@ -1,8 +1,8 @@
-import { getOptions } from './internal/options.js';
-import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
+import { getOptions } from './internal/options';
+import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
 
-import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame.js';
-import calculateMinMax from '../shared/calculateMinMax.js';
+import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame';
+import calculateMinMax from '../shared/calculateMinMax';
 
 function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
   const loaderOptions = getOptions();

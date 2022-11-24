@@ -1,4 +1,4 @@
-import imageIdToURI from '../imageIdToURI.js';
+import imageIdToURI from '../imageIdToURI';
 
 let metadataByImageURI = [];
 

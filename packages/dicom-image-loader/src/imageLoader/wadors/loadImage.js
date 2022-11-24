@@ -1,6 +1,6 @@
-import external from '../../externalModules.js';
-import getPixelData from './getPixelData.js';
-import createImage from '../createImage.js';
+import external from '../../externalModules';
+import getPixelData from './getPixelData';
+import createImage from '../createImage';
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.

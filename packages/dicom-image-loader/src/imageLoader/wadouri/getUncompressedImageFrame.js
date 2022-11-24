@@ -1,4 +1,4 @@
-import unpackBinaryFrame from './unpackBinaryFrame.js';
+import unpackBinaryFrame from './unpackBinaryFrame';
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.

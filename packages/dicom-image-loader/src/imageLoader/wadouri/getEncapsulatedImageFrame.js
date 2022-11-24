@@ -1,4 +1,4 @@
-import external from '../../externalModules.js';
+import external from '../../externalModules';
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.

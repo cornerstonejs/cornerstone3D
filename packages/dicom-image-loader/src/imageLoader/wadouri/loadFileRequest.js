@@ -1,5 +1,5 @@
-import parseImageId from './parseImageId.js';
-import fileManager from './fileManager.js';
+import parseImageId from './parseImageId';
+import fileManager from './fileManager';
 
 function loadFileRequest(uri) {
   const parsedImageId = parseImageId(uri);

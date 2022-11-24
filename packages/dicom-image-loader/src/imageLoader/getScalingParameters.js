@@ -19,7 +19,6 @@ export default function getScalingParameters(metaData, imageId) {
     modality,
   };
 
-  debugger;
   const suvFactor = metaData.get('scalingModule', imageId) || {};
 
   return {
