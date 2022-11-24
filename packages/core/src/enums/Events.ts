@@ -162,7 +162,7 @@ enum Events {
   IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
   /**
    * Triggers on the eventTarget when there is a progress in the image load process. Note: this event
-   * is being used in the Cornerstone-WADO-Image-Loader repository. See {@link https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/src/imageLoader/internal/xhrRequest.js | here}
+   * is being used in the dicom-image-loader repository. See {@link https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/src/imageLoader/internal/xhrRequest.js | here}
    *
    * Make use of {@link EventTypes.ImageLoadProgress | ImageLoadProgress Event Type } for typing your event listeners for IMAGE_LOAD_PROGRESS event,
    * and see what event detail is included in {@link EventTypes.ImageLoadProgressEventDetail | ImageLoadProgress Event Detail }

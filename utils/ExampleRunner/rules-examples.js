@@ -16,6 +16,24 @@ module.exports = [
     },
   },
   {
+    test: /\.wasm/,
+    // asset resource is used for assets that are not built but we want
+    // to copy to dist. Don't import .wasm, just treat it as a file and
+    // copy it to dist.
+    type: 'asset/resource',
+  },
+  {
+    test: /\.worker\.js$/,
+    use: [
+      {
+        loader: 'worker-loader',
+      },
+      // {
+      //   loader: 'babel-loader',
+      // },
+    ],
+  },
+  {
     test: /\.css$/,
     exclude: /\.module\.css$/,
     use: [

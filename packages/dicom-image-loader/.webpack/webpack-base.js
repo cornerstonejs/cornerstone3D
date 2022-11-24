@@ -43,15 +43,15 @@ module.exports = {
   module: {
     noParse: [/(codecs)/],
     rules: [
-      {
-        enforce: 'pre',
-        test: /\.js$/,
-        exclude: /(node_modules)|(codecs)/,
-        loader: 'eslint-loader',
-        options: {
-          failOnError: false,
-        },
-      },
+      // {
+      //   enforce: 'pre',
+      //   test: /\.js$/,
+      //   exclude: /(node_modules)|(codecs)/,
+      //   loader: 'eslint-loader',
+      //   options: {
+      //     failOnError: false,
+      //   },
+      // },
       {
         test: /\.wasm/,
         type: 'asset/resource',
@@ -83,9 +83,6 @@ module.exports = {
         },
       },
     ],
-  },
-  experiments: {
-    asyncWebAssembly: true,
   },
   plugins: [new webpack.ProgressPlugin()],
   // plugins: [new webpack.ProgressPlugin(), new BundleAnalyzerPlugin()],
