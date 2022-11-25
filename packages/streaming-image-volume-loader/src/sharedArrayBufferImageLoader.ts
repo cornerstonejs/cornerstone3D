@@ -4,7 +4,7 @@ import {
   decodeImageFrame,
   getImageFrame,
   external,
-} from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js';
+} from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min';
 
 function getImageRetrievalPool() {
   return external.cornerstone.imageRetrievalPoolManager;
@@ -129,6 +129,8 @@ function getTransferSyntaxForContentType(contentType: string): string {
     'image/x-jls': '1.2.840.10008.1.2.4.80',
     'image/jp2': '1.2.840.10008.1.2.4.90',
     'image/jpx': '1.2.840.10008.1.2.4.92',
+    'image/jphc': '3.2.840.10008.1.2.4.96',
+    'image/jls': '1.2.840.10008.1.2.4.80',
   };
 
   if (params['transfer-syntax']) {
