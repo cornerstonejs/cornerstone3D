@@ -15,9 +15,15 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
+import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
+import loadRTStruct from './utils/loadStruct';
 
 // This is for debugging purposes
 console.warn(
@@ -138,6 +144,64 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return index !== -1;
 }
 
+function createPolyData(roiData, addClippingPlanes = false) {
+  const pointList = roiData.pointsList;
+  const polygon = vtkPolyData.newInstance();
+  const pointArray = [];
+  const lineArray = [];
+  let index = 0;
+  for (let i = 0; i < pointList.length; i++) {
+    const points = pointList[i].points;
+    for (let j = 0; j < points.length; j++) {
+      pointArray.push(points[j].x);
+      pointArray.push(points[j].y);
+      pointArray.push(points[j].z);
+      lineArray.push(index + j);
+    }
+    index = index + points.length;
+  }
+  polygon.getPoints().setData(Float32Array.from(pointArray), 3);
+  polygon.getLines().setData(Uint16Array.from(lineArray));
+
+  const mapper = vtkMapper.newInstance();
+  mapper.setInputData(polygon);
+
+  if (addClippingPlanes) {
+    const clipPlane1 = vtkPlane.newInstance();
+    const clipPlane2 = vtkPlane.newInstance();
+    let clipPlane1Position = 0;
+    let clipPlane2Position = 0;
+    const clipPlane1Normal = [-1, 1, 0];
+    const clipPlane2Normal = [0, 0, 1];
+
+    const sizeX = 0;
+    const sizeY = 10;
+    clipPlane1Position = sizeX / 4;
+    clipPlane2Position = sizeY / 2;
+    const clipPlane1Origin = [
+      clipPlane1Position * clipPlane1Normal[0],
+      clipPlane1Position * clipPlane1Normal[1],
+      clipPlane1Position * clipPlane1Normal[2],
+    ];
+    const clipPlane2Origin = [
+      clipPlane2Position * clipPlane2Normal[0],
+      clipPlane2Position * clipPlane2Normal[1],
+      clipPlane2Position * clipPlane2Normal[2],
+    ];
+
+    clipPlane1.setNormal(clipPlane1Normal);
+    clipPlane1.setOrigin(clipPlane1Origin);
+    clipPlane2.setNormal(clipPlane2Normal);
+    clipPlane2.setOrigin(clipPlane2Origin);
+    mapper.addClippingPlane(clipPlane1);
+    mapper.addClippingPlane(clipPlane2);
+  }
+
+  const actor = vtkActor.newInstance();
+  actor.setMapper(mapper);
+  return actor;
+}
+
 function getSphereActor({
   center,
   radius,
@@ -244,15 +308,30 @@ async function run() {
     type: 'VOLUME',
   });
 
+  const RTSTRUCTId = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
+    SeriesInstanceUID:
+      '1.2.246.352.205.5293987336505275805.4293842691528653980',
+    wadoRsRoot: 'http://localhost/dicom-web',
+    type: 'VOLUME',
+  });
+
+  const rtData = await loadRTStruct(RTSTRUCTId, imageIds);
+  console.log(rtData);
+
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
+  let type = ViewportType.PERSPECTIVE;
+  const ortographic = true;
+  if (ortographic) type = ViewportType.ORTHOGRAPHIC;
+
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -261,7 +340,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -270,7 +349,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -281,30 +360,6 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
   const viewportIds = [viewportId1, viewportId2, viewportId3];
-  const displaySphere = true;
-  if (displaySphere) {
-    setTimeout(() => {
-      const toolCenter = [0, -10, -20];
-      const actor = getSphereActor({
-        center: toolCenter,
-        radius: 300,
-        phiResolution: 20,
-        thetaResolution: 20,
-        opacity: 1,
-        edgeVisibility: true,
-      });
-      viewportIds.forEach((viewportId) => {
-        const viewport = renderingEngine.getViewport(viewportId);
-        viewport.addActor({ uid: 'spherePolyData', actor });
-        // Render the image
-        viewport.render();
-        renderingEngine.render();
-      }, 3000);
-
-      renderingEngine.render();
-    });
-  }
-  renderingEngine.renderViewports(viewportIds);
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -355,6 +410,43 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Render the image
+  renderingEngine.renderViewports(viewportIds);
+  const displaySphere = false;
+  if (displaySphere) {
+    setTimeout(() => {
+      const toolCenter = [0, 0, -20];
+      const actor = getSphereActor({
+        center: toolCenter,
+        radius: 300,
+        phiResolution: 20,
+        thetaResolution: 20,
+        opacity: 1,
+        edgeVisibility: true,
+      });
+      viewportIds.forEach((viewportId) => {
+        const viewport = renderingEngine.getViewport(viewportId);
+        viewport.addActor({ uid: 'spherePolyData', actor });
+        // Render the image
+        viewport.render();
+        renderingEngine.render();
+      }, 3000);
+
+      renderingEngine.render();
+    });
+  } else {
+    setTimeout(() => {
+      const actor = createPolyData(rtData['CONTOUR EXTERNE']);
+      viewportIds.forEach((viewportId) => {
+        const viewport = renderingEngine.getViewport(viewportId);
+        viewport.addActor({ uid: 'spherePolyData', actor });
+        // Render the image
+        viewport.render();
+        renderingEngine.render();
+      }, 3000);
+
+      renderingEngine.render();
+    });
+  }
   renderingEngine.renderViewports(viewportIds);
 }
 
