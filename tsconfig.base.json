@@ -15,7 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false,
     "jsx": "react-jsx",
-    "lib": ["ES6", "dom"], // "ES6", "DOM" | "es2015", "dom"
+    "lib": ["ES6", "dom", "ES2020"], // "ES6", "DOM" | "es2015", "dom"
     "module": "esnext", // esnext | commonjs
     "moduleResolution": "node",
     "noImplicitAny": false,

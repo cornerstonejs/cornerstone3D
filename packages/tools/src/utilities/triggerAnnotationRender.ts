@@ -93,15 +93,14 @@ class AnnotationRenderingEngine {
 
         // This viewport has been rendered, we can remove it from the set
         this._needsRender.delete(element);
-
-        // If there is nothing left that is flagged for rendering, stop here
-        // and allow RAF to be called again
-        if (this._needsRender.size === 0) {
-          this._animationFrameSet = false;
-          this._animationFrameHandle = null;
-          return;
-        }
       }
+    }
+    // If there is nothing left that is flagged for rendering, stop here
+    // and allow RAF to be called again
+    if (this._needsRender.size === 0) {
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
+      return;
     }
   };
 
