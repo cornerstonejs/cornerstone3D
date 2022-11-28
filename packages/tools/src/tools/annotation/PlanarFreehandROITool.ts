@@ -510,6 +510,10 @@ class PlanarFreehandROITool extends AnnotationTool {
       const data = annotation.data;
       const point = data.polyline[0];
 
+      if (!annotation.isVisible) {
+        continue;
+      }
+
       // A = point
       // B = focal point
       // P = normal
