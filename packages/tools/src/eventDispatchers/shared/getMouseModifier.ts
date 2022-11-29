@@ -5,14 +5,26 @@ import { KeyboardBindings as kb } from '../../enums';
  * Supports Shift, Ctrl, Alt, in singly and in combinations of 2
  * Supports Meta singly.
  */
-const getMouseModifierKey = (evt) =>
-  (evt.shiftKey &&
-    ((evt.ctrlKey && kb.ShiftCtrl) ||
-      (evt.altKey && kb.ShiftAlt) ||
-      kb.Shift)) ||
-  (evt.ctrlKey && ((evt.altKey && kb.CtrlAlt) || kb.Ctrl)) ||
-  (evt.altKey && kb.Alt) ||
-  (evt.metaKey && kb.Meta) ||
-  undefined;
+const getMouseModifierKey = (evt) => {
+  // The logic is a hard coded key mapping
+  if (evt.shiftKey) {
+    if (evt.ctrlKey) return kb.ShiftCtrl;
+    if (evt.altKey) return kb.ShiftAlt;
+    if (evt.metaKey) return kb.ShiftMeta;
+    return kb.Shift;
+  }
+  if (evt.ctrlKey) {
+    if (evt.altKey) return kb.CtrlAlt;
+    if (evt.metaKey) return kb.CtrlMeta;
+    return kb.Ctrl;
+  }
+  if (evt.altKey) {
+    return (evt.metaKey && kb.AltMeta) || kb.Alt;
+  }
+  if (evt.metaKey) {
+    kb.Meta;
+  }
+  return undefined;
+};
 
 export default getMouseModifierKey;
