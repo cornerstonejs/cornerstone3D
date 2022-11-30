@@ -40,6 +40,11 @@ import type {
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
 import ISynchronizerEventHandler from './ISynchronizerEventHandler';
+import {
+  FloodFillGetter,
+  FloodFillOptions,
+  FloodFillResult,
+} from './FloodFillTypes';
 
 export type {
   // AnnotationState
@@ -90,4 +95,8 @@ export type {
   CINETypes,
   BoundsIJK,
   SVGDrawingHelper,
+  // FloodFill
+  FloodFillResult,
+  FloodFillGetter,
+  FloodFillOptions,
 };
