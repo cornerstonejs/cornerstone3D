@@ -104,6 +104,7 @@ function mouseDownListener(evt: MouseEvent) {
 
   const startPoints = getMouseEventPoints(evt, state.element);
   const deltaPoints = _getDeltaPoints(startPoints, startPoints);
+  console.debug(startPoints.world);
 
   const eventDetail: EventTypes.MouseDownEventDetail = {
     event: evt,

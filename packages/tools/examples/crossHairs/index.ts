@@ -16,7 +16,6 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
@@ -35,6 +34,7 @@ const {
   Enums: csToolsEnums,
   CrosshairsTool,
   StackScrollMouseWheelTool,
+  ZoomTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -148,20 +148,27 @@ function createPolyData(roiData, addClippingPlanes = false) {
   const pointList = roiData.pointsList;
   const polygon = vtkPolyData.newInstance();
   const pointArray = [];
-  const lineArray = [];
   let index = 0;
+
+  const lines = vtkCellArray.newInstance();
+
   for (let i = 0; i < pointList.length; i++) {
     const points = pointList[i].points;
+    const lineArray = [];
     for (let j = 0; j < points.length; j++) {
       pointArray.push(points[j].x);
       pointArray.push(points[j].y);
       pointArray.push(points[j].z);
+
       lineArray.push(index + j);
     }
+    // Uniting the last point with the first
+    lineArray.push(index);
+    lines.insertNextCell(lineArray);
     index = index + points.length;
   }
   polygon.getPoints().setData(Float32Array.from(pointArray), 3);
-  polygon.getLines().setData(Uint16Array.from(lineArray));
+  polygon.setLines(lines);
 
   const mapper = vtkMapper.newInstance();
   mapper.setInputData(polygon);
@@ -295,6 +302,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(CrosshairsTool);
+  cornerstoneTools.addTool(ZoomTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const StudyInstanceUID =
@@ -370,16 +378,16 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    [viewportId1, viewportId2, viewportId3]
-  );
+  // await setVolumesForViewports(
+  //   renderingEngine,
+  //   [
+  //     {
+  //       volumeId,
+  //       callback: setCtTransferFunctionForVolumeActor,
+  //     },
+  //   ],
+  //   [viewportId1, viewportId2, viewportId3]
+  // );
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -392,6 +400,7 @@ async function run() {
 
   // Manipulation Tools
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
   // Add Crosshairs tool and configure it to link the three viewports
   // These viewports could use different tool groups. See the PET-CT example
   // for a more complicated used case.
@@ -408,6 +417,9 @@ async function run() {
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
