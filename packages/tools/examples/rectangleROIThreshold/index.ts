@@ -107,9 +107,10 @@ content.append(instructions);
 let numSlicesToProject = 3;
 let ctLowerThreshold = -900;
 let ctUpperThreshold = -700;
+const overwrite = false;
 
-const ptLowerThreshold = 0;
-const ptUpperThreshold = 5;
+let ptLowerThreshold = 0;
+let ptUpperThreshold = 5;
 
 addButtonToToolbar({
   title: 'Execute threshold',
@@ -139,42 +140,55 @@ addButtonToToolbar({
     csToolsUtils.segmentation.rectangleROIThresholdVolumeByRange(
       selectedAnnotationUIDs,
       segmentationVolume,
-      [ctVolume, ptVolume],
       [
-        {
-          numSlicesToProject,
-          lower: ctLowerThreshold,
-          upper: ctUpperThreshold,
-          overwrite: false,
-        },
-        {
-          numSlicesToProject,
-          lower: ptLowerThreshold,
-          upper: ptUpperThreshold,
-          overwrite: false,
-        },
-      ]
+        { volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold },
+        { volume: ptVolume, lower: ptLowerThreshold, upper: ptUpperThreshold },
+      ],
+      numSlicesToProject,
+      overwrite
     );
   },
 });
 
 addSliderToToolbar({
-  title: `Number of Slices to Segment: ${numSlicesToProject
-    .toString()
-    .padStart(4)}`,
+  title: `#Slices to Segment: ${numSlicesToProject.toString().padStart(4)}`,
   range: [1, 5],
   defaultValue: numSlicesToProject,
   onSelectedValueChange: (value) => {
     numSlicesToProject = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `Number of Slices to Segment: ${value}`;
+    label.innerText = `#Slices to Segment: ${value}`;
   },
 });
 
 addSliderToToolbar({
-  title: `Lower Threshold: ${ctLowerThreshold}`,
-  range: [100, 400],
+  title: `PT Lower Thresh: ${ptLowerThreshold}`,
+  range: [0, 5],
+  defaultValue: ptLowerThreshold,
+  onSelectedValueChange: (value) => {
+    ptLowerThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
+    label.innerText = `PT Lower Threshold: ${value}`;
+  },
+});
+
+addSliderToToolbar({
+  title: `PT Upper Thresh: ${ptUpperThreshold.toString().padStart(4)}`,
+  range: [0, 5],
+  defaultValue: ptUpperThreshold,
+  onSelectedValueChange: (value) => {
+    ptUpperThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
+    label.innerText = `PT Upper Threshold: ${value}`;
+  },
+});
+
+addSliderToToolbar({
+  title: `CT Lower Thresh: ${ctLowerThreshold}`,
+  range: [-1000, 1000],
   defaultValue: ctLowerThreshold,
   onSelectedValueChange: (value) => {
     ctLowerThreshold = Number(value);
@@ -185,8 +199,8 @@ addSliderToToolbar({
 });
 
 addSliderToToolbar({
-  title: `Upper Threshold: ${ctUpperThreshold.toString().padStart(4)}`,
-  range: [500, 1000],
+  title: `CT Upper Thresh: ${ctUpperThreshold.toString().padStart(4)}`,
+  range: [-1000, 1000],
   defaultValue: ctUpperThreshold,
   onSelectedValueChange: (value) => {
     ctUpperThreshold = Number(value);

@@ -40,8 +40,9 @@ export type AnnotationForThresholding = {
 function rectangleROIThresholdVolumeByRange(
   annotationUIDs: string[],
   segmentationVolume: Types.IImageVolume,
-  referenceVolumes: Types.IImageVolume[],
-  options: ThresholdRangeOptions[]
+  thresholdVolumeInformation,
+  numSlicesToProject,
+  overwrite
 ): Types.IImageVolume {
   const annotations = annotationUIDs.map((annotationUID) => {
     return state.getAnnotation(annotationUID);
@@ -52,14 +53,15 @@ function rectangleROIThresholdVolumeByRange(
   // considering all volumes having the dsame dimensions
   const boundsIJK = getBoundsIJKFromRectangleAnnotations(
     annotations,
-    referenceVolumes[0],
-    options[0]
+    thresholdVolumeInformation[0].volume,
+    { numSlicesToProject }
   );
 
   const outputSegmentationVolume = thresholdVolumeByRange(
     segmentationVolume,
-    referenceVolumes,
-    options,
+    thresholdVolumeInformation,
+    numSlicesToProject,
+    overwrite,
     boundsIJK
   );
 

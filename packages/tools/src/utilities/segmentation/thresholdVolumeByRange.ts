@@ -21,12 +21,12 @@ export type ThresholdRangeOptions = {
  */
 function thresholdVolumeByRange(
   segmentationVolume: Types.IImageVolume,
-  referenceVolumes: Types.IImageVolume[],
-  options: ThresholdRangeOptions[],
-  boundsIJK: any
+  thresholdVolumeInformation,
+  numSlicesToProject,
+  overwrite: boolean,
+  boundsIJK
 ): Types.IImageVolume {
   const { scalarData, imageData: segmentationImageData } = segmentationVolume;
-  const { overwrite } = options[0];
 
   // set the segmentation to all zeros
   if (overwrite) {
@@ -36,17 +36,17 @@ function thresholdVolumeByRange(
   }
 
   const volumeInfoList = [];
-  for (let i = 0; i < referenceVolumes.length; i++) {
-    const { imageData } = referenceVolumes[i];
+  for (let i = 0; i < thresholdVolumeInformation.length; i++) {
+    const { imageData } = thresholdVolumeInformation[i].volume;
     const referenceValues = imageData.getPointData().getScalars().getData();
-    const { lower, upper } = options[i];
-    const volumeInfo = {
+    const lower = thresholdVolumeInformation[i].lower;
+    const upper = thresholdVolumeInformation[i].upper;
+    volumeInfoList.push({
       imageData,
       referenceValues,
       lower,
       upper,
-    };
-    volumeInfoList.push(volumeInfo);
+    });
   }
 
   const callback = ({ index, pointIJK }) => {
