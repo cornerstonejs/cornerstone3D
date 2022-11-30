@@ -41,39 +41,26 @@ function rectangleROIThresholdVolumeByRange(
   annotationUIDs: string[],
   segmentationVolume: Types.IImageVolume,
   referenceVolumes: Types.IImageVolume[],
-  options: ThresholdRangeOptions
+  options: ThresholdRangeOptions[]
 ): Types.IImageVolume {
-  if (referenceVolumes.length > 1) {
-    throw new Error(
-      'thresholding based on more than one reference volumes data is not supported yet'
-    );
-  }
-
-  const referenceVolume = referenceVolumes[0];
-
   const annotations = annotationUIDs.map((annotationUID) => {
     return state.getAnnotation(annotationUID);
   });
 
   _validateAnnotations(annotations);
 
+  // considering all volumes having the dsame dimensions
   const boundsIJK = getBoundsIJKFromRectangleAnnotations(
     annotations,
-    referenceVolume,
-    options
+    referenceVolumes[0],
+    options[0]
   );
-
-  const optionsToUse = {
-    lower: options.lower,
-    upper: options.upper,
-    overwrite: options.overwrite,
-    boundsIJK,
-  };
 
   const outputSegmentationVolume = thresholdVolumeByRange(
     segmentationVolume,
-    referenceVolume,
-    optionsToUse
+    referenceVolumes,
+    options,
+    boundsIJK
   );
 
   return outputSegmentationVolume;
