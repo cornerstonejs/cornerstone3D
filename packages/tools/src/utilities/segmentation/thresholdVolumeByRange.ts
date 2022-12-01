@@ -5,8 +5,8 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import { BoundsIJK } from '../../types';
 
 export type ThresholdRangeOptions = {
-  boundsIJK: BoundsIJK;
   overwrite: boolean;
+  boundsIJK: BoundsIJK;
 };
 
 export type ThresholdInformation = {
@@ -53,14 +53,18 @@ function thresholdVolumeByRange(
     });
   }
 
-  const callback = ({ index, pointIJK }) => {
+  const callback = ({ index, pointLPS }) => {
     let insert = volumeInfoList.length > 0;
     for (let i = 0; i < volumeInfoList.length; i++) {
       const { imageData, referenceValues, lower, upper } = volumeInfoList[i];
+      const pointIJK = imageData.worldToIndex(pointLPS);
       const offset = imageData.computeOffsetIndex(pointIJK);
+
       const value = referenceValues[offset];
       if (value <= lower || value >= upper) insert = false;
-      if (!insert) break;
+      if (!insert) {
+        break;
+      }
     }
 
     // Todo: make the segmentIndex a parameter
