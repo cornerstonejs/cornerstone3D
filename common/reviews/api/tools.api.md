@@ -2606,9 +2606,23 @@ enum KeyboardBindings {
     // (undocumented)
     Alt = 18,
     // (undocumented)
+    AltMeta = 1891,
+    // (undocumented)
     Ctrl = 17,
     // (undocumented)
-    Shift = 16
+    CtrlAlt = 1718,
+    // (undocumented)
+    CtrlMeta = 1791,
+    // (undocumented)
+    Meta = 91,
+    // (undocumented)
+    Shift = 16,
+    // (undocumented)
+    ShiftAlt = 1618,
+    // (undocumented)
+    ShiftCtrl = 1617,
+    // (undocumented)
+    ShiftMeta = 1691
 }
 
 // @public (undocumented)

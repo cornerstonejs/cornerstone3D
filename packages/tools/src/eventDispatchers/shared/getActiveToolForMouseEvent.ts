@@ -2,6 +2,7 @@ import { ToolGroupManager } from '../../store';
 import { MouseBindings, ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
 import { EventTypes } from '../../types';
+import getMouseModifier from './getMouseModifier';
 
 const { Active } = ToolModes;
 
@@ -22,7 +23,9 @@ export default function getActiveToolForMouseEvent(
   const mouseEvent = evt.detail.event;
 
   // If any keyboard modifier key is also pressed
-  const modifierKey = keyEventListener.getModifierKey();
+  // Use the actual key if set, otherwise get the key from the mouse event.
+  const modifierKey =
+    keyEventListener.getModifierKey() || getMouseModifier(mouseEvent);
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
