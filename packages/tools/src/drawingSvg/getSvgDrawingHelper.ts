@@ -2,6 +2,8 @@ import { state } from '../store';
 import { getEnabledElement } from '@cornerstonejs/core';
 import { SVGDrawingHelper } from '../types';
 
+const VIEWPORT_ELEMENT = 'viewport-element';
+
 /**
  * Returns the SVG drawing helper for the given HTML element.
  * @param element - The HTML element to get the SVG drawing helper for.
@@ -34,7 +36,8 @@ function getSvgDrawingHelper(element: HTMLDivElement): SVGDrawingHelper {
  * @private
  */
 function _getSvgLayer(element) {
-  const internalDivElement = element.firstChild;
+  const viewportElement = `.${VIEWPORT_ELEMENT}`;
+  const internalDivElement = element.querySelector(viewportElement);
   const svgLayer = internalDivElement.querySelector('.svg-layer');
 
   return svgLayer;
