@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.6.7...@cornerstonejs/streaming-image-volume-loader@0.6.8) (2022-12-01)
+
+
+### Bug Fixes
+
+* htj2k and keymodifier ([#313](https://github.com/cornerstonejs/cornerstone3D-beta/issues/313)) ([48bd8a1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/48bd8a14b81e31cba9f3237b0b68b7082bd66892))
+
+
+
+
+
 ## [0.6.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.6.6...@cornerstonejs/streaming-image-volume-loader@0.6.7) (2022-11-23)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

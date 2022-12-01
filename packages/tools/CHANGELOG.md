@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.30.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.2...@cornerstonejs/tools@0.30.3) (2022-12-01)
+
+
+### Bug Fixes
+
+* htj2k and keymodifier ([#313](https://github.com/cornerstonejs/cornerstone3D-beta/issues/313)) ([48bd8a1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/48bd8a14b81e31cba9f3237b0b68b7082bd66892))
+
+
+
+
+
 ## [0.30.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.1...@cornerstonejs/tools@0.30.2) (2022-12-01)
 
 
