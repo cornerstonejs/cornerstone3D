@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.22.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.22.0...@cornerstonejs/core@0.22.1) (2022-12-01)
+
+
+### Bug Fixes
+
+* coronal view should not be flipped ([#321](https://github.com/cornerstonejs/cornerstone3D-beta/issues/321)) ([a85a867](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a85a86785de9f225154829a4934926143c86eb5e))
+
+
+
+
+
 # [0.22.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.21.5...@cornerstonejs/core@0.22.0) (2022-11-23)
 
 
