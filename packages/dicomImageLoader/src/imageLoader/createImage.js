@@ -307,6 +307,9 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
         windowWidth: voiLutModule.windowWidth
           ? voiLutModule.windowWidth[0]
           : undefined,
+        voiLUTFunction: voiLutModule.voiLUTFunction
+          ? voiLutModule.voiLUTFunction
+          : undefined,
         decodeTimeInMS: imageFrame.decodeTimeInMS,
         floatPixelData: undefined,
         imageFrame,
