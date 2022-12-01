@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.22.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.22.2...@cornerstonejs/core@0.22.3) (2022-12-01)
+
+
+### Bug Fixes
+
+* **volumeViewport:** Add optional scaling as the volume can be undefined ([#323](https://github.com/cornerstonejs/cornerstone3D-beta/issues/323)) ([a58a831](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a58a831f4c5ab4c9ea9d7d258a59cbdcb5c837e4))
+
+
+
+
+
 ## [0.22.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.22.1...@cornerstonejs/core@0.22.2) (2022-12-01)
 
 
