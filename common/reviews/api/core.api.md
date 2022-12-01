@@ -612,6 +612,9 @@ function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
+function hasNaNValues(input: number[] | number): boolean;
+
+// @public (undocumented)
 interface ICache {
     // (undocumented)
     getCacheSize: () => number;
@@ -1975,7 +1978,8 @@ declare namespace utilities {
         getClosestStackImageIndexForPoint,
         calculateViewportsSpatialRegistration,
         spatialRegistrationMetadataProvider,
-        getViewportImageCornersInWorld
+        getViewportImageCornersInWorld,
+        hasNaNValues
     }
 }
 export { utilities }

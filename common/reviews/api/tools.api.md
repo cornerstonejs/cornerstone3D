@@ -503,7 +503,11 @@ export class BidirectionalTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _getSignedAngle: (vector1: any, vector2: any) => number;
+    // (undocumented)
     _getTextLines: (data: any, targetId: any) => string[];
+    // (undocumented)
+    _handleDragModify: (evt: any) => void;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: BidirectionalAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -521,11 +525,9 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _mouseDragModifyCallback: (evt: MouseDragEventType) => void;
     // (undocumented)
-    _mouseDragModifyHandle: (evt: any) => void;
-    // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    _movingLongAxisWouldPutItThroughShortAxis: (proposedFirstLineSegment: any, secondLineSegment: any) => boolean;
+    _movingLongAxisWouldPutItThroughShortAxis: (firstLineSegment: any, secondLineSegment: any) => boolean;
     // (undocumented)
     preventHandleOutsideImage: boolean;
     // (undocumented)
