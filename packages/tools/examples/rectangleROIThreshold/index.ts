@@ -107,7 +107,7 @@ content.append(instructions);
 let numSlicesToProject = 3;
 let ctLowerThreshold = -900;
 let ctUpperThreshold = -700;
-const overwrite = false;
+const overwrite = true;
 
 let ptLowerThreshold = 0;
 let ptUpperThreshold = 5;
