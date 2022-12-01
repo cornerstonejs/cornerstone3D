@@ -144,10 +144,18 @@ abstract class BaseTool implements IBaseTool {
     if (targetId.startsWith('imageId:')) {
       const imageId = targetId.split('imageId:')[1];
       const imageURI = utilities.imageIdToURI(imageId);
-      const viewports = utilities.getViewportsWithImageURI(
+      let viewports = utilities.getViewportsWithImageURI(
         imageURI,
         renderingEngine.id
       );
+
+      if (!viewports || !viewports.length) {
+        return;
+      }
+
+      viewports = viewports.filter((viewport) => {
+        return viewport.getCurrentImageId() === imageId;
+      });
 
       if (!viewports || !viewports.length) {
         return;
