@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.30.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.4...@cornerstonejs/tools@0.30.5) (2022-12-01)
+
+
+### Bug Fixes
+
+* bidirectional tool when short and long axis changes ([#309](https://github.com/cornerstonejs/cornerstone3D-beta/issues/309)) ([f973e72](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f973e7262897a2daf4f37363d3e818ae88620bb8))
+
+
+
+
+
 ## [0.30.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.3...@cornerstonejs/tools@0.30.4) (2022-12-01)
 
 
