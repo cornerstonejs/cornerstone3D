@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.30.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.6...@cornerstonejs/tools@0.30.7) (2022-12-01)
+
+
+### Bug Fixes
+
+* Use queryselector instead of firstChild to get svg-layer ([#268](https://github.com/cornerstonejs/cornerstone3D-beta/issues/268)) ([1dd315c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1dd315c61476f7bca5640033f530bcc956d14307))
+
+
+
+
+
 ## [0.30.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.5...@cornerstonejs/tools@0.30.6) (2022-12-01)
 
 **Note:** Version bump only for package @cornerstonejs/tools
