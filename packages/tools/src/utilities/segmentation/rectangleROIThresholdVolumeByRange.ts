@@ -8,9 +8,13 @@ import {
 import thresholdVolumeByRange from './thresholdVolumeByRange';
 import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsIJKFromRectangleAnnotations';
 
-export type ThresholdRangeOptions = {
+export type ThresholdInformation = {
+  volume: Types.IImageVolume;
   lower: number;
   upper: number;
+};
+
+export type ThresholdOptions = {
   numSlicesToProject?: number; // number of slices to project before and after current slice
   overwrite: boolean;
 };
@@ -40,9 +44,8 @@ export type AnnotationForThresholding = {
 function rectangleROIThresholdVolumeByRange(
   annotationUIDs: string[],
   segmentationVolume: Types.IImageVolume,
-  thresholdVolumeInformation,
-  numSlicesToProject,
-  overwrite
+  thresholdVolumeInformation: ThresholdInformation[],
+  options: ThresholdOptions
 ): Types.IImageVolume {
   const annotations = annotationUIDs.map((annotationUID) => {
     return state.getAnnotation(annotationUID);
@@ -54,15 +57,13 @@ function rectangleROIThresholdVolumeByRange(
   const boundsIJK = getBoundsIJKFromRectangleAnnotations(
     annotations,
     thresholdVolumeInformation[0].volume,
-    { numSlicesToProject }
+    options
   );
 
   const outputSegmentationVolume = thresholdVolumeByRange(
     segmentationVolume,
     thresholdVolumeInformation,
-    numSlicesToProject,
-    overwrite,
-    boundsIJK
+    { ...options, boundsIJK }
   );
 
   return outputSegmentationVolume;
