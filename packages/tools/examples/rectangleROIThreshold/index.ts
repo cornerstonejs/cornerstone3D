@@ -144,15 +144,17 @@ addButtonToToolbar({
         { volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold },
         { volume: ptVolume, lower: ptLowerThreshold, upper: ptUpperThreshold },
       ],
-      numSlicesToProject,
-      overwrite
+      {
+        numSlicesToProject,
+        overwrite,
+      }
     );
   },
 });
 
 addSliderToToolbar({
-  title: `#Slices to Segment: ${numSlicesToProject.toString().padStart(4)}`,
-  range: [1, 5],
+  title: `#Slices to Segment: ${numSlicesToProject}`,
+  range: [1, 10],
   defaultValue: numSlicesToProject,
   onSelectedValueChange: (value) => {
     numSlicesToProject = Number(value);
@@ -164,25 +166,25 @@ addSliderToToolbar({
 
 addSliderToToolbar({
   title: `PT Lower Thresh: ${ptLowerThreshold}`,
-  range: [0, 5],
+  range: [0, 10],
   defaultValue: ptLowerThreshold,
   onSelectedValueChange: (value) => {
     ptLowerThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `PT Lower Threshold: ${value}`;
+    label.innerText = `PT Lower Thresh: ${value}`;
   },
 });
 
 addSliderToToolbar({
-  title: `PT Upper Thresh: ${ptUpperThreshold.toString().padStart(4)}`,
-  range: [0, 5],
+  title: `PT Upper Thresh: ${ptUpperThreshold}`,
+  range: [0, 10],
   defaultValue: ptUpperThreshold,
   onSelectedValueChange: (value) => {
     ptUpperThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `PT Upper Threshold: ${value}`;
+    label.innerText = `PT Upper Thresh: ${value}`;
   },
 });
 
@@ -194,19 +196,19 @@ addSliderToToolbar({
     ctLowerThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `Lower Threshold: ${value}`;
+    label.innerText = `CT Lower Thresh: ${value}`;
   },
 });
 
 addSliderToToolbar({
-  title: `CT Upper Thresh: ${ctUpperThreshold.toString().padStart(4)}`,
+  title: `CT Upper Thresh: ${ctUpperThreshold}`,
   range: [-1000, 1000],
   defaultValue: ctUpperThreshold,
   onSelectedValueChange: (value) => {
     ctUpperThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `Upper Threshold: ${value}`;
+    label.innerText = `CT Upper Thresh: ${value}`;
   },
 });
 
@@ -285,15 +287,15 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://domvja9iplmyu.cloudfront.net/dicomweb';
   const StudyInstanceUID =
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339';
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
     wadoRsRoot,
     type: 'VOLUME',
   });
@@ -301,7 +303,7 @@ async function run() {
   const ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
     wadoRsRoot,
     type: 'VOLUME',
   });

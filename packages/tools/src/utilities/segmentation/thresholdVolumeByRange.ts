@@ -5,10 +5,14 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import { BoundsIJK } from '../../types';
 
 export type ThresholdRangeOptions = {
-  upper: number;
-  lower: number;
   boundsIJK: BoundsIJK;
   overwrite: boolean;
+};
+
+export type ThresholdInformation = {
+  volume: Types.IImageVolume;
+  lower: number;
+  upper: number;
 };
 
 /**
@@ -21,12 +25,12 @@ export type ThresholdRangeOptions = {
  */
 function thresholdVolumeByRange(
   segmentationVolume: Types.IImageVolume,
-  thresholdVolumeInformation,
-  numSlicesToProject,
-  overwrite: boolean,
-  boundsIJK
+  thresholdVolumeInformation: ThresholdInformation[],
+  options: ThresholdRangeOptions
 ): Types.IImageVolume {
   const { scalarData, imageData: segmentationImageData } = segmentationVolume;
+
+  const { overwrite, boundsIJK } = options;
 
   // set the segmentation to all zeros
   if (overwrite) {
