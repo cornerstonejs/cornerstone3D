@@ -6,6 +6,38 @@ import type { Types } from '@cornerstonejs/core';
  * Credit and details: geeksforgeeks.org/check-if-two-given-line-segments-intersect/
  */
 
+function getAllIntersectiosnWithPolyline(
+  points: Types.Point2[],
+  p1: Types.Point2,
+  q1: Types.Point2,
+  closed = true
+): Types.Point2[] {
+  let initialI;
+  let j;
+  const intersections: Types.Point2[] = [];
+
+  if (closed) {
+    j = points.length - 1;
+    initialI = 0;
+  } else {
+    j = 0;
+    initialI = 1;
+  }
+
+  for (let i = initialI; i < points.length; i++) {
+    const p2 = points[j];
+    const q2 = points[i];
+
+    if (doesIntersect(p1, q1, p2, q2)) {
+      intersections.push([j, i]);
+    }
+
+    j = i;
+  }
+
+  return intersections;
+}
+
 /**
  * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the
  * `points`, and returns the first value.
@@ -179,4 +211,8 @@ function onSegment(p: Types.Point2, q: Types.Point2, r: Types.Point2): boolean {
   return false;
 }
 
-export { getFirstIntersectionWithPolyline, getClosestIntersectionWithPolyline };
+export {
+  getAllIntersectiosnWithPolyline,
+  getFirstIntersectionWithPolyline,
+  getClosestIntersectionWithPolyline,
+};

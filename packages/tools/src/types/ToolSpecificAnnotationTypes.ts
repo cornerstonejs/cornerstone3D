@@ -209,6 +209,7 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
         };
       };
     };
+    cachedStats?: ROICachedStats;
   };
 }
 
