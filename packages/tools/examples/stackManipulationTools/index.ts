@@ -13,7 +13,7 @@ console.warn(
 
 const {
   PanTool,
-  WindowLevelTool,
+  StackRotateTool,
   StackScrollMouseWheelTool,
   ZoomTool,
   ToolGroupManager,
@@ -43,7 +43,7 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+  'Left Click: Rotate\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
 
 content.append(instructions);
 // ============================= //
@@ -59,7 +59,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(WindowLevelTool);
+  cornerstoneTools.addTool(StackRotateTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
 
@@ -68,14 +68,14 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName);
+  toolGroup.addTool(StackRotateTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
+  toolGroup.setToolActive(StackRotateTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
