@@ -138,9 +138,8 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Helpers
   private _imageData: vtkImageDataType;
-  private cameraPosOnRender: Point3;
+  private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
-  private panCache: Point3;
   private voiApplied = false;
   private rotationCache = 0;
   private _publishCalibratedEvent = false;
@@ -196,8 +195,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.imageIds = [];
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
-    this.panCache = [0, 0, 0];
-    this.cameraPosOnRender = [0, 0, 0];
+    this.cameraFocalPointOnRender = [0, 0, 0];
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
@@ -1221,7 +1219,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
         break;
       default:
-        console.debug('bit allocation not implemented');
+        console.log('bit allocation not implemented');
     }
 
     const scalarArray = vtkDataArray.newInstance({
@@ -1666,9 +1664,11 @@ class StackViewport extends Viewport implements IStackViewport {
       // it in the space 3) restore the pan, zoom props.
       const cameraProps = this.getCamera();
 
-      this.panCache[0] = this.cameraPosOnRender[0] - cameraProps.position[0];
-      this.panCache[1] = this.cameraPosOnRender[1] - cameraProps.position[1];
-      this.panCache[2] = this.cameraPosOnRender[2] - cameraProps.position[2];
+      const panCache = vec3.subtract(
+        vec3.create(),
+        this.cameraFocalPointOnRender,
+        cameraProps.focalPoint
+      );
 
       // store rotation cache since reset camera will reset it
       const rotationCache = this.rotationCache;
@@ -1680,8 +1680,15 @@ class StackViewport extends Viewport implements IStackViewport {
       // restore the rotation cache for the new slice
       this.setRotation(rotationCache, rotationCache);
 
-      const { position } = this.getCamera();
-      this.cameraPosOnRender = position;
+      // set the flip back to the previous value since the restore camera props
+      // rely on the correct flip value
+      this.setCameraNoEvent({
+        flipHorizontal: previousCameraProps.flipHorizontal,
+        flipVertical: previousCameraProps.flipVertical,
+      });
+
+      const { focalPoint } = this.getCamera();
+      this.cameraFocalPointOnRender = focalPoint;
 
       // This is necessary to initialize the clipping range and it is not related
       // to our custom slabThickness.
@@ -1690,7 +1697,11 @@ class StackViewport extends Viewport implements IStackViewport {
 
       // We shouldn't restore the focalPoint, position and parallelScale after reset
       // if it is the first render or we have completely re-created the vtkImageData
-      this._restoreCameraProps(cameraProps, previousCameraProps);
+      this._restoreCameraProps(
+        cameraProps,
+        previousCameraProps,
+        panCache as Point3
+      );
 
       // Restore rotation for the new slice of the image
       this.rotationCache = 0;
@@ -1796,8 +1807,8 @@ class StackViewport extends Viewport implements IStackViewport {
     actor.getProperty().setRGBTransferFunction(0, cfun);
 
     // Saving position of camera on render, to cache the panning
-    const { position } = this.getCamera();
-    this.cameraPosOnRender = position;
+    const { focalPoint } = this.getCamera();
+    this.cameraFocalPointOnRender = focalPoint;
     this.stackInvalidated = false;
 
     if (this._publishCalibratedEvent) {
@@ -1977,30 +1988,24 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   private _restoreCameraProps(
     { parallelScale: prevScale }: ICamera,
-    previousCamera: ICamera
+    previousCamera: ICamera,
+    panCache: Point3
   ): void {
     const renderer = this.getRenderer();
 
     // get the focalPoint and position after the reset
     const { position, focalPoint } = this.getCamera();
 
-    const newPosition = <Point3>[
-      position[0] - this.panCache[0],
-      position[1] - this.panCache[1],
-      position[2] - this.panCache[2],
-    ];
-
-    const newFocal = <Point3>[
-      focalPoint[0] - this.panCache[0],
-      focalPoint[1] - this.panCache[1],
-      focalPoint[2] - this.panCache[2],
-    ];
+    const newPosition = vec3.subtract(vec3.create(), position, panCache);
+    const newFocal = vec3.subtract(vec3.create(), focalPoint, panCache);
 
     // Restoring previous state x,y and scale, keeping the new z
+    // we need to break the flip operations since they also work on the
+    // camera position and focal point
     this.setCameraNoEvent({
       parallelScale: prevScale,
-      position: newPosition,
-      focalPoint: newFocal,
+      position: newPosition as Point3,
+      focalPoint: newFocal as Point3,
     });
 
     const camera = this.getCamera();

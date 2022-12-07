@@ -27,9 +27,11 @@ import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
 import isImageActor from './isImageActor';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
+import getClosestStackImageIndexForPoint from './getClosestStackImageIndexForPoint';
 import calculateViewportsSpatialRegistration from './calculateViewportsSpatialRegistration';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
+import hasNaNValues from './hasNaNValues';
 
 // name spaces
 import * as planar from './planar';
@@ -67,7 +69,9 @@ export {
   getImageSliceDataForVolumeViewport,
   isImageActor,
   getViewportsWithImageURI,
+  getClosestStackImageIndexForPoint,
   calculateViewportsSpatialRegistration,
   spatialRegistrationMetadataProvider,
   getViewportImageCornersInWorld,
+  hasNaNValues,
 };

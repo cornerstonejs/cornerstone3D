@@ -15,8 +15,8 @@ module.exports = {
   mode: 'production',
   context,
   entry: {
-    cornerstoneWADOImageLoader: './imageLoader/index.js',
-    cornerstoneWADOImageLoaderNoWebWorkers: './imageLoader/index-noWorkers.js',
+    cornerstoneWADOImageLoader: './imageLoader/index.ts',
+    cornerstoneWADOImageLoaderNoWebWorkers: './imageLoader/index-noWorkers.ts',
   },
   target: 'web',
   output: {
@@ -39,6 +39,7 @@ module.exports = {
     },
   },
   resolve: {
+    extensions: ['.ts', '.js'],
     fallback: {
       fs: false,
       path: false,
@@ -49,7 +50,7 @@ module.exports = {
     rules: [
       {
         enforce: 'pre',
-        test: /\.js$/,
+        test: /\.(mjs|js|ts)$/,
         exclude: /(node_modules)|(codecs)/,
         loader: 'eslint-loader',
         options: {
@@ -61,7 +62,7 @@ module.exports = {
         type: 'asset/inline',
       },
       {
-        test: /\.worker\.js$/,
+        test: /\.worker\.(mjs|js|ts)$/,
         use: [
           {
             loader: 'worker-loader',
@@ -73,7 +74,7 @@ module.exports = {
         ],
       },
       {
-        test: /\.js$/,
+        test: /\.(mjs|js|ts)$/,
         exclude: [/(node_modules)/, /(codecs)/],
         use: {
           loader: 'babel-loader',

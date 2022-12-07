@@ -20,6 +20,7 @@ import EllipticalROITool from './annotation/EllipticalROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
+import ReferenceCursors from './ReferenceCursors';
 import ReferenceLines from './ReferenceLinesTool';
 
 // Segmentation DisplayTool
@@ -58,6 +59,7 @@ export {
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   AngleTool,
+  ReferenceCursors,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools

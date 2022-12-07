@@ -503,7 +503,11 @@ export class BidirectionalTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _getSignedAngle: (vector1: any, vector2: any) => number;
+    // (undocumented)
     _getTextLines: (data: any, targetId: any) => string[];
+    // (undocumented)
+    _handleDragModify: (evt: any) => void;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: BidirectionalAnnotation, handle: ToolHandle, interactionType?: string) => void;
     // (undocumented)
@@ -521,11 +525,9 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _mouseDragModifyCallback: (evt: MouseDragEventType) => void;
     // (undocumented)
-    _mouseDragModifyHandle: (evt: any) => void;
-    // (undocumented)
     _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    _movingLongAxisWouldPutItThroughShortAxis: (proposedFirstLineSegment: any, secondLineSegment: any) => boolean;
+    _movingLongAxisWouldPutItThroughShortAxis: (firstLineSegment: any, secondLineSegment: any) => boolean;
     // (undocumented)
     preventHandleOutsideImage: boolean;
     // (undocumented)
@@ -1279,7 +1281,7 @@ function drawArrow(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ar
 function drawCircle(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, circleUID: string, center: Types_2.Point2, radius: number, options?: {}): void;
 
 // @public (undocumented)
-function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}): void;
+function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}, dataId?: string): void;
 
 // @public (undocumented)
 function drawHandles(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
@@ -2606,9 +2608,23 @@ enum KeyboardBindings {
     // (undocumented)
     Alt = 18,
     // (undocumented)
+    AltMeta = 1891,
+    // (undocumented)
     Ctrl = 17,
     // (undocumented)
-    Shift = 16
+    CtrlAlt = 1718,
+    // (undocumented)
+    CtrlMeta = 1791,
+    // (undocumented)
+    Meta = 91,
+    // (undocumented)
+    Shift = 16,
+    // (undocumented)
+    ShiftAlt = 1618,
+    // (undocumented)
+    ShiftCtrl = 1617,
+    // (undocumented)
+    ShiftMeta = 1691
 }
 
 // @public (undocumented)
@@ -3592,6 +3608,63 @@ export class RectangleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
+interface ReferenceCursor extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: [Types_2.Point3];
+        };
+    };
+}
+
+// @public (undocumented)
+export class ReferenceCursors extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _addAnnotation(element: HTMLDivElement, annotation: Annotation): string | null;
+    // (undocumented)
+    createInitialAnnotation: (worldPos: Types_2.Point3, element: HTMLDivElement) => void;
+    // (undocumented)
+    _currentCanvasPosition: null | Types_2.Point2;
+    // (undocumented)
+    _currentCursorWorldPosition: null | Types_2.Point3;
+    // (undocumented)
+    _disableCursorEnabled: boolean;
+    // (undocumented)
+    _elementWithCursor: null | HTMLDivElement;
+    // (undocumented)
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations;
+    // (undocumented)
+    getActiveAnnotation(element: HTMLDivElement): null | Annotation;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => boolean;
+    // (undocumented)
+    onCameraModified: (evt: any) => void;
+    // (undocumented)
+    onSetToolActive(): void;
+    // (undocumented)
+    onSetToolDisabled(): void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: any;
+    // (undocumented)
+    updateAnnotationPosition(element: HTMLDivElement, annotation: Annotation): void;
+    // (undocumented)
+    updateViewportImage(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): void;
+}
+
+// @public (undocumented)
 interface ReferenceLineAnnotation extends Annotation {
     // (undocumented)
     data: {
@@ -4336,6 +4409,7 @@ declare namespace ToolSpecificAnnotationTypes {
         PlanarFreehandROIAnnotation,
         ArrowAnnotation,
         AngleAnnotation,
+        ReferenceCursor,
         ReferenceLineAnnotation
     }
 }

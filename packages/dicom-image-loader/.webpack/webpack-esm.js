@@ -12,7 +12,7 @@ const config = {
   mode: 'development',
   context,
   entry: {
-    cornerstoneWADOImageLoader: './imageLoader/index.js',
+    cornerstoneWADOImageLoader: './imageLoader/index.ts',
   },
   target: 'web',
   output: {
@@ -35,6 +35,7 @@ const config = {
     },
   },
   resolve: {
+    extensions: ['.ts', '.js'],
     fallback: {
       fs: false,
       path: false,
@@ -57,7 +58,7 @@ const config = {
         type: 'asset/resource',
       },
       {
-        test: /\.js$/,
+        test: /\.(mjs|js|ts)$/,
         exclude: [/(node_modules)/, /(codecs)/],
         use: {
           loader: 'babel-loader',

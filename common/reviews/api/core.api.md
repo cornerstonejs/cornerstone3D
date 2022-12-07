@@ -546,6 +546,9 @@ type FlipDirection = {
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3, viewUp: Point3): string;
 
 // @public (undocumented)
+function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
+
+// @public (undocumented)
 export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
 
 // @public (undocumented)
@@ -607,6 +610,9 @@ function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 
 // @public (undocumented)
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
+
+// @public (undocumented)
+function hasNaNValues(input: number[] | number): boolean;
 
 // @public (undocumented)
 interface ICache {
@@ -1521,12 +1527,16 @@ declare namespace planar {
     export {
         linePlaneIntersection,
         planeEquation,
-        threePlaneIntersection
+        threePlaneIntersection,
+        planeDistanceToPoint
     }
 }
 
 // @public (undocumented)
 type Plane = [number, number, number, number];
+
+// @public (undocumented)
+function planeDistanceToPoint(plane: Plane, point: Point3, signed?: boolean): number;
 
 // @public (undocumented)
 function planeEquation(normal: Point3, point: Point3 | vec3): Plane;
@@ -1965,9 +1975,11 @@ declare namespace utilities {
         getImageSliceDataForVolumeViewport,
         isImageActor,
         getViewportsWithImageURI,
+        getClosestStackImageIndexForPoint,
         calculateViewportsSpatialRegistration,
         spatialRegistrationMetadataProvider,
-        getViewportImageCornersInWorld
+        getViewportImageCornersInWorld,
+        hasNaNValues
     }
 }
 export { utilities }
@@ -2020,8 +2032,8 @@ export class Viewport implements IViewport {
     _getEdges(bounds: Array<number>): Array<[number[], number[]]>;
     // (undocumented)
     _getFocalPointForResetCamera(centeredFocalPoint: Point3, previousCamera: ICamera, { resetPan, resetToCenter }: {
-        resetPan: boolean;
-        resetToCenter: boolean;
+        resetPan?: boolean;
+        resetToCenter?: boolean;
     }): Point3;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
