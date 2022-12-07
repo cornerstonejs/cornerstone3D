@@ -200,6 +200,7 @@ class PlanarFreehandROITool extends AnnotationTool {
           knotsRatioPercentageOnAdd: 40,
           knotsRatioPercentageOnEdit: 40,
         },
+        calculateStats: false,
       },
     }
   ) {
@@ -213,12 +214,6 @@ class PlanarFreehandROITool extends AnnotationTool {
     registerOpenContourEditLoop(this);
     registerOpenContourEndEditLoop(this);
     registerRenderMethods(this);
-
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStats,
-      100,
-      { trailing: true }
-    );
   }
 
   /**
@@ -591,6 +586,8 @@ class PlanarFreehandROITool extends AnnotationTool {
       // render contour method to render all of them
       annotations.forEach((annotation) => {
         this.renderContour(enabledElement, svgDrawingHelper, annotation);
+
+        if (!this.configuration.calculateStats) return;
 
         const { data } = annotation;
         if (
