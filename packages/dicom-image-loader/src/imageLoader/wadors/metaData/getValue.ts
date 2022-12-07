@@ -1,3 +1,5 @@
+import { WadoRsMetaDataElement } from '../wado-rs-metadata';
+
 /**
  * Returns the raw value
  *
@@ -6,7 +8,11 @@
  * @param [defaultValue] - The default value to return if the element does not exist
  * @returns {*}
  */
-function getValue(element, index, defaultValue) {
+function getValue(
+  element: WadoRsMetaDataElement,
+  index?: number,
+  defaultValue?: number | string
+) {
   index = index || 0;
   if (!element) {
     return defaultValue;

@@ -5,16 +5,26 @@ import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
 import { inflateRaw } from 'pako/lib/inflate';
+import { ByteArray } from 'dicom-parser';
+import { CornerstoneWadoImageFrame } from '../shared/image-frame';
 
-window.pako = { inflateRaw };
+/**
+ * @todo check any
+ */
+(window as any).pako = { inflateRaw };
 
-function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
+function processDecodeTask(
+  imageFrame: CornerstoneWadoImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  options
+): Promise<CornerstoneWadoImageFrame> {
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]
     : undefined;
 
-  return webWorkerManager.addTask(
+  return webWorkerManager.addTask<CornerstoneWadoImageFrame>(
     'decodeTask',
     {
       imageFrame,
@@ -28,12 +38,12 @@ function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
 }
 
 function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
-  canvas,
+  imageFrame: CornerstoneWadoImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  canvas: HTMLCanvasElement,
   options = {}
-) {
+): Promise<CornerstoneWadoImageFrame> {
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
       // Implicit VR Little Endian

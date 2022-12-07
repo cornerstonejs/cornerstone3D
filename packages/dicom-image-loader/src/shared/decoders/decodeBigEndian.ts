@@ -1,9 +1,15 @@
+import { ByteArray } from 'dicom-parser';
+import { CornerstoneWadoImageFrame } from '../image-frame';
+
 /* eslint no-bitwise: 0 */
 function swap16(val) {
   return ((val & 0xff) << 8) | ((val >> 8) & 0xff);
 }
 
-async function decodeBigEndian(imageFrame, pixelData) {
+async function decodeBigEndian(
+  imageFrame: CornerstoneWadoImageFrame,
+  pixelData: ByteArray
+): Promise<CornerstoneWadoImageFrame> {
   if (imageFrame.bitsAllocated === 16) {
     let arrayBuffer = pixelData.buffer;
 

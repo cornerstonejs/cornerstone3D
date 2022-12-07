@@ -1,7 +1,7 @@
 import { xhrRequest } from '../internal/index';
 import findIndexOfString from './findIndexOfString';
 
-function findBoundary(header) {
+function findBoundary(header: string[]): string {
   for (let i = 0; i < header.length; i++) {
     if (header[i].substr(0, 2) === '--') {
       return header[i];
@@ -9,7 +9,7 @@ function findBoundary(header) {
   }
 }
 
-function findContentType(header) {
+function findContentType(header: string[]): string {
   for (let i = 0; i < header.length; i++) {
     if (header[i].substr(0, 13) === 'Content-Type:') {
       return header[i].substr(13).trim();
@@ -29,12 +29,22 @@ function uint8ArrayToString(data, offset, length) {
   return str;
 }
 
-function getPixelData(uri, imageId, mediaType = 'application/octet-stream') {
+export interface GetPixelDataResponse {
+  contentType: string;
+  imageFrame: {
+    pixelData: Uint8Array;
+  };
+}
+function getPixelData(
+  uri: string,
+  imageId: string,
+  mediaType = 'application/octet-stream'
+): Promise<GetPixelDataResponse> {
   const headers = {
     Accept: mediaType,
   };
 
-  return new Promise((resolve, reject) => {
+  return new Promise<GetPixelDataResponse>((resolve, reject) => {
     const loadPromise = xhrRequest(uri, imageId, headers);
 
     loadPromise.then(function (imageFrameAsArrayBuffer /* , xhr*/) {

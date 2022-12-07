@@ -1,4 +1,10 @@
-async function decodeRLE(imageFrame, pixelData) {
+import { ByteArray } from 'dicom-parser';
+import { CornerstoneWadoImageFrame } from '../image-frame';
+
+async function decodeRLE(
+  imageFrame: CornerstoneWadoImageFrame,
+  pixelData: ByteArray
+): Promise<CornerstoneWadoImageFrame> {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
       return decode8Planar(imageFrame, pixelData);
@@ -12,7 +18,7 @@ async function decodeRLE(imageFrame, pixelData) {
   throw new Error('unsupported pixel format for RLE');
 }
 
-function decode8(imageFrame, pixelData) {
+function decode8(imageFrame: CornerstoneWadoImageFrame, pixelData: ByteArray) {
   const frameData = pixelData;
   const frameSize = imageFrame.rows * imageFrame.columns;
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel);
@@ -63,7 +69,10 @@ function decode8(imageFrame, pixelData) {
   return imageFrame;
 }
 
-function decode8Planar(imageFrame, pixelData) {
+function decode8Planar(
+  imageFrame: CornerstoneWadoImageFrame,
+  pixelData: ByteArray
+) {
   const frameData = pixelData;
   const frameSize = imageFrame.rows * imageFrame.columns;
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel);
@@ -114,7 +123,7 @@ function decode8Planar(imageFrame, pixelData) {
   return imageFrame;
 }
 
-function decode16(imageFrame, pixelData) {
+function decode16(imageFrame: CornerstoneWadoImageFrame, pixelData: ByteArray) {
   const frameData = pixelData;
   const frameSize = imageFrame.rows * imageFrame.columns;
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel * 2);

@@ -1,7 +1,8 @@
 import getValue from './getValue';
 import getNumberValue from './getNumberValue';
+import { WadoRsMetaData } from '../wado-rs-metadata';
 
-export default function getOverlayPlaneModule(metaData) {
+export default function getOverlayPlaneModule(metaData: WadoRsMetaData) {
   const overlays = [];
 
   for (let overlayGroup = 0x00; overlayGroup <= 0x1e; overlayGroup += 0x02) {

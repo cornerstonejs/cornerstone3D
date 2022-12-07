@@ -1,4 +1,10 @@
-async function decodeLittleEndian(imageFrame, pixelData) {
+import { ByteArray } from 'dicom-parser';
+import { CornerstoneWadoImageFrame } from '../image-frame';
+
+async function decodeLittleEndian(
+  imageFrame: CornerstoneWadoImageFrame,
+  pixelData: ByteArray
+): Promise<CornerstoneWadoImageFrame> {
   let arrayBuffer = pixelData.buffer;
 
   let offset = pixelData.byteOffset;

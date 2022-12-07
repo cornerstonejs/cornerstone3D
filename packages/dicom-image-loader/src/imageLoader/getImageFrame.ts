@@ -1,11 +1,11 @@
 import external from '../externalModules';
+import { CornerstoneWadoImageFrame } from '../shared/image-frame';
+import { CornerstoneMetadataImagePixelModule } from '../shared/types/metadata-modules';
 
-function getImageFrame(imageId) {
+function getImageFrame(imageId: string): CornerstoneWadoImageFrame {
   const { cornerstone } = external;
-  const imagePixelModule = cornerstone.metaData.get(
-    'imagePixelModule',
-    imageId
-  );
+  const imagePixelModule: CornerstoneMetadataImagePixelModule =
+    cornerstone.metaData.get('imagePixelModule', imageId);
 
   return {
     samplesPerPixel: imagePixelModule.samplesPerPixel,

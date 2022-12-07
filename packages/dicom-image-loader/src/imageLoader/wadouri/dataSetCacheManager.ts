@@ -1,5 +1,7 @@
+import { DataSet } from 'dicom-parser';
 import external from '../../externalModules';
 import { xhrRequest } from '../internal/index';
+import { CornerstoneWadoLoaderLoadRequestFunction } from '../../shared/types/load-request-function';
 
 /**
  * This object supports loading of DICOM P10 dataset from a uri and caching it so it can be accessed
@@ -9,16 +11,21 @@ import { xhrRequest } from '../internal/index';
  */
 let cacheSizeInBytes = 0;
 
-let loadedDataSets = {};
+let loadedDataSets: Record<string, { dataSet: DataSet; cacheCount: number }> =
+  {};
 
-let promises = {};
+let promises: Record<string, CornerstoneWadoLoaderCachedPromise> = {};
+
+export interface CornerstoneWadoLoaderCachedPromise extends Promise<DataSet> {
+  cacheCount?: number;
+}
 
 // returns true if the wadouri for the specified index has been loaded
-function isLoaded(uri) {
+function isLoaded(uri: string): boolean {
   return loadedDataSets[uri] !== undefined;
 }
 
-function get(uri) {
+function get(uri: string): DataSet {
   if (!loadedDataSets[uri]) {
     return;
   }
@@ -27,7 +34,11 @@ function get(uri) {
 }
 
 // loads the dicom dataset from the wadouri sp
-function load(uri, loadRequest = xhrRequest, imageId) {
+function load(
+  uri: string,
+  loadRequest: CornerstoneWadoLoaderLoadRequestFunction = xhrRequest,
+  imageId: string
+): CornerstoneWadoLoaderCachedPromise {
   const { cornerstone, dicomParser } = external;
 
   // if already loaded return it right away
@@ -51,44 +62,50 @@ function load(uri, loadRequest = xhrRequest, imageId) {
   const loadDICOMPromise = loadRequest(uri, imageId);
 
   // handle success and failure of the XHR request load
-  const promise = new Promise((resolve, reject) => {
-    loadDICOMPromise
-      .then(function (dicomPart10AsArrayBuffer /* , xhr*/) {
-        const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+  const promise: CornerstoneWadoLoaderCachedPromise = new Promise(
+    (resolve, reject) => {
+      loadDICOMPromise
+        .then(function (dicomPart10AsArrayBuffer /* , xhr*/) {
+          const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
 
-        // Reject the promise if parsing the dicom file fails
-        let dataSet;
+          // Reject the promise if parsing the dicom file fails
+          let dataSet;
 
-        try {
-          dataSet = dicomParser.parseDicom(byteArray);
-        } catch (error) {
-          return reject(error);
-        }
+          try {
+            dataSet = dicomParser.parseDicom(byteArray);
+          } catch (error) {
+            return reject(error);
+          }
 
-        loadedDataSets[uri] = {
-          dataSet,
-          cacheCount: promise.cacheCount,
-        };
-        cacheSizeInBytes += dataSet.byteArray.length;
-        resolve(dataSet);
+          loadedDataSets[uri] = {
+            dataSet,
+            cacheCount: promise.cacheCount,
+          };
+          cacheSizeInBytes += dataSet.byteArray.length;
+          resolve(dataSet);
 
-        cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
-          uri,
-          action: 'loaded',
-          cacheInfo: getInfo(),
-        });
-      }, reject)
-      .then(
-        () => {
-          // Remove the promise if success
-          delete promises[uri];
-        },
-        () => {
-          // Remove the promise if failure
-          delete promises[uri];
-        }
-      );
-  });
+          cornerstone.triggerEvent(
+            (cornerstone as any).events,
+            'datasetscachechanged',
+            {
+              uri,
+              action: 'loaded',
+              cacheInfo: getInfo(),
+            }
+          );
+        }, reject)
+        .then(
+          () => {
+            // Remove the promise if success
+            delete promises[uri];
+          },
+          () => {
+            // Remove the promise if failure
+            delete promises[uri];
+          }
+        );
+    }
+  );
 
   promise.cacheCount = 1;
 
@@ -98,7 +115,7 @@ function load(uri, loadRequest = xhrRequest, imageId) {
 }
 
 // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
-function unload(uri) {
+function unload(uri: string): void {
   const { cornerstone } = external;
 
   // console.log('unload for ' + uri);
@@ -109,16 +126,24 @@ function unload(uri) {
       cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
 
-      cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
-        uri,
-        action: 'unloaded',
-        cacheInfo: getInfo(),
-      });
+      cornerstone.triggerEvent(
+        (cornerstone as any).events,
+        'datasetscachechanged',
+        {
+          uri,
+          action: 'unloaded',
+          cacheInfo: getInfo(),
+        }
+      );
     }
   }
 }
 
-export function getInfo() {
+export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
+  cacheSizeInBytes: number;
+  numberOfDataSetsCached: number;
+}
+export function getInfo(): CornerstoneWadoLoaderCacheManagerInfoResponse {
   return {
     cacheSizeInBytes,
     numberOfDataSetsCached: Object.keys(loadedDataSets).length,
@@ -126,7 +151,7 @@ export function getInfo() {
 }
 
 // removes all cached datasets from memory
-function purge() {
+function purge(): void {
   loadedDataSets = {};
   promises = {};
   cacheSizeInBytes = 0;

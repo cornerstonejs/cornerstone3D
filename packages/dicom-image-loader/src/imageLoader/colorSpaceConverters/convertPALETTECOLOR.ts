@@ -1,6 +1,9 @@
 /* eslint no-bitwise: 0 */
 
-function convertLUTto8Bit(lut, shift) {
+import { CornerstoneWadoImageFrame } from 'dicom-image-loader/src/shared/image-frame';
+import { ByteArray } from 'dicom-parser';
+
+function convertLUTto8Bit(lut: number[], shift: number) {
   const numEntries = lut.length;
   const cleanedLUT = new Uint8ClampedArray(numEntries);
 
@@ -18,7 +21,11 @@ function convertLUTto8Bit(lut, shift) {
  * @param {Uint8ClampedArray} colorBuffer
  * @returns {void}
  */
-export default function (imageFrame, colorBuffer, useRGBA) {
+export default function (
+  imageFrame: CornerstoneWadoImageFrame,
+  colorBuffer: ByteArray,
+  useRGBA: boolean
+): void {
   const numPixels = imageFrame.columns * imageFrame.rows;
   const pixelData = imageFrame.pixelData;
   const rData = imageFrame.redPaletteColorLookupTableData;

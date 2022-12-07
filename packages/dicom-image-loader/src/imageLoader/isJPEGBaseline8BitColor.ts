@@ -1,5 +1,11 @@
-function isJPEGBaseline8BitColor(imageFrame, transferSyntax) {
-  transferSyntax = transferSyntax || imageFrame.transferSyntax;
+import { CornerstoneWadoImageFrame } from '../shared/image-frame';
+
+function isJPEGBaseline8BitColor(
+  imageFrame: CornerstoneWadoImageFrame,
+  transferSyntax: string
+): boolean {
+  /** @todo check as any */
+  transferSyntax = transferSyntax || (imageFrame as any).transferSyntax;
 
   if (
     imageFrame.bitsAllocated === 8 &&

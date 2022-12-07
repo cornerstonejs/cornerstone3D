@@ -1,12 +1,22 @@
+import { CornerstoneLoadImageOptions } from 'dicom-image-loader/src/shared/types/load-image-options';
+import { DataSet } from 'dicom-parser';
 import createImage from '../createImage';
-import parseImageId from './parseImageId';
-import dataSetCacheManager from './dataSetCacheManager';
-import loadFileRequest from './loadFileRequest';
-import getPixelData from './getPixelData';
 import { xhrRequest } from '../internal/index';
+import {
+  CornerstoneWadoLoaderIImage,
+  CornerstoneWadoLoaderIImageLoadObject,
+} from '../wado-loader';
+import dataSetCacheManager from './dataSetCacheManager';
+import { CornerstoneWadoLoaderLoadRequestFunction } from '../../shared/types/load-request-function';
+import getPixelData from './getPixelData';
+import loadFileRequest from './loadFileRequest';
+import parseImageId from './parseImageId';
 
 // add a decache callback function to clear out our dataSetCacheManager
-function addDecache(imageLoadObject, imageId) {
+function addDecache(
+  imageLoadObject: CornerstoneWadoLoaderIImageLoadObject,
+  imageId: string
+) {
   imageLoadObject.decache = function () {
     // console.log('decache');
     const parsedImageId = parseImageId(imageId);
@@ -16,16 +26,19 @@ function addDecache(imageLoadObject, imageId) {
 }
 
 function loadImageFromPromise(
-  dataSetPromise,
-  imageId,
+  dataSetPromise: Promise<DataSet>,
+  imageId: string,
   frame = 0,
-  sharedCacheKey,
-  options,
-  callbacks
-) {
+  sharedCacheKey: string,
+  options: CornerstoneLoadImageOptions,
+  callbacks?: {
+    imageDoneCallback: (image: CornerstoneWadoLoaderIImage) => void;
+  }
+): CornerstoneWadoLoaderIImageLoadObject {
   const start = new Date().getTime();
-  const imageLoadObject = {
+  const imageLoadObject: CornerstoneWadoLoaderIImageLoadObject = {
     cancelFn: undefined,
+    promise: undefined,
   };
 
   imageLoadObject.promise = new Promise((resolve, reject) => {
@@ -82,43 +95,45 @@ function loadImageFromPromise(
 
 function loadImageFromDataSet(
   dataSet,
-  imageId,
+  imageId: string,
   frame = 0,
-  sharedCacheKey,
+  sharedCacheKey: string,
   options
-) {
+): CornerstoneWadoLoaderIImageLoadObject {
   const start = new Date().getTime();
 
-  const promise = new Promise((resolve, reject) => {
-    const loadEnd = new Date().getTime();
+  const promise = new Promise<CornerstoneWadoLoaderIImage>(
+    (resolve, reject) => {
+      const loadEnd = new Date().getTime();
 
-    let imagePromise;
+      let imagePromise: Promise<CornerstoneWadoLoaderIImage>;
 
-    try {
-      const pixelData = getPixelData(dataSet, frame);
-      const transferSyntax = dataSet.string('x00020010');
+      try {
+        const pixelData = getPixelData(dataSet, frame);
+        const transferSyntax = dataSet.string('x00020010');
 
-      imagePromise = createImage(imageId, pixelData, transferSyntax, options);
-    } catch (error) {
-      // Reject the error, and the dataSet
-      reject({
-        error,
-        dataSet,
-      });
+        imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+      } catch (error) {
+        // Reject the error, and the dataSet
+        reject({
+          error,
+          dataSet,
+        });
 
-      return;
+        return;
+      }
+
+      imagePromise.then((image) => {
+        image.data = dataSet;
+        image.sharedCacheKey = sharedCacheKey;
+        const end = new Date().getTime();
+
+        image.loadTimeInMS = loadEnd - start;
+        image.totalTimeInMS = end - start;
+        resolve(image);
+      }, reject);
     }
-
-    imagePromise.then((image) => {
-      image.data = dataSet;
-      image.sharedCacheKey = sharedCacheKey;
-      const end = new Date().getTime();
-
-      image.loadTimeInMS = loadEnd - start;
-      image.totalTimeInMS = end - start;
-      resolve(image);
-    }, reject);
-  });
+  );
 
   return {
     promise,
@@ -126,7 +141,9 @@ function loadImageFromDataSet(
   };
 }
 
-function getLoaderForScheme(scheme) {
+function getLoaderForScheme(
+  scheme: string
+): CornerstoneWadoLoaderLoadRequestFunction {
   if (scheme === 'dicomweb' || scheme === 'wadouri') {
     return xhrRequest;
   } else if (scheme === 'dicomfile') {
@@ -134,7 +151,10 @@ function getLoaderForScheme(scheme) {
   }
 }
 
-function loadImage(imageId, options = {}) {
+function loadImage(
+  imageId: string,
+  options: CornerstoneLoadImageOptions = {}
+): CornerstoneWadoLoaderIImageLoadObject {
   const parsedImageId = parseImageId(imageId);
 
   options = Object.assign({}, options);
@@ -148,7 +168,14 @@ function loadImage(imageId, options = {}) {
 
   // if the dataset for this url is already loaded, use it
   if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
-    const dataSet = dataSetCacheManager.get(parsedImageId.url, loader, imageId);
+    /**
+     * @todo The arguments to the dataSetCacheManager below are incorrect.
+     */
+    const dataSet: DataSet = (dataSetCacheManager as any).get(
+      parsedImageId.url,
+      loader,
+      imageId
+    );
 
     return loadImageFromDataSet(
       dataSet,

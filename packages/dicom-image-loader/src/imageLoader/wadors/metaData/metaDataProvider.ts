@@ -5,7 +5,7 @@ import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
 import metaDataManager from '../metaDataManager';
 
-function metaDataProvider(type, imageId) {
+function metaDataProvider(type: string, imageId: string) {
   const { dicomParser } = external;
   const metaData = metaDataManager.get(imageId);
 
@@ -52,14 +52,14 @@ function metaDataProvider(type, imageId) {
 
     if (imageOrientationPatient) {
       rowCosines = [
-        parseFloat(imageOrientationPatient[0]),
-        parseFloat(imageOrientationPatient[1]),
-        parseFloat(imageOrientationPatient[2]),
+        parseFloat(imageOrientationPatient[0] as any),
+        parseFloat(imageOrientationPatient[1] as any),
+        parseFloat(imageOrientationPatient[2] as any),
       ];
       columnCosines = [
-        parseFloat(imageOrientationPatient[3]),
-        parseFloat(imageOrientationPatient[4]),
-        parseFloat(imageOrientationPatient[5]),
+        parseFloat(imageOrientationPatient[3] as any),
+        parseFloat(imageOrientationPatient[4] as any),
+        parseFloat(imageOrientationPatient[5] as any),
       ];
     }
 
@@ -142,7 +142,7 @@ function metaDataProvider(type, imageId) {
     return {
       radiopharmaceuticalInfo: {
         radiopharmaceuticalStartTime: dicomParser.parseTM(
-          getValue(radiopharmaceuticalInfo['00181072'], 0, '')
+          getValue(radiopharmaceuticalInfo['00181072'], 0, '') as string
         ),
         radionuclideTotalDose: getNumberValue(
           radiopharmaceuticalInfo['00181074']

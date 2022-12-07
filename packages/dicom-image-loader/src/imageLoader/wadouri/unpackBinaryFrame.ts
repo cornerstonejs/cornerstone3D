@@ -1,13 +1,19 @@
 /* eslint no-bitwise: 0 */
 
-function isBitSet(byte, bitPos) {
+import { ByteArray } from 'dicom-parser';
+
+function isBitSet(byte: number, bitPos: number) {
   return byte & (1 << bitPos);
 }
 
 /**
  * Function to deal with unpacking a binary frame
  */
-function unpackBinaryFrame(byteArray, frameOffset, pixelsPerFrame) {
+function unpackBinaryFrame(
+  byteArray: ByteArray,
+  frameOffset: number,
+  pixelsPerFrame: number
+): Uint8Array {
   // Create a new pixel array given the image size
   const pixelData = new Uint8Array(pixelsPerFrame);
 

@@ -1,17 +1,43 @@
+/// <reference lib="webworker" />
+
+import {
+  CornerstoneWadoWebWorkerOptions,
+  CornerstoneWadoWebWorkerTaskOptions,
+  CornerstoneWadoWorkerTaskTypes,
+} from '../imageLoader/webWorkerManager';
+import { CornerstoneWadoImageFrame } from '../shared/image-frame';
+import {
+  CornerstoneWadoWebWorkerData,
+  CornerstoneWadoWebWorkerDecodeData,
+  CornerstoneWadoWebWorkerInitializeData,
+} from './webworker-messages';
+
+interface CornerstoneWadoWebWorkerTaskHandler {
+  taskType: CornerstoneWadoWorkerTaskTypes;
+  handler: (
+    data: CornerstoneWadoWebWorkerDecodeData,
+    cb: (
+      result: CornerstoneWadoImageFrame,
+      transferables: Transferable[]
+    ) => void
+  ) => void;
+  initialize: (config: CornerstoneWadoWebWorkerTaskOptions) => void;
+}
+
 // an object of task handlers
-const taskHandlers = {};
+const taskHandlers: Record<string, CornerstoneWadoWebWorkerTaskHandler> = {};
 
 // Flag to ensure web worker is only initialized once
 let initialized = false;
 
 // the configuration object passed in when the web worker manager is initialized
-let config;
+let config: CornerstoneWadoWebWorkerOptions;
 
 /**
  * Initialization function that loads additional web workers and initializes them
  * @param data
  */
-function initialize(data) {
+function initialize(data: CornerstoneWadoWebWorkerInitializeData) {
   // console.log('web worker initialize ', data.workerIndex);
   // prevent initialization from happening more than once
   if (initialized) {
@@ -21,8 +47,11 @@ function initialize(data) {
   // save the config data
   config = data.config;
 
+  /**
+   * @todo review any
+   */
   // Additional web worker tasks can self-register by calling self.registerTaskHandler
-  self.registerTaskHandler = registerTaskHandler;
+  (self as any).registerTaskHandler = registerTaskHandler;
 
   // load any additional web worker tasks
   if (data.config.webWorkerTaskPaths) {
@@ -51,7 +80,9 @@ function initialize(data) {
  * Function exposed to web worker tasks to register themselves
  * @param taskHandler
  */
-export function registerTaskHandler(taskHandler) {
+export function registerTaskHandler(
+  taskHandler: CornerstoneWadoWebWorkerTaskHandler
+): false | void {
   if (taskHandlers[taskHandler.taskType]) {
     console.log(
       'attempt to register duplicate task handler "',
@@ -80,7 +111,7 @@ function loadWebWorkerTask(data) {
  * Web worker message handler - dispatches messages to the registered task handlers
  * @param msg
  */
-self.onmessage = function (msg) {
+self.onmessage = function (msg: MessageEvent<CornerstoneWadoWebWorkerData>) {
   if (!msg.data.taskType) {
     console.log(msg.data);
 
@@ -120,7 +151,7 @@ self.onmessage = function (msg) {
           );
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.log(`task ${msg.data.taskType} failed - ${error.message}`);
       self.postMessage({
         taskType: msg.data.taskType,

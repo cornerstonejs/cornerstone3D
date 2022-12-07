@@ -1,9 +1,15 @@
+import { CornerstoneWadoWebWorkerDecodeConfig } from 'dicom-image-loader/src/imageLoader/webWorkerManager';
+import { ByteArray } from 'dicom-parser';
+import { CornerstoneWadoImageFrame } from '../image-frame';
+
 const local = {
   JpegImage: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
 };
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.JpegImage) {
@@ -18,7 +24,10 @@ export function initialize(decodeConfig) {
   });
 }
 
-async function decodeJPEGBaseline12BitAsync(imageFrame, pixelData) {
+async function decodeJPEGBaseline12BitAsync(
+  imageFrame: CornerstoneWadoImageFrame,
+  pixelData: ByteArray
+): Promise<CornerstoneWadoImageFrame> {
   // check to make sure codec is loaded
   await initialize();
   if (typeof local.JpegImage === 'undefined') {

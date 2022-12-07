@@ -9,18 +9,20 @@ import decodeJPEGLossless from './decoders/decodeJPEGLossless';
 import decodeJPEGLS from './decoders/decodeJPEGLS';
 import decodeJPEG2000 from './decoders/decodeJPEG2000';
 import scaleArray from './scaling/scaleArray';
+import { ByteArray } from 'dicom-parser';
+import { CornerstoneWadoImageFrame } from './image-frame';
 
 function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
+  imageFrame: CornerstoneWadoImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
   decodeConfig,
   options,
-  callbackFn
-) {
+  callbackFn: (...args: any[]) => void
+): void {
   const start = new Date().getTime();
 
-  let decodePromise = null;
+  let decodePromise: Promise<CornerstoneWadoImageFrame> = null;
 
   let opts;
 
@@ -141,7 +143,11 @@ function decodeImageFrame(
     });
 }
 
-function postProcessDecodedPixels(imageFrame, options, start) {
+function postProcessDecodedPixels(
+  imageFrame: CornerstoneWadoImageFrame,
+  options,
+  start: number
+) {
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;

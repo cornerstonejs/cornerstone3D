@@ -1,13 +1,49 @@
+import {
+  CornerstoneMetadataGeneralSeriesModule,
+  CornerstoneMetadataImagePixelModule,
+  CornerstoneMetadataImagePlaneModule,
+  CornerstoneMetadataPatientStudyModule,
+  CornerstoneMetadataSopCommonModule,
+  CornerstoneMetadataTransferSyntax,
+  CornerstoneMetaDataTypes,
+} from 'dicom-image-loader/src/shared/types/metadata-modules';
 import external from '../../../externalModules';
-import getNumberValues from './getNumberValues';
-import parseImageId from '../parseImageId';
 import dataSetCacheManager from '../dataSetCacheManager';
+import parseImageId from '../parseImageId';
 import getImagePixelModule from './getImagePixelModule';
-import getOverlayPlaneModule from './getOverlayPlaneModule';
 import getLUTs from './getLUTs';
 import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixelRepresentation';
+import getNumberValues from './getNumberValues';
+import getOverlayPlaneModule from './getOverlayPlaneModule';
 
-function metaDataProvider(type, imageId) {
+function metaDataProvider(
+  type: 'generalSeriesModule',
+  imageId: string
+): CornerstoneMetadataGeneralSeriesModule;
+function metaDataProvider(
+  type: 'patientStudyModule',
+  imageId: string
+): CornerstoneMetadataPatientStudyModule;
+function metaDataProvider(
+  type: 'imagePlaneModule',
+  imageId: string
+): CornerstoneMetadataImagePlaneModule;
+function metaDataProvider(
+  type: 'imagePixelModule',
+  imageId: string
+): CornerstoneMetadataImagePixelModule;
+function metaDataProvider(
+  type: 'transferSyntax',
+  imageId: string
+): CornerstoneMetadataTransferSyntax;
+function metaDataProvider(
+  type: 'sopCommonModule',
+  imageId: string
+): CornerstoneMetadataSopCommonModule;
+function metaDataProvider(
+  type: CornerstoneMetaDataTypes,
+  imageId: string
+): any {
   const { dicomParser } = external;
   const parsedImageId = parseImageId(imageId);
 
@@ -41,9 +77,9 @@ function metaDataProvider(type, imageId) {
     const imagePositionPatient = getNumberValues(dataSet, 'x00200032', 3);
     const pixelSpacing = getNumberValues(dataSet, 'x00280030', 2);
 
-    let columnPixelSpacing = null;
+    let columnPixelSpacing: number = null;
 
-    let rowPixelSpacing = null;
+    let rowPixelSpacing: number = null;
 
     if (pixelSpacing) {
       rowPixelSpacing = pixelSpacing[0];
@@ -56,14 +92,14 @@ function metaDataProvider(type, imageId) {
 
     if (imageOrientationPatient) {
       rowCosines = [
-        parseFloat(imageOrientationPatient[0]),
-        parseFloat(imageOrientationPatient[1]),
-        parseFloat(imageOrientationPatient[2]),
+        parseFloat(imageOrientationPatient[0] as any),
+        parseFloat(imageOrientationPatient[1] as any),
+        parseFloat(imageOrientationPatient[2] as any),
       ];
       columnCosines = [
-        parseFloat(imageOrientationPatient[3]),
-        parseFloat(imageOrientationPatient[4]),
-        parseFloat(imageOrientationPatient[5]),
+        parseFloat(imageOrientationPatient[3] as any),
+        parseFloat(imageOrientationPatient[4] as any),
+        parseFloat(imageOrientationPatient[5] as any),
       ];
     }
 

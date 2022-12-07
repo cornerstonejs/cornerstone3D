@@ -1,10 +1,17 @@
-import { getOptions } from './internal/options';
 import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
+import { getOptions } from './internal/options';
 
-import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame';
+import { ByteArray } from 'dicom-parser';
 import calculateMinMax from '../shared/calculateMinMax';
+import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame';
+import { CornerstoneWadoImageFrame } from '../shared/image-frame';
 
-function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
+function processDecodeTask(
+  imageFrame: CornerstoneWadoImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  options
+): Promise<CornerstoneWadoImageFrame> {
   const loaderOptions = getOptions();
   const { strict, decodeConfig } = loaderOptions;
 
@@ -33,12 +40,12 @@ function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
 }
 
 function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
-  canvas,
+  imageFrame: CornerstoneWadoImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  canvas: HTMLCanvasElement,
   options = {}
-) {
+): Promise<CornerstoneWadoImageFrame> {
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
       // Implicit VR Little Endian

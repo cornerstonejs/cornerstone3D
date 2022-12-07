@@ -1,6 +1,7 @@
 import { setOptions } from './internal/index';
+import { CornerstoneWadoLoaderOptions } from './internal/options';
 
-function configure(options) {
+function configure(options: CornerstoneWadoLoaderOptions): void {
   setOptions(options);
 }
 

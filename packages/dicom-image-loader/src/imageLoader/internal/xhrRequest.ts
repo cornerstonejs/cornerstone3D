@@ -1,13 +1,38 @@
 import external from '../../externalModules';
 import { getOptions } from './options';
 
-function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
+export interface CornerstoneWadoLoaderXhrRequestError extends Error {
+  request: XMLHttpRequest;
+  response: any;
+  status: number;
+}
+
+/**
+ * @description mutable object
+ */
+export interface CornerstoneWadoLoaderXhrRequestParams {
+  url?: string;
+  deferred?: {
+    resolve: (value: ArrayBuffer | PromiseLike<ArrayBuffer>) => void;
+    reject: (reason?: any) => void;
+  };
+  imageId?: string;
+}
+
+function xhrRequest(
+  url: string,
+  imageId: string,
+  defaultHeaders: Record<string, string> = {},
+  params: CornerstoneWadoLoaderXhrRequestParams = {}
+): Promise<ArrayBuffer> {
   const { cornerstone } = external;
   const options = getOptions();
 
-  const errorInterceptor = (xhr) => {
+  const errorInterceptor = (xhr: XMLHttpRequest) => {
     if (typeof options.errorInterceptor === 'function') {
-      const error = new Error('request failed');
+      const error = new Error(
+        'request failed'
+      ) as CornerstoneWadoLoaderXhrRequestError;
 
       error.request = xhr;
       error.response = xhr.response;
@@ -17,7 +42,7 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
   };
 
   // Make the request for the DICOM P10 SOP Instance
-  return new Promise((resolve, reject) => {
+  return new Promise<ArrayBuffer>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
     xhr.open('get', url, true);
@@ -63,7 +88,7 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
       };
 
       cornerstone.triggerEvent(
-        cornerstone.events,
+        (cornerstone as any).events,
         'cornerstoneimageloadstart',
         eventData
       );
@@ -83,7 +108,7 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
 
       // Event
       cornerstone.triggerEvent(
-        cornerstone.events,
+        (cornerstone as any).events,
         'cornerstoneimageloadend',
         eventData
       );
@@ -124,9 +149,9 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
       // console.log('progress:',oProgress)
       const loaded = oProgress.loaded; // evt.loaded the bytes browser receive
 
-      let total;
+      let total: number;
 
-      let percentComplete;
+      let percentComplete: number;
 
       if (oProgress.lengthComputable) {
         total = oProgress.total; // evt.total the total bytes seted by the header
@@ -148,7 +173,7 @@ function xhrRequest(url, imageId, defaultHeaders = {}, params = {}) {
       };
 
       cornerstone.triggerEvent(
-        cornerstone.events,
+        (cornerstone as any).events,
         cornerstone.EVENTS.IMAGE_LOAD_PROGRESS,
         eventData
       );
