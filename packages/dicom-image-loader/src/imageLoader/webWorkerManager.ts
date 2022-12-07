@@ -22,7 +22,7 @@ let nextTaskId = 0;
 
 export interface CornerstoneWadoWebWorkerDecodeConfig {
   initializeCodecsOnStartup: boolean;
-  strict: boolean;
+  strict?: boolean;
 }
 
 export interface CornerstoneWadoWebWorkerTaskOptions {
