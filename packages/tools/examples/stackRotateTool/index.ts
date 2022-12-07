@@ -12,10 +12,7 @@ console.warn(
 );
 
 const {
-  PanTool,
-  WindowLevelTool,
-  StackScrollMouseWheelTool,
-  ZoomTool,
+  StackRotateTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -25,8 +22,8 @@ const { MouseBindings } = csToolsEnums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic Stack Manipulation',
-  'Manipulation tools for a stack viewport'
+  'Stack Viewport Rotate',
+  'Rotate tool for a stack viewport'
 );
 
 const content = document.getElementById('content');
@@ -42,8 +39,7 @@ element.style.height = '500px';
 content.appendChild(element);
 
 const instructions = document.createElement('p');
-instructions.innerText =
-  'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+instructions.innerText = 'Left Click: Rotate';
 
 content.append(instructions);
 // ============================= //
@@ -58,47 +54,24 @@ async function run() {
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackRotateTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackRotateTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
+  toolGroup.setToolActive(StackRotateTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
