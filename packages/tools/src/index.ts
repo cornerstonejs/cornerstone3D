@@ -50,6 +50,7 @@ import {
   BrushTool,
   AngleTool,
   MagnifyTool,
+  ReferenceCursors,
   ReferenceLines,
 } from './tools';
 
@@ -87,6 +88,7 @@ export {
   ArrowAnnotateTool,
   AngleTool,
   MagnifyTool,
+  ReferenceCursors,
   ReferenceLines,
   // Segmentation Display
   SegmentationDisplayTool,

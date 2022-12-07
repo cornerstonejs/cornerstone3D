@@ -11,7 +11,8 @@ function drawEllipse(
   ellipseUID: string,
   corner1: Types.Point2,
   corner2: Types.Point2,
-  options = {}
+  options = {},
+  dataId = ''
 ): void {
   const { color, width, lineWidth, lineDash } = Object.assign(
     {
@@ -56,6 +57,10 @@ function drawEllipse(
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const svgEllipseElement = document.createElementNS(svgns, 'ellipse');
+
+    if (dataId !== '') {
+      svgEllipseElement.setAttribute('data-id', dataId);
+    }
 
     _setNewAttributesIfValid(attributes, svgEllipseElement);
 

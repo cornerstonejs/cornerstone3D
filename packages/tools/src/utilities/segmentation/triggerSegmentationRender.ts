@@ -129,6 +129,10 @@ class SegmentationRenderingEngine {
     const segmentationDisplayToolInstance = toolGroup.getToolInstance(
       SegmentationDisplayTool.toolName
     ) as SegmentationDisplayTool;
+    if (!segmentationDisplayToolInstance) {
+      console.warn('No segmentation tool found inside', toolGroupId);
+      return;
+    }
 
     function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
       const { element, viewportId, renderingEngineId } = evt.detail;

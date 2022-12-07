@@ -63,4 +63,29 @@ function threePlaneIntersection(
   return [x, y, z];
 }
 
-export { linePlaneIntersection, planeEquation, threePlaneIntersection };
+/**
+ * Computes the distance of a point in 3D space to a plane
+ * @param plane - [A, B, C, D] of plane equation A*X + B*Y + C*Z = D
+ * @param point - [A, B, C] the plane in World coordinate
+ * @param signed - if true, the distance is signed
+ * @returns - the distance of the point to the plane
+ * */
+function planeDistanceToPoint(
+  plane: Plane,
+  point: Point3,
+  signed = false
+): number {
+  const [A, B, C, D] = plane;
+  const [x, y, z] = point;
+  const numerator = A * x + B * y + C * z - D;
+  const distance = Math.abs(numerator) / Math.sqrt(A * A + B * B + C * C);
+  const sign = signed ? Math.sign(numerator) : 1;
+  return sign * distance;
+}
+
+export {
+  linePlaneIntersection,
+  planeEquation,
+  threePlaneIntersection,
+  planeDistanceToPoint,
+};

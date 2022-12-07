@@ -239,7 +239,6 @@ class SphereScissorsTool extends BaseTool {
     if (newAnnotation && !hasMoved) {
       return;
     }
-
     annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 

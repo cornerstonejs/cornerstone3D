@@ -422,6 +422,10 @@ class EllipticalROITool extends AnnotationTool {
       return;
     }
 
+    // Elliptical ROI tool should reset its highlight to false on mouse up (as opposed
+    // to other tools that keep it highlighted until the user moves. The reason
+    // is that we use top-left and bottom-right handles to define the ellipse,
+    // and they are by definition not in the ellipse on mouse up.
     annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 
@@ -868,6 +872,7 @@ class EllipticalROITool extends AnnotationTool {
         );
       }
 
+      const dataId = `${annotationUID}-ellipse`;
       const ellipseUID = '0';
       drawEllipseSvg(
         svgDrawingHelper,
@@ -879,7 +884,8 @@ class EllipticalROITool extends AnnotationTool {
           color,
           lineDash,
           lineWidth,
-        }
+        },
+        dataId
       );
 
       // draw center point, if "centerPointRadius" configuration is valid.

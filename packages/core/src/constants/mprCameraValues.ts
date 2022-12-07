@@ -10,7 +10,7 @@ const MPR_CAMERA_VALUES = {
     viewUp: [0, 0, 1],
   },
   coronal: {
-    viewPlaneNormal: [0, 1, 0],
+    viewPlaneNormal: [0, -1, 0],
     viewUp: [0, 0, 1],
   },
 };
