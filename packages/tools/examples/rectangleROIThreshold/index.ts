@@ -16,6 +16,7 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import perfusionColorMap from './preset';
 
 // This is for debugging purposes
 console.warn(
@@ -385,7 +386,11 @@ async function run() {
       },
       {
         volumeId: ptVolumeId,
-        callback: setPetColorMapTransferFunctionForVolumeActor,
+        callback: ({ volumeActor }) =>
+          setPetColorMapTransferFunctionForVolumeActor({
+            volumeActor,
+            preset: perfusionColorMap,
+          }),
       },
     ],
     [viewportId1, viewportId2, viewportId3]

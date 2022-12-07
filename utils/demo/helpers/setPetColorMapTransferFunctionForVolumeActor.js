@@ -4,13 +4,14 @@ import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunc
 
 export default function setPetColorMapTransferFunctionForVolumeActor({
   volumeActor,
+  preset,
 }) {
   const mapper = volumeActor.getMapper();
   mapper.setSampleDistance(1.0);
 
   const cfun = vtkColorTransferFunction.newInstance();
-  const preset = vtkColorMaps.getPresetByName('hsv');
-  cfun.applyColorMap(preset);
+  let presetToUse = preset ? preset : vtkColorMaps.getPresetByName('hsv');
+  cfun.applyColorMap(presetToUse);
   cfun.setMappingRange(0, 5);
 
   volumeActor.getProperty().setRGBTransferFunction(0, cfun);
