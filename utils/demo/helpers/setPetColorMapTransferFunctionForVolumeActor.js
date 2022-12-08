@@ -4,7 +4,7 @@ import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunc
 
 export default function setPetColorMapTransferFunctionForVolumeActor({
   volumeActor,
-  preset,
+  preset?,
 }) {
   const mapper = volumeActor.getMapper();
   mapper.setSampleDistance(1.0);
