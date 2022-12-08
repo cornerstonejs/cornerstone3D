@@ -10,6 +10,7 @@ type VolumeInputCallback = (params: {
   volumeActor: VolumeActor;
   /** unique volume Id in the cache */
   volumeId: string;
+  preset?;
 }) => unknown;
 
 /**
