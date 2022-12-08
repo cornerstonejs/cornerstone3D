@@ -2215,7 +2215,9 @@ enum ViewportType {
     // (undocumented)
     PERSPECTIVE = "perspective",
     // (undocumented)
-    STACK = "stack"
+    STACK = "stack",
+    // (undocumented)
+    VOLUME_3D = "volume3d"
 }
 
 // @public (undocumented)

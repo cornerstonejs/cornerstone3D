@@ -60,6 +60,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       case ViewportType.ORTHOGRAPHIC:
         camera.setParallelProjection(true);
         break;
+      case ViewportType.VOLUME_3D:
+        camera.setParallelProjection(true);
+        break;
       case ViewportType.PERSPECTIVE:
         camera.setParallelProjection(false);
         break;

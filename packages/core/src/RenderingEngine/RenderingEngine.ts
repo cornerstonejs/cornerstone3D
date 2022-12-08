@@ -21,6 +21,7 @@ import type {
   NormalizedViewportInput,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
+import VolumeViewport3D from './VolumeViewport3D';
 
 type ViewportDisplayCoords = {
   sxStartDisplayCoords: number;
@@ -750,6 +751,8 @@ class RenderingEngine implements IRenderingEngine {
     ) {
       // 4.b Create a volume viewport
       viewport = new VolumeViewport(viewportInput);
+    } else if (type === ViewportType.VOLUME_3D) {
+      viewport = new VolumeViewport3D(viewportInput);
     } else {
       throw new Error(`Viewport Type ${type} is not supported`);
     }

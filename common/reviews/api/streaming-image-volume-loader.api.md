@@ -1279,6 +1279,8 @@ enum ViewportType {
     ORTHOGRAPHIC = 'orthographic',
     PERSPECTIVE = 'perspective',
     STACK = 'stack',
+    // (undocumented)
+    VOLUME_3D = 'volume3d',
 }
 
 // @public (undocumented)
