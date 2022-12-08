@@ -432,8 +432,6 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     getToolName(): string;
     // (undocumented)
-    readonly instanceName: string;
-    // (undocumented)
     mode: ToolModes;
     // (undocumented)
     setActiveStrategy(strategyName: string): void;
@@ -2400,10 +2398,17 @@ type IToolBinding = {
 };
 
 // @public (undocumented)
+type IToolClassReference = new <T extends BaseTool>(config: any) => T;
+
+// @public (undocumented)
 interface IToolGroup {
     // (undocumented)
     addTool: {
-        (toolName: string, toolConfiguration?: any, toolInstanceName?: string): void;
+        (toolName: string, toolConfiguration?: any): void;
+    };
+    // (undocumented)
+    addToolInstance: {
+        (ttoolName: string, parentClassName: string, configuration?: any): void;
     };
     // (undocumented)
     addViewport: {
@@ -2411,17 +2416,19 @@ interface IToolGroup {
     };
     // (undocumented)
     getActivePrimaryMouseButtonTool: {
-        (): ToolIdentifierType | undefined;
+        (): undefined | string;
+    };
+    // (undocumented)
+    getToolConfiguration: {
+        (toolName: string, configurationPath: string): any;
     };
     // (undocumented)
     getToolInstance: {
-        (toolName: string, toolInstanceName?: string): any;
+        (toolName: string): any;
     };
     // (undocumented)
-    getToolInstanceNames: (toolName: string) => string[];
-    // (undocumented)
     getToolOptions: {
-        (toolName: string, toolInstanceName: string): ToolOptionsType;
+        (toolName: string): ToolOptionsType;
     };
     // (undocumented)
     getViewportIds: () => string[];
@@ -2434,28 +2441,24 @@ interface IToolGroup {
         (renderingEngineId: string, viewportId?: string): void;
     };
     // (undocumented)
-    setActiveStrategy: {
-        (toolName: string, strategyName: string, toolInstanceName?: string): void;
-    };
-    // (undocumented)
     setToolActive: {
-        (toolName: string, toolBindingsOption?: SetToolBindingsType, toolInstanceName?: string): void;
+        (toolName: string, toolBindingsOption?: SetToolBindingsType): void;
     };
     // (undocumented)
     setToolConfiguration: {
-        (toolName: string, configuration: Record<any, any>, overwrite?: boolean): boolean;
+        (toolName: string, configuration: Record<any, any>, overwrite?: boolean): void;
     };
     // (undocumented)
     setToolDisabled: {
-        (toolName: string, toolInstanceName?: string): void;
+        (toolName: string): void;
     };
     // (undocumented)
     setToolEnabled: {
-        (toolName: string, toolInstanceName?: string): void;
+        (toolName: string): void;
     };
     // (undocumented)
     setToolPassive: {
-        (toolName: string, toolInstanceName?: string): void;
+        (toolName: string): void;
     };
     // (undocumented)
     setViewportsCursorByToolName: {
@@ -3319,7 +3322,6 @@ type PTScaling = {
 // @public (undocumented)
 type PublicToolProps = SharedToolProp & {
     name?: string;
-    instanceName?: string;
 };
 
 // @public
@@ -4420,12 +4422,6 @@ type ToolGroupSpecificRepresentationState = {
 type ToolHandle = AnnotationHandle | TextBoxHandle;
 
 // @public (undocumented)
-type ToolIdentifierType = {
-    toolName: string;
-    toolInstanceName: string;
-};
-
-// @public (undocumented)
 enum ToolModes {
     // (undocumented)
     Active = "Active",
@@ -4561,8 +4557,8 @@ declare namespace Types {
         SetToolBindingsType,
         ToolOptionsType,
         InteractionTypes,
-        ToolIdentifierType,
         IToolGroup,
+        IToolClassReference,
         ISynchronizerEventHandler,
         ToolHandle,
         AnnotationHandle,

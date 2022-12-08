@@ -45,6 +45,7 @@ import {
   FloodFillOptions,
   FloodFillResult,
 } from './FloodFillTypes';
+import IToolClassReference from './IToolClassReference';
 
 export type {
   // AnnotationState
@@ -69,6 +70,7 @@ export type {
   InteractionTypes,
   //
   IToolGroup,
+  IToolClassReference,
   ISynchronizerEventHandler,
   ToolHandle,
   AnnotationHandle,

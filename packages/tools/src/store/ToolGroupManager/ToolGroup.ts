@@ -9,7 +9,12 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { state } from '../index';
-import { IToolGroup, SetToolBindingsType, ToolOptionsType } from '../../types';
+import {
+  IToolClassReference,
+  IToolGroup,
+  SetToolBindingsType,
+  ToolOptionsType,
+} from '../../types';
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
@@ -121,26 +126,35 @@ export default class ToolGroup implements IToolGroup {
     this._toolInstances[toolName] = instantiatedTool;
   }
 
-  addToolInstance(toolName, parentClassName, configuration) {
-    let toolClassToUse = state.tools[toolName]?.toolClass;
+  public addToolInstance(
+    toolName: string,
+    parentClassName: string,
+    configuration = {}
+  ): void {
+    let ToolClassToUse = state.tools[toolName]
+      ?.toolClass as IToolClassReference;
 
-    if (!toolClassToUse) {
+    if (!ToolClassToUse) {
       // get parent class constructor
-      const ParentClass = state.tools[parentClassName].toolClass;
+      const ParentClass = state.tools[parentClassName]
+        .toolClass as IToolClassReference;
 
-      // create a new class that extends the parent class
+      // Todo: could not find a way to make this work with typescript
+      // @ts-ignore
       class ToolInstance extends ParentClass {}
+      // @ts-ignore
       ToolInstance.toolName = toolName;
-
-      toolClassToUse = ToolInstance;
+      // @ts-ignore
+      ToolClassToUse = ToolInstance;
 
       state.tools[toolName] = {
-        toolClass: ToolInstance,
+        toolClass: ToolInstance as IToolClassReference,
       };
     }
 
     // add the tool to the toolGroup
-    this.addTool(toolClassToUse.toolName, configuration);
+    // @ts-ignore
+    this.addTool(ToolClassToUse.toolName, configuration);
   }
 
   //   class InstanceTool extends parentClass;
@@ -178,11 +192,11 @@ export default class ToolGroup implements IToolGroup {
     }
 
     // Handle the newly added viewport's mouse cursor
-    const activeToolIdentifier = this.getActivePrimaryMouseButtonTool();
+    const toolName = this.getActivePrimaryMouseButtonTool();
 
     const runtimeSettings = Settings.getRuntimeSettings();
     if (runtimeSettings.get('useCursors')) {
-      this.setViewportsCursorByToolName(activeToolIdentifier?.toolName);
+      this.setViewportsCursorByToolName(toolName);
     }
   }
 

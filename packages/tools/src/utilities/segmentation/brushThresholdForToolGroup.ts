@@ -1,10 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
-import BrushTool from '../../tools/segmentation/BrushTool';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
 import { getRenderingEngine } from '@cornerstonejs/core';
-
-const brushToolName = BrushTool.toolName;
+import getBrushToolInstances from './utilities';
 
 export function setBrushThresholdForToolGroup(
   toolGroupId: string,
@@ -16,21 +14,9 @@ export function setBrushThresholdForToolGroup(
     return;
   }
 
-  const toolInstances = toolGroup._toolInstances;
+  const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
 
-  if (!Object.keys(toolInstances).length) {
-    return;
-  }
-
-  const brushToolInstances = toolInstances[brushToolName];
-
-  if (!Object.keys(brushToolInstances).length) {
-    return;
-  }
-
-  Object.keys(brushToolInstances).forEach((toolInstanceName) => {
-    const tool = brushToolInstances[toolInstanceName];
-
+  brushBasedToolInstances.forEach((tool) => {
     tool.configuration.strategySpecificConfiguration.THRESHOLD_INSIDE_CIRCLE.threshold =
       threshold;
   });
@@ -66,16 +52,14 @@ export function getBrushThresholdForToolGroup(toolGroupId: string) {
     return;
   }
 
-  const brushToolInstances = toolInstances[brushToolName];
+  const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
+  const brushToolInstance = brushBasedToolInstances[0];
 
-  if (!Object.keys(brushToolInstances).length) {
+  if (!brushToolInstance) {
     return;
   }
 
-  // Note: -> Assumes the thresholds are the same and set via these helpers.
-  const toolInstanceNames = Object.keys(brushToolInstances);
-  const firstToolInstance = brushToolInstances[toolInstanceNames[0]];
-
-  return firstToolInstance.configuration.strategySpecificConfiguration
+  // TODO -> Assumes the
+  return brushToolInstance.configuration.strategySpecificConfiguration
     .THRESHOLD_INSIDE_CIRCLE.threshold;
 }

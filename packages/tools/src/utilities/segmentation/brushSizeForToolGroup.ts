@@ -2,8 +2,7 @@ import { getToolGroup } from '../../store/ToolGroupManager';
 import BrushTool from '../../tools/segmentation/BrushTool';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
 import { getRenderingEngine } from '@cornerstonejs/core';
-
-const brushToolName = BrushTool.toolName;
+import getBrushToolInstances from './utilities';
 
 export function setBrushSizeForToolGroup(
   toolGroupId: string,
@@ -15,22 +14,14 @@ export function setBrushSizeForToolGroup(
     return;
   }
 
-  const toolInstances = toolGroup._toolInstances;
+  const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
 
-  if (!Object.keys(toolInstances).length) {
-    return;
-  }
+  brushBasedToolInstances.forEach((tool: BrushTool) => {
+    tool.configuration.brushSize = brushSize;
 
-  const brushToolInstance = toolInstances[brushToolName];
-
-  if (!brushToolInstance) {
-    return;
-  }
-
-  brushToolInstance.configuration.brushSize = brushSize;
-
-  // Invalidate the brush being rendered so it can update.
-  brushToolInstance.invalidateBrushCursor();
+    // Invalidate the brush being rendered so it can update.
+    tool.invalidateBrushCursor();
+  });
 
   // Trigger an annotation render for any viewports on the toolgroup
   const viewportsInfo = toolGroup.getViewportsInfo();
@@ -67,16 +58,15 @@ export function getBrushSizeForToolGroup(toolGroupId: string): void {
     return;
   }
 
-  const brushToolInstance = toolInstances[brushToolName];
+  const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
+
+  // one is enough as they share the same brush size
+  const brushToolInstance = brushBasedToolInstances[0];
 
   if (!brushToolInstance) {
     return;
   }
 
   // TODO -> Assumes the brush sizes are the same and set via these helpers.
-
-  // const toolInstanceNames = Object.keys(brushToolInstances);
-  // const firstToolInstance = brushToolInstances[toolInstanceNames[0]];
-
   return brushToolInstance.configuration.brushSize;
 }
