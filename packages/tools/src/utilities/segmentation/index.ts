@@ -5,6 +5,15 @@ import isValidRepresentationConfig from './isValidRepresentationConfig';
 import getDefaultRepresentationConfig from './getDefaultRepresentationConfig';
 import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
 import { triggerSegmentationRender } from './triggerSegmentationRender';
+import floodFill from './floodFill';
+import {
+  getBrushSizeForToolGroup,
+  setBrushSizeForToolGroup,
+} from './brushSizeForToolGroup';
+import {
+  getBrushThresholdForToolGroup,
+  setBrushThresholdForToolGroup,
+} from './brushThresholdForToolGroup';
 
 export {
   thresholdVolumeByRange,
@@ -14,4 +23,9 @@ export {
   createLabelmapVolumeForViewport,
   rectangleROIThresholdVolumeByRange,
   triggerSegmentationRender,
+  floodFill,
+  getBrushSizeForToolGroup,
+  setBrushSizeForToolGroup,
+  getBrushThresholdForToolGroup,
+  setBrushThresholdForToolGroup,
 };

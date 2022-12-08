@@ -556,13 +556,21 @@ type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    invalidateBrushCursor(): void;
+    // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    onSetToolPassive: () => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
 }
 
 // @public (undocumented)
@@ -1204,6 +1212,9 @@ const _default: {
 };
 
 // @public (undocumented)
+function (getter: FloodFillGetter, seed: Types_2.Point2 | Types_2.Point3, options?: FloodFillOptions): FloodFillResult;
+
+// @public (undocumented)
 const _default_2: {
     interpolateAnnotation: typeof interpolateAnnotation;
 };
@@ -1661,6 +1672,23 @@ type FlipDirection = {
 };
 
 // @public (undocumented)
+type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
+
+// @public (undocumented)
+type FloodFillOptions = {
+    onFlood?: (x: any, y: any) => void;
+    onBoundary?: (x: any, y: any) => void;
+    equals?: (a: any, b: any) => boolean;
+    diagonals?: boolean;
+};
+
+// @public (undocumented)
+type FloodFillResult = {
+    flooded: Types_2.Point2[] | Types_2.Point3[];
+    boundaries: Types_2.Point2[] | Types_2.Point3[];
+};
+
+// @public (undocumented)
 class FrameOfReferenceSpecificAnnotationManager {
     constructor(uid?: string);
     // (undocumented)
@@ -1740,6 +1768,12 @@ function getBoundingBoxAroundShape(points: Types_2.Point3[], dimensions?: Types_
 
 // @public (undocumented)
 function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
+
+// @public (undocumented)
+function getBrushSizeForToolGroup(toolGroupId: string): void;
+
+// @public (undocumented)
+function getBrushThresholdForToolGroup(toolGroupId: string): any;
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
@@ -2366,10 +2400,17 @@ type IToolBinding = {
 };
 
 // @public (undocumented)
+type IToolClassReference = new <T extends BaseTool>(config: any) => T;
+
+// @public (undocumented)
 interface IToolGroup {
     // (undocumented)
     addTool: {
         (toolName: string, toolConfiguration?: any): void;
+    };
+    // (undocumented)
+    addToolInstance: {
+        (ttoolName: string, parentClassName: string, configuration?: any): void;
     };
     // (undocumented)
     addViewport: {
@@ -3026,6 +3067,15 @@ type OrientationVectors = {
     viewPlaneNormal: Point3;
     viewUp: Point3;
 };
+
+// @public (undocumented)
+export class PaintFillTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    static toolName: string;
+}
 
 // @public (undocumented)
 export class PanTool extends BaseTool {
@@ -3813,7 +3863,12 @@ declare namespace segmentation_2 {
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
         rectangleROIThresholdVolumeByRange,
-        triggerSegmentationRender
+        triggerSegmentationRender,
+        default_2 as floodFill,
+        getBrushSizeForToolGroup,
+        setBrushSizeForToolGroup,
+        getBrushThresholdForToolGroup,
+        setBrushThresholdForToolGroup
     }
 }
 
@@ -3954,6 +4009,12 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 
 // @public (undocumented)
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
+
+// @public (undocumented)
+function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number): void;
+
+// @public (undocumented)
+function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
 
 // @public (undocumented)
 function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Color): void;
@@ -4513,6 +4574,7 @@ declare namespace Types {
         ToolOptionsType,
         InteractionTypes,
         IToolGroup,
+        IToolClassReference,
         ISynchronizerEventHandler,
         ToolHandle,
         AnnotationHandle,
@@ -4534,7 +4596,10 @@ declare namespace Types {
         ScrollOptions_2 as ScrollOptions,
         CINETypes,
         BoundsIJK,
-        SVGDrawingHelper
+        SVGDrawingHelper,
+        FloodFillResult,
+        FloodFillGetter,
+        FloodFillOptions
     }
 }
 export { Types }
