@@ -11,6 +11,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { VolumeActor } from 'core/src/types';
@@ -30,9 +31,12 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
+let renderingEngine;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = '3D_VIEWPORT';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -62,6 +66,26 @@ const instructions = document.createElement('p');
 instructions.innerText = 'Click the image to rotate it.';
 
 content.append(instructions);
+
+addDropdownToToolbar({
+  options: {
+    values: CONSTANTS.VIEWPORT_PRESETS.map((preset) => preset.name),
+    defaultValue: 'CT-Bone',
+  },
+  onSelectedValueChange: (presetName) => {
+    const volumeActor = renderingEngine
+      .getViewport(viewportId)
+      .getDefaultActor().actor as VolumeActor;
+
+    utilities.applyPreset(
+      volumeActor,
+      CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === presetName)
+    );
+
+    renderingEngine.render();
+  },
+});
+
 // ============================= //
 
 /**
@@ -98,23 +122,21 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
+    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportIds = ['3D_VIEWPORT'];
 
   const viewportInputArray = [
     {
-      viewportId: viewportIds[0],
+      viewportId: viewportId,
       type: ViewportType.VOLUME_3D,
       element: element1,
       defaultOptions: {
@@ -127,9 +149,7 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewports
-  viewportIds.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineId)
-  );
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -139,20 +159,26 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds).then(
+  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
     () => {
-      viewportIds.forEach((viewportId) => {
-        const volumeActor = renderingEngine
-          .getViewport(viewportId)
-          .getDefaultActor().actor as VolumeActor;
+      const volumeActor = renderingEngine
+        .getViewport(viewportId)
+        .getDefaultActor().actor as VolumeActor;
 
-        utilities.applyPreset(
-          volumeActor,
-          CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-AAA')
-        );
-      });
+      utilities.applyPreset(
+        volumeActor,
+        CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+      );
+
+      const renderer = viewport.getRenderer();
+      renderer.getActiveCamera().elevation(-70);
+      viewport.setCamera({ parallelScale: 600 });
+
+      viewport.render();
     }
   );
+
+  const viewport = renderingEngine.getViewport(viewportId);
   renderingEngine.render();
 }
 
