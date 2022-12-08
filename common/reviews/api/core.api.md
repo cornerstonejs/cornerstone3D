@@ -138,7 +138,8 @@ declare namespace CONSTANTS {
         colormapsData as CPU_COLORMAPS,
         RENDERING_DEFAULTS,
         mprCameraValues as MPR_CAMERA_VALUES,
-        EPSILON
+        EPSILON,
+        presets as VIEWPORT_PRESETS
     }
 }
 export { CONSTANTS }
@@ -1600,6 +1601,9 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
+const presets: ViewportPreset[];
+
+// @public (undocumented)
 type PreStackNewImageEvent = CustomEvent_2<PreStackNewImageEventDetail>;
 
 // @public (undocumented)
@@ -1957,6 +1961,7 @@ declare namespace Types {
         IVolumeLoadObject,
         IVolumeInput,
         VolumeInputCallback,
+        ViewportPreset,
         Metadata,
         OrientationVectors,
         Point2,
@@ -2174,6 +2179,30 @@ type ViewportInputOptions = {
     orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
 };
+
+// @public (undocumented)
+interface ViewportPreset {
+    // (undocumented)
+    ambient: string;
+    // (undocumented)
+    colorTransfer: string;
+    // (undocumented)
+    diffuse: string;
+    // (undocumented)
+    gradientOpacity: string;
+    // (undocumented)
+    interpolation: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    scalarOpacity: string;
+    // (undocumented)
+    shade: string;
+    // (undocumented)
+    specular: string;
+    // (undocumented)
+    specularPower: string;
+}
 
 // @public (undocumented)
 enum ViewportType {
