@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.31.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.7...@cornerstonejs/tools@0.31.0) (2022-12-08)
+
+
+### Features
+
+* enable having multiple instances of the same tool and add more seg tools ([#327](https://github.com/cornerstonejs/cornerstone3D-beta/issues/327)) ([7ff05c5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7ff05c5519243632d9d9113e3c84cf9e10725193))
+
+
+
+
+
 ## [0.30.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.6...@cornerstonejs/tools@0.30.7) (2022-12-01)
 
 
