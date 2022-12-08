@@ -82,10 +82,6 @@
         "name": "Stack Manipulation Tools",
         "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
       },
-      "stackRotateTools": {
-        "name": "Stack Rotate Tools",
-        "description": "Demonstrates rotate tool on Stack Viewport"
-      },
       "annotationToolModes": {
         "name": "Annotation Tool Modes",
         "description": "Demonstrates the various tool modes for annotation tools (active, passive, enabled, disabled)"
