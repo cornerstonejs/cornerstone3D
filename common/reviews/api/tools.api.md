@@ -432,6 +432,8 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     getToolName(): string;
     // (undocumented)
+    readonly instanceName: string;
+    // (undocumented)
     mode: ToolModes;
     // (undocumented)
     setActiveStrategy(strategyName: string): void;
@@ -554,13 +556,21 @@ type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    invalidateBrushCursor(): void;
+    // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    onSetToolPassive: () => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
 }
 
 // @public (undocumented)
@@ -1202,6 +1212,9 @@ const _default: {
 };
 
 // @public (undocumented)
+function (getter: FloodFillGetter, seed: Types_2.Point2 | Types_2.Point3, options?: FloodFillOptions): FloodFillResult;
+
+// @public (undocumented)
 const _default_2: {
     interpolateAnnotation: typeof interpolateAnnotation;
 };
@@ -1659,6 +1672,23 @@ type FlipDirection = {
 };
 
 // @public (undocumented)
+type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
+
+// @public (undocumented)
+type FloodFillOptions = {
+    onFlood?: (x: any, y: any) => void;
+    onBoundary?: (x: any, y: any) => void;
+    equals?: (a: any, b: any) => boolean;
+    diagonals?: boolean;
+};
+
+// @public (undocumented)
+type FloodFillResult = {
+    flooded: Types_2.Point2[] | Types_2.Point3[];
+    boundaries: Types_2.Point2[] | Types_2.Point3[];
+};
+
+// @public (undocumented)
 class FrameOfReferenceSpecificAnnotationManager {
     constructor(uid?: string);
     // (undocumented)
@@ -1738,6 +1768,12 @@ function getBoundingBoxAroundShape(points: Types_2.Point3[], dimensions?: Types_
 
 // @public (undocumented)
 function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
+
+// @public (undocumented)
+function getBrushSizeForToolGroup(toolGroupId: string): void;
+
+// @public (undocumented)
+function getBrushThresholdForToolGroup(toolGroupId: string): any;
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
@@ -2367,7 +2403,7 @@ type IToolBinding = {
 interface IToolGroup {
     // (undocumented)
     addTool: {
-        (toolName: string, toolConfiguration?: any): void;
+        (toolName: string, toolConfiguration?: any, toolInstanceName?: string): void;
     };
     // (undocumented)
     addViewport: {
@@ -2375,19 +2411,17 @@ interface IToolGroup {
     };
     // (undocumented)
     getActivePrimaryMouseButtonTool: {
-        (): undefined | string;
-    };
-    // (undocumented)
-    getToolConfiguration: {
-        (toolName: string, configurationPath: string): any;
+        (): ToolIdentifierType | undefined;
     };
     // (undocumented)
     getToolInstance: {
-        (toolName: string): any;
+        (toolName: string, toolInstanceName?: string): any;
     };
     // (undocumented)
+    getToolInstanceNames: (toolName: string) => string[];
+    // (undocumented)
     getToolOptions: {
-        (toolName: string): ToolOptionsType;
+        (toolName: string, toolInstanceName: string): ToolOptionsType;
     };
     // (undocumented)
     getViewportIds: () => string[];
@@ -2400,24 +2434,28 @@ interface IToolGroup {
         (renderingEngineId: string, viewportId?: string): void;
     };
     // (undocumented)
+    setActiveStrategy: {
+        (toolName: string, strategyName: string, toolInstanceName?: string): void;
+    };
+    // (undocumented)
     setToolActive: {
-        (toolName: string, toolBindingsOption?: SetToolBindingsType): void;
+        (toolName: string, toolBindingsOption?: SetToolBindingsType, toolInstanceName?: string): void;
     };
     // (undocumented)
     setToolConfiguration: {
-        (toolName: string, configuration: Record<any, any>, overwrite?: boolean): void;
+        (toolName: string, configuration: Record<any, any>, overwrite?: boolean): boolean;
     };
     // (undocumented)
     setToolDisabled: {
-        (toolName: string): void;
+        (toolName: string, toolInstanceName?: string): void;
     };
     // (undocumented)
     setToolEnabled: {
-        (toolName: string): void;
+        (toolName: string, toolInstanceName?: string): void;
     };
     // (undocumented)
     setToolPassive: {
-        (toolName: string): void;
+        (toolName: string, toolInstanceName?: string): void;
     };
     // (undocumented)
     setViewportsCursorByToolName: {
@@ -3012,6 +3050,15 @@ type OrientationVectors = {
 };
 
 // @public (undocumented)
+export class PaintFillTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    static toolName: string;
+}
+
+// @public (undocumented)
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
@@ -3272,6 +3319,7 @@ type PTScaling = {
 // @public (undocumented)
 type PublicToolProps = SharedToolProp & {
     name?: string;
+    instanceName?: string;
 };
 
 // @public
@@ -3797,7 +3845,12 @@ declare namespace segmentation_2 {
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
         rectangleROIThresholdVolumeByRange,
-        triggerSegmentationRender
+        triggerSegmentationRender,
+        default_2 as floodFill,
+        getBrushSizeForToolGroup,
+        setBrushSizeForToolGroup,
+        getBrushThresholdForToolGroup,
+        setBrushThresholdForToolGroup
     }
 }
 
@@ -3938,6 +3991,12 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 
 // @public (undocumented)
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
+
+// @public (undocumented)
+function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number): void;
+
+// @public (undocumented)
+function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
 
 // @public (undocumented)
 function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Color): void;
@@ -4361,6 +4420,12 @@ type ToolGroupSpecificRepresentationState = {
 type ToolHandle = AnnotationHandle | TextBoxHandle;
 
 // @public (undocumented)
+type ToolIdentifierType = {
+    toolName: string;
+    toolInstanceName: string;
+};
+
+// @public (undocumented)
 enum ToolModes {
     // (undocumented)
     Active = "Active",
@@ -4496,6 +4561,7 @@ declare namespace Types {
         SetToolBindingsType,
         ToolOptionsType,
         InteractionTypes,
+        ToolIdentifierType,
         IToolGroup,
         ISynchronizerEventHandler,
         ToolHandle,
@@ -4518,7 +4584,10 @@ declare namespace Types {
         ScrollOptions_2 as ScrollOptions,
         CINETypes,
         BoundsIJK,
-        SVGDrawingHelper
+        SVGDrawingHelper,
+        FloodFillResult,
+        FloodFillGetter,
+        FloodFillOptions
     }
 }
 export { Types }

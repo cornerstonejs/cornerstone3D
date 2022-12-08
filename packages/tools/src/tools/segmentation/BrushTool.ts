@@ -368,18 +368,36 @@ export default class BrushTool extends BaseTool {
    * Add event handlers for the modify event loop, and prevent default event propagation.
    */
   private _activateDraw = (element: HTMLDivElement): void => {
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this._mouseUpCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this._mouseDragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this._mouseUpCallback as EventListener
+    );
   };
 
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.
    */
   private _deactivateDraw = (element: HTMLDivElement): void => {
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this._mouseDragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this._mouseUpCallback as EventListener
+    );
   };
 
   public invalidateBrushCursor() {

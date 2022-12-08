@@ -30,14 +30,11 @@ var webpack = require('webpack');
 var path = require('path');
 module.exports = {
   mode: 'development',
-  devtool: 'eval-source-map',
+  devtool: 'source-map',
   plugins: [
     new ESLintPlugin(),
     new HtmlWebpackPlugin({
-      template: '${root.replace(
-        /\\/g,
-        '/'
-      )}/utils/ExampleRunner/template.html',
+      template: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/template.html',
     }),
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
@@ -53,10 +50,10 @@ module.exports = {
     }),
     // new BundleAnalyzerPlugin()
   ],
-  entry: path.join('${exampleBasePath.replace(
+  entry: path.join('${exampleBasePath.replace(/\\/g, '/')}', '${relPath.replace(
     /\\/g,
     '/'
-  )}', '${relPath.replace(/\\/g, '/')}'),
+  )}'),
   output: {
     path: '${destPath.replace(/\\/g, '/')}',
     filename: '${name}.js',
@@ -87,7 +84,7 @@ module.exports = {
   devServer: {
     hot: true,
     open: false,
-    port: 3000,
+    port: 3001,
     historyApiFallback: true,
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",

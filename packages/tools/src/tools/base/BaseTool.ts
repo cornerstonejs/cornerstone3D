@@ -4,7 +4,7 @@ import deepMerge from '../../utilities/deepMerge';
 import { ToolModes } from '../../enums';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
-interface IBaseTool {
+export interface IBaseTool {
   /** ToolGroup ID the tool instance belongs to */
   toolGroupId: string;
   /** Tool supported interaction types */

@@ -287,7 +287,7 @@ export default class PaintFillTool extends BaseTool {
 
   // Define a getter for the fill routine to access the working label map.
   private generateFloodFillGetter = (
-    dimensions: Type.Point3,
+    dimensions: Types.Point3,
     fixedDimension: number,
     fixedDimensionValue: number,
     getLabelValue: PaintFillToolHelpers['getLabelValue']
