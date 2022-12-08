@@ -42,6 +42,9 @@ function addProvider(provider: (type: string, query: any) => any, priority?: num
 export function addVolumesToViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
 
 // @public (undocumented)
+function applyPreset(actor: VolumeActor, preset: ViewportPreset): void;
+
+// @public (undocumented)
 export abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
@@ -2033,7 +2036,8 @@ declare namespace utilities {
         calculateViewportsSpatialRegistration,
         spatialRegistrationMetadataProvider,
         getViewportImageCornersInWorld,
-        hasNaNValues
+        hasNaNValues,
+        applyPreset
     }
 }
 export { utilities }
