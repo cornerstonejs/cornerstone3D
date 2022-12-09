@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.32.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.31.0...@cornerstonejs/tools@0.32.0) (2022-12-09)
+
+
+### Features
+
+* Add new 3D volume viewport ([#281](https://github.com/cornerstonejs/cornerstone3D-beta/issues/281)) ([57cf7ac](https://github.com/cornerstonejs/cornerstone3D-beta/commit/57cf7ac3bfd83d35d68f54b1f00f03583ed8e998))
+
+
+
+
+
 # [0.31.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.30.7...@cornerstonejs/tools@0.31.0) (2022-12-08)
 
 
