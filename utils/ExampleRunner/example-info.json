@@ -42,6 +42,10 @@
         "name": "Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
       },
+      "volumeViewport3D": {
+        "name": "3D Volume Rendering",
+        "description": "Demonstrates how to 3D render a volume and apply a preset"
+      },
       "volumeEvents": {
         "name": "Volume Viewport Events",
         "description": "Demonstrates the Events that are fired during interaction with a Volume Viewport"

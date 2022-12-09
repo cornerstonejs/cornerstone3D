@@ -45,7 +45,7 @@ export default async function createLabelmapVolumeForViewport(input: {
 
   const { viewport } = enabledElement;
   if (!(viewport instanceof VolumeViewport)) {
-    throw new Error('Segmentation not ready for stackViewport');
+    throw new Error('Segmentation only supports VolumeViewport');
   }
 
   const { uid } = viewport.getDefaultActor();

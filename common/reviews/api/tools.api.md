@@ -4671,6 +4671,30 @@ type ViewportInputOptions = {
     suppressEvents?: boolean;
 };
 
+// @public (undocumented)
+interface ViewportPreset {
+    // (undocumented)
+    ambient: string;
+    // (undocumented)
+    colorTransfer: string;
+    // (undocumented)
+    diffuse: string;
+    // (undocumented)
+    gradientOpacity: string;
+    // (undocumented)
+    interpolation: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    scalarOpacity: string;
+    // (undocumented)
+    shade: string;
+    // (undocumented)
+    specular: string;
+    // (undocumented)
+    specularPower: string;
+}
+
 declare namespace visibility {
     export {
         setAnnotationVisibility,

@@ -1,4 +1,4 @@
-import { VolumeViewport } from '../';
+import BaseVolumeViewport from '../BaseVolumeViewport';
 import type {
   IVolumeInput,
   IRenderingEngine,
@@ -32,9 +32,9 @@ async function setVolumesForViewports(
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
     }
 
-    // if not instance of VolumeViewport, throw
-    if (!(viewport instanceof VolumeViewport)) {
-      throw new Error('setVolumesForViewports only supports VolumeViewport');
+    // if not instance of BaseVolumeViewport, throw
+    if (!(viewport instanceof BaseVolumeViewport)) {
+      throw new Error('setVolumesForViewports only supports VolumeViewport and VolumeViewport3D');
     }
   });
 
