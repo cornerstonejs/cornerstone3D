@@ -765,3 +765,28 @@ it("Reads and writes numbers with NaN and Infinity values of tags with type FD (
         Infinity
     );
 });
+
+it("Tests that reading fails on a DICOM without a meta length tag", () => {
+    const rawFile = fs.readFileSync("test/no-meta-length-test.dcm");
+
+    let arrayBuffer = rawFile.buffer;
+    if (
+        rawFile.byteOffset !== 0 ||
+        rawFile.byteLength !== arrayBuffer.byteLength
+    ) {
+        arrayBuffer = arrayBuffer.slice(
+            rawFile.byteOffset,
+            rawFile.byteOffset + rawFile.byteLength
+        );
+    }
+
+    expect(() => {
+        dcmjs.data.DicomMessage.readFile(arrayBuffer, {
+            ignoreErrors: false,
+            untilTag: "0020000E",
+            includeUntilTagValue: true
+        });
+    }).toThrow(
+        "Invalid DICOM file, meta length tag is malformed or not present."
+    );
+});

@@ -200,8 +200,15 @@ class DicomMessage {
         if (stream.readAsciiString(4) !== "DICM") {
             throw new Error("Invalid DICOM file, expected header is missing");
         }
-        var el = DicomMessage._readTag(stream, useSyntax),
-            metaLength = el.values[0];
+
+        var el = DicomMessage._readTag(stream, useSyntax);
+        if (el.tag.toCleanString() !== "00020000") {
+            throw new Error(
+                "Invalid DICOM file, meta length tag is malformed or not present."
+            );
+        }
+
+        var metaLength = el.values[0];
 
         //read header buffer
         var metaStream = stream.more(metaLength);
