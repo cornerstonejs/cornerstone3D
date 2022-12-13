@@ -70,15 +70,19 @@ function thresholdVolumeByRange(
   let hits, total;
   let range;
 
-  const callbackBaseVolume = ({ value }) => {
+  // this callback function will test voxels in the finer volume and counts
+  // which pass the range test
+  const callbackFinerVolume = ({ value }) => {
     total = total + 1;
     if (value >= range.lower && value <= range.upper) {
       hits = hits + 1;
     }
   };
+
   const callback = ({ index, pointLPS }) => {
     let insert = volumeInfoList.length > 0;
     for (let i = 0; i < volumeInfoList.length; i++) {
+      // if this is the volume were is based the segmentation, test the voxels
       if (i == baseVolumeIdx) {
         const { imageData, referenceValues, lower, upper } = volumeInfoList[i];
         const pointIJK = imageData.worldToIndex(pointLPS);
@@ -90,6 +94,8 @@ function thresholdVolumeByRange(
           break;
         }
       } else {
+        // if it is a finer volume, need to test all its voxels that correspond
+        // to the voxel in base volume
         const { imageData, dimensions, lower, upper, spacing } =
           volumeInfoList[i];
         const pointsToUse = [];
@@ -119,7 +125,7 @@ function thresholdVolumeByRange(
         pointInShapeCallback(
           imageData,
           () => true,
-          callbackBaseVolume,
+          callbackFinerVolume,
           boundsIJK
         );
         // any voxel will do
