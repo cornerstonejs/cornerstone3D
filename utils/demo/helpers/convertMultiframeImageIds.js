@@ -12,20 +12,17 @@ export default function convertMultiframeImageIds(imageIds) {
   const newImageIds = [];
   imageIds.forEach((imageId) => {
     const imageIdFrameless = imageId.slice(0, imageId.indexOf('/frames/') + 8);
-
     const instanceMetaData = metaData.get('MultiframeModule', imageId);
-    if (instanceMetaData && instanceMetaData.NumberOfFrames) {
+    if (
+      instanceMetaData &&
+      instanceMetaData.NumberOfFrames &&
+      instanceMetaData.NumberOfFrames > 1
+    ) {
       const NumberOfFrames = instanceMetaData.NumberOfFrames;
-      if (NumberOfFrames > 1) {
-        for (let i = 0; i < NumberOfFrames; i++) {
-          const newMetadata = metaData.get(
-            'MultiframeModule',
-            imageIdFrameless + (i + 1)
-          );
-          const newImageId = imageIdFrameless + (i + 1);
-          if (newMetadata) newImageIds.push(newImageId);
-        }
-      } else newImageIds.push(imageId);
+      for (let i = 0; i < NumberOfFrames; i++) {
+        const newImageId = imageIdFrameless + (i + 1);
+        newImageIds.push(newImageId);
+      }
     } else newImageIds.push(imageId);
   });
   return newImageIds;
