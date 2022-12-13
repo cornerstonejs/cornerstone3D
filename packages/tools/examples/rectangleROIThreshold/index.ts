@@ -12,6 +12,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addSliderToToolbar,
+  addDropdownToToolbar,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
@@ -112,6 +113,21 @@ const overwrite = true;
 
 let ptLowerThreshold = 0;
 let ptUpperThreshold = 5;
+let coverType;
+
+addDropdownToToolbar({
+  options: {
+    values: ['All voxels', 'Any voxel'],
+    defaultValue: 'Any voxel',
+  },
+  onSelectedValueChange: (selectedValue) => {
+    if (selectedValue === 'All voxels') {
+      coverType = 1;
+    } else if (selectedValue === 'Any voxel') {
+      coverType = 0;
+    }
+  },
+});
 
 addButtonToToolbar({
   title: 'Execute threshold',
@@ -148,6 +164,7 @@ addButtonToToolbar({
       {
         numSlicesToProject,
         overwrite,
+        coverType,
       }
     );
   },

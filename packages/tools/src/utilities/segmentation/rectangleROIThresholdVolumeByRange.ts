@@ -17,6 +17,7 @@ export type ThresholdInformation = {
 export type ThresholdOptions = {
   numSlicesToProject?: number; // number of slices to project before and after current slice
   overwrite: boolean;
+  coverType: number;
 };
 
 export type AnnotationForThresholding = {

@@ -1,12 +1,15 @@
 import type { Types } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 
 import { pointInShapeCallback } from '../../utilities';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { BoundsIJK } from '../../types';
+import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape';
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;
   boundsIJK: BoundsIJK;
+  coverType: number;
 };
 
 export type ThresholdInformation = {
@@ -30,7 +33,7 @@ function thresholdVolumeByRange(
 ): Types.IImageVolume {
   const { scalarData, imageData: segmentationImageData } = segmentationVolume;
 
-  const { overwrite, boundsIJK } = options;
+  const { overwrite, boundsIJK, coverType } = options;
 
   // set the segmentation to all zeros
   if (overwrite) {
@@ -40,30 +43,93 @@ function thresholdVolumeByRange(
   }
 
   const volumeInfoList = [];
+  let baseVolumeIdx = 0;
   for (let i = 0; i < thresholdVolumeInformation.length; i++) {
-    const { imageData } = thresholdVolumeInformation[i].volume;
+    const { imageData, spacing, dimensions } =
+      thresholdVolumeInformation[i].volume;
     const referenceValues = imageData.getPointData().getScalars().getData();
     const lower = thresholdVolumeInformation[i].lower;
     const upper = thresholdVolumeInformation[i].upper;
+    // discover the volume Index the segmentation data is based on
+    if (
+      thresholdVolumeInformation[i].volume.scalarData.length ===
+      scalarData.length
+    )
+      baseVolumeIdx = i;
+
     volumeInfoList.push({
       imageData,
       referenceValues,
       lower,
       upper,
+      spacing,
+      dimensions,
     });
   }
 
+  let hits, total;
+  let range;
+
+  const callbackBaseVolume = ({ value }) => {
+    total = total + 1;
+    if (value >= range.lower && value <= range.upper) {
+      hits = hits + 1;
+    }
+  };
   const callback = ({ index, pointLPS }) => {
     let insert = volumeInfoList.length > 0;
     for (let i = 0; i < volumeInfoList.length; i++) {
-      const { imageData, referenceValues, lower, upper } = volumeInfoList[i];
-      const pointIJK = imageData.worldToIndex(pointLPS);
-      const offset = imageData.computeOffsetIndex(pointIJK);
+      if (i == baseVolumeIdx) {
+        const { imageData, referenceValues, lower, upper } = volumeInfoList[i];
+        const pointIJK = imageData.worldToIndex(pointLPS);
+        const offset = imageData.computeOffsetIndex(pointIJK);
 
-      const value = referenceValues[offset];
-      if (value <= lower || value >= upper) insert = false;
-      if (!insert) {
-        break;
+        const value = referenceValues[offset];
+        if (value <= lower || value >= upper) insert = false;
+        if (!insert) {
+          break;
+        }
+      } else {
+        const { imageData, dimensions, lower, upper, spacing } =
+          volumeInfoList[i];
+        const pointsToUse = [];
+        for (let i = 0; i < 2; i++) {
+          for (let j = 0; j < 2; j++) {
+            for (let k = 0; k < 2; k++) {
+              const point = pointLPS;
+              point[0] = point[0] + (i * 2 - 1) * spacing[0];
+              point[1] = point[1] + (i * 2 - 1) * spacing[1];
+              point[2] = point[2] + (i * 2 - 1) * spacing[2];
+              pointsToUse.push(point);
+            }
+          }
+        }
+
+        const rectangleCornersIJK = pointsToUse.map(
+          (world) =>
+            csUtils.transformWorldToIndex(imageData, world) as Types.Point3
+        );
+        const boundsIJK = getBoundingBoxAroundShape(
+          rectangleCornersIJK,
+          dimensions
+        );
+        total = 0;
+        hits = 0;
+        range = { lower, upper };
+        pointInShapeCallback(
+          imageData,
+          () => true,
+          callbackBaseVolume,
+          boundsIJK
+        );
+        // any voxel will do
+        if (coverType === 0) {
+          insert = hits > 0;
+        } else if (coverType == 1) {
+          // all voxels needed
+          insert = hits === total;
+        }
+        if (!insert) break;
       }
     }
 
