@@ -9,7 +9,7 @@ import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape'
 export type ThresholdRangeOptions = {
   overwrite: boolean;
   boundsIJK: BoundsIJK;
-  coverType: number;
+  coverType?: number;
 };
 
 export type ThresholdInformation = {
