@@ -44,12 +44,12 @@ const { ViewportType } = Enums;
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const volumeId = ptVolumeId;
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
@@ -113,7 +113,7 @@ const overwrite = true;
 
 let ptLowerThreshold = 0;
 let ptUpperThreshold = 5;
-let coverType;
+let coverType = 0;
 
 addDropdownToToolbar({
   options: {

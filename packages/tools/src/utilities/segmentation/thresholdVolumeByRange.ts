@@ -33,7 +33,12 @@ function thresholdVolumeByRange(
 ): Types.IImageVolume {
   const { scalarData, imageData: segmentationImageData } = segmentationVolume;
 
-  const { overwrite, boundsIJK, coverType } = options;
+  const { overwrite, boundsIJK } = options;
+  let coverType = options.coverType;
+
+  if (!coverType) {
+    coverType = 0;
+  }
 
   // set the segmentation to all zeros
   if (overwrite) {
