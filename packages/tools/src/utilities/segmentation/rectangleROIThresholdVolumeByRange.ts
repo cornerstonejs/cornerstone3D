@@ -17,7 +17,7 @@ export type ThresholdInformation = {
 export type ThresholdOptions = {
   numSlicesToProject?: number; // number of slices to project before and after current slice
   overwrite: boolean;
-  coverType: number; // type of the voxel cover. 0 means any voxel in range will segment. 1 means all voxels need to in range to segment
+  coverType?: number; // type of the voxel cover. 0 means any voxel in range will segment. 1 means all voxels need to in range to segment
 };
 
 export type AnnotationForThresholding = {
