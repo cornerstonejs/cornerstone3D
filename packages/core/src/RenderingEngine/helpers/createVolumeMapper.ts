@@ -1,5 +1,5 @@
 import { vtkSharedVolumeMapper } from '../vtkClasses';
-
+import { getConfiguration } from '../../init';
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
  * from which various volume actors can be created.
@@ -16,6 +16,10 @@ export default function createVolumeMapper(
 ): any {
   const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
+  if (getConfiguration().rendering.preferSizeOverAccuracy) {
+    volumeMapper.setPreferSizeOverAccuracy(true);
+  }
+
   volumeMapper.setInputData(imageData);
 
   const spacing = imageData.getSpacing();
@@ -24,10 +28,9 @@ export default function createVolumeMapper(
   const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
 
   // This is to allow for good pixel level image quality.
+  // Todo: why we are setting this to 4000? Is this a good number? it should be configurable
   volumeMapper.setMaximumSamplesPerRay(4000);
-
   volumeMapper.setSampleDistance(sampleDistance);
-
   volumeMapper.setScalarTexture(vtkOpenGLTexture);
 
   return volumeMapper;

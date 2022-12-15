@@ -148,6 +148,14 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
+type Cornerstone3DConfig = {
+    rendering: {
+        preferSizeOverAccuracy: boolean;
+        useCPURendering: boolean;
+    };
+};
+
+// @public (undocumented)
 interface CPUFallbackColormap {
     // (undocumented)
     addColor: (rgba: Point4) => void;
@@ -451,6 +459,9 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public (undocumented)
+const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
+
+// @public (undocumented)
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public (undocumented)
@@ -600,6 +611,9 @@ function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlan
 
 // @public (undocumented)
 function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
+
+// @public (undocumented)
+export function getConfiguration(): Cornerstone3DConfig;
 
 // @public (undocumented)
 export function getEnabledElement(element: HTMLDivElement | undefined): IEnabledElement | undefined;
@@ -1134,7 +1148,7 @@ type ImageVolumeModifiedEventDetail = {
 function indexWithinDimensions(index: Point3, dimensions: Point3): boolean;
 
 // @public (undocumented)
-export function init(defaultConfiguration?: {}): Promise<boolean>;
+export function init(configuration?: {}): Promise<boolean>;
 
 // @public (undocumented)
 enum InterpolationType {
@@ -1737,6 +1751,9 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
+export function setConfiguration(newConfig: Cornerstone3DConfig): void;
+
+// @public (undocumented)
 export class Settings {
     constructor(base?: Settings);
     // (undocumented)
@@ -1931,6 +1948,7 @@ export function triggerEvent(el: EventTarget, type: string, detail?: unknown): b
 
 declare namespace Types {
     export {
+        Cornerstone3DConfig,
         ICamera,
         IStackViewport,
         IVolumeViewport,
@@ -2037,7 +2055,8 @@ declare namespace utilities {
         spatialRegistrationMetadataProvider,
         getViewportImageCornersInWorld,
         hasNaNValues,
-        applyPreset
+        applyPreset,
+        deepMerge
     }
 }
 export { utilities }
