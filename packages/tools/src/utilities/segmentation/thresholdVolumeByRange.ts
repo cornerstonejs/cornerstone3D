@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
 import { pointInShapeCallback } from '../../utilities';
@@ -9,7 +9,7 @@ import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape'
 export type ThresholdRangeOptions = {
   overwrite: boolean;
   boundsIJK: BoundsIJK;
-  coverType?: number;
+  overlapType?: number;
 };
 
 export type ThresholdInformation = {
@@ -20,9 +20,10 @@ export type ThresholdInformation = {
 
 /**
  * It thresholds a segmentation volume based on a set of threshold values with
- * respect to reference volumes.
+ * respect to a list of volumes and respective threshold ranges.
  * @param segmentationVolume - the segmentation volume to be modified
- * @param referenceVolumes - the reference volumes to be used for thresholding
+ * @param thresholdVolumeInformation - array of objects containing volume data
+ * and a range (lower and upper values) to threshold
  * @param options - the options for thresholding
  * @returns segmented volume
  */
@@ -34,10 +35,10 @@ function thresholdVolumeByRange(
   const { scalarData, imageData: segmentationImageData } = segmentationVolume;
 
   const { overwrite, boundsIJK } = options;
-  let coverType = options.coverType;
+  let overlapType = options.overlapType;
 
-  if (!coverType) {
-    coverType = 0;
+  if (!overlapType) {
+    overlapType = 0; // default is any overlap
   }
 
   // set the segmentation to all zeros
@@ -47,20 +48,23 @@ function thresholdVolumeByRange(
     }
   }
 
+  // prepare a list of volume information objects for callback functions
   const volumeInfoList = [];
   let baseVolumeIdx = 0;
   for (let i = 0; i < thresholdVolumeInformation.length; i++) {
     const { imageData, spacing, dimensions } =
       thresholdVolumeInformation[i].volume;
+
+    const volumeSize = thresholdVolumeInformation[i].volume.scalarData.length;
+    // discover the index of the volume the segmentation data is based on
+    if (volumeSize === scalarData.length) {
+      baseVolumeIdx = i;
+    }
+
+    // prepare information used in callback functions
     const referenceValues = imageData.getPointData().getScalars().getData();
     const lower = thresholdVolumeInformation[i].lower;
     const upper = thresholdVolumeInformation[i].upper;
-    // discover the volume Index the segmentation data is based on
-    if (
-      thresholdVolumeInformation[i].volume.scalarData.length ===
-      scalarData.length
-    )
-      baseVolumeIdx = i;
 
     volumeInfoList.push({
       imageData,
@@ -69,78 +73,131 @@ function thresholdVolumeByRange(
       upper,
       spacing,
       dimensions,
+      volumeSize,
     });
   }
 
-  let hits, total;
-  let range;
+  // global variables used in calbackOverlap function
+  let overlaps, total, range;
 
-  // this callback function will test voxels in the finer volume and counts
-  // which pass the range test
-  const callbackFinerVolume = ({ value }) => {
-    total = total + 1;
-    if (value >= range.lower && value <= range.upper) {
-      hits = hits + 1;
+  /**
+   * As we are working with volumes of different dimensions, there will be no
+   * 1 to 1 mapping. So we need to work with the idea of voxel overlaps
+   * (1 to many mappings). We consider all intersections valid, to avoid the
+   * complexity to calculate a minimum voxel intersection percentage. This
+   * function, given a voxel center and spacing, calculates the overlap of the
+   * voxel with another volume and range check the voxels in the overlap. Three
+   * situations can occur: all voxels pass the range check, some voxels pass or
+   * none voxels pass. The overlapType parameter indicates if the user requires
+   * all voxels pass (overlapType = 1) or any voxel pass (overlapType = 0)
+   */
+  const testOverlapRange = (volumeInfo, voxelSpacing, voxelCenter) => {
+    const { imageData, dimensions, lower, upper } = volumeInfo;
+
+    const overlapBounds = getVoxelOverlap(
+      imageData,
+      dimensions,
+      voxelSpacing,
+      voxelCenter
+    );
+
+    // reset global variables and setting the range check
+    total = 0;
+    overlaps = 0;
+    range = { lower, upper };
+
+    let overlapTest = false;
+
+    // check all voxel overlaps
+    pointInShapeCallback(imageData, () => true, callbackOverlap, overlapBounds);
+
+    if (overlapType === 0) {
+      overlapTest = overlaps > 0; // any voxel overlap is accepted
+    } else if (overlapType == 1) {
+      overlapTest = overlaps === total; // require all voxel overlaps
+    }
+    return overlapTest;
+  };
+
+  // range checks a voxel in a volume with same dimension as the segmentation
+  const testRange = (volumeInfo, pointIJK) => {
+    const { imageData, referenceValues, lower, upper } = volumeInfo;
+    const offset = imageData.computeOffsetIndex(pointIJK);
+
+    const value = referenceValues[offset];
+    if (value <= lower || value >= upper) {
+      return false;
+    } else {
+      return true;
     }
   };
 
-  const callback = ({ index, pointLPS }) => {
+  /**
+   * Given the center of a voxel in world coordinates, calculate the voxel
+   * corners in world coords to calculate the voxel overlap in another volume
+   */
+  const getVoxelOverlap = (
+    imageData,
+    dimensions,
+    voxelSpacing,
+    voxelCenter
+  ) => {
+    const voxelCornersWorld = [];
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 2; j++) {
+        for (let k = 0; k < 2; k++) {
+          const point = voxelCenter;
+          point[0] = point[0] + ((i * 2 - 1) * voxelSpacing[0]) / 2;
+          point[1] = point[1] + ((j * 2 - 1) * voxelSpacing[1]) / 2;
+          point[2] = point[2] + ((k * 2 - 1) * voxelSpacing[2]) / 2;
+          voxelCornersWorld.push(point);
+        }
+      }
+    }
+    const voxelCornersIJK = voxelCornersWorld.map(
+      (world) => csUtils.transformWorldToIndex(imageData, world) as Types.Point3
+    );
+    const overlapBounds = getBoundingBoxAroundShape(
+      voxelCornersIJK,
+      dimensions
+    );
+
+    return overlapBounds;
+  };
+
+  /**
+   * This callback function will test all overlaps between a voxel in base
+   * volume (the reference for segmentation volume creation) and voxels in other
+   * volumes.
+   */
+  const callbackOverlap = ({ value }) => {
+    total = total + 1;
+    if (value >= range.lower && value <= range.upper) {
+      overlaps = overlaps + 1;
+    }
+  };
+
+  /**
+   * This callback function will test all overlaps between a voxel in base
+   * volume (the reference for segmentation volume creation) and voxels in other
+   * volumes.
+   */
+  const callback = ({ index, pointIJK, pointLPS }) => {
     let insert = volumeInfoList.length > 0;
     for (let i = 0; i < volumeInfoList.length; i++) {
-      // if this is the volume were is based the segmentation, test the voxels
-      if (i == baseVolumeIdx) {
-        const { imageData, referenceValues, lower, upper } = volumeInfoList[i];
-        const pointIJK = imageData.worldToIndex(pointLPS);
-        const offset = imageData.computeOffsetIndex(pointIJK);
-
-        const value = referenceValues[offset];
-        if (value <= lower || value >= upper) insert = false;
-        if (!insert) {
-          break;
-        }
+      // if volume has the same size as segmentation volume, just range check
+      if (volumeInfoList[i].volumeSize === scalarData.length) {
+        insert = testRange(volumeInfoList[i], pointIJK);
       } else {
-        // if it is a finer volume, need to test all its voxels that correspond
-        // to the voxel in base volume
-        const { imageData, dimensions, lower, upper, spacing } =
-          volumeInfoList[i];
-        const pointsToUse = [];
-        for (let i = 0; i < 2; i++) {
-          for (let j = 0; j < 2; j++) {
-            for (let k = 0; k < 2; k++) {
-              const point = pointLPS;
-              point[0] = point[0] + (i * 2 - 1) * spacing[0];
-              point[1] = point[1] + (i * 2 - 1) * spacing[1];
-              point[2] = point[2] + (i * 2 - 1) * spacing[2];
-              pointsToUse.push(point);
-            }
-          }
-        }
-
-        const rectangleCornersIJK = pointsToUse.map(
-          (world) =>
-            csUtils.transformWorldToIndex(imageData, world) as Types.Point3
+        // if not, need to calculate overlaps
+        insert = testOverlapRange(
+          volumeInfoList[i],
+          volumeInfoList[baseVolumeIdx].spacing,
+          pointLPS
         );
-        const boundsIJK = getBoundingBoxAroundShape(
-          rectangleCornersIJK,
-          dimensions
-        );
-        total = 0;
-        hits = 0;
-        range = { lower, upper };
-        pointInShapeCallback(
-          imageData,
-          () => true,
-          callbackFinerVolume,
-          boundsIJK
-        );
-        // any voxel will do
-        if (coverType === 0) {
-          insert = hits > 0;
-        } else if (coverType == 1) {
-          // all voxels needed
-          insert = hits === total;
-        }
-        if (!insert) break;
+      }
+      if (!insert) {
+        break;
       }
     }
 

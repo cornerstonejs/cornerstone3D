@@ -113,7 +113,7 @@ const overwrite = true;
 
 let ptLowerThreshold = 0;
 let ptUpperThreshold = 5;
-let coverType = 0;
+let overlapType = 0;
 
 addDropdownToToolbar({
   options: {
@@ -122,9 +122,9 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (selectedValue) => {
     if (selectedValue === 'All voxels') {
-      coverType = 1;
+      overlapType = 1;
     } else if (selectedValue === 'Any voxel') {
-      coverType = 0;
+      overlapType = 0;
     }
   },
 });
@@ -164,7 +164,7 @@ addButtonToToolbar({
       {
         numSlicesToProject,
         overwrite,
-        coverType,
+        overlapType,
       }
     );
   },
