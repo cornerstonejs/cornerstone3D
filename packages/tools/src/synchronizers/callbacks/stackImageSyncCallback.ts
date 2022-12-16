@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import { Synchronizer } from '../../store';
 import { jumpToSlice } from '../../utilities';
-import coPlanarViewports from './coPlanarViewports';
+import areViewportsCoplanar from './areViewportsCoplanar ';
 /**
  * Synchronizer callback to synchronize the source viewport image to the
  * target viewports closest image in its stack. There are two scenarios
@@ -66,26 +66,28 @@ export default async function stackImageSyncCallback(
 
   const targetImageIds = tViewport.getImageIds();
 
+  if (!areViewportsCoplanar(sViewport, tViewport)) {
+    return;
+  }
+
   if (frameOfReferenceUID1 === frameOfReferenceUID2) {
     // if frames of references are the same we can use the absolute
     // imagePositionPatient to find the closest image in the target viewport's stack
-    if (coPlanarViewports(sViewport, tViewport)) {
-      const closestImageIdIndex = _getClosestImageIdIndex(
-        sourceImagePositionPatient,
-        targetImageIds
-      );
+    const closestImageIdIndex = _getClosestImageIdIndex(
+      sourceImagePositionPatient,
+      targetImageIds
+    );
 
-      if (
-        closestImageIdIndex.index !== -1 &&
-        tViewport.getCurrentImageIdIndex() !== closestImageIdIndex.index
-      ) {
-        // await tViewport.setImageIdIndex(closestImageIdIndex.index);
-        await jumpToSlice(tViewport.element, {
-          imageIndex: closestImageIdIndex.index,
-        });
+    if (
+      closestImageIdIndex.index !== -1 &&
+      tViewport.getCurrentImageIdIndex() !== closestImageIdIndex.index
+    ) {
+      // await tViewport.setImageIdIndex(closestImageIdIndex.index);
+      await jumpToSlice(tViewport.element, {
+        imageIndex: closestImageIdIndex.index,
+      });
 
-        return;
-      }
+      return;
     }
   } else {
     // if the frame of reference is different we need to use the registrationMetadataProvider
