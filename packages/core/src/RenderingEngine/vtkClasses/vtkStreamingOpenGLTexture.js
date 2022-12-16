@@ -21,7 +21,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     depth,
     numComps,
     dataType,
-    data
+    data,
+    preferSizeOverAccuracy
   ) => {
     model.inputDataType = dataType;
     model.inputNumComps = numComps;
@@ -32,7 +33,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       depth,
       numComps,
       dataType,
-      data
+      data,
+      preferSizeOverAccuracy
     );
   };
 
@@ -48,7 +50,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     if (!updatedFrames.length) {
       return;
     }
-
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
@@ -62,6 +63,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     } else if (data instanceof Int16Array) {
       bytesPerVoxel = 2;
       TypedArrayConstructor = Int16Array;
+    } else if (data instanceof Uint16Array) {
+      bytesPerVoxel = 2;
+      TypedArrayConstructor = Uint16Array;
     } else if (data instanceof Float32Array) {
       bytesPerVoxel = 4;
       TypedArrayConstructor = Float32Array;

@@ -10,6 +10,8 @@ import isEqual from './isEqual';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
+import createUint16SharedArray from './createUInt16SharedArray';
+import createInt16SharedArray from './createInt16SharedArray';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
@@ -34,6 +36,8 @@ import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
 import applyPreset from './applyPreset';
 import deepMerge from './deepMerge';
+import getScalingParameters from './getScalingParameters';
+import getScalarDataType from './getScalarDataType';
 
 // name spaces
 import * as planar from './planar';
@@ -53,6 +57,8 @@ export {
   isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,
+  createUint16SharedArray,
+  createInt16SharedArray,
   windowLevel,
   getClosestImageId,
   getSpacingInNormalDirection,
@@ -78,4 +84,6 @@ export {
   hasNaNValues,
   applyPreset,
   deepMerge,
+  getScalingParameters,
+  getScalarDataType,
 };

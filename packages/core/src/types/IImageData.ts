@@ -15,7 +15,7 @@ interface IImageData {
   /** image origin */
   origin: Point3;
   /** image scalarData which stores the array of pixelData */
-  scalarData: Float32Array;
+  scalarData: Float32Array | Uint16Array | Uint8Array | Int16Array;
   /** vtkImageData object */
   imageData: vtkImageData;
   /** image metadata - currently only modality */

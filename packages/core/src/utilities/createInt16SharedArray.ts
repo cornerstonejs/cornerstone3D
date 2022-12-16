@@ -1,6 +1,6 @@
 import global from '../global';
 /**
- * A helper function that creates a new Float32Array that utilized a shared
+ * A helper function that creates a new Int16 that utilized a shared
  * array buffer. This allows the array to be updated  simultaneously in
  * workers or the main thread. Depending on the system (the CPU, the OS, the Browser)
  * it can take a while until the change is propagated to all contexts.
@@ -16,14 +16,14 @@ import global from '../global';
  * Creating an array for a Volume with known dimensions:
  * ```
  * const dimensions = [512, 512, 25];
- * const scalarData = createUint8SharedArray(dimensions[0] * dimensions[1] * dimensions[2]);
+ * const scalarData = createInt16SharedArray(dimensions[0] * dimensions[1] * dimensions[2]);
  * ```
  *
  * @param length - frame size * number of frames
- * @returns a Uint8Array with an underlying SharedArrayBuffer
+ * @returns a Int8Array with an underlying SharedArrayBuffer
  * @public
  */
-function createUint8SharedArray(length: number): Uint8Array {
+function createInt16SharedArray(length: number): Int16Array {
   if (!window.crossOriginIsolated) {
     throw new Error(
       'Your page is NOT cross-origin isolated, see https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated'
@@ -37,7 +37,7 @@ function createUint8SharedArray(length: number): Uint8Array {
 
   const sharedArrayBuffer = new SharedArrayBuffer(length * 2);
 
-  return new Uint8Array(sharedArrayBuffer);
+  return new Int16Array(sharedArrayBuffer);
 }
 
-export default createUint8SharedArray;
+export default createInt16SharedArray;

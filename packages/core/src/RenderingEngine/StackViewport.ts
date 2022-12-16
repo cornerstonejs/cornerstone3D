@@ -7,6 +7,7 @@ import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { getConfiguration } from '../init';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
@@ -74,7 +75,7 @@ interface ImagePixelModule {
   samplesPerPixel: number;
   highBit: number;
   photometricInterpretation: string;
-  pixelRepresentation: string;
+  pixelRepresentation: number;
   windowWidth: number;
   windowCenter: number;
   modality: string;
@@ -1203,15 +1204,19 @@ class StackViewport extends Viewport implements IStackViewport {
     bitsAllocated,
     numComps,
     numVoxels,
+    isSigned,
   }): void {
     let pixelArray;
     switch (bitsAllocated) {
       case 8:
         pixelArray = new Uint8Array(numVoxels * numComps);
         break;
-
       case 16:
-        pixelArray = new Float32Array(numVoxels * numComps);
+        if (getConfiguration().rendering.hasNorm16TextureSupport) {
+          pixelArray = new Uint16Array(numVoxels * numComps);
+        } else {
+          pixelArray = new Float32Array(numVoxels * numComps);
+        }
 
         break;
       case 24:
@@ -1501,19 +1506,15 @@ class StackViewport extends Viewport implements IStackViewport {
         );
       }
 
-      // Todo: Note that eventually all viewport data is converted into Float32Array,
-      // we use it here for the purpose of scaling for now.
-      const type = 'Float32Array';
-
       const priority = -5;
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
-        targetBuffer: {
-          type,
-          offset: null,
-          length: null,
-        },
+        // targetBuffer: {
+        //   type: getScalarDataType()
+        //   offset: null,
+        //   length: null,
+        // },
         preScale: {
           enabled: true,
         },
@@ -1731,6 +1732,7 @@ class StackViewport extends Viewport implements IStackViewport {
       bitsAllocated,
       numComps,
       numVoxels,
+      isSigned: imagePixelModule.pixelRepresentation === 1,
     });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone

@@ -32,7 +32,7 @@ import {
   isCornerstoneInitialized,
   setUseCPURendering,
   resetUseCPURendering,
-  setConfiguration,
+  setPreferSizeOverAccuracy,
   getConfiguration,
 } from './init';
 
@@ -56,11 +56,15 @@ import {
 export type { Types };
 
 export {
+  // init
   init,
-  getConfiguration,
-  setConfiguration,
-  //
   isCornerstoneInitialized,
+  // configs
+  getConfiguration,
+  setPreferSizeOverAccuracy,
+  getShouldUseCPURendering,
+  setUseCPURendering,
+  resetUseCPURendering,
   // enums
   Enums,
   CONSTANTS,
@@ -103,8 +107,4 @@ export {
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
   imageLoadPoolManager,
-  // CPU Rendering
-  getShouldUseCPURendering,
-  setUseCPURendering,
-  resetUseCPURendering,
 };
