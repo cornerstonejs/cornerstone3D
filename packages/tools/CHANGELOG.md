@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.32.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.32.0...@cornerstonejs/tools@0.32.1) (2022-12-16)
+
+
+### Bug Fixes
+
+* Add coplanar check in stackImageSync callback ([#335](https://github.com/cornerstonejs/cornerstone3D-beta/issues/335)) ([f806177](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f806177d628664150b02e941c3a802b58bdc5293))
+
+
+
+
+
 # [0.32.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.31.0...@cornerstonejs/tools@0.32.0) (2022-12-09)
 
 
