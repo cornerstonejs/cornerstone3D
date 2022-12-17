@@ -51,7 +51,6 @@ import { MouseDragEventType } from '../types/EventTypes';
 import { CONSTANTS } from '@cornerstonejs/core';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
-const { liangBarksyClip } = math.vec2;
 
 // TODO: nested config is weird
 interface ToolConfiguration {
@@ -923,8 +922,8 @@ class CrosshairsTool extends AnnotationTool {
 
       // Clipping lines to be only included in a box (canvas), we don't want
       // the lines goes beyond canvas
-      liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
-      liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
+      math.vec2.liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
+      math.vec2.liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
 
       // Computing rotation handle positions
       const rotHandleOne = vec2.create();
@@ -1017,7 +1016,7 @@ class CrosshairsTool extends AnnotationTool {
       );
       vec2.add(stLinePointTwo, stLinePointTwo, canvasOrthoVectorFromCenter);
 
-      liangBarksyClip(stLinePointOne, stLinePointTwo, canvasBox);
+      math.vec2.liangBarksyClip(stLinePointOne, stLinePointTwo, canvasBox);
 
       const stLinePointThree = vec2.create();
       vec2.add(
@@ -1043,7 +1042,7 @@ class CrosshairsTool extends AnnotationTool {
         canvasOrthoVectorFromCenter
       );
 
-      liangBarksyClip(stLinePointThree, stLinePointFour, canvasBox);
+      math.vec2.liangBarksyClip(stLinePointThree, stLinePointFour, canvasBox);
 
       // points for slab thickness handles
       const stHandleOne = vec2.create();
