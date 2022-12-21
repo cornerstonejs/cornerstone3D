@@ -133,6 +133,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     // Cap to actual frame height:
     blockHeight = Math.min(blockHeight, model.height);
+    blockHeight = 1;
 
     const multiRowBlockLength = rowLength * blockHeight;
     const multiRowBlockLengthInBytes = multiRowBlockLength * bytesPerVoxel;

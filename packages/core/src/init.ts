@@ -43,11 +43,14 @@ function _hasActiveWebGLContext() {
   const gl = _getGLContext();
 
   // Report the result.
-  if (
-    (gl && gl instanceof WebGLRenderingContext) ||
-    gl instanceof WebGL2RenderingContext
-  ) {
-    return true;
+  if (gl && (gl as WebGL2RenderingContext).getExtension) {
+    const ext = (gl as WebGL2RenderingContext).getExtension(
+      'EXT_texture_norm16'
+    );
+
+    if (ext) {
+      return true;
+    }
   }
 
   return false;
@@ -57,7 +60,9 @@ function _hasNorm16TextureSupport() {
   const gl = _getGLContext();
 
   if (gl) {
-    const ext = gl.getExtension('EXT_texture_norm16');
+    const ext = (gl as WebGL2RenderingContext).getExtension(
+      'EXT_texture_norm16'
+    );
 
     if (ext) {
       return true;
