@@ -10,6 +10,7 @@ import decodeJPEGLS from './decoders/decodeJPEGLS.js';
 import decodeJPEG2000 from './decoders/decodeJPEG2000.js';
 import decodeHTJ2K from './decoders/decodeHTJ2K.js';
 import scaleArray from './scaling/scaleArray.js';
+import { getOptions } from '../imageLoader/internal/options.js';
 
 function decodeImageFrame(
   imageFrame,
@@ -140,17 +141,17 @@ function decodeImageFrame(
 
   decodePromise
     .then((imageFrame) => {
-      callbackFn(
-        postProcessDecodedPixels(imageFrame, options, start, decodeConfig)
-      );
+      callbackFn(postProcessDecodedPixels(imageFrame, options, start));
     })
     .catch((err) => {
       throw err;
     });
 }
 
-function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
-  const { use16BitDataType } = decodeConfig;
+function postProcessDecodedPixels(imageFrame, options, start) {
+  const {
+    decodeConfig: { use16BitDataType },
+  } = getOptions();
 
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
