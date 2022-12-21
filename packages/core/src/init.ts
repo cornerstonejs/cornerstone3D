@@ -4,7 +4,8 @@ import { Cornerstone3DConfig } from './types';
 
 let csRenderInitialized = false;
 
-const defaultConfig: Cornerstone3DConfig = {
+const defaultConfig = {
+  detectGPU: {},
   rendering: {
     preferSizeOverAccuracy: true,
     useCPURendering: false,
@@ -14,7 +15,8 @@ const defaultConfig: Cornerstone3DConfig = {
   // ...
 };
 
-let config: Cornerstone3DConfig = {
+let config = {
+  detectGPU: {},
   rendering: {
     preferSizeOverAccuracy: true,
     useCPURendering: false,
@@ -96,6 +98,7 @@ async function init(configuration = {}): Promise<boolean> {
     config.rendering.useCPURendering = true;
   } else {
     const gpuTier = await getGPUTier();
+    config.detectGPU = gpuTier;
     console.log(
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
       gpuTier
@@ -164,7 +167,8 @@ function isCornerstoneInitialized(): boolean {
  */
 function getConfiguration(): Cornerstone3DConfig {
   // return a copy
-  return JSON.parse(JSON.stringify(config));
+  // return JSON.parse(JSON.stringify(config));
+  return config;
 }
 
 /**
@@ -189,4 +193,5 @@ export {
   resetUseCPURendering,
   setPreferSizeOverAccuracy,
   hasNorm16TextureSupport,
+  _hasActiveWebGLContext as hasActiveWebGLContext,
 };
