@@ -151,6 +151,7 @@ export { CONSTANTS }
 type Cornerstone3DConfig = {
     rendering: {
         preferSizeOverAccuracy: boolean;
+        hasNorm16TextureSupport: boolean;
         useCPURendering: boolean;
     };
 };
@@ -439,7 +440,13 @@ function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): P
 function createFloat32SharedArray(length: number): Float32Array;
 
 // @public (undocumented)
+function createInt16SharedArray(length: number): Int16Array;
+
+// @public (undocumented)
 function createLocalVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): ImageVolume;
+
+// @public (undocumented)
+function createUint16SharedArray(length: number): Uint16Array;
 
 // @public (undocumented)
 function createUint8SharedArray(length: number): Uint8Array;
@@ -647,6 +654,12 @@ export function getRenderingEngines(): IRenderingEngine[] | undefined;
 
 // @public (undocumented)
 function getRuntimeId(context?: unknown, separator?: string, max?: number): string;
+
+// @public (undocumented)
+function getScalarDataType(scalingParameters: ScalingParameters, scalarData?: any): string;
+
+// @public (undocumented)
+function getScalingParameters(imageId: string): ScalingParameters;
 
 // @public (undocumented)
 export function getShouldUseCPURendering(): boolean;
@@ -897,7 +910,7 @@ interface IImageData {
         };
     };
     // (undocumented)
-    scalarData: Float32Array;
+    scalarData: Float32Array | Uint16Array | Uint8Array | Int16Array;
     // (undocumented)
     scaling?: Scaling;
     // (undocumented)
@@ -1115,7 +1128,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: Float32Array | Uint8Array;
+    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -1412,7 +1425,7 @@ interface IVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: Float32Array | Uint8Array;
+    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -1751,7 +1764,7 @@ type ScalingParameters = {
 };
 
 // @public (undocumented)
-export function setConfiguration(newConfig: Cornerstone3DConfig): void;
+export function setPreferSizeOverAccuracy(status: boolean): void;
 
 // @public (undocumented)
 export class Settings {
@@ -2032,6 +2045,8 @@ declare namespace utilities {
         isOpposite,
         createFloat32SharedArray,
         createUint8SharedArray,
+        createUint16SharedArray,
+        createInt16SharedArray,
         windowLevel,
         getClosestImageId,
         getSpacingInNormalDirection,
@@ -2056,7 +2071,9 @@ declare namespace utilities {
         getViewportImageCornersInWorld,
         hasNaNValues,
         applyPreset,
-        deepMerge
+        deepMerge,
+        getScalingParameters,
+        getScalarDataType
     }
 }
 export { utilities }
