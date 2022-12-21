@@ -8,7 +8,13 @@ import { inflateRaw } from 'pako/lib/inflate.js';
 
 window.pako = { inflateRaw };
 
-function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
+function processDecodeTask(
+  imageFrame,
+  transferSyntax,
+  pixelData,
+  options,
+  decodeConfig
+) {
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]
@@ -21,6 +27,7 @@ function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
       transferSyntax,
       pixelData,
       options,
+      decodeConfig,
     },
     priority,
     transferList
@@ -32,24 +39,55 @@ function decodeImageFrame(
   transferSyntax,
   pixelData,
   canvas,
-  options = {}
+  options = {},
+  decodeConfig
 ) {
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
       // Implicit VR Little Endian
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.1':
       // Explicit VR Little Endian
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.2':
       // Explicit VR Big Endian (retired)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.1.99':
       // Deflate transfer syntax (deflated by dicomParser)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.5':
       // RLE Lossless
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.50':
       // JPEG Baseline lossy process 1 (8 bit)
 
@@ -62,32 +100,86 @@ function decodeImageFrame(
         return decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas);
       }
 
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.51':
       // JPEG Baseline lossy process 2 & 4 (12 bit)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.57':
       // JPEG Lossless, Nonhierarchical (Processes 14)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.70':
       // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.80':
       // JPEG-LS Lossless Image Compression
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.81':
       // JPEG-LS Lossy (Near-Lossless) Image Compression
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.90':
       // JPEG 2000 Lossless
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.91':
       // JPEG 2000 Lossy
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
 
     case '3.2.840.10008.1.2.4.96':
       // HTJ2K
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
   }
 
   /* Don't know if these work...

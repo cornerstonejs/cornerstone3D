@@ -68,7 +68,9 @@ function handler(data, doneCallback) {
     data.data.imageFrame,
     data.data.transferSyntax,
     pixelData,
-    decodeConfig.decodeTask,
+    // decodeTask are webworker specific, but decodeConfig are the configs
+    // that are passed in from the user. We need to merge them together
+    Object.assign(decodeConfig.decodeTask, data.data.decodeConfig),
     data.data.options,
     finishedCallback
   );

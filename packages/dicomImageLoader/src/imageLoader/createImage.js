@@ -133,15 +133,18 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
       };
     }
   }
+
+  const { decodeConfig } = getOptions();
+
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,
     pixelData,
     canvas,
-    options
+    options,
+    decodeConfig
   );
 
-  const { decodeConfig } = getOptions();
   const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
 
   return new Promise((resolve, reject) => {
