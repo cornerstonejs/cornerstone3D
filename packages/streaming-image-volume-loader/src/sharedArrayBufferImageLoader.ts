@@ -59,7 +59,8 @@ function sharedArrayBufferImageLoader(
             transferSyntax,
             pixelData,
             canvas,
-            options
+            options,
+            { convertFloatPixelDataToInt: false, use16BitDataType: true }
           );
 
           decodePromise.then(() => {

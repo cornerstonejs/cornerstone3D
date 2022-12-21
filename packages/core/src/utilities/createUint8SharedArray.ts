@@ -35,7 +35,7 @@ function createUint8SharedArray(length: number): Uint8Array {
     );
   }
 
-  const sharedArrayBuffer = new SharedArrayBuffer(length * 2);
+  const sharedArrayBuffer = new SharedArrayBuffer(length);
 
   return new Uint8Array(sharedArrayBuffer);
 }

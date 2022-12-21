@@ -35,7 +35,7 @@ function createUint16SharedArray(length: number): Uint16Array {
     );
   }
 
-  const sharedArrayBuffer = new SharedArrayBuffer(length);
+  const sharedArrayBuffer = new SharedArrayBuffer(length * 2);
 
   return new Uint16Array(sharedArrayBuffer);
 }

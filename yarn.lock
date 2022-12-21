@@ -8199,10 +8199,10 @@ core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.3.tgz#a6042d3634c2b27e9328f837b965fac83808db85"
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
-cornerstone-wado-image-loader@^4.5.1:
-  version "4.5.1"
-  resolved "https://registry.npmjs.org/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.5.1.tgz#dc1b353ef3658e65e340da1c26ef919b1a4d14c3"
-  integrity sha512-/+bmzUSeTb5Hm/5STB0fgKHFe6wN7+zNngYSPefPHhkpEo5zVboBv57UvwJBaga8Cobyg7aEzTCxh3OCbyMcSA==
+cornerstone-wado-image-loader@^4.5.2:
+  version "4.5.2"
+  resolved "https://registry.npmjs.org/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.5.2.tgz#a29cf9e8a05f49429054ea7dbd2e8bff5a3b54bb"
+  integrity sha512-rnTK1RrYcpJtf9GOKN8CnzzJHDZyS8wReKt79SrryIXqX7ZNApcKj56RQyFG1r9w8JYgOW08zzBoeUOLI3X50g==
   dependencies:
     "@babel/eslint-parser" "^7.19.1"
     "@cornerstonejs/codec-charls" "^0.1.1"
