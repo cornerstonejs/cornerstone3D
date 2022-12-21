@@ -140,14 +140,18 @@ function decodeImageFrame(
 
   decodePromise
     .then((imageFrame) => {
-      callbackFn(postProcessDecodedPixels(imageFrame, options, start));
+      callbackFn(
+        postProcessDecodedPixels(imageFrame, options, start, decodeConfig)
+      );
     })
     .catch((err) => {
       throw err;
     });
 }
 
-function postProcessDecodedPixels(imageFrame, options, start) {
+function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
+  const { use16BitDataType } = decodeConfig;
+
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
@@ -191,8 +195,11 @@ function postProcessDecodedPixels(imageFrame, options, start) {
       case 'Uint8Array':
         TypedArrayConstructor = Uint8Array;
         break;
-      case 'Uint16Array':
+      case use16BitDataType && 'Uint16Array':
         TypedArrayConstructor = Uint16Array;
+        break;
+      case use16BitDataType && 'Int16Array':
+        TypedArrayConstructor = Int16Array;
         break;
       case 'Float32Array':
         TypedArrayConstructor = Float32Array;

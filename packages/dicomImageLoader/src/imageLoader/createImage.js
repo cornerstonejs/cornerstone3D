@@ -142,7 +142,7 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
   );
 
   const { decodeConfig } = getOptions();
-  const { convertFloatPixelDataToInt } = decodeConfig;
+  const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
 
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line complexity
@@ -173,8 +173,11 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
           case 'Uint8Array':
             TypedArrayConstructor = Uint8Array;
             break;
-          case 'Uint16Array':
+          case use16BitDataType && 'Uint16Array':
             TypedArrayConstructor = Uint16Array;
+            break;
+          case use16BitDataType && 'Int16Array':
+            TypedArrayConstructor = Int16Array;
             break;
           case 'Float32Array':
             TypedArrayConstructor = Float32Array;

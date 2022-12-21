@@ -14,6 +14,7 @@ let options = {
   strict: false,
   decodeConfig: {
     convertFloatPixelDataToInt: true,
+    use16BitDataType: false,
   },
 };
 
