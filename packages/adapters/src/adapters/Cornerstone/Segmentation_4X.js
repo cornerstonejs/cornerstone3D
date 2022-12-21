@@ -752,7 +752,9 @@ function checkSEGsOverlapping(
 
         if (!imageId) {
             console.warn(
-                "Image not present in stack, can't import frame : " + i + "."
+                "Image not present in stack, can't import frame : " +
+                    frameSegment +
+                    "."
             );
             continue;
         }
