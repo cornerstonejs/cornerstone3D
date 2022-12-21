@@ -34,6 +34,8 @@ import {
   resetUseCPURendering,
   setPreferSizeOverAccuracy,
   getConfiguration,
+  hasNorm16TextureSupport,
+  hasActiveWebGLContext,
 } from './init';
 
 // Classes
@@ -58,6 +60,8 @@ export type { Types };
 export {
   // init
   init,
+  hasNorm16TextureSupport,
+  hasActiveWebGLContext,
   isCornerstoneInitialized,
   // configs
   getConfiguration,

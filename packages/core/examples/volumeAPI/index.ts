@@ -5,7 +5,9 @@ import {
   volumeLoader,
   getRenderingEngine,
   utilities,
-  CONSTANTS,
+  hasNorm16TextureSupport,
+  hasActiveWebGLContext,
+  getConfiguration,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -45,7 +47,31 @@ element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
 
+const element1 = document.createElement('p');
+const element2 = document.createElement('p');
+const element3 = document.createElement('p');
+const element4 = document.createElement('p');
+const element5 = document.createElement('p');
+const element6 = document.createElement('p');
+const element7 = document.createElement('p');
+
+// update the element div text to have hasNorm16TextureSupport
+element2.innerText = `hasNorm16TextureSupport: ${hasNorm16TextureSupport()}`;
+element2.style.color = 'blue';
+
+element3.innerText = `isWebGL2Supported: ${hasActiveWebGLContext()}`;
+element3.style.color = 'blue';
+
+content.appendChild(element1);
+content.appendChild(element2);
+content.appendChild(element3);
+content.appendChild(element5);
+content.appendChild(element4);
+content.appendChild(element6);
+content.appendChild(element7);
+
 content.appendChild(element);
+
 // ============================= //
 
 // TODO -> Maybe some of these implementations should be pushed down to some API
@@ -285,6 +311,21 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
     type: 'VOLUME',
   });
+
+  // @ts-ignore
+  const gpuConfig = getConfiguration().detectGPU;
+  const useCPURendering = getConfiguration().rendering.useCPURendering;
+  element4.innerText = `GPU Tier: ${JSON.stringify(gpuConfig)}`;
+  element4.style.color = 'blue';
+
+  element5.innerText = `Use CPU Rendering: ${useCPURendering}`;
+  element5.style.color = 'blue';
+
+  element6.innerText = `platform: ${navigator.platform}`;
+  element6.style.color = 'blue';
+
+  element7.innerText = `appVersion: ${navigator.appVersion}`;
+  element7.style.color = 'blue';
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
