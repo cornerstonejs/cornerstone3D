@@ -68,6 +68,13 @@ type Cornerstone3DConfig = {
         // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
         // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
         preferSizeOverAccuracy: boolean;
+        // Whether the EXT_texture_norm16 extension is supported by the browser.
+        // WebGL 2 report (link: https://webglreport.com/?v=2) can be used to check
+        // if the browser supports this extension.
+        // In case the browser supports this extension, instead of using 32bit float
+        // textures, 16bit float textures will be used to reduce the memory usage where
+        // possible.
+        hasNorm16TextureSupport: boolean;
         useCPURendering: boolean;
     };
 };
@@ -637,7 +644,7 @@ interface IImageData {
             suvbw?: number;
         };
     };
-    scalarData: Float32Array;
+    scalarData: Float32Array | Uint16Array | Uint8Array | Int16Array;
     scaling?: Scaling;
     spacing: Point3;
 }
@@ -961,7 +968,7 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: Float32Array | Uint8Array;
+    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
     scaling?: {
         PET?: {
             // @TODO: Do these values exist?
@@ -1236,7 +1243,7 @@ export class StreamingImageVolume extends ImageVolume {
                 arrayBuffer: ArrayBufferLike;
                 offset: number;
                 length: number;
-                type: any;
+                type: string;
             };
             preScale: {
                 enabled: boolean;
