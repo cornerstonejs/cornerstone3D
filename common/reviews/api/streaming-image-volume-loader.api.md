@@ -1146,12 +1146,6 @@ type ScalingParameters = {
     suvbsa?: number;
 };
 
-// @public (undocumented)
-export function sharedArrayBufferImageLoader(imageId: string, options?: Record<string, any>): {
-    promise: Promise<Record<string, any>>;
-    cancelFn: () => void;
-};
-
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
@@ -1218,6 +1212,7 @@ export class StreamingImageVolume extends ImageVolume {
                 length: number;
                 type: any;
             };
+            skipCreateImage: boolean;
             preScale: {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
