@@ -609,7 +609,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /*
    * Checking if the imageURI is in the volumes that are being
    * rendered by the viewport. imageURI is the imageId without the schema
-   * for instance for the imageId of streaming-wadors:http://..., the http://... is the imageURI.
+   * for instance for the imageId of wadors:http://..., the http://... is the imageURI.
    * Why we don't check the imageId is because the same image can be shown in
    * another viewport (StackViewport) with a different schema
    *

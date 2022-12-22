@@ -251,6 +251,7 @@ export default class StreamingImageVolume extends ImageVolume {
       imageId: string,
       scalingParameters
     ) => {
+      debugger;
       // Check if there is a cached image for the same imageURI (different
       // data loader scheme)
       const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
@@ -420,6 +421,7 @@ export default class StreamingImageVolume extends ImageVolume {
           length,
           type,
         },
+        skipCreateImage: true,
         preScale: {
           enabled: true,
           // we need to pass in the scalingParameters here, since the streaming

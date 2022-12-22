@@ -126,7 +126,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
-    type: 'VOLUME',
   });
 
   // Instantiate a rendering engine

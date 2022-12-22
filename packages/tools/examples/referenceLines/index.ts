@@ -210,7 +210,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7311.5101.250911858840767891342974687368',
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
-    type: 'STACK',
   });
 
   const t2_tse_tra = await createImageIdsAndCacheMetaData({
@@ -219,7 +218,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7311.5101.160028252338004527274326500702',
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
-    type: 'STACK',
   });
 
   const t2_tse_cor = await createImageIdsAndCacheMetaData({
@@ -228,7 +226,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7311.5101.604184452348902957788528403471',
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
-    type: 'STACK',
   });
 
   const adc = await createImageIdsAndCacheMetaData({
@@ -237,7 +234,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7311.5101.339319789559896104041345048780',
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
-    type: 'STACK',
   });
 
   const t2_tse_tra_vol = await createImageIdsAndCacheMetaData({
@@ -246,7 +242,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7311.5101.160028252338004527274326500702',
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
-    type: 'VOLUME',
   });
 
   // Instantiate a rendering engine

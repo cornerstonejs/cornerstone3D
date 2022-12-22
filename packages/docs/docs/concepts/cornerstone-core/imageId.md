@@ -48,4 +48,3 @@ Here are some examples of what an ImageId could look like for different Image Lo
 - http://server/image.jpeg
 - custom://server/uuid
 - wadors://server/{StudyInstanceUID}/{SeriesInstanceUID}/{SOPInstanceUID}
-- streaming-wadors://server/{StudyInstanceUID}/{SeriesInstanceUID}/{SOPInstanceUID}
