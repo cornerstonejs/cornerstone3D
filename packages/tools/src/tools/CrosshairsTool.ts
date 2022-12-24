@@ -31,7 +31,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../cursors/elementCursor';
-import { math } from '../utilities';
+import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import * as lineSegment from '../utilities/math/line';
@@ -922,8 +922,8 @@ class CrosshairsTool extends AnnotationTool {
 
       // Clipping lines to be only included in a box (canvas), we don't want
       // the lines goes beyond canvas
-      math.vec2.liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
-      math.vec2.liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
+      liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
+      liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
 
       // Computing rotation handle positions
       const rotHandleOne = vec2.create();
@@ -1016,7 +1016,7 @@ class CrosshairsTool extends AnnotationTool {
       );
       vec2.add(stLinePointTwo, stLinePointTwo, canvasOrthoVectorFromCenter);
 
-      math.vec2.liangBarksyClip(stLinePointOne, stLinePointTwo, canvasBox);
+      liangBarksyClip(stLinePointOne, stLinePointTwo, canvasBox);
 
       const stLinePointThree = vec2.create();
       vec2.add(
@@ -1042,7 +1042,7 @@ class CrosshairsTool extends AnnotationTool {
         canvasOrthoVectorFromCenter
       );
 
-      math.vec2.liangBarksyClip(stLinePointThree, stLinePointFour, canvasBox);
+      liangBarksyClip(stLinePointThree, stLinePointFour, canvasBox);
 
       // points for slab thickness handles
       const stHandleOne = vec2.create();
