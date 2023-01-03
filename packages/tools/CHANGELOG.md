@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.32.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.32.1...@cornerstonejs/tools@0.32.2) (2023-01-03)
+
+
+### Bug Fixes
+
+* could not access 'index' before initialization ([#337](https://github.com/cornerstonejs/cornerstone3D-beta/issues/337)) ([f4b7ff8](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f4b7ff8a147a2fbebac3ae66d0b24f28c1910387))
+
+
+
+
+
 ## [0.32.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.32.0...@cornerstonejs/tools@0.32.1) (2022-12-16)
 
 
