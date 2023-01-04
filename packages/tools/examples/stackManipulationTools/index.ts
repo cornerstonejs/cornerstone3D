@@ -16,6 +16,7 @@ const {
   WindowLevelTool,
   StackScrollMouseWheelTool,
   ZoomTool,
+  StackRotateTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -62,6 +63,7 @@ async function run() {
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackRotateTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -72,6 +74,7 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackRotateTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
