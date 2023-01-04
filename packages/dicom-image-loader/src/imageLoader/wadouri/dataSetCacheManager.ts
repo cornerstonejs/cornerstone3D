@@ -2,6 +2,9 @@ import { DataSet } from 'dicom-parser';
 import external from '../../externalModules';
 import { xhrRequest } from '../internal/index';
 import { CornerstoneWadoLoaderLoadRequestFunction } from '../../shared/types/load-request-function';
+import dataSetFromPartialContent, {
+  CornerstoneLoaderDataSetWithFetchMore,
+} from './dataset-from-partial-content';
 
 /**
  * This object supports loading of DICOM P10 dataset from a uri and caching it so it can be accessed
@@ -16,7 +19,8 @@ let loadedDataSets: Record<string, { dataSet: DataSet; cacheCount: number }> =
 
 let promises: Record<string, CornerstoneWadoLoaderCachedPromise> = {};
 
-export interface CornerstoneWadoLoaderCachedPromise extends Promise<DataSet> {
+export interface CornerstoneWadoLoaderCachedPromise
+  extends Promise<DataSet | CornerstoneLoaderDataSetWithFetchMore> {
   cacheCount?: number;
 }
 
@@ -31,6 +35,30 @@ function get(uri: string): DataSet {
   }
 
   return loadedDataSets[uri].dataSet;
+}
+
+function update(uri: string, dataSet: DataSet) {
+  const loadedDataSet = loadedDataSets[uri];
+
+  if (!loadedDataSet) {
+    console.error(`No loaded dataSet for uri ${uri}`);
+
+    return;
+  }
+  // Update dataset
+  cacheSizeInBytes -= loadedDataSet.dataSet.byteArray.length;
+  loadedDataSet.dataSet = dataSet;
+  cacheSizeInBytes += dataSet.byteArray.length;
+
+  external.cornerstone.triggerEvent(
+    (external.cornerstone as any).events,
+    'datasetscachechanged',
+    {
+      uri,
+      action: 'updated',
+      cacheInfo: getInfo(),
+    }
+  );
 }
 
 // loads the dicom dataset from the wadouri sp
@@ -65,14 +93,49 @@ function load(
   const promise: CornerstoneWadoLoaderCachedPromise = new Promise(
     (resolve, reject) => {
       loadDICOMPromise
-        .then(function (dicomPart10AsArrayBuffer /* , xhr*/) {
+        .then(async function (dicomPart10AsArrayBuffer /* , xhr*/) {
+          const partialContent = {
+            isPartialContent: false,
+            fileTotalLength: null,
+          };
+
+          // Allow passing extra data with the loader promise so as not to change
+          // the API
+          if (!(dicomPart10AsArrayBuffer instanceof ArrayBuffer)) {
+            if (!dicomPart10AsArrayBuffer.arrayBuffer) {
+              return reject(
+                new Error(
+                  'If not returning ArrayBuffer, must return object with `arrayBuffer` parameter'
+                )
+              );
+            }
+            partialContent.isPartialContent =
+              dicomPart10AsArrayBuffer.flags.isPartialContent;
+            partialContent.fileTotalLength =
+              dicomPart10AsArrayBuffer.flags.fileTotalLength;
+            dicomPart10AsArrayBuffer = dicomPart10AsArrayBuffer.arrayBuffer;
+          }
+
           const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
 
           // Reject the promise if parsing the dicom file fails
-          let dataSet;
+          let dataSet: DataSet | CornerstoneLoaderDataSetWithFetchMore;
 
           try {
-            dataSet = dicomParser.parseDicom(byteArray);
+            if (partialContent.isPartialContent) {
+              // This dataSet object will include a fetchMore function,
+              dataSet = await dataSetFromPartialContent(
+                byteArray,
+                loadRequest,
+                {
+                  uri,
+                  imageId,
+                  fileTotalLength: partialContent.fileTotalLength,
+                }
+              );
+            } else {
+              dataSet = dicomParser.parseDicom(byteArray);
+            }
           } catch (error) {
             return reject(error);
           }
@@ -164,4 +227,5 @@ export default {
   getInfo,
   purge,
   get,
+  update,
 };

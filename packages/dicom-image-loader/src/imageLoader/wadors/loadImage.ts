@@ -47,6 +47,9 @@ export function getTransferSyntaxForContentType(contentType: string): string {
     'image/jll': '1.2.840.10008.1.2.4.70',
     'image/jp2': '1.2.840.10008.1.2.4.90',
     'image/jpx': '1.2.840.10008.1.2.4.92',
+    // Temporary types, until ratified by DICOM committed - TODO
+    'image/jphc': '3.2.840.10008.1.2.4.96',
+    'image/jxl': '1.2.840.10008.1.2.4.140',
   };
 
   if (params['transfer-syntax']) {
@@ -60,6 +63,8 @@ export function getTransferSyntaxForContentType(contentType: string): string {
     return defaultTransferSyntaxByType[contentType];
   } else if (params.type && defaultTransferSyntaxByType[params.type]) {
     return defaultTransferSyntaxByType[params.type];
+  } else if (defaultTransferSyntaxByType[contentType]) {
+    return defaultTransferSyntaxByType[contentType];
   }
 
   return defaultTransferSyntax;
@@ -106,6 +111,7 @@ function loadImage(
             const transferSyntax = getTransferSyntaxForContentType(
               result.contentType
             );
+
             const pixelData = result.imageFrame.pixelData;
             const imagePromise = createImage(
               imageId,

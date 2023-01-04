@@ -1,22 +1,24 @@
 /* eslint-disable complexity */
-import decodeLittleEndian from './decoders/decodeLittleEndian';
 import decodeBigEndian from './decoders/decodeBigEndian';
-import decodeRLE from './decoders/decodeRLE';
 import decodeJPEGBaseline8Bit from './decoders/decodeJPEGBaseline8Bit';
+import decodeLittleEndian from './decoders/decodeLittleEndian';
+import decodeRLE from './decoders/decodeRLE';
 // import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit';
+import { ByteArray } from 'dicom-parser';
+import { CornerstoneWadoLoaderDecodeOptions } from '../imageLoader/internal/options';
+import decodeHTJ2K from './decoders/decodeHTJ2K';
+import decodeJPEG2000 from './decoders/decodeJPEG2000';
 import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit-js';
 import decodeJPEGLossless from './decoders/decodeJPEGLossless';
 import decodeJPEGLS from './decoders/decodeJPEGLS';
-import decodeJPEG2000 from './decoders/decodeJPEG2000';
-import scaleArray from './scaling/scaleArray';
-import { ByteArray } from 'dicom-parser';
 import { CornerstoneWadoImageFrame } from './image-frame';
+import scaleArray from './scaling/scaleArray';
 
 function decodeImageFrame(
   imageFrame: CornerstoneWadoImageFrame,
   transferSyntax: string,
   pixelData: ByteArray,
-  decodeConfig,
+  decodeConfig: CornerstoneWadoLoaderDecodeOptions,
   options,
   callbackFn: (...args: any[]) => void
 ): void {
@@ -32,7 +34,7 @@ function decodeImageFrame(
       decodePromise = decodeLittleEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.1':
-      // Explicit VR Little Endian
+      // Implicit or Explicit VR Little Endian
       decodePromise = decodeLittleEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.2':
@@ -113,6 +115,14 @@ function decodeImageFrame(
       // imageFrame, pixelData, decodeConfig, options
       decodePromise = decodeJPEG2000(pixelData, opts);
       break;
+    case '3.2.840.10008.1.2.4.96':
+      // HTJ2K
+      opts = {
+        ...imageFrame,
+      };
+
+      decodePromise = decodeHTJ2K(pixelData, opts);
+      break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
   }
@@ -136,7 +146,9 @@ function decodeImageFrame(
 
   decodePromise
     .then((imageFrame) => {
-      callbackFn(postProcessDecodedPixels(imageFrame, options, start));
+      callbackFn(
+        postProcessDecodedPixels(imageFrame, options, start, decodeConfig)
+      );
     })
     .catch((err) => {
       throw err;
@@ -146,8 +158,11 @@ function decodeImageFrame(
 function postProcessDecodedPixels(
   imageFrame: CornerstoneWadoImageFrame,
   options,
-  start: number
+  start: number,
+  decodeConfig: CornerstoneWadoLoaderDecodeOptions
 ) {
+  const { use16BitDataType } = decodeConfig || {};
+
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
@@ -191,8 +206,11 @@ function postProcessDecodedPixels(
       case 'Uint8Array':
         TypedArrayConstructor = Uint8Array;
         break;
-      case 'Uint16Array':
+      case use16BitDataType && 'Uint16Array':
         TypedArrayConstructor = Uint16Array;
+        break;
+      case use16BitDataType && 'Int16Array':
+        TypedArrayConstructor = Int16Array;
         break;
       case 'Float32Array':
         TypedArrayConstructor = Float32Array;
