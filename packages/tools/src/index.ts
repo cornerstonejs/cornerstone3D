@@ -52,6 +52,7 @@ import {
   MagnifyTool,
   ReferenceCursors,
   ReferenceLines,
+  PaintFillTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -103,6 +104,7 @@ export {
   synchronizers,
   Synchronizer,
   SynchronizerManager,
+  PaintFillTool,
   Types,
   state,
   // ToolGroups
