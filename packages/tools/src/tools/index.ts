@@ -33,6 +33,7 @@ import SphereScissorsTool from './segmentation/SphereScissorsTool';
 import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool';
 import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool';
 import BrushTool from './segmentation/BrushTool';
+import PaintFillTool from './segmentation/PaintFillTool';
 
 export {
   // ~~ BASE
@@ -71,4 +72,5 @@ export {
   BrushTool,
   MagnifyTool,
   ReferenceLines,
+  PaintFillTool,
 };

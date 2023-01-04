@@ -5,6 +5,7 @@ import { triggerEvent, uuidv4 } from '../utilities';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
+import BaseVolumeViewport from './BaseVolumeViewport';
 import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
@@ -20,6 +21,7 @@ import type {
   NormalizedViewportInput,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
+import VolumeViewport3D from './VolumeViewport3D';
 
 type ViewportDisplayCoords = {
   sxStartDisplayCoords: number;
@@ -380,8 +382,8 @@ class RenderingEngine implements IRenderingEngine {
 
     const isVolumeViewport = (
       viewport: IStackViewport | IVolumeViewport
-    ): viewport is VolumeViewport => {
-      return viewport instanceof VolumeViewport;
+    ): viewport is BaseVolumeViewport => {
+      return viewport instanceof BaseVolumeViewport;
     };
 
     return viewports.filter(isVolumeViewport);
@@ -749,6 +751,8 @@ class RenderingEngine implements IRenderingEngine {
     ) {
       // 4.b Create a volume viewport
       viewport = new VolumeViewport(viewportInput);
+    } else if (type === ViewportType.VOLUME_3D) {
+      viewport = new VolumeViewport3D(viewportInput);
     } else {
       throw new Error(`Viewport Type ${type} is not supported`);
     }

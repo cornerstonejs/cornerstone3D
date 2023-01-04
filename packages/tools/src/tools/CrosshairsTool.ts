@@ -31,7 +31,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../cursors/elementCursor';
-import { math } from '../utilities';
+import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import * as lineSegment from '../utilities/math/line';
@@ -51,7 +51,6 @@ import { MouseDragEventType } from '../types/EventTypes';
 import { CONSTANTS } from '@cornerstonejs/core';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
-const { liangBarksyClip } = math.vec2;
 
 // TODO: nested config is weird
 interface ToolConfiguration {

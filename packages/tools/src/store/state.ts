@@ -1,18 +1,18 @@
 import _cloneDeep from 'lodash.clonedeep';
 
-import { IToolGroup } from '../types';
+import { IToolGroup, IToolClassReference } from '../types';
 import Synchronizer from './SynchronizerManager/Synchronizer';
 import svgNodeCache, { resetSvgNodeCache } from './svgNodeCache';
-import { BaseTool } from '../tools';
-
-interface IToolClassReference {
-  toolClass: new <T extends BaseTool>(config: any) => T;
-}
 
 interface ICornerstoneTools3dState {
   isInteractingWithTool: boolean;
   isMultiPartToolActive: boolean;
-  tools: Record<string, IToolClassReference>;
+  tools: Record<
+    string,
+    {
+      toolClass: IToolClassReference;
+    }
+  >;
   toolGroups: Array<IToolGroup>;
   synchronizers: Array<Synchronizer>;
   svgNodeCache: Record<string, unknown>;

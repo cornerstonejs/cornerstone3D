@@ -32,6 +32,7 @@ import calculateViewportsSpatialRegistration from './calculateViewportsSpatialRe
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
+import applyPreset from './applyPreset';
 
 // name spaces
 import * as planar from './planar';
@@ -74,4 +75,5 @@ export {
   spatialRegistrationMetadataProvider,
   getViewportImageCornersInWorld,
   hasNaNValues,
+  applyPreset,
 };
