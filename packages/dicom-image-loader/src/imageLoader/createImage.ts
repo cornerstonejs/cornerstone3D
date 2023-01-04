@@ -300,6 +300,7 @@ function createImage(
 
           // remove the A from the RGBA of the imageFrame
           imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
+
         }
 
         /** @todo check as any */

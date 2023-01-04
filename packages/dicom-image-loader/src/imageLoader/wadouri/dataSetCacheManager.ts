@@ -6,6 +6,7 @@ import dataSetFromPartialContent, {
   CornerstoneLoaderDataSetWithFetchMore,
 } from './dataset-from-partial-content';
 
+
 /**
  * This object supports loading of DICOM P10 dataset from a uri and caching it so it can be accessed
  * by the caller.  This allows a caller to access the datasets without having to go through cornerstone's
@@ -60,6 +61,7 @@ function update(uri: string, dataSet: DataSet) {
     }
   );
 }
+
 
 // loads the dicom dataset from the wadouri sp
 function load(

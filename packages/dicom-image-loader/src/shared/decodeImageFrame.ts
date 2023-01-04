@@ -14,6 +14,7 @@ import decodeJPEGLS from './decoders/decodeJPEGLS';
 import { CornerstoneWadoImageFrame } from './image-frame';
 import scaleArray from './scaling/scaleArray';
 
+
 function decodeImageFrame(
   imageFrame: CornerstoneWadoImageFrame,
   transferSyntax: string,
@@ -162,6 +163,7 @@ function postProcessDecodedPixels(
   decodeConfig: CornerstoneWadoLoaderDecodeOptions
 ) {
   const { use16BitDataType } = decodeConfig || {};
+
 
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
