@@ -462,6 +462,7 @@ class AngleTool extends AnnotationTool {
       }
 
       this.editData = null;
+      this.angleStartedNotYetCompleted = false;
       return annotation.annotationUID;
     }
   };
