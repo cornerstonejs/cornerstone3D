@@ -1,4 +1,7 @@
-import { CornerstoneWadoWebWorkerTaskOptions } from '../imageLoader/webWorkerManager';
+import {
+  CornerstoneWadoWebWorkerTaskOptions,
+  CornerstoneWadoWorkerTaskTypes,
+} from '../imageLoader/webWorkerManager';
 import calculateMinMax from '../shared/calculateMinMax';
 import decodeImageFrame from '../shared/decodeImageFrame';
 import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000';
@@ -85,7 +88,7 @@ function handler(
 }
 
 export default {
-  taskType: 'decodeTask',
+  taskType: 'decodeTask' as CornerstoneWadoWorkerTaskTypes,
   handler,
   initialize,
 };
