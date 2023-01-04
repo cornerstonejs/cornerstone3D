@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.32.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.32.2...@cornerstonejs/tools@0.32.3) (2023-01-04)
+
+
+### Bug Fixes
+
+* AngleTool not working after cancellation ([#342](https://github.com/cornerstonejs/cornerstone3D-beta/issues/342)) ([a82c0bc](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a82c0bc0e8beb6d47131ad2cd5040b93b02f2de9))
+
+
+
+
+
 ## [0.32.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.32.1...@cornerstonejs/tools@0.32.2) (2023-01-03)
 
 
