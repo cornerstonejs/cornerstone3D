@@ -217,6 +217,12 @@ class PlanarFreehandROITool extends AnnotationTool {
     registerOpenContourEditLoop(this);
     registerOpenContourEndEditLoop(this);
     registerRenderMethods(this);
+
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    );
   }
 
   /**
@@ -595,8 +601,6 @@ class PlanarFreehandROITool extends AnnotationTool {
     const isEditingClosed = this.isEditingClosed;
 
     if (!(isDrawing || isEditingOpen || isEditingClosed)) {
-      const isPreScaled = isViewportPreScaled(viewport, targetId);
-
       // No annotations are currently being modified, so we can just use the
       // render contour method to render all of them
       annotations.forEach((annotation) => {
@@ -617,58 +621,28 @@ class PlanarFreehandROITool extends AnnotationTool {
             stdDev: null,
             areaUnit: null,
           };
+
+          this._calculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
+            enabledElement
+          );
+        } else if (annotation.invalidated) {
+          this._throttledCalculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
+            enabledElement
+          );
         }
 
-        this._calculateCachedStats(
+        this._renderStats(
           annotation,
           viewport,
-          renderingEngine,
-          enabledElement
+          enabledElement,
+          svgDrawingHelper
         );
-
-        const textLines = this._getTextLines(data, targetId, isPreScaled);
-        if (!textLines || textLines.length === 0) return;
-
-        const canvasCoordinates = data.polyline.map((p) =>
-          viewport.worldToCanvas(p)
-        );
-        if (!data.handles.textBox.hasMoved) {
-          const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-          data.handles.textBox.worldPosition =
-            viewport.canvasToWorld(canvasTextBoxCoords);
-        }
-
-        const textBoxPosition = viewport.worldToCanvas(
-          data.handles.textBox.worldPosition
-        );
-
-        const styleSpecifier: AnnotationStyle.StyleSpecifier = {
-          toolGroupId: this.toolGroupId,
-          toolName: this.getToolName(),
-          viewportId: enabledElement.viewport.id,
-        };
-
-        const textBoxUID = '1';
-        const boundingBox = drawLinkedTextBox(
-          svgDrawingHelper,
-          annotation.annotationUID ?? '',
-          textBoxUID,
-          textLines,
-          textBoxPosition,
-          canvasCoordinates,
-          {},
-          this.getLinkedTextBoxStyle(styleSpecifier, annotation)
-        );
-
-        const { x: left, y: top, width, height } = boundingBox;
-
-        data.handles.textBox.worldBoundingBox = {
-          topLeft: viewport.canvasToWorld([left, top]),
-          topRight: viewport.canvasToWorld([left + width, top]),
-          bottomLeft: viewport.canvasToWorld([left, top + height]),
-          bottomRight: viewport.canvasToWorld([left + width, top + height]),
-        };
       });
 
       return renderStatus;
@@ -836,6 +810,55 @@ class PlanarFreehandROITool extends AnnotationTool {
     }
 
     return cachedStats;
+  };
+
+  _renderStats = (annotation, viewport, enabledElement, svgDrawingHelper) => {
+    const data = annotation.data;
+    const targetId = this.getTargetId(viewport);
+    const isPreScaled = isViewportPreScaled(viewport, targetId);
+    const textLines = this._getTextLines(data, targetId, isPreScaled);
+    if (!textLines || textLines.length === 0) return;
+
+    const canvasCoordinates = data.polyline.map((p) =>
+      viewport.worldToCanvas(p)
+    );
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const styleSpecifier: AnnotationStyle.StyleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+    };
+
+    const textBoxUID = '1';
+    const boundingBox = drawLinkedTextBox(
+      svgDrawingHelper,
+      annotation.annotationUID ?? '',
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      this.getLinkedTextBoxStyle(styleSpecifier, annotation)
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
   };
 
   _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
