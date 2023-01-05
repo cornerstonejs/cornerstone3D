@@ -19,7 +19,21 @@ export default function getSliceRange(
   viewPlaneNormal: Point3,
   focalPoint: Point3
 ): ActorSliceRange {
-  const corners = getVolumeActorCorners(volumeActor);
+  // TODO - for i,j,k vectors, use the old logic
+  const imageData = volumeActor.getMapper().getInputData();
+  const [dx, dy, dz] = imageData.getDimensions();
+  const cornersIdx = [
+    [0, 0, 0],
+    [dx - 1, 0, 0],
+    [0, dy - 1, 0],
+    [dx - 1, dy - 1, 0],
+    [0, 0, dz - 1],
+    [dx - 1, 0, dz - 1],
+    [0, dy - 1, dz - 1],
+    [dx - 1, dy - 1, dz - 1],
+  ];
+  const cornersNew = cornersIdx.map((it) => imageData.indexToWorld(it));
+  const corners = cornersNew;
 
   // Get rotation matrix from normal to +X (since bounds is aligned to XYZ)
   const transform = vtkMatrixBuilder
@@ -30,7 +44,6 @@ export default function getSliceRange(
   corners.forEach((pt) => transform.apply(pt));
 
   const transformedFocalPoint = [...focalPoint];
-
   transform.apply(transformedFocalPoint);
 
   const currentSlice = transformedFocalPoint[0];
@@ -47,6 +60,8 @@ export default function getSliceRange(
       minX = x;
     }
   }
+
+  console.log('Slice range', minX, maxX, currentSlice);
 
   return {
     min: minX,
