@@ -107,6 +107,12 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
     const volumeNewImageCleanUpBound = volumeNewImageCleanUp.bind(this);
 
     function volumeNewImageHandler(cameraEvent) {
+      const { viewportId } = cameraEvent.detail;
+
+      if (viewportId !== this.id || this.isDisabled) {
+        return;
+      }
+
       const viewportImageData = this.getImageData();
 
       if (!viewportImageData) {
@@ -745,7 +751,7 @@ class VolumeViewport extends Viewport implements IVolumeViewport {
       metadata: {
         Modality: volume?.metadata?.Modality,
       },
-      scaling: volume.scaling,
+      scaling: volume?.scaling,
       hasPixelSpacing: true,
     };
   }

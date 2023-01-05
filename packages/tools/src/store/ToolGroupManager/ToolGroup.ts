@@ -273,9 +273,12 @@ export default class ToolGroup implements IToolGroup {
     if (this._hasMousePrimaryButtonBinding(toolBindingsOptions) && useCursor) {
       this.setViewportsCursorByToolName(toolName);
     } else {
-      // reset to default cursor
-      const cursor = MouseCursor.getDefinedCursor('default');
-      this._setCursorForViewports(cursor);
+      // reset to default cursor only if there is no other tool with primary binding
+      const activeToolName = this.getActivePrimaryMouseButtonTool();
+      if (!activeToolName && useCursor) {
+        const cursor = MouseCursor.getDefinedCursor('default');
+        this._setCursorForViewports(cursor);
+      }
     }
 
     if (typeof this._toolInstances[toolName].onSetToolActive === 'function') {

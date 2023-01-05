@@ -1,4 +1,5 @@
 import {
+  CONSTANTS,
   getEnabledElement,
   triggerEvent,
   eventTarget,
@@ -50,7 +51,9 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 
 const { pointCanProjectOnLine } = polyline;
+const { EPSILON } = CONSTANTS;
 
+const PARALLEL_THRESHOLD = 1 - EPSILON;
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
  * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal),
@@ -498,13 +501,21 @@ class PlanarFreehandROITool extends AnnotationTool {
     spacingInNormalDirection: number
   ): Annotations {
     const { viewPlaneNormal } = camera;
-    const annotationsWithSameNormal = annotations.filter((td: Annotation) => {
-      const annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
-      return csUtils.isEqual(annotationViewPlaneNormal, viewPlaneNormal);
-    });
+
+    const annotationsWithParallelNormals = annotations.filter(
+      (td: Annotation) => {
+        const annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+
+        const isParallel =
+          Math.abs(vec3.dot(viewPlaneNormal, annotationViewPlaneNormal)) >
+          PARALLEL_THRESHOLD;
+
+        return annotationViewPlaneNormal && isParallel;
+      }
+    );
 
     // No in plane annotations.
-    if (!annotationsWithSameNormal.length) {
+    if (!annotationsWithParallelNormals.length) {
       return [];
     }
 
@@ -516,9 +527,13 @@ class PlanarFreehandROITool extends AnnotationTool {
 
     const annotationsWithinSlice = [];
 
-    for (const annotation of annotationsWithSameNormal) {
+    for (const annotation of annotationsWithParallelNormals) {
       const data = annotation.data;
       const point = data.polyline[0];
+
+      if (!annotation.isVisible) {
+        continue;
+      }
 
       // A = point
       // B = focal point

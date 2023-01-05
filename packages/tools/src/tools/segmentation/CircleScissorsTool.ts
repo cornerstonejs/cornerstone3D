@@ -239,7 +239,6 @@ class CircleScissorsTool extends BaseTool {
       return;
     }
 
-    annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 
     this._deactivateDraw(element);
