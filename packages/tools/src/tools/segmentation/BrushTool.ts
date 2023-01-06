@@ -234,7 +234,7 @@ class BrushTool extends BaseTool {
   }
 
   private _dragCallback = (evt: EventTypes.MouseDragEventType): void => {
-    const eventData = evt.detail;
+=    const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
