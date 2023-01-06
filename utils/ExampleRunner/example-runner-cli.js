@@ -175,6 +175,8 @@ if (configuration.examples) {
       validPath(rootPath),
       validPath(exBasePath)
     );
+
+    // console.log('conf', conf);
     shell.ShellString(conf).to(webpackConfigPath);
     shell.cd(exBasePath);
     shell.exec(`webpack serve --progress --config ${webpackConfigPath}`);

@@ -1,9 +1,9 @@
 const path = require('path');
 
-const csRenderBasePath = path.resolve('../core/src/index');
-const csToolsBasePath = path.resolve('../tools/src/index');
+const csRenderBasePath = path.resolve('packages/core/src/index');
+const csToolsBasePath = path.resolve('packages/tools/src/index');
 const csStreamingBasePath = path.resolve(
-  '../streaming-image-volume-loader/src/index'
+  'packages/streaming-image-volume-loader/src/index'
 );
 
 module.exports = function buildConfig(
