@@ -1,7 +1,24 @@
+// @ts-check
+const { tmpdir } = require('os');
+const { join } = require('path');
 const path = require('path');
 
 process.env.CHROME_BIN = require('puppeteer').executablePath();
 
+/**
+ * Required for packages/dicom-image-loader Manually set a temporary output
+ * directory for webpack so that Karma can serve all the required files for
+ * dicom-image-loader, such as wasm files and web-workers. See
+ * https://github.com/ryanclark/karma-webpack/issues/498
+ */
+const output = {
+  path: join(tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000),
+};
+
+/**
+ *
+ * @param { import("karma").Config } config - karma config
+ */
 module.exports = function (config) {
   config.set({
     reporters: ['junit', 'coverage', 'spec'],
@@ -45,12 +62,12 @@ module.exports = function (config) {
     frameworks: ['jasmine', 'webpack'],
     customHeaders: [
       {
-        match: '.*.html',
+        match: '.*html|js|wasm$',
         name: 'Cross-Origin-Opener-Policy',
         value: 'same-origin',
       },
       {
-        match: '.*.html',
+        match: '.*html|js|wasm$',
         name: 'Cross-Origin-Embedder-Policy',
         value: 'require-corp',
       },
@@ -59,7 +76,36 @@ module.exports = function (config) {
       'packages/streaming-image-volume-loader/test/**/*_test.js',
       'packages/core/test/**/*_test.js',
       'packages/tools/test/**/*_test.js',
+      'packages/dicom-image-loader/test/**/*_test.ts',
+      /**
+       * Required for packages/dicom-image-loader
+       * Serve all the webpack files from the output path so that karma can load
+       * wasm and web workers required for dicom-image-loader
+       */
+      {
+        pattern: `${output.path}/**/*`,
+        watched: false,
+        included: false,
+      },
+      /**
+       * Required for packages/dicom-image-loader
+       * Serve all the testImages for the dicom-image-loader tests
+       */
+      {
+        pattern: 'packages/dicom-image-loader/testImages/*.dcm',
+        watched: false,
+        included: false,
+        served: true,
+        nocache: false,
+      },
     ],
+    /**
+     * Required for packages/dicom-image-loader configure /testImages path as a
+     * proxy for all the dicom-image-loader test images
+     */
+    proxies: {
+      '/testImages/': '/base/packages/dicom-image-loader/testImages',
+    },
     preprocessors: {
       'packages/streaming-image-volume-loader/test/**/*_test.js': ['webpack'],
       'packages/core/test/**/*_test.js': ['webpack'],
@@ -84,7 +130,13 @@ module.exports = function (config) {
         rules: [
           {
             test: /\.(js|jsx|ts|tsx)$/,
-            exclude: /node_modules/,
+            /**
+             * exclude codecs for dicom-image-loader so that
+             * packages/dicom-image-loader/codecs/* are not processed and
+             * imported as is. See
+             * packages/dicom-image-loader/.webpack/webpack-base.js
+             */
+            exclude: /(node_modules)|(codecs)/,
             use: ['babel-loader'],
           },
           {
@@ -95,9 +147,46 @@ module.exports = function (config) {
               },
             ],
           },
+          /**
+           * Start webpack rules for packages/dicom-image-loader
+           * see packages/dicom-image-loader/.webpack/webpack-base.js
+           */
+          {
+            test: /\.wasm/,
+            type: 'asset/resource',
+          },
+          {
+            test: /\.worker\.(mjs|js|ts)$/,
+            use: [
+              {
+                loader: 'worker-loader',
+              },
+            ],
+          },
+          {
+            test: path.join(
+              path.resolve(__dirname, 'packages/dicom-image-loader'),
+              'codecs',
+              'jpeg.js'
+            ),
+            loader: 'exports-loader',
+            options: {
+              type: 'commonjs',
+              exports: 'JpegImage',
+            },
+          },
+          /**
+           * End webpack rules for packages/dicom-image-loader
+           */
           {
             test: /\.ts$/,
-            exclude: [path.resolve(__dirname, 'test')],
+            exclude: [
+              path.resolve(__dirname, 'test'),
+              /**
+               * Exclude dicom-image-loader due to a parsing error that I
+               * suspect is related to wasm modules
+               */ path.resolve(__dirname, 'packages/dicom-image-loader'),
+            ],
             enforce: 'post',
             use: {
               loader: 'istanbul-instrumenter-loader',
@@ -118,7 +207,18 @@ module.exports = function (config) {
           '@cornerstonejs/streaming-image-volume-loader': path.resolve(
             'packages/streaming-image-volume-loader/src/index'
           ),
+          '@cornerstonejs/dicom-image-loader': path.resolve(
+            'packages/dicom-image-loader/src/imageLoader/index'
+          ),
         },
+      },
+      /**
+       * Required for packages/dicom-image-loader
+       * so that the WASM modules are loaded correctly.
+       */
+      experiments: {
+        asyncWebAssembly: true,
+        syncWebAssembly: true,
       },
     },
     webpackMiddleware: {

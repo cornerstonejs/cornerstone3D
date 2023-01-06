@@ -40,6 +40,12 @@ import type {
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
 import ISynchronizerEventHandler from './ISynchronizerEventHandler';
+import {
+  FloodFillGetter,
+  FloodFillOptions,
+  FloodFillResult,
+} from './FloodFillTypes';
+import IToolClassReference from './IToolClassReference';
 
 export type {
   // AnnotationState
@@ -64,6 +70,7 @@ export type {
   InteractionTypes,
   //
   IToolGroup,
+  IToolClassReference,
   ISynchronizerEventHandler,
   ToolHandle,
   AnnotationHandle,
@@ -90,4 +97,8 @@ export type {
   CINETypes,
   BoundsIJK,
   SVGDrawingHelper,
+  // FloodFill
+  FloodFillResult,
+  FloodFillGetter,
+  FloodFillOptions,
 };

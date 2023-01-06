@@ -1,4 +1,7 @@
-import { CornerstoneWadoWebWorkerTaskOptions } from '../imageLoader/webWorkerManager';
+import {
+  CornerstoneWadoWebWorkerTaskOptions,
+  CornerstoneWadoWorkerTaskTypes,
+} from '../imageLoader/webWorkerManager';
 import calculateMinMax from '../shared/calculateMinMax';
 import decodeImageFrame from '../shared/decodeImageFrame';
 import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000';
@@ -78,14 +81,16 @@ function handler(
     data.data.imageFrame,
     data.data.transferSyntax,
     pixelData,
-    decodeConfig.decodeTask,
+    // decodeTask are webworker specific, but decodeConfig are the configs
+    // that are passed in from the user. We need to merge them together
+    Object.assign(decodeConfig.decodeTask, data.data.decodeConfig),
     data.data.options,
     finishedCallback
   );
 }
 
 export default {
-  taskType: 'decodeTask',
+  taskType: 'decodeTask' as CornerstoneWadoWorkerTaskTypes,
   handler,
   initialize,
 };

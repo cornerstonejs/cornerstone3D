@@ -9,6 +9,7 @@ export interface CornerstoneWadoLoaderIImage extends Types.IImage {
   totalTimeInMS?: number;
   data?: DataSet;
   imageFrame?: CornerstoneWadoImageFrame;
+  voiLUTFunction?: string | undefined;
 }
 
 export interface CornerstoneWadoLoaderIImageLoadObject

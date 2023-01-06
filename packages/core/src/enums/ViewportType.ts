@@ -15,6 +15,7 @@ enum ViewportType {
   ORTHOGRAPHIC = 'orthographic',
   /** Perspective Viewport: Not Implemented yet */
   PERSPECTIVE = 'perspective',
+  VOLUME_3D = 'volume3d',
 }
 
 export default ViewportType;

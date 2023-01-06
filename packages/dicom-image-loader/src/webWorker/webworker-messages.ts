@@ -1,5 +1,8 @@
 import { ByteArray } from 'dicom-parser';
-import { CornerstoneWadoLoaderOptions } from '../imageLoader/internal/options';
+import {
+  CornerstoneWadoLoaderDecodeOptions,
+  CornerstoneWadoLoaderOptions,
+} from '../imageLoader/internal/options';
 import {
   CornerstoneWadoWebWorkerOptions,
   CornerstoneWadoWorkerTaskTypes,
@@ -11,6 +14,7 @@ export interface CornerstoneWadoWebWorkerDecodeTaskData {
   transferSyntax: string;
   pixelData: ByteArray;
   options: CornerstoneWadoLoaderOptions;
+  decodeConfig: CornerstoneWadoLoaderDecodeOptions;
 }
 
 export interface CornerstoneWadoWebWorkerDecodeData {

@@ -1,12 +1,13 @@
-import webWorkerManager from './webWorkerManager';
 import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
+import webWorkerManager from './webWorkerManager';
 
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
-import { inflateRaw } from 'pako/lib/inflate';
 import { ByteArray } from 'dicom-parser';
+import { inflateRaw } from 'pako/lib/inflate';
 import { CornerstoneWadoImageFrame } from '../shared/image-frame';
+import { CornerstoneWadoLoaderDecodeOptions } from './internal/options';
 
 /**
  * @todo check any
@@ -17,7 +18,8 @@ function processDecodeTask(
   imageFrame: CornerstoneWadoImageFrame,
   transferSyntax: string,
   pixelData: ByteArray,
-  options
+  options,
+  decodeConfig: CornerstoneWadoLoaderDecodeOptions
 ): Promise<CornerstoneWadoImageFrame> {
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
@@ -31,6 +33,7 @@ function processDecodeTask(
       transferSyntax,
       pixelData,
       options,
+      decodeConfig,
     },
     priority,
     transferList
@@ -42,24 +45,55 @@ function decodeImageFrame(
   transferSyntax: string,
   pixelData: ByteArray,
   canvas: HTMLCanvasElement,
-  options = {}
+  options = {},
+  decodeConfig: CornerstoneWadoLoaderDecodeOptions
 ): Promise<CornerstoneWadoImageFrame> {
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
       // Implicit VR Little Endian
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.1':
       // Explicit VR Little Endian
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.2':
       // Explicit VR Big Endian (retired)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.1.99':
       // Deflate transfer syntax (deflated by dicomParser)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.5':
       // RLE Lossless
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.50':
       // JPEG Baseline lossy process 1 (8 bit)
 
@@ -72,28 +106,85 @@ function decodeImageFrame(
         return decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas);
       }
 
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.51':
       // JPEG Baseline lossy process 2 & 4 (12 bit)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.57':
       // JPEG Lossless, Nonhierarchical (Processes 14)
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.70':
       // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.80':
       // JPEG-LS Lossless Image Compression
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.81':
       // JPEG-LS Lossy (Near-Lossless) Image Compression
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.90':
       // JPEG 2000 Lossless
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '1.2.840.10008.1.2.4.91':
       // JPEG 2000 Lossy
-      return processDecodeTask(imageFrame, transferSyntax, pixelData, options);
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
+    case '3.2.840.10008.1.2.4.96':
+      // HTJ2K
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
   }
 
   /* Don't know if these work...

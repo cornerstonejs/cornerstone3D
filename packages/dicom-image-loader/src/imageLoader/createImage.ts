@@ -154,16 +154,19 @@ function createImage(
       };
     }
   }
+
+  const { decodeConfig } = getOptions();
+
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,
     pixelData,
     canvas,
-    options
+    options,
+    decodeConfig
   );
 
-  const { decodeConfig } = getOptions();
-  const { convertFloatPixelDataToInt } = decodeConfig;
+  const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
 
   return new Promise<CornerstoneWadoLoaderIImage>((resolve, reject) => {
     // eslint-disable-next-line complexity
@@ -194,8 +197,11 @@ function createImage(
           case 'Uint8Array':
             TypedArrayConstructor = Uint8Array;
             break;
-          case 'Uint16Array':
+          case use16BitDataType && 'Uint16Array':
             TypedArrayConstructor = Uint16Array;
+            break;
+          case use16BitDataType && 'Int16Array':
+            TypedArrayConstructor = Int16Array;
             break;
           case 'Float32Array':
             TypedArrayConstructor = Float32Array;
@@ -261,41 +267,40 @@ function createImage(
             imageFrame.imageData = imageData;
             imageFrame.pixelData = imageData.data;
           }
-        } else {
-          if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
-            // If we don't need the RGBA but the decoding is done with RGBA (the case
-            // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
-            // we need to remove the A channel from pixel data
-            const colorBuffer = new Uint8ClampedArray(
-              (imageFrame.pixelData.length / 4) * 3
-            );
+        } else if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
+          // If we don't need the RGBA but the decoding is done with RGBA (the case
+          // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
+          // we need to remove the A channel from pixel data
+          const colorBuffer = new Uint8ClampedArray(
+            (imageFrame.pixelData.length / 4) * 3
+          );
 
-            // remove the A from the RGBA of the imageFrame
-            imageFrame.pixelData = removeAFromRGBA(
-              imageFrame.pixelData,
-              colorBuffer
-            );
-          } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
-            canvas.height = imageFrame.rows;
-            canvas.width = imageFrame.columns;
+          // remove the A from the RGBA of the imageFrame
+          imageFrame.pixelData = removeAFromRGBA(
+            imageFrame.pixelData,
+            colorBuffer
+          );
+        } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          canvas.height = imageFrame.rows;
+          canvas.width = imageFrame.columns;
 
-            const context = canvas.getContext('2d');
+          const context = canvas.getContext('2d');
 
-            const imageData = context.createImageData(
-              imageFrame.columns,
-              imageFrame.rows
-            );
+          const imageData = context.createImageData(
+            imageFrame.columns,
+            imageFrame.rows
+          );
 
-            convertColorSpace(imageFrame, imageData.data, true);
+          convertColorSpace(imageFrame, imageData.data, true);
 
-            /** @todo check as any */
-            const colorBuffer = new (imageData.data as any).constructor(
-              (imageData.data.length / 4) * 3
-            );
+          /** @todo check as any */
+          const colorBuffer = new (imageData.data as any).constructor(
+            (imageData.data.length / 4) * 3
+          );
 
-            // remove the A from the RGBA of the imageFrame
-            imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
-          }
+          // remove the A from the RGBA of the imageFrame
+          imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
+
         }
 
         /** @todo check as any */
@@ -331,6 +336,9 @@ function createImage(
           : undefined,
         windowWidth: voiLutModule.windowWidth
           ? voiLutModule.windowWidth[0]
+          : undefined,
+        voiLUTFunction: voiLutModule.voiLUTFunction
+          ? voiLutModule.voiLUTFunction
           : undefined,
         decodeTimeInMS: imageFrame.decodeTimeInMS,
         floatPixelData: undefined,
