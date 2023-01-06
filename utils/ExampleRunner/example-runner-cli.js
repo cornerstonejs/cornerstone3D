@@ -83,6 +83,7 @@ if (configuration.examples) {
   var exampleCount = 0;
   var closestExampleName = null;
   var closestSimilarity = 100;
+  var filteredExampleCorrectCase = null;
 
   console.log('\n=> Extract examples\n');
   configuration.examples.forEach(function (entry) {
@@ -108,16 +109,19 @@ if (configuration.examples) {
 
         while (['index.ts', 'example'].indexOf(exampleName) !== -1) {
           // make sure the matching of the name is not case sensitive
-          exampleName = fullPath.pop().toLowerCase();
+          exampleName = fullPath.pop();
         }
 
         if (
           !buildExample ||
-          filterExamples.map((i) => i.toLowerCase()).indexOf(exampleName) !== -1
+          filterExamples
+            .map((i) => i.toLowerCase())
+            .indexOf(exampleName.toLowerCase()) !== -1
         ) {
           currentExamples[exampleName] = './' + file;
           exampleCount++;
           console.log('  - Found example: ' + exampleName);
+          filteredExampleCorrectCase = exampleName;
         } else {
           // store the similarity of the example name to the filter name
           // so that we can suggest the user the correct name later
@@ -157,7 +161,7 @@ if (configuration.examples) {
 
   if (buildExample) {
     var exBasePath = null;
-    const exampleName = filterExamples[0];
+    const exampleName = filteredExampleCorrectCase;
     Object.keys(examples).forEach((exampleBasePath) => {
       if (examples[exampleBasePath][exampleName]) {
         exBasePath = exampleBasePath;
@@ -171,7 +175,6 @@ if (configuration.examples) {
       validPath(rootPath),
       validPath(exBasePath)
     );
-    // console.log('buildConfig result', conf);
     shell.ShellString(conf).to(webpackConfigPath);
     shell.cd(exBasePath);
     shell.exec(`webpack serve --progress --config ${webpackConfigPath}`);
