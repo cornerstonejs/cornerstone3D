@@ -420,6 +420,7 @@ export default class StreamingImageVolume extends ImageVolume {
           length,
           type,
         },
+        skipCreateImage: true,
         preScale: {
           enabled: true,
           // we need to pass in the scalingParameters here, since the streaming
@@ -486,52 +487,62 @@ export default class StreamingImageVolume extends ImageVolume {
     });
   }
 
+  /**
+   * This function decides whether or not to scale the image based on the
+   * scalingParameters. If the image is already scaled, we should take that
+   * into account when scaling the image again, so if the rescaleSlope and/or
+   * rescaleIntercept are different from the ones that were used to scale the
+   * image, we should scale the image again according to the new parameters.
+   */
   private _scaleIfNecessary(image, scalingParametersToUse) {
-    // check if keys inside scalingParameters are defined
-    const { rescaleSlope, rescaleIntercept, modality } = scalingParametersToUse;
-    if (
-      typeof rescaleSlope === 'undefined' ||
-      typeof rescaleIntercept === 'undefined' ||
-      typeof modality === 'undefined' ||
-      rescaleSlope === null ||
-      rescaleIntercept === null ||
-      modality === null
-    ) {
+    const imageIsAlreadyScaled = image.preScale?.scaled;
+
+    if (!imageIsAlreadyScaled) {
+      // if not already scaled, just scale the image.
+      // copy so that it doesn't get modified
+      const pixelDataCopy = image.getPixelData().slice(0);
+      const scaledArray = scaleArray(pixelDataCopy, scalingParametersToUse);
+      return scaledArray;
+    }
+
+    // if the image is already scaled,
+    const {
+      rescaleSlope: rescaleSlopeToUse,
+      rescaleIntercept: rescaleInterceptToUse,
+      suvbw: suvbwToUse,
+    } = scalingParametersToUse;
+
+    const {
+      rescaleSlope: rescaleSlopeUsed,
+      rescaleIntercept: rescaleInterceptUsed,
+      suvbw: suvbwUsed,
+    } = image.preScale.scalingParameters;
+
+    const rescaleSlopeIsSame = rescaleSlopeToUse === rescaleSlopeUsed;
+    const rescaleInterceptIsSame =
+      rescaleInterceptToUse === rescaleInterceptUsed;
+    const suvbwIsSame = suvbwToUse === suvbwUsed;
+
+    if (rescaleSlopeIsSame && rescaleInterceptIsSame && suvbwIsSame) {
+      // if the scaling parameters are the same, we don't need to scale the image again
       return image.getPixelData();
     }
 
-    let scalingParameters = scalingParametersToUse;
-
-    // if the image is already scaled, we should take that into account
-    if (image.preScale && image.preScale.scalingParameters) {
-      const { suvbw } = image.preScale.scalingParameters;
-      const { suvbw: suvbwToUse } = scalingParametersToUse;
-
-      // Todo: handle if the intercept or slope are different
-      // check if suvbw is undefined OR null
-      if (
-        typeof suvbw === 'undefined' ||
-        typeof suvbwToUse === 'undefined' ||
-        suvbw === null ||
-        suvbwToUse === null ||
-        suvbw === suvbwToUse
-      ) {
-        // don't modify the pixel data, just return it as is
-        return image.getPixelData();
-      }
-
-      // scale accordingly if they exist and are different
-      scalingParameters = {
-        modality: scalingParametersToUse.modality,
-        rescaleSlope: 1,
-        rescaleIntercept: 0,
-        suvbw: suvbwToUse / suvbw,
-      };
-    }
-
-    // copy so that it doesn't get modified
     const pixelDataCopy = image.getPixelData().slice(0);
-    const scaledArray = scaleArray(pixelDataCopy, scalingParameters);
+    // the general formula for scaling is  scaledPixelValue = suvbw * (pixelValue * rescaleSlope) + rescaleIntercept
+    const newSuvbw = suvbwToUse / suvbwUsed;
+    const newRescaleSlope = rescaleSlopeToUse / rescaleSlopeUsed;
+    const newRescaleIntercept =
+      rescaleInterceptToUse - rescaleInterceptUsed * newRescaleSlope;
+
+    const newScalingParameters = {
+      ...scalingParametersToUse,
+      rescaleSlope: newRescaleSlope,
+      rescaleIntercept: newRescaleIntercept,
+      suvbw: newSuvbw,
+    };
+
+    const scaledArray = scaleArray(pixelDataCopy, newScalingParameters);
     return scaledArray;
   }
 

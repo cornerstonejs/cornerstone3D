@@ -43,7 +43,7 @@ function add(imageId, scalingMetaData) {
 <summary>imageId vs imageURI</summary>
 
 With the addition of `Volumes` in `Cornerstone3D`, and the caching optimizations
-that happen internally between `Volumes` and `Images` ([`streaming-wadors`](../concepts/streaming-image-volume/streaming.md#streaming-wadors-imageloader))
+that happen internally between `Volumes` and `Images` ([`imageLoader`](../concepts/streaming-image-volume/streaming.md#imageloader))
 we should store the imageURI (instead of the `imageId`) inside the provider's cache, since
 the imageURI is unique for each image but can be retrieved with different loading schemes.
 

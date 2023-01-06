@@ -81,7 +81,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7311.5101.119114186762760923175160291330',
     wadoRsRoot: 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/rs',
-    type: 'VOLUME',
   });
 
   // create toolGroup

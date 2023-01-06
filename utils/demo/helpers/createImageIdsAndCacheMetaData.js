@@ -28,7 +28,6 @@ export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
   wadoRsRoot,
-  type,
 }) {
   const SOP_INSTANCE_UID = '00080018';
   const SERIES_INSTANCE_UID = '0020000E';
@@ -47,8 +46,7 @@ export default async function createImageIdsAndCacheMetaData({
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
-    const prefix =
-      type.toLowerCase() === VOLUME ? 'streaming-wadors:' : 'wadors:';
+    const prefix = 'wadors:';
 
     const imageId =
       prefix +

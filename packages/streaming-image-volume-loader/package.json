@@ -2,9 +2,9 @@
   "name": "@cornerstonejs/streaming-image-volume-loader",
   "version": "0.7.0",
   "description": "",
-  "main": "dist/umd/index.js",
+  "main": "src/index.ts",
   "types": "dist/esm/index.d.ts",
-  "module": "dist/esm/index.js",
+  "module": "src/index.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "files": [
     "dist/"
@@ -26,14 +26,14 @@
   },
   "dependencies": {
     "@cornerstonejs/core": "^0.24.0",
-    "cornerstone-wado-image-loader": "^4.2.1"
+    "cornerstone-wado-image-loader": "^4.6.0"
   },
   "peerDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2"
   },
   "devDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2",
-    "cornerstone-wado-image-loader": "^4.2.1"
+    "cornerstone-wado-image-loader": "^4.6.0"
   },
   "contributors": [
     {
