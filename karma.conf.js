@@ -110,6 +110,7 @@ module.exports = function (config) {
       'packages/streaming-image-volume-loader/test/**/*_test.js': ['webpack'],
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
+      'packages/dicom-image-loader/test/**/*_test.js': ['webpack'],
     },
     coverageIstanbulReporter: {
       reports: ['html', 'text-summary', 'lcovonly'],
