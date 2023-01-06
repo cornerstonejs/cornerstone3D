@@ -2,6 +2,12 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import type { VolumeActor, Point3, ActorSliceRange } from '../types';
 
+const isOne = (v) => Math.abs(v) > 0.99 && Math.abs(v) < 1.01;
+const isUnit = (v, off) =>
+  isOne(v[off]) || isOne(v[off + 1]) || isOne(v[off + 2]);
+
+const isIJK = (v) => isUnit(v, 0) && isUnit(v, 3) && isUnit(v, 6);
+
 /**
  * Given a `vtkVolumeActor`, and a normal direction,
  * calculate the range of slices in the focal normal direction that encapsulate
@@ -21,20 +27,25 @@ export default function getSliceRange(
 ): ActorSliceRange {
   // TODO - for i,j,k vectors, use the old logic
   const imageData = volumeActor.getMapper().getInputData();
-  const [dx, dy, dz] = imageData.getDimensions();
-  const cornersIdx = [
-    [0, 0, 0],
-    [dx - 1, 0, 0],
-    [0, dy - 1, 0],
-    [dx - 1, dy - 1, 0],
-    [0, 0, dz - 1],
-    [dx - 1, 0, dz - 1],
-    [0, dy - 1, dz - 1],
-    [dx - 1, dy - 1, dz - 1],
-  ];
-  const cornersNew = cornersIdx.map((it) => imageData.indexToWorld(it));
-  const corners = cornersNew;
+  let corners;
+  const direction = imageData.getDirection();
 
+  if (isIJK(direction)) {
+    corners = getVolumeActorCorners(volumeActor);
+  } else {
+    const [dx, dy, dz] = imageData.getDimensions();
+    const cornersIdx = [
+      [0, 0, 0],
+      [dx - 1, 0, 0],
+      [0, dy - 1, 0],
+      [dx - 1, dy - 1, 0],
+      [0, 0, dz - 1],
+      [dx - 1, 0, dz - 1],
+      [0, dy - 1, dz - 1],
+      [dx - 1, dy - 1, dz - 1],
+    ];
+    corners = cornersIdx.map((it) => imageData.indexToWorld(it));
+  }
   // Get rotation matrix from normal to +X (since bounds is aligned to XYZ)
   const transform = vtkMatrixBuilder
     .buildFromDegree()
