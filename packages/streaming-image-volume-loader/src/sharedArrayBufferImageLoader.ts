@@ -5,6 +5,29 @@ import {
   getImageFrame,
   external,
 } from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js';
+import { parseDicom } from 'dicom-parser';
+
+import { wadouri } from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js';
+const { getEncapsulatedImageFrame, getUncompressedImageFrame } = wadouri;
+
+/**
+ * This function is copied directly from cornerstoneWADOImageLoader wadouri
+ * loader. It is not exported from that package so can't import it directly.
+ */
+function getPixelDataWadoURI(dataSet, frameIndex = 0) {
+  const pixelDataElement =
+    dataSet.elements.x7fe00010 || dataSet.elements.x7fe00008;
+
+  if (!pixelDataElement) {
+    return null;
+  }
+
+  if (pixelDataElement.encapsulatedPixelData) {
+    return getEncapsulatedImageFrame(dataSet, frameIndex);
+  }
+
+  return getUncompressedImageFrame(dataSet, frameIndex);
+}
 
 function getImageRetrievalPool() {
   return external.cornerstone.imageRetrievalPoolManager;
@@ -37,38 +60,78 @@ function sharedArrayBufferImageLoader(
     // TODO: load bulk data items that we might need
     const mediaType = 'multipart/related; type=application/octet-stream'; // 'image/dicom+jp2';
 
-    // get the pixel data from the server
-    function sendXHR(imageURI, imageId, mediaType) {
-      return getPixelData(imageURI, imageId, mediaType)
-        .then((result) => {
-          const transferSyntax = getTransferSyntaxForContentType(
-            result.contentType
-          );
+    let sendXHR: (
+      imageURI: string,
+      imageId: string,
+      mediaType?: string
+    ) => Promise<void>;
 
-          const pixelData = result.imageFrame.pixelData;
+    /**
+     * If options.wadouri is true, then we directly fetch the wadoURI object,
+     * parse, and decode.
+     */
+    if (options.wadouri) {
+      sendXHR = (imageURI, imageId) => {
+        return fetch(imageURI)
+          .then(async (response) => {
+            if (!response.ok) {
+              reject(response.status);
+            }
+            let arrayBuffer = await response.arrayBuffer();
+            let byteArray = new Uint8Array(arrayBuffer);
+            let dataSet = parseDicom(byteArray);
 
-          if (!pixelData || !pixelData.length) {
-            reject(new Error('The file does not contain image data.'));
-            return;
-          }
+            const canvas = document.createElement('canvas');
+            const imageFrame = getImageFrame(imageId);
+            const decodePromise = decodeImageFrame(
+              imageFrame,
+              dataSet.string('x00020010'),
+              getPixelDataWadoURI(dataSet),
+              canvas,
+              options
+            );
 
-          const canvas = document.createElement('canvas');
-          const imageFrame = getImageFrame(imageId);
-          const decodePromise = decodeImageFrame(
-            imageFrame,
-            transferSyntax,
-            pixelData,
-            canvas,
-            options
-          );
+            decodePromise.then(() => {
+              resolve(undefined);
+            }, reject);
+          })
+          .catch((err) => {
+            reject(err);
+          });
+      };
+    } else {
+      sendXHR = (imageURI, imageId, mediaType) => {
+        return getPixelData(imageURI, imageId, mediaType)
+          .then((result) => {
+            const transferSyntax = getTransferSyntaxForContentType(
+              result.contentType
+            );
 
-          decodePromise.then(() => {
-            resolve(undefined);
-          }, reject);
-        })
-        .catch((error) => {
-          reject(error);
-        });
+            const pixelData = result.imageFrame.pixelData;
+
+            if (!pixelData || !pixelData.length) {
+              reject(new Error('The file does not contain image data.'));
+              return;
+            }
+
+            const canvas = document.createElement('canvas');
+            const imageFrame = getImageFrame(imageId);
+            const decodePromise = decodeImageFrame(
+              imageFrame,
+              transferSyntax,
+              pixelData,
+              canvas,
+              options
+            );
+
+            decodePromise.then(() => {
+              resolve(undefined);
+            }, reject);
+          })
+          .catch((error) => {
+            reject(error);
+          });
+      };
     }
 
     // TODO: These probably need to be pulled from somewhere?
