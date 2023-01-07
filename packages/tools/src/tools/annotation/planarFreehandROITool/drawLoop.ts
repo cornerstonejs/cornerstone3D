@@ -29,9 +29,7 @@ const {
  * Activates the contour drawing event loop.
  */
 function activateDraw(
-  evt:
-    | EventTypes.MouseDownActivateEventType
-    | EventTypes.TouchStartActivateEventType,
+  evt: EventTypes.InteractionEventType,
   annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
 ): void {
@@ -92,12 +90,7 @@ function deactivateDraw(element: HTMLDivElement): void {
  * Adds points to a set of preview canvas points of the contour being created.
  * Checks if crossing of lines means early completion and editing needs to be started.
  */
-function mouseDragDrawCallback(
-  evt:
-    | EventTypes.MouseDragEventType
-    | EventTypes.MouseMoveEventType
-    | EventTypes.TouchDragEventType
-): void {
+function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
   const worldPos = currentPoints.world;
@@ -150,13 +143,7 @@ function mouseDragDrawCallback(
  * If the `allowOpenContours` configuration option is `false`, always creates a
  * closed contour.
  */
-function mouseUpDrawCallback(
-  evt:
-    | EventTypes.MouseUpEventType
-    | EventTypes.MouseClickEventType
-    | EventTypes.TouchEndEventType
-    | EventTypes.TouchTapEventType
-): void {
+function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
   const { allowOpenContours } = this.configuration;
   const { canvasPoints } = this.drawData;
   const firstPoint = canvasPoints[0];
@@ -316,7 +303,7 @@ function completeDrawOpenContour(element: HTMLDivElement): boolean {
  * index of the point just before the lines cross.
  */
 function findCrossingIndexDuringCreate(
-  evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
+  evt: EventTypes.InteractionEventType
 ): number | undefined {
   // Note as we super sample the added points, we need to check the whole last mouse move, not the points
   const eventDetail = evt.detail;
@@ -348,10 +335,7 @@ function findCrossingIndexDuringCreate(
  * since this occurs during a mouse drag.
  */
 function applyCreateOnCross(
-  evt:
-    | EventTypes.MouseDragEventType
-    | EventTypes.MouseMoveEventType
-    | EventTypes.TouchDragEventType,
+  evt: EventTypes.InteractionEventType,
   crossingIndex: number
 ): void {
   const eventDetail = evt.detail;
