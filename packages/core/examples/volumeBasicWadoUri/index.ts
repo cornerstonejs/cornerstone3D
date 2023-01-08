@@ -10,9 +10,6 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
-import { parseDicom } from 'dicom-parser';
-import { addInstance } from './metadata-provider';
-import { sharedArrayBufferImageLoader } from '@cornerstonejs/streaming-image-volume-loader';
 import instanceUIDs from './instanceUIDs.js';
 
 // This is for debugging purposes
@@ -44,13 +41,6 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  /**
-   * Register the image loader with the wadouri option set to true
-   */
-  imageLoader.registerImageLoader('streaming-wadouri', (imageId, options) => {
-    return sharedArrayBufferImageLoader(imageId, { wadouri: true, ...options });
-  });
-
   const seriesUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561';
   const studyUID =
@@ -58,25 +48,26 @@ async function run() {
   const wadoURIRoot = `https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/wado?requestType=WADO&studyUID=${studyUID}&seriesUID=${seriesUID}&contentType=application%2Fdicom`;
 
   const imageIds = instanceUIDs.map((uid) => {
-    return `streaming-wadouri:${wadoURIRoot}&objectUID=${uid}`;
+    return `wadouri:${wadoURIRoot}&objectUID=${uid}`;
   });
 
   /**
-   * Preload first and middle image metadata as these are the images the current
-   * streaming image loader explicitly requests metadata from. I am not sure how
-   * to appropriately cache these datasets, so that they aren't re-requested by
-   * the volume loader.
+   * Preload first, middle, and last image metadata as these are the images the
+   * current streaming image loader may explicitly request metadata from. The
+   * last image metadata would only be specifically requested if the imageId
+   * array order is reversed in the `sortImageIdsAndGetSpacing.ts` file.
    */
   const middleImageIndex = Math.floor(imageIds.length / 2);
-  const indexesToPrefetch = [0, middleImageIndex];
+  const indexesToPrefetch = [0, middleImageIndex, imageIds.length - 1];
   for (let i of indexesToPrefetch) {
-    const uri = imageIds[i].slice(imageIds[i].indexOf(':') + 1);
-    const imageArrayBuffer = await fetch(uri).then((response) =>
-      response.arrayBuffer()
+    await imageLoader.loadImage(imageIds[i], { skipCreateImage: true }).then(
+      () => {
+        console.log(`image prefetched ${i}`);
+      },
+      (error) => {
+        console.error(error);
+      }
     );
-    const dataSet = parseDicom(new Uint8Array(imageArrayBuffer));
-
-    addInstance(imageIds[i], dataSet);
   }
 
   // Instantiate a rendering engine

@@ -1,19 +1,5 @@
 import * as cornerstone from '@cornerstonejs/core';
-import * as cornerstoneWADOImageLoaderModule from 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js';
-const cornerstoneWADOImageLoader = cornerstoneWADOImageLoaderModule.default;
-
-/**
- * Define a custom metadata provider for wadoURI, which in reality just caches
- * the entire parsed DICOM P10 buffers for the prefetched images, which can then
- * be used to extrapolate metadata for an entire volume.
- */
-
-const metaDataCache = {};
-
-export function addInstance(imageId, dataSet) {
-  console.log(`Adding instance with imageId: ${imageId}`);
-  metaDataCache[imageId] = dataSet;
-}
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
 function metadataProvider(type, imageId, cacheCheck = undefined) {
   const { parseImageId, dataSetCacheManager } =
@@ -26,28 +12,25 @@ function metadataProvider(type, imageId, cacheCheck = undefined) {
   }
 
   if (!dataSet) {
-    dataSet = metaDataCache[imageId];
-    if (!dataSet) {
-      // If image metadata not found, and this request isn't asking for instance
-      // specific metadata, return metadata from the middle (or 2nd) prefetched
-      // metadata set.
-      const cachedImageIds = Object.keys(metaDataCache);
-      const middleImageId =
-        Object.keys(metaDataCache)[Math.floor(cachedImageIds.length / 2)];
-      if (
-        ![
-          'generalImageModule',
-          'cineModule',
-          'sortableAttributes',
-          'imagePlaneModule',
-        ].includes(type) &&
-        metaDataCache[middleImageId]
-      ) {
-        dataSet = metaDataCache[middleImageId];
-      } else {
-        console.warn(`Dataset for imageId ${imageId} not available`);
-        return;
-      }
+    // If image metadata not found, and this request isn't asking for instance
+    // specific metadata, return metadata from the middle (or 2nd) prefetched
+    // metadata set.
+    const cachedImageIds = Object.keys(metaDataCache);
+    const middleImageId =
+      Object.keys(metaDataCache)[Math.floor(cachedImageIds.length / 2)];
+    if (
+      ![
+        'generalImageModule',
+        'cineModule',
+        'sortableAttributes',
+        'imagePlaneModule',
+      ].includes(type) &&
+      metaDataCache[middleImageId]
+    ) {
+      dataSet = metaDataCache[middleImageId];
+    } else {
+      console.warn(`Dataset for imageId ${imageId} not available`);
+      return;
     }
   }
 

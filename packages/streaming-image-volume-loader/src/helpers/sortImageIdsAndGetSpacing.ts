@@ -41,8 +41,22 @@ export default function sortImageIdsAndGetSpacing(
     referenceImagePositionPatient[2]
   );
 
-  let sortedImageIds;
-  let zSpacing;
+  let sortedImageIds: string[];
+  let zSpacing: number;
+
+  function getDistance(imageId: string) {
+    const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
+
+    const positionVector = vec3.create();
+
+    vec3.sub(
+      positionVector,
+      referenceImagePositionPatient,
+      imagePositionPatient
+    );
+
+    return vec3.dot(positionVector, scanAxisNormal);
+  }
 
   /**
    * If we have all image metadata, then sort by image position in 3D space, and
@@ -52,20 +66,7 @@ export default function sortImageIdsAndGetSpacing(
    */
   if (haveAllMetadata) {
     const distanceImagePairs = imageIds.map((imageId) => {
-      const { imagePositionPatient } = metaData.get(
-        'imagePlaneModule',
-        imageId
-      );
-
-      const positionVector = vec3.create();
-
-      vec3.sub(
-        positionVector,
-        referenceImagePositionPatient,
-        imagePositionPatient
-      );
-
-      const distance = vec3.dot(positionVector, scanAxisNormal);
+      const distance = getDistance(imageId);
 
       return {
         distance,
@@ -88,14 +89,23 @@ export default function sortImageIdsAndGetSpacing(
       ) /
       (numImages - 1);
   } else {
-    // Assume initial imageId array order is pre-sorted
+    // Assume initial imageId array order is pre-sorted, but check orientation.
+    const prefetchedImageIds = [
+      imageIds[0],
+      imageIds[Math.floor(imageIds.length / 2)],
+    ];
     sortedImageIds = imageIds;
+    const firstImageDistance = getDistance(prefetchedImageIds[0]);
+    const middleImageDistance = getDistance(prefetchedImageIds[1]);
+    if (firstImageDistance - middleImageDistance < 0) {
+      sortedImageIds.reverse();
+    }
 
     // Calculate average spacing between the first and middle prefetched images,
     // otherwise fall back to DICOM `spacingBetweenSlices`
     const metadataForMiddleImage = metaData.get(
       'imagePlaneModule',
-      imageIds[Math.floor(imageIds.length / 2)]
+      prefetchedImageIds[1]
     );
     if (metadataForMiddleImage) {
       const positionVector = vec3.create();
@@ -112,15 +122,11 @@ export default function sortImageIdsAndGetSpacing(
       zSpacing =
         Math.abs(distanceBetweenFirstAndMiddleImages) /
         Math.floor(imageIds.length / 2);
-      console.log('Calculated zspacing:', zSpacing);
-      console.log(
-        'DICOM spacingBetweenSlices:',
-        metaData.get('imagePlaneModule', imageIds[0]).spacingBetweenSlices
       );
     } else {
       ({ spacingBetweenSlices: zSpacing } = metaData.get(
         'imagePlaneModule',
-        imageIds[0]
+        prefetchedImageIds[0]
       ));
     }
   }
