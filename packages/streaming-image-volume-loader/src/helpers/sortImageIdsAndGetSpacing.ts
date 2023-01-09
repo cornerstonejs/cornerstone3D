@@ -122,7 +122,6 @@ export default function sortImageIdsAndGetSpacing(
       zSpacing =
         Math.abs(distanceBetweenFirstAndMiddleImages) /
         Math.floor(imageIds.length / 2);
-      );
     } else {
       ({ spacingBetweenSlices: zSpacing } = metaData.get(
         'imagePlaneModule',
