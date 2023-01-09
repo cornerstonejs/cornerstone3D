@@ -1,3 +1,4 @@
+import type { ViewportInput } from '../types/IViewport';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import { RENDERING_DEFAULTS } from '../constants';
 
@@ -9,6 +10,18 @@ import { RENDERING_DEFAULTS } from '../constants';
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport3D extends BaseVolumeViewport {
+  constructor(props: ViewportInput) {
+    super(props);
+
+    const { parallelProjection } = this.options;
+
+    const activeCamera = this.getVtkActiveCamera();
+
+    if (parallelProjection !== undefined) {
+      activeCamera.setParallelProjection(parallelProjection);
+    }
+  }
+
   public resetCamera(
     resetPan = true,
     resetZoom = true,

@@ -508,7 +508,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
      * isPerformingCoordinateTransformation is set to true.
      */
 
-    vtkCamera.setIsPerformingCoordinateTransformation(true);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
@@ -536,7 +536,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       renderer
     );
 
-    vtkCamera.setIsPerformingCoordinateTransformation(false);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(false);
 
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
@@ -574,7 +574,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
      * isPerformingCoordinateTransformation is set to true.
      */
 
-    vtkCamera.setIsPerformingCoordinateTransformation(true);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
@@ -601,7 +601,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       canvasCoord[1] / devicePixelRatio,
     ];
 
-    vtkCamera.setIsPerformingCoordinateTransformation(false);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(false);
 
     return canvasCoordWithDPR;
   };
