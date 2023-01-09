@@ -42,7 +42,8 @@ function getPixelData(uri, imageId, mediaType = 'application/octet-stream') {
       // request succeeded, Parse the multi-part mime response
       const response = new Uint8Array(imageFrameAsArrayBuffer);
 
-      const contentType = xhr.getResponseHeader('Content-Type');
+      const contentType =
+        xhr.getResponseHeader('Content-Type') || 'application/octet-stream';
 
       if (contentType.indexOf('multipart') === -1) {
         resolve({

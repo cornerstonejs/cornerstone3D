@@ -30,7 +30,7 @@ function initialize(config) {
 /**
  * Task handler function
  */
-function handler(data, doneCallback) {
+async function handler(data, doneCallback) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
@@ -41,39 +41,34 @@ function handler(data, doneCallback) {
   // not typed arrays
   const pixelData = new Uint8Array(data.data.pixelData);
 
-  // TODO switch to promise
-  function finishedCallback(imageFrame) {
-    if (!imageFrame.pixelData) {
-      throw new Error(
-        'decodeTask: imageFrame.pixelData is undefined after decoding'
-      );
-    }
-
-    calculateMinMax(imageFrame, strict);
-
-    // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
-    // typed arrays
-    imageFrame.pixelData = imageFrame.pixelData.buffer;
-
-    // invoke the callback with our result and pass the pixelData in the transferList to move it to
-    // UI thread without making a copy
-
-    // ONLY USING setTIMEOUT for TESTING>.. REMOVE THIS
-    // setTimeout(() => {
-    doneCallback(imageFrame, [imageFrame.pixelData]);
-    // }, 100);
-  }
-
-  decodeImageFrame(
+  const imageFrame = await decodeImageFrame(
     data.data.imageFrame,
     data.data.transferSyntax,
     pixelData,
     // decodeTask are webworker specific, but decodeConfig are the configs
     // that are passed in from the user. We need to merge them together
     Object.assign(decodeConfig.decodeTask, data.data.decodeConfig),
-    data.data.options,
-    finishedCallback
+    data.data.options
   );
+
+  if (!imageFrame.pixelData) {
+    throw new Error(
+      'decodeTask: imageFrame.pixelData is undefined after decoding'
+    );
+  }
+
+  calculateMinMax(imageFrame, strict);
+
+  // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
+  // typed arrays
+  imageFrame.pixelData = imageFrame.pixelData.buffer;
+
+  doneCallback?.(imageFrame, [imageFrame.pixelData]);
+
+  return {
+    result: imageFrame,
+    transferList: [imageFrame.pixelData],
+  };
 }
 
 export default {

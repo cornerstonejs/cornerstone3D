@@ -4,32 +4,28 @@ import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
 import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame.js';
 import calculateMinMax from '../shared/calculateMinMax.js';
 
-function processDecodeTask(imageFrame, transferSyntax, pixelData, options) {
+async function processDecodeTask(
+  imageFrame,
+  transferSyntax,
+  pixelData,
+  options
+) {
   const loaderOptions = getOptions();
   const { strict, decodeConfig } = loaderOptions;
 
-  return new Promise((resolve, reject) => {
-    try {
-      const callbackFn = (decodedImageFrame) => {
-        calculateMinMax(decodedImageFrame, strict);
-        resolve(decodedImageFrame);
-      };
+  const decodeArguments = [
+    imageFrame,
+    transferSyntax,
+    pixelData,
+    decodeConfig,
+    options,
+  ];
 
-      const decodeArguments = [
-        imageFrame,
-        transferSyntax,
-        pixelData,
-        decodeConfig,
-        options,
-        callbackFn,
-      ];
+  const decodedImageFrame = await decodeImageFrameHandler(...decodeArguments);
 
-      decodeImageFrameHandler(...decodeArguments);
-    } catch (error) {
-      console.error(error);
-      reject(error);
-    }
-  });
+  calculateMinMax(decodedImageFrame, strict);
+
+  return decodedImageFrame;
 }
 
 function decodeImageFrame(

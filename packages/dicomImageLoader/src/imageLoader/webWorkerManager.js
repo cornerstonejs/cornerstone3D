@@ -111,7 +111,12 @@ function handleMessageFromWorker(msg) {
 
     const action = msg.data.status === 'success' ? 'resolve' : 'reject';
 
-    webWorkers[msg.data.workerIndex].task.deferred[action](msg.data.result);
+    try {
+      webWorkers[msg.data.workerIndex].task.deferred[action](msg.data.result);
+    } catch (e) {
+      // Do a catch here to ensure the web worker is available
+      console.warn('Caught error delivering response', e);
+    }
 
     webWorkers[msg.data.workerIndex].task = undefined;
 
