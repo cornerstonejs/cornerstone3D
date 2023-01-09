@@ -126,7 +126,12 @@ abstract class BaseTool implements IBaseTool {
       return;
     }
 
-    return actors[0].uid;
+    // find the first image actor of instance type vtkVolume
+    for (let i = 0; i < actors.length; i++) {
+      if (actors[i].actor.getClassName() === 'vtkVolume') {
+        return actors[i].uid;
+      }
+    }
   }
 
   /**

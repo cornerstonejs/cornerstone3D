@@ -32,14 +32,15 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   if (!volumeActors || !volumeActors.length) {
     return { spacingInNormalDirection: null, imageVolume: null };
   }
-  const numVolumeActors = volumeActors.length;
 
-  const imageVolumes = volumeActors.map((va) => {
-    // prefer the referenceUID if it is set, since it can be a derived actor
-    // and the uid does not necessarily match the volumeId
-    const uid = va.referenceId ?? va.uid;
-    return cache.getVolume(uid);
-  });
+  const imageVolumes = volumeActors
+    .map((va) => {
+      // prefer the referenceUID if it is set, since it can be a derived actor
+      // and the uid does not necessarily match the volumeId
+      const uid = va.referenceId ?? va.uid;
+      return cache.getVolume(uid);
+    })
+    .filter((iv) => !!iv);
 
   // If a volumeId is defined, set that volume as the target
   if (targetVolumeId) {
@@ -55,13 +56,17 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     return { imageVolume, spacingInNormalDirection };
   }
 
+  if (!imageVolumes.length) {
+    return { spacingInNormalDirection: null, imageVolume: null };
+  }
+
   // Fetch volume actor with finest resolution in direction of projection.
   const smallest = {
     spacingInNormalDirection: Infinity,
     imageVolume: null,
   };
 
-  for (let i = 0; i < numVolumeActors; i++) {
+  for (let i = 0; i < imageVolumes.length; i++) {
     const imageVolume = imageVolumes[i];
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
