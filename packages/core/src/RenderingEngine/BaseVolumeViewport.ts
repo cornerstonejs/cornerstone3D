@@ -26,6 +26,7 @@ import eventTarget from '../eventTarget';
 import { imageIdToURI, triggerEvent } from '../utilities';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
+import { RENDERING_DEFAULTS } from '../constants';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -130,6 +131,22 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       Events.ELEMENT_DISABLED,
       volumeNewImageCleanUpBound
     );
+  }
+
+  protected setVolumeViewportClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
   }
 
   /**

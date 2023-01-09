@@ -28,20 +28,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
     resetToCenter = true
   ): boolean {
     super.resetCamera(resetPan, resetZoom, resetToCenter);
-    const activeCamera = this.getVtkActiveCamera();
-    // Set large numbers to ensure everything is always rendered
-    if (activeCamera.getParallelProjection()) {
-      activeCamera.setClippingRange(
-        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    } else {
-      activeCamera.setClippingRange(
-        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    }
-
+    this.setVolumeViewportClippingRange();
     return;
   }
 }
