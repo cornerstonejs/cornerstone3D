@@ -278,33 +278,24 @@ class VolumeViewport extends BaseVolumeViewport {
     resetToCenter = true
   ): boolean {
     super.resetCamera(resetPan, resetZoom, resetToCenter);
-    const activeCamera = this.getVtkActiveCamera();
-    // Set large numbers to ensure everything is always rendered
-    if (activeCamera.getParallelProjection()) {
-      activeCamera.setClippingRange(
-        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    } else {
-      activeCamera.setClippingRange(
-        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    }
 
+    this.setVolumeViewportClippingRange();
+
+    const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
 
+    // always add clipping planes for the volume viewport. If a use case
+    // arises where we don't want clipping planes, you should use the volume_3d
+    // viewport instead.
     const actorEntries = this.getActors();
     actorEntries.forEach((actorEntry) => {
-      // we assume that the first two clipping plane of the mapper are always
-      // the 'camera' clipping. Add clipping planes only if the actor is
-      // a vtkVolume
-      if (!actorEntry.actor || !actorEntry.actor.isA('vtkVolume')) {
+      if (!actorEntry.actor) {
         return;
       }
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
+
       if (vtkPlanes.length === 0) {
         const clipPlane1 = vtkPlane.newInstance();
         const clipPlane2 = vtkPlane.newInstance();
