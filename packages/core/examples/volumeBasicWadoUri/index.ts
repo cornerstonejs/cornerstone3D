@@ -11,6 +11,8 @@ import {
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import instanceUIDs from './instanceUIDs.js';
+import * as cornerstone from '@cornerstonejs/core';
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
 // This is for debugging purposes
 console.warn(
@@ -50,6 +52,37 @@ async function run() {
   const imageIds = instanceUIDs.map((uid) => {
     return `wadouri:${wadoURIRoot}&objectUID=${uid}`;
   });
+  const middleImageIndex = Math.floor(imageIds.length / 2);
+  const middleImageId = imageIds[middleImageIndex];
+
+  /**
+   * Extend cornerstone-wado-image-loader metadata-provider
+   */
+  const { parseImageId, dataSetCacheManager, metaData } =
+    cornerstoneWADOImageLoader.wadouri;
+  function streamingMetaDataProvider(type, imageId) {
+    const parsedImageId = parseImageId(imageId);
+    let dataSet = dataSetCacheManager.get(parsedImageId.url);
+
+    if (!dataSet) {
+      // If image metadata not found, and this request isn't asking for instance
+      // specific metadata, return metadata from the middle (or 2nd) prefetched
+      // metadata set.
+      const middleImageDataSet = dataSetCacheManager.get(
+        parseImageId(middleImageId).url
+      );
+      if (
+        !['imagePlaneModule', 'imagePixelModule'].includes(type) &&
+        middleImageDataSet
+      ) {
+        return metaData.metaDataProvider(type, middleImageId);
+      } else {
+        console.warn(`Dataset for imageId ${imageId} not available`);
+        return;
+      }
+    }
+  }
+  cornerstone.metaData.addProvider(streamingMetaDataProvider);
 
   /**
    * Preload first, middle, and last image metadata as these are the images the
@@ -57,7 +90,6 @@ async function run() {
    * last image metadata would only be specifically requested if the imageId
    * array order is reversed in the `sortImageIdsAndGetSpacing.ts` file.
    */
-  const middleImageIndex = Math.floor(imageIds.length / 2);
   const indexesToPrefetch = [0, middleImageIndex, imageIds.length - 1];
   for (let i of indexesToPrefetch) {
     await imageLoader.loadImage(imageIds[i], { skipCreateImage: true }).then(
