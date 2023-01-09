@@ -1,15 +1,11 @@
 import * as cornerstone from '@cornerstonejs/core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
-function metadataProvider(type, imageId, cacheCheck = undefined) {
+function metadataProvider(type, imageId) {
   const { parseImageId, dataSetCacheManager } =
     cornerstoneWADOImageLoader.wadouri;
   const parsedImageId = parseImageId(imageId);
   let dataSet = dataSetCacheManager.get(parsedImageId.url);
-
-  if (cacheCheck) {
-    return Object.keys(metaDataCache).includes(imageId);
-  }
 
   if (!dataSet) {
     // If image metadata not found, and this request isn't asking for instance
