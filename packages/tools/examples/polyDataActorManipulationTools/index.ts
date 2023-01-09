@@ -151,7 +151,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_3D,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -160,9 +160,10 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.PERSPECTIVE,
+      type: ViewportType.VOLUME_3D,
       element: element2,
       defaultOptions: {
+        parallelProjection: false,
         orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0, 0.2, 0.2],
       },
