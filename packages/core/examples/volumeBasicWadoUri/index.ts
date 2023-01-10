@@ -10,7 +10,7 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
-import instanceUIDs from './instanceUIDs.js';
+import instanceUIDs from './instanceUIDs';
 import * as cornerstone from '@cornerstonejs/core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
@@ -75,6 +75,7 @@ async function run() {
         !['imagePlaneModule', 'imagePixelModule'].includes(type) &&
         middleImageDataSet
       ) {
+        console.warn(`Dataset not found, using data from middle image`)
         return metaData.metaDataProvider(type, middleImageId);
       } else {
         console.warn(`Dataset for imageId ${imageId} not available`);
@@ -82,25 +83,8 @@ async function run() {
       }
     }
   }
-  cornerstone.metaData.addProvider(streamingMetaDataProvider);
+  cornerstone.metaData.addProvider(streamingMetaDataProvider, 1);
 
-  /**
-   * Preload first, middle, and last image metadata as these are the images the
-   * current streaming image loader may explicitly request metadata from. The
-   * last image metadata would only be specifically requested if the imageId
-   * array order is reversed in the `sortImageIdsAndGetSpacing.ts` file.
-   */
-  const indexesToPrefetch = [0, middleImageIndex, imageIds.length - 1];
-  for (let i of indexesToPrefetch) {
-    await imageLoader.loadImage(imageIds[i], { skipCreateImage: true }).then(
-      () => {
-        console.log(`image prefetched ${i}`);
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
-  }
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';

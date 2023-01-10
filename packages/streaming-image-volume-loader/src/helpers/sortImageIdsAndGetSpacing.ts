@@ -27,12 +27,8 @@ export default function sortImageIdsAndGetSpacing(
 
   const refIppVec = vec3.create();
 
-  // Check if we have preloaded metadata for all images, or just prefetched a
-  // few
-  const imageMetadata = imageIds
-    .map((imageId) => metaData.get('imagePlaneModule', imageId))
-    .filter((md) => md);
-  const haveAllMetadata = imageMetadata.length === imageIds.length;
+  // Check if we are using wadouri scheme
+  const usingWadoUri = imageIds[0].split(':')[0] === 'wadouri'
 
   vec3.set(
     refIppVec,
@@ -59,12 +55,13 @@ export default function sortImageIdsAndGetSpacing(
   }
 
   /**
-   * If we have all image metadata, then sort by image position in 3D space, and
-   * calculate average slice spacing from the entire volume. If not, then use
-   * the sampled images (1st and middle) to calculate slice spacing, and use
-   * the provided imageId order. Correct sorting must be done ahead of time.
+   * If we are using wadors and so have all image metadata cached ahead of time,
+   * then sort by image position in 3D space, and calculate average slice
+   * spacing from the entire volume. If not, then use the sampled images (1st
+   * and middle) to calculate slice spacing, and use the provided imageId order.
+   * Correct sorting must be done ahead of time.
    */
-  if (haveAllMetadata) {
+  if (!usingWadoUri) {
     const distanceImagePairs = imageIds.map((imageId) => {
       const distance = getDistance(imageId);
 
@@ -89,7 +86,9 @@ export default function sortImageIdsAndGetSpacing(
       ) /
       (numImages - 1);
   } else {
-    // Assume initial imageId array order is pre-sorted, but check orientation.
+    // Using wadouri, so we have only prefetched the first, middle, and last
+    // images for metadata. Assume initial imageId array order is pre-sorted,
+    // but check orientation.
     const prefetchedImageIds = [
       imageIds[0],
       imageIds[Math.floor(imageIds.length / 2)],
@@ -107,27 +106,24 @@ export default function sortImageIdsAndGetSpacing(
       'imagePlaneModule',
       prefetchedImageIds[1]
     );
-    if (metadataForMiddleImage) {
-      const positionVector = vec3.create();
-
-      vec3.sub(
-        positionVector,
-        referenceImagePositionPatient,
-        metadataForMiddleImage.imagePositionPatient
-      );
-      const distanceBetweenFirstAndMiddleImages = vec3.dot(
-        positionVector,
-        scanAxisNormal
-      );
-      zSpacing =
-        Math.abs(distanceBetweenFirstAndMiddleImages) /
-        Math.floor(imageIds.length / 2);
-    } else {
-      ({ spacingBetweenSlices: zSpacing } = metaData.get(
-        'imagePlaneModule',
-        prefetchedImageIds[0]
-      ));
+    if (!metadataForMiddleImage) {
+      throw new Error('Incomplete metadata required for volume construction.');
     }
+
+    const positionVector = vec3.create();
+
+    vec3.sub(
+      positionVector,
+      referenceImagePositionPatient,
+      metadataForMiddleImage.imagePositionPatient
+    );
+    const distanceBetweenFirstAndMiddleImages = vec3.dot(
+      positionVector,
+      scanAxisNormal
+    );
+    zSpacing =
+      Math.abs(distanceBetweenFirstAndMiddleImages) /
+      Math.floor(imageIds.length / 2);
   }
 
   const { imagePositionPatient: origin } = metaData.get(
