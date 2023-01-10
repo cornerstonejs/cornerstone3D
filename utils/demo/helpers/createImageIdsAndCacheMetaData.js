@@ -5,14 +5,11 @@ import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
 import { utilities } from '@cornerstonejs/core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
-import WADORSHeaderProvider from './WADORSHeaderProvider';
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
-
-const VOLUME = 'volume';
 
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
@@ -63,8 +60,6 @@ export default async function createImageIdsAndCacheMetaData({
       imageId,
       instanceMetaData
     );
-
-    WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
 
     // Add calibrated pixel spacing
     const m = JSON.parse(JSON.stringify(instanceMetaData));
