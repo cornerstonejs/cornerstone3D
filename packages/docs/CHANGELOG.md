@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.9.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.9.0...docs@0.9.1) (2023-01-10)
+
+
+### Bug Fixes
+
+* no need for wadors header provider in the demo ([#356](https://github.com/cornerstonejs/cornerstone3D-beta/issues/356)) ([92891cf](https://github.com/cornerstonejs/cornerstone3D-beta/commit/92891cf4fd8f502b1dd0908702e46fb3556bacd7))
+
+
+
+
+
 # [0.9.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.8.0...docs@0.9.0) (2023-01-06)
 
 
