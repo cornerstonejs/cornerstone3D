@@ -26,14 +26,14 @@
   },
   "dependencies": {
     "@cornerstonejs/core": "^0.25.0",
-    "cornerstone-wado-image-loader": "^4.6.0"
+    "cornerstone-wado-image-loader": "^4.7.0"
   },
   "peerDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2"
   },
   "devDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2",
-    "cornerstone-wado-image-loader": "^4.6.0"
+    "cornerstone-wado-image-loader": "^4.7.0"
   },
   "contributors": [
     {
