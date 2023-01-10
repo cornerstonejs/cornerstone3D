@@ -25,6 +25,8 @@ function metaDataProvider(type, imageId) {
       studyInstanceUID: dataSet.string('x0020000d'),
       seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
       seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || ''),
+      acquisitionDate: dicomParser.parseDA(dataSet.string('x00080022') || ''),
+      acquisitionTime: dicomParser.parseTM(dataSet.string('x00080032') || ''),
     };
   }
 
@@ -152,6 +154,23 @@ function metaDataProvider(type, imageId) {
   if (type === 'transferSyntax') {
     return {
       transferSyntaxUID: dataSet.string('x00020010'),
+    };
+  }
+
+  if (type === 'petSeriesModule') {
+    return {
+      correctedImage: dataSet.string('x00280051'),
+      units: dataSet.string('x00541001'),
+      decayCorrection: dataSet.string('x00541102'),
+    };
+  }
+
+  if (type === 'petImageModule') {
+    return {
+      frameReferenceTime: dicomParser.floatString(
+        dataSet.string('x00541300') || ''
+      ),
+      actualFrameDuration: dicomParser.intString(dataSet.string('x00181242')),
     };
   }
 }

@@ -21,6 +21,10 @@ function metaDataProvider(type, imageId) {
       studyInstanceUID: getValue(metaData['0020000D']),
       seriesDate: dicomParser.parseDA(getValue(metaData['00080021'])),
       seriesTime: dicomParser.parseTM(getValue(metaData['00080031'], 0, '')),
+      acquisitionDate: dicomParser.parseDA(getValue(metaData['00080022']), ''),
+      acquisitionTime: dicomParser.parseTM(
+        getValue(metaData['00080032'], 0, '')
+      ),
     };
   }
 
@@ -28,6 +32,7 @@ function metaDataProvider(type, imageId) {
     return {
       patientAge: getNumberValue(metaData['00101010']),
       patientSize: getNumberValue(metaData['00101020']),
+      patientSex: getValue(metaData['00100040']),
       patientWeight: getNumberValue(metaData['00101030']),
     };
   }
@@ -163,6 +168,21 @@ function metaDataProvider(type, imageId) {
   if (type === 'transferSyntax') {
     return {
       transferSyntaxUID: getValue(metaData['00020010']),
+    };
+  }
+
+  if (type === 'petSeriesModule') {
+    return {
+      correctedImage: getValue(metaData['00280051']),
+      units: getValue(metaData['00541001']),
+      decayCorrection: getValue(metaData['00541102']),
+    };
+  }
+
+  if (type === 'petImageModule') {
+    return {
+      frameReferenceTime: getNumberValue(metaData['00541300']),
+      actualFrameDuration: getNumberValue(metaData['00181242']),
     };
   }
 }
