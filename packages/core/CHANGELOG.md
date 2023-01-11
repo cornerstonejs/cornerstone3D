@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.25.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.25.0...@cornerstonejs/core@0.25.1) (2023-01-11)
+
+
+### Bug Fixes
+
+* colored images using rgba in CPU rendering [#338](https://github.com/cornerstonejs/cornerstone3D-beta/issues/338) ([#345](https://github.com/cornerstonejs/cornerstone3D-beta/issues/345)) ([90bcc7b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/90bcc7b5a8380adbc03af34f7c00c72795fe003c))
+
+
+
+
+
 # [0.25.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.24.0...@cornerstonejs/core@0.25.0) (2023-01-06)
 
 
