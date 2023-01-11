@@ -209,17 +209,19 @@ function cornerstoneStreamingImageVolumeLoader(
     return streamingImageVolume;
   }
 
+  const streamingImageVolumePromise = getStreamingImageVolume();
+
   return {
-    promise: getStreamingImageVolume(),
+    promise: streamingImageVolumePromise,
     decache: () => {
-      getStreamingImageVolume().then((streamingImageVolume) => {
+      streamingImageVolumePromise.then((streamingImageVolume) => {
         streamingImageVolume.vtkOpenGLTexture.delete();
         streamingImageVolume.scalarData = null;
         streamingImageVolume = null;
       });
     },
     cancel: () => {
-      getStreamingImageVolume().then((streamingImageVolume) => {
+      streamingImageVolumePromise.then((streamingImageVolume) => {
         streamingImageVolume.cancelLoading();
       });
     },
