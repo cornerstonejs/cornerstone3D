@@ -1517,7 +1517,7 @@ class StackViewport extends Viewport implements IStackViewport {
         preScale: {
           enabled: true,
         },
-        useRGBA: false,
+        useRGBA: true,
       };
 
       imageLoadPoolManager.addRequest(
