@@ -315,7 +315,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
     wadoRsRoot,
-    type: 'VOLUME',
   });
 
   const ptImageIds = await createImageIdsAndCacheMetaData({
