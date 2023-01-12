@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.34.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.34.1...@cornerstonejs/tools@0.34.2) (2023-01-12)
+
+
+### Bug Fixes
+
+* unexpected token problem for typescript for tools ([#360](https://github.com/cornerstonejs/cornerstone3D-beta/issues/360)) ([7844798](https://github.com/cornerstonejs/cornerstone3D-beta/commit/78447981ed583ef97f8f7cbed247cd6c3b1419a6))
+
+
+
+
+
 ## [0.34.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.34.0...@cornerstonejs/tools@0.34.1) (2023-01-11)
 
 **Note:** Version bump only for package @cornerstonejs/tools
