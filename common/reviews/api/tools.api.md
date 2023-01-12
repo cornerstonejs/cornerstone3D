@@ -3551,7 +3551,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
 }
 
 // @public (undocumented)
-function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, referenceVolumes: Types_2.IImageVolume[], options: ThresholdRangeOptions_2): Types_2.IImageVolume;
+function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation_2[], options: ThresholdOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
 export class RectangleROITool extends AnnotationTool {
@@ -4371,7 +4371,7 @@ type TextBoxHandle = {
 };
 
 // @public (undocumented)
-function thresholdVolumeByRange(segmentationVolume: Types_2.IImageVolume, referenceVolume: Types_2.IImageVolume, options: ThresholdRangeOptions): Types_2.IImageVolume;
+function thresholdVolumeByRange(segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation[], options: ThresholdRangeOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
