@@ -36,8 +36,8 @@ type PaintFillToolHelpers = {
  * or empty region with the the activeSegmentIndex label. You can use the
  * SegmentationModule to set the active segmentation and segmentIndex.
  */
-export default class PaintFillTool extends BaseTool {
-  static toolName = 'PaintFill';
+class PaintFillTool extends BaseTool {
+  static toolName;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -366,3 +366,6 @@ export default class PaintFillTool extends BaseTool {
     return getScalarDataPositionFromPlane;
   };
 }
+
+PaintFillTool.toolName = 'PaintFill';
+export default PaintFillTool;

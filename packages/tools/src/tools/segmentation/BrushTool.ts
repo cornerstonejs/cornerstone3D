@@ -34,8 +34,8 @@ import {
 /**
  * @public
  */
-export default class BrushTool extends BaseTool {
-  static toolName = 'Brush';
+class BrushTool extends BaseTool {
+  static toolName;
   private _editData: {
     segmentation: Types.IImageVolume;
     imageVolume: Types.IImageVolume; //
@@ -473,3 +473,6 @@ export default class BrushTool extends BaseTool {
     );
   }
 }
+
+BrushTool.toolName = 'Brush';
+export default BrushTool;
