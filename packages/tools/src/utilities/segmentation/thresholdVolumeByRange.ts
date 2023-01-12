@@ -18,6 +18,11 @@ export type ThresholdInformation = {
   upper: number;
 };
 
+// function used to compare to arrays
+const equalsCheck = (a, b) => {
+  return JSON.stringify(a) === JSON.stringify(b);
+};
+
 /**
  * It thresholds a segmentation volume based on a set of threshold values with
  * respect to a list of volumes and respective threshold ranges.
@@ -42,7 +47,11 @@ function thresholdVolumeByRange(
   thresholdVolumeInformation: ThresholdInformation[],
   options: ThresholdRangeOptions
 ): Types.IImageVolume {
-  const { scalarData, imageData: segmentationImageData } = segmentationVolume;
+  const {
+    scalarData,
+    spacing: segmentationSpacing,
+    imageData: segmentationImageData,
+  } = segmentationVolume;
 
   const { overwrite, boundsIJK } = options;
   const overlapType = options?.overlapType || 0;
@@ -63,7 +72,10 @@ function thresholdVolumeByRange(
 
     const volumeSize = thresholdVolumeInformation[i].volume.scalarData.length;
     // discover the index of the volume the segmentation data is based on
-    if (volumeSize === scalarData.length) {
+    if (
+      volumeSize === scalarData.length &&
+      equalsCheck(spacing, segmentationSpacing)
+    ) {
       baseVolumeIdx = i;
     }
 
