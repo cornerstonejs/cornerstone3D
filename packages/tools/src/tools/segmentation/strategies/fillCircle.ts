@@ -14,26 +14,30 @@ const { transformWorldToIndex } = csUtils;
 
 type OperationData = {
   segmentationId: string;
+  imageVolume: Types.IImageVolume;
   points: any; // Todo:fix
   volume: Types.IImageVolume;
   segmentIndex: number;
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
+  strategySpecificConfiguration: any;
   constraintFn: () => boolean;
 };
 
 function fillCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData,
-  inside = true
+  threshold = false
 ): void {
   const {
     volume: segmentationVolume,
+    imageVolume,
     points,
     segmentsLocked,
     segmentIndex,
     segmentationId,
+    strategySpecificConfiguration,
   } = operationData;
   const { imageData, dimensions, scalarData } = segmentationVolume;
   const { viewport } = enabledElement;
@@ -76,14 +80,33 @@ function fillCircle(
   };
 
   const modifiedSlicesToUse = new Set() as Set<number>;
-  const callback = ({ value, index, pointIJK }) => {
-    if (segmentsLocked.includes(value)) {
-      return;
-    }
-    scalarData[index] = segmentIndex;
-    //Todo: I don't think this will always be index 2 in streamingImageVolume?
-    modifiedSlicesToUse.add(pointIJK[2]);
-  };
+
+  let callback;
+
+  if (threshold) {
+    callback = ({ value, index, pointIJK }) => {
+      if (segmentsLocked.includes(value)) {
+        return;
+      }
+
+      if (
+        isWithinThreshold(index, imageVolume, strategySpecificConfiguration)
+      ) {
+        scalarData[index] = segmentIndex;
+        //Todo: I don't think this will always be index 2 in streamingImageVolume?
+        modifiedSlicesToUse.add(pointIJK[2]);
+      }
+    };
+  } else {
+    callback = ({ value, index, pointIJK }) => {
+      if (segmentsLocked.includes(value)) {
+        return;
+      }
+      scalarData[index] = segmentIndex;
+      //Todo: I don't think this will always be index 2 in streamingImageVolume?
+      modifiedSlicesToUse.add(pointIJK[2]);
+    };
+  }
 
   pointInShapeCallback(
     imageData,
@@ -97,6 +120,19 @@ function fillCircle(
   triggerSegmentationDataModified(segmentationId, arrayOfSlices);
 }
 
+function isWithinThreshold(
+  index: number,
+  imageVolume: Types.IImageVolume,
+  strategySpecificConfiguration: any
+) {
+  const { THRESHOLD_INSIDE_CIRCLE } = strategySpecificConfiguration;
+
+  const voxelValue = imageVolume.scalarData[index];
+  const { threshold } = THRESHOLD_INSIDE_CIRCLE;
+
+  return threshold[0] <= voxelValue && voxelValue <= threshold[1];
+}
+
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
  * It fills the segmentation pixels inside the defined circle.
@@ -107,6 +143,30 @@ export function fillInsideCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
+  fillCircle(enabledElement, operationData, false);
+}
+
+/**
+ * Fill inside the circular region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined circle.
+ * @param enabledElement - The element for which the segment is being erased.
+ * @param operationData - EraseOperationData
+ */
+export function thresholdInsideCircle(
+  enabledElement: Types.IEnabledElement,
+  operationData: OperationData
+): void {
+  const { volume, imageVolume } = operationData;
+
+  if (
+    !csUtils.isEqual(volume.dimensions, imageVolume.dimensions) ||
+    !csUtils.isEqual(volume.direction, imageVolume.direction)
+  ) {
+    throw new Error(
+      'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
+    );
+  }
+
   fillCircle(enabledElement, operationData, true);
 }
 
@@ -120,5 +180,5 @@ export function fillOutsideCircle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillCircle(enabledElement, operationData, false);
+  throw new Error('Not yet implemented');
 }

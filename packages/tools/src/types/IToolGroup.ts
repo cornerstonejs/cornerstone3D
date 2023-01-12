@@ -21,6 +21,10 @@ export default interface IToolGroup {
   getToolInstance: { (toolName: string): any };
   /** Add a tool to toolGroup with its configuration */
   addTool: { (toolName: string, toolConfiguration?: any): void };
+  /** Add tool instance, if you want to create more than one instance from the same tool e.g., brush/eraser tool */
+  addToolInstance: {
+    (ttoolName: string, parentClassName: string, configuration?: any): void;
+  };
   /** Add viewports to share the tools for the ToolGroup */
   addViewport: {
     (viewportId: string, renderingEngineId?: string): void;

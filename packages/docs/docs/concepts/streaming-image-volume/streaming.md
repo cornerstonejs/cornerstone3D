@@ -51,19 +51,16 @@ Then the volume can call its `load` method to actually load the pixel data of th
 await ctVolume.load();
 ```
 
-## `streaming-wadors` imageLoader
+## imageLoader
 
-As mentioned before, we don't need to create the [`Image`](../cornerstone-core/images.md) object for each imageId in
-the `StreamingImageVolume`. Instead, we can just insert the pixelData of the image directly into the volume.
-To achieve this, we have created a new `imageLoader` called [`SharedArrayBufferImageLoader`](/api/streaming-image-volume-loader/function/sharedArrayBufferImageLoader) which is small stripped version of the `cornerstoneWADOImageLoader` which loads the images
-but don't create image objects to save memory.
+Since the volume loader does not need to create the [`Image`](../cornerstone-core/images.md) object for each imageId in
+the `StreamingImageVolume`, it will use the `skipCreateImage` option internally to skip the creation of the image object.
+Otherwise, the volume's image loader is the same as wadors image loader written in `cornerstone-wado-image-loader`.
 
-This imageLoader registers itself with `streaming-wadors` schema. This means that the `streaming-wadors` schema should be
-the first part of imagesIds. Therefore, the full code to use the streaming image loader is:
 
 ```js
 // using sharedArrayBufferImageLoader to load the images
-const imageIds = ['streaming-wadors:imageId1', 'streaming-wadors:imageId2'];
+const imageIds = ['wadors:imageId1', 'wadors:imageId2'];
 
 const ctVolumeId = 'cornerstoneStreamingImageVolume:CT_VOLUME';
 

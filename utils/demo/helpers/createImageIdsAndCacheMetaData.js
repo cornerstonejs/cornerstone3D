@@ -5,14 +5,11 @@ import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
 import { utilities } from '@cornerstonejs/core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
-import WADORSHeaderProvider from './WADORSHeaderProvider';
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
-
-const VOLUME = 'volume';
 
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
@@ -28,7 +25,6 @@ export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
   wadoRsRoot,
-  type,
 }) {
   const SOP_INSTANCE_UID = '00080018';
   const SERIES_INSTANCE_UID = '0020000E';
@@ -47,8 +43,7 @@ export default async function createImageIdsAndCacheMetaData({
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
-    const prefix =
-      type.toLowerCase() === VOLUME ? 'streaming-wadors:' : 'wadors:';
+    const prefix = 'wadors:';
 
     const imageId =
       prefix +
@@ -65,8 +60,6 @@ export default async function createImageIdsAndCacheMetaData({
       imageId,
       instanceMetaData
     );
-
-    WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
 
     // Add calibrated pixel spacing
     const m = JSON.parse(JSON.stringify(instanceMetaData));

@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.25.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.25.0...@cornerstonejs/core@0.25.1) (2023-01-11)
+
+
+### Bug Fixes
+
+* colored images using rgba in CPU rendering [#338](https://github.com/cornerstonejs/cornerstone3D-beta/issues/338) ([#345](https://github.com/cornerstonejs/cornerstone3D-beta/issues/345)) ([90bcc7b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/90bcc7b5a8380adbc03af34f7c00c72795fe003c))
+
+
+
+
+
+# [0.25.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.24.0...@cornerstonejs/core@0.25.0) (2023-01-06)
+
+
+### Features
+
+* **volumeLoader:** no need for streaming-wadors imageLoader anymore since streaming volume loader will use cswil wadors image loader ([#340](https://github.com/cornerstonejs/cornerstone3D-beta/issues/340)) ([0b5f785](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0b5f785041a6f92443b58f6d72c8c965a29b35fc))
+
+
+
+
+
+# [0.24.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.23.0...@cornerstonejs/core@0.24.0) (2023-01-06)
+
+
+### Features
+
+* improved example runner to handle casing and partial match ([#347](https://github.com/cornerstonejs/cornerstone3D-beta/issues/347)) ([9e8fa12](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9e8fa122f766c1fceff4e3d4fe3cd0f68963c92b))
+
+
+
+
+
+# [0.23.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.22.3...@cornerstonejs/core@0.23.0) (2022-12-09)
+
+
+### Features
+
+* Add new 3D volume viewport ([#281](https://github.com/cornerstonejs/cornerstone3D-beta/issues/281)) ([57cf7ac](https://github.com/cornerstonejs/cornerstone3D-beta/commit/57cf7ac3bfd83d35d68f54b1f00f03583ed8e998))
+
+
+
+
+
 ## [0.22.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.22.2...@cornerstonejs/core@0.22.3) (2022-12-01)
 
 

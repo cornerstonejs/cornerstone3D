@@ -1,4 +1,5 @@
 import { VolumeViewport } from '../';
+import BaseVolumeViewport from '../BaseVolumeViewport';
 import type { IVolumeInput, IRenderingEngine } from '../../types';
 
 /**
@@ -28,10 +29,10 @@ async function addVolumesToViewports(
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
     }
 
-    // if not instance of VolumeViewport, throw
-    if (!(viewport instanceof VolumeViewport)) {
+    // if not instance of BaseVolumeViewport, throw
+    if (!(viewport instanceof BaseVolumeViewport)) {
       console.warn(
-        `Viewport with Id ${viewportId} is not a VolumeViewport. Cannot add volume to this viewport.`
+        `Viewport with Id ${viewportId} is not a BaseVolumeViewport. Cannot add volume to this viewport.`
       );
 
       return;

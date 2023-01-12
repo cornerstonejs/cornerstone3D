@@ -40,6 +40,7 @@ import type ICachedImage from './ICachedImage';
 import type ICachedVolume from './ICachedVolume';
 import type IStackViewport from './IStackViewport';
 import type IVolumeViewport from './IVolumeViewport';
+import type ViewportPreset from './ViewportPreset';
 
 // CPU types
 import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
@@ -93,6 +94,7 @@ export type {
   IVolumeLoadObject,
   IVolumeInput,
   VolumeInputCallback,
+  ViewportPreset,
   //
   Metadata,
   OrientationVectors,

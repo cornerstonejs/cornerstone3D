@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import { Synchronizer } from '../../store';
 import { jumpToSlice } from '../../utilities';
-
+import areViewportsCoplanar from './areViewportsCoplanar ';
 /**
  * Synchronizer callback to synchronize the source viewport image to the
  * target viewports closest image in its stack. There are two scenarios
@@ -65,6 +65,10 @@ export default async function stackImageSyncCallback(
   const sourceImagePositionPatient = imagePlaneModule1.imagePositionPatient;
 
   const targetImageIds = tViewport.getImageIds();
+
+  if (!areViewportsCoplanar(sViewport, tViewport)) {
+    return;
+  }
 
   if (frameOfReferenceUID1 === frameOfReferenceUID2) {
     // if frames of references are the same we can use the absolute

@@ -323,7 +323,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
     wadoRsRoot,
-    type: 'VOLUME',
   });
 
   // Define a volume in memory

@@ -1,9 +1,9 @@
 const path = require('path');
 
-const csRenderBasePath = path.resolve('../core/src/index');
-const csToolsBasePath = path.resolve('../tools/src/index');
+const csRenderBasePath = path.resolve('packages/core/src/index');
+const csToolsBasePath = path.resolve('packages/tools/src/index');
 const csStreamingBasePath = path.resolve(
-  '../streaming-image-volume-loader/src/index'
+  'packages/streaming-image-volume-loader/src/index'
 );
 
 module.exports = function buildConfig(
@@ -30,14 +30,11 @@ var webpack = require('webpack');
 var path = require('path');
 module.exports = {
   mode: 'development',
-  devtool: 'eval-source-map',
+  devtool: 'source-map',
   plugins: [
     new ESLintPlugin(),
     new HtmlWebpackPlugin({
-      template: '${root.replace(
-        /\\/g,
-        '/'
-      )}/utils/ExampleRunner/template.html',
+      template: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/template.html',
     }),
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
@@ -53,10 +50,10 @@ module.exports = {
     }),
     // new BundleAnalyzerPlugin()
   ],
-  entry: path.join('${exampleBasePath.replace(
+  entry: path.join('${exampleBasePath.replace(/\\/g, '/')}', '${relPath.replace(
     /\\/g,
     '/'
-  )}', '${relPath.replace(/\\/g, '/')}'),
+  )}'),
   output: {
     path: '${destPath.replace(/\\/g, '/')}',
     filename: '${name}.js',
