@@ -570,7 +570,7 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
@@ -3074,7 +3074,7 @@ export class PaintFillTool extends BaseTool {
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
-    static toolName: string;
+    static toolName: any;
 }
 
 // @public (undocumented)
