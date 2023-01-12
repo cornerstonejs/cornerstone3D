@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.35.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.34.2...@cornerstonejs/tools@0.35.0) (2023-01-12)
+
+
+### Features
+
+* ROI threshold to consider two volumes for thresholding ([#325](https://github.com/cornerstonejs/cornerstone3D-beta/issues/325)) ([87362af](https://github.com/cornerstonejs/cornerstone3D-beta/commit/87362af8008b08fd874ffbb5188d415d9a71abdd))
+
+
+
+
+
 ## [0.34.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.34.1...@cornerstonejs/tools@0.34.2) (2023-01-12)
 
 
