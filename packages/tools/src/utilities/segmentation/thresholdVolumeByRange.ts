@@ -25,6 +25,16 @@ export type ThresholdInformation = {
  * @param thresholdVolumeInformation - array of objects containing volume data
  * and a range (lower and upper values) to threshold
  * @param options - the options for thresholding
+ * As there is a chance the volumes might have different dimensions and spacing,
+ * could be the case of no 1 to 1 mapping. So we need to work with the idea of
+ * voxel overlaps (1 to many mappings). We consider all intersections valid, to
+ * avoid thecomplexity to calculate a minimum voxel intersection percentage.
+ * This function, given a voxel center and spacing, calculates the overlap of
+ * the voxel with another volume and range check the voxels in the overlap.
+ * Three situations can occur: all voxels pass the range check, some voxels pass
+ * or none voxels pass. The overlapType parameter indicates if the user requires
+ * all voxels pass (overlapType = 1) or any voxel pass (overlapType = 0)
+ *
  * @returns segmented volume
  */
 function thresholdVolumeByRange(
@@ -35,11 +45,7 @@ function thresholdVolumeByRange(
   const { scalarData, imageData: segmentationImageData } = segmentationVolume;
 
   const { overwrite, boundsIJK } = options;
-  let overlapType = options.overlapType;
-
-  if (!overlapType) {
-    overlapType = 0; // default is any overlap
-  }
+  const overlapType = options?.overlapType || 0;
 
   // set the segmentation to all zeros
   if (overwrite) {
@@ -80,18 +86,19 @@ function thresholdVolumeByRange(
   // global variables used in calbackOverlap function
   let overlaps, total, range;
 
-  /**
-   * As we are working with volumes of different dimensions, there will be no
-   * 1 to 1 mapping. So we need to work with the idea of voxel overlaps
-   * (1 to many mappings). We consider all intersections valid, to avoid the
-   * complexity to calculate a minimum voxel intersection percentage. This
-   * function, given a voxel center and spacing, calculates the overlap of the
-   * voxel with another volume and range check the voxels in the overlap. Three
-   * situations can occur: all voxels pass the range check, some voxels pass or
-   * none voxels pass. The overlapType parameter indicates if the user requires
-   * all voxels pass (overlapType = 1) or any voxel pass (overlapType = 0)
-   */
   const testOverlapRange = (volumeInfo, voxelSpacing, voxelCenter) => {
+    /**
+     * This callback function will test all overlaps between a voxel in base
+     * volume (the reference for segmentation volume creation) and voxels in other
+     * volumes.
+     */
+    const callbackOverlap = ({ value }) => {
+      total = total + 1;
+      if (value >= range.lower && value <= range.upper) {
+        overlaps = overlaps + 1;
+      }
+    };
+
     const { imageData, dimensions, lower, upper } = volumeInfo;
 
     const overlapBounds = getVoxelOverlap(
@@ -163,18 +170,6 @@ function thresholdVolumeByRange(
     );
 
     return overlapBounds;
-  };
-
-  /**
-   * This callback function will test all overlaps between a voxel in base
-   * volume (the reference for segmentation volume creation) and voxels in other
-   * volumes.
-   */
-  const callbackOverlap = ({ value }) => {
-    total = total + 1;
-    if (value >= range.lower && value <= range.upper) {
-      overlaps = overlaps + 1;
-    }
   };
 
   /**
