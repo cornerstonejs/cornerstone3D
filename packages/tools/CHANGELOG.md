@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.35.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.35.1...@cornerstonejs/tools@0.35.2) (2023-01-13)
+
+
+### Bug Fixes
+
+* floodFill export in tools ([#362](https://github.com/cornerstonejs/cornerstone3D-beta/issues/362)) ([700baa3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/700baa349f59c12b4a10979b580ee3afd9637f9e))
+
+
+
+
+
 ## [0.35.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.35.0...@cornerstonejs/tools@0.35.1) (2023-01-13)
 
 **Note:** Version bump only for package @cornerstonejs/tools
