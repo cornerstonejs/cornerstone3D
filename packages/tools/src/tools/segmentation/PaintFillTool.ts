@@ -14,12 +14,11 @@ import {
   activeSegmentation,
   segmentIndex as segmentIndexController,
 } from '../../stateManagement/segmentation';
-import { segmentation as segmentationUtils } from '../../utilities';
+import floodFill from '../../utilities/segmentation/floodFill';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
 
 const { transformWorldToIndex, isEqual } = csUtils;
-const { floodFill } = segmentationUtils;
 
 type PaintFillToolHelpers = {
   getScalarDataPositionFromPlane: (x: number, y: number) => number;

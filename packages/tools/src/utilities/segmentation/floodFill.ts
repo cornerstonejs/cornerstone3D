@@ -24,7 +24,7 @@ import { Types } from '@cornerstonejs/core';
  *
  * @returns {Object}
  */
-export default function (
+function floodFill(
   getter: FloodFillGetter,
   seed: Types.Point2 | Types.Point3,
   options: FloodFillOptions = {}
@@ -190,3 +190,5 @@ function lpad(string, character, length) {
 
   return (pad + string).slice(-length);
 }
+
+export default floodFill;
