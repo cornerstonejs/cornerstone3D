@@ -127,6 +127,14 @@ module.exports = function (config) {
     webpack: {
       devtool: 'eval-source-map',
       mode: 'development',
+      /**
+       * Required for dicom-image-loader
+       *
+       * The webpack output directory is manually specified so that all
+       * generated assets, such as wasm, workers etc.. can be found when running
+       * in Karma
+       */
+      output,
       module: {
         rules: [
           {
@@ -212,14 +220,6 @@ module.exports = function (config) {
             'packages/dicom-image-loader/src/imageLoader/index'
           ),
         },
-      },
-      /**
-       * Required for packages/dicom-image-loader
-       * so that the WASM modules are loaded correctly.
-       */
-      experiments: {
-        asyncWebAssembly: true,
-        syncWebAssembly: true,
       },
     },
     webpackMiddleware: {
