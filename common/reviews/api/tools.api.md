@@ -1212,9 +1212,6 @@ const _default: {
 };
 
 // @public (undocumented)
-function (getter: FloodFillGetter, seed: Types_2.Point2 | Types_2.Point3, options?: FloodFillOptions): FloodFillResult;
-
-// @public (undocumented)
 const _default_2: {
     interpolateAnnotation: typeof interpolateAnnotation;
 };
@@ -1670,6 +1667,9 @@ type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
 };
+
+// @public (undocumented)
+function floodFill(getter: FloodFillGetter, seed: Types_2.Point2 | Types_2.Point3, options?: FloodFillOptions): FloodFillResult;
 
 // @public (undocumented)
 type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
@@ -3864,7 +3864,7 @@ declare namespace segmentation_2 {
         createLabelmapVolumeForViewport,
         rectangleROIThresholdVolumeByRange,
         triggerSegmentationRender,
-        default_2 as floodFill,
+        floodFill,
         getBrushSizeForToolGroup,
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
