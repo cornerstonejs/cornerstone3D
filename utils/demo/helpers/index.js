@@ -1,4 +1,5 @@
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+import wadoURICreateImageIds from './WADOURICreateImageIds';
 import initDemo from './initDemo';
 import setCtTransferFunctionForVolumeActor, {
   ctVoiRange,
@@ -14,6 +15,7 @@ import camera from './camera';
 
 export {
   createImageIdsAndCacheMetaData,
+  wadoURICreateImageIds,
   initDemo,
   setTitleAndDescription,
   addButtonToToolbar,
