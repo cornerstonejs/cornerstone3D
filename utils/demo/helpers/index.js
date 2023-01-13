@@ -1,5 +1,5 @@
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
-import wadoURICreateImageIds from './wadoURICreateImageIds';
+import wadoURICreateImageIds from './WADOURICreateImageIds';
 import initDemo from './initDemo';
 import setCtTransferFunctionForVolumeActor, {
   ctVoiRange,

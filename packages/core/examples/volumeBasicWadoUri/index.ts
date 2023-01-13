@@ -8,7 +8,7 @@ import {
   initDemo,
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
-  wadoURICreateImageIds
+  wadoURICreateImageIds,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
