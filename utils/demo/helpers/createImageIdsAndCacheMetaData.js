@@ -12,8 +12,6 @@ import convertMultiframeImageIds from './convertMultiframeImageIds';
 const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
-const VOLUME = 'volume';
-
 /**
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
@@ -25,7 +23,6 @@ const VOLUME = 'volume';
  * @returns {string[]} An array of imageIds for instances in the study.
  */
 
-export default async function createImageIdsAndCacheMetaData({
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
@@ -64,8 +61,6 @@ export default async function createImageIdsAndCacheMetaData({
     cornerstoneWADOImageLoader.wadors.metaDataManager.add(
       imageId,
       instanceMetaData
-      imageId,
-      instanceMetaData
     );
     return imageId;
   });
@@ -77,8 +72,6 @@ export default async function createImageIdsAndCacheMetaData({
       cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
     instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
     if (instanceMetaData) {
-      WADORSHeaderProvider.addInstance(imageId, instanceMetaData);
-
       // Add calibrated pixel spacing
       instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
       const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
