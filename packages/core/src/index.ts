@@ -29,9 +29,12 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
+  getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
+  setUseSharedArrayBuffer,
   resetUseCPURendering,
+  resetUseSharedArrayBuffer,
 } from './init';
 
 // Classes
@@ -102,4 +105,8 @@ export {
   getShouldUseCPURendering,
   setUseCPURendering,
   resetUseCPURendering,
+  // SharedArrayBuffer
+  getShouldUseSharedArrayBuffer,
+  setUseSharedArrayBuffer,
+  resetUseSharedArrayBuffer,
 };

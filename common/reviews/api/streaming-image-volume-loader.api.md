@@ -1147,6 +1147,15 @@ type ScalingParameters = {
 };
 
 // @public
+enum SharedArrayBufferModes {
+    AUTO = 'auto',
+    // (undocumented)
+    FALSE = 'false',
+    // (undocumented)
+    TRUE = 'true',
+}
+
+// @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
 
 // @public
@@ -1207,7 +1216,7 @@ export class StreamingImageVolume extends ImageVolume {
         imageIdIndex: number;
         options: {
             targetBuffer: {
-                arrayBuffer: ArrayBufferLike;
+                arrayBuffer: SharedArrayBuffer;
                 offset: number;
                 length: number;
                 type: any;
