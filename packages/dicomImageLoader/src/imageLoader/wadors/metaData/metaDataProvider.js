@@ -1,12 +1,53 @@
 import external from '../../../externalModules.js';
 import getNumberValues from './getNumberValues.js';
-import getValue from './getValue.js';
 import getNumberValue from './getNumberValue.js';
 import getOverlayPlaneModule from './getOverlayPlaneModule.js';
 import metaDataManager from '../metaDataManager.js';
+import getValue from './getValue.js';
+//import fixNMMetadata from './fixNMMetadata.js';
+import {
+  getMultiframeInformation,
+  getFrameInformation,
+} from '../combineFrameInstance.js';
+import multiframeMetadata from '../retrieveMultiframeMetadata.js';
 
 function metaDataProvider(type, imageId) {
+  if (type === 'multiframeModule') {
+    // the get function removes the PerFrameFunctionalGroupsSequence
+    const { metadata, frame } =
+      multiframeMetadata.retrieveMultiframeMetadata(imageId);
+
+    if (!metadata) {
+      return;
+    }
+    const {
+      PerFrameFunctionalGroupsSequence,
+      SharedFunctionalGroupsSequence,
+      NumberOfFrames,
+    } = getMultiframeInformation(metadata);
+
+    if (PerFrameFunctionalGroupsSequence || NumberOfFrames > 1) {
+      const { shared, perFrame } = getFrameInformation(
+        PerFrameFunctionalGroupsSequence,
+        SharedFunctionalGroupsSequence,
+        frame
+      );
+
+      return {
+        NumberOfFrames,
+        //PerFrameFunctionalGroupsSequence,
+        PerFrameFunctionalInformation: perFrame,
+        SharedFunctionalInformation: shared,
+      };
+    }
+
+    return {
+      NumberOfFrames,
+      //PerFrameFunctionalGroupsSequence,
+    };
+  }
   const { dicomParser } = external;
+
   const metaData = metaDataManager.get(imageId);
 
   if (!metaData) {
@@ -38,6 +79,7 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === 'imagePlaneModule') {
+    //metaData = fixNMMetadata(metaData);
     const imageOrientationPatient = getNumberValues(metaData['00200037'], 6);
     const imagePositionPatient = getNumberValues(metaData['00200032'], 3);
     const pixelSpacing = getNumberValues(metaData['00280030'], 2);

@@ -1,5 +1,7 @@
 import external from '../../externalModules.js';
 import { xhrRequest } from '../internal/index.js';
+import { combineFrameInstanceDataset } from './combineFrameInstanceDataset.js';
+import multiframeDataset from './retrieveMultiframeDataset.js';
 import dataSetFromPartialContent from './dataset-from-partial-content.js';
 
 /**
@@ -20,11 +22,18 @@ function isLoaded(uri) {
 }
 
 function get(uri) {
-  if (!loadedDataSets[uri]) {
-    return;
+  let dataSet;
+
+  if (uri.includes('&frame=')) {
+    const { frame, dataSet: multiframeDataSet } =
+      multiframeDataset.retrieveMultiframeDataset(uri);
+
+    dataSet = combineFrameInstanceDataset(frame, multiframeDataSet);
+  } else if (loadedDataSets[uri]) {
+    dataSet = loadedDataSets[uri].dataSet;
   }
 
-  return loadedDataSets[uri].dataSet;
+  return dataSet;
 }
 
 function update(uri, dataSet) {
@@ -174,7 +183,7 @@ function unload(uri) {
   }
 }
 
-export function getInfo() {
+function getInfo() {
   return {
     cacheSizeInBytes,
     numberOfDataSetsCached: Object.keys(loadedDataSets).length,
@@ -187,6 +196,8 @@ function purge() {
   promises = {};
   cacheSizeInBytes = 0;
 }
+
+export { loadedDataSets };
 
 export default {
   isLoaded,

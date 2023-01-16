@@ -6,10 +6,30 @@ import getImagePixelModule from './getImagePixelModule.js';
 import getOverlayPlaneModule from './getOverlayPlaneModule.js';
 import getLUTs from './getLUTs.js';
 import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixelRepresentation.js';
+import { getDirectFrameInformation } from '../combineFrameInstanceDataset.js';
+import multiframeDataset from '../retrieveMultiframeDataset.js';
 
 function metaDataProvider(type, imageId) {
-  const { dicomParser } = external;
   const parsedImageId = parseImageId(imageId);
+
+  if (type === 'multiframeModule') {
+    const multiframeData = multiframeDataset.retrieveMultiframeDataset(
+      parsedImageId.url
+    );
+
+    if (!multiframeData.dataSet) {
+      return;
+    }
+
+    const multiframeInfo = getDirectFrameInformation(
+      multiframeData.dataSet,
+      multiframeData.frame
+    );
+
+    return multiframeInfo;
+  }
+
+  const { dicomParser } = external;
 
   const dataSet = dataSetCacheManager.get(parsedImageId.url);
 
