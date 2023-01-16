@@ -14,6 +14,7 @@ export default function initCornerstoneWADOImageLoader() {
     useWebWorkers: true,
     decodeConfig: {
       convertFloatPixelDataToInt: false,
+      use16BitDataType: true,
     },
   });
 
