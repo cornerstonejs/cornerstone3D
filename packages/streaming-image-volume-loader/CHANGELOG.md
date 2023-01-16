@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.10.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.9.0...@cornerstonejs/streaming-image-volume-loader@0.10.0) (2023-01-16)
+
+
+### Features
+
+* add multiframe example ([#331](https://github.com/cornerstonejs/cornerstone3D-beta/issues/331)) ([327f17a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/327f17a551f869c8f454566782be720367291235))
+
+
+
+
+
 # [0.9.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.8.3...@cornerstonejs/streaming-image-volume-loader@0.9.0) (2023-01-13)
 
 
