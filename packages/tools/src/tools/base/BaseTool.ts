@@ -1,6 +1,5 @@
 import { StackViewport, VolumeViewport, utilities } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
-import deepMerge from '../../utilities/deepMerge';
 import { ToolModes } from '../../enums';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
@@ -37,7 +36,7 @@ abstract class BaseTool implements IBaseTool {
   public mode: ToolModes;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    const initialProps = deepMerge(defaultToolProps, toolProps);
+    const initialProps = utilities.deepMerge(defaultToolProps, toolProps);
 
     const {
       configuration = {},
@@ -87,7 +86,10 @@ abstract class BaseTool implements IBaseTool {
    * @param configuration - toolConfiguration
    */
   public setConfiguration(newConfiguration: Record<string, any>): void {
-    this.configuration = deepMerge(this.configuration, newConfiguration);
+    this.configuration = utilities.deepMerge(
+      this.configuration,
+      newConfiguration
+    );
   }
 
   /**

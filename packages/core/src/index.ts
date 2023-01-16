@@ -32,6 +32,8 @@ import {
   isCornerstoneInitialized,
   setUseCPURendering,
   resetUseCPURendering,
+  setConfiguration,
+  getConfiguration,
 } from './init';
 
 // Classes
@@ -55,6 +57,9 @@ export type { Types };
 
 export {
   init,
+  getConfiguration,
+  setConfiguration,
+  //
   isCornerstoneInitialized,
   // enums
   Enums,

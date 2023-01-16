@@ -1,5 +1,5 @@
 // @see: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#-type-only-imports-and-export
-
+import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
@@ -61,6 +61,9 @@ import type ActorSliceRange from './ActorSliceRange';
 import type ImageSliceData from './ImageSliceData';
 
 export type {
+  // config
+  Cornerstone3DConfig,
+  //
   ICamera,
   IStackViewport,
   IVolumeViewport,

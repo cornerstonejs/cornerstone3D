@@ -1,10 +1,27 @@
 import { getGPUTier } from 'detect-gpu';
+import { deepMerge } from './utilities';
+import { Cornerstone3DConfig } from './types';
 
 let csRenderInitialized = false;
-let useCPURendering = false;
+
+const defaultConfig: Cornerstone3DConfig = {
+  rendering: {
+    preferSizeOverAccuracy: false,
+    useCPURendering: false,
+  },
+  // cache
+  // ...
+};
+
+let config: Cornerstone3DConfig = {
+  rendering: {
+    preferSizeOverAccuracy: false,
+    useCPURendering: false,
+  },
+};
 
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
-function hasActiveWebGLContext() {
+function _hasActiveWebGLContext() {
   // Create canvas element. The canvas is not added to the
   // document itself, so it is never displayed in the
   // browser window.
@@ -26,20 +43,23 @@ function hasActiveWebGLContext() {
  * the detected gpu (by detect-gpu library) indicates the GPU is not low end we
  * will use webgl GPU rendering. Otherwise we will use cpu rendering.
  *
- * @param defaultConfiguration - A configuration object
+ * @param configuration - A configuration object
  * @returns A promise that resolves to true cornerstone has been initialized successfully.
  * @category Initialization
  */
-async function init(defaultConfiguration = {}): Promise<boolean> {
+async function init(configuration = {}): Promise<boolean> {
   if (csRenderInitialized) {
     return csRenderInitialized;
   }
 
+  // merge configs
+  config = deepMerge(defaultConfig, configuration);
+
   // detectGPU
-  const hasWebGLContext = hasActiveWebGLContext();
+  const hasWebGLContext = _hasActiveWebGLContext();
   if (!hasWebGLContext) {
-    useCPURendering = true;
     console.log('CornerstoneRender: GPU not detected, using CPU rendering');
+    config.rendering.useCPURendering = true;
   } else {
     const gpuTier = await getGPUTier();
     console.log(
@@ -50,7 +70,7 @@ async function init(defaultConfiguration = {}): Promise<boolean> {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
       );
-      useCPURendering = true;
+      config.rendering.useCPURendering = true;
     } else {
       console.log('CornerstoneRender: using GPU rendering');
     }
@@ -68,7 +88,7 @@ async function init(defaultConfiguration = {}): Promise<boolean> {
  *
  */
 function setUseCPURendering(status: boolean): void {
-  useCPURendering = status;
+  config.rendering.useCPURendering = status;
   csRenderInitialized = true;
 }
 
@@ -79,7 +99,7 @@ function setUseCPURendering(status: boolean): void {
  *
  */
 function resetUseCPURendering() {
-  useCPURendering = !hasActiveWebGLContext();
+  config.rendering.useCPURendering = !_hasActiveWebGLContext();
 }
 
 /**
@@ -89,7 +109,7 @@ function resetUseCPURendering() {
  *
  */
 function getShouldUseCPURendering(): boolean {
-  return useCPURendering;
+  return config.rendering.useCPURendering;
 }
 
 /**
@@ -103,10 +123,31 @@ function isCornerstoneInitialized(): boolean {
   return csRenderInitialized;
 }
 
+/**
+ * This function returns a copy of the config object. This is used to prevent the
+ * config object from being modified by other parts of the program.
+ * @returns A copy of the config object.
+ */
+function getConfiguration(): Cornerstone3DConfig {
+  // return a copy
+  return JSON.parse(JSON.stringify(config));
+}
+
+/**
+ * It takes a new configuration object and merges it with the existing
+ * configuration object
+ * @param newConfig - The new configuration object.
+ */
+function setConfiguration(newConfig: Cornerstone3DConfig): void {
+  config = deepMerge(config, newConfig);
+}
+
 export {
   init,
   getShouldUseCPURendering,
   isCornerstoneInitialized,
   setUseCPURendering,
   resetUseCPURendering,
+  getConfiguration,
+  setConfiguration,
 };

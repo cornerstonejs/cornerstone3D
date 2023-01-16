@@ -21,7 +21,6 @@ import {
 
 import addLabelmapToElement from './addLabelmapToElement';
 
-import { deepMerge } from '../../../utilities';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 
 const MAX_NUMBER_COLORS = 255;
@@ -78,7 +77,7 @@ async function addSegmentationRepresentation(
     const currentToolGroupConfig =
       SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
 
-    const mergedConfig = deepMerge(
+    const mergedConfig = utilities.deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
     );
