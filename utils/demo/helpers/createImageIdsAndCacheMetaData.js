@@ -7,10 +7,12 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
+import convertMultiframeImageIds from './convertMultiframeImageIds';
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
+/**
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
@@ -39,7 +41,7 @@ export default async function createImageIdsAndCacheMetaData({
   const instances = await client.retrieveSeriesMetadata(studySearchOptions);
   const modality = instances[0][MODALITY].Value[0];
 
-  const imageIds = instances.map((instanceMetaData) => {
+  let imageIds = instances.map((instanceMetaData) => {
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
@@ -60,18 +62,27 @@ export default async function createImageIdsAndCacheMetaData({
       imageId,
       instanceMetaData
     );
-
-    // Add calibrated pixel spacing
-    const m = JSON.parse(JSON.stringify(instanceMetaData));
-    const instance = DicomMetaDictionary.naturalizeDataset(m);
-    const pixelSpacing = getPixelSpacingInformation(instance);
-
-    calibratedPixelSpacingMetadataProvider.add(
-      imageId,
-      pixelSpacing.map((s) => parseFloat(s))
-    );
-
     return imageId;
+  });
+  // if the image ids represent multiframe information, creates a new list with one image id per frame
+  // if not multiframe data available, just returns the same list given
+  imageIds = convertMultiframeImageIds(imageIds);
+  imageIds.forEach((imageId) => {
+    let instanceMetaData =
+      cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+    instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
+    if (instanceMetaData) {
+      // Add calibrated pixel spacing
+      const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
+      const pixelSpacing = getPixelSpacingInformation(metadata);
+
+      if (pixelSpacing) {
+        calibratedPixelSpacingMetadataProvider.add(
+          imageId,
+          pixelSpacing.map((s) => parseFloat(s))
+        );
+      }
+    }
   });
 
   // we don't want to add non-pet
