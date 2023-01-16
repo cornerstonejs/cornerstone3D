@@ -73,7 +73,6 @@ export default async function createImageIdsAndCacheMetaData({
     instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
     if (instanceMetaData) {
       // Add calibrated pixel spacing
-      instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
       const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
       const pixelSpacing = getPixelSpacingInformation(metadata);
 

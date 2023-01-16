@@ -45,7 +45,7 @@ function convertMultiframeImageIds(imageIds) {
   const newImageIds = [];
   imageIds.forEach((imageId) => {
     const { imageIdFrameless } = getFrameInformation(imageId);
-    const instanceMetaData = metaData.get('MultiframeModule', imageId);
+    const instanceMetaData = metaData.get('multiframeModule', imageId);
     if (
       instanceMetaData &&
       instanceMetaData.NumberOfFrames &&
