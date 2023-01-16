@@ -161,12 +161,12 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
   const byteOffset = imageIdIndex * bytesPerImage;
 
   const options = {
-    targetBuffer: {
-      arrayBuffer: scalarData.buffer,
-      offset: byteOffset,
-      length: voxelsPerImage,
-      type,
-    },
+    // targetBuffer: {
+    //   arrayBuffer: scalarData.buffer,
+    //   offset: byteOffset,
+    //   length: voxelsPerImage,
+    //   type,
+    // },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
     preScale: {

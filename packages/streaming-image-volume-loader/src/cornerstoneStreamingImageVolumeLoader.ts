@@ -1,16 +1,15 @@
-import {
-  cache,
-  utilities,
-  Enums,
-  imageLoader,
-  imageLoadPoolManager,
-} from '@cornerstonejs/core';
+import { cache, utilities, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers';
 import StreamingImageVolume from './StreamingImageVolume';
 
-const { createUint8SharedArray, createFloat32SharedArray } = utilities;
+const {
+  createUint8SharedArray,
+  createFloat32SharedArray,
+  createUint16SharedArray,
+  createInt16SharedArray,
+} = utilities;
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -36,6 +35,7 @@ function cornerstoneStreamingImageVolumeLoader(
     imageIds: string[];
   }
 ): IVolumeLoader {
+  const { hasNorm16TextureSupport } = getConfiguration().rendering;
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
       'ImageIds must be provided to create a streaming image volume'
@@ -128,9 +128,14 @@ function cornerstoneStreamingImageVolumeLoader(
     const signed = PixelRepresentation === 1;
 
     // Check if it fits in the cache before we allocate data
-    // TODO Improve this when we have support for more types
-    // NOTE: We use 4 bytes per voxel as we are using Float32.
-    const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1;
+    let bytesPerVoxel = 1;
+
+    if (BitsAllocated === 16 && hasNorm16TextureSupport) {
+      bytesPerVoxel = 2;
+    } else {
+      bytesPerVoxel = 4;
+    }
+
     const sizeInBytesPerComponent =
       bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2];
 
@@ -166,9 +171,21 @@ function cornerstoneStreamingImageVolumeLoader(
         break;
 
       case 16:
-        scalarData = createFloat32SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
-        );
+        if (hasNorm16TextureSupport) {
+          if (signed) {
+            scalarData = createInt16SharedArray(
+              dimensions[0] * dimensions[1] * dimensions[2]
+            );
+          } else {
+            scalarData = createUint16SharedArray(
+              dimensions[0] * dimensions[1] * dimensions[2]
+            );
+          }
+        } else {
+          scalarData = createFloat32SharedArray(
+            dimensions[0] * dimensions[1] * dimensions[2]
+          );
+        }
 
         break;
 
@@ -181,7 +198,7 @@ function cornerstoneStreamingImageVolumeLoader(
         break;
     }
 
-    let streamingImageVolume = new StreamingImageVolume(
+    const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
       {
         volumeId,

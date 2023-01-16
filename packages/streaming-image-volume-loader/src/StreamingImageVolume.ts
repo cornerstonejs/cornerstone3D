@@ -204,16 +204,6 @@ export default class StreamingImageVolume extends ImageVolume {
     // Length of one frame in bytes
     const lengthInBytes = arrayBuffer.byteLength / numFrames;
 
-    let type;
-
-    if (scalarData instanceof Uint8Array) {
-      type = 'Uint8Array';
-    } else if (scalarData instanceof Float32Array) {
-      type = 'Float32Array';
-    } else {
-      throw new Error('Unsupported array type');
-    }
-
     let framesLoaded = 0;
     let framesProcessed = 0;
 
@@ -391,26 +381,10 @@ export default class StreamingImageVolume extends ImageVolume {
         return;
       }
 
-      const modalityLutModule =
-        metaData.get('modalityLutModule', imageId) || {};
+      const scalingParameters = csUtils.getScalingParameters(imageId);
 
-      const generalSeriesModule =
-        metaData.get('generalSeriesModule', imageId) || {};
-
-      const scalingParameters: Types.ScalingParameters = {
-        rescaleSlope: modalityLutModule.rescaleSlope,
-        rescaleIntercept: modalityLutModule.rescaleIntercept,
-        modality: generalSeriesModule.modality,
-      };
-
-      if (scalingParameters.modality === 'PT') {
-        const suvFactor = metaData.get('scalingModule', imageId);
-
-        if (suvFactor) {
-          this._addScalingToVolume(suvFactor);
-          scalingParameters.suvbw = suvFactor.suvbw;
-        }
-      }
+      this._addScalingToVolumeIfNecessary(scalingParameters);
+      const type = csUtils.getScalarDataType(scalingParameters, scalarData);
 
       const options = {
         // WADO Image Loader
@@ -546,13 +520,20 @@ export default class StreamingImageVolume extends ImageVolume {
     return scaledArray;
   }
 
-  private _addScalingToVolume(suvFactor) {
+  private _addScalingToVolumeIfNecessary(
+    scalingParameters: Types.ScalingParameters
+  ) {
+    const { suvbsa, suvbw, suvlbm } = scalingParameters;
+    if (suvbsa !== undefined || suvbw !== undefined || suvlbm !== undefined) {
+      this._addScalingToVolume({ suvbsa, suvbw, suvlbm });
+    }
+  }
+
+  private _addScalingToVolume({ suvbsa, suvbw, suvlbm }) {
     // Todo: handle case where suvFactors are not the same for all frames
     if (this.scaling) {
       return;
     }
-
-    const { suvbw, suvlbm, suvbsa } = suvFactor;
 
     const petScaling = <Types.PTScaling>{};
 

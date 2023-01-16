@@ -13,6 +13,13 @@ type Cornerstone3DConfig = {
     // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
     // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
     preferSizeOverAccuracy: boolean;
+    // Whether the EXT_texture_norm16 extension is supported by the browser.
+    // WebGL 2 report (link: https://webglreport.com/?v=2) can be used to check
+    // if the browser supports this extension.
+    // In case the browser supports this extension, instead of using 32bit float
+    // textures, 16bit float textures will be used to reduce the memory usage where
+    // possible.
+    hasNorm16TextureSupport: boolean;
     useCPURendering: boolean;
   };
 };

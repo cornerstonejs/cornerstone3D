@@ -222,6 +222,12 @@ class WindowLevelTool extends BaseTool {
     } else if (scalarData instanceof Uint8Array) {
       bytesPerVoxel = 1;
       TypedArrayConstructor = Uint8Array;
+    } else if (scalarData instanceof Uint16Array) {
+      bytesPerVoxel = 2;
+      TypedArrayConstructor = Uint16Array;
+    } else if (scalarData instanceof Int16Array) {
+      bytesPerVoxel = 2;
+      TypedArrayConstructor = Int16Array;
     }
 
     const buffer = scalarData.buffer;

@@ -6,8 +6,9 @@ let csRenderInitialized = false;
 
 const defaultConfig: Cornerstone3DConfig = {
   rendering: {
-    preferSizeOverAccuracy: false,
+    preferSizeOverAccuracy: true,
     useCPURendering: false,
+    hasNorm16TextureSupport: _hasNorm16TextureSupport(),
   },
   // cache
   // ...
@@ -15,24 +16,52 @@ const defaultConfig: Cornerstone3DConfig = {
 
 let config: Cornerstone3DConfig = {
   rendering: {
-    preferSizeOverAccuracy: false,
+    preferSizeOverAccuracy: true,
     useCPURendering: false,
+    hasNorm16TextureSupport: _hasNorm16TextureSupport(),
   },
+  // cache
+  // ...
 };
 
-// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
-function _hasActiveWebGLContext() {
+function _getGLContext(): RenderingContext {
   // Create canvas element. The canvas is not added to the
   // document itself, so it is never displayed in the
   // browser window.
   const canvas = document.createElement('canvas');
   // Get WebGLRenderingContext from canvas element.
   const gl =
-    canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    canvas.getContext('webgl2') ||
+    canvas.getContext('webgl') ||
+    canvas.getContext('experimental-webgl');
+
+  return gl;
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
+function _hasActiveWebGLContext() {
+  const gl = _getGLContext();
 
   // Report the result.
-  if (gl && gl instanceof WebGLRenderingContext) {
+  if (
+    (gl && gl instanceof WebGLRenderingContext) ||
+    gl instanceof WebGL2RenderingContext
+  ) {
     return true;
+  }
+
+  return false;
+}
+
+function _hasNorm16TextureSupport() {
+  const gl = _getGLContext();
+
+  if (gl) {
+    const ext = gl.getExtension('EXT_texture_norm16');
+
+    if (ext) {
+      return true;
+    }
   }
 
   return false;
@@ -138,8 +167,12 @@ function getConfiguration(): Cornerstone3DConfig {
  * configuration object
  * @param newConfig - The new configuration object.
  */
-function setConfiguration(newConfig: Cornerstone3DConfig): void {
-  config = deepMerge(config, newConfig);
+function setPreferSizeOverAccuracy(status: boolean): void {
+  config.rendering.preferSizeOverAccuracy = status;
+}
+
+function hasNorm16TextureSupport(): boolean {
+  return config.rendering.hasNorm16TextureSupport;
 }
 
 export {
@@ -147,7 +180,8 @@ export {
   getShouldUseCPURendering,
   isCornerstoneInitialized,
   setUseCPURendering,
-  resetUseCPURendering,
   getConfiguration,
-  setConfiguration,
+  resetUseCPURendering,
+  setPreferSizeOverAccuracy,
+  hasNorm16TextureSupport,
 };
