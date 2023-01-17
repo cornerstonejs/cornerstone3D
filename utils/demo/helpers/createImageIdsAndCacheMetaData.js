@@ -7,7 +7,7 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
-import convertMultiframeImageIds from './convertMultiframeImageIds';
+import { convertMultiframeImageIds } from './convertMultiframeImageIds';
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
