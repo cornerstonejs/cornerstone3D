@@ -16,7 +16,7 @@ export default function scaleArray(
 
   if (scalingParameters.modality === 'PT') {
     if (typeof suvbw !== 'number') {
-      return;
+      return array;
     }
 
     for (let i = 0; i < arrayLength; i++) {

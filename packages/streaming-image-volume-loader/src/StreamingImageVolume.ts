@@ -494,10 +494,27 @@ export default class StreamingImageVolume extends ImageVolume {
    * rescaleIntercept are different from the ones that were used to scale the
    * image, we should scale the image again according to the new parameters.
    */
-  private _scaleIfNecessary(image, scalingParametersToUse) {
+  private _scaleIfNecessary(
+    image,
+    scalingParametersToUse: Types.ScalingParameters
+  ) {
     const imageIsAlreadyScaled = image.preScale?.scaled;
+    const noScalingParametersToUse =
+      !scalingParametersToUse ||
+      !scalingParametersToUse.rescaleIntercept ||
+      !scalingParametersToUse.rescaleSlope;
 
-    if (!imageIsAlreadyScaled) {
+    if (!imageIsAlreadyScaled && noScalingParametersToUse) {
+      // no need to scale the image
+      return image.getPixelData().slice(0);
+    }
+
+    if (
+      !imageIsAlreadyScaled &&
+      scalingParametersToUse &&
+      scalingParametersToUse.rescaleIntercept !== undefined &&
+      scalingParametersToUse.rescaleSlope !== undefined
+    ) {
       // if not already scaled, just scale the image.
       // copy so that it doesn't get modified
       const pixelDataCopy = image.getPixelData().slice(0);
