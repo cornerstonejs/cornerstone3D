@@ -244,7 +244,7 @@ function addPolyData(viewport) {
 
     const actor1 = vtkActor.newInstance();
     actor1.setMapper(mapper1);
-    actor1.getProperty().setLineWidth(10);
+    actor1.getProperty().setLineWidth(4);
     actor1.getProperty().setColor(0, 0.5, 0);
 
     viewport.addActor({ actor: actor1, uid: `polyData-${index}` });
