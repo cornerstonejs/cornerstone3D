@@ -10,6 +10,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { state } from '../index';
 import {
+  IToolBinding,
   IToolClassReference,
   IToolGroup,
   SetToolBindingsType,
@@ -314,7 +315,7 @@ export default class ToolGroup implements IToolGroup {
       return;
     }
 
-    const prevBindings = this.toolOptions[toolName]
+    const prevBindings: IToolBinding[] = this.toolOptions[toolName]
       ? this.toolOptions[toolName].bindings
       : [];
 
@@ -323,10 +324,12 @@ export default class ToolGroup implements IToolGroup {
       : [];
 
     // combine the new bindings with the previous bindings to avoid duplicates
+    // it allows duplicated mouse buttons as long as they don't have same
+    // modifier keys.
     const bindingsToUse = [...prevBindings, ...newBindings].reduce(
       (unique, binding) => {
         if (
-          !unique.some((obj) => obj.mouseButton === binding.mouseButton) &&
+          !unique.some((obj) => hasSameBinding(obj, binding)) &&
           binding.mouseButton !== undefined
         ) {
           unique.push(binding);
@@ -656,4 +659,15 @@ export default class ToolGroup implements IToolGroup {
       getRenderingEngine(renderingEngineId).renderViewport(viewportId);
     });
   }
+}
+
+function hasSameBinding(
+  binding1: IToolBinding,
+  binding2: IToolBinding
+): boolean {
+  if (binding1.mouseButton !== binding2.mouseButton) {
+    return false;
+  }
+
+  return binding1.modifierKey === binding2.modifierKey;
 }
