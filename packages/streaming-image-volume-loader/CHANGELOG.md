@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.10.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.10.0...@cornerstonejs/streaming-image-volume-loader@0.10.1) (2023-01-19)
+
+
+### Bug Fixes
+
+* **StreamingImageVolume:** scaling bug for undefined parameters ([#376](https://github.com/cornerstonejs/cornerstone3D-beta/issues/376)) ([a366d9d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a366d9decaad125dc566315e0ae2bf882762d8ba))
+
+
+
+
+
 # [0.10.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.9.0...@cornerstonejs/streaming-image-volume-loader@0.10.0) (2023-01-16)
 
 
