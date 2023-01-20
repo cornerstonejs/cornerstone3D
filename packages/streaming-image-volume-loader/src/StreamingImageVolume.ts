@@ -385,29 +385,31 @@ export default class StreamingImageVolume extends ImageVolume {
     }
 
     function handleArrayBufferLoad(scalarData, image, options) {
-      if (scalarData.buffer instanceof ArrayBuffer) {
-        const offset = options.targetBuffer.offset; // in bytes
-        const length = options.targetBuffer.length; // in frames
-        try {
-          if (scalarData instanceof Float32Array) {
-            const bytesInFloat = 4;
-            const floatView = new Float32Array(image.pixelData);
-            if (floatView.length !== length) {
-              throw 'Error pixelData length does not match frame length';
-            }
-            scalarData.set(floatView, offset / bytesInFloat);
+      if (!(scalarData.buffer instanceof ArrayBuffer)) {
+        return;
+      }
+
+      const offset = options.targetBuffer.offset; // in bytes
+      const length = options.targetBuffer.length; // in frames
+      try {
+        if (scalarData instanceof Float32Array) {
+          const bytesInFloat = 4;
+          const floatView = new Float32Array(image.pixelData);
+          if (floatView.length !== length) {
+            throw 'Error pixelData length does not match frame length';
           }
-          if (scalarData instanceof Uint8Array) {
-            const bytesInUint8 = 1;
-            const intView = new Uint8Array(image.pixelData);
-            if (intView.length !== length) {
-              throw 'Error pixelData length does not match frame length';
-            }
-            scalarData.set(intView, offset / bytesInUint8);
-          }
-        } catch (e) {
-          console.error(e);
+          scalarData.set(floatView, offset / bytesInFloat);
         }
+        if (scalarData instanceof Uint8Array) {
+          const bytesInUint8 = 1;
+          const intView = new Uint8Array(image.pixelData);
+          if (intView.length !== length) {
+            throw 'Error pixelData length does not match frame length';
+          }
+          scalarData.set(intView, offset / bytesInUint8);
+        }
+      } catch (e) {
+        console.error(e);
       }
     }
 

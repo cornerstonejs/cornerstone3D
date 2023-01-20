@@ -150,8 +150,10 @@ function cornerstoneStreamingImageVolumeLoader(
 
     cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
 
-    let scalarData;
     const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();
+    const length = dimensions[0] * dimensions[1] * dimensions[2];
+
+    let scalarData;
     switch (BitsAllocated) {
       case 8:
         if (signed) {
@@ -160,37 +162,29 @@ function cornerstoneStreamingImageVolumeLoader(
           );
         } else {
           scalarData = useSharedArrayBuffer
-            ? createUint8SharedArray(
-                dimensions[0] * dimensions[1] * dimensions[2]
-              )
-            : new Uint8Array(dimensions[0] * dimensions[1] * dimensions[2]);
+            ? createUint8SharedArray(length)
+            : new Uint8Array(length);
         }
 
         break;
 
       case 16:
         scalarData = useSharedArrayBuffer
-          ? createFloat32SharedArray(
-              dimensions[0] * dimensions[1] * dimensions[2]
-            )
-          : new Float32Array(dimensions[0] * dimensions[1] * dimensions[2]);
+          ? createFloat32SharedArray(length)
+          : new Float32Array(length);
 
         break;
 
       case 24:
         // hacky because we don't support alpha channel in dicom
         scalarData = useSharedArrayBuffer
-          ? createUint8SharedArray(
-              dimensions[0] * dimensions[1] * dimensions[2] * numComponents
-            )
-          : new Uint8Array(
-              dimensions[0] * dimensions[1] * dimensions[2] * numComponents
-            );
+          ? createUint8SharedArray(length * numComponents)
+          : new Uint8Array(length * numComponents);
 
         break;
     }
 
-    let streamingImageVolume = new StreamingImageVolume(
+    const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
       {
         volumeId,

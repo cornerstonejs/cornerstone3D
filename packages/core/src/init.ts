@@ -1,9 +1,10 @@
 import { getGPUTier } from 'detect-gpu';
-import { Enums } from '@cornerstonejs/core';
+import { SharedArrayBufferModes } from './enums';
+
 let csRenderInitialized = false;
 let useCPURendering = false;
 let useSharedArrayBuffer = true;
-let sharedArrayBufferMode = Enums.SharedArrayBufferModes.TRUE;
+let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
 function hasActiveWebGLContext() {
@@ -109,11 +110,9 @@ function getShouldUseCPURendering(): boolean {
   return useCPURendering;
 }
 
-function setUseSharedArrayBuffer(
-  mode: Enums.SharedArrayBufferModes | boolean
-): void {
-  if (mode == Enums.SharedArrayBufferModes.AUTO) {
-    sharedArrayBufferMode = Enums.SharedArrayBufferModes.AUTO;
+function setUseSharedArrayBuffer(mode: SharedArrayBufferModes | boolean): void {
+  if (mode == SharedArrayBufferModes.AUTO) {
+    sharedArrayBufferMode = SharedArrayBufferModes.AUTO;
     const hasSharedBuffer = hasSharedArrayBuffer();
     if (!hasSharedBuffer) {
       useSharedArrayBuffer = false;
@@ -129,14 +128,14 @@ function setUseSharedArrayBuffer(
     return;
   }
 
-  if (mode == Enums.SharedArrayBufferModes.TRUE || mode == true) {
-    sharedArrayBufferMode = Enums.SharedArrayBufferModes.TRUE;
+  if (mode == SharedArrayBufferModes.TRUE || mode == true) {
+    sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
     useSharedArrayBuffer = true;
     return;
   }
 
-  if (mode == Enums.SharedArrayBufferModes.FALSE || mode == false) {
-    sharedArrayBufferMode = Enums.SharedArrayBufferModes.FALSE;
+  if (mode == SharedArrayBufferModes.FALSE || mode == false) {
+    sharedArrayBufferMode = SharedArrayBufferModes.FALSE;
     useSharedArrayBuffer = false;
     return;
   }
