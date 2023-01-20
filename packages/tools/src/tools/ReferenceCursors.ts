@@ -84,7 +84,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
    * @param filteredAnnotations - The annotations to check for hover interactions
    * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
    */
-  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): boolean => {
+  mouseMoveCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const { detail } = evt;
     const { element, currentPoints } = detail;
 

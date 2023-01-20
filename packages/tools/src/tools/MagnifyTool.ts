@@ -56,11 +56,7 @@ class MagnifyTool extends BaseTool {
     return referencedImageId;
   }
 
-  preMouseDownCallback = (
-    evt:
-      | EventTypes.MouseDownActivateEventType
-      | EventTypes.TouchStartActivateEventType
-  ) => {
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element, currentPoints } = eventDetail;
     const enabledElement = getEnabledElement(element);
@@ -103,7 +99,7 @@ class MagnifyTool extends BaseTool {
     return true;
   };
 
-  preTouchStartCallback = (evt: EventTypes.TouchStartActivateEventType) => {
+  preTouchStartCallback = (evt: EventTypes.InteractionEventType) => {
     this.preMouseDownCallback(evt);
   };
 
@@ -200,9 +196,7 @@ class MagnifyTool extends BaseTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  _dragCallback = (
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
-  ) => {
+  _dragCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
 
     const { deltaPoints, element, currentPoints } = eventDetail;
@@ -250,9 +244,7 @@ class MagnifyTool extends BaseTool {
     magnifyViewport.render();
   };
 
-  _dragEndCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.TouchEndEventType
-  ) => {
+  _dragEndCallback = (evt: EventTypes.InteractionEventType) => {
     const { element } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;

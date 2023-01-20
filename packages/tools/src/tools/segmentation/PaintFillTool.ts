@@ -55,9 +55,7 @@ class PaintFillTool extends BaseTool {
    * @returns The annotation object.
    *
    */
-  preMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
-  ): boolean => {
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;

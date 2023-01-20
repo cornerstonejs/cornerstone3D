@@ -274,7 +274,7 @@ class AngleTool extends AnnotationTool {
   };
 
   handleSelectedCallback(
-    evt: EventTypes.InteractionStartType,
+    evt: EventTypes.InteractionEventType,
     annotation: AngleAnnotation,
     handle: ToolHandle
   ): void {

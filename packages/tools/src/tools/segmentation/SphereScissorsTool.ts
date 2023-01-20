@@ -79,7 +79,7 @@ class SphereScissorsTool extends BaseTool {
    * @returns The annotation object.
    *
    */
-  preMouseDownCallback = (evt: EventTypes.MouseDownActivateEventType): true => {
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType): true => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -172,7 +172,7 @@ class SphereScissorsTool extends BaseTool {
     return true;
   };
 
-  _dragCallback = (evt: EventTypes.MouseDragEventType) => {
+  _dragCallback = (evt: EventTypes.InteractionEventType) => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -218,9 +218,7 @@ class SphereScissorsTool extends BaseTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  _endCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ) => {
+  _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 

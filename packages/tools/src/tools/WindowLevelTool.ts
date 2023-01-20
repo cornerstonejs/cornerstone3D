@@ -33,13 +33,11 @@ class WindowLevelTool extends BaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  touchDragCallback(evt: EventTypes.TouchDragEventType) {
+  touchDragCallback(evt: EventTypes.InteractionEventType) {
     this.mouseDragCallback(evt);
   }
 
-  mouseDragCallback(
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
-  ) {
+  mouseDragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewportId, viewport } = enabledElement;

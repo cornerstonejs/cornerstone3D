@@ -29,16 +29,14 @@ class StackScrollTool extends BaseTool {
     this.deltaY = 1;
   }
 
-  mouseDragCallback(evt: EventTypes.MouseDragEventType) {
+  mouseDragCallback(evt: EventTypes.InteractionEventType) {
     this._dragCallback(evt);
   }
-  touchDragCallback(evt: EventTypes.TouchDragEventType) {
+  touchDragCallback(evt: EventTypes.InteractionEventType) {
     this._dragCallback(evt);
   }
 
-  _dragCallback(
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
-  ) {
+  _dragCallback(evt: EventTypes.InteractionEventType) {
     const { deltaPoints, viewportId, renderingEngineId } = evt.detail;
     const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
 

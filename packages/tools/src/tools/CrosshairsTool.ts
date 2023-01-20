@@ -367,9 +367,7 @@ class CrosshairsTool extends AnnotationTool {
    * @returns Crosshairs annotation
    */
   addNewAnnotation = (
-    evt:
-      | EventTypes.MouseDownActivateEventType
-      | EventTypes.TouchStartActivateEventType,
+    evt: EventTypes.InteractionEventType,
     interactionType = 'mouse'
   ): CrosshairsAnnotation => {
     const eventDetail = evt.detail;
@@ -471,7 +469,7 @@ class CrosshairsTool extends AnnotationTool {
   }
 
   handleSelectedCallback = (
-    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
+    evt: EventTypes.InteractionEventType,
     annotation: Annotation,
     handle: ToolHandle,
     interactionType = 'mouse'
@@ -518,7 +516,7 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   toolSelectedCallback = (
-    evt: EventTypes.MouseDownEventType | EventTypes.TouchStartEventType,
+    evt: EventTypes.InteractionEventType,
     annotation: Annotation,
     interactionType: InteractionTypes
   ): void => {
@@ -651,7 +649,7 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   mouseMoveCallback = (
-    evt: EventTypes.MouseMoveEventType,
+    evt: EventTypes.InteractionEventType,
     filteredToolAnnotations: Annotations
   ): boolean => {
     const { element, currentPoints } = evt.detail;
@@ -1921,13 +1919,7 @@ class CrosshairsTool extends AnnotationTool {
     element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
-  _endCallback = (
-    evt:
-      | EventTypes.MouseUpEventType
-      | EventTypes.MouseClickEventType
-      | EventTypes.TouchEndEventType
-      | EventTypes.TouchTapEventType
-  ) => {
+  _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -1953,7 +1945,7 @@ class CrosshairsTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  _dragCallback = (evt: MouseDragEventType | EventTypes.TouchDragEventType) => {
+  _dragCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const delta = eventDetail.deltaPoints.world;
 

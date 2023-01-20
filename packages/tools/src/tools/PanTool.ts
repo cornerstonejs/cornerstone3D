@@ -18,17 +18,15 @@ class PanTool extends BaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  touchDragCallback(evt: EventTypes.TouchDragEventType) {
+  touchDragCallback(evt: EventTypes.InteractionEventType) {
     this._dragCallback(evt);
   }
 
-  mouseDragCallback(evt: EventTypes.MouseDragEventType) {
+  mouseDragCallback(evt: EventTypes.InteractionEventType) {
     this._dragCallback(evt);
   }
 
-  _dragCallback(
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
-  ) {
+  _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
 

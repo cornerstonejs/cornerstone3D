@@ -11,8 +11,8 @@ import { EventTypes, PublicToolProps, ToolProps } from '../types';
  */
 class ZoomTool extends BaseTool {
   static toolName;
-  touchDragCallback: (evt: EventTypes.TouchDragEventType) => void;
-  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
+  mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
 
@@ -42,11 +42,7 @@ class ZoomTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  preMouseDownCallback = (
-    evt:
-      | EventTypes.MouseDownActivateEventType
-      | EventTypes.TouchStartActivateEventType
-  ): boolean => {
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const worldPos = currentPoints.world;
@@ -77,16 +73,17 @@ class ZoomTool extends BaseTool {
     return false;
   };
 
-  preTouchStartCallback = (
-    evt: EventTypes.TouchStartActivateEventType
-  ): boolean => {
+  preTouchStartCallback = (evt: EventTypes.InteractionEventType): boolean => {
     if (!this.configuration.pinchToZoom) {
       return this.preMouseDownCallback(evt);
     }
   };
 
-  _pinchCallback(evt: EventTypes.TouchDragEventType) {
-    if (evt.detail.currentPointsList.length > 1) {
+  _pinchCallback(evt: EventTypes.InteractionEventType) {
+    const pointsList = (evt as EventTypes.TouchStartEventType).detail
+      .currentPointsList;
+
+    if (pointsList.length > 1) {
       const { element, currentPoints } = evt.detail;
       const enabledElement = getEnabledElement(element);
       const { viewport } = enabledElement;
@@ -118,9 +115,7 @@ class ZoomTool extends BaseTool {
   }
 
   // Takes ICornerstoneEvent, Mouse or Touch
-  _dragCallback(
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
-  ) {
+  _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
@@ -137,7 +132,7 @@ class ZoomTool extends BaseTool {
   }
 
   _dragParallelProjection = (
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType,
+    evt: EventTypes.InteractionEventType,
     viewport: Types.IStackViewport | Types.IVolumeViewport,
     camera: Types.ICamera,
     pinch = false
@@ -227,7 +222,7 @@ class ZoomTool extends BaseTool {
   };
 
   _dragPerspectiveProjection = (
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType,
+    evt: EventTypes.InteractionEventType,
     viewport: Types.IStackViewport | Types.IVolumeViewport,
     camera: Types.ICamera,
     pinch = false
@@ -266,9 +261,7 @@ class ZoomTool extends BaseTool {
     viewport.setCamera({ position, focalPoint });
   };
 
-  _panCallback(
-    evt: EventTypes.MouseDragEventType | EventTypes.TouchDragEventType
-  ) {
+  _panCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
 
