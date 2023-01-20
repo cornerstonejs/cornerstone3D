@@ -467,7 +467,7 @@ export default class StreamingImageVolume extends ImageVolume {
 
       // Use loadImage because we are skipping the Cornerstone Image cache
       // when we load directly into the Volume cache
-      function callLoadImage(imageId, imageIdIndex, options) {
+      const callLoadImage = (imageId, imageIdIndex, options) => {
         return imageLoader.loadImage(imageId, options).then(
           (image) => {
             // scalarData is the volume container we are progressively loading into
@@ -480,7 +480,7 @@ export default class StreamingImageVolume extends ImageVolume {
             errorCallback(error, imageIdIndex, imageId);
           }
         );
-      }
+      };
 
       return {
         callLoadImage,
