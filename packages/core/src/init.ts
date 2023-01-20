@@ -1,7 +1,10 @@
 import { getGPUTier } from 'detect-gpu';
+import { SharedArrayBufferModes } from './enums';
 
 let csRenderInitialized = false;
 let useCPURendering = false;
+let useSharedArrayBuffer = true;
+let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
 function hasActiveWebGLContext() {
@@ -19,6 +22,18 @@ function hasActiveWebGLContext() {
   }
 
   return false;
+}
+
+function hasSharedArrayBuffer() {
+  try {
+    if (new SharedArrayBuffer(0)) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -55,6 +70,9 @@ async function init(defaultConfiguration = {}): Promise<boolean> {
       console.log('CornerstoneRender: using GPU rendering');
     }
   }
+
+  setUseSharedArrayBuffer(sharedArrayBufferMode);
+
   csRenderInitialized = true;
   return csRenderInitialized;
 }
@@ -78,7 +96,7 @@ function setUseCPURendering(status: boolean): void {
  * @category Initialization
  *
  */
-function resetUseCPURendering() {
+function resetUseCPURendering(): void {
   useCPURendering = !hasActiveWebGLContext();
 }
 
@@ -90,6 +108,45 @@ function resetUseCPURendering() {
  */
 function getShouldUseCPURendering(): boolean {
   return useCPURendering;
+}
+
+function setUseSharedArrayBuffer(mode: SharedArrayBufferModes | boolean): void {
+  if (mode == SharedArrayBufferModes.AUTO) {
+    sharedArrayBufferMode = SharedArrayBufferModes.AUTO;
+    const hasSharedBuffer = hasSharedArrayBuffer();
+    if (!hasSharedBuffer) {
+      useSharedArrayBuffer = false;
+      console.warn(
+        `CornerstoneRender: SharedArray Buffer not allowed, performance may be slower.
+        Try ensuring page is cross-origin isolated to enable SharedArrayBuffer.`
+      );
+    } else {
+      useSharedArrayBuffer = true;
+      // eslint-disable-next-line no-console
+      console.log('CornerstoneRender: using SharedArrayBuffer');
+    }
+    return;
+  }
+
+  if (mode == SharedArrayBufferModes.TRUE || mode == true) {
+    sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
+    useSharedArrayBuffer = true;
+    return;
+  }
+
+  if (mode == SharedArrayBufferModes.FALSE || mode == false) {
+    sharedArrayBufferMode = SharedArrayBufferModes.FALSE;
+    useSharedArrayBuffer = false;
+    return;
+  }
+}
+
+function resetUseSharedArrayBuffer(): void {
+  setUseSharedArrayBuffer(sharedArrayBufferMode);
+}
+
+function getShouldUseSharedArrayBuffer(): boolean {
+  return useSharedArrayBuffer;
 }
 
 /**
@@ -106,7 +163,10 @@ function isCornerstoneInitialized(): boolean {
 export {
   init,
   getShouldUseCPURendering,
+  getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
+  setUseSharedArrayBuffer,
   resetUseCPURendering,
+  resetUseSharedArrayBuffer,
 };

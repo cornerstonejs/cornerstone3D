@@ -4,6 +4,7 @@ import {
   Enums,
   imageLoader,
   imageLoadPoolManager,
+  getShouldUseSharedArrayBuffer,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -149,8 +150,10 @@ function cornerstoneStreamingImageVolumeLoader(
 
     cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
 
-    let scalarData;
+    const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();
+    const length = dimensions[0] * dimensions[1] * dimensions[2];
 
+    let scalarData;
     switch (BitsAllocated) {
       case 8:
         if (signed) {
@@ -158,30 +161,30 @@ function cornerstoneStreamingImageVolumeLoader(
             '8 Bit signed images are not yet supported by this plugin.'
           );
         } else {
-          scalarData = createUint8SharedArray(
-            dimensions[0] * dimensions[1] * dimensions[2]
-          );
+          scalarData = useSharedArrayBuffer
+            ? createUint8SharedArray(length)
+            : new Uint8Array(length);
         }
 
         break;
 
       case 16:
-        scalarData = createFloat32SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
-        );
+        scalarData = useSharedArrayBuffer
+          ? createFloat32SharedArray(length)
+          : new Float32Array(length);
 
         break;
 
       case 24:
         // hacky because we don't support alpha channel in dicom
-        scalarData = createUint8SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2] * numComponents
-        );
+        scalarData = useSharedArrayBuffer
+          ? createUint8SharedArray(length * numComponents)
+          : new Uint8Array(length * numComponents);
 
         break;
     }
 
-    let streamingImageVolume = new StreamingImageVolume(
+    const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
       {
         volumeId,

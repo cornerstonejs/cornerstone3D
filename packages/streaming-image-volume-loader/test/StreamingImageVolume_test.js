@@ -27,17 +27,12 @@ const fakeSharedBufferImageLoader = (imageId, options) => {
     pixelData[i] = Number(imageIdNumber);
   }
 
-  // If we have a target buffer, write to that instead. This helps reduce memory duplication.
-  const { arrayBuffer, offset, length } = options.targetBuffer;
-
-  const typedArray = new Uint8Array(arrayBuffer, offset, length);
-
-  // TypedArray.Set is api level and ~50x faster than copying elements even for
-  // Arrays of different types, which aren't simply memcpy ops.
-  typedArray.set(pixelData, 0);
+  const image = {
+    pixelData,
+  };
 
   return {
-    promise: Promise.resolve(undefined),
+    promise: Promise.resolve(image),
   };
 };
 

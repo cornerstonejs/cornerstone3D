@@ -384,6 +384,35 @@ export default class StreamingImageVolume extends ImageVolume {
       triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
     }
 
+    function handleArrayBufferLoad(scalarData, image, options) {
+      if (!(scalarData.buffer instanceof ArrayBuffer)) {
+        return;
+      }
+
+      const offset = options.targetBuffer.offset; // in bytes
+      const length = options.targetBuffer.length; // in frames
+      try {
+        if (scalarData instanceof Float32Array) {
+          const bytesInFloat = 4;
+          const floatView = new Float32Array(image.pixelData);
+          if (floatView.length !== length) {
+            throw 'Error pixelData length does not match frame length';
+          }
+          scalarData.set(floatView, offset / bytesInFloat);
+        }
+        if (scalarData instanceof Uint8Array) {
+          const bytesInUint8 = 1;
+          const intView = new Uint8Array(image.pixelData);
+          if (intView.length !== length) {
+            throw 'Error pixelData length does not match frame length';
+          }
+          scalarData.set(intView, offset / bytesInUint8);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     const requests = imageIds.map((imageId, imageIdIndex) => {
       if (cachedFrames[imageIdIndex]) {
         framesLoaded++;
@@ -415,7 +444,13 @@ export default class StreamingImageVolume extends ImageVolume {
       const options = {
         // WADO Image Loader
         targetBuffer: {
-          arrayBuffer,
+          // keeping this in the options means a large empty volume array buffer
+          // will be transferred to the worker. This is undesirable for streaming
+          // volume without shared array buffer because the target is now an empty
+          // 300-500MB volume array buffer. Instead the volume should be progressively
+          // set in the main thread.
+          arrayBuffer:
+            arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
           offset: imageIdIndex * lengthInBytes,
           length,
           type,
@@ -434,7 +469,11 @@ export default class StreamingImageVolume extends ImageVolume {
       // when we load directly into the Volume cache
       function callLoadImage(imageId, imageIdIndex, options) {
         return imageLoader.loadImage(imageId, options).then(
-          () => {
+          (image) => {
+            // scalarData is the volume container we are progressively loading into
+            // image is the pixelData decoded from workers in cornerstoneWADOImageLoader
+            const scalarData = this.scalarData;
+            handleArrayBufferLoad(scalarData, image, options);
             successCallback(imageIdIndex, imageId, scalingParameters);
           },
           (error) => {

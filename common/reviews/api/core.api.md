@@ -477,7 +477,8 @@ declare namespace Enums {
         InterpolationType,
         RequestType,
         ViewportType,
-        OrientationAxis
+        OrientationAxis,
+        SharedArrayBufferModes
     }
 }
 export { Enums }
@@ -636,6 +637,9 @@ function getRuntimeId(context?: unknown, separator?: string, max?: number): stri
 
 // @public (undocumented)
 export function getShouldUseCPURendering(): boolean;
+
+// @public (undocumented)
+export function getShouldUseSharedArrayBuffer(): boolean;
 
 // @public (undocumented)
 function getSliceRange(volumeActor: VolumeActor, viewPlaneNormal: Point3, focalPoint: Point3): ActorSliceRange;
@@ -1719,6 +1723,9 @@ enum RequestType {
 export function resetUseCPURendering(): void;
 
 // @public (undocumented)
+export function resetUseSharedArrayBuffer(): void;
+
+// @public (undocumented)
 function scaleRGBTransferFunction(rgbTransferFunction: any, scalingFactor: number): void;
 
 // @public (undocumented)
@@ -1769,7 +1776,20 @@ export class Settings {
 export function setUseCPURendering(status: boolean): void;
 
 // @public (undocumented)
+export function setUseSharedArrayBuffer(mode: SharedArrayBufferModes | boolean): void;
+
+// @public (undocumented)
 export function setVolumesForViewports(renderingEngine: IRenderingEngine, volumeInputs: Array<IVolumeInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
+
+// @public (undocumented)
+enum SharedArrayBufferModes {
+    // (undocumented)
+    AUTO = "auto",
+    // (undocumented)
+    FALSE = "false",
+    // (undocumented)
+    TRUE = "true"
+}
 
 // @public (undocumented)
 function snapFocalPointToSlice(focalPoint: Point3, position: Point3, sliceRange: ActorSliceRange, viewPlaneNormal: Point3, spacingInNormalDirection: number, deltaFrames: number): {
