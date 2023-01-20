@@ -34,7 +34,7 @@ Touch events natively support multitouch which is provided as a list of [`ITouch
 In order for touch events to be compatiable with mouse events, these `ITouchPoints[]` need to be reduced into a single
 `ITouchPoint`. The current strategy for array reduction is taking the mean coordinate values. Other strategies can be
 implemented such as first point, median point, etc. This can be implemented in the
-[`touch` utilities codebase](https://github.com/cornerstonejs/cornerstone3D-beta/blob/gradienthealth/main/packages/tools/src/utilities/touch/index.ts)
+[`touch` utilities codebase](https://github.com/cornerstonejs/cornerstone3D-beta/main/packages/tools/src/utilities/touch/index.ts)
 
 The structure of `ITouchPoints` are the following:
 
@@ -100,7 +100,7 @@ element.addEventListener(Events.TOUCH_DRAG, (evt) => {
   console.log(evt);
 });
 
-element.addEventListener('CORNERSTONE_TOOLS_SWIPE', (evt) => {
+element.addEventListener(Events.[CORNERSTONE_TOOLS_SWIPE], (evt) => {
   // my function on swipe
   console.log(evt);
 });
@@ -108,7 +108,7 @@ element.addEventListener('CORNERSTONE_TOOLS_SWIPE', (evt) => {
 // within the chrome console in a deployed OHIF application
 cornerstone
   .getEnabledElements()[0]
-  .viewport.element.addEventListener('CORNERSTONE_TOOLS_SWIPE', (evt) => {
+  .viewport.element.addEventListener(Events.TOUCH_SWIPE, (evt) => {
     // my function on swipe
     console.log('SWIPE', evt);
   });

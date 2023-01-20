@@ -48,7 +48,7 @@ content.appendChild(element);
 const instructions = document.createElement('p');
 instructions.innerText = `
  One finger will change WW/WL,
- Two fingers will allow for pan/zoom, 
+ Two fingers will allow for pan/zoom,
  Three fingers will allow for stack scrolling
 `;
 
@@ -103,7 +103,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-    type: 'STACK',
   });
 
   // Instantiate a rendering engine
