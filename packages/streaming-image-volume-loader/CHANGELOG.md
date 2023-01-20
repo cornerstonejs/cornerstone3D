@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.11.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.10.1...@cornerstonejs/streaming-image-volume-loader@0.11.0) (2023-01-20)
+
+
+### Features
+
+* option to use Arraybuffer for volume loader instead of sharedArrayBuffer ([#358](https://github.com/cornerstonejs/cornerstone3D-beta/issues/358)) ([ab8237c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ab8237cf6b9672e4837ec27b73b75d38e85305f0))
+
+
+
+
+
 ## [0.10.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.10.0...@cornerstonejs/streaming-image-volume-loader@0.10.1) (2023-01-19)
 
 

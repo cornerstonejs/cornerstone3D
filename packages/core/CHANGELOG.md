@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.27.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.26.0...@cornerstonejs/core@0.27.0) (2023-01-20)
+
+
+### Features
+
+* option to use Arraybuffer for volume loader instead of sharedArrayBuffer ([#358](https://github.com/cornerstonejs/cornerstone3D-beta/issues/358)) ([ab8237c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ab8237cf6b9672e4837ec27b73b75d38e85305f0))
+
+
+
+
+
 # [0.26.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.25.1...@cornerstonejs/core@0.26.0) (2023-01-13)
 
 
