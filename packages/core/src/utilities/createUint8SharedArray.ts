@@ -1,4 +1,6 @@
 import global from '../global';
+import { getShouldUseSharedArrayBuffer } from '../init';
+
 /**
  * A helper function that creates a new Float32Array that utilized a shared
  * array buffer. This allows the array to be updated  simultaneously in
@@ -24,7 +26,7 @@ import global from '../global';
  * @public
  */
 function createUint8SharedArray(length: number): Uint8Array {
-  if (!window.crossOriginIsolated) {
+  if (!getShouldUseSharedArrayBuffer()) {
     throw new Error(
       'Your page is NOT cross-origin isolated, see https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated'
     );
