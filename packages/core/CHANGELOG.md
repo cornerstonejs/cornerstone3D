@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.27.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.0...@cornerstonejs/core@0.27.1) (2023-01-20)
+
+
+### Bug Fixes
+
+* monochrome1 bug for stackviewport ([#378](https://github.com/cornerstonejs/cornerstone3D-beta/issues/378)) ([f542d9c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f542d9ce8bd755f87aa6b316c56001a253d591ae))
+
+
+
+
+
 # [0.27.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.26.0...@cornerstonejs/core@0.27.0) (2023-01-20)
 
 
