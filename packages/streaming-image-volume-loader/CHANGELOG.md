@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.11.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.11.1...@cornerstonejs/streaming-image-volume-loader@0.11.2) (2023-01-20)
+
+
+### Bug Fixes
+
+* missing bind for the callLoadImage function ([#380](https://github.com/cornerstonejs/cornerstone3D-beta/issues/380)) ([fd96060](https://github.com/cornerstonejs/cornerstone3D-beta/commit/fd96060f3bc1e62bc73b22db0973c84513f1e9d9))
+
+
+
+
+
 ## [0.11.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.11.0...@cornerstonejs/streaming-image-volume-loader@0.11.1) (2023-01-20)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

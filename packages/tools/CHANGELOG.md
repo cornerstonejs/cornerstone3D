@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.36.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.36.2...@cornerstonejs/tools@0.36.3) (2023-01-20)
+
+
+### Bug Fixes
+
+* tool bindings with different modifier keys ([#377](https://github.com/cornerstonejs/cornerstone3D-beta/issues/377)) ([c95ba60](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c95ba60e0045eac33e889985e2a340f2ce543dc2))
+
+
+
+
+
 ## [0.36.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.36.1...@cornerstonejs/tools@0.36.2) (2023-01-20)
 
 **Note:** Version bump only for package @cornerstonejs/tools
