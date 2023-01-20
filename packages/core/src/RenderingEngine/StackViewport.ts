@@ -1806,6 +1806,13 @@ class StackViewport extends Viewport implements IStackViewport {
     cfun.addRGBPoint(upper, 1.0, 1.0, 1.0);
     actor.getProperty().setRGBTransferFunction(0, cfun);
 
+    let invert = false;
+    if (imagePixelModule.photometricInterpretation === 'MONOCHROME1') {
+      invert = true;
+    }
+
+    this.setProperties({ invert });
+
     // Saving position of camera on render, to cache the panning
     const { focalPoint } = this.getCamera();
     this.cameraFocalPointOnRender = focalPoint;
