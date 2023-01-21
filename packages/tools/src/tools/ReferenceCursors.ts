@@ -33,7 +33,7 @@ import {
   resetElementCursor,
 } from '../cursors/elementCursor';
 import { getToolGroup } from '../store/ToolGroupManager';
-
+import { Events } from '../enums';
 /**
  * ReferenceCursors is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
  * Also when positionSync is enabled, it will try to sync viewports so that the cursor can be displayed in the correct position in all viewports.
@@ -55,6 +55,8 @@ class ReferenceCursors extends AnnotationDisplayTool {
   _elementWithCursor: null | HTMLDivElement = null;
   _currentCursorWorldPosition: null | Types.Point3 = null;
   _currentCanvasPosition: null | Types.Point2 = null;
+
+  _isMouseDragActive = false;
   //need to keep track if this was enabled when tool was enabled because we need to know if we should reset cursors
   _disableCursorEnabled = false;
 
@@ -68,12 +70,108 @@ class ReferenceCursors extends AnnotationDisplayTool {
         displayThreshold: 5,
         positionSync: true,
         disableCursor: false,
+        //if true, it will draw on mousedown and with drag, if false it will only draw on mouse move
+        //It is also necessary to set mouse bindings for mouseDownActivate
+        drawOnMouseDrag: false,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
     this._disableCursorEnabled = this.configuration.disableCursor;
   }
+
+  /**
+   * Overwritten preMouseDownCallback in order to maintain mouse position and redraw annotations on mouse drag
+   * @virtual Event handler for Cornerstone MOUSE_DOWN event.
+   *
+   *
+   * @param evt - The normalized mouse event
+   * @returns True if the vursors needs to be re-drawn by the mousemovecalback.
+   */
+
+  preMouseDownCallback = (evt: EventTypes.MouseDownActivateEventType) => {
+    evt.preventDefault();
+
+    const { element } = evt.detail;
+
+    this._isMouseDragActive = true;
+    this._activateDraw(element);
+
+    hideElementCursor(element);
+
+    this._showorHideReferenceCursors(true);
+    this.mouseMoveCallback(evt);
+    return true;
+  };
+
+  /**
+   * Overwritten mouseDragCallback since we want to keep track of the current mouse position and redraw annotations
+   * when the mouse is dragged
+   * @virtual Event handler for Cornerstone MOUSE_DRAG event.
+   *
+   *
+   * @param evt - The normalized mouse event
+   * @returns True if the cursors need to be re-drawn by the mousemovecalback.
+   */
+  _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
+    if (this.configuration.drawOnMouseDrag && !this._isMouseDragActive) {
+      return;
+    }
+    this.mouseMoveCallback(evt);
+  };
+
+  /**
+   * Overwritten mouseUpCallback since we want to deactivate the draw event loop and hide the cursors
+   * @virtual Event handler for Cornerstone MOUSE_UP event.
+   *
+   *
+   * @param evt - The normalized mouse event
+   * @returns True if the cursors need to be re-drawn by the mousemovecalback.
+   */
+  _mouseUpCallback = (evt: EventTypes.MouseUpEventType) => {
+    const { element } = evt.detail;
+    this._isMouseDragActive = false;
+    this._deactivateDraw(element);
+
+    resetElementCursor(element);
+
+    this._showorHideReferenceCursors(false);
+  };
+
+  /**
+   * Add event handlers for the modify event loop, and prevent default event propagation.
+   */
+  _activateDraw = (element: HTMLDivElement) => {
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this._mouseUpCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this._mouseDragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this._mouseUpCallback as EventListener
+    );
+  };
+  /**
+   * Add event handlers for the modify event loop, and prevent default event propagation.
+   */
+  _deactivateDraw = (element: HTMLDivElement) => {
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this._mouseUpCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this._mouseDragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this._mouseUpCallback as EventListener
+    );
+  };
 
   /**
    * Overwritten mouseMoveCallback since we want to keep track of the current mouse position and redraw on mouseMove
@@ -85,6 +183,11 @@ class ReferenceCursors extends AnnotationDisplayTool {
    * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
    */
   mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): boolean => {
+    //if drawOnMouseDrag is enabled and mousedown event called we only want to draw when the mouse is down
+    if (this.configuration.drawOnMouseDrag && !this._isMouseDragActive) {
+      return;
+    }
+
     const { detail } = evt;
     const { element, currentPoints } = detail;
 
@@ -92,7 +195,6 @@ class ReferenceCursors extends AnnotationDisplayTool {
     this._currentCursorWorldPosition = currentPoints.world;
     this._currentCanvasPosition = currentPoints.canvas;
     this._elementWithCursor = element;
-
     const annotation = this.getActiveAnnotation(element);
     if (annotation === null) {
       this.createInitialAnnotation(currentPoints.world, element);
@@ -115,6 +217,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
       if (element) hideElementCursor(element.viewport.element);
     });
   }
+
   onSetToolDisabled(): void {
     if (!this._disableCursorEnabled) return;
     const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
@@ -465,6 +568,29 @@ class ReferenceCursors extends AnnotationDisplayTool {
       }
     }
   }
+
+  //display annotation if current viewports has a referencecursor mouse down and drag event
+  // managing the cursor visibility
+  _showorHideReferenceCursors = (show: boolean): void => {
+    if (!this.configuration.drawOnMouseDrag) return;
+
+    const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
+    if (!viewportIds) return;
+    const enabledElements = viewportIds.map((e) =>
+      getEnabledElementByIds(e.viewportId, e.renderingEngineId)
+    );
+
+    enabledElements.forEach((element) => {
+      if (element) {
+        const viewportElement = element.viewport.element;
+        const svgCursorElement: HTMLDivElement =
+          viewportElement.querySelector('.svg-layer');
+        if (svgCursorElement) {
+          svgCursorElement.style.display = show ? 'block' : 'none';
+        }
+      }
+    });
+  };
 }
 
 ReferenceCursors.toolName = 'ReferenceCursors';
