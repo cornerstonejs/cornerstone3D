@@ -181,14 +181,14 @@ class StackViewport extends Viewport implements IStackViewport {
       renderer.setActiveCamera(camera);
 
       const viewPlaneNormal = <Point3>[0, 0, -1];
-      const viewUp = <Point3>[0, -1, 0];
+      this.initialViewUp = <Point3>[0, -1, 0];
 
       camera.setDirectionOfProjection(
         -viewPlaneNormal[0],
         -viewPlaneNormal[1],
         -viewPlaneNormal[2]
       );
-      camera.setViewUp(...viewUp);
+      camera.setViewUp(...this.initialViewUp);
       camera.setParallelProjection(true);
       camera.setThicknessFromFocalPoint(0.1);
       // @ts-ignore: vtkjs incorrect typing
@@ -1889,14 +1889,13 @@ class StackViewport extends Viewport implements IStackViewport {
     // Todo: we need to make the rotation a camera properties so that
     // we can reset it there, right now it is not possible to reset the rotation
     // without this
-    if (this.initialViewUp) {
-      // We do not know the ordering of various flips and rotations that have been applied, so just start like we were at the beginning.
-      this.setCamera({
-        flipHorizontal: false,
-        flipVertical: false,
-        viewUp: this.initialViewUp,
-      });
-    }
+
+    // We do not know the ordering of various flips and rotations that have been applied, so just start like we were at the beginning.
+    this.setCamera({
+      flipHorizontal: false,
+      flipVertical: false,
+      viewUp: this.initialViewUp,
+    });
 
     // For stack Viewport we since we have only one slice
     // it should be enough to reset the camera to the center of the image
