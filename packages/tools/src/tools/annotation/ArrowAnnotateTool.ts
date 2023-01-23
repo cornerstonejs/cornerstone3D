@@ -423,6 +423,10 @@ class ArrowAnnotateTool extends AnnotationTool {
       annotations
     );
 
+    if (!annotations) {
+      return;
+    }
+
     const clickedAnnotation = annotations.find((annotation) =>
       this.isPointNearTool(
         element,
@@ -446,6 +450,10 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     this.editData = null;
     this.isDrawing = false;
+
+    // This double click was handled and the dialogue was displayed. No need for anyone else to handle it too.
+    evt.stopImmediatePropagation();
+    evt.preventDefault();
   };
 
   _doneChangingTextCallback(element, annotation, updatedText) {

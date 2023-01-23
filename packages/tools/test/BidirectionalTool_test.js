@@ -1,6 +1,8 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import * as cornerstoneTools from '@cornerstonejs/tools';
+import { doMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
   cache,
@@ -15,6 +17,8 @@ const {
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
+
+const { Events: ToolEvents } = cornerstoneTools.Enums;
 
 const {
   BidirectionalTool,
@@ -590,13 +594,16 @@ describe('Cornerstone Tools: ', () => {
         pageX: pageX3,
         pageY: pageY3,
       });
-      element.dispatchEvent(evt);
 
       // Just grab and don't really move it
-      evt = new MouseEvent('mouseup');
+      const mouseUpEvt = new MouseEvent('mouseup');
 
-      addEventListenerForAnnotationRendered();
-      document.dispatchEvent(evt);
+      doMouseDownAndUp(
+        element,
+        evt,
+        mouseUpEvt,
+        addEventListenerForAnnotationRendered
+      );
     });
 
     this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);

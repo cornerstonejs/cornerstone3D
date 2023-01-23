@@ -1,5 +1,7 @@
 import mouseDoubleClickListener from './mouseDoubleClickListener';
-import mouseDownListener from './mouseDownListener';
+import mouseDownListener, {
+  mouseDoubleClickIgnoreListener,
+} from './mouseDownListener';
 import mouseMoveListener from './mouseMoveListener';
 
 /**
@@ -12,6 +14,9 @@ import mouseMoveListener from './mouseMoveListener';
  */
 function disable(element: HTMLDivElement): void {
   element.removeEventListener('dblclick', mouseDoubleClickListener);
+  element.removeEventListener('dblclick', mouseDoubleClickIgnoreListener, {
+    capture: true, // capture phase is the best way to ignore double clicks
+  });
   element.removeEventListener('mousedown', mouseDownListener);
   element.removeEventListener('mousemove', mouseMoveListener);
 }
@@ -29,6 +34,10 @@ function enable(element: HTMLDivElement): void {
   disable(element);
 
   element.addEventListener('dblclick', mouseDoubleClickListener);
+  element.addEventListener('dblclick', mouseDoubleClickIgnoreListener, {
+    capture: true, // capture phase is the best way to ignore double clicks
+  });
+
   element.addEventListener('mousedown', mouseDownListener);
   element.addEventListener('mousemove', mouseMoveListener);
 }
