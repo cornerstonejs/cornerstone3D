@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.27.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.1...@cornerstonejs/core@0.27.2) (2023-01-23)
+
+
+### Bug Fixes
+
+* **StackViewport:** Reset camera bug when rotation happens on StackViewport ([#374](https://github.com/cornerstonejs/cornerstone3D-beta/issues/374)) ([598e95f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/598e95f0d1fe6aea5e8e9d37cc61c355cc704c70)), closes [#372](https://github.com/cornerstonejs/cornerstone3D-beta/issues/372)
+
+
+
+
+
 ## [0.27.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.0...@cornerstonejs/core@0.27.1) (2023-01-20)
 
 
