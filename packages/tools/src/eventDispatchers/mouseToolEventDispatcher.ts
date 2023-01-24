@@ -10,7 +10,6 @@ import {
   mouseUp,
   mouseWheel,
 } from './mouseEventHandlers';
-import suppressEventForToolInteraction from './shared/suppressEventForToolInteraction';
 
 /**
  * Enable these listeners are emitted in order, and can be cancelled/prevented from bubbling
@@ -29,14 +28,6 @@ const enable = function (element: HTMLDivElement): void {
     Events.MOUSE_DOUBLE_CLICK,
     mouseDoubleClick as EventListener
   );
-
-  // Best way to prevent a double click during tool interaction is on the event capture phase.
-  element.addEventListener(
-    Events.MOUSE_DOUBLE_CLICK,
-    suppressEventForToolInteraction as EventListener,
-    { capture: true } // capture phase event
-  );
-
   element.addEventListener(Events.MOUSE_DRAG, mouseDrag as EventListener);
   element.addEventListener(Events.MOUSE_MOVE, mouseMove as EventListener);
   element.addEventListener(Events.MOUSE_UP, mouseUp as EventListener);
@@ -59,13 +50,6 @@ const disable = function (element: HTMLDivElement) {
     Events.MOUSE_DOUBLE_CLICK,
     mouseDoubleClick as EventListener
   );
-
-  element.removeEventListener(
-    Events.MOUSE_DOUBLE_CLICK,
-    suppressEventForToolInteraction as EventListener,
-    { capture: true } // capture phase event
-  );
-
   element.removeEventListener(Events.MOUSE_DRAG, mouseDrag as EventListener);
   element.removeEventListener(Events.MOUSE_MOVE, mouseMove as EventListener);
   element.removeEventListener(Events.MOUSE_UP, mouseUp as EventListener);

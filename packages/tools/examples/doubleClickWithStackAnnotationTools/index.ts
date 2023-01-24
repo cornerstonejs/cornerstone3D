@@ -52,31 +52,37 @@ element.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
 
-// Listen for the browser double click event in an ancestor of the viewport element for best results.
-// Listening for the browser double click event on the viewport element itself, could result
-// in receiving a 'dblclick' event when cornerstone is trying to suppress it.
+// It is best to listen for the browser double click event on an ancestor of the viewport
+// element instead of the viewport element itself. This is so that in case CS3D needs to
+// handle the double click first (e.g. edit arrow annotation) and stop its propagation.
 content.addEventListener('dblclick', () => {
-  browserDoubleClickEventStatus.innerText =
-    "Browser 'dblclick' event detected on an ancestor of the viewport element.";
   toggleCanvasSize();
 
+  browserDoubleClickEventStatus.style.visibility = '';
   const renderEngine = getRenderingEngine(renderingEngineId);
   renderEngine.resize(true);
 
   statusDiv.style.backgroundColor = '#00ff00';
 });
 
-element.addEventListener(Events.MOUSE_DOUBLE_CLICK, () => {
-  cs3dDoubleClickEventStatus.innerText = `'${Events.MOUSE_DOUBLE_CLICK}' event detected on the viewport element.`;
+element.addEventListener(Events.MOUSE_DOWN, () => {
+  browserDoubleClickEventStatus.style.visibility = 'hidden';
   statusDiv.style.backgroundColor = null;
 });
 
-element.addEventListener(Events.MOUSE_DOWN, () => {
-  browserDoubleClickEventStatus.innerText = '';
-  cs3dDoubleClickEventStatus.innerText = '';
-});
-
 content.appendChild(element);
+
+// double click status info elements
+const statusDiv = document.createElement('div');
+statusDiv.style.width = element.style.width;
+
+content.append(statusDiv);
+
+const browserDoubleClickEventStatus = document.createElement('p');
+browserDoubleClickEventStatus.style.visibility = 'hidden';
+browserDoubleClickEventStatus.innerText =
+  "Browser 'dblclick' event detected on a viewport element ancestor.";
+statusDiv.append(browserDoubleClickEventStatus);
 
 // instruction elements
 const instructionsDiv = document.createElement('div');
@@ -93,22 +99,11 @@ instructions.innerText = `Select a tool from the drop down above the viewport.
 instructionsDiv.append(instructions);
 
 instructions = document.createElement('p');
-instructions.innerText = `When a double click is detected, the viewport size changes and an info message is displayed below.
-  Note that a double click during tool usage/interaction is suppressed`;
+instructions.innerText = `When a double click is detected, the viewport size changes and an info message is displayed just below the viewport.
+  Note that a double click is permitted during any phase of annotation creation and it does not change the state of the annotation.
+  Double clicking an arrow annotation to edit its text stops the event from bubbling up.`;
 
 instructionsDiv.append(instructions);
-
-// double click status info elements
-const statusDiv = document.createElement('div');
-statusDiv.style.width = element.style.width;
-
-content.append(statusDiv);
-
-const browserDoubleClickEventStatus = document.createElement('p');
-statusDiv.append(browserDoubleClickEventStatus);
-
-const cs3dDoubleClickEventStatus = document.createElement('p');
-statusDiv.append(cs3dDoubleClickEventStatus);
 
 // canvas sizing
 const canvasSizes = ['500px', '750px'];
@@ -121,8 +116,6 @@ function toggleCanvasSize() {
   element.style.height = canvasSize;
 
   statusDiv.style.width = canvasSize;
-
-  instructionsDiv.style.width = canvasSize;
 }
 
 toggleCanvasSize();
