@@ -649,7 +649,7 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   mouseMoveCallback = (
-    evt: EventTypes.InteractionEventType,
+    evt: EventTypes.MouseMoveEventType,
     filteredToolAnnotations: Annotations
   ): boolean => {
     const { element, currentPoints } = evt.detail;

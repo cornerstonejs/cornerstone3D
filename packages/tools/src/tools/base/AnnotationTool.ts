@@ -104,7 +104,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @returns True if the annotation needs to be re-drawn by the annotationRenderingEngine.
    */
   public mouseMoveCallback = (
-    evt: EventTypes.InteractionEventType,
+    evt: EventTypes.MouseMoveEventType,
     filteredAnnotations?: Annotations
   ): boolean => {
     if (!filteredAnnotations) {
