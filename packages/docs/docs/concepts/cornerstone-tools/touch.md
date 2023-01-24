@@ -139,7 +139,8 @@ toolGroup.addTool(ZoomTool.toolName);
 toolGroup.addTool(StackScrollTool.toolName);
 
 // Set the initial state of the tools, here all tools are active and bound to
-// Different touch inputs (5-touch points are possible)
+// Different touch inputs
+// 5 touch points are possible => unlimited touch points are supported, but is generally limited by hardware.
 toolGroup.setToolActive(ZoomTool.toolName, {
   bindings: [{ numTouchPoints: 2 }],
 });
