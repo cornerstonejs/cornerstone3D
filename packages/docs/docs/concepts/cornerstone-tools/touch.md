@@ -100,7 +100,7 @@ element.addEventListener(Events.TOUCH_DRAG, (evt) => {
   console.log(evt);
 });
 
-element.addEventListener(Events.[CORNERSTONE_TOOLS_SWIPE], (evt) => {
+element.addEventListener(Events.TOUCH_SWIPE, (evt) => {
   // my function on swipe
   console.log(evt);
 });
@@ -139,7 +139,7 @@ toolGroup.addTool(ZoomTool.toolName);
 toolGroup.addTool(StackScrollTool.toolName);
 
 // Set the initial state of the tools, here all tools are active and bound to
-// Different mouse inputs
+// Different touch inputs (5-touch points are possible)
 toolGroup.setToolActive(ZoomTool.toolName, {
   bindings: [{ numTouchPoints: 2 }],
 });
@@ -149,7 +149,7 @@ toolGroup.setToolActive(StackScrollTool.toolName, {
 toolGroup.setToolActive(WindowLevelTool.toolName, {
   bindings: [
     {
-      mouseButton: MouseBindings.Primary, // Left Click + 1 touch point.
+      mouseButton: MouseBindings.Primary, // special condition for one finger touch
     },
   ],
 });
