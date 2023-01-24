@@ -11,6 +11,12 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
 
 const DOUBLE_CLICK_TOLERANCE_MS = 400;
 
+// A drag (distance) during the double click timeout that is greater than this
+// value will cancel the timeout and suppress any double click that might occur.
+// This tolerance is particularly important on touch devices where some movement
+// might occur between the two clicks.
+const DOUBLE_CLICK_DRAG_TOLERANCE = 2;
+
 interface IMouseDownListenerState {
   mouseButton: number;
   element: HTMLDivElement;
@@ -112,13 +118,24 @@ function mouseDownListener(evt: MouseEvent) {
 
   state.element = <HTMLDivElement>evt.currentTarget;
 
-  // Prevent CornerstoneToolsMouseMove while mouse is down
-  state.element.removeEventListener('mousemove', mouseMoveListener);
+  state.mouseButton = evt.button;
+
+  const enabledElement = getEnabledElement(state.element);
+  const { renderingEngineId, viewportId } = enabledElement;
+
+  state.renderingEngineId = renderingEngineId;
+  state.viewportId = viewportId;
 
   state.preventClickTimeout = setTimeout(
     _preventClickHandler,
     state.clickDelay
   );
+
+  // Prevent CornerstoneToolsMouseMove while mouse is down
+  state.element.removeEventListener('mousemove', mouseMoveListener);
+
+  state.startPoints = getMouseEventPoints(evt, state.element);
+  state.lastPoints = _copyPoints(state.startPoints);
 
   // First mouse down of a potential double click. So save it and start
   // a timeout to determine a double click.
@@ -140,16 +157,7 @@ function mouseDownListener(evt: MouseEvent) {
  * @private
  */
 function _doMouseDown(evt: MouseEvent) {
-  state.mouseButton = evt.button;
-
-  const enabledElement = getEnabledElement(state.element);
-  const { renderingEngineId, viewportId } = enabledElement;
-
-  state.renderingEngineId = renderingEngineId;
-  state.viewportId = viewportId;
-
-  const startPoints = getMouseEventPoints(evt, state.element);
-  const deltaPoints = _getDeltaPoints(startPoints, startPoints);
+  const deltaPoints = _getDeltaPoints(state.startPoints, state.startPoints);
 
   const eventDetail: EventTypes.MouseDownEventDetail = {
     event: evt,
@@ -159,13 +167,12 @@ function _doMouseDown(evt: MouseEvent) {
     renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
     camera: {},
-    startPoints,
-    lastPoints: startPoints,
-    currentPoints: startPoints,
+    startPoints: state.startPoints,
+    lastPoints: state.startPoints,
+    currentPoints: state.startPoints,
     deltaPoints,
   };
 
-  state.startPoints = _copyPoints(eventDetail.startPoints);
   state.lastPoints = _copyPoints(eventDetail.lastPoints);
 
   // by triggering MOUSE_DOWN it checks if this is toolSelection, handle modification etc.
@@ -190,13 +197,6 @@ function _doMouseDown(evt: MouseEvent) {
  * @param evt - The mouse event.
  */
 function _onMouseDrag(evt: MouseEvent) {
-  if (doubleClickState.doubleClickTimeout) {
-    _doStateMouseDownAndUp();
-  }
-
-  // Dragging means no double click should occur.
-  doubleClickState.ignoreDoubleClick = true;
-
   const currentPoints = getMouseEventPoints(evt, state.element);
   const lastPoints = _updateMouseEventsLastPoints(
     state.element,
@@ -204,6 +204,17 @@ function _onMouseDrag(evt: MouseEvent) {
   );
 
   const deltaPoints = _getDeltaPoints(currentPoints, lastPoints);
+
+  if (doubleClickState.doubleClickTimeout) {
+    if (_isDragPastDoubleClickTolerance(deltaPoints.canvas)) {
+      _doStateMouseDownAndUp();
+
+      // Dragging past the tolerance means no double click should occur.
+      doubleClickState.ignoreDoubleClick = true;
+    } else {
+      return;
+    }
+  }
 
   const eventDetail: EventTypes.MouseDragEventDetail = {
     event: evt,
@@ -248,6 +259,7 @@ function _onMouseUp(evt: MouseEvent): void {
       // this is the second mouse up of a double click!
 
       document.removeEventListener('mouseup', _onMouseUp);
+      state.element.removeEventListener('mousemove', _onMouseMove);
 
       // Restore our global mousemove listener
       state.element.addEventListener('mousemove', mouseMoveListener);
@@ -261,9 +273,11 @@ function _onMouseUp(evt: MouseEvent): void {
     } else {
       // this is the first mouse up during the double click timeout; we'll need it later if the timeout expires
       doubleClickState.mouseUpEvent = evt;
+
+      state.element.addEventListener('mousemove', _onMouseMove);
     }
   } else {
-    // Handle the actual mouse up. Note that it may have occured during the double click timeout or
+    // Handle the actual mouse up. Note that it may have occurred during the double click timeout or
     // after it expired. In either case this block is being executed after the time out has expired
     // or after a drag started.
 
@@ -294,6 +308,8 @@ function _onMouseUp(evt: MouseEvent): void {
 
     document.removeEventListener('mouseup', _onMouseUp);
 
+    state.element.removeEventListener('mousemove', _onMouseMove);
+
     // Restore our global mousemove listener
     state.element.addEventListener('mousemove', mouseMoveListener);
 
@@ -302,8 +318,50 @@ function _onMouseUp(evt: MouseEvent): void {
   }
 
   // Remove the drag as soon as we get the mouse up because either we have executed
-  // the mouse up logic, or we have not even handled the mouse down logic yet.
+  // the mouse up logic, or we have not even handled the mouse down logic yet
+  // - either way no drag should/can occur.
   document.removeEventListener('mousemove', _onMouseDrag);
+}
+
+/**
+ * Handles a mouse move on the state element after a mouse down AND up AND
+ * while the double click timeout is still running.
+ * @private
+ * @param evt - The mouse event.
+ */
+function _onMouseMove(evt: MouseEvent) {
+  const currentPoints = getMouseEventPoints(evt, state.element);
+  const lastPoints = _updateMouseEventsLastPoints(
+    state.element,
+    state.lastPoints
+  );
+
+  const deltaPoints = _getDeltaPoints(currentPoints, lastPoints);
+
+  if (!_isDragPastDoubleClickTolerance(deltaPoints.canvas)) {
+    return;
+  }
+
+  _doStateMouseDownAndUp();
+
+  // Moving past the tolerance means no double click should occur.
+  doubleClickState.ignoreDoubleClick = true;
+
+  // Do the move again because during the timeout the global mouse move listener was removed.
+  // Now it is back.
+  mouseMoveListener(evt);
+}
+
+/**
+ * Determines if the given delta is past the double click, drag distance tolerance.
+ * @param delta the delta
+ * @returns true iff the delta is past the tolerance
+ */
+function _isDragPastDoubleClickTolerance(delta: Types.Point2): boolean {
+  return (
+    Math.sqrt(Math.pow(delta[0], 2) + Math.pow(delta[1], 2)) >
+    DOUBLE_CLICK_DRAG_TOLERANCE
+  );
 }
 
 function _preventClickHandler() {
