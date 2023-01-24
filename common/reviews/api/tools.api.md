@@ -322,7 +322,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract isPointNearTool(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType, filteredAnnotations?: Annotations) => boolean;
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredAnnotations?: Annotations) => boolean;
     // (undocumented)
     static toolName: any;
     // (undocumented)
@@ -1100,7 +1100,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _jump: (enabledElement: any, jumpWorld: any) => boolean;
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType, filteredToolAnnotations: Annotations) => boolean;
+    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredToolAnnotations: Annotations) => boolean;
     // (undocumented)
     onCameraModified: (evt: any) => void;
     // (undocumented)
