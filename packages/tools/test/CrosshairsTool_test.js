@@ -1,7 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { doMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
   cache,
@@ -346,7 +346,7 @@ describe('Cornerstone Tools: ', () => {
       p1 = worldCoord1;
 
       // Mouse Down
-      let evt = new MouseEvent('mousedown', {
+      const mouseDownEvt = new MouseEvent('mousedown', {
         target: element1,
         buttons: 1,
         pageX: pageX1,
@@ -358,7 +358,12 @@ describe('Cornerstone Tools: ', () => {
       // Mouse Up instantly after
       const mouseUpEvt = new MouseEvent('mouseup');
 
-      doMouseDownAndUp(element1, evt, mouseUpEvt, attachCrosshairsHandler);
+      performMouseDownAndUp(
+        element1,
+        mouseDownEvt,
+        mouseUpEvt,
+        attachCrosshairsHandler
+      );
     };
 
     element1.addEventListener(Events.IMAGE_RENDERED, eventHandler);

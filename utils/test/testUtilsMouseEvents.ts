@@ -62,7 +62,7 @@ function createNormalizedMouseEvent(
  * @param afterDownAndUpCallback optional callback after the up
  * @returns a Promise for the eventual completion of the mouse down and up
  */
-function doMouseDownAndUp(
+function performMouseDownAndUp(
   element: HTMLElement,
   mouseDownEvent: MouseEvent,
   mouseUpEvent: MouseEvent,
@@ -100,4 +100,4 @@ function doMouseDownAndUp(
   });
 }
 
-export { createNormalizedMouseEvent, doMouseDownAndUp };
+export { createNormalizedMouseEvent, performMouseDownAndUp };

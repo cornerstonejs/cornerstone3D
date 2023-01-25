@@ -1,7 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { doMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
   cache,
@@ -166,7 +166,7 @@ describe('ProbeTool (CPU):', () => {
       } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
       // Mouse Down
-      let evt = new MouseEvent('mousedown', {
+      const mouseDownEvt = new MouseEvent('mousedown', {
         target: element,
         buttons: 1,
         pageX: pageX1,
@@ -178,9 +178,9 @@ describe('ProbeTool (CPU):', () => {
       // Mouse Up instantly after
       const mouseUpEvt = new MouseEvent('mouseup');
 
-      doMouseDownAndUp(
+      performMouseDownAndUp(
         element,
-        evt,
+        mouseDownEvt,
         mouseUpEvt,
         // Since there is tool rendering happening for any mouse event
         // we just attach a listener before the last one -> mouse up
@@ -283,7 +283,7 @@ describe('ProbeTool (CPU):', () => {
       } = createNormalizedMouseEvent(imageData, index2, element, vp);
 
       // Mouse Down
-      let evt1 = new MouseEvent('mousedown', {
+      const mouseDownEvt1 = new MouseEvent('mousedown', {
         target: element,
         buttons: 1,
         pageX: pageX1,
@@ -295,10 +295,10 @@ describe('ProbeTool (CPU):', () => {
       // Mouse Up instantly after
       const mouseUpEvt1 = new MouseEvent('mouseup');
 
-      await doMouseDownAndUp(element, evt1, mouseUpEvt1);
+      await performMouseDownAndUp(element, mouseDownEvt1, mouseUpEvt1);
 
       // Mouse Down
-      let evt2 = new MouseEvent('mousedown', {
+      const mouseDownEvt2 = new MouseEvent('mousedown', {
         target: element,
         buttons: 1,
         pageX: pageX2,
@@ -310,9 +310,9 @@ describe('ProbeTool (CPU):', () => {
       // Mouse Up instantly after
       const mouseUpEvt2 = new MouseEvent('mouseup');
 
-      doMouseDownAndUp(
+      performMouseDownAndUp(
         element,
-        evt2,
+        mouseDownEvt2,
         mouseUpEvt2,
         addEventListenerForAnnotationRendered
       );
@@ -384,7 +384,7 @@ describe('ProbeTool (CPU):', () => {
       } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
       // Mouse Down
-      let evt = new MouseEvent('mousedown', {
+      const mouseDownEvt = new MouseEvent('mousedown', {
         target: element,
         buttons: 1,
         pageX: pageX1,
@@ -396,9 +396,9 @@ describe('ProbeTool (CPU):', () => {
       // Mouse Up instantly after
       const mouseUpEvt = new MouseEvent('mouseup');
 
-      doMouseDownAndUp(
+      performMouseDownAndUp(
         element,
-        evt,
+        mouseDownEvt,
         mouseUpEvt,
         addEventListenerForAnnotationRendered
       );
@@ -470,7 +470,7 @@ describe('ProbeTool (CPU):', () => {
       } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
       // Mouse Down
-      let evt = new MouseEvent('mousedown', {
+      const mouseDownEvt = new MouseEvent('mousedown', {
         target: element,
         buttons: 1,
         pageX: pageX1,
@@ -482,9 +482,9 @@ describe('ProbeTool (CPU):', () => {
       // Mouse Up instantly after
       const mouseUpEvt = new MouseEvent('mouseup');
 
-      doMouseDownAndUp(
+      performMouseDownAndUp(
         element,
-        evt,
+        mouseDownEvt,
         mouseUpEvt,
         addEventListenerForAnnotationRendered
       );
@@ -574,7 +574,7 @@ describe('ProbeTool (CPU):', () => {
       p2 = worldCoord2;
 
       // Mouse Down
-      let evt = new MouseEvent('mousedown', {
+      const mouseDownEvt = new MouseEvent('mousedown', {
         target: element,
         buttons: 1,
         clientX: clientX1,
@@ -586,10 +586,10 @@ describe('ProbeTool (CPU):', () => {
       // Mouse Up instantly after
       const mouseUpEvt = new MouseEvent('mouseup');
 
-      await doMouseDownAndUp(element, evt, mouseUpEvt);
+      await performMouseDownAndUp(element, mouseDownEvt, mouseUpEvt);
 
       // Grab the probe tool again
-      evt = new MouseEvent('mousedown', {
+      let evt = new MouseEvent('mousedown', {
         target: element,
         buttons: 1,
         clientX: clientX1,

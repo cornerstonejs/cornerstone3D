@@ -451,7 +451,10 @@ class ArrowAnnotateTool extends AnnotationTool {
     this.editData = null;
     this.isDrawing = false;
 
-    // This double click was handled and the dialogue was displayed. No need for anyone else to handle it too.
+    // This double click was handled and the dialogue was displayed.
+    // No need for any other listener to handle it too - stopImmediatePropagation
+    // helps ensure this primarily so that no other listeners on the target element
+    // get called.
     evt.stopImmediatePropagation();
     evt.preventDefault();
   };

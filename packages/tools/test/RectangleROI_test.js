@@ -1,7 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { doMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
   cache,
@@ -566,7 +566,7 @@ describe('Rectangle ROI Tool: ', () => {
         document.dispatchEvent(evt);
 
         // Mouse down on the middle of the rectangleROI, just to select
-        evt = new MouseEvent('mousedown', {
+        const mouseDownEvt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           clientX: clientX3,
@@ -578,9 +578,9 @@ describe('Rectangle ROI Tool: ', () => {
         // Just grab and don't really move it
         const mouseUpEvt = new MouseEvent('mouseup');
 
-        doMouseDownAndUp(
+        performMouseDownAndUp(
           element,
-          evt,
+          mouseDownEvt,
           mouseUpEvt,
           addEventListenerForAnnotationRendered
         );

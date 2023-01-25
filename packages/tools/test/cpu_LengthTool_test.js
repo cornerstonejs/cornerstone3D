@@ -1,7 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { doMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
   cache,
@@ -482,7 +482,7 @@ describe('Length Tool (CPU):', () => {
       // Just grab and don't really move it
       const mouseUpEvt = new MouseEvent('mouseup');
 
-      doMouseDownAndUp(
+      performMouseDownAndUp(
         element,
         evt,
         mouseUpEvt,
