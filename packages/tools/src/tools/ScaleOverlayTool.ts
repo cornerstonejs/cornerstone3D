@@ -126,7 +126,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
   onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
     // If the camera is modified, we need to update the viewport
     // that the camera was modified on
-    this.configuration.viewportId = evt.target.dataset.viewportUid;
+    this.configuration.viewportId = evt.detail.viewportId;
     this._init();
   };
 
