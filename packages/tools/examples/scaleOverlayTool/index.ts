@@ -45,7 +45,7 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Left Click: Window/Level\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+  'Left Click: Length Tool\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
 
 content.append(instructions);
 // ============================= //
@@ -89,7 +89,6 @@ async function run() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Create a stack viewport
-  // const viewportId = 'CT_STACK';
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
