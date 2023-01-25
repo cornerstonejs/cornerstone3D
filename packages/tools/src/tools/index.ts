@@ -75,4 +75,5 @@ export {
   MagnifyTool,
   ReferenceLines,
   PaintFillTool,
+  ScaleOverlayTool,
 };

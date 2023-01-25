@@ -54,6 +54,7 @@ import {
   ReferenceCursors,
   ReferenceLines,
   PaintFillTool,
+  ScaleOverlayTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -93,6 +94,7 @@ export {
   MagnifyTool,
   ReferenceCursors,
   ReferenceLines,
+  ScaleOverlayTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
