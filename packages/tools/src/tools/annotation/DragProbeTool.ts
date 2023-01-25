@@ -50,6 +50,66 @@ class DragProbeTool extends ProbeTool {
     super(toolProps, defaultToolProps);
   }
 
+  postTouchDownCallback = (
+    evt: EventTypes.InteractionEventType
+  ): ProbeAnnotation => {
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
+
+    this.isDrawing = true;
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
+
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
+
+    const annotation: ProbeAnnotation = {
+      invalidated: true,
+      highlighted: true,
+      isVisible: true,
+      metadata: {
+        toolName: this.getToolName(),
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
+        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        referencedImageId,
+      },
+      data: {
+        label: '',
+        handles: { points: [<Types.Point3>[...worldPos]] },
+        cachedStats: {},
+      },
+    };
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
+    this.editData = {
+      annotation,
+      newAnnotation: true,
+      viewportIdsToRender,
+    };
+    this._activateModify(element);
+
+    hideElementCursor(element);
+
+    evt.preventDefault();
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    return annotation;
+  };
+
   postMouseDownCallback = (
     evt: EventTypes.InteractionEventType
   ): ProbeAnnotation => {

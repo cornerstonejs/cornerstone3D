@@ -273,8 +273,8 @@ class CircleScissorsTool extends BaseTool {
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._endCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
   };
 
   /**
@@ -285,8 +285,8 @@ class CircleScissorsTool extends BaseTool {
     element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
     element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
-    // element.removeEventListener(Events.TOUCH_END, this._endCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
   };
 
   /**

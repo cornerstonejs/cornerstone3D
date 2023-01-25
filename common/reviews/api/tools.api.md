@@ -1280,6 +1280,8 @@ export class DragProbeTool extends ProbeTool {
     // (undocumented)
     postMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
+    postTouchDownCallback: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
+    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     static toolName: any;
