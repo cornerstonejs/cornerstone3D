@@ -512,7 +512,7 @@ export function getMouseButton(): number {
  * preventDefault are used to ingore the event.
  * @param evt browser dblclick event
  */
-function mouseDoubleClickIgnoreListener(evt: MouseEvent) {
+export function mouseDoubleClickIgnoreListener(evt: MouseEvent) {
   if (doubleClickState.ignoreDoubleClick) {
     doubleClickState.ignoreDoubleClick = false;
 
@@ -523,11 +523,5 @@ function mouseDoubleClickIgnoreListener(evt: MouseEvent) {
     evt.preventDefault();
   }
 }
-
-// Listen for a double click event at the root element on the capture phase
-// to best prevent listeners of mistakenly getting an ignored dblclick event.
-document.addEventListener('dblclick', mouseDoubleClickIgnoreListener, {
-  capture: true,
-});
 
 export default mouseDownListener;
