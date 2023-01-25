@@ -367,8 +367,7 @@ class CrosshairsTool extends AnnotationTool {
    * @returns Crosshairs annotation
    */
   addNewAnnotation = (
-    evt: EventTypes.InteractionEventType,
-    interactionType = 'mouse'
+    evt: EventTypes.InteractionEventType
   ): CrosshairsAnnotation => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -470,9 +469,7 @@ class CrosshairsTool extends AnnotationTool {
 
   handleSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: Annotation,
-    handle: ToolHandle,
-    interactionType = 'mouse'
+    annotation: Annotation
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;

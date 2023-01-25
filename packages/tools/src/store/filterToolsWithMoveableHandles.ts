@@ -33,8 +33,7 @@ export default function filterToolsWithMoveableHandles(
         element,
         annotation,
         canvasCoords,
-        proximity,
-        interactionType
+        proximity
       );
 
       if (handle) {

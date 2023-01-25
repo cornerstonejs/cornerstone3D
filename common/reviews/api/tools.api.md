@@ -314,7 +314,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
-    getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType?: string): ToolHandle | undefined;
+    getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
     getLinkedTextBoxStyle(specifications: StyleSpecifier, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
@@ -357,7 +357,7 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
     // (undocumented)
-    doubleClickCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    doubleClickCallback: (evt: EventTypes_2.TouchTapEventType) => void;
     // (undocumented)
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
@@ -1037,7 +1037,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.InteractionEventType, interactionType?: string) => CrosshairsAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => CrosshairsAnnotation;
     // (undocumented)
     _applyDeltaShiftToSelectedViewportCameras(renderingEngine: any, viewportsAnnotationsToUpdate: any, delta: any): void;
     // (undocumented)
@@ -1087,7 +1087,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _getViewportsInfo: () => Types_2.IViewportId[];
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation) => void;
     // (undocumented)
     initializeViewport: ({ renderingEngineId, viewportId, }: Types_2.IViewportId) => {
         normal: Types_2.Point3;

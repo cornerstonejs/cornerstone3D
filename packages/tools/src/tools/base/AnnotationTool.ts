@@ -172,8 +172,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     element: HTMLDivElement,
     annotation: Annotation,
     canvasCoords: Types.Point2,
-    proximity: number,
-    interactionType = 'mouse'
+    proximity: number
   ): ToolHandle | undefined {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
