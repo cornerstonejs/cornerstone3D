@@ -26,6 +26,9 @@ const DOUBLE_CLICK_TOLERANCE_MS = 400;
 // value will cancel the timeout and suppress any double click that might occur.
 // This tolerance is particularly important on touch devices where some movement
 // might occur between the two clicks.
+//
+// TODO revisit this value for touch devices
+//
 const DOUBLE_CLICK_DRAG_TOLERANCE = 3;
 
 interface IMouseDownListenerState {
