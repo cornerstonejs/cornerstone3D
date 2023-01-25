@@ -3,6 +3,7 @@ import { getEnabledElementByIds, Types } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
 import { labelmapDisplay } from './Labelmap';
+import { contourDisplay } from './Contour';
 import { config as segmentationConfig } from '../../stateManagement/segmentation';
 import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { getToolGroup } from '../../store/ToolGroupManager';
@@ -140,6 +141,14 @@ class SegmentationDisplayTool extends BaseTool {
           if (representation.type == Representations.Labelmap) {
             viewportsRenderList.push(
               labelmapDisplay.render(
+                viewport as Types.IVolumeViewport,
+                representation,
+                config
+              )
+            );
+          } else if (representation.type == Representations.Contour) {
+            viewportsRenderList.push(
+              contourDisplay.render(
                 viewport as Types.IVolumeViewport,
                 representation,
                 config

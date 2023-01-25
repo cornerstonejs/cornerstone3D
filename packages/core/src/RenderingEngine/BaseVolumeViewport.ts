@@ -7,7 +7,7 @@ import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
 } from './helpers/volumeNewImageEventDispatcher';
-import { loadVolume } from '../volumeLoader';
+import { loadVolume } from '../loaders/volumeLoader';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import { getShouldUseCPURendering } from '../init';
 import type {

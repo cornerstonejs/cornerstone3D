@@ -76,6 +76,7 @@ module.exports = {
             'concepts/cornerstone-core/metadataProvider',
             'concepts/cornerstone-core/volumes',
             'concepts/cornerstone-core/volumeLoader',
+            'concepts/cornerstone-core/geometryLoader',
             'concepts/cornerstone-core/cache',
             'concepts/cornerstone-core/viewports',
             'concepts/cornerstone-core/renderingEngine',

@@ -45,8 +45,16 @@ function volumeNewImageEventDispatcher(
     state[viewport.id] = 0;
   }
 
-  const { numberOfSlices, imageIndex } =
-    getImageSliceDataForVolumeViewport(viewport);
+  const sliceData = getImageSliceDataForVolumeViewport(viewport);
+
+  if (!sliceData) {
+    console.warn(
+      `volumeNewImageEventDispatcher: sliceData is undefined for viewport ${viewport.id}`
+    );
+    return;
+  }
+
+  const { numberOfSlices, imageIndex } = sliceData;
 
   if (state[viewport.id] === imageIndex) {
     return;

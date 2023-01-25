@@ -48,6 +48,7 @@ import {
   FloodFillResult,
 } from './FloodFillTypes';
 import IToolClassReference from './IToolClassReference';
+import { ContourSegmentationData } from './ContourTypes';
 
 export type {
   // AnnotationState
@@ -105,4 +106,6 @@ export type {
   FloodFillResult,
   FloodFillGetter,
   FloodFillOptions,
+  // Contour
+  ContourSegmentationData,
 };
