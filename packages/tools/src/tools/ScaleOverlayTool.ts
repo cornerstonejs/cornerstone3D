@@ -384,7 +384,9 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     worldHeightViewport: number,
     location: any
   ) => {
-    const scaleSizes = [2000, 1000, 500, 250, 100, 50, 25, 10, 5];
+    const scaleSizes = [
+      16000, 8000, 4000, 2000, 1000, 500, 250, 100, 50, 25, 10, 5, 2,
+    ];
     let currentScaleSize;
     if (location == 'top' || location == 'bottom') {
       currentScaleSize = scaleSizes.filter(
