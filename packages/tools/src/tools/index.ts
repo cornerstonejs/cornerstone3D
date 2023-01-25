@@ -23,6 +23,7 @@ import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
 import ReferenceCursors from './ReferenceCursors';
 import ReferenceLines from './ReferenceLinesTool';
+import ScaleOverlayTool from './ScaleOverlayTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
