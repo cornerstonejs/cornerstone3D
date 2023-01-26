@@ -110,7 +110,7 @@ class DragProbeTool extends ProbeTool {
     return annotation;
   };
 
-  postTouchDownCallback = (
+  postTouchStartCallback = (
     evt: EventTypes.InteractionEventType
   ): ProbeAnnotation => {
     return this.postMouseDownCallback(evt);
