@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.28.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.2...@cornerstonejs/core@0.28.0) (2023-01-26)
+
+
+### Features
+
+* **doubleClick:** Add Double click detection ([#375](https://github.com/cornerstonejs/cornerstone3D-beta/issues/375)) ([#382](https://github.com/cornerstonejs/cornerstone3D-beta/issues/382)) ([8e4be96](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8e4be962c8f9d6c226095a573905087842995f89))
+
+
+
+
+
 ## [0.27.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.1...@cornerstonejs/core@0.27.2) (2023-01-23)
 
 
