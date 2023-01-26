@@ -405,7 +405,7 @@ class ArrowAnnotateTool extends AnnotationTool {
 
   touchTapCallback = (evt: EventTypes.TouchTapEventType) => {
     if (evt.detail.taps == 2) {
-      this.doubleClickCallback(evt as EventTypes.TouchTapEventType);
+      this.doubleClickCallback(evt);
     }
   };
 
