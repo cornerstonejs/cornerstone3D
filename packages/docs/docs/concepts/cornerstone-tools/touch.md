@@ -119,7 +119,9 @@ A full example can be found by running
 
 ## Binding
 
-Touch tools have bindings depending on the number of pointers that are placed down. In the future, bindings can be filter based on force, as well as radius (stylus detection).
+Touch tools have bindings depending on the number of pointers that are placed down.
+In the future, bindings can be filter based on force, as well as radius (stylus detection).
+The `numTouchPoints` can be as many as is supported by hardware.
 
 ```js
 // Add tools to Cornerstone3D
@@ -154,4 +156,63 @@ toolGroup.setToolActive(WindowLevelTool.toolName, {
     },
   ],
 });
+```
+
+The `MouseBindings.Primary` is a special binding type which will
+automatically bind single finger touch.
+
+## Touch and Mouse Event Analogs
+
+Touch and Mouse Events share a lot of overlapping inheritance. Most touch events
+have a mouse event analog. See the below:
+
+| TOUCH EVENT            | MOUSE_EVENT           |
+| ---------------------- | --------------------- |
+| `TOUCH_START`          | `MOUSE_DOWN`          |
+| `TOUCH_START_ACTIVATE` | `MOUSE_DOWN_ACTIVATE` |
+| `TOUCH_PRESS`          | N/A                   |
+| `TOUCH_DRAG`           | `MOUSE_DRAG`          |
+| `TOUCH_SWIPE`          | N/A                   |
+| `TOUCH_END`            | `MOUSE_UP`            |
+| `TOUCH_TAP`            | `MOUSE_CLICK`         |
+
+The main difference between touch events and mouse events are that touch events
+can have multiple pointers (multi-touch). Touch events will automatically reduce
+multiple pointers into a single point value. The default way these points are
+reduced is taking the weighted average. This reduced point can be used as a `IPoints`
+or `ITouchPoints` depending if touch information is needed.
+
+In the case multiple touch points are needed, they are accessible in list form.
+
+```js
+type MousePointsDetail = {
+  /** The starting points of the mouse event. */
+  startPoints: IPoints,
+  /** The last points of the mouse. */
+  lastPoints: IPoints,
+  /** The current mouse position. */
+  currentPoints: IPoints,
+  /** The difference between the current and last points. */
+  deltaPoints: IPoints,
+};
+
+type TouchPointsDetail = {
+  /** The starting points of the touch event. */
+  startPoints: ITouchPoints,
+  /** The last points of the touch. */
+  lastPoints: ITouchPoints,
+  /** The current touch position. */
+  currentPoints: ITouchPoints,
+
+  startPointsList: ITouchPoints[],
+  /** The last points of the touch. */
+  lastPointsList: ITouchPoints[],
+  /** The current touch position. */
+  currentPointsList: ITouchPoints[],
+
+  /** The difference between the current and last points. */
+  deltaPoints: IPoints,
+  /** The difference between distances between the current and last points. */
+  deltaDistance: IDistance,
+};
 ```
