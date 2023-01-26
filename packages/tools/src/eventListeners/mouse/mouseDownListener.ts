@@ -22,7 +22,7 @@ const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
 //
 const DOUBLE_CLICK_TOLERANCE_MS = 400;
 
-// A drag (distance) during the double click timeout that is greater than this
+// A drag (projected distance) during the double click timeout that is greater than this
 // value will cancel the timeout and suppress any double click that might occur.
 // This tolerance is particularly important on touch devices where some movement
 // might occur between the two clicks.
@@ -368,17 +368,13 @@ function _onMouseMove(evt: MouseEvent) {
 }
 
 /**
- * Determines if the given delta is past the double click, drag distance tolerance.
- * This is a bit of an expensive calculation, so it is best to only be called within
- * the double click timeout.
+ * Determines if the given delta is past the double click, (projected) drag distance
+ * tolerance.
  * @param delta the delta
  * @returns true iff the delta is past the tolerance
  */
 function _isDragPastDoubleClickTolerance(delta: Types.Point2): boolean {
-  return (
-    Math.sqrt(Math.pow(delta[0], 2) + Math.pow(delta[1], 2)) >
-    DOUBLE_CLICK_DRAG_TOLERANCE
-  );
+  return Math.abs(delta[0]) + Math.abs(delta[1]) > DOUBLE_CLICK_DRAG_TOLERANCE;
 }
 
 function _preventClickHandler() {
@@ -507,12 +503,32 @@ export function getMouseButton(): number {
 }
 
 /**
+ * Adds a capture phase double click listener to the document that ignores double
+ * click events as determined by this module.
+ */
+export function addIgnoreDoubleClickCaptureListener() {
+  document.addEventListener('dblclick', _mouseDoubleClickIgnoreListener, {
+    capture: true,
+  });
+}
+
+/**
+ * Removes a capture phase double click listener from the document that ignores double
+ * click events as determined by this module.
+ */
+export function removeIgnoreDoubleClickCaptureListener() {
+  document.removeEventListener('dblclick', _mouseDoubleClickIgnoreListener, {
+    capture: true,
+  });
+}
+
+/**
  * Handles a dblclick event to determine if it should be ignored based on the
  * double click state's ignoreDoubleClick flag. stopImmediatePropagation and
  * preventDefault are used to ingore the event.
  * @param evt browser dblclick event
  */
-export function mouseDoubleClickIgnoreListener(evt: MouseEvent) {
+function _mouseDoubleClickIgnoreListener(evt: MouseEvent) {
   if (doubleClickState.ignoreDoubleClick) {
     doubleClickState.ignoreDoubleClick = false;
 
