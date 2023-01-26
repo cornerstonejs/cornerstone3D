@@ -1,11 +1,13 @@
 import { ContourType } from '../enums';
 import Point3 from './Point3';
 
-type PublicContourSetData = Array<{
-  points: Point3[];
-  type: ContourType;
+type PublicContourSetData = Array<ContourSetData>;
+
+type ContourSetData = {
+  data: ContourData[];
+  id: string;
   color?: Point3;
-}>;
+};
 
 type ContourData = {
   points: Point3[];
@@ -13,4 +15,4 @@ type ContourData = {
   color?: Point3;
 };
 
-export type { PublicContourSetData, ContourData };
+export type { PublicContourSetData, ContourSetData, ContourData };

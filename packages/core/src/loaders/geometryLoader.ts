@@ -25,7 +25,7 @@ type GeometryOptions = {
 async function createAndCacheGeometry(
   geometryId: string,
   options: GeometryOptions
-): Promise<IGeometry> {
+): Promise<any> {
   let geometry = cache.getGeometry(geometryId);
 
   if (geometry) {
@@ -48,33 +48,72 @@ async function createAndCacheGeometry(
 }
 
 // Todo: this should be moved
-function _createContourSet(geometryId: string, data: PublicContourSetData) {
+function _createContourSet(
+  geometryId: string,
+  contourSetDataArray: PublicContourSetData
+) {
   // validate the data to make sure it is a valid contour set
-  if (!data || !Array.isArray(data) || data.length === 0) {
+  if (
+    !contourSetDataArray ||
+    !Array.isArray(contourSetDataArray) ||
+    contourSetDataArray.length === 0
+  ) {
     throw new Error(
       'Invalid contour set data, see publicContourSetData type for more info'
     );
   }
 
-  // make sure it has points
-  if (!data[0].points || !Array.isArray(data[0].points)) {
-    throw new Error(
-      'ContourSet points are not valid, see publicContourSetData type for more info'
-    );
-  }
+  // make sure it each has id, and each has data of type Point3[]
+  contourSetDataArray.forEach((contourSetData) => {
+    if (!contourSetData.id) {
+      throw new Error(
+        'Invalid contour set data, each contour set must have an id'
+      );
+    }
 
-  // make sure it has type
-  if (!data[0].type) {
-    throw new Error(
-      'ContourSet type is not valid, see publicContourSetData type for more info'
-    );
-  }
+    if (!contourSetData.data || !Array.isArray(contourSetData.data)) {
+      throw new Error(
+        'Invalid contour set data, each contour set must have an array of contours'
+      );
+    }
 
-  const contourSet = new ContourSet({
-    id: geometryId,
-    data,
+    contourSetData.data.forEach((contourData) => {
+      if (!contourData.points || !Array.isArray(contourData.points)) {
+        throw new Error(
+          'Invalid contour set data, each contour must have an array of points'
+        );
+      }
+
+      contourData.points.forEach((point) => {
+        if (!point || !Array.isArray(point) || point.length !== 3) {
+          throw new Error(
+            'Invalid contour set data, each point must be an array of length 3'
+          );
+        }
+      });
+    });
   });
-  return contourSet;
+
+  const contourSets = contourSetDataArray.map((contourSetData) => {
+    return new ContourSet({
+      id: contourSetData.id,
+      data: contourSetData.data,
+      color: contourSetData.color,
+    });
+  });
+
+  const sizeInBytes = contourSets.reduce((acc, contourSet) => {
+    return acc + contourSet.sizeInBytes;
+  }, 0);
+
+  const geometry: IGeometry = {
+    id: geometryId,
+    type: GeometryType.CONTOUR,
+    data: contourSets,
+    sizeInBytes,
+  };
+
+  return geometry;
 }
 
 export { createAndCacheGeometry };

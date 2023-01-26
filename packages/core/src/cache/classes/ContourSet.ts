@@ -1,9 +1,9 @@
-import { Point3, PublicContourSetData, IContourSet } from '../../types';
+import { Point3, IContourSet, ContourData } from '../../types';
 import Contour from './Contour';
 
 /**
  * This class represents a set of contours.
- * Usually contours are grouped together in a contour set to represent a meaningful shape/object
+ * Usually contours are grouped together in a contour set to represent a meaningful shape.
  */
 export class ContourSet implements IContourSet {
   readonly id: string;
@@ -11,29 +11,27 @@ export class ContourSet implements IContourSet {
   private color: Point3 = [200, 0, 0]; // default color
   contours: Contour[];
 
-  constructor(props: { id: string; data: PublicContourSetData }) {
+  constructor(props: { id: string; data: ContourData[]; color?: Point3 }) {
     this.id = props.id;
     this.contours = [];
+    this.color = props.color ?? this.color;
 
     this._createEachContour(props.data);
     this.sizeInBytes = this._getSizeInBytes();
   }
 
-  _createEachContour(data: PublicContourSetData): void {
-    this.contours = data.map(({ points, type, color }, index) => {
+  _createEachContour(contourDataArray: ContourData[]): void {
+    this.contours = contourDataArray.map((contourData, index) => {
+      const { points, type, color } = contourData;
       return new Contour({
         id: `${this.id}-${index}`,
         data: {
           points,
           type,
-          color: color || this.color,
         },
+        color: color ?? this.color,
       });
     });
-
-    if (data[0].color) {
-      this.color = data[0].color;
-    }
   }
 
   _getSizeInBytes(): number {

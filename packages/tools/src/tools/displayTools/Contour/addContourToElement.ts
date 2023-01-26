@@ -24,17 +24,16 @@ function addContourToElement(
   const pointList = contour.getPoints();
   const flatPoints = contour.getFlatPointsArray();
   const color = contour.getColor();
+  const type = contour.getType();
 
-  // createPolyData();
-  // return;
+  const p = pointList.map((_, i) => i);
+
+  if (type === Enums.ContourType.CLOSED_PLANAR) {
+    p.push(0);
+  }
 
   const var1 = Float32Array.from(flatPoints);
-  const var2 = Uint32Array.from([
-    pointList.length,
-    ...pointList.map((_, i) => i),
-  ]);
-
-  // Todo: add the closed property to the contour
+  const var2 = Uint32Array.from([p.length, ...p]);
 
   const points = vtkPoints.newInstance();
   points.setData(var1, 3);

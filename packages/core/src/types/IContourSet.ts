@@ -1,10 +1,11 @@
-import { PublicContourSetData, IContour, Point3 } from './';
+import { ContourData, IContour, Point3 } from './';
 
 export interface IContourSet {
   readonly id: string;
+  readonly color: Point3;
   readonly sizeInBytes: number;
   contours: IContour[];
-  _createEachContour(data: PublicContourSetData): void;
+  _createEachContour(data: ContourData[]): void;
   _getSizeInBytes(): number;
   getColor(): any;
   /**

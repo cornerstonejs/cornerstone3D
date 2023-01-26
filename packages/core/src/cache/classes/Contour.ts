@@ -1,19 +1,19 @@
-import { IGeometry, Point3, ContourData } from '../../types';
+import { Point3, ContourData, IContour } from '../../types';
 import { ContourType } from '../../enums';
 
-export class Contour implements IGeometry {
+export class Contour implements IContour {
   readonly id: string;
   readonly sizeInBytes: number;
   points: Point3[];
   color: Point3;
   type: ContourType;
 
-  constructor(props: { id: string; data: ContourData }) {
-    const { points, type, color } = props.data;
+  constructor(props: { id: string; data: ContourData; color: Point3 }) {
+    const { points, type } = props.data;
     this.id = props.id;
     this.points = points;
     this.type = type;
-    this.color = color;
+    this.color = props.color;
 
     this.sizeInBytes = this._getSizeInBytes();
   }

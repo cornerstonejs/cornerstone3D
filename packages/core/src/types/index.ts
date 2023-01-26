@@ -64,7 +64,11 @@ import type IRenderingEngine from './IRenderingEngine';
 import type ActorSliceRange from './ActorSliceRange';
 import type ImageSliceData from './ImageSliceData';
 import type IGeometry from './IGeometry';
-import type { PublicContourSetData, ContourData } from './ContourData';
+import type {
+  PublicContourSetData,
+  ContourSetData,
+  ContourData,
+} from './ContourData';
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
@@ -140,6 +144,7 @@ export type {
   ICachedGeometry,
   // Contour
   PublicContourSetData,
+  ContourSetData,
   ContourData,
   IContourSet,
   IContour,

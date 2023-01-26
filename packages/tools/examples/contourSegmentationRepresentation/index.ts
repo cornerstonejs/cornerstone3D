@@ -12,7 +12,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import rtContour from './RTContour.json';
+// import rtContour from './RTContour.json';
+import rtContour from './RTContourNew.json';
 
 // This is for debugging purposes
 console.warn(
@@ -71,7 +72,7 @@ async function addSegmentationsToState() {
   // load the contour data
   await geometryLoader.createAndCacheGeometry(geometryId, {
     type: GeometryType.CONTOUR,
-    data: rtContour.data as Types.PublicContourSetData,
+    data: rtContour.contourSets as Types.PublicContourSetData,
   });
 
   // Add the segmentations to state
@@ -130,11 +131,24 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+  //   wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  // });
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.2.840.113619.2.278.3.3523880722.420.1464584245.596',
-    SeriesInstanceUID: '1.2.840.113619.2.278.3.3523880722.420.1464584245.665',
+    StudyInstanceUID: '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000347',
+    SeriesInstanceUID:
+      '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000346',
     wadoRsRoot: 'http://localhost/dicom-web',
   });
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID: '1.2.276.0.7230010.3.1.2.481035776.1.1669385265.734807',
+  //   SeriesInstanceUID: '1.2.276.0.7230010.3.1.3.481035776.1.1669385265.734808',
+  //   wadoRsRoot: 'http://localhost/dicom-web',
+  // });
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -172,6 +186,12 @@ async function run() {
 
   // Set volumes on the viewports
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
+
+  const viewport = renderingEngine.getViewport(
+    viewportId1
+  ) as Types.IVolumeViewport;
+  // viewport.setBlendMode(Enums.BlendModes.MAXIMUM_INTENSITY_BLEND);
+  // viewport.setSlabThickness(10);
 
   // // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
