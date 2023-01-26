@@ -15,10 +15,10 @@ import mouseMoveListener from './mouseMoveListener';
 function disable(element: HTMLDivElement): void {
   element.removeEventListener('dblclick', mouseDoubleClickListener);
 
-  // A separate double click listener at the root element. Separate because...
+  // A separate double click listener for the element. Separate because...
   // - it listens on the capture phase (and not the typical bubble phase)
   // - the data used to ignore the double click is private to mouseDoubleClickIgnoreListener
-  document.removeEventListener('dblclick', mouseDoubleClickIgnoreListener, {
+  element.removeEventListener('dblclick', mouseDoubleClickIgnoreListener, {
     capture: true, // capture phase is the best way to ignore double clicks
   });
 
@@ -39,7 +39,7 @@ function enable(element: HTMLDivElement): void {
   disable(element);
 
   element.addEventListener('dblclick', mouseDoubleClickListener);
-  document.addEventListener('dblclick', mouseDoubleClickIgnoreListener, {
+  element.addEventListener('dblclick', mouseDoubleClickIgnoreListener, {
     capture: true,
   });
 
