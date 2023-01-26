@@ -2131,7 +2131,7 @@ class StackViewport extends Viewport implements IStackViewport {
     vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
     vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
 
-    return worldPos as Point3;
+    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
   };
 
   private worldToCanvasCPU = (worldPos: Point3): Point2 => {
