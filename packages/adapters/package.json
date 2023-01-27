@@ -8,6 +8,9 @@
     "directories": {
         "example": "examples"
     },
+    "publishConfig": {
+        "access": "public"
+    },
     "scripts": {
         "test": "jest --testTimeout 60000",
         "build": "rollup -c",
