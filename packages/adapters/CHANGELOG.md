@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.2](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.1...@cornerstonejs/adapters@0.1.2) (2023-01-27)
+
+
+### Bug Fixes
+
+* **build:** fixing publish of adapters in package json ([#396](https://github.com/dcmjs-org/dcmjs/issues/396)) ([5a45b2f](https://github.com/dcmjs-org/dcmjs/commit/5a45b2f9ebeca9b800642d2735720a8d8400cd12))
+
+
+
+
+
 ## [0.1.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.0...@cornerstonejs/adapters@0.1.1) (2023-01-27)
 
 
