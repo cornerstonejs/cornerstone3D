@@ -1,0 +1,5 @@
+*.dcm
+.jshintrc
+examples/
+src/
+config/
