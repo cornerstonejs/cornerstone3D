@@ -23,7 +23,7 @@ export default function filterMoveableAnnotationTools(
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
 ): ToolAnnotationPair[] {
-  const proximity = 6;
+  const proximity = interactionType === 'touch' ? 36 : 6;
 
   // TODO - This could get pretty expensive pretty quickly. We don't want to fetch the camera
   // And do world to canvas on each coord.

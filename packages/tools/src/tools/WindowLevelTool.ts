@@ -24,9 +24,6 @@ const PT = 'PT';
  */
 class WindowLevelTool extends BaseTool {
   static toolName;
-  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
-  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
-
   constructor(
     toolProps = {},
     defaultToolProps = {
@@ -34,12 +31,13 @@ class WindowLevelTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
-
-    this.touchDragCallback = this._dragCallback.bind(this);
-    this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  _dragCallback(evt: EventTypes.MouseDragEventType) {
+  touchDragCallback(evt: EventTypes.InteractionEventType) {
+    this.mouseDragCallback(evt);
+  }
+
+  mouseDragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewportId, viewport } = enabledElement;

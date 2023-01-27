@@ -38,7 +38,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param interactionType -  The interaction type used to add the annotation.
    */
   abstract addNewAnnotation(
-    evt: EventTypes.MouseDownActivateEventType,
+    evt: EventTypes.InteractionEventType,
     interactionType: InteractionTypes
   ): Annotation;
 
@@ -57,7 +57,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param interactionType - The interaction type the handle was selected with.
    */
   abstract handleSelectedCallback(
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.InteractionEventType,
     annotation: Annotation,
     handle: ToolHandle,
     interactionType: InteractionTypes
@@ -71,7 +71,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param interactionType - The interaction type used to select the tool.
    */
   abstract toolSelectedCallback(
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.InteractionEventType,
     annotation: Annotation,
     interactionType: InteractionTypes
   ): void;

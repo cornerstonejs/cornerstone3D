@@ -155,18 +155,13 @@ class BrushTool extends BaseTool {
     return true;
   };
 
-  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): void => {
+  mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
     }
   };
 
-  private updateCursor(
-    evt:
-      | EventTypes.MouseMoveEventType
-      | EventTypes.MouseDragEventType
-      | EventTypes.MouseUpEventType
-  ) {
+  private updateCursor(evt: EventTypes.InteractionEventType) {
     const eventData = evt.detail;
     const { element } = eventData;
     const { currentPoints } = eventData;
@@ -233,7 +228,7 @@ class BrushTool extends BaseTool {
     );
   }
 
-  private _mouseDragCallback = (evt: EventTypes.MouseDragEventType): void => {
+  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -317,7 +312,7 @@ class BrushTool extends BaseTool {
     data.invalidated = false;
   }
 
-  private _mouseUpCallback = (evt: EventTypes.MouseUpEventType): void => {
+  private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
 
@@ -370,15 +365,15 @@ class BrushTool extends BaseTool {
   private _activateDraw = (element: HTMLDivElement): void => {
     element.addEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
   };
 
@@ -388,15 +383,15 @@ class BrushTool extends BaseTool {
   private _deactivateDraw = (element: HTMLDivElement): void => {
     element.removeEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
   };
 

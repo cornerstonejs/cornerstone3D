@@ -7,6 +7,8 @@ import type {
 import type * as EventTypes from './EventTypes';
 import type * as LabelmapTypes from './LabelmapTypes';
 import type IPoints from './IPoints';
+import type ITouchPoints from './ITouchPoints';
+import type IDistance from './IDistance';
 import type PlanarBoundingBox from './PlanarBoundingBox';
 import type {
   SetToolBindingsType,
@@ -63,6 +65,8 @@ export type {
   // Event data
   EventTypes,
   IPoints,
+  ITouchPoints,
+  IDistance,
   // ToolBindings
   IToolBinding,
   SetToolBindingsType,

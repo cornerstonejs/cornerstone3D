@@ -131,7 +131,7 @@ class BidirectionalTool extends AnnotationTool {
    *
    */
   addNewAnnotation(
-    evt: EventTypes.MouseDownActivateEventType
+    evt: EventTypes.InteractionEventType
   ): BidirectionalAnnotation {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
@@ -296,9 +296,8 @@ class BidirectionalTool extends AnnotationTool {
    * @param interactionType - interaction type (mouse, touch)
    */
   toolSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
-    annotation: BidirectionalAnnotation,
-    interactionType: InteractionTypes
+    evt: EventTypes.InteractionEventType,
+    annotation: BidirectionalAnnotation
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -338,10 +337,9 @@ class BidirectionalTool extends AnnotationTool {
    * @param interactionType - interaction type (mouse, touch)
    */
   handleSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.InteractionEventType,
     annotation: BidirectionalAnnotation,
-    handle: ToolHandle,
-    interactionType = 'mouse'
+    handle: ToolHandle
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -390,9 +388,7 @@ class BidirectionalTool extends AnnotationTool {
    *
    * @param evt - mouse up or mouse click event types
    */
-  _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ) => {
+  _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -500,7 +496,7 @@ class BidirectionalTool extends AnnotationTool {
   /**
    * @param evt - mouse move event type or mouse drag
    */
-  _mouseDragDrawCallback = (evt: MouseMoveEventType | MouseDragEventType) => {
+  _dragDrawCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
 
     const eventDetail = evt.detail;
@@ -584,7 +580,7 @@ class BidirectionalTool extends AnnotationTool {
    * Mouse drag to edit annotation callback
    * @param evt - mouse drag event
    */
-  _mouseDragModifyCallback = (evt: MouseDragEventType) => {
+  _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
 
     const eventDetail = evt.detail;
@@ -619,7 +615,7 @@ class BidirectionalTool extends AnnotationTool {
       });
       annotation.invalidated = true;
     } else {
-      this._handleDragModify(evt);
+      this._dragModifyHandle(evt);
       annotation.invalidated = true;
     }
 
@@ -630,7 +626,7 @@ class BidirectionalTool extends AnnotationTool {
    * Mouse dragging a handle callback
    * @param evt - mouse drag event
    */
-  _handleDragModify = (evt) => {
+  _dragModifyHandle = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const enabledElement = getEnabledElement(element);
@@ -928,53 +924,87 @@ class BidirectionalTool extends AnnotationTool {
   _activateDraw = (element) => {
     state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback);
-    element.addEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_UP, this._endCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._dragDrawCallback);
+    element.addEventListener(Events.MOUSE_MOVE, this._dragDrawCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragDrawCallback as EventListener
+    );
   };
 
   _deactivateDraw = (element) => {
     state.isInteractingWithTool = false;
 
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragDrawCallback);
-    element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragDrawCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._dragDrawCallback);
+    element.removeEventListener(Events.MOUSE_MOVE, this._dragDrawCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragDrawCallback)
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragDrawCallback as EventListener
+    );
   };
 
   _activateModify = (element) => {
     state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragModifyCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_UP, this._endCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._dragModifyCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragModifyCallback)
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragModifyCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
 
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.removeEventListener(
-      Events.MOUSE_DRAG,
-      this._mouseDragModifyCallback
-    );
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._dragModifyCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(
-    //   Events.TOUCH_DRAG,
-    //   this._mouseDragModifyCallback
-    // )
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragModifyCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   /**

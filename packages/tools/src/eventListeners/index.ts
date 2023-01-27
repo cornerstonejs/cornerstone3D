@@ -1,4 +1,5 @@
 import mouseEventListeners from './mouse';
+import touchEventListeners from './touch';
 import wheelEventListener from './wheel';
 import keyEventListener from './keyboard';
 import {
@@ -15,6 +16,7 @@ import {
 
 export {
   mouseEventListeners,
+  touchEventListeners,
   wheelEventListener,
   keyEventListener,
   segmentationRepresentationModifiedEventListener,

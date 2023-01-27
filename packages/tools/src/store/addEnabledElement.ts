@@ -2,12 +2,14 @@ import { Types } from '@cornerstonejs/core';
 import {
   mouseEventListeners,
   wheelEventListener,
+  touchEventListeners,
   keyEventListener,
 } from '../eventListeners';
 import {
   imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
   mouseToolEventDispatcher,
+  touchToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
 } from '../eventDispatchers';
@@ -37,6 +39,7 @@ export default function addEnabledElement(
   // Listeners
   mouseEventListeners.enable(element);
   wheelEventListener.enable(element);
+  touchEventListeners.enable(element);
   keyEventListener.enable(element);
 
   // Dispatchers: renderer
@@ -46,7 +49,7 @@ export default function addEnabledElement(
   // Dispatchers: interaction
   mouseToolEventDispatcher.enable(element);
   keyboardToolEventDispatcher.enable(element);
-  // touchToolEventDispatcher.enable(enabledElement);
+  touchToolEventDispatcher.enable(element);
 
   // labelmap
   // State

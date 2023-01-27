@@ -86,7 +86,7 @@ class ArrowAnnotateTool extends AnnotationTool {
    *
    */
   addNewAnnotation = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt: EventTypes.InteractionEventType
   ): ArrowAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
@@ -213,9 +213,8 @@ class ArrowAnnotateTool extends AnnotationTool {
   };
 
   toolSelectedCallback = (
-    evt: EventTypes.MouseDownEventType,
-    annotation: ArrowAnnotation,
-    interactionType: InteractionTypes
+    evt: EventTypes.InteractionEventType,
+    annotation: ArrowAnnotation
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -246,10 +245,9 @@ class ArrowAnnotateTool extends AnnotationTool {
   };
 
   handleSelectedCallback(
-    evt: EventTypes.MouseDownEventType,
+    evt: EventTypes.InteractionEventType,
     annotation: ArrowAnnotation,
-    handle: ToolHandle,
-    interactionType = 'mouse'
+    handle: ToolHandle
   ): void {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -290,9 +288,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     evt.preventDefault();
   }
 
-  _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ) => {
+  _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -355,9 +351,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     this.isDrawing = false;
   };
 
-  _mouseDragCallback = (
-    evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
-  ) => {
+  _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -409,12 +403,15 @@ class ArrowAnnotateTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  doubleClickCallback = (evt: EventTypes.MouseUpEventType) => {
+  touchTapCallback = (evt: EventTypes.TouchTapEventType) => {
+    if (evt.detail.taps == 2) {
+      this.doubleClickCallback(evt);
+    }
+  };
+
+  doubleClickCallback = (evt: EventTypes.TouchTapEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-
-    const { viewportId, renderingEngineId, renderingEngine } =
-      getEnabledElement(element);
 
     let annotations = getAnnotations(element, this.getToolName());
 
@@ -459,7 +456,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     evt.preventDefault();
   };
 
-  _doneChangingTextCallback(element, annotation, updatedText) {
+  _doneChangingTextCallback(element, annotation, updatedText): void {
     annotation.data.text = updatedText;
 
     const { renderingEngine, viewportId, renderingEngineId } =
@@ -523,19 +520,29 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     element.addEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
   };
 
   _deactivateModify = (element: HTMLDivElement) => {
@@ -543,19 +550,29 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     element.removeEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
   };
 
   _activateDraw = (element: HTMLDivElement) => {
@@ -563,23 +580,33 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     element.addEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_MOVE,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
   };
 
   _deactivateDraw = (element: HTMLDivElement) => {
@@ -587,23 +614,33 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     element.removeEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_MOVE,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
   };
 
   /**

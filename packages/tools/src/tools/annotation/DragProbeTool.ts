@@ -51,7 +51,7 @@ class DragProbeTool extends ProbeTool {
   }
 
   postMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
+    evt: EventTypes.InteractionEventType
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
@@ -108,6 +108,12 @@ class DragProbeTool extends ProbeTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
+  };
+
+  postTouchStartCallback = (
+    evt: EventTypes.InteractionEventType
+  ): ProbeAnnotation => {
+    return this.postMouseDownCallback(evt);
   };
 
   renderAnnotation = (

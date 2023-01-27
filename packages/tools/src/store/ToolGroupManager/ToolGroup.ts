@@ -328,9 +328,12 @@ export default class ToolGroup implements IToolGroup {
     // modifier keys.
     const bindingsToUse = [...prevBindings, ...newBindings].reduce(
       (unique, binding) => {
+        const TouchBinding = binding.numTouchPoints !== undefined;
+        const MouseBinding = binding.mouseButton !== undefined;
+
         if (
           !unique.some((obj) => hasSameBinding(obj, binding)) &&
-          binding.mouseButton !== undefined
+          (TouchBinding || MouseBinding)
         ) {
           unique.push(binding);
         }
@@ -388,7 +391,7 @@ export default class ToolGroup implements IToolGroup {
       return;
     }
 
-    // Wwe should only remove the primary button bindings and keep
+    // We should only remove the primary button bindings and keep
     // the other ones (Zoom on right click)
     const prevToolOptions = this.getToolOptions(toolName);
     const toolOptions = Object.assign(
@@ -401,9 +404,10 @@ export default class ToolGroup implements IToolGroup {
       }
     );
 
-    // Remove the primary button bindings if they exist
+    // Remove the primary button bindings without modifiers, if they exist
     toolOptions.bindings = toolOptions.bindings.filter(
-      (binding) => binding.mouseButton !== MouseBindings.Primary
+      (binding) =>
+        binding.mouseButton !== MouseBindings.Primary || binding.modifierKey
     );
 
     // If there are other bindings, set the tool to be active
