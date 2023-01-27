@@ -2744,6 +2744,7 @@ interface IViewport {
     getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;
+    getRotation: () => number;
     getZoom(): number;
     id: string;
     isDisabled: boolean;

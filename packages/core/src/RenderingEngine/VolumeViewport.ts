@@ -448,6 +448,8 @@ class VolumeViewport extends BaseVolumeViewport {
     // number of steps, and subtract 1 to get the index
     return Math.round(Math.abs(distance) / spacingInNormal);
   };
+
+  getRotation = (): number => 0;
 }
 
 export default VolumeViewport;

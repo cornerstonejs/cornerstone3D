@@ -1478,6 +1478,8 @@ interface IViewport {
     // (undocumented)
     getRenderingEngine(): any;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     getZoom(): number;
     // (undocumented)
     id: string;
@@ -2001,6 +2003,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getRenderer(): any;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     getTargetImageIdIndex: () => number;
     // (undocumented)
     hasImageId: (imageId: string) => boolean;
@@ -2278,6 +2282,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
     getZoom(): number;
@@ -2311,8 +2317,6 @@ export class Viewport implements IViewport {
     protected resetCameraNoEvent(): void;
     // (undocumented)
     resize: () => void;
-    // (undocumented)
-    protected rotation: number;
     // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
@@ -2500,6 +2504,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     getCurrentImageIdIndex: () => number | undefined;
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
+    // (undocumented)
+    getRotation: () => number;
     // (undocumented)
     getSlabThickness(): number;
     // (undocumented)

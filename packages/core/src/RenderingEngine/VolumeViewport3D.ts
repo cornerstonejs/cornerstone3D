@@ -31,6 +31,8 @@ class VolumeViewport3D extends BaseVolumeViewport {
     this.resetVolumeViewportClippingRange();
     return;
   }
+
+  getRotation = (): number => 0;
 }
 
 export default VolumeViewport3D;

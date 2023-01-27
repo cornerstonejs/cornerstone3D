@@ -47,7 +47,6 @@ class Viewport implements IViewport {
   readonly type: ViewportType;
   protected flipHorizontal = false;
   protected flipVertical = false;
-  protected rotation = 0;
   public isDisabled: boolean;
 
   /** sx of viewport on the offscreen canvas */
@@ -99,6 +98,7 @@ class Viewport implements IViewport {
     this.isDisabled = false;
   }
 
+  getRotation: () => number;
   getFrameOfReferenceUID: () => string;
   canvasToWorld: (canvasPos: Point2) => Point3;
   worldToCanvas: (worldPos: Point3) => Point2;
@@ -995,7 +995,7 @@ class Viewport implements IViewport {
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
-        rotation: this.rotation,
+        rotation: this.getRotation(),
       };
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
