@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.38.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.37.0...@cornerstonejs/tools@0.38.0) (2023-01-27)
+
+
+### Features
+
+* **Touch:** added touch events to tools ([#247](https://github.com/cornerstonejs/cornerstone3D-beta/issues/247)) ([e35f963](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e35f963717b3909b670f874b38e242a522007e68)), closes [#3](https://github.com/cornerstonejs/cornerstone3D-beta/issues/3)
+
+
+
+
+
 # [0.37.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.36.4...@cornerstonejs/tools@0.37.0) (2023-01-26)
 
 
