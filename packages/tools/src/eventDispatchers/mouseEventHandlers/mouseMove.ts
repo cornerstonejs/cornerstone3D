@@ -6,10 +6,7 @@ import { ToolModes } from '../../enums';
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
-import {
-  InteractionEventType,
-  MouseMoveEventType,
-} from '../../types/EventTypes';
+import { MouseMoveEventType } from '../../types/EventTypes';
 
 const { Active, Passive } = ToolModes;
 
