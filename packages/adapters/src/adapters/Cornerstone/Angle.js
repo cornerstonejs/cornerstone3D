@@ -10,6 +10,7 @@ const ANGLE = "Angle";
 class Angle {
     /**
      * Generate TID300 measurement data for a plane angle measurement - use a CobbAngle, but label it as Angle
+     * comment to publish
      */
     static getMeasurementData(MeasurementGroup) {
         const { defaultState, NUMGroup, SCOORDGroup } =
