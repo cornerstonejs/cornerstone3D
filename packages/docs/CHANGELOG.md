@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.12.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.11.0...docs@0.12.0) (2023-01-27)
+
+
+### Features
+
+* Move adapters from dcmjs for Cornerstone/3d and VTK ([b136a21](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b136a21fb96bb28c3a10a63b6b78083b897f4e19))
+
+
+
+
+
 # [0.11.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.10.6...docs@0.11.0) (2023-01-27)
 
 
