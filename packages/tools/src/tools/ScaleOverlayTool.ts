@@ -148,8 +148,6 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     }
     const location = this.configuration.scaleLocation;
     const { annotation, viewport } = this.editData;
-    const image = viewport.getImageData();
-    const imageId = viewport.getCurrentImageId();
     const canvas = enabledElement.viewport.canvas;
 
     const renderStatus = false;
@@ -163,26 +161,6 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
     };
-
-    let rowPixelSpacing = image.spacing[0];
-    let colPixelSpacing = image.spacing[1];
-    const imagePlane = metaData.get('imagePlaneModule', imageId);
-
-    // if imagePlane exists, set row and col pixel spacing
-    if (imagePlane) {
-      rowPixelSpacing =
-        imagePlane.rowPixelSpacing || imagePlane.rowImagePixelSpacing;
-      colPixelSpacing =
-        imagePlane.columnPixelSpacing || imagePlane.colImagePixelSpacing;
-    }
-
-    // Check whether pixel spacing is defined
-    if (!rowPixelSpacing || !colPixelSpacing) {
-      console.warn(
-        `Unable to define rowPixelSpacing or colPixelSpacing from data on ScaleOverlayTool's renderAnnotation`
-      );
-      return;
-    }
 
     const canvasSize = {
       width: canvas.width,
@@ -458,11 +436,11 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
   };
 
   computeInnerScaleTicks = (
-    scaleSize,
-    location,
-    annotationUID,
-    leftTick,
-    rightTick
+    scaleSize: number,
+    location: string,
+    annotationUID: string,
+    leftTick: any[][],
+    rightTick: any[][]
   ) => {
     let canvasScaleSize;
     if (location == 'bottom' || location == 'top') {
