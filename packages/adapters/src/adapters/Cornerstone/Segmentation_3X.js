@@ -1,17 +1,18 @@
-import log from "../../log.js";
+import { log, utilities, normalizers, derivations } from "dcmjs";
 import ndarray from "ndarray";
-import { BitArray } from "../../bitArray.js";
-import { datasetToBlob } from "../../datasetToBlob.js";
-import { DicomMessage } from "../../DicomMessage.js";
-import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
-import { Normalizer } from "../../normalizers.js";
-import { Segmentation as SegmentationDerivation } from "../../derivations/index.js";
-import {
+
+const {
     rotateDirectionCosinesInPlane,
-    flipImageOrientationPatient as flipIOP,
+    flipImageOrientationPatient: flipIOP,
     flipMatrix2D,
     rotateMatrix902D
-} from "../../utilities/orientation/index.js";
+} = utilities.orientation;
+
+const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
+    utilities;
+
+const { Normalizer } = normalizers;
+const { Segmentation: SegmentationDerivation } = derivations;
 
 const Segmentation = {
     generateSegmentation,
@@ -415,8 +416,6 @@ function addImageIdSpecificBrushToolState(
 
     const cToolsPixelData = brushDataI.pixelData;
 
-    const [rows, cols] = pixelData2D.shape;
-
     for (let p = 0; p < cToolsPixelData.length; p++) {
         if (pixelData2D.data[p]) {
             cToolsPixelData[p] = 1;
@@ -526,8 +525,8 @@ function getImageIdOfReferencedFrame(
 /**
  * getValidOrientations - returns an array of valid orientations.
  *
- * @param  {Number[6]} iop The row (0..2) an column (3..5) direction cosines.
- * @return {Number[8][6]} An array of valid orientations.
+ * @param  iop - The row (0..2) an column (3..5) direction cosines.
+ * @return  An array of valid orientations.
  */
 function getValidOrientations(iop) {
     const orientations = [];
@@ -555,10 +554,10 @@ function getValidOrientations(iop) {
 /**
  * alignPixelDataWithSourceData -
  *
- * @param {Ndarray} pixelData2D The data to align.
- * @param  {Number[6]} iop The orientation of the image slice.
- * @param  {Number[8][6]} orientations   An array of valid imageOrientationPatient values.
- * @return {Ndarray}                         The aligned pixelData.
+ * @param pixelData2D - The data to align.
+ * @param iop - The orientation of the image slice.
+ * @param orientations - An array of valid imageOrientationPatient values.
+ * @return The aligned pixelData.
  */
 function alignPixelDataWithSourceData(pixelData2D, iop, orientations) {
     if (compareIOP(iop, orientations[0])) {
@@ -596,9 +595,9 @@ const dx = 1e-5;
  * compareIOP - Returns true if iop1 and iop2 are equal
  * within a tollerance, dx.
  *
- * @param  {Number[6]} iop1 An ImageOrientationPatient array.
- * @param  {Number[6]} iop2 An ImageOrientationPatient array.
- * @return {Boolean}      True if iop1 and iop2 are equal.
+ * @param  iop1 - An ImageOrientationPatient array.
+ * @param  iop2 - An ImageOrientationPatient array.
+ * @return True if iop1 and iop2 are equal.
  */
 function compareIOP(iop1, iop2) {
     return (

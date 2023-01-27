@@ -1,16 +1,13 @@
+import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
-import TID300Polyline from "../../utilities/TID300/Polyline";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
 
-class RectangleRoi {
-    constructor() {}
+const { Polyline: TID300Polyline } = utilities.TID300;
 
+class RectangleRoi {
     static getMeasurementData(MeasurementGroup) {
-        const {
-            defaultState,
-            SCOORDGroup,
-            NUMGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const { defaultState, SCOORDGroup, NUMGroup } =
+            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const state = {
             ...defaultState,
@@ -50,7 +47,6 @@ class RectangleRoi {
 
     static getTID300RepresentationArguments(tool) {
         const { finding, findingSites, cachedStats = {}, handles } = tool;
-        console.log("getTID300 Rectangle", tool, cachedStats, handles);
         const { start, end } = handles;
         const points = [
             start,
@@ -60,7 +56,6 @@ class RectangleRoi {
         ];
         const { area, perimeter } = cachedStats;
 
-        console.log("Point=", points, "cachedStats=", cachedStats);
         const trackingIdentifierTextValue =
             "cornerstoneTools@^4.0.0:RectangleRoi";
 

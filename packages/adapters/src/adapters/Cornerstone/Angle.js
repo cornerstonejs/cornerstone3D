@@ -1,16 +1,15 @@
-import MeasurementReport from "./MeasurementReport.js";
-import TID300CobbAngle from "../../utilities/TID300/CobbAngle.js";
+import { utilities } from "dcmjs";
+
+import MeasurementReport from "./MeasurementReport";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
+
+const { CobbAngle: TID300CobbAngle } = utilities.TID300;
 
 const ANGLE = "Angle";
 
 class Angle {
-    constructor() {}
-
     /**
      * Generate TID300 measurement data for a plane angle measurement - use a CobbAngle, but label it as Angle
-     * @param  MeasurementGroup
-     * @returns
      */
     static getMeasurementData(MeasurementGroup) {
         const { defaultState, NUMGroup, SCOORDGroup } =

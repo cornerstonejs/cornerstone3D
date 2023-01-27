@@ -7,12 +7,12 @@ import json from "rollup-plugin-json";
 import pkg from "./package.json";
 
 export default {
-  input: "src/index.js",
+  input: pkg.src,
   output: [
     {
       file: pkg.main,
       format: "umd",
-      name: "dcmjs",
+      name: pkg.name,
       sourcemap: true
     },
     {

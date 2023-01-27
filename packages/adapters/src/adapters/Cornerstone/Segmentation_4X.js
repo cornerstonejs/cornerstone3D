@@ -1,24 +1,22 @@
-import log from "../../log.js";
+import { log, utilities, normalizers, derivations } from "dcmjs";
 import ndarray from "ndarray";
-import { BitArray } from "../../bitArray.js";
-import { datasetToBlob } from "../../datasetToBlob.js";
-import { DicomMessage } from "../../DicomMessage.js";
-import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
-import { Normalizer } from "../../normalizers.js";
-import { Segmentation as SegmentationDerivation } from "../../derivations/index.js";
-import { mat4 } from "gl-matrix";
-import {
+import cloneDeep from "lodash.clonedeep";
+
+const {
     rotateDirectionCosinesInPlane,
-    flipImageOrientationPatient as flipIOP,
+    flipImageOrientationPatient: flipIOP,
     flipMatrix2D,
     rotateMatrix902D,
     nearlyEqual
-} from "../../utilities/orientation/index.js";
-import {
-    encode,
-    decode
-} from "../../utilities/compression/rleSingleSamplePerPixel";
-import cloneDeep from "lodash.clonedeep";
+} = utilities.orientation;
+
+const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
+    utilities;
+
+const { Normalizer } = normalizers;
+const { Segmentation: SegmentationDerivation } = derivations;
+
+const { encode, decode } = utilities.compression;
 
 const Segmentation = {
     generateSegmentation,
@@ -418,176 +416,176 @@ function generateToolState(
     };
 }
 
-function insertPixelDataPerpendicular(
-    segmentsOnFrame,
-    labelmapBuffer,
-    pixelData,
-    multiframe,
-    imageIds,
-    validOrientations,
-    metadataProvider
-) {
-    const {
-        SharedFunctionalGroupsSequence,
-        PerFrameFunctionalGroupsSequence,
-        Rows,
-        Columns
-    } = multiframe;
+// function insertPixelDataPerpendicular(
+//     segmentsOnFrame,
+//     labelmapBuffer,
+//     pixelData,
+//     multiframe,
+//     imageIds,
+//     validOrientations,
+//     metadataProvider
+// ) {
+//     const {
+//         SharedFunctionalGroupsSequence,
+//         PerFrameFunctionalGroupsSequence,
+//         Rows,
+//         Columns
+//     } = multiframe;
 
-    const firstImagePlaneModule = metadataProvider.get(
-        "imagePlaneModule",
-        imageIds[0]
-    );
+//     const firstImagePlaneModule = metadataProvider.get(
+//         "imagePlaneModule",
+//         imageIds[0]
+//     );
 
-    const lastImagePlaneModule = metadataProvider.get(
-        "imagePlaneModule",
-        imageIds[imageIds.length - 1]
-    );
+//     const lastImagePlaneModule = metadataProvider.get(
+//         "imagePlaneModule",
+//         imageIds[imageIds.length - 1]
+//     );
 
-    console.log(firstImagePlaneModule);
-    console.log(lastImagePlaneModule);
+//     console.log(firstImagePlaneModule);
+//     console.log(lastImagePlaneModule);
 
-    const corners = [
-        ...getCorners(firstImagePlaneModule),
-        ...getCorners(lastImagePlaneModule)
-    ];
+//     const corners = [
+//         ...getCorners(firstImagePlaneModule),
+//         ...getCorners(lastImagePlaneModule)
+//     ];
 
-    console.log(`corners:`);
-    console.log(corners);
+//     console.log(`corners:`);
+//     console.log(corners);
 
-    const indexToWorld = mat4.create();
+//     const indexToWorld = mat4.create();
 
-    const ippFirstFrame = firstImagePlaneModule.imagePositionPatient;
-    const rowCosines = Array.isArray(firstImagePlaneModule.rowCosines)
-        ? [...firstImagePlaneModule.rowCosines]
-        : [
-              firstImagePlaneModule.rowCosines.x,
-              firstImagePlaneModule.rowCosines.y,
-              firstImagePlaneModule.rowCosines.z
-          ];
+//     const ippFirstFrame = firstImagePlaneModule.imagePositionPatient;
+//     const rowCosines = Array.isArray(firstImagePlaneModule.rowCosines)
+//         ? [...firstImagePlaneModule.rowCosines]
+//         : [
+//               firstImagePlaneModule.rowCosines.x,
+//               firstImagePlaneModule.rowCosines.y,
+//               firstImagePlaneModule.rowCosines.z
+//           ];
 
-    const columnCosines = Array.isArray(firstImagePlaneModule.columnCosines)
-        ? [...firstImagePlaneModule.columnCosines]
-        : [
-              firstImagePlaneModule.columnCosines.x,
-              firstImagePlaneModule.columnCosines.y,
-              firstImagePlaneModule.columnCosines.z
-          ];
+//     const columnCosines = Array.isArray(firstImagePlaneModule.columnCosines)
+//         ? [...firstImagePlaneModule.columnCosines]
+//         : [
+//               firstImagePlaneModule.columnCosines.x,
+//               firstImagePlaneModule.columnCosines.y,
+//               firstImagePlaneModule.columnCosines.z
+//           ];
 
-    const { pixelSpacing } = firstImagePlaneModule;
+//     const { pixelSpacing } = firstImagePlaneModule;
 
-    mat4.set(
-        indexToWorld,
-        // Column 1
-        0,
-        0,
-        0,
-        ippFirstFrame[0],
-        // Column 2
-        0,
-        0,
-        0,
-        ippFirstFrame[1],
-        // Column 3
-        0,
-        0,
-        0,
-        ippFirstFrame[2],
-        // Column 4
-        0,
-        0,
-        0,
-        1
-    );
+//     mat4.set(
+//         indexToWorld,
+//         // Column 1
+//         0,
+//         0,
+//         0,
+//         ippFirstFrame[0],
+//         // Column 2
+//         0,
+//         0,
+//         0,
+//         ippFirstFrame[1],
+//         // Column 3
+//         0,
+//         0,
+//         0,
+//         ippFirstFrame[2],
+//         // Column 4
+//         0,
+//         0,
+//         0,
+//         1
+//     );
 
-    // TODO -> Get origin and (x,y,z) increments to build a translation matrix:
-    // TODO -> Equation C.7.6.2.1-1
+//     // TODO -> Get origin and (x,y,z) increments to build a translation matrix:
+//     // TODO -> Equation C.7.6.2.1-1
 
-    // | cx*di rx* Xx 0 |  |x|
-    // | cy*di ry Xy 0 |  |y|
-    // | cz*di rz Xz 0 |  |z|
-    // | tx ty tz 1 |  |1|
+//     // | cx*di rx* Xx 0 |  |x|
+//     // | cy*di ry Xy 0 |  |y|
+//     // | cz*di rz Xz 0 |  |z|
+//     // | tx ty tz 1 |  |1|
 
-    // const [
-    //     0, 0 , 0 , 0,
-    //     0, 0 , 0 , 0,
-    //     0, 0 , 0 , 0,
-    //     ipp[0], ipp[1] , ipp[2] , 1,
-    // ]
+//     // const [
+//     //     0, 0 , 0 , 0,
+//     //     0, 0 , 0 , 0,
+//     //     0, 0 , 0 , 0,
+//     //     ipp[0], ipp[1] , ipp[2] , 1,
+//     // ]
 
-    // Each frame:
+//     // Each frame:
 
-    // Find which corner the first voxel lines up with (one of 8 corners.)
+//     // Find which corner the first voxel lines up with (one of 8 corners.)
 
-    // Find how i,j,k orient with respect to source volume.
-    // Go through each frame, find location in source to start, and whether to increment +/ix,+/-y,+/-z
-    //   through each voxel.
+//     // Find how i,j,k orient with respect to source volume.
+//     // Go through each frame, find location in source to start, and whether to increment +/ix,+/-y,+/-z
+//     //   through each voxel.
 
-    // [1,0,0,0,1,0]
+//     // [1,0,0,0,1,0]
 
-    // const [
+//     // const [
 
-    // ]
+//     // ]
 
-    // Invert transformation matrix to get worldToIndex
+//     // Invert transformation matrix to get worldToIndex
 
-    // Apply world to index on each point to fill up the matrix.
+//     // Apply world to index on each point to fill up the matrix.
 
-    // const sharedImageOrientationPatient = SharedFunctionalGroupsSequence.PlaneOrientationSequence
-    //     ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
-    //           .ImageOrientationPatient
-    //     : undefined;
-    // const sliceLength = Columns * Rows;
-}
+//     // const sharedImageOrientationPatient = SharedFunctionalGroupsSequence.PlaneOrientationSequence
+//     //     ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
+//     //           .ImageOrientationPatient
+//     //     : undefined;
+//     // const sliceLength = Columns * Rows;
+// }
 
-function getCorners(imagePlaneModule) {
-    // console.log(imagePlaneModule);
+// function getCorners(imagePlaneModule) {
+//     // console.log(imagePlaneModule);
 
-    const {
-        rows,
-        columns,
-        rowCosines,
-        columnCosines,
-        imagePositionPatient: ipp,
-        rowPixelSpacing,
-        columnPixelSpacing
-    } = imagePlaneModule;
+//     const {
+//         rows,
+//         columns,
+//         rowCosines,
+//         columnCosines,
+//         imagePositionPatient: ipp,
+//         rowPixelSpacing,
+//         columnPixelSpacing
+//     } = imagePlaneModule;
 
-    const rowLength = columns * columnPixelSpacing;
-    const columnLength = rows * rowPixelSpacing;
+//     const rowLength = columns * columnPixelSpacing;
+//     const columnLength = rows * rowPixelSpacing;
 
-    const entireRowVector = [
-        rowLength * columnCosines[0],
-        rowLength * columnCosines[1],
-        rowLength * columnCosines[2]
-    ];
+//     const entireRowVector = [
+//         rowLength * columnCosines[0],
+//         rowLength * columnCosines[1],
+//         rowLength * columnCosines[2]
+//     ];
 
-    const entireColumnVector = [
-        columnLength * rowCosines[0],
-        columnLength * rowCosines[1],
-        columnLength * rowCosines[2]
-    ];
+//     const entireColumnVector = [
+//         columnLength * rowCosines[0],
+//         columnLength * rowCosines[1],
+//         columnLength * rowCosines[2]
+//     ];
 
-    const topLeft = [ipp[0], ipp[1], ipp[2]];
-    const topRight = [
-        topLeft[0] + entireRowVector[0],
-        topLeft[1] + entireRowVector[1],
-        topLeft[2] + entireRowVector[2]
-    ];
-    const bottomLeft = [
-        topLeft[0] + entireColumnVector[0],
-        topLeft[1] + entireColumnVector[1],
-        topLeft[2] + entireColumnVector[2]
-    ];
+//     const topLeft = [ipp[0], ipp[1], ipp[2]];
+//     const topRight = [
+//         topLeft[0] + entireRowVector[0],
+//         topLeft[1] + entireRowVector[1],
+//         topLeft[2] + entireRowVector[2]
+//     ];
+//     const bottomLeft = [
+//         topLeft[0] + entireColumnVector[0],
+//         topLeft[1] + entireColumnVector[1],
+//         topLeft[2] + entireColumnVector[2]
+//     ];
 
-    const bottomRight = [
-        bottomLeft[0] + entireRowVector[0],
-        bottomLeft[1] + entireRowVector[1],
-        bottomLeft[2] + entireRowVector[2]
-    ];
+//     const bottomRight = [
+//         bottomLeft[0] + entireRowVector[0],
+//         bottomLeft[1] + entireRowVector[1],
+//         bottomLeft[2] + entireRowVector[2]
+//     ];
 
-    return [topLeft, topRight, bottomLeft, bottomRight];
-}
+//     return [topLeft, topRight, bottomLeft, bottomRight];
+// }
 
 /**
  * Find the reference frame of the segmentation frame in the source data.
@@ -772,7 +770,7 @@ function checkSEGsOverlapping(
         }
     }
 
-    for (let [user, role] of frameSegmentsMapping.entries()) {
+    for (let [, role] of frameSegmentsMapping.entries()) {
         let temp2DArray = new Uint16Array(sliceLength).fill(0);
 
         for (let i = 0; i < role.length; ++i) {

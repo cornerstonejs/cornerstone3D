@@ -1,13 +1,13 @@
-import MeasurementReport from "./MeasurementReport.js";
-import TID300Point from "../../utilities/TID300/Point.js";
+import { utilities } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
+import MeasurementReport from "./MeasurementReport";
+
+const { Point: TID300Point } = utilities.TID300;
 
 const PROBE = "Probe";
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${PROBE}`;
 
 class Probe {
-    constructor() {}
-
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,

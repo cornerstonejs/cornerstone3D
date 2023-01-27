@@ -1,22 +1,16 @@
+import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
-import TID300Circle from "../../utilities/TID300/Circle";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
-import { toArray } from "../helpers.js";
+
+const { Circle: TID300Circle } = utilities.TID300;
 
 const CIRCLEROI = "CircleRoi";
-const FINDING = "121071";
-const FINDING_SITE = "G-C0E3";
 
 class CircleRoi {
-    constructor() {}
-
     /** Gets the measurement data for cornerstone, given DICOM SR measurement data. */
     static getMeasurementData(MeasurementGroup) {
-        const {
-            defaultState,
-            NUMGroup,
-            SCOORDGroup
-        } = MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+        const { defaultState, NUMGroup, SCOORDGroup } =
+            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
         const { GraphicData } = SCOORDGroup;
 

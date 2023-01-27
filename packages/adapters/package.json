@@ -1,70 +1,61 @@
 {
-  "name": "dcmjs",
-  "version": "0.24.0",
-  "description": "Javascript implementation of DICOM manipulation",
-  "main": "build/dcmjs.js",
-  "module": "build/dcmjs.es.js",
-  "directories": {
-    "example": "examples"
-  },
-  "scripts": {
-    "test": "jest --testTimeout 60000",
-    "build": "rollup -c",
-    "build:examples": "npm run build && npx cpx 'build/**/*.{js,map}' examples/js",
-    "start": "rollup -c -w",
-    "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-    "lint": "eslint --fix ."
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dcmjs-org/dcmjs.git"
-  },
-  "author": "Steve Pieper",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/dcmjs-org/dcmjs/issues"
-  },
-  "homepage": "https://github.com/dcmjs-org/dcmjs#readme",
-  "devDependencies": {
-    "@babel/core": "^7.17.8",
-    "@babel/preset-env": "^7.16.11",
-    "@babel/register": "^7.13.0",
-    "acorn": "^7.1.0",
-    "acorn-jsx": "^5.2.0",
-    "eslint": "^8.17.0",
-    "eslint-config-prettier": "^8.5.0",
-    "follow-redirects": "^1.10.0",
-    "husky": "^1.3.1",
-    "jest": "^27.5.1",
-    "lint-staged": "^8.2.1",
-    "prettier": "^2.6.2",
-    "rollup": "^1.31.1",
-    "rollup-plugin-babel": "^4.3.3",
-    "rollup-plugin-commonjs": "^9.3.4",
-    "rollup-plugin-json": "^3.1.0",
-    "rollup-plugin-node-builtins": "^2.1.2",
-    "rollup-plugin-node-globals": "^1.4.0",
-    "rollup-plugin-node-resolve": "^4.2.4",
-    "unzipper": "^0.10.9",
-    "xml2js": "^0.4.23"
-  },
-  "dependencies": {
-    "@babel/runtime-corejs2": "^7.17.8",
-    "gl-matrix": "^3.1.0",
-    "lodash.clonedeep": "^4.5.0",
-    "loglevelnext": "^3.0.1",
-    "ndarray": "^1.0.19",
-    "pako": "^2.0.4"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
+    "name": "@cornerstonejs/adapters",
+    "version": "0.0.1",
+    "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
+    "src": "src/index.js",
+    "main": "build/adapters.js",
+    "module": "build/adapters.es.js",
+    "directories": {
+        "example": "examples"
+    },
+    "scripts": {
+        "test": "jest --testTimeout 60000",
+        "build": "rollup -c",
+        "build:examples": "npm run build && npx cpx 'build/**/*.{js,map}' examples/js",
+        "start": "rollup -c -w",
+        "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+        "lint": "eslint --fix ."
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dcmjs-org/dcmjs.git"
+    },
+    "author": "@cornerstonejs (formerly Steve Pieper from dcmjs)",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/cornerstonejs/cornerstone3D-beta/issues"
+    },
+    "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages/adapters/README.md",
+    "devDependencies": {
+        "@babel/core": "^7.16.12",
+        "@babel/preset-env": "^7.16.11",
+        "@babel/register": "^7.13.0",
+        "acorn": "^7.1.0",
+        "acorn-jsx": "^5.2.0",
+        "eslint": "^8.17.0",
+        "eslint-config-prettier": "^8.5.0",
+        "follow-redirects": "^1.10.0",
+        "husky": "^1.3.1",
+        "jest": "^27.5.1",
+        "lint-staged": "^8.2.1",
+        "prettier": "^2.6.2",
+        "rollup": "^1.31.1",
+        "rollup-plugin-babel": "^4.3.3",
+        "rollup-plugin-commonjs": "^9.3.4",
+        "rollup-plugin-json": "^3.1.0",
+        "rollup-plugin-node-builtins": "^2.1.2",
+        "rollup-plugin-node-globals": "^1.4.0",
+        "rollup-plugin-node-resolve": "^4.2.4",
+        "unzipper": "^0.10.9",
+        "xml2js": "^0.4.23"
+    },
+    "dependencies": {
+        "@babel/runtime-corejs2": "^7.17.8",
+        "dcmjs": "^0.29.4",
+        "gl-matrix": "^3.4.3",
+        "lodash.clonedeep": "^4.5.0",
+        "loglevelnext": "^3.0.1",
+        "ndarray": "^1.0.19",
+        "pako": "^2.0.4"
     }
-  },
-  "lint-staged": {
-    "src/**/*.{js,jsx,json,css}": [
-      "prettier --write",
-      "git add"
-    ]
-  }
 }

@@ -1,18 +1,16 @@
-import { vec2, vec3 } from "gl-matrix";
-import MeasurementReport from "./MeasurementReport";
-import TID300Ellipse from "../../utilities/TID300/Ellipse";
+import { vec3 } from "gl-matrix";
+import { utilities } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
+import MeasurementReport from "./MeasurementReport";
+
+const { Ellipse: TID300Ellipse } = utilities.TID300;
 
 const ELLIPTICALROI = "EllipticalROI";
-const FINDING = "121071";
-const FINDING_SITE = "G-C0E3";
 const EPSILON = 1e-4;
 
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ELLIPTICALROI}`;
 
 class EllipticalROI {
-    constructor() {}
-
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,

@@ -1,15 +1,12 @@
-import MeasurementReport from "./MeasurementReport.js";
-import TID300Length from "../../utilities/TID300/Length.js";
+import { utilities } from "dcmjs";
+import MeasurementReport from "./MeasurementReport";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
-import { toArray } from "../helpers.js";
+
+const { Length: TID300Length } = utilities.TID300;
 
 const LENGTH = "Length";
-const FINDING = "121071";
-const FINDING_SITE = "G-C0E3";
 
 class Length {
-    constructor() {}
-
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
         const { defaultState, NUMGroup, SCOORDGroup } =

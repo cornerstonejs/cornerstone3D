@@ -1,11 +1,16 @@
-import { Normalizer } from "../../normalizers.js";
-import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
-import { StructuredReport } from "../../derivations/index.js";
-import TID1500MeasurementReport from "../../utilities/TID1500/TID1500MeasurementReport.js";
-import TID1501MeasurementGroup from "../../utilities/TID1500/TID1501MeasurementGroup.js";
-import addAccessors from "../../utilities/addAccessors.js";
+import { normalizers, data, utilities, derivations } from "dcmjs";
 
-import { toArray, codeMeaningEquals } from "../helpers.js";
+import { toArray, codeMeaningEquals } from "../helpers";
+
+const { TID1500, addAccessors } = utilities;
+
+const { StructuredReport } = derivations;
+
+const { Normalizer } = normalizers;
+
+const { TID1500MeasurementReport, TID1501MeasurementGroup } = TID1500;
+
+const { DicomMetaDictionary } = data;
 
 const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
@@ -66,8 +71,6 @@ function getMeasurementGroup(toolType, toolData, ReferencedSOPSequence) {
 }
 
 export default class MeasurementReport {
-    constructor() {}
-
     static getSetupMeasurementData(MeasurementGroup) {
         const { ContentSequence } = MeasurementGroup;
 
@@ -86,10 +89,8 @@ export default class MeasurementReport {
             group => group.ValueType === "SCOORD"
         );
         const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
-        const {
-            ReferencedSOPInstanceUID,
-            ReferencedFrameNumber
-        } = ReferencedSOPSequence;
+        const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
+            ReferencedSOPSequence;
 
         const defaultState = {
             sopInstanceUid: ReferencedSOPInstanceUID,
@@ -187,9 +188,8 @@ export default class MeasurementReport {
                 }
             });
 
-            allMeasurementGroups = allMeasurementGroups.concat(
-                measurementGroups
-            );
+            allMeasurementGroups =
+                allMeasurementGroups.concat(measurementGroups);
         });
 
         const MeasurementReport = new TID1500MeasurementReport(
@@ -298,11 +298,12 @@ export default class MeasurementReport {
                 measurementGroup.ContentSequence
             );
 
-            const TrackingIdentifierGroup = measurementGroupContentSequence.find(
-                contentItem =>
-                    contentItem.ConceptNameCodeSequence.CodeMeaning ===
-                    TRACKING_IDENTIFIER
-            );
+            const TrackingIdentifierGroup =
+                measurementGroupContentSequence.find(
+                    contentItem =>
+                        contentItem.ConceptNameCodeSequence.CodeMeaning ===
+                        TRACKING_IDENTIFIER
+                );
 
             const TrackingIdentifierValue = TrackingIdentifierGroup.TextValue;
 
@@ -319,9 +320,8 @@ export default class MeasurementReport {
                   );
 
             if (toolClass) {
-                const measurement = toolClass.getMeasurementData(
-                    measurementGroup
-                );
+                const measurement =
+                    toolClass.getMeasurementData(measurementGroup);
 
                 console.log(`=== ${toolClass.toolType} ===`);
                 console.log(measurement);

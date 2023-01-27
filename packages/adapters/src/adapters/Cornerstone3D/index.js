@@ -1,16 +1,17 @@
-import MeasurementReport from "./MeasurementReport.js";
-import Length from "./Length.js";
-import Bidirectional from "./Bidirectional.js";
-import EllipticalROI from "./EllipticalROI.js";
-import ArrowAnnotate from "./ArrowAnnotate.js";
-import Probe from "./Probe.js";
-import PlanarFreehandROI from "./PlanarFreehandROI.js";
+import MeasurementReport from "./MeasurementReport";
 import CodeScheme from "./CodingScheme";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 
+import ArrowAnnotate from "./ArrowAnnotate";
+import Bidirectional from "./Bidirectional";
+import EllipticalROI from "./EllipticalROI";
+import Length from "./Length";
+import PlanarFreehandROI from "./PlanarFreehandROI";
+import Probe from "./Probe";
+
 const Cornerstone3D = {
-    Length,
     Bidirectional,
+    Length,
     EllipticalROI,
     ArrowAnnotate,
     Probe,

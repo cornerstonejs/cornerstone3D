@@ -1,13 +1,11 @@
-import Cornerstone from "./Cornerstone/index.js";
-import Cornerstone3D from "./Cornerstone3D/index.js";
-import VTKjs from "./VTKjs/index.js";
-import DICOMMicroscopyViewer from "./DICOMMicroscopyViewer/";
+import Cornerstone from "./Cornerstone";
+import Cornerstone3D from "./Cornerstone3D";
+import VTKjs from "./VTKjs";
 
 const adapters = {
     Cornerstone,
     Cornerstone3D,
     VTKjs,
-    DICOMMicroscopyViewer
 };
 
 export default adapters;

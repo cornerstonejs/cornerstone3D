@@ -1,19 +1,16 @@
-import MeasurementReport from "./MeasurementReport";
-import TID300Bidirectional from "../../utilities/TID300/Bidirectional";
+import { utilities } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
+import MeasurementReport from "./MeasurementReport";
+import { toArray } from "../helpers";
 
-import { toArray } from "../helpers.js";
+const { Bidirectional: TID300Bidirectional } = utilities.TID300;
 
 const BIDIRECTIONAL = "Bidirectional";
 const LONG_AXIS = "Long Axis";
 const SHORT_AXIS = "Short Axis";
-const FINDING = "121071";
-const FINDING_SITE = "G-C0E3";
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${BIDIRECTIONAL}`;
 
 class Bidirectional {
-    constructor() {}
-
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,

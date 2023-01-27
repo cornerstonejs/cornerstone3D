@@ -1,12 +1,12 @@
-import MeasurementReport from "./MeasurementReport.js";
-import TID300CobbAngle from "../../utilities/TID300/CobbAngle.js";
+import { utilities } from "dcmjs";
+import MeasurementReport from "./MeasurementReport";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
+
+const { CobbAngle: TID300CobbAngle } = utilities.TID300;
 
 const COBB_ANGLE = "CobbAngle";
 
 class CobbAngle {
-    constructor() {}
-
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
         const { defaultState, NUMGroup, SCOORDGroup } =

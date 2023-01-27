@@ -1,7 +1,9 @@
+import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
-import TID300Bidirectional from "../../utilities/TID300/Bidirectional";
 import CORNERSTONE_4_TAG from "./cornerstone4Tag";
-import { toArray } from "../helpers.js";
+import { toArray } from "../helpers";
+
+const { Bidirectional: TID300Bidirectional } = utilities.TID300;
 
 const BIDIRECTIONAL = "Bidirectional";
 const LONG_AXIS = "Long Axis";
@@ -10,8 +12,6 @@ const FINDING = "121071";
 const FINDING_SITE = "G-C0E3";
 
 class Bidirectional {
-    constructor() {}
-
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(MeasurementGroup) {
         const { ContentSequence } = MeasurementGroup;
@@ -41,10 +41,8 @@ class Bidirectional {
         ).find(group => group.ValueType === "SCOORD");
 
         const { ReferencedSOPSequence } = longAxisSCOORDGroup.ContentSequence;
-        const {
-            ReferencedSOPInstanceUID,
-            ReferencedFrameNumber
-        } = ReferencedSOPSequence;
+        const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
+            ReferencedSOPSequence;
 
         // Long axis
 
@@ -129,7 +127,6 @@ class Bidirectional {
             isCreating: false,
             longestDiameter,
             shortestDiameter,
-            toolType: "Bidirectional",
             toolName: "Bidirectional",
             visible: true,
             finding: findingGroup
@@ -142,18 +139,10 @@ class Bidirectional {
     }
 
     static getTID300RepresentationArguments(tool) {
-        const {
-            start,
-            end,
-            perpendicularStart,
-            perpendicularEnd
-        } = tool.handles;
-        const {
-            shortestDiameter,
-            longestDiameter,
-            finding,
-            findingSites
-        } = tool;
+        const { start, end, perpendicularStart, perpendicularEnd } =
+            tool.handles;
+        const { shortestDiameter, longestDiameter, finding, findingSites } =
+            tool;
 
         const trackingIdentifierTextValue =
             "cornerstoneTools@^4.0.0:Bidirectional";

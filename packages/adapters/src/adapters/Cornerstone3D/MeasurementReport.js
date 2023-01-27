@@ -1,12 +1,17 @@
-import { Normalizer } from "../../normalizers.js";
-import { DicomMetaDictionary } from "../../DicomMetaDictionary.js";
-import { StructuredReport } from "../../derivations/index.js";
-import TID1500MeasurementReport from "../../utilities/TID1500/TID1500MeasurementReport.js";
-import TID1501MeasurementGroup from "../../utilities/TID1500/TID1501MeasurementGroup.js";
-import Cornerstone3DCodingScheme from "./CodingScheme";
-import addAccessors from "../../utilities/addAccessors.js";
+import { normalizers, data, utilities, derivations } from "dcmjs";
 
-import { toArray, codeMeaningEquals } from "../helpers.js";
+import { toArray, codeMeaningEquals } from "../helpers";
+import Cornerstone3DCodingScheme from "./CodingScheme";
+
+const { TID1500, addAccessors } = utilities;
+
+const { StructuredReport } = derivations;
+
+const { Normalizer } = normalizers;
+
+const { TID1500MeasurementReport, TID1501MeasurementGroup } = TID1500;
+
+const { DicomMetaDictionary } = data;
 
 const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
@@ -77,8 +82,6 @@ function getMeasurementGroup(
 }
 
 export default class MeasurementReport {
-    constructor() {}
-
     static getCornerstoneLabelFromDefaultState(defaultState) {
         const { findingSites = [], finding } = defaultState;
 
@@ -379,7 +382,7 @@ export default class MeasurementReport {
             measurementData[key] = [];
         });
 
-        measurementGroups.forEach((measurementGroup, index) => {
+        measurementGroups.forEach(measurementGroup => {
             const measurementGroupContentSequence = toArray(
                 measurementGroup.ContentSequence
             );
