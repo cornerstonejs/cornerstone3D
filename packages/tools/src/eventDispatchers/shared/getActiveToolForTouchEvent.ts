@@ -43,7 +43,12 @@ export default function getActiveToolForTouchEvent(
 
     const correctBinding =
       toolOptions.bindings.length &&
-      // MouseBindings.Primary is an alias for numTouchPoints===1
+      /**
+       * TODO: setActiveTool treats MouseBindings.Primary in a special way
+       * which is analgous to numTouchPoints === 1 as the primary interaction
+       * for touch based applications. The ToolGroup set active and get active
+       * logic should be updated to account for numTouchPoints === 1
+       */
       toolOptions.bindings.some(
         (binding) =>
           (binding.numTouchPoints === numTouchPoints ||

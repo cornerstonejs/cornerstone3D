@@ -90,6 +90,10 @@
         "name": "Stack Manipulation Tools",
         "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
       },
+      "stackManipulationToolsTouch": {
+        "name": "Stack Manipulation Tools Touch",
+        "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling for mobile touch"
+      },
       "annotationToolModes": {
         "name": "Annotation Tool Modes",
         "description": "Demonstrates the various tool modes for annotation tools (active, passive, enabled, disabled)"
