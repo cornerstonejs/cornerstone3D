@@ -7,16 +7,16 @@ import json from "rollup-plugin-json";
 import pkg from "./package.json";
 
 export default {
-  input: pkg.src,
+  input: pkg.src || 'src/index.js',
   output: [
     {
-      file: pkg.main,
+      file: `build/${pkg.name}.js`,
       format: "umd",
       name: pkg.name,
       sourcemap: true
     },
     {
-      file: pkg.module,
+      file: `build/${pkg.name}.es.js`,
       format: "es",
       sourcemap: true
     }
