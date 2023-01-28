@@ -3,10 +3,18 @@
     "version": "0.0.1",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "src": "src/index.js",
-    "main": "build/adapters.js",
-    "module": "build/adapters.es.js",
+    "main": "src/index.js",
+    "files": [
+        "build/",
+        "src/"
+    ],
     "directories": {
-        "example": "examples"
+        "example": "examples",
+        "build": "build"
+    },
+    "exports": {
+        ".": "./build/@cornerstonejs/adapters.js",
+        "./es": "./build/@cornerstonejs/adapters.es.js"
     },
     "scripts": {
         "test": "jest --testTimeout 60000",
