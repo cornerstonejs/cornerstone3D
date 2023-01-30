@@ -10,13 +10,13 @@ export default {
   input: pkg.src || 'src/index.js',
   output: [
     {
-      file: `build/${pkg.name}.js`,
+      file: `dist/${pkg.name}.js`,
       format: "umd",
       name: pkg.name,
       sourcemap: true
     },
     {
-      file: `build/${pkg.name}.es.js`,
+      file: `dist/${pkg.name}.es.js`,
       format: "es",
       sourcemap: true
     }
