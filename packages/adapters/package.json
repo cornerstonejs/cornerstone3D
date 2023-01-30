@@ -5,17 +5,16 @@
     "src": "src/index.js",
     "main": "src/index.js",
     "files": [
-        "build",
-        "build/@cornerstonejs",
+        "dist",
         "src"
     ],
     "directories": {
         "example": "examples",
-        "build": "build"
+        "build": "dist"
     },
     "exports": {
-        ".": "./build/@cornerstonejs/adapters.js",
-        "./es": "./build/@cornerstonejs/adapters.es.js"
+        ".": "./dist/@cornerstonejs/adapters.js",
+        "./es": "./dist/@cornerstonejs/adapters.es.js"
     },
     "publishConfig": {
         "access": "public"
@@ -23,7 +22,7 @@
     "scripts": {
         "test": "jest --testTimeout 60000",
         "build": "rollup -c",
-        "build:examples": "npm run build && npx cpx 'build/**/*.{js,map}' examples/js",
+        "build:examples": "npm run build && npx cpx 'dist/**/*.{js,map}' examples/js",
         "start": "rollup -c -w",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."

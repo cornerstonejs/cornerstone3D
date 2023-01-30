@@ -43,6 +43,7 @@ jobs:
             - packages/core/dist
             - packages/tools/dist
             - packages/streaming-image-volume-loader/dist
+            - packages/adapters/dist
 
   API_CHECK:
     <<: *defaults
