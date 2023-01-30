@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.39.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.38.0...@cornerstonejs/tools@0.39.0) (2023-01-30)
+
+
+### Features
+
+* **CobbAngle:** Add CobbAngle tool ([#353](https://github.com/cornerstonejs/cornerstone3D-beta/issues/353)) ([b9bd701](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b9bd701df41ae2b8b2afbcf1d092d7587f7b267a))
+
+
+
+
+
 # [0.38.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.37.0...@cornerstonejs/tools@0.38.0) (2023-01-27)
 
 

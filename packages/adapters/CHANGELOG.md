@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.2.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.5...@cornerstonejs/adapters@0.2.0) (2023-01-30)
+
+
+### Features
+
+* **CobbAngle:** Add CobbAngle tool ([#353](https://github.com/dcmjs-org/dcmjs/issues/353)) ([b9bd701](https://github.com/dcmjs-org/dcmjs/commit/b9bd701df41ae2b8b2afbcf1d092d7587f7b267a))
+
+
+
+
+
 ## [0.1.5](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.4...@cornerstonejs/adapters@0.1.5) (2023-01-30)
 
 
