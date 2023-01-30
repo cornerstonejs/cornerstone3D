@@ -1,7 +1,7 @@
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { vec3 } from 'gl-matrix';
 import {
-  metaData,
+  getEnabledElementByIds,
   getRenderingEngines,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -20,6 +20,7 @@ import {
   SVGDrawingHelper,
 } from '../types';
 import { StyleSpecifier } from '../types/AnnotationStyle';
+import { getToolGroup } from '../store/ToolGroupManager';
 
 const SCALEOVERLAYTOOL_ID = 'scaleoverlay-viewport';
 
@@ -66,15 +67,22 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
 
-    let viewports = renderingEngine.getViewports();
-    viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
+    const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
 
-    let viewport = viewports[0];
+    if (!viewportIds) return;
+
+    const enabledElements = viewportIds.map((e) =>
+      getEnabledElementByIds(e.viewportId, e.renderingEngineId)
+    );
+
+    let viewport = enabledElements[0].viewport;
 
     if (this.configuration.viewportId) {
-      viewport = viewports.find(
-        (viewportId) => viewportId.id === this.configuration.viewportId
-      );
+      enabledElements.forEach((element) => {
+        if (element.viewport.id === this.configuration.viewportId) {
+          viewport = element.viewport;
+        }
+      });
     }
 
     if (!viewport) {
@@ -177,7 +185,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     const worldWidthViewport = vec3.distance(bottomLeft, bottomRight);
     const worldHeightViewport = vec3.distance(topLeft, bottomLeft);
 
-    // 0.05 gives margin to horizontal and vertical lines
+    // hscaleBounds and vscaleBounds compute the max bound for scales on the image
     const hscaleBounds = this.computeScaleBounds(
       canvasSize,
       0.05,
@@ -192,12 +200,15 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       location
     );
 
+    // Computes which scale size to use, ex: 100mm, 50mm
     const scaleSize = this.computeScaleSize(
       worldWidthViewport,
       worldHeightViewport,
       location
     );
 
+    // Applies the scale with the predetermined size to the image in
+    // world coordinates, then converts them to canvas coordinates
     const canvasCoordinates = this.computeWorldScaleCoordinates(
       scaleSize,
       location,
@@ -205,6 +216,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       pointSet1
     ).map((world) => viewport.worldToCanvas(world));
 
+    // Uses the bounds and canvas size to center the scale
+    // based on the location
     const scaleCanvasCoordinates = this.computeCanvasScaleCoordinates(
       canvasSize,
       canvasCoordinates,
@@ -213,6 +226,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       location
     );
 
+    // Computes the end scale ticks coordinates
     const scaleTicks = this.computeEndScaleTicks(
       scaleCanvasCoordinates,
       location
