@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.5](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.4...@cornerstonejs/adapters@0.1.5) (2023-01-30)
+
+
+### Bug Fixes
+
+* **build:** Include adapters in circleci config ([#402](https://github.com/dcmjs-org/dcmjs/issues/402)) ([45c8416](https://github.com/dcmjs-org/dcmjs/commit/45c84167b40c6a48bb2c499b6153c200763778a0))
+
+
+
+
+
 ## [0.1.4](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.3...@cornerstonejs/adapters@0.1.4) (2023-01-30)
 
 
