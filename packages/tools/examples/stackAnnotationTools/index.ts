@@ -19,6 +19,7 @@ const {
   EllipticalROITool,
   BidirectionalTool,
   AngleTool,
+  CobbAngleTool,
   ToolGroupManager,
   ArrowAnnotateTool,
   Enums: csToolsEnums,
@@ -60,6 +61,7 @@ const toolsNames = [
   EllipticalROITool.toolName,
   BidirectionalTool.toolName,
   AngleTool.toolName,
+  CobbAngleTool.toolName,
   ArrowAnnotateTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
@@ -100,6 +102,7 @@ async function run() {
   cornerstoneTools.addTool(EllipticalROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(AngleTool);
+  cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -113,6 +116,7 @@ async function run() {
   toolGroup.addTool(EllipticalROITool.toolName);
   toolGroup.addTool(BidirectionalTool.toolName);
   toolGroup.addTool(AngleTool.toolName);
+  toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -131,6 +135,7 @@ async function run() {
   toolGroup.setToolPassive(EllipticalROITool.toolName);
   toolGroup.setToolPassive(BidirectionalTool.toolName);
   toolGroup.setToolPassive(AngleTool.toolName);
+  toolGroup.setToolPassive(CobbAngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
