@@ -1,5 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
+
 const rootPath = process.cwd();
 const context = path.join(rootPath, 'src');
 const codecs = path.join(rootPath, 'codecs');
@@ -12,7 +13,7 @@ module.exports = {
   mode: 'development',
   context,
   entry: {
-    cornerstoneWADOImageLoader: './imageLoader/index.js',
+    cornerstoneDICOMImageLoader: './imageLoader/index.js',
   },
   target: 'web',
   output: {
@@ -43,15 +44,15 @@ module.exports = {
   module: {
     noParse: [/(codecs)/],
     rules: [
-      {
-        enforce: 'pre',
-        test: /\.js$/,
-        exclude: /(node_modules)|(codecs)/,
-        loader: 'eslint-loader',
-        options: {
-          failOnError: false,
-        },
-      },
+      // {
+      //   enforce: 'pre',
+      //   test: /\.js$/,
+      //   exclude: /(node_modules)|(codecs)/,
+      //   loader: 'eslint-loader',
+      //   options: {
+      //     failOnError: false,
+      //   },
+      // },
       {
         test: /\.wasm/,
         type: 'asset/resource',

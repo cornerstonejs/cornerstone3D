@@ -63,6 +63,7 @@
     "css-loader": "^5.2.7",
     "cssnano": "^4.1.11",
     "eslint": "^8.17.0",
+    "eslint-loader": "4.0.2",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-jsx-a11y": "6.x",

@@ -1,7 +1,7 @@
 {
-  "name": "cornerstone-wado-image-loader",
-  "version": "0.0.0-semantically-released",
-  "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS",
+  "name": "@cornerstonejs/dicom-image-loader",
+  "version": "0.0.1",
+  "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
     "WADO",
@@ -9,17 +9,19 @@
     "medical",
     "imaging"
   ],
-  "author": "Chris Hafey",
-  "homepage": "https://github.com/cornerstonejs/cornerstoneWADOImageLoader",
+  "author": "@cornerstonejs (previously Chris Hafey)",
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "license": "MIT",
-  "main": "./dist/cornerstoneWADOImageLoader.bundle.min.js",
+  "main": "./dist/cornerstoneDICOMImageLoader.bundle.min.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cornerstonejs/cornerstoneWADOImageLoader.git"
+    "url": "https://github.com/cornerstonejs/cornerstone3D-beta.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "cm": "npx git-cz",
-    "build": "npm run version && npm run webpack:bundle && npm run webpack:dynamic-import",
     "clean": "npm run clean:dist && npm run clean:coverage",
     "clean:dist": "shx rm -rf dist",
     "clean:docs": "shx rm -rf documentation",
@@ -48,56 +50,23 @@
     "webpack:watch": "webpack --progress --watch  --config ./config/webpack",
     "prepublishOnly": "npm run build && npm run test:ci && npm run doc:generate"
   },
-  "peerDependencies": {
-    "cornerstone-core": "^2.6.0"
-  },
   "devDependencies": {
-    "@babel/core": "^7.15.4",
     "@babel/plugin-proposal-object-rest-spread": "^7.14.7",
-    "@babel/plugin-transform-runtime": "^7.15.0",
-    "@babel/preset-env": "^7.15.4",
     "@babel/runtime-corejs3": "^7.15.4",
-    "@webpack-cli/serve": "^1.5.2",
-    "babel-loader": "^8.2.2",
     "chai": "^4.3.4",
-    "clean-webpack-plugin": "^4.0.0",
-    "commitizen": "4.2.x",
     "concat": "^1.0.3",
-    "copy-webpack-plugin": "9.0.1",
     "core-js": "^3.26.1",
-    "cornerstone-core": "^2.5.0",
     "coveralls": "^3.1.1",
-    "cross-env": "^7.0.3",
     "docdash": "^1.2.0",
-    "eslint": "^7.32.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-loader": "^4.0.2",
-    "eslint-plugin-import": "^2.24.2",
-    "eslint-plugin-prettier": "^4.0.0",
     "exports-loader": "^3.0.0",
     "fs-extra": "^10.0.0",
     "jsdoc": "^3.6.7",
-    "karma": "^6.3.4",
-    "karma-chrome-launcher": "^3.1.0",
-    "karma-coverage": "^2.0.3",
-    "karma-firefox-launcher": "^2.1.1",
     "karma-mocha": "^2.0.1",
-    "karma-spec-reporter": "0.0.32",
-    "karma-webpack": "^5.0.0",
-    "lint-staged": "^11.1.2",
     "lodash": "^4.17.21",
     "mocha": "^9.1.1",
     "open-cli": "^7.0.1",
-    "prettier": "^2.3.2",
     "puppeteer": "^10.2.0",
-    "semantic-release": "^17.4.7",
-    "shx": "^0.3.3",
-    "terser-webpack-plugin": "^5.2.2",
-    "webpack": "^5.51.2",
-    "webpack-bundle-analyzer": "^4.4.2",
-    "webpack-cli": "^4.8.0",
-    "webpack-dev-server": "4.1.0",
-    "worker-loader": "^3.0.8"
+    "shx": "^0.3.3"
   },
   "dependencies": {
     "@babel/eslint-parser": "^7.19.1",

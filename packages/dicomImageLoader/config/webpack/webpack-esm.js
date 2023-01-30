@@ -1,18 +1,19 @@
 // Not used for now due to issues with experimental output modules
 const path = require('path');
 const webpack = require('webpack');
+
 const rootPath = process.cwd();
 const context = path.join(rootPath, 'src');
 const outputPath = path.join(rootPath, 'dist');
 
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
-  .BundleAnalyzerPlugin;
+const BundleAnalyzerPlugin =
+  require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 const config = {
   mode: 'development',
   context,
   entry: {
-    cornerstoneWADOImageLoader: './imageLoader/index.js',
+    cornerstoneDICOMImageLoader: './imageLoader/index.js',
   },
   target: 'web',
   output: {

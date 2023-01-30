@@ -1,5 +1,3 @@
-// @ts-check
-
 import external from '../../externalModules.js';
 
 function fixFragments(dataSet) {

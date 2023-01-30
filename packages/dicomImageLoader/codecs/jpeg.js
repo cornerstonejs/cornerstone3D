@@ -1,7 +1,6 @@
 // jshint ignore: start
+/* eslint-disable */
 
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
- /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /*
  Copyright 2011 notmasteryet
 
@@ -30,70 +29,10 @@ var ColorSpace = { Unkown: 0, Grayscale: 1, AdobeRGB: 2, RGB: 3, CYMK: 4 };
 var JpegImage = (function jpegImage() {
   'use strict';
   var dctZigZag = new Int32Array([
-    0,
-    1,
-    8,
-    16,
-    9,
-    2,
-    3,
-    10,
-    17,
-    24,
-    32,
-    25,
-    18,
-    11,
-    4,
-    5,
-    12,
-    19,
-    26,
-    33,
-    40,
-    48,
-    41,
-    34,
-    27,
-    20,
-    13,
-    6,
-    7,
-    14,
-    21,
-    28,
-    35,
-    42,
-    49,
-    56,
-    57,
-    50,
-    43,
-    36,
-    29,
-    22,
-    15,
-    23,
-    30,
-    37,
-    44,
-    51,
-    58,
-    59,
-    52,
-    45,
-    38,
-    31,
-    39,
-    46,
-    53,
-    60,
-    61,
-    54,
-    47,
-    55,
-    62,
-    63,
+    0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40,
+    48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36,
+    29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61,
+    54, 47, 55, 62, 63,
   ]);
 
   var dctCos1 = 4017; // cos(pi/16)
@@ -104,8 +43,6 @@ var JpegImage = (function jpegImage() {
   var dctSin6 = 3784; // sin(6*pi/16)
   var dctSqrt2 = 5793; // sqrt(2)
   var dctSqrt1d2 = 2896; // sqrt(2) / 2
-
-  function constructor() {}
 
   function buildHuffmanTable(codeLengths, values) {
     var k = 0,
@@ -179,8 +116,9 @@ var JpegImage = (function jpegImage() {
       if (bitsData == 0xff) {
         var nextByte = data[offset++];
         if (nextByte) {
-          throw 'unexpected marker: ' +
-            ((bitsData << 8) | nextByte).toString(16);
+          throw (
+            'unexpected marker: ' + ((bitsData << 8) | nextByte).toString(16)
+          );
         }
         // unstuff 0
       }
@@ -625,7 +563,7 @@ var JpegImage = (function jpegImage() {
 
   constructor.prototype = {
     load: function load(path) {
-      var handleData = function(data) {
+      var handleData = function (data) {
         this.parse(data);
         if (this.onload) this.onload();
       }.bind(this);
@@ -642,7 +580,7 @@ var JpegImage = (function jpegImage() {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', path, true);
         xhr.responseType = 'arraybuffer';
-        xhr.onload = function() {
+        xhr.onload = function () {
           // TODO catch parse error
           var data = new Uint8Array(xhr.response);
           handleData(data);
