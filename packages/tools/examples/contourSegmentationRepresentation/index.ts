@@ -12,8 +12,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-// import rtContour from './RTContour.json';
-import rtContour from './RTContourNew.json';
+import rtContour from './RTContour.json';
+// import rtContour from './RTContourNew.json';
 
 // This is for debugging purposes
 console.warn(
@@ -38,7 +38,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const geometryId = 'RTContour';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -70,10 +69,17 @@ content.append(instructions);
 
 async function addSegmentationsToState() {
   // load the contour data
-  await geometryLoader.createAndCacheGeometry(geometryId, {
-    type: GeometryType.CONTOUR,
-    data: rtContour.contourSets as Types.PublicContourSetData,
+  const geometryIds = [];
+  const promises = rtContour.contourSets.map((contourSet) => {
+    const geometryId = contourSet.id;
+    geometryIds.push(geometryId);
+    return geometryLoader.createAndCacheGeometry(geometryId, {
+      type: GeometryType.CONTOUR,
+      geometryData: contourSet as Types.PublicContourSetData,
+    });
   });
+
+  await Promise.all(promises);
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -85,7 +91,7 @@ async function addSegmentationsToState() {
         // The actual segmentation data, in the case of contour geometry
         //  this is a reference to the geometry data
         data: {
-          geometryId,
+          geometryIds,
         },
       },
     },
@@ -138,17 +144,17 @@ async function run() {
   //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
   //   wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   // });
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000347',
-    SeriesInstanceUID:
-      '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000346',
-    wadoRsRoot: 'http://localhost/dicom-web',
-  });
   // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID: '1.2.276.0.7230010.3.1.2.481035776.1.1669385265.734807',
-  //   SeriesInstanceUID: '1.2.276.0.7230010.3.1.3.481035776.1.1669385265.734808',
+  //   StudyInstanceUID: '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000347',
+  //   SeriesInstanceUID:
+  //     '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000346',
   //   wadoRsRoot: 'http://localhost/dicom-web',
   // });
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.2.276.0.7230010.3.1.2.481035776.1.1669385265.734807',
+    SeriesInstanceUID: '1.2.276.0.7230010.3.1.3.481035776.1.1669385265.734808',
+    wadoRsRoot: 'http://localhost/dicom-web',
+  });
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -186,12 +192,6 @@ async function run() {
 
   // Set volumes on the viewports
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
-
-  const viewport = renderingEngine.getViewport(
-    viewportId1
-  ) as Types.IVolumeViewport;
-  // viewport.setBlendMode(Enums.BlendModes.MAXIMUM_INTENSITY_BLEND);
-  // viewport.setSlabThickness(10);
 
   // // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [

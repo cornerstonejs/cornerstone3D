@@ -2,11 +2,11 @@ import { ContourData, IContour, Point3 } from './';
 
 export interface IContourSet {
   readonly id: string;
-  readonly color: Point3;
   readonly sizeInBytes: number;
   contours: IContour[];
   _createEachContour(data: ContourData[]): void;
   _getSizeInBytes(): number;
+  getSizeInBytes(): number;
   getColor(): any;
   /**
    * This function returns the contours of the image

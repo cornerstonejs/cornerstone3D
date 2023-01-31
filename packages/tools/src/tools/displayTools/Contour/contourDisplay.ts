@@ -3,6 +3,7 @@ import {
   getEnabledElementByIds,
   Types,
   utilities,
+  Enums,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -135,53 +136,100 @@ async function render(
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
   const contourData = segmentation.representationData[Representations.Contour];
-  const { geometryId } = contourData;
+  const { geometryIds } = contourData;
 
-  const geometry = cache.getGeometry(geometryId);
-  if (!geometry) {
-    throw new Error(`No contours found for geometryId ${geometryId}`);
-  }
-
-  if (!geometry.data) {
+  if (!geometryIds || geometryIds.length === 0) {
     console.warn(
-      `No contours found for geometryId ${geometryId}. Skipping render.`
+      `No contours found for segmentationId ${segmentationId}. Skipping render.`
     );
-
-    return;
   }
 
-  geometry.data.forEach((contourSet: Types.IContourSet) => {
-    _renderContourSet(viewport, contourSet);
+  _renderContourSets(viewport, geometryIds, segmentationRepresentationUID);
+}
+
+function _renderContourSets(
+  viewport,
+  geometryIds,
+  segmentationRepresentationUID
+) {
+  geometryIds.forEach((geometryId) => {
+    const geometry = cache.getGeometry(geometryId);
+    if (!geometry) {
+      throw new Error(`No contours found for geometryId ${geometryId}`);
+    }
+
+    if (geometry.type !== Enums.GeometryType.CONTOUR) {
+      // Todo: later we can support converting other geometries to contours
+      throw new Error(
+        `Geometry type ${geometry.type} not supported for rendering.`
+      );
+    }
+
+    if (!geometry.data) {
+      console.warn(
+        `No contours found for geometryId ${geometryId}. Skipping render.`
+      );
+      return;
+    }
+
+    const contourSet = geometry.data;
+
+    _renderContourSet(viewport, contourSet, segmentationRepresentationUID);
+  });
+}
+
+function _renderContourSet(
+  viewport: Types.IVolumeViewport,
+  contourSet: Types.IContourSet,
+  segmentationRepresentationUID: string
+): void {
+  contourSet.getContours().forEach((contour: Types.IContour, index) => {
+    const contourUID = `${segmentationRepresentationUID}_${contourSet.id}_${index}}`;
+    _renderContour(viewport, contour, contourUID);
   });
 
   viewport.resetCamera();
   viewport.render();
 }
 
-function _renderContourSet(
-  viewport: Types.IVolumeViewport,
-  contourSet: Types.IContourSet
-): void {
-  const { id } = contourSet;
-
-  contourSet.getContours().forEach((contour: Types.IContour, index) => {
-    const actorUID = `${id}-${index}`;
-    const actorEntry = viewport.getActor(actorUID);
-
-    if (!actorEntry) {
-      _addContourToViewport(viewport, contour, actorUID);
-    } else {
-      // actorEntry.actor.setVisibility(visibility);
-    }
-  });
-}
-
-function _addContourToViewport(
+function _renderContour(
   viewport: Types.IVolumeViewport,
   contour: Types.IContour,
-  actorUID: string
+  contourUID: string
 ): void {
-  addContourToElement(viewport.element, contour, actorUID);
+  const actorUID = contourUID;
+  const actorEntry = viewport.getActor(actorUID);
+
+  if (!actorEntry) {
+    addContourToElement(viewport.element, contour, actorUID);
+  } else {
+    // actorEntry.actor.setVisibility(visibility);
+  }
+}
+
+function _removeContourFromToolGroupViewports(
+  toolGroupId: string,
+  segmentationRepresentationUID: string
+): void {
+  const toolGroup = getToolGroup(toolGroupId);
+
+  if (toolGroup === undefined) {
+    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`);
+  }
+
+  const { viewportsInfo } = toolGroup;
+
+  for (const viewportInfo of viewportsInfo) {
+    const { viewportId, renderingEngineId } = viewportInfo;
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      renderingEngineId
+    );
+    removeContourFromElement(
+      enabledElement.viewport.element,
+      segmentationRepresentationUID
+    );
+  }
 }
 
 export default {

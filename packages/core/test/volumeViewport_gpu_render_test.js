@@ -47,7 +47,8 @@ function createViewport(
   renderingEngine,
   orientation,
   width = 1000,
-  height = 1000
+  height = 1000,
+  type = ViewportType.ORTHOGRAPHIC
 ) {
   const element = document.createElement('div');
 
@@ -58,7 +59,7 @@ function createViewport(
   renderingEngine.setViewports([
     {
       viewportId: viewportId,
-      type: ViewportType.ORTHOGRAPHIC,
+      type,
       element,
       defaultOptions: {
         orientation,
@@ -90,7 +91,10 @@ describe('Volume Viewport GPU -- ', () => {
     it('should successfully render a sphere source', function (done) {
       const element = createViewport(
         this.renderingEngine,
-        Enums.OrientationAxis.SAGITTAL
+        Enums.OrientationAxis.SAGITTAL,
+        1000,
+        1000,
+        ViewportType.VOLUME_3D
       );
       this.DOMElements.push(element);
 

@@ -1,5 +1,6 @@
 import { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
 import { cache } from '@cornerstonejs/core';
+import { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
 
 function validate(segmentationInput: SegmentationPublicInput): void {
   if (!segmentationInput.representation.data) {
@@ -8,7 +9,8 @@ function validate(segmentationInput: SegmentationPublicInput): void {
     );
   }
 
-  const representationData = segmentationInput.representation.data;
+  const representationData = segmentationInput.representation
+    .data as LabelmapSegmentationData;
 
   if (!representationData.volumeId) {
     throw new Error(

@@ -17,6 +17,7 @@ import {
 import floodFill from '../../utilities/segmentation/floodFill';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -82,7 +83,7 @@ class PaintFillTool extends BaseTool {
       segmentLocking.getLockedSegments(segmentationId);
     const { representationData } = getSegmentation(segmentationId);
 
-    const { volumeId } = representationData[type];
+    const { volumeId } = representationData[type] as LabelmapSegmentationData;
     const segmentation = cache.getVolume(volumeId);
     const { scalarData, dimensions, direction } = segmentation;
 

@@ -1,4 +1,4 @@
-import { Point3, IContourSet, ContourData } from '../../types';
+import { Point3, IContourSet, IContour, ContourData } from '../../types';
 import Contour from './Contour';
 
 /**
@@ -9,7 +9,7 @@ export class ContourSet implements IContourSet {
   readonly id: string;
   readonly sizeInBytes: number;
   private color: Point3 = [200, 0, 0]; // default color
-  contours: Contour[];
+  contours: IContour[];
 
   constructor(props: { id: string; data: ContourData[]; color?: Point3 }) {
     this.id = props.id;
@@ -21,17 +21,18 @@ export class ContourSet implements IContourSet {
   }
 
   _createEachContour(contourDataArray: ContourData[]): void {
-    this.contours = contourDataArray.map((contourData, index) => {
-      const { points, type, color } = contourData;
-      return new Contour({
-        id: `${this.id}-${index}`,
+    for (let i = 0; i < contourDataArray.length; i++) {
+      const contour = new Contour({
+        id: `${this.id}-${i}`,
         data: {
-          points,
-          type,
+          points: contourDataArray[i].points,
+          type: contourDataArray[i].type,
         },
-        color: color ?? this.color,
+        color: contourDataArray[i].color ?? this.color,
       });
-    });
+
+      this.contours.push(contour);
+    }
   }
 
   _getSizeInBytes(): number {
@@ -53,8 +54,12 @@ export class ContourSet implements IContourSet {
    * This function returns the contours of the image
    * @returns The contours of the image.
    */
-  public getContours(): Contour[] {
+  public getContours(): IContour[] {
     return this.contours;
+  }
+
+  public getSizeInBytes(): number {
+    return this.sizeInBytes;
   }
 
   /**

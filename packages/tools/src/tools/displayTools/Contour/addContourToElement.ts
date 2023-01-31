@@ -5,6 +5,9 @@ import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 
+// Todo: this seems to have performance issues when there are many contours
+// Maybe we should not create one actor per contour, but rather one actor per
+// contourSet?
 function addContourToElement(
   element: HTMLDivElement,
   contour: Types.IContour,
@@ -35,10 +38,13 @@ function addContourToElement(
   const var1 = Float32Array.from(flatPoints);
   const var2 = Uint32Array.from([p.length, ...p]);
 
+  const colorToUse = color.map((c) => c / 255);
+
   const points = vtkPoints.newInstance();
   points.setData(var1, 3);
 
   const lines = vtkCellArray.newInstance();
+  // @ts-ignore
   lines.setData(var2, 3);
 
   const polygon = vtkPolyData.newInstance();
@@ -50,7 +56,7 @@ function addContourToElement(
   const actor1 = vtkActor.newInstance();
   actor1.setMapper(mapper1);
   actor1.getProperty().setLineWidth(4);
-  actor1.getProperty().setColor(...color.map((c) => c / 255));
+  actor1.getProperty().setColor(colorToUse[0], colorToUse[1], colorToUse[2]);
 
   viewport.addActor({ actor: actor1, uid: actorUID });
 }

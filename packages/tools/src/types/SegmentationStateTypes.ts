@@ -168,7 +168,7 @@ export type ToolGroupSpecificRepresentations =
  *           volumeId: 'segmentation1',
  *         },
  *         CONTOUR: {
- *           point: Float32Array,
+ *           geometryIds: ['contourSet1', 'contourSet2'],
  *         },
  *       },
  *     },

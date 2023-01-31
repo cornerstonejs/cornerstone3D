@@ -20,5 +20,7 @@ export type ContourRenderingConfig = {
 };
 
 export type ContourSegmentationData = {
-  geometryId: string;
+  // Ids of the contourSets that are part of this segmentation
+  // in the cache
+  geometryIds: string[];
 };

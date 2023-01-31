@@ -768,10 +768,23 @@ declare namespace CONSTANTS {
 export { CONSTANTS }
 
 // @public (undocumented)
-function copyPoints(points: ITouchPoints): ITouchPoints;
+type ContourData = {
+    points: Point3[];
+    type: ContourType;
+    color?: Point3;
+};
 
 // @public (undocumented)
-function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
+type ContourSegmentationData = {
+    geometryIds: string[];
+};
+
+// @public (undocumented)
+type ContourSetData = {
+    id: string;
+    data: ContourData[];
+    color?: Point3;
+};
 
 // @public (undocumented)
 const CORNERSTONE_COLOR_LUT: number[][];
@@ -2047,6 +2060,22 @@ interface ICache {
 }
 
 // @public (undocumented)
+interface ICachedGeometry {
+    // (undocumented)
+    geometry?: IGeometry;
+    // (undocumented)
+    geometryId: string;
+    // (undocumented)
+    geometryLoadObject: IGeometryLoadObject;
+    // (undocumented)
+    loaded: boolean;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    timeStamp: number;
+}
+
+// @public (undocumented)
 interface ICachedImage {
     // (undocumented)
     image?: IImage;
@@ -2096,12 +2125,52 @@ interface ICamera {
 }
 
 // @public (undocumented)
-type IDistance = {
-    page: number;
-    client: number;
-    canvas: number;
-    world: number;
-};
+interface IContour {
+    // (undocumented)
+    color: any;
+    // (undocumented)
+    getColor(): Point3;
+    // (undocumented)
+    getFlatPointsArray(): number[];
+    getPoints(): Point3[];
+    // (undocumented)
+    _getSizeInBytes(): number;
+    // (undocumented)
+    getType(): ContourType;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    points: Point3[];
+    // (undocumented)
+    readonly sizeInBytes: number;
+    // (undocumented)
+    type: ContourType;
+}
+
+// @public (undocumented)
+interface IContourSet {
+    // (undocumented)
+    contours: IContour[];
+    // (undocumented)
+    _createEachContour(data: ContourData[]): void;
+    // (undocumented)
+    getColor(): any;
+    getContours(): IContour[];
+    getFlatPointsArray(): Point3[];
+    getNumberOfContours(): number;
+    getNumberOfPointsArray(): number[];
+    getNumberOfPointsInAContour(contourIndex: number): number;
+    getPointsInAContour(contourIndex: number): Point3[];
+    // (undocumented)
+    getSizeInBytes(): number;
+    // (undocumented)
+    _getSizeInBytes(): number;
+    getTotalNumberOfPoints(): number;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
 
 // @public
 interface IEnabledElement {
@@ -2110,6 +2179,25 @@ interface IEnabledElement {
     renderingEngineId: string;
     viewport: IStackViewport | IVolumeViewport;
     viewportId: string;
+}
+
+// @public (undocumented)
+interface IGeometry {
+    // (undocumented)
+    data: ContourSet;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    type: GeometryType;
+}
+
+// @public (undocumented)
+interface IGeometryLoadObject {
+    cancelFn?: () => void;
+    decache?: () => void;
+    promise: Promise<IGeometry>;
 }
 
 // @public
@@ -2647,6 +2735,8 @@ interface IViewport {
     id: string;
     isDisabled: boolean;
     options: ViewportInputOptions;
+    removeActor(actorUID: string): void;
+    removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;
     renderingEngineId: string;
@@ -3459,6 +3549,9 @@ type PTScaling = {
 };
 
 // @public (undocumented)
+type PublicContourSetData = ContourSetData;
+
+// @public (undocumented)
 type PublicToolProps = SharedToolProp & {
     name?: string;
 };
@@ -3914,6 +4007,7 @@ export function removeTool(ToolClass: any): void;
 // @public (undocumented)
 type RepresentationConfig = {
     LABELMAP?: LabelmapConfig;
+    CONTOUR?: ContourConfig;
 };
 
 // @public (undocumented)
@@ -4053,6 +4147,7 @@ type SegmentationRepresentationConfig = {
 // @public (undocumented)
 type SegmentationRepresentationData = {
     LABELMAP?: LabelmapSegmentationData;
+    CONTOUR?: ContourSegmentationData;
 };
 
 // @public (undocumented)
@@ -4075,6 +4170,8 @@ type SegmentationRepresentationRemovedEventType = Types_2.CustomEventType<Segmen
 
 // @public (undocumented)
 enum SegmentationRepresentations {
+    // (undocumented)
+    Contour = "CONTOUR",
     // (undocumented)
     Labelmap = "LABELMAP"
 }
@@ -4802,7 +4899,8 @@ declare namespace Types {
         SVGDrawingHelper,
         FloodFillResult,
         FloodFillGetter,
-        FloodFillOptions
+        FloodFillOptions,
+        ContourSegmentationData
     }
 }
 export { Types }
@@ -4873,6 +4971,7 @@ type ViewportInputOptions = {
     background?: [number, number, number];
     orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
+    parallelProjection?: boolean;
 };
 
 // @public (undocumented)

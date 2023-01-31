@@ -19,9 +19,17 @@ function removeContourFromElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  (viewport as Types.IVolumeViewport).removeVolumeActors([
-    segmentationRepresentationUID,
-  ]);
+  const actorEntries = (viewport as Types.IVolumeViewport).getActors();
+
+  // remove actors whose id has the same prefix as the segmentationRepresentationUID
+  const actorUIDsToRemove = actorEntries
+    .map(({ uid }) =>
+      uid.startsWith(segmentationRepresentationUID) ? uid : undefined
+    )
+    .filter(Boolean);
+
+  // @ts-ignore
+  viewport.removeActors(actorUIDsToRemove);
 }
 
 export default removeContourFromElement;
