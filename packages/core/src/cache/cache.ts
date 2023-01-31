@@ -361,7 +361,7 @@ class Cache implements ICache {
           return;
         }
 
-        if (image.sizeInBytes === undefined) {
+        if (Number.isNaN(image.sizeInBytes)) {
           throw new Error(
             'putImageLoadObject: image.sizeInBytes must not be undefined'
           );
@@ -563,7 +563,7 @@ class Cache implements ICache {
           return;
         }
 
-        if (volume.sizeInBytes === undefined) {
+        if (Number.isNaN(volume.sizeInBytes)) {
           throw new Error(
             'putVolumeLoadObject: volume.sizeInBytes must not be undefined'
           );
@@ -627,7 +627,7 @@ class Cache implements ICache {
   };
 
   public getGeometry = (geometryId: string): IGeometry => {
-    if (geometryId === undefined) {
+    if (geometryId == null) {
       throw new Error('getGeometry: geometryId must not be undefined');
     }
 
@@ -732,7 +732,7 @@ class Cache implements ICache {
     geometryId: string,
     geometryLoadObject: IGeometryLoadObject
   ): Promise<void> => {
-    if (geometryId === undefined) {
+    if (geometryId == undefined) {
       throw new Error(
         'putGeometryLoadObject: geometryId must not be undefined'
       );
@@ -763,7 +763,7 @@ class Cache implements ICache {
           return;
         }
 
-        if (geometry.sizeInBytes === undefined) {
+        if (Number.isNaN(geometry.sizeInBytes)) {
           throw new Error(
             'putGeometryLoadObject: geometry.sizeInBytes is not a number'
           );

@@ -21,13 +21,12 @@ import removeContourFromElement from './removeContourFromElement';
 import addContourToElement from './addContourToElement';
 
 /**
- * For each viewport, in the toolGroup it adds the segmentation labelmap
- * representation to its viewports.
- * @param toolGroup - the tool group that contains the viewports
- * @param representationInput - The segmentation representation input
- * @param toolGroupSpecificConfig - The configuration object for toolGroup
- *
- * @returns The UID of the new segmentation representation
+ * It adds a new segmentation representation to the segmentation state
+ * @param toolGroupId - The id of the toolGroup that the segmentation
+ * belongs to
+ * @param representationInput - RepresentationPublicInput
+ * @param toolGroupSpecificConfig - The configuration that is specific to the toolGroup.
+ * @returns The segmentationRepresentationUID
  */
 async function addSegmentationRepresentation(
   toolGroupId: string,
@@ -80,12 +79,14 @@ async function addSegmentationRepresentation(
 }
 
 /**
- * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
- * Initializes the global and viewport specific state for the segmentation in the
- * SegmentationStateManager.
- * @param toolGroup - the tool group that contains the viewports
- * @param segmentationRepresentationUID - The uid of the segmentation representation
- * @param renderImmediate - If true, there will be a render call after the labelmap is removed
+ * It removes a segmentation representation from the tool group's viewports and
+ * from the segmentation state
+ * @param toolGroupId - The toolGroupId of the toolGroup that the
+ * segmentationRepresentation belongs to.
+ * @param segmentationRepresentationUID - This is the unique identifier
+ * for the segmentation representation.
+ * @param renderImmediate - If true, the viewport will be rendered
+ * immediately after the segmentation representation is removed.
  */
 function removeSegmentationRepresentation(
   toolGroupId: string,
@@ -114,11 +115,10 @@ function removeSegmentationRepresentation(
 }
 
 /**
- * It takes the enabled element, the segmentation Id, and the configuration, and
- * it sets the segmentation for the enabled element as a labelmap
- * @param enabledElement - The cornerstone enabled element
- * @param segmentationId - The id of the segmentation to be rendered.
- * @param configuration - The configuration object for the labelmap.
+ * It renders the contour sets for the given segmentation
+ * @param viewport - The viewport object
+ * @param representation - ToolGroupSpecificRepresentation
+ * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
   viewport: Types.IVolumeViewport,
@@ -138,7 +138,7 @@ async function render(
   const contourData = segmentation.representationData[Representations.Contour];
   const { geometryIds } = contourData;
 
-  if (!geometryIds || geometryIds.length === 0) {
+  if (!geometryIds?.length) {
     console.warn(
       `No contours found for segmentationId ${segmentationId}. Skipping render.`
     );
@@ -203,7 +203,7 @@ function _renderContour(
   if (!actorEntry) {
     addContourToElement(viewport.element, contour, actorUID);
   } else {
-    // actorEntry.actor.setVisibility(visibility);
+    throw new Error('Not implemented yet. (Update contour)');
   }
 }
 

@@ -6,6 +6,7 @@ type PublicContourSetData = ContourSetData;
 type ContourSetData = {
   id: string;
   data: ContourData[];
+  frameOfReferenceUID: string;
   color?: Point3;
 };
 

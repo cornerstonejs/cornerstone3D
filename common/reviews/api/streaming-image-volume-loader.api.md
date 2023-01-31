@@ -602,7 +602,7 @@ interface IContourSet {
     getNumberOfContours(): number;
     getNumberOfPointsArray(): number[];
     getNumberOfPointsInAContour(contourIndex: number): number;
-    getPointsInAContour(contourIndex: number): Point3[];
+    getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
     getSizeInBytes(): number;
     // (undocumented)

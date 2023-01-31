@@ -26,6 +26,9 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
+function actorIsA(actorEntry: Types.ActorEntry, actorType: actorTypes): boolean;
+
+// @public (undocumented)
 type ActorSliceRange = {
     actor: VolumeActor;
     viewPlaneNormal: Point3;
@@ -76,6 +79,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
+    protected resetVolumeViewportClippingRange(): void;
+    // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
@@ -85,8 +90,6 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
-    // (undocumented)
-    protected setVolumeViewportClippingRange(): void;
     // (undocumented)
     useCPURendering: boolean;
     // (undocumented)
@@ -160,6 +163,7 @@ type ContourData = {
 type ContourSetData = {
     id: string;
     data: ContourData[];
+    frameOfReferenceUID: string;
     color?: Point3;
 };
 
@@ -831,8 +835,6 @@ interface IContour {
     points: Point3[];
     // (undocumented)
     readonly sizeInBytes: number;
-    // (undocumented)
-    type: ContourType;
 }
 
 // @public (undocumented)
@@ -841,6 +843,8 @@ interface IContourSet {
     contours: IContour[];
     // (undocumented)
     _createEachContour(data: ContourData[]): void;
+    // (undocumented)
+    readonly frameOfReferenceUID: string;
     // (undocumented)
     getColor(): any;
     // (undocumented)
@@ -854,11 +858,9 @@ interface IContourSet {
     // (undocumented)
     getNumberOfPointsInAContour(contourIndex: number): number;
     // (undocumented)
-    getPointsInAContour(contourIndex: number): Point3[];
+    getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
     getSizeInBytes(): number;
-    // (undocumented)
-    _getSizeInBytes(): number;
     // (undocumented)
     getTotalNumberOfPoints(): number;
     // (undocumented)
@@ -1346,7 +1348,7 @@ export function isCornerstoneInitialized(): boolean;
 function isEqual(v1: number[] | Float32Array, v2: number[] | Float32Array, tolerance?: number): boolean;
 
 // @public (undocumented)
-function isImageActor(actor: vtkActor | vtkVolume | vtkImageSlice): boolean;
+function isImageActor(actorEntry: Types.ActorEntry): boolean;
 
 // @public (undocumented)
 function isOpposite(v1: Point3, v2: Point3, tolerance?: number): boolean;
@@ -1483,8 +1485,6 @@ interface IViewport {
     isDisabled: boolean;
     // (undocumented)
     options: ViewportInputOptions;
-    // (undocumented)
-    removeActor(actorUID: string): void;
     // (undocumented)
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
@@ -2204,6 +2204,7 @@ declare namespace utilities {
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
         isImageActor,
+        actorIsA,
         getViewportsWithImageURI,
         getClosestStackImageIndexForPoint,
         calculateViewportsSpatialRegistration,
@@ -2293,7 +2294,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
-    removeActor(actorUID: string): void;
+    _removeActor(actorUID: string): void;
     // (undocumented)
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)

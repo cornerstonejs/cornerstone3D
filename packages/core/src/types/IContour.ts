@@ -6,7 +6,6 @@ export interface IContour {
   readonly sizeInBytes: number;
   points: Point3[];
   color: any;
-  type: ContourType;
   _getSizeInBytes(): number;
   /**
    * It returns the value of the points property of the data object

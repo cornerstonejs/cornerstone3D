@@ -6,7 +6,6 @@ export interface IContourSet {
   readonly frameOfReferenceUID: string;
   contours: IContour[];
   _createEachContour(data: ContourData[]): void;
-  _getSizeInBytes(): number;
   getSizeInBytes(): number;
   getColor(): any;
   /**
@@ -41,7 +40,7 @@ export interface IContourSet {
    * points from.
    * @returns An array of Point3 objects.
    */
-  getPointsInAContour(contourIndex: number): Point3[];
+  getPointsInContour(contourIndex: number): Point3[];
   /**
    * "This function returns the number of points in a contour."
    *

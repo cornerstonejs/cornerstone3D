@@ -17,7 +17,7 @@ Since usually a segmentation is a collection of multiple structures, each Contou
 
 A Contour includes the information about the points that make up the contour. Each Contour has data, type (closed or open), and a color.
 
-## Loading Contour Segmentation Representation
+## Loading Contour as Segmentation Representation
 
 ```js
 // load each contour set and cache the geometry
@@ -38,7 +38,7 @@ segmentation.addSegmentations([
       // The type of segmentation
       type: csToolsEnums.SegmentationRepresentations.Contour,
       // The actual segmentation data, in the case of contour geometry
-      //  this is a reference to the geometry data
+      // this is a reference to the geometry data
       data: {
         geometryIds: contourSets.map((contourSet) => contourSet.id),
       },

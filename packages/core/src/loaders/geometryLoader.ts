@@ -92,6 +92,7 @@ function _createContourSet(
     id: contourSetData.id,
     data: contourSetData.data,
     color: contourSetData.color,
+    frameOfReferenceUID: contourSetData.frameOfReferenceUID,
   });
 
   const geometry: IGeometry = {

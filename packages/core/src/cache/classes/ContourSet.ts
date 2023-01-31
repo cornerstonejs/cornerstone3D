@@ -1,6 +1,13 @@
 import { Point3, IContourSet, IContour, ContourData } from '../../types';
 import Contour from './Contour';
 
+type ContourSetProps = {
+  id: string;
+  data: ContourData[];
+  frameOfReferenceUID: string;
+  color?: Point3;
+};
+
 /**
  * This class represents a set of contours.
  * Usually contours are grouped together in a contour set to represent a meaningful shape.
@@ -12,12 +19,7 @@ export class ContourSet implements IContourSet {
   private color: Point3 = [200, 0, 0]; // default color
   contours: IContour[];
 
-  constructor(props: {
-    id: string;
-    data: ContourData[];
-    frameOfReferenceUID: string;
-    color?: Point3;
-  }) {
+  constructor(props: ContourSetProps) {
     this.id = props.id;
     this.contours = [];
     this.color = props.color ?? this.color;
@@ -43,12 +45,9 @@ export class ContourSet implements IContourSet {
   }
 
   _getSizeInBytes(): number {
-    let sizeInBytes = 0;
-    this.contours.forEach((contour) => {
-      sizeInBytes += contour.sizeInBytes;
-    });
-
-    return sizeInBytes;
+    return this.contours.reduce((sizeInBytes, contour) => {
+      return sizeInBytes + contour.sizeInBytes;
+    }, 0);
   }
 
   public getColor(): Point3 {
@@ -74,11 +73,7 @@ export class ContourSet implements IContourSet {
    * @returns An array of points.
    */
   public getFlatPointsArray(): Point3[] {
-    const flatPoints = [];
-    this.contours.forEach((contour) => {
-      flatPoints.push(...contour.getPoints());
-    });
-    return flatPoints;
+    return this.contours.map((contour) => contour.getPoints()).flat();
   }
 
   /**
@@ -95,11 +90,9 @@ export class ContourSet implements IContourSet {
    * @returns The number of points in the contours.
    */
   public getTotalNumberOfPoints(): number {
-    let numberOfPoints = 0;
-    this.contours.forEach((contour) => {
-      numberOfPoints += contour.getPoints().length;
-    });
-    return numberOfPoints;
+    return this.contours.reduce((numberOfPoints, contour) => {
+      return numberOfPoints + contour.getPoints().length;
+    }, 0);
   }
 
   /**
@@ -107,11 +100,10 @@ export class ContourSet implements IContourSet {
    * @returns An array of numbers.
    */
   public getNumberOfPointsArray(): number[] {
-    const numberOfPointsArray = [];
-    this.contours.forEach((_, index) => {
-      numberOfPointsArray[index] = this.getNumberOfPointsInAContour(index);
-    });
-    return numberOfPointsArray;
+    return this.contours.reduce((acc, _, i) => {
+      acc[i] = this.getNumberOfPointsInAContour(i);
+      return acc;
+    }, []);
   }
 
   /**
@@ -120,7 +112,7 @@ export class ContourSet implements IContourSet {
    * points from.
    * @returns An array of Point3 objects.
    */
-  public getPointsInAContour(contourIndex: number): Point3[] {
+  public getPointsInContour(contourIndex: number): Point3[] {
     return this.contours[contourIndex].getPoints();
   }
   /**
@@ -131,7 +123,7 @@ export class ContourSet implements IContourSet {
    * @returns The number of points in the contour.
    */
   public getNumberOfPointsInAContour(contourIndex: number): number {
-    return this.getPointsInAContour(contourIndex).length;
+    return this.getPointsInContour(contourIndex).length;
   }
 
   /**

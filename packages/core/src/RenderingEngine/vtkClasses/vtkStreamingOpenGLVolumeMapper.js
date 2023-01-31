@@ -421,7 +421,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         const distance = camera.getDistance();
 
         // set the clipping range to be model.distance and model.distance + 0.1
-        // since we use the in the keyMats.wcpc (world to projection) matrix
+        // since we use this in the keyMats.wcpc (world to projection) matrix
         // the projection matrix calculation relies on the clipping range to be
         // set correctly. This is done inside the interactorStyleMPRSlice which
         // limits use cases where the interactor style is not used.
@@ -451,11 +451,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     mat4.invert(model.projectionToView, keyMats.vcpc);
     program.setUniformMatrix('PCVCMatrix', model.projectionToView);
-
-    // handle lighting values
-    // if (model.lastLightComplexity === 0) {
-    //   return;
-    // }
 
     switch (model.lastLightComplexity) {
       default:

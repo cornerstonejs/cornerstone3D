@@ -17,7 +17,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
     const activeCamera = this.getVtkActiveCamera();
 
-    if (parallelProjection !== undefined) {
+    if (parallelProjection != null) {
       activeCamera.setParallelProjection(parallelProjection);
     }
   }

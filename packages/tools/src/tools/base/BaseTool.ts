@@ -120,18 +120,16 @@ abstract class BaseTool implements IBaseTool {
 
     // If volume not specified, then return the actorUID for the
     // default actor - first actor
-    const actors = viewport.getActors();
+    const actorEntries = viewport.getActors();
 
-    if (!actors && !actors.length) {
+    if (!actorEntries) {
       return;
     }
 
     // find the first image actor of instance type vtkVolume
-    for (let i = 0; i < actors.length; i++) {
-      if (actors[i].actor.getClassName() === 'vtkVolume') {
-        return actors[i].uid;
-      }
-    }
+    return actorEntries.find(
+      (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+    )?.uid;
   }
 
   /**

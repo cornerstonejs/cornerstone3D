@@ -12,8 +12,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import rtContour from './RTContour.json';
-// import rtContour from './RTContourNew.json';
+import contour from './Contour.json';
 
 // This is for debugging purposes
 console.warn(
@@ -70,7 +69,7 @@ content.append(instructions);
 async function addSegmentationsToState() {
   // load the contour data
   const geometryIds = [];
-  const promises = rtContour.contourSets.map((contourSet) => {
+  const promises = contour.contourSets.map((contourSet) => {
     const geometryId = contourSet.id;
     geometryIds.push(geometryId);
     return geometryLoader.createAndCacheGeometry(geometryId, {
@@ -89,7 +88,7 @@ async function addSegmentationsToState() {
         // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Contour,
         // The actual segmentation data, in the case of contour geometry
-        //  this is a reference to the geometry data
+        // this is a reference to the geometry data
         data: {
           geometryIds,
         },
@@ -137,24 +136,24 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
+  // // const imageIds = await createImageIdsAndCacheMetaData({
+  // //   StudyInstanceUID: '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000347',
+  // //   SeriesInstanceUID:
+  // //     '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000346',
+  // //   wadoRsRoot: 'http://localhost/dicom-web',
+  // // });
   // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  //   wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-  // });
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID: '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000347',
-  //   SeriesInstanceUID:
-  //     '1.3.12.2.1107.5.7.8.10013.30000011072819531359300000346',
+  //   StudyInstanceUID: '1.2.276.0.7230010.3.1.2.481035776.1.1669385265.734807',
+  //   SeriesInstanceUID: '1.2.276.0.7230010.3.1.3.481035776.1.1669385265.734808',
   //   wadoRsRoot: 'http://localhost/dicom-web',
   // });
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.2.276.0.7230010.3.1.2.481035776.1.1669385265.734807',
-    SeriesInstanceUID: '1.2.276.0.7230010.3.1.3.481035776.1.1669385265.734808',
-    wadoRsRoot: 'http://localhost/dicom-web',
-  });
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

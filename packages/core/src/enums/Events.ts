@@ -183,6 +183,9 @@ enum Events {
    */
   STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 
+  /**
+   * Triggers on the eventTarget when a new geometry is added to the geometry cache
+   */
   GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
 
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',

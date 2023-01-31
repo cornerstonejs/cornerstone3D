@@ -783,6 +783,7 @@ type ContourSegmentationData = {
 type ContourSetData = {
     id: string;
     data: ContourData[];
+    frameOfReferenceUID: string;
     color?: Point3;
 };
 
@@ -2143,8 +2144,6 @@ interface IContour {
     points: Point3[];
     // (undocumented)
     readonly sizeInBytes: number;
-    // (undocumented)
-    type: ContourType;
 }
 
 // @public (undocumented)
@@ -2154,17 +2153,17 @@ interface IContourSet {
     // (undocumented)
     _createEachContour(data: ContourData[]): void;
     // (undocumented)
+    readonly frameOfReferenceUID: string;
+    // (undocumented)
     getColor(): any;
     getContours(): IContour[];
     getFlatPointsArray(): Point3[];
     getNumberOfContours(): number;
     getNumberOfPointsArray(): number[];
     getNumberOfPointsInAContour(contourIndex: number): number;
-    getPointsInAContour(contourIndex: number): Point3[];
+    getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
     getSizeInBytes(): number;
-    // (undocumented)
-    _getSizeInBytes(): number;
     getTotalNumberOfPoints(): number;
     // (undocumented)
     readonly id: string;
@@ -2735,7 +2734,6 @@ interface IViewport {
     id: string;
     isDisabled: boolean;
     options: ViewportInputOptions;
-    removeActor(actorUID: string): void;
     removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;

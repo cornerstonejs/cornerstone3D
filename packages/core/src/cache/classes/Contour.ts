@@ -1,6 +1,18 @@
 import { Point3, ContourData, IContour } from '../../types';
 import { ContourType } from '../../enums';
 
+type ContourProps = {
+  id: string;
+  data: ContourData;
+  color: Point3;
+};
+
+/**
+ * The `Contour` class implements the `IContour` interface and represents a contour in 3D space.
+ * It holds information about the contour's id, size in bytes, points, color, and type.
+ * The class also provides methods to retrieve the points, color, and type of the contour.
+ * Each Contour is part of a ContourSet, and each ContourSet is part of a Geometry.
+ */
 export class Contour implements IContour {
   readonly id: string;
   readonly sizeInBytes: number;
@@ -8,7 +20,7 @@ export class Contour implements IContour {
   color: Point3;
   type: ContourType;
 
-  constructor(props: { id: string; data: ContourData; color: Point3 }) {
+  constructor(props: ContourProps) {
     const { points, type } = props.data;
     this.id = props.id;
     this.points = points;
@@ -35,11 +47,7 @@ export class Contour implements IContour {
   }
 
   public getFlatPointsArray(): number[] {
-    const flatPointsArray: number[] = [];
-    this.points.forEach((point) => {
-      flatPointsArray.push(point[0], point[1], point[2]);
-    });
-    return flatPointsArray;
+    return this.points.map((point) => [...point]).flat();
   }
 
   /**
