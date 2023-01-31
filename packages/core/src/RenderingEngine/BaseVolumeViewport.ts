@@ -23,7 +23,7 @@ import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { Events, BlendModes, OrientationAxis } from '../enums';
 import eventTarget from '../eventTarget';
-import { imageIdToURI, triggerEvent } from '../utilities';
+import { actorIsA, imageIdToURI, triggerEvent } from '../utilities';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import { RENDERING_DEFAULTS } from '../constants';
@@ -133,7 +133,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     );
   }
 
-  protected setVolumeViewportClippingRange() {
+  protected resetVolumeViewportClippingRange() {
     const activeCamera = this.getVtkActiveCamera();
 
     if (activeCamera.getParallelProjection()) {
@@ -457,12 +457,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const { uid: defaultActorUID } = defaultActor;
     volumeId = volumeId ?? defaultActorUID;
 
-    const { actor } = this.getActor(volumeId);
+    const actorEntry = this.getActor(volumeId);
 
-    if (!actor.isA('vtkVolume')) {
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
+    const actor = actorEntry.actor;
     const volume = cache.getVolume(volumeId);
 
     const vtkImageData = actor.getMapper().getInputData();
@@ -634,8 +635,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns True if the imageURI is in the volumes that are being rendered by the viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    const volumeActors = this.getActors().filter(({ actor }) =>
-      actor.isA('vtkVolume')
+    const volumeActors = this.getActors().filter((actorEntry) =>
+      actorIsA(actorEntry, 'vtkVolume')
     );
 
     return volumeActors.some(({ uid }) => {

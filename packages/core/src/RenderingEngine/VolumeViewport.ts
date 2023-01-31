@@ -14,6 +14,7 @@ import type { ViewportInput } from '../types/IViewport';
 import { RENDERING_DEFAULTS, MPR_CAMERA_VALUES, EPSILON } from '../constants';
 import { BlendModes, OrientationAxis } from '../enums';
 import BaseVolumeViewport from './BaseVolumeViewport';
+import { actorIsA } from '../utilities';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -223,11 +224,12 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns The intensity value of the voxel at the given point.
    */
   public getIntensityFromWorld(point: Point3): number {
-    const { actor, uid } = this.getDefaultActor();
-    if (!actor.isA('vtkVolume')) {
+    const actorEntry = this.getDefaultActor();
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
+    const { actor, uid } = actorEntry;
     const imageData = actor.getMapper().getInputData();
 
     const volume = cache.getVolume(uid);
@@ -279,7 +281,7 @@ class VolumeViewport extends BaseVolumeViewport {
   ): boolean {
     super.resetCamera(resetPan, resetZoom, resetToCenter);
 
-    this.setVolumeViewportClippingRange();
+    this.resetVolumeViewportClippingRange();
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
@@ -341,9 +343,7 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     actorEntries.forEach((actorEntry) => {
-      const { actor } = actorEntry;
-
-      if (actor.isA('vtkVolume')) {
+      if (actorIsA(actorEntry, 'vtkVolume')) {
         actorEntry.slabThickness = slabThickness;
       }
     });
@@ -397,11 +397,12 @@ class VolumeViewport extends BaseVolumeViewport {
       return;
     }
 
-    const { uid, actor } = this.getDefaultActor();
-    if (!actor.isA('vtkVolume')) {
+    const actorEntry = this.getDefaultActor();
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
+    const { uid } = actorEntry;
     const volume = cache.getVolume(uid);
 
     if (!volume) {

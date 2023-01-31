@@ -3,13 +3,13 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import { vec2, vec3, mat4 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import { triggerEvent, planar, isImageActor } from '../utilities';
+import { triggerEvent, planar, isImageActor, actorIsA } from '../utilities';
 import hasNaNValues from '../utilities/hasNaNValues';
 import { RENDERING_DEFAULTS } from '../constants';
 import type {
@@ -306,7 +306,7 @@ class Viewport implements IViewport {
   private getDefaultImageData(): any {
     const actorEntry = this.getDefaultActor();
 
-    if (actorEntry && isImageActor(actorEntry.actor)) {
+    if (actorEntry && isImageActor(actorEntry)) {
       return actorEntry.actor.getMapper().getInputData();
     }
   }
@@ -373,7 +373,7 @@ class Viewport implements IViewport {
    * Remove the actor from the viewport
    * @param actorUID - The unique identifier for the actor.
    */
-  public removeActor(actorUID: string): void {
+  _removeActor(actorUID: string): void {
     const actorEntry = this.getActor(actorUID);
     if (!actorEntry) {
       console.warn(`Actor ${actorUID} does not exist for this viewport`);
@@ -390,7 +390,7 @@ class Viewport implements IViewport {
    */
   public removeActors(actorUIDs: Array<string>): void {
     actorUIDs.forEach((actorUID) => {
-      this.removeActor(actorUID);
+      this._removeActor(actorUID);
     });
   }
 
@@ -956,7 +956,11 @@ class Viewport implements IViewport {
     // update clippingPlanes if volume viewports
     const actorEntry = this.getDefaultActor();
 
-    const isImageSlice = actorEntry?.actor?.isA('vtkImageSlice');
+    if (!actorEntry || !actorEntry.actor) {
+      return;
+    }
+
+    const isImageSlice = actorIsA(actorEntry, 'vtkImageSlice');
 
     if (!isImageSlice) {
       this.updateClippingPlanesForActors(updatedCamera);

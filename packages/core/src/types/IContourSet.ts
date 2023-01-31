@@ -3,6 +3,7 @@ import { ContourData, IContour, Point3 } from './';
 export interface IContourSet {
   readonly id: string;
   readonly sizeInBytes: number;
+  readonly frameOfReferenceUID: string;
   contours: IContour[];
   _createEachContour(data: ContourData[]): void;
   _getSizeInBytes(): number;

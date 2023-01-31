@@ -8,13 +8,20 @@ import Contour from './Contour';
 export class ContourSet implements IContourSet {
   readonly id: string;
   readonly sizeInBytes: number;
+  readonly frameOfReferenceUID: string;
   private color: Point3 = [200, 0, 0]; // default color
   contours: IContour[];
 
-  constructor(props: { id: string; data: ContourData[]; color?: Point3 }) {
+  constructor(props: {
+    id: string;
+    data: ContourData[];
+    frameOfReferenceUID: string;
+    color?: Point3;
+  }) {
     this.id = props.id;
     this.contours = [];
     this.color = props.color ?? this.color;
+    this.frameOfReferenceUID = props.frameOfReferenceUID;
 
     this._createEachContour(props.data);
     this.sizeInBytes = this._getSizeInBytes();
