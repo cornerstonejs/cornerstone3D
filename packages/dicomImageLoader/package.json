@@ -21,6 +21,7 @@
     "access": "public"
   },
   "scripts": {
+    "build":"echo 'build not implemented yet'",
     "cm": "npx git-cz",
     "clean": "npm run clean:dist && npm run clean:coverage",
     "clean:dist": "shx rm -rf dist",
