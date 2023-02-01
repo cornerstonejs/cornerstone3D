@@ -33,13 +33,7 @@ function removeEnabledElement(
   const { element, viewportId } = elementDisabledEvt.detail;
 
   _resetSvgNodeCache(element);
-
-  const viewportNode = element;
-  const svgLayer = viewportNode.querySelector('svg');
-  const internalViewportNode = element.querySelector(`div.${VIEWPORT_ELEMENT}`);
-  if (svgLayer) {
-    internalViewportNode.removeChild(svgLayer);
-  }
+  _removeSvgNode(element);
 
   // Remove this element from the annotation rendering engine
   annotationRenderingEngine.removeViewportElement(viewportId, element);
@@ -111,6 +105,14 @@ function _resetSvgNodeCache(element: HTMLDivElement) {
   const elementHash = `${viewportId}:${renderingEngineId}`;
 
   delete state.svgNodeCache[elementHash];
+}
+
+function _removeSvgNode(element: HTMLDivElement) {
+  const internalViewportNode = element.querySelector(`div.${VIEWPORT_ELEMENT}`);
+  const svgLayer = internalViewportNode.querySelector('svg');
+  if (svgLayer) {
+    internalViewportNode.removeChild(svgLayer);
+  }
 }
 
 /**
