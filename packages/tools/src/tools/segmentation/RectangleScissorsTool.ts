@@ -13,7 +13,6 @@ import { eraseInsideRectangle } from './strategies/eraseRectangle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 
 import { Events } from '../../enums';
-import RectangleROITool from '../annotation/RectangleROITool';
 import { drawRect as drawRectSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -29,6 +28,7 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -118,7 +118,7 @@ class RectangleScissorsTool extends BaseTool {
     const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type];
+    const { volumeId } = representationData[type] as LabelmapSegmentationData;
     const segmentation = cache.getVolume(volumeId);
 
     // Todo: Used for drawing the svg only, we might not need it at all

@@ -41,11 +41,12 @@ import {
 import Settings from './Settings';
 
 // Namespaces
-import * as volumeLoader from './volumeLoader';
-import * as imageLoader from './imageLoader';
+import * as volumeLoader from './loaders/volumeLoader';
+import * as imageLoader from './loaders/imageLoader';
+import * as geometryLoader from './loaders/geometryLoader';
 import * as Types from './types';
 import * as utilities from './utilities';
-import { registerImageLoader } from './imageLoader'; // since it is used by CSWIL right now
+import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
 
@@ -109,4 +110,6 @@ export {
   getShouldUseSharedArrayBuffer,
   setUseSharedArrayBuffer,
   resetUseSharedArrayBuffer,
+  // Geometry Loader
+  geometryLoader,
 };

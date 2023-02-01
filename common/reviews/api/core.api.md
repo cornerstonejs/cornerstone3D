@@ -26,6 +26,9 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
+function actorIsA(actorEntry: Types.ActorEntry, actorType: actorTypes): boolean;
+
+// @public (undocumented)
 type ActorSliceRange = {
     actor: VolumeActor;
     viewPlaneNormal: Point3;
@@ -75,6 +78,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+    // (undocumented)
+    protected resetVolumeViewportClippingRange(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
     // (undocumented)
@@ -146,6 +151,29 @@ declare namespace CONSTANTS {
     }
 }
 export { CONSTANTS }
+
+// @public (undocumented)
+type ContourData = {
+    points: Point3[];
+    type: ContourType;
+    color?: Point3;
+};
+
+// @public (undocumented)
+type ContourSetData = {
+    id: string;
+    data: ContourData[];
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
+// @public (undocumented)
+enum ContourType {
+    // (undocumented)
+    CLOSED_PLANAR = "CLOSED_PLANAR",
+    // (undocumented)
+    OPEN_PLANAR = "OPEN_PLANAR"
+}
 
 // @public (undocumented)
 interface CPUFallbackColormap {
@@ -425,6 +453,9 @@ type CPUImageData = {
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<ImageVolume>;
 
 // @public (undocumented)
+function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
+
+// @public (undocumented)
 function createAndCacheVolume(volumeId: string, options: VolumeLoaderOptions): Promise<Record<string, any>>;
 
 // @public (undocumented)
@@ -478,7 +509,9 @@ declare namespace Enums {
         RequestType,
         ViewportType,
         OrientationAxis,
-        SharedArrayBufferModes
+        SharedArrayBufferModes,
+        GeometryType,
+        ContourType
     }
 }
 export { Enums }
@@ -498,6 +531,8 @@ export enum EVENTS {
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
     // (undocumented)
     ELEMENT_ENABLED = "CORNERSTONE_ELEMENT_ENABLED",
+    // (undocumented)
+    GEOMETRY_CACHE_GEOMETRY_ADDED = "CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED",
     // (undocumented)
     IMAGE_CACHE_IMAGE_ADDED = "CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED",
     // (undocumented)
@@ -596,6 +631,19 @@ type FlipDirection = {
     flipVertical?: boolean;
 };
 
+declare namespace geometryLoader {
+    export {
+        createAndCacheGeometry
+    }
+}
+export { geometryLoader }
+
+// @public (undocumented)
+enum GeometryType {
+    // (undocumented)
+    CONTOUR = "contour"
+}
+
 // @public (undocumented)
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3, viewUp: Point3): string;
 
@@ -692,6 +740,22 @@ interface ICache {
 }
 
 // @public (undocumented)
+interface ICachedGeometry {
+    // (undocumented)
+    geometry?: IGeometry;
+    // (undocumented)
+    geometryId: string;
+    // (undocumented)
+    geometryLoadObject: IGeometryLoadObject;
+    // (undocumented)
+    loaded: boolean;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    timeStamp: number;
+}
+
+// @public (undocumented)
 interface ICachedImage {
     // (undocumented)
     image?: IImage;
@@ -752,6 +816,60 @@ interface ICamera {
 }
 
 // @public (undocumented)
+interface IContour {
+    // (undocumented)
+    color: any;
+    // (undocumented)
+    getColor(): Point3;
+    // (undocumented)
+    getFlatPointsArray(): number[];
+    // (undocumented)
+    getPoints(): Point3[];
+    // (undocumented)
+    _getSizeInBytes(): number;
+    // (undocumented)
+    getType(): ContourType;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    points: Point3[];
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
+
+// @public (undocumented)
+interface IContourSet {
+    // (undocumented)
+    contours: IContour[];
+    // (undocumented)
+    _createEachContour(data: ContourData[]): void;
+    // (undocumented)
+    readonly frameOfReferenceUID: string;
+    // (undocumented)
+    getColor(): any;
+    // (undocumented)
+    getContours(): IContour[];
+    // (undocumented)
+    getFlatPointsArray(): Point3[];
+    // (undocumented)
+    getNumberOfContours(): number;
+    // (undocumented)
+    getNumberOfPointsArray(): number[];
+    // (undocumented)
+    getNumberOfPointsInAContour(contourIndex: number): number;
+    // (undocumented)
+    getPointsInContour(contourIndex: number): Point3[];
+    // (undocumented)
+    getSizeInBytes(): number;
+    // (undocumented)
+    getTotalNumberOfPoints(): number;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
+
+// @public (undocumented)
 interface IEnabledElement {
     // (undocumented)
     FrameOfReferenceUID: string;
@@ -763,6 +881,28 @@ interface IEnabledElement {
     viewport: IStackViewport | IVolumeViewport;
     // (undocumented)
     viewportId: string;
+}
+
+// @public (undocumented)
+interface IGeometry {
+    // (undocumented)
+    data: ContourSet;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    type: GeometryType;
+}
+
+// @public (undocumented)
+interface IGeometryLoadObject {
+    // (undocumented)
+    cancelFn?: () => void;
+    // (undocumented)
+    decache?: () => void;
+    // (undocumented)
+    promise: Promise<IGeometry>;
 }
 
 // @public (undocumented)
@@ -1208,7 +1348,7 @@ export function isCornerstoneInitialized(): boolean;
 function isEqual(v1: number[] | Float32Array, v2: number[] | Float32Array, tolerance?: number): boolean;
 
 // @public (undocumented)
-function isImageActor(actor: vtkActor | vtkVolume | vtkImageSlice): boolean;
+function isImageActor(actorEntry: Types.ActorEntry): boolean;
 
 // @public (undocumented)
 function isOpposite(v1: Point3, v2: Point3, tolerance?: number): boolean;
@@ -1345,6 +1485,8 @@ interface IViewport {
     isDisabled: boolean;
     // (undocumented)
     options: ViewportInputOptions;
+    // (undocumented)
+    removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
     removeAllActors(): void;
     // (undocumented)
@@ -1626,6 +1768,9 @@ type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
 };
+
+// @public (undocumented)
+type PublicContourSetData = ContourSetData;
 
 // @public (undocumented)
 type PublicViewportInput = {
@@ -2011,7 +2156,15 @@ declare namespace Types {
         CPUFallbackRenderingTools,
         CustomEvent_2 as CustomEventType,
         ActorSliceRange,
-        ImageSliceData
+        ImageSliceData,
+        IGeometry,
+        IGeometryLoadObject,
+        ICachedGeometry,
+        PublicContourSetData,
+        ContourSetData,
+        ContourData,
+        IContourSet,
+        IContour
     }
 }
 export { Types }
@@ -2051,6 +2204,7 @@ declare namespace utilities {
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
         isImageActor,
+        actorIsA,
         getViewportsWithImageURI,
         getClosestStackImageIndexForPoint,
         calculateViewportsSpatialRegistration,
@@ -2140,7 +2294,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
-    removeActor(actorUID: string): void;
+    _removeActor(actorUID: string): void;
     // (undocumented)
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
@@ -2202,6 +2356,7 @@ type ViewportInputOptions = {
     background?: [number, number, number];
     orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
+    parallelProjection?: boolean;
 };
 
 // @public (undocumented)

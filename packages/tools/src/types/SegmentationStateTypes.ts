@@ -1,4 +1,5 @@
 import * as Enums from '../enums';
+import { ContourConfig, ContourSegmentationData } from './ContourTypes';
 import type {
   LabelmapConfig,
   LabelmapSegmentationData,
@@ -26,6 +27,8 @@ export type SegmentSpecificRepresentationConfig = {
 export type RepresentationConfig = {
   /** labelmap configuration */
   LABELMAP?: LabelmapConfig;
+  /** contour configuration */
+  CONTOUR?: ContourConfig;
 };
 
 export type SegmentationRepresentationConfig = {
@@ -37,6 +40,7 @@ export type SegmentationRepresentationConfig = {
 
 export type SegmentationRepresentationData = {
   LABELMAP?: LabelmapSegmentationData;
+  CONTOUR?: ContourSegmentationData;
 };
 
 /**
@@ -123,6 +127,13 @@ export type ToolGroupSpecificLabelmapRepresentation =
     segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
   };
 
+export type ToolGroupSpecificContourRepresentation =
+  ToolGroupSpecificRepresentationState & {
+    config: LabelmapRenderingConfig;
+    segmentationRepresentationSpecificConfig?: RepresentationConfig;
+    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
+  };
+
 export type ToolGroupSpecificRepresentation =
   ToolGroupSpecificLabelmapRepresentation; // | other ones
 
@@ -157,7 +168,7 @@ export type ToolGroupSpecificRepresentations =
  *           volumeId: 'segmentation1',
  *         },
  *         CONTOUR: {
- *           point: Float32Array,
+ *           geometryIds: ['contourSet1', 'contourSet2'],
  *         },
  *       },
  *     },
@@ -230,7 +241,7 @@ export type SegmentationPublicInput = {
   segmentationId: string;
   representation: {
     type: Enums.SegmentationRepresentations;
-    data: LabelmapSegmentationData;
+    data: LabelmapSegmentationData | ContourSegmentationData;
   };
 };
 

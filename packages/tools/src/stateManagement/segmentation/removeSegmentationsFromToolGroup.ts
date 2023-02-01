@@ -75,6 +75,8 @@ function _removeSegmentation(
       segmentationRepresentationUID,
       immediate
     );
+  } else if (type === SegmentationRepresentations.Contour) {
+    console.debug('Contour representation is not supported yet, ignoring...');
   } else {
     throw new Error(`The representation ${type} is not supported yet`);
   }

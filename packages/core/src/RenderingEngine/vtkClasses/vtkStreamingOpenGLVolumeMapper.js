@@ -255,9 +255,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     // // [WMVP]C == {world, model, view, projection} coordinates
     // // E.g., WCPC == world to projection coordinate transformation
-    cam.setIsPerformingCoordinateTransformation(true);
     const keyMats = model.openGLCamera.getKeyMatrices(ren);
-    cam.setIsPerformingCoordinateTransformation(false);
     const actMats = model.openGLVolume.getKeyMatrices();
     mat4.multiply(model.modelToView, keyMats.wcvc, actMats.mcwc);
 
@@ -418,28 +416,42 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
         program.setUniformMatrix('vWCtoIDX', worldToIndex);
 
+        const camera = ren.getActiveCamera();
+        const [cRange0, cRange1] = camera.getClippingRange();
+        const distance = camera.getDistance();
+
+        // set the clipping range to be model.distance and model.distance + 0.1
+        // since we use this in the keyMats.wcpc (world to projection) matrix
+        // the projection matrix calculation relies on the clipping range to be
+        // set correctly. This is done inside the interactorStyleMPRSlice which
+        // limits use cases where the interactor style is not used.
+
+        camera.setClippingRange(distance, distance + 0.1);
+        const labelOutlineKeyMats = model.openGLCamera.getKeyMatrices(ren);
+
         // Get the projection coordinate to world coordinate transformation matrix.
-        mat4.invert(model.projectionToWorld, keyMats.wcpc);
+        mat4.invert(model.projectionToWorld, labelOutlineKeyMats.wcpc);
+
+        // reset the clipping range since the keyMats are cached
+        camera.setClippingRange(cRange0, cRange1);
+
+        // to re compute the matrices for the current camera and cache them
+        model.openGLCamera.getKeyMatrices(ren);
+
         program.setUniformMatrix('PCWCMatrix', model.projectionToWorld);
 
         const size = publicAPI.getRenderTargetSize();
-        const offset = publicAPI.getRenderTargetOffset();
-
         program.setUniformf('vpWidth', size[0]);
         program.setUniformf('vpHeight', size[1]);
-
-        // TODO: You need to use the fix/labelMapOutline branch or these
-        // won't be consumed by the shader
+        const offset = publicAPI.getRenderTargetOffset();
         program.setUniformf('vpOffsetX', offset[0] / size[0]);
         program.setUniformf('vpOffsetY', offset[1] / size[1]);
       }
     }
 
     mat4.invert(model.projectionToView, keyMats.vcpc);
-    model.projectionToView[10] = model.projectionToView[14];
     program.setUniformMatrix('PCVCMatrix', model.projectionToView);
 
-    // handle lighting values
     switch (model.lastLightComplexity) {
       default:
       case 0: // no lighting, tcolor is fine as is
@@ -483,6 +495,107 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         // mat3.transpose(keyMats.normalMatrix, keyMats.normalMatrix);
       }
     }
+
+    let lightNum = 0;
+    const lightColor = [];
+    const lightDir = [];
+    const halfAngle = [];
+    ren.getLights().forEach((light) => {
+      const status = light.getSwitch();
+      if (status > 0) {
+        const dColor = light.getColor();
+        const intensity = light.getIntensity();
+        lightColor[0 + lightNum * 3] = dColor[0] * intensity;
+        lightColor[1 + lightNum * 3] = dColor[1] * intensity;
+        lightColor[2 + lightNum * 3] = dColor[2] * intensity;
+        const ldir = light.getDirection();
+        vec3.set(normal, ldir[0], ldir[1], ldir[2]);
+        vec3.transformMat3(normal, normal, keyMats.normalMatrix); // in view coordinat
+        vec3.normalize(normal, normal);
+        lightDir[0 + lightNum * 3] = normal[0];
+        lightDir[1 + lightNum * 3] = normal[1];
+        lightDir[2 + lightNum * 3] = normal[2];
+        // camera DOP is 0,0,-1.0 in VC
+        halfAngle[0 + lightNum * 3] = -0.5 * normal[0];
+        halfAngle[1 + lightNum * 3] = -0.5 * normal[1];
+        halfAngle[2 + lightNum * 3] = -0.5 * (normal[2] - 1.0);
+        lightNum++;
+      }
+    });
+    program.setUniformi('twoSidedLighting', ren.getTwoSidedLighting());
+    program.setUniformi('lightNum', lightNum);
+    program.setUniform3fv('lightColor', lightColor);
+    program.setUniform3fv('lightDirectionVC', lightDir);
+    program.setUniform3fv('lightHalfAngleVC', halfAngle);
+
+    if (model.lastLightComplexity === 3) {
+      lightNum = 0;
+      const lightPositionVC = [];
+      const lightAttenuation = [];
+      const lightConeAngle = [];
+      const lightExponent = [];
+      const lightPositional = [];
+      ren.getLights().forEach((light) => {
+        const status = light.getSwitch();
+        if (status > 0) {
+          const attenuation = light.getAttenuationValues();
+          lightAttenuation[0 + lightNum * 3] = attenuation[0];
+          lightAttenuation[1 + lightNum * 3] = attenuation[1];
+          lightAttenuation[2 + lightNum * 3] = attenuation[2];
+          lightExponent[lightNum] = light.getExponent();
+          lightConeAngle[lightNum] = light.getConeAngle();
+          lightPositional[lightNum] = light.getPositional();
+          const lp = light.getTransformedPosition();
+          vec3.transformMat4(lp, lp, model.modelToView);
+          lightPositionVC[0 + lightNum * 3] = lp[0];
+          lightPositionVC[1 + lightNum * 3] = lp[1];
+          lightPositionVC[2 + lightNum * 3] = lp[2];
+          lightNum += 1;
+        }
+      });
+      program.setUniform3fv('lightPositionVC', lightPositionVC);
+      program.setUniform3fv('lightAttenuation', lightAttenuation);
+      program.setUniformfv('lightConeAngle', lightConeAngle);
+      program.setUniformfv('lightExponent', lightExponent);
+      program.setUniformiv('lightPositional', lightPositional);
+    }
+    if (model.renderable.getVolumetricScatteringBlending() > 0.0) {
+      program.setUniformf(
+        'giReach',
+        model.renderable.getGlobalIlluminationReach()
+      );
+      program.setUniformf(
+        'volumetricScatteringBlending',
+        model.renderable.getVolumetricScatteringBlending()
+      );
+      program.setUniformf(
+        'volumeShadowSamplingDistFactor',
+        model.renderable.getVolumeShadowSamplingDistFactor()
+      );
+      program.setUniformf('anisotropy', model.renderable.getAnisotropy());
+      program.setUniformf(
+        'anisotropy2',
+        model.renderable.getAnisotropy() ** 2.0
+      );
+    }
+    if (
+      model.renderable.getVolumetricScatteringBlending() === 0.0 &&
+      model.renderable.getLocalAmbientOcclusion() &&
+      actor.getProperty().getAmbient() > 0.0
+    ) {
+      const ks = model.renderable.getLAOKernelSize();
+      program.setUniformi('kernelSize', ks);
+      const kernelSample = [];
+      for (let i = 0; i < ks; i++) {
+        kernelSample[i * 2] = Math.random() * 0.5;
+        kernelSample[i * 2 + 1] = Math.random() * 0.5;
+      }
+      program.setUniform2fv('kernelSample', kernelSample);
+      program.setUniformi(
+        'kernelRadius',
+        model.renderable.getLAOKernelRadius()
+      );
+    }
   };
 
   // publicAPI.getRenderTargetSize = () => {
@@ -507,6 +620,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
   //   return model._openGLRenderWindow.getFramebufferSize()
   // }
+
   publicAPI.getRenderTargetSize = () => {
     if (model._useSmallViewport) {
       return [model._smallViewportWidth, model._smallViewportHeight];

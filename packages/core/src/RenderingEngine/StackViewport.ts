@@ -18,6 +18,7 @@ import {
   windowLevel as windowLevelUtil,
   imageIdToURI,
   isImageActor,
+  actorIsA,
 } from '../utilities';
 import {
   Point2,
@@ -43,7 +44,7 @@ import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { getColormap } from './helpers/cpuFallback/colors/index';
 
-import { loadAndCacheImage } from '../imageLoader';
+import { loadAndCacheImage } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import InterpolationType from '../enums/InterpolationType';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
@@ -261,11 +262,11 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
 
+    const { actor } = defaultActor;
     const vtkImageData = actor.getMapper().getInputData();
     return {
       dimensions: vtkImageData.getDimensions(),
@@ -883,10 +884,10 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
+    const { actor } = defaultActor;
     const volumeProperty = actor.getProperty();
 
     // @ts-ignore
@@ -924,23 +925,22 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
 
     // Duplicated logic to make sure typescript stops complaining
     // about vtkActor not having the correct property
-    if (actor.isA('vtkVolume')) {
-      const volumeActor = actor as VolumeActor;
+    if (actorIsA(defaultActor, 'vtkVolume')) {
+      const volumeActor = defaultActor.actor as VolumeActor;
       const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
       if ((!this.invert && invert) || (this.invert && !invert)) {
         invertRgbTransferFunction(tfunc);
       }
       this.invert = invert;
-    } else if (actor.isA('vtkImageSlice')) {
-      const imageSliceActor = actor as vtkImageSlice;
+    } else if (actorIsA(defaultActor, 'vtkImageSlice')) {
+      const imageSliceActor = defaultActor.actor as vtkImageSlice;
       const tfunc = imageSliceActor.getProperty().getRGBTransferFunction(0);
 
       if ((!this.invert && invert) || (this.invert && !invert)) {
@@ -1005,12 +1005,10 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
-
+    const { actor } = defaultActor;
     const imageActor = actor as ImageActor;
 
     let voiRangeToUse = voiRange;

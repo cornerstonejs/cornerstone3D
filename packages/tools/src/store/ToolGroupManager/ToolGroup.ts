@@ -99,7 +99,9 @@ export default class ToolGroup implements IToolGroup {
     }
 
     if (!toolDefinition) {
-      console.warn(`'${toolName}' is not registered with the library.`);
+      console.warn(
+        `'${toolName}' is not registered with the library. You need to use cornerstoneTools.addTool to register it.`
+      );
       return;
     }
 

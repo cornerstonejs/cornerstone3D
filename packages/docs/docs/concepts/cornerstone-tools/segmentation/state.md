@@ -19,7 +19,6 @@ An overview of the state is shown below.
 
 </div>
 
-
 ## Global Config
 
 `Cornerstone3DTools` implements two configurations, and the consumer
@@ -58,7 +57,7 @@ Each segmentation object has the following properties:
       volumeId: 'segmentation1',
     },
     CONTOUR: {
-      point: Float32Array,
+      geometryIds: ['contourSet1', 'contourSet2'],
     },
   },
 },
@@ -74,7 +73,6 @@ Each segmentation object has the following properties:
 - `representationData`: **THE MOST IMPORTANT PART**, this is where
   the data for creation of the `SegmentationRepresentation` is stored.
   For instance, in `LABELMAP` representation, the required information for creating the `SegmentationRepresentation` is a cached `volumeId`.
-  For `CONTOUR` (not implemented yet - see our roadmap) the required information might be `point` array.
 
 ### Adding Segmentations to the State
 

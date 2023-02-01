@@ -73,7 +73,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.VOLUME_3D,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,

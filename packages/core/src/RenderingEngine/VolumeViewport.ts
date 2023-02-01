@@ -14,6 +14,7 @@ import type { ViewportInput } from '../types/IViewport';
 import { RENDERING_DEFAULTS, MPR_CAMERA_VALUES, EPSILON } from '../constants';
 import { BlendModes, OrientationAxis } from '../enums';
 import BaseVolumeViewport from './BaseVolumeViewport';
+import { actorIsA } from '../utilities';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -223,11 +224,12 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns The intensity value of the voxel at the given point.
    */
   public getIntensityFromWorld(point: Point3): number {
-    const { actor, uid } = this.getDefaultActor();
-    if (!actor.isA('vtkVolume')) {
+    const actorEntry = this.getDefaultActor();
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
+    const { actor, uid } = actorEntry;
     const imageData = actor.getMapper().getInputData();
 
     const volume = cache.getVolume(uid);
@@ -278,33 +280,24 @@ class VolumeViewport extends BaseVolumeViewport {
     resetToCenter = true
   ): boolean {
     super.resetCamera(resetPan, resetZoom, resetToCenter);
-    const activeCamera = this.getVtkActiveCamera();
-    // Set large numbers to ensure everything is always rendered
-    if (activeCamera.getParallelProjection()) {
-      activeCamera.setClippingRange(
-        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    } else {
-      activeCamera.setClippingRange(
-        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    }
 
+    this.resetVolumeViewportClippingRange();
+
+    const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
 
+    // always add clipping planes for the volume viewport. If a use case
+    // arises where we don't want clipping planes, you should use the volume_3d
+    // viewport instead.
     const actorEntries = this.getActors();
     actorEntries.forEach((actorEntry) => {
-      // we assume that the first two clipping plane of the mapper are always
-      // the 'camera' clipping. Add clipping planes only if the actor is
-      // a vtkVolume
-      if (!actorEntry.actor || !actorEntry.actor.isA('vtkVolume')) {
+      if (!actorEntry.actor) {
         return;
       }
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
+
       if (vtkPlanes.length === 0) {
         const clipPlane1 = vtkPlane.newInstance();
         const clipPlane2 = vtkPlane.newInstance();
@@ -350,9 +343,7 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     actorEntries.forEach((actorEntry) => {
-      const { actor } = actorEntry;
-
-      if (actor.isA('vtkVolume')) {
+      if (actorIsA(actorEntry, 'vtkVolume')) {
         actorEntry.slabThickness = slabThickness;
       }
     });
@@ -406,11 +397,12 @@ class VolumeViewport extends BaseVolumeViewport {
       return;
     }
 
-    const { uid, actor } = this.getDefaultActor();
-    if (!actor.isA('vtkVolume')) {
+    const actorEntry = this.getDefaultActor();
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
+    const { uid } = actorEntry;
     const volume = cache.getVolume(uid);
 
     if (!volume) {

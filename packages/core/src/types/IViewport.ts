@@ -61,6 +61,8 @@ interface IViewport {
   addActor(actorEntry: ActorEntry): void;
   /** remove all actors from the viewport */
   removeAllActors(): void;
+  /** remove array of uids */
+  removeActors(actorUIDs: Array<string>): void;
   /** returns the renderingEngine instance the viewport belongs to */
   getRenderingEngine(): any;
   /** returns the vtkRenderer (for GPU rendering) of the viewport */

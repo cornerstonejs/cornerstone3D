@@ -25,6 +25,8 @@ import {
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -114,7 +116,7 @@ class CircleScissorsTool extends BaseTool {
     const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type];
+    const { volumeId } = representationData[type] as LabelmapSegmentationData;
     const segmentation = cache.getVolume(volumeId);
 
     // Todo: Used for drawing the svg only, we might not need it at all

@@ -7,7 +7,7 @@ import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
 } from './helpers/volumeNewImageEventDispatcher';
-import { loadVolume } from '../volumeLoader';
+import { loadVolume } from '../loaders/volumeLoader';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import { getShouldUseCPURendering } from '../init';
 import type {
@@ -23,9 +23,10 @@ import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { Events, BlendModes, OrientationAxis } from '../enums';
 import eventTarget from '../eventTarget';
-import { imageIdToURI, triggerEvent } from '../utilities';
+import { actorIsA, imageIdToURI, triggerEvent } from '../utilities';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
+import { RENDERING_DEFAULTS } from '../constants';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -130,6 +131,22 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       Events.ELEMENT_DISABLED,
       volumeNewImageCleanUpBound
     );
+  }
+
+  protected resetVolumeViewportClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
   }
 
   /**
@@ -440,12 +457,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const { uid: defaultActorUID } = defaultActor;
     volumeId = volumeId ?? defaultActorUID;
 
-    const { actor } = this.getActor(volumeId);
+    const actorEntry = this.getActor(volumeId);
 
-    if (!actor.isA('vtkVolume')) {
+    if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
+    const actor = actorEntry.actor;
     const volume = cache.getVolume(volumeId);
 
     const vtkImageData = actor.getMapper().getInputData();
@@ -508,7 +526,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
      * isPerformingCoordinateTransformation is set to true.
      */
 
-    vtkCamera.setIsPerformingCoordinateTransformation(true);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
@@ -536,7 +554,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       renderer
     );
 
-    vtkCamera.setIsPerformingCoordinateTransformation(false);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(false);
 
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
@@ -574,7 +592,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
      * isPerformingCoordinateTransformation is set to true.
      */
 
-    vtkCamera.setIsPerformingCoordinateTransformation(true);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
@@ -601,7 +619,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       canvasCoord[1] / devicePixelRatio,
     ];
 
-    vtkCamera.setIsPerformingCoordinateTransformation(false);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(false);
 
     return canvasCoordWithDPR;
   };
@@ -617,8 +635,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns True if the imageURI is in the volumes that are being rendered by the viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    const volumeActors = this.getActors().filter(({ actor }) =>
-      actor.isA('vtkVolume')
+    const volumeActors = this.getActors().filter((actorEntry) =>
+      actorIsA(actorEntry, 'vtkVolume')
     );
 
     return volumeActors.some(({ uid }) => {

@@ -84,6 +84,7 @@ export default interface IVolumeViewport extends IViewport {
    * the viewport, it does nothing.
    */
   removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
+
   /**
    * Given a point in world coordinates, return the intensity at that point
    */
