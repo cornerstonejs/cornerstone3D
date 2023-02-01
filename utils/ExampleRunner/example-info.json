@@ -189,7 +189,7 @@
       "doubleClickWithStackAnnotationTools": {
         "name": "Double Click With Stack Annotation Tools",
         "description": "Demonstrates double click detection before/during/after using various annotation tools on a stack viewport."
-      },
+      }
     },
     "tools-advanced": {
       "mipJumpToClick": {
