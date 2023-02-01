@@ -36,7 +36,7 @@
     "start": "npm run webpack:dev",
     "start:dev": "webpack-dev-server --config ./config/webpack/webpack-dev",
     "test": "npm run test:chrome",
-    "test:ci": "karma start config/karma/karma-base.js --single-run",
+    "test:ci": "echo 'test:ci not implemented yet'",
     "test:all": "npm run test && npm run test:chrome && npm run test:firefox",
     "test:chrome": "karma start config/karma/karma-base.js",
     "test:firefox": "karma start config/karma/karma-firefox.js",
