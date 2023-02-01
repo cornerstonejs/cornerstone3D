@@ -19,7 +19,6 @@ import { default as isColorImage } from './isColorImage.js';
 import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor.js';
 import { default as webWorkerManager } from './webWorkerManager.js';
 import { default as getPixelData } from './wadors/getPixelData.js';
-import { default as version } from '../version.js';
 import { internal } from './internal/index.js';
 import { default as external } from '../externalModules.js';
 
@@ -42,7 +41,6 @@ const cornerstoneWADOImageLoader = {
   isColorImage,
   isJPEGBaseline8BitColor,
   webWorkerManager,
-  version,
   internal,
   external,
 };
@@ -66,7 +64,6 @@ export {
   isColorImage,
   isJPEGBaseline8BitColor,
   webWorkerManager,
-  version,
   internal,
   external,
 };
