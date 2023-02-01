@@ -142,6 +142,10 @@
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
       },
+      "contourSegmentationRepresentation": {
+        "name": "Contour Segmentation Representation",
+        "description": "Demonstrates how to use the Contour Segmentation Representation"
+      },
       "segmentationSwapping": {
         "name": "Segmentation Swapping",
         "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
@@ -186,10 +190,6 @@
         "name": "Double Click With Stack Annotation Tools",
         "description": "Demonstrates double click detection before/during/after using various annotation tools on a stack viewport."
       },
-      "contourSegmentationRepresentation": {
-        "name": "Contour Segmentation Representation",
-        "description": "Demonstrates how to use the Contour Segmentation Representation"
-      }
     },
     "tools-advanced": {
       "mipJumpToClick": {
