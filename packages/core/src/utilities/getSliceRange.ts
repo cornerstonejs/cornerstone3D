@@ -25,14 +25,15 @@ export default function getSliceRange(
   viewPlaneNormal: Point3,
   focalPoint: Point3
 ): ActorSliceRange {
-  // TODO - for i,j,k vectors, use the old logic
   const imageData = volumeActor.getMapper().getInputData();
   let corners;
   const direction = imageData.getDirection();
 
   if (isIJK(direction)) {
+    // This logic is only valid when the IJK vectors are unit vectors
     corners = getVolumeActorCorners(volumeActor);
   } else {
+    // This logic works for both unit and non-unit vectors, but is slower
     const [dx, dy, dz] = imageData.getDimensions();
     const cornersIdx = [
       [0, 0, 0],
@@ -71,8 +72,6 @@ export default function getSliceRange(
       minX = x;
     }
   }
-
-  console.log('Slice range', minX, maxX, currentSlice);
 
   return {
     min: minX,
