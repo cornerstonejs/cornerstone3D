@@ -149,11 +149,6 @@ function mouseDownListener(evt: MouseEvent) {
   state.renderingEngineId = renderingEngineId;
   state.viewportId = viewportId;
 
-  state.preventClickTimeout = setTimeout(
-    _preventClickHandler,
-    state.clickDelay
-  );
-
   // Prevent CornerstoneToolsMouseMove while mouse is down
   state.element.removeEventListener('mousemove', mouseMoveListener);
 
@@ -172,6 +167,11 @@ function mouseDownListener(evt: MouseEvent) {
  * @private
  */
 function _doMouseDown(evt: MouseEvent) {
+  state.preventClickTimeout = setTimeout(
+    _preventClickHandler,
+    state.clickDelay
+  );
+
   const deltaPoints = _getDeltaPoints(state.startPoints, state.startPoints);
 
   const eventDetail: EventTypes.MouseDownEventDetail = {
