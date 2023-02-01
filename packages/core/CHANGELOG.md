@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.29.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.28.0...@cornerstonejs/core@0.29.0) (2023-02-01)
+
+
+### Features
+
+* **Segmentation:** Add contour representation for segmentations ([#384](https://github.com/cornerstonejs/cornerstone3D-beta/issues/384)) ([541a351](https://github.com/cornerstonejs/cornerstone3D-beta/commit/541a3519cd78437db020d1bc561d3b2755ec9c7c))
+
+
+
+
+
 # [0.28.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.2...@cornerstonejs/core@0.28.0) (2023-01-26)
 
 

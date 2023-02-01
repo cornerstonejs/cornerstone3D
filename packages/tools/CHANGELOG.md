@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.40.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.39.1...@cornerstonejs/tools@0.40.0) (2023-02-01)
+
+
+### Bug Fixes
+
+* **svg:** find and reset svg-layer within the correct element ([#387](https://github.com/cornerstonejs/cornerstone3D-beta/issues/387)) ([3e0829e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/3e0829e35f19bef3601ee9f197dbf6d87bc01fcf))
+
+
+### Features
+
+* **Segmentation:** Add contour representation for segmentations ([#384](https://github.com/cornerstonejs/cornerstone3D-beta/issues/384)) ([541a351](https://github.com/cornerstonejs/cornerstone3D-beta/commit/541a3519cd78437db020d1bc561d3b2755ec9c7c))
+
+
+
+
+
 ## [0.39.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.39.0...@cornerstonejs/tools@0.39.1) (2023-02-01)
 
 
