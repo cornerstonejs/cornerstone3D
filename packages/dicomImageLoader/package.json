@@ -40,7 +40,6 @@
     "test:chrome": "karma start config/karma/karma-base.js",
     "test:firefox": "karma start config/karma/karma-firefox.js",
     "test:watch": "karma start config/karma/karma-watch.js",
-    "version": "node -p -e \"'export default \\'' + require('./package.json').version + '\\';'\" > src/version.js",
     "watch": "npm run clean && shx mkdir dist && npm run webpack:watch",
     "dev": "npm run webpack:dev",
     "webpack:dev": "webpack serve --progress --config ./config/webpack/webpack-dev.js",

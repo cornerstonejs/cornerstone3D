@@ -1,186 +1,72 @@
-# Changelog
+# Change Log
+
 All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
-
-## [3.0.0] - 2018-07-29
-### Added
-- Added .terminate() function to webWorkerManager to clean up unnecessary workers (thanks @talkdirty!)
-- Added overlay plane metadata provider paths for group 6000 overlay tags. (thanks @kofifus!)
-
-### Changed
-- BREAKING: Web worker and codec paths no longer need to be specified, the worker is now pulled in using Webpack's worker-loader. The loadCodecsOnStartup option has been removed because it is no longer necessary.
-
-## [2.2.3] - 2018-12-05
-### Added
-- Added default export named 'cornerstoneWADOImageLoader' to the module
-
-### Fixed
-- Switched 'module' in package.json to point to dist/cornerstoneWADOImageLoader.min.js
-
-## [2.2.2] - 2018-10-29
-### Fixed
-- fix(wado-rs): Fix broken case for getTransferSyntaxForContentType
-
-## [2.2.1] - 2018-10-27
-### Fixed
-- Fixed failing build due to missing babel-loader dependency
-
-## [2.2.0] - 2018-10-27
-### Added
-- feat(dev-server) Add webpack-dev-server and hot reloading for development (#211)
-- feat(content-type): Support WADO-RS in cases where transfer-syntax is not explicitly returned (#228)
-- feat(options.beforeSend): Add headers object and parameters to the beforeSend callback to simplify transfer-syntax specification (#227)
-
-### Changed
-- chore(devDependencies): Update all dev dependencies to latest versions
-
-### Fixed
-- Fixed failing build due to Webpack issue (thanks @jssuttles!)
-- fix(loadImage) Fix for custom loaders with WebWorkers (#213) (thanks @jgabrito!)
-- fix(pixelSpacing) Fix Pixel spacing is mistakenly being set to 1.0 / 1.0 (#215) (thanks @galelis!)
-- fix(tests): Fix test timeout for Lossy transfer syntax tests (thanks @maltempi)
-
-## [2.1.4] - 2018-07-11
-### Fixed
-- Bad NPM Publish was providing 2.1.2 under the 2.1.3 tag. This commit is only to note that problem.
-
-## [2.1.3] - 2018-07-11
-### Added
-- Allow specification of alternative loading schemes via options.loader (#166, thanks @adreyfus)
-
-### Changed
-- Removed 'render' property from the returned Image. This was done so that Cornerstone could decide which rendering function to use. *Note* You may have issues with this if you are using a new version of Cornerstone WADO Image Loader with an old version of Cornerstone.
-- Added dicomParser to 'external'. If you are using WADO Image Loader with a packaging system that uses modules, you may need to add: 
-
-  ````javascript
-  cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
-  ````
-
-  If you are using WADO Image Loader and dicomParser with script tags, you shouldn't have any issues.
-
-### Fixed
-- Fixed an unguarded for-in loop which was causing issues with WADO-RS requests.
-
-## [2.1.2] - 2018-06-05
-### Fixed
-- Bugfix: Update calculateMinMax strict mode behavior, [PR200](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/200) Fix [#198](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/198) and [#199](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/199).
-- Bugfix: Fix decoder jpeg lossy bug [#203](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/203) 
-- Fix an issue in rawgit examples by adding a fallback to convolveTask.js that points directly to rawgit with absolute url. [PR192](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/192)
-
-## [2.1.1] - 2018-04-18
-### Fixed
-- Bugfix: Webworkers getting 'window undefined' but related to Webpack update
-
-## [2.1.0] - 2018-04-11
-### Changed
-- Updated Webpack to version 4
-- DIST folder is now removed from the repository
-- Set W/L by default for color images
-
-### Added
-- Added useWebWorkers flag to decodeConfig
-- Added JSDoc to the transfer-syntax extraction
-- Handle signed data (thanks @jdnarvaez)
-- Added a decache function in image load object (thanks @adreyfus)
-
-### Fixed
-- Bugfix: remove the promise regardless of success or failure
+# 0.1.0 (2023-02-01)
 
 
-## [2.0.0] - 2017-12-08
-### Changed
+### Bug Fixes
 
-- *Breaking Change!!!* Switches image loader return values to support the breaking change in Cornerstone Master (https://github.com/cornerstonejs/cornerstone/commit/9448755397da10a6de6f694d83123274cbd4b38e) which requires image loaders to return an object of the form { promise, cancelFn }.
-- *Breaking Change!!!* Removed jQuery events from triggerEvent, lower-cased all the event names.
-- *Breaking Change!!!* Switched all Deferred usage to use Promises
-- *Breaking Change!!!* Updated to depend on Cornerstone 2.0.0 or higher
+* **180:** Avoid throwing exception for missing transfer syntax decoder ([#181](https://github.com/cornerstonejs/cornerstone3D-beta/issues/181)) ([874d7e6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/874d7e660ab38d3d4da20e26c1a305c73d2b0dbd))
+* Add support for YBR_FULL_422 photometric interpretation ([#304](https://github.com/cornerstonejs/cornerstone3D-beta/issues/304)) ([2b57c08](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2b57c0876d77b5b04e1b3d339faa26f7f543f5b1))
+* byteLength calculation ([#314](https://github.com/cornerstonejs/cornerstone3D-beta/issues/314)) ([743142b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/743142bde71a388538bc85c4a061a4c417a50020))
+* cornerstoneDemo is still a chafey repository ([4a18e45](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4a18e45fa6ee02cf6a21c93f9c3671c3ff0a7f3a))
+* createImage fails if options are undefined (https://github.com/OHIF/Viewers/issues/2239) ([#353](https://github.com/cornerstonejs/cornerstone3D-beta/issues/353)) ([3cc6723](https://github.com/cornerstonejs/cornerstone3D-beta/commit/3cc6723c21e1f9bcf90f6f709b6339f2ac377ced))
+* decodeConfig was passed incorrectly to decode ([#502](https://github.com/cornerstonejs/cornerstone3D-beta/issues/502)) ([ed4de89](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ed4de89923ffcd026d3f0bf1abb6a1def9bb74ce))
+* dicom tag for series and studyUID ([#444](https://github.com/cornerstonejs/cornerstone3D-beta/issues/444)) ([6865c70](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6865c7081d0e473b0d960e382c6b9ea35a225c21))
+* imageRetrievalPoolManager should also use addToBeginning ([#402](https://github.com/cornerstonejs/cornerstone3D-beta/issues/402)) ([5bd9945](https://github.com/cornerstonejs/cornerstone3D-beta/commit/5bd994527c67c3625f18e450fe6018e2c71d64ca))
+* improvements for usage of targetBuffer, add convertFloatPixelDataToInt flag (default true) ([1f58326](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1f583264303668e820f61cf1bb2351f03e16de1d))
+* mediaType to avoid preflight requests ([#419](https://github.com/cornerstonejs/cornerstone3D-beta/issues/419)) ([90662ec](https://github.com/cornerstonejs/cornerstone3D-beta/commit/90662ecd68bda22cc0ab60bc4f8fef1b03433d9a))
+* null ref error for getLuts from metadata ([edbfa91](https://github.com/cornerstonejs/cornerstone3D-beta/commit/edbfa9128ed030cec55b2575aa3f868fa758a6c8)), closes [#269](https://github.com/cornerstonejs/cornerstone3D-beta/issues/269)
+* public path for dynamically imported codecs / worker ([#398](https://github.com/cornerstonejs/cornerstone3D-beta/issues/398)) ([2b2bd58](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2b2bd586818073d417187b4c2cc1898e05fb219b))
+* publicPath to auto ([#399](https://github.com/cornerstonejs/cornerstone3D-beta/issues/399)) ([d9275b5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d9275b5e3414db68b875bb93b7f8ac913496c7f6))
+* Remove explicit server-side transcoding ([#357](https://github.com/cornerstonejs/cornerstone3D-beta/issues/357)) ([#359](https://github.com/cornerstonejs/cornerstone3D-beta/issues/359)) ([88e373b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/88e373bb9a9a0d4a3ab35bdcf184afe2642bb3cc))
+* Remove unnecessary check for metadata, because sometimes metadata may be coming from an outside provider ([#320](https://github.com/cornerstonejs/cornerstone3D-beta/issues/320)) ([be1b4e6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/be1b4e6f8aafd9d8c541335052724240924acd6e))
+* remove unnecessary logging ([#427](https://github.com/cornerstonejs/cornerstone3D-beta/issues/427)) ([a200edd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a200edd17272219d8686c49f032802933e98fb0d))
+* Renaming SUV PET scaling parameter to include suvbw (SUV Body Weight) ([#374](https://github.com/cornerstonejs/cornerstone3D-beta/issues/374)) ([821dc03](https://github.com/cornerstonejs/cornerstone3D-beta/commit/821dc0364e7cb674184dcb7231a8677d9215b63f))
+* rendering of palette color for no useRGB flag ([#459](https://github.com/cornerstonejs/cornerstone3D-beta/issues/459)) ([60f8e84](https://github.com/cornerstonejs/cornerstone3D-beta/commit/60f8e84ffc9d751fd0b30923174289ffdd3c9dad))
+* rework decode config to be passed to the workers ([#503](https://github.com/cornerstonejs/cornerstone3D-beta/issues/503)) ([e4e2be3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e4e2be3d01bc9998b5749f7645c55a1952161f4a))
+* scaling metadata should be derived from providers ([#464](https://github.com/cornerstonejs/cornerstone3D-beta/issues/464)) ([abb0892](https://github.com/cornerstonejs/cornerstone3D-beta/commit/abb08921f46fc3e1d946b0a0a5782bcbe8c3a10f))
+* Switch to terser-webpack-plugin from uglify ([#283](https://github.com/cornerstonejs/cornerstone3D-beta/issues/283)) ([edd47c4](https://github.com/cornerstonejs/cornerstone3D-beta/commit/edd47c4b0e78438e25b4a9cb73b3ad08c50c2646))
+* terminate ([#277](https://github.com/cornerstonejs/cornerstone3D-beta/issues/277)) ([#278](https://github.com/cornerstonejs/cornerstone3D-beta/issues/278)) ([7fd9197](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7fd9197663be9ce00b895e5fc69fefdc736d3bb5))
+* test ci permissions ([f6ad461](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f6ad461a719c83eaa676b9ff2c05a0fd7afe5349))
+* test ci semantic-release ([b599d3d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b599d3d145828ba052a217e2635734c1a1ef4732)), closes [#267](https://github.com/cornerstonejs/cornerstone3D-beta/issues/267) [#267](https://github.com/cornerstonejs/cornerstone3D-beta/issues/267)
+* test run; kick-off ci ([0149c8d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0149c8deed31de18805f895b89d6b0edaea534d7))
+* Update to dicom-parser 1.8.9 because it excludes zlib from its bundle ([#397](https://github.com/cornerstonejs/cornerstone3D-beta/issues/397)) ([d6a81d2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d6a81d232071e33898a24faddd62f511b642c265))
+* **wado-rs:** Fix broken case for getTransferSyntaxForContentType ([eacc417](https://github.com/cornerstonejs/cornerstone3D-beta/commit/eacc4174d5844b55b1f74fd7f58461bc3c1b4492))
+* **WebWorker:** Handle decoder exceptions ([#253](https://github.com/cornerstonejs/cornerstone3D-beta/issues/253)) ([6ed6c70](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6ed6c70f7406fdfa64904a16a4319f3ce08a9ced))
+* **webworker:** Hangs forever when image decode fails ([#492](https://github.com/cornerstonejs/cornerstone3D-beta/issues/492)) ([58ac0b6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/58ac0b61ca54ca350f27100cd5fbbef07605dfe9))
 
-## [1.0.5] - 2017-12-08
-### Added
-- beforeSend option now passes imageId as its second parameter. This is useful for writing beforeSend functions which have different actions depending on the image type.
 
-### Changed
-- Moved the repository from Chris Hafey's (@chafey) personal page to a new Organization (@cornerstonejs). Renamed all the relevant links. Join us at @cornerstonejs to start contributing!
+### Features
 
-## [1.0.4] - 2017-11-26
-### Added
-- Added support for DICOM Parametric Maps
+* 🎸 Allow optional in-worker scaling and buffer redirection ([c504bb1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c504bb16ee150d3e616a2fd9966fe8275163d28a))
+* add 16 bit data type scale under a decode flag ([#501](https://github.com/cornerstonejs/cornerstone3D-beta/issues/501)) ([1b47073](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1b47073d8f526dc49d9cdcfd57a42c691e2969d2))
+* Add beforeProcessing hook to WADO-URI XMLHttpRequest ([#338](https://github.com/cornerstonejs/cornerstone3D-beta/issues/338)) ([43dbacb](https://github.com/cornerstonejs/cornerstone3D-beta/commit/43dbacbd11fd9388355f48cf6daabc1e391acde9))
+* Add HTJ2K - release attempt ([c65218e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c65218ef61bb54e7afa64d7e1600ac91e0ef9def))
+* add option to skipi image creation ([#504](https://github.com/cornerstonejs/cornerstone3D-beta/issues/504)) ([d287878](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d2878785c52292730da5607d79a793d33800a522))
+* add petSeries and petImage modules to providers ([#505](https://github.com/cornerstonejs/cornerstone3D-beta/issues/505)) ([60fa805](https://github.com/cornerstonejs/cornerstone3D-beta/commit/60fa8051e6ea13597f8b809e3ff1799ce0883b77))
+* Add preScale parameters to the image ([#413](https://github.com/cornerstonejs/cornerstone3D-beta/issues/413)) ([14603e2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/14603e23bcfe2f9c9afa855dc591748f66b9ba3b))
+* add rgba property to image object ([#460](https://github.com/cornerstonejs/cornerstone3D-beta/issues/460)) ([798ce3f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/798ce3fdc7ab9dcc21f0c7669dff9ef5f22035b1))
+* added voiLUTFunction ([#476](https://github.com/cornerstonejs/cornerstone3D-beta/issues/476)) ([28fec2f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/28fec2f08173515bb8056043f71fba7ae05e63b4))
+* adding support for multiframe metadata in wadors and wadouri ([#494](https://github.com/cornerstonejs/cornerstone3D-beta/issues/494)) ([483cfa7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/483cfa701a13614e27ec3f1d6b8e6e2538b21036))
+* **codecs, loadImage:** Switch to WASM Codecs, use image load into distinct queues for retrievals and decoding ([#394](https://github.com/cornerstonejs/cornerstone3D-beta/issues/394)) ([4ffc3e6](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4ffc3e6c99397e9b2ed26ebae8e1c6766baea8f4))
+* **options.beforeSend:** Add headers object and parameters to the beforeSend callback to simplify transfer-syntax specification ([#227](https://github.com/cornerstonejs/cornerstone3D-beta/issues/227)) ([2fdc9bc](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2fdc9bc61463c084d105dfa35412b986ff51ab34))
+* **overlayPlaneMetadata:** Add metadata provider paths for DICOM Overlays ([#240](https://github.com/cornerstonejs/cornerstone3D-beta/issues/240)) ([1f1352d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1f1352de66542409986b60c8e7f2d3d87c9b4114)), closes [cornerstonejs/cornerstoneTools#788](https://github.com/cornerstonejs/cornerstoneTools/issues/788) [cornerstonejs/cornerstoneTools#780](https://github.com/cornerstonejs/cornerstoneTools/issues/780) [cornerstonejs/cornerstoneTools#788](https://github.com/cornerstonejs/cornerstoneTools/issues/788) [cornerstonejs/cornerstoneTools#780](https://github.com/cornerstonejs/cornerstoneTools/issues/780)
+* update yarn lock ([0dd87ad](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0dd87addcb3b58536eb14608e57f172bd627d8b9))
+* **WebWorkers:** Use worker-loader to pull in codecs and web worker ([#264](https://github.com/cornerstonejs/cornerstone3D-beta/issues/264)) ([23c1e58](https://github.com/cornerstonejs/cornerstone3D-beta/commit/23c1e5876e5d19565eaf9f8d10c56190a50561f9))
 
-Float pixel data is rescaled to Uint16 for display and new rescale slope and intercept values are calculated. The original float pixel data is available in the image object as image.floatPixelData.
 
-- Added eslint-plugin-import to force paths to resolve
+### Performance Improvements
 
-### Changed
-- Improvements for special cases with Palette Color images (#42):
+* add option to use RGB instead of RGBA ([#457](https://github.com/cornerstonejs/cornerstone3D-beta/issues/457)) ([0bfea34](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0bfea348d71a53a63751c0a5d21f8bcf2afd4abc))
 
-- Check that the number of entries for the palette color LUT descriptors matches the actual data length in the LUT data. If it doesn't, then the bits allocated for the LUT must be 16, regardless of whether or not the descriptor specifies it as 8.
-- If the descriptor is wrong, update it so we can use the proper shift value.
-- Preprocess the R/G/B LUT arrays, rather than shifting each pixel individually.
 
-## [1.0.3] - 2017-11-21
-### Changed
-- Fix bug introduced in 1.0.2 in which WADO-URI rows/columns are undefined in the metaDataProvider (thanks @hardmaster92)
+### BREAKING CHANGES
 
-## [1.0.2] - 2017-11-21
-### Added
-- WADO URI and WADO RS metaData providers have been updated to provide all necessary information for drawing reference lines with Cornerstone Tools (thanks @dannyrb)
-- Some basic decodeImageFrame tests have been written, though they are incomplete (feel free to send a PR!)
+* **codecs, loadImage:** An external dependency must be updated to a higher version.
 
-### Changed
-- Switched this changelog to try to follow http://keepachangelog.com/en/1.0.0/
-- README issue has been fixed (@nicomlas)
-
-## Version 1.0.1
-
-- Fix decodeLittleEndian to properly return pixelData for bitsAllocated = 1. This affected DICOM Segmentation files.
-- Fix #98: incorrect number of LUT entries issue for Palette Color images.
-
-## Version 1.0.0
-
-- Updated to 1.0.0 because 0.15.0 introduced a breaking change with Cornerstone injection. This doesn't break usage if you are using HTML script tags, but if you are using a module system, Cornerstone WADO Image Loader may not properly find its dependencies.
-
-The solution for this is to inject your Cornerstone instance into Cornerstone Tools as follows:
-
-````javascript
-cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-````
-
-An example commit doing this in the OHIF Viewer Meteor application is here: https://github.com/OHIF/Viewers/commit/012bba44806d0fb9bb60af329c4875e7f6b751e0#diff-d9ccd906dfc48b4589d720766fe14715R25
-
-We apologize for any headaches that the breaking change in 0.15.0 may have caused for those using module systems.
-- Note: the dependencies have been updated to require Cornerstone Core 1.0.0 or above
-
-## Version 0.15.1 (deprecated due to breaking change)
-
-- Added native CustomEvents that are triggered parallel to the jQuery events. This is part of a transition to drop the jQuery dependency entirely.
-- *Note:* This version requires Cornerstone Core 0.13.2 or above, where cornerstone.events has the EventTarget interface!
-
-e.g. CornerstoneImageLoadStart has a native CustomEvent name 'cornerstoneimageloadstart'
-
-## Version 0.15.0 (deprecated due to breaking change)
-
-- Further fixes for browser native ES6 module loading
-- Fix Web Worker tasks being inserted incorrectly based on priority
-- Migrate createImage, decodeJPEGBaseline8BitColor, loadFileRequest, getPixelData, and dataSetCacheManager from Deferred to Promises
-- Add dependency injection for cornerstone
-
-## Version 0.14.7
-
-- Bumped up cornerstone version to 0.12.2
-- Removed library `Loadash` and added `Lodash` as a DevDependency
-
-## Version 0.14.5
-
-- Rename loadDataSetFromPromise to loadImageFromPromise (https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/94)
-- Set web worker status ready after task is read (https://github.com/cornerstonejs/cornerstoneWADOImageLoader/pull/95)
-- Fixes for dependencies after migration to Webpack (@lscoder)
-
-## Version 0.14.4
-
-- Migrate to new build process with Webpack and Babel. Remove grunt from WebWorker and Codec file construction. (@lscoder)
-- Fixes for examples after inital migration steps (@kofifus, @lscoder)
-- Typo in package.json (@JMiha)
-- Bug fix for the inital draw of color images with WW/WC 255/128
-- Bug fixes for JPEG Baseline 8 Bit decoding (https://github.com/cornerstonejs/cornerstoneWADOImageLoader/issues/46)
+Co-authored-by: dannyrb <danny.ri.brown@gmail.com>
+Co-authored-by: Alireza <ar.sedghi@gmail.com>
+* **WebWorkers:** Web worker and codec paths no longer need to be specified, they are pulled in directly inside the library.
