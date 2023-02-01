@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -21,7 +21,7 @@
     "access": "public"
   },
   "scripts": {
-    "build":"echo 'build not implemented yet'",
+    "build": "echo 'build not implemented yet'",
     "cm": "npx git-cz",
     "clean": "npm run clean:dist && npm run clean:coverage",
     "clean:dist": "shx rm -rf dist",
