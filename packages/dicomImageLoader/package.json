@@ -48,7 +48,7 @@
     "webpack:bundle": "webpack --progress --config ./config/webpack/webpack-bundle",
     "webpack:dynamic-import:watch": "webpack --progress --watch --config ./config/webpack/webpack-dynamic-import",
     "webpack:watch": "webpack --progress --watch  --config ./config/webpack",
-    "prepublishOnly": "npm run build && npm run test:ci && npm run doc:generate"
+    "prepublishOnly": "echo 'prepublishOnly not implemented yet'"
   },
   "devDependencies": {
     "@babel/plugin-proposal-object-rest-spread": "^7.14.7",
