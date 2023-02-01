@@ -9,7 +9,7 @@ type ContourSetProps = {
 };
 
 /**
- * This class represents a set of contours.
+ * This class represents a set of contours in 3d space.
  * Usually contours are grouped together in a contour set to represent a meaningful shape.
  */
 export class ContourSet implements IContourSet {

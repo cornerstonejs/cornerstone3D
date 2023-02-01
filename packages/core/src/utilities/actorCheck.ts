@@ -9,14 +9,9 @@ type actorTypes = 'vtkActor' | 'vtkVolume' | 'vtkImageSlice';
  * @returns A boolean value.
  */
 export function isImageActor(actorEntry: Types.ActorEntry): boolean {
-  if (
-    actorIsA(actorEntry, 'vtkVolume') ||
-    actorIsA(actorEntry, 'vtkImageSlice')
-  ) {
-    return true;
-  }
-
-  return false;
+  return (
+    actorIsA(actorEntry, 'vtkVolume') || actorIsA(actorEntry, 'vtkImageSlice')
+  );
 }
 
 export function actorIsA(
@@ -25,9 +20,5 @@ export function actorIsA(
 ): boolean {
   const actor = actorEntry.actor;
 
-  if (actor.isA(actorType)) {
-    return true;
-  }
-
-  return false;
+  return !!actor.isA(actorType);
 }

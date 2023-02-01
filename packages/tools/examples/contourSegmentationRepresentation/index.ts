@@ -4,7 +4,9 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  utilities,
   geometryLoader,
+  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -27,6 +29,7 @@ const {
   ZoomTool,
   PanTool,
   StackScrollMouseWheelTool,
+  TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 const { ViewportType, GeometryType } = Enums;
@@ -37,11 +40,12 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Contour Segmentation Representation for Volume Viewport',
-  'Here we demonstrate how you can add a contour as a segmentation to a volume.'
+  'Contour Segmentation Representation for Volume Viewports',
+  'Here we demonstrate how you can add a contour as a segmentation to a volume viewport. Please note that the contour in this example (for segmentation), is different than the freehandROI tool contour which is an annotation tool. Here, the contour is represented in the 3d space, while the freehandROI tool contour is represented via SVG in the 2d space. So you can render the contour segmentation in the 3d viewport (as seen below) but you cannot render the freehandROI tool contour in the 3d viewport.'
 );
 
 const size = '500px';
@@ -53,12 +57,17 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
+const element2 = document.createElement('div');
 element1.oncontextmenu = () => false;
+element2.oncontextmenu = () => false;
 
 element1.style.width = size;
 element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
 
 viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
@@ -109,14 +118,25 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
+
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+
+  toolGroup3d.addTool(SegmentationDisplayTool.toolName);
+  toolGroup3d.addTool(ZoomTool.toolName);
+  toolGroup3d.addTool(TrackballRotateTool.toolName, {
+    configuration: { volumeId },
+  });
+
+  toolGroup3d.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -134,6 +154,22 @@ async function run() {
   });
 
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  toolGroup3d.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+    ],
+  });
+
+  toolGroup3d.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -169,6 +205,7 @@ async function run() {
 
   // Create the viewports
   const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_3D';
 
   const viewportInputArray = [
     {
@@ -180,17 +217,43 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.VOLUME_3D,
+      element: element2,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup3d.addViewport(viewportId2, renderingEngineId);
 
   // Set the volume to load
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
+  setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId1, viewportId2]
+  ).then(() => {
+    const viewport3d = renderingEngine.getViewport(viewportId2);
+    const volumeActor = viewport3d.getDefaultActor().actor as Types.VolumeActor;
+    utilities.applyPreset(
+      volumeActor,
+      CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+    );
+
+    const renderer = viewport3d.getRenderer();
+    renderer.getActiveCamera().elevation(-70);
+    viewport3d.setCamera({ parallelScale: 600 });
+
+    viewport3d.render();
+  });
 
   // // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
@@ -200,8 +263,15 @@ async function run() {
     },
   ]);
 
+  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
+
   // Render the image
-  renderingEngine.renderViewports([viewportId1]);
+  renderingEngine.render();
 }
 
 run();

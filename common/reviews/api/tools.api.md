@@ -788,6 +788,12 @@ type ContourSetData = {
 };
 
 // @public (undocumented)
+function copyPoints(points: ITouchPoints): ITouchPoints;
+
+// @public (undocumented)
+function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
+
+// @public (undocumented)
 const CORNERSTONE_COLOR_LUT: number[][];
 
 // @public (undocumented)
@@ -2146,7 +2152,7 @@ interface IContour {
     readonly sizeInBytes: number;
 }
 
-// @public (undocumented)
+// @public
 interface IContourSet {
     // (undocumented)
     contours: IContour[];
@@ -2170,6 +2176,14 @@ interface IContourSet {
     // (undocumented)
     readonly sizeInBytes: number;
 }
+
+// @public (undocumented)
+type IDistance = {
+    page: number;
+    client: number;
+    canvas: number;
+    world: number;
+};
 
 // @public
 interface IEnabledElement {

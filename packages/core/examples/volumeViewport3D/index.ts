@@ -14,7 +14,6 @@ import {
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { VolumeActor } from 'core/src/types';
 
 // This is for debugging purposes
 console.warn(
@@ -75,7 +74,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (presetName) => {
     const volumeActor = renderingEngine
       .getViewport(viewportId)
-      .getDefaultActor().actor as VolumeActor;
+      .getDefaultActor().actor as Types.VolumeActor;
 
     utilities.applyPreset(
       volumeActor,
@@ -162,7 +161,7 @@ async function run() {
     () => {
       const volumeActor = renderingEngine
         .getViewport(viewportId)
-        .getDefaultActor().actor as VolumeActor;
+        .getDefaultActor().actor as Types.VolumeActor;
 
       utilities.applyPreset(
         volumeActor,

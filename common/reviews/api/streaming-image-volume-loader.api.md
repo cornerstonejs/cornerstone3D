@@ -63,6 +63,7 @@ type ContourData = {
 type ContourSetData = {
     id: string;
     data: ContourData[];
+    frameOfReferenceUID: string;
     color?: Point3;
 };
 
@@ -390,7 +391,6 @@ enum Events {
     CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
     ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
     ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
-    // (undocumented)
     GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
     IMAGE_CACHE_IMAGE_ADDED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED',
     IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
@@ -585,16 +585,16 @@ interface IContour {
     points: Point3[];
     // (undocumented)
     readonly sizeInBytes: number;
-    // (undocumented)
-    type: ContourType;
 }
 
-// @public (undocumented)
+// @public
 interface IContourSet {
     // (undocumented)
     contours: IContour[];
     // (undocumented)
     _createEachContour(data: ContourData[]): void;
+    // (undocumented)
+    readonly frameOfReferenceUID: string;
     // (undocumented)
     getColor(): any;
     getContours(): IContour[];
@@ -605,8 +605,6 @@ interface IContourSet {
     getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
     getSizeInBytes(): number;
-    // (undocumented)
-    _getSizeInBytes(): number;
     getTotalNumberOfPoints(): number;
     // (undocumented)
     readonly id: string;
@@ -1021,7 +1019,6 @@ interface IViewport {
     id: string;
     isDisabled: boolean;
     options: ViewportInputOptions;
-    removeActor(actorUID: string): void;
     removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;

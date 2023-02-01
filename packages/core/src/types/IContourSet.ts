@@ -1,5 +1,9 @@
 import { ContourData, IContour, Point3 } from './';
 
+/**
+ * This class represents a set of contours in 3d space.
+ * Usually contours are grouped together in a contour set to represent a meaningful shape.
+ */
 export interface IContourSet {
   readonly id: string;
   readonly sizeInBytes: number;
