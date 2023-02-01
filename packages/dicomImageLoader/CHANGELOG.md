@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.1.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.1.3...@cornerstonejs/dicom-image-loader@0.1.4) (2023-02-01)
+
+
+### Bug Fixes
+
+* **build:** prepublish for dicomImageLoader ([#415](https://github.com/cornerstonejs/cornerstone3D-beta/issues/415)) ([20589a1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/20589a1083a87505e26be85e2685a1cb621205fb))
+
+
+
+
+
 ## [0.1.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.1.2...@cornerstonejs/dicom-image-loader@0.1.3) (2023-02-01)
 
 
