@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.40.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.40.0...@cornerstonejs/tools@0.40.1) (2023-02-02)
+
+
+### Bug Fixes
+
+* **doubleClick:** moved the mouse click/down timeout detection back into ([#417](https://github.com/cornerstonejs/cornerstone3D-beta/issues/417)) ([99eea67](https://github.com/cornerstonejs/cornerstone3D-beta/commit/99eea6795b4ded35d9fd9549e7208ce8c09a9ada))
+
+
+
+
+
 # [0.40.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.39.1...@cornerstonejs/tools@0.40.0) (2023-02-01)
 
 
