@@ -149,6 +149,11 @@ function mouseDownListener(evt: MouseEvent) {
   state.renderingEngineId = renderingEngineId;
   state.viewportId = viewportId;
 
+  state.preventClickTimeout = setTimeout(
+    _preventClickHandler,
+    state.clickDelay
+  );
+
   // Prevent CornerstoneToolsMouseMove while mouse is down
   state.element.removeEventListener('mousemove', mouseMoveListener);
 
@@ -167,11 +172,6 @@ function mouseDownListener(evt: MouseEvent) {
  * @private
  */
 function _doMouseDown(evt: MouseEvent) {
-  state.preventClickTimeout = setTimeout(
-    _preventClickHandler,
-    state.clickDelay
-  );
-
   const deltaPoints = _getDeltaPoints(state.startPoints, state.startPoints);
 
   const eventDetail: EventTypes.MouseDownEventDetail = {
@@ -267,6 +267,9 @@ function _onMouseDrag(evt: MouseEvent) {
  * @param evt - The mouse event.
  */
 function _onMouseUp(evt: MouseEvent): void {
+  // Cancel the timeout preventing the click event from triggering
+  clearTimeout(state.preventClickTimeout);
+
   if (doubleClickState.doubleClickTimeout) {
     // received a mouse up while waiting for a double click (via a timeout)
 
@@ -295,9 +298,6 @@ function _onMouseUp(evt: MouseEvent): void {
     // Handle the actual mouse up. Note that it may have occurred during the double click timeout or
     // after it expired. In either case this block is being executed after the time out has expired
     // or after a drag started.
-
-    // Cancel the timeout preventing the click event from triggering
-    clearTimeout(state.preventClickTimeout);
 
     const eventName = state.isClickEvent ? MOUSE_CLICK : MOUSE_UP;
 

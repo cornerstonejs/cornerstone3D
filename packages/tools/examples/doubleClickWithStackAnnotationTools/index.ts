@@ -62,12 +62,28 @@ content.addEventListener('dblclick', () => {
   const renderEngine = getRenderingEngine(renderingEngineId);
   renderEngine.resize(true);
 
+  browserDoubleClickEventStatus.innerText =
+    "Browser 'dblclick' event detected on a viewport element ancestor.";
   statusDiv.style.backgroundColor = '#00ff00';
 });
 
 element.addEventListener(Events.MOUSE_DOWN, () => {
   browserDoubleClickEventStatus.style.visibility = 'hidden';
   statusDiv.style.backgroundColor = null;
+});
+
+element.addEventListener(Events.MOUSE_UP, () => {
+  browserDoubleClickEventStatus.style.visibility = '';
+  browserDoubleClickEventStatus.innerText =
+    "Cornerstone 'MOUSE_UP' event detected on the viewport element.";
+  statusDiv.style.backgroundColor = '#00ff00';
+});
+
+element.addEventListener(Events.MOUSE_CLICK, () => {
+  browserDoubleClickEventStatus.style.visibility = '';
+  browserDoubleClickEventStatus.innerText =
+    "Cornerstone 'MOUSE_CLICK' event detected on the viewport element.";
+  statusDiv.style.backgroundColor = '#00ff00';
 });
 
 content.appendChild(element);
@@ -80,8 +96,6 @@ content.append(statusDiv);
 
 const browserDoubleClickEventStatus = document.createElement('p');
 browserDoubleClickEventStatus.style.visibility = 'hidden';
-browserDoubleClickEventStatus.innerText =
-  "Browser 'dblclick' event detected on a viewport element ancestor.";
 statusDiv.append(browserDoubleClickEventStatus);
 
 // instruction elements
