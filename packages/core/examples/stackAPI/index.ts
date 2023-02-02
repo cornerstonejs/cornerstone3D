@@ -59,10 +59,14 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
     renderingEngine.getViewport(viewportId)
   );
 
+  if (!viewport) {
+    return;
+  }
+
   const { flipHorizontal, flipVertical } = viewport.getCamera();
   const { rotation } = viewport.getProperties();
 
-  rotationInfo.innerText = `Rotation: ${rotation}`;
+  rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
   flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });

@@ -567,6 +567,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     if (typeof rotation !== 'undefined') {
+      // TODO: check with VTK about rounding errors here.
       if (this.getRotation() !== rotation) {
         this.setRotation(rotation);
       }
@@ -837,38 +838,38 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   private getRotationGPU = (): number => {
     const {
-      viewUp: endViewUp,
+      viewUp: currentViewUp,
       viewPlaneNormal,
       flipVertical,
     } = this.getCamera();
 
-    // The start view up vector without any rotation, but incorporating any vertical flip.
-    const startViewUp = flipVertical
+    // The initial view up vector without any rotation, but incorporating vertical flip.
+    const initialViewUp = flipVertical
       ? vec3.negate(vec3.create(), this.initialViewUp)
       : this.initialViewUp;
 
-    // The dot product of the start and end view up vectors.
-    const startToEndViewUpDot = vec3.dot(startViewUp, endViewUp);
+    // The angle between the initial and current view up vectors.
+    // TODO: check with VTK about rounding errors here.
+    const initialToCurrentViewUpAngle =
+      (vec3.angle(initialViewUp, currentViewUp) * 180) / Math.PI;
 
-    // The angle between the start and end view up vectors.
-    const startToEndViewUpAngle =
-      (Math.acos(startToEndViewUpDot) * 180) / Math.PI;
-
-    // Now determine if startToEndViewUpAngle is positive or negative by comparing
-    // the direction of the start/end view up cross product with the current
+    // Now determine if initialToCurrentViewUpAngle is positive or negative by comparing
+    // the direction of the initial/current view up cross product with the current
     // viewPlaneNormal.
 
-    const startToEndViewUpCross = vec3.cross(
+    const initialToCurrentViewUpCross = vec3.cross(
       vec3.create(),
-      startViewUp,
-      endViewUp
+      initialViewUp,
+      currentViewUp
     );
 
     // The sign of the dot product of the start/end view up cross product and
     // the viewPlaneNormal indicates a positive or negative rotation respectively.
-    const normalDot = vec3.dot(startToEndViewUpCross, viewPlaneNormal);
+    const normalDot = vec3.dot(initialToCurrentViewUpCross, viewPlaneNormal);
 
-    return normalDot >= 0 ? startToEndViewUpAngle : 360 - startToEndViewUpAngle;
+    return normalDot >= 0
+      ? initialToCurrentViewUpAngle
+      : (360 - initialToCurrentViewUpAngle) % 360;
   };
 
   private setRotation(rotation: number): void {
