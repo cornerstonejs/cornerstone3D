@@ -7,8 +7,10 @@ import {
 } from '@cornerstonejs/core';
 import { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import type { Types } from '@cornerstonejs/core';
-import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
-import { addAnnotation } from '../stateManagement/annotation/annotationState';
+import {
+  addAnnotation,
+  getAnnotations,
+} from '../stateManagement/annotation/annotationState';
 import {
   drawLine as drawLineSvg,
   drawTextBox as drawTextBoxSvg,
@@ -23,6 +25,7 @@ import { StyleSpecifier } from '../types/AnnotationStyle';
 import { getToolGroup } from '../store/ToolGroupManager';
 
 const SCALEOVERLAYTOOL_ID = 'scaleoverlay-viewport';
+const viewportsWithAnnotations = [];
 
 /**
  * @public
@@ -52,7 +55,6 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       configuration: {
         viewportId: '',
         scaleLocation: 'bottom',
-        scaleColor: 'yellow',
       },
     }
   ) {
@@ -67,19 +69,24 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
 
+    // get viewports with tool enabled
     const viewportIds = getToolGroup(this.toolGroupId).viewportsInfo;
 
     if (!viewportIds) return;
 
+    // get enabled elements
     const enabledElements = viewportIds.map((e) =>
       getEnabledElementByIds(e.viewportId, e.renderingEngineId)
     );
 
     let viewport = enabledElements[0].viewport;
 
+    // onCameraModified, configuration.viewportId is set to the active
+    // viewport Id, here we are setting the viewport variable to the
+    // viewport with the matching Id
     if (this.configuration.viewportId) {
       enabledElements.forEach((element) => {
-        if (element.viewport.id === this.configuration.viewportId) {
+        if (element.viewport.id == this.configuration.viewportId) {
           viewport = element.viewport;
         }
       });
@@ -97,7 +104,19 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     let annotation = this.editData.annotation;
 
-    if (!annotation) {
+    const annotations = getAnnotations(element, this.getToolName());
+
+    // if annotations have been created, get the annotation for the
+    // current viewport Id
+    if (annotations) {
+      annotation = annotations.filter(
+        (thisAnnotation) => thisAnnotation.data.viewportId == viewport.id
+      )[0] as ScaleOverlayAnnotation;
+    }
+
+    // viewportsWithAnnotations stores which viewports have an annotation,
+    // if the viewport does not have an annotation, create a new one
+    if (!viewportsWithAnnotations.includes(viewport.id)) {
       const newAnnotation: ScaleOverlayAnnotation = {
         metadata: {
           toolName: this.getToolName(),
@@ -110,14 +129,18 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
           handles: {
             points: viewportCanvasCornersInWorld,
           },
+          viewportId: viewport.id,
         },
       };
 
+      viewportsWithAnnotations.push(viewport.id);
+
       addAnnotation(element, newAnnotation);
       annotation = newAnnotation;
-    } else {
+    } else if (this.editData.annotation.data.viewportId == viewport.id) {
       this.editData.annotation.data.handles.points =
         viewportCanvasCornersInWorld;
+      this.editData.annotation.data.viewportId = viewport.id;
     }
 
     this.editData = {
@@ -155,7 +178,13 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
     const location = this.configuration.scaleLocation;
-    const { annotation, viewport } = this.editData;
+    const { viewport } = enabledElement;
+    const { element } = viewport;
+
+    const annotations = getAnnotations(element, this.getToolName());
+    const annotation = annotations.filter(
+      (thisAnnotation) => thisAnnotation.data.viewportId == viewport.id
+    )[0];
     const canvas = enabledElement.viewport.canvas;
 
     const renderStatus = false;
@@ -212,7 +241,6 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     const canvasCoordinates = this.computeWorldScaleCoordinates(
       scaleSize,
       location,
-      topRight,
       pointSet1
     ).map((world) => viewport.worldToCanvas(world));
 
@@ -522,7 +550,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     return { tickIds, tickUIDs, tickCoordinates };
   };
 
-  computeWorldScaleCoordinates = (scaleSize, location, topRight, pointSet) => {
+  computeWorldScaleCoordinates = (scaleSize, location, pointSet) => {
     let worldCoordinates;
     let topBottomVec = vec3.subtract(vec3.create(), pointSet[0], pointSet[1]);
     topBottomVec = vec3.normalize(vec3.create(), topBottomVec) as Types.Point3;
