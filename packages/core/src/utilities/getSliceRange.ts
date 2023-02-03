@@ -6,7 +6,7 @@ const isOne = (v) => Math.abs(v) > 0.99 && Math.abs(v) < 1.01;
 const isUnit = (v, off) =>
   isOne(v[off]) || isOne(v[off + 1]) || isOne(v[off + 2]);
 
-const isIJK = (v) => isUnit(v, 0) && isUnit(v, 3) && isUnit(v, 6);
+const isOrthonormal = (v) => isUnit(v, 0) && isUnit(v, 3) && isUnit(v, 6);
 
 /**
  * Given a `vtkVolumeActor`, and a normal direction,
@@ -29,7 +29,7 @@ export default function getSliceRange(
   let corners;
   const direction = imageData.getDirection();
 
-  if (isIJK(direction)) {
+  if (isOrthonormal(direction)) {
     // This logic is only valid when the IJK vectors are unit vectors
     corners = getVolumeActorCorners(volumeActor);
   } else {
