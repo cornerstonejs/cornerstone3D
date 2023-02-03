@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.29.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.29.0...@cornerstonejs/core@0.29.1) (2023-02-03)
+
+
+### Bug Fixes
+
+* **SliceRange:** slice range for oblique image ([#408](https://github.com/cornerstonejs/cornerstone3D-beta/issues/408)) ([7138372](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7138372b185b5d7c2cc76a8e2b257a94e1751f42))
+
+
+
+
+
 # [0.29.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.28.0...@cornerstonejs/core@0.29.0) (2023-02-01)
 
 
