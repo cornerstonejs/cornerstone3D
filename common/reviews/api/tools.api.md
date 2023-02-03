@@ -4032,6 +4032,72 @@ type RepresentationPublicInput = {
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
+interface ScaleOverlayAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+        };
+        viewportId: string;
+    };
+}
+
+// @public (undocumented)
+export class ScaleOverlayTool extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    computeCanvasScaleCoordinates: (canvasSize: any, canvasCoordinates: any, vscaleBounds: any, hscaleBounds: any, location: any) => any;
+    // (undocumented)
+    computeEndScaleTicks: (canvasCoordinates: any, location: any) => {
+        endTick1: any[][];
+        endTick2: any[][];
+    };
+    // (undocumented)
+    computeInnerScaleTicks: (scaleSize: number, location: string, annotationUID: string, leftTick: any[][], rightTick: any[][]) => {
+        tickIds: any[];
+        tickUIDs: any[];
+        tickCoordinates: any[];
+    };
+    // (undocumented)
+    computeScaleBounds: (canvasSize: any, horizontalReduction: any, verticalReduction: any, location: any) => {
+        height: any;
+        width: any;
+    };
+    // (undocumented)
+    computeScaleSize: (worldWidthViewport: number, worldHeightViewport: number, location: any) => any;
+    // (undocumented)
+    computeWorldScaleCoordinates: (scaleSize: any, location: any, pointSet: any) => any;
+    // (undocumented)
+    editData: {
+        renderingEngine: any;
+        viewport: any;
+        annotation: ScaleOverlayAnnotation;
+    } | null;
+    // (undocumented)
+    _getTextLines(scaleSize: number): string[] | undefined;
+    // (undocumented)
+    _init: () => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: any;
+}
+
+// @public (undocumented)
 type Scaling = {
     PET?: PTScaling;
 };
@@ -4715,7 +4781,8 @@ declare namespace ToolSpecificAnnotationTypes {
         ArrowAnnotation,
         AngleAnnotation,
         ReferenceCursor,
-        ReferenceLineAnnotation
+        ReferenceLineAnnotation,
+        ScaleOverlayAnnotation
     }
 }
 

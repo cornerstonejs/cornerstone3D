@@ -231,6 +231,10 @@
       "cancelAnnotationDrawing": {
         "name": "Cancel Annotation Drawing",
         "description": "Demonstrates how to use the keyboard (ESC) key to cancel annotation drawing."
+      },
+      "scaleOverlayTool": {
+        "name": "Scale Overlay Tool",
+        "description": "Demonstrates the scale overlay tool for rendering a scale on a viewport showing the real world size of the image."
       }
     }
   }

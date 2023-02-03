@@ -272,3 +272,12 @@ export interface ReferenceLineAnnotation extends Annotation {
     };
   };
 }
+
+export interface ScaleOverlayAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+    };
+    viewportId: string;
+  };
+}
