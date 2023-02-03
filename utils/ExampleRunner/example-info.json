@@ -146,6 +146,10 @@
         "name": "Contour Segmentation Representation",
         "description": "Demonstrates how to use the Contour Segmentation Representation"
       },
+      "surfaceSegmentationRepresentation": {
+        "name": "Surface Segmentation Representation",
+        "description": "Demonstrates how to use the Surface Segmentation Representation"
+      },
       "segmentationSwapping": {
         "name": "Segmentation Swapping",
         "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
