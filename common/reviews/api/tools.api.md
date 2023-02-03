@@ -4038,6 +4038,7 @@ interface ScaleOverlayAnnotation extends Annotation {
         handles: {
             points: Types_2.Point3[];
         };
+        viewportId: string;
     };
 }
 
@@ -4052,7 +4053,7 @@ export class ScaleOverlayTool extends AnnotationDisplayTool {
         endTick2: any[][];
     };
     // (undocumented)
-    computeInnerScaleTicks: (scaleSize: any, location: any, annotationUID: any, leftTick: any, rightTick: any) => {
+    computeInnerScaleTicks: (scaleSize: number, location: string, annotationUID: string, leftTick: any[][], rightTick: any[][]) => {
         tickIds: any[];
         tickUIDs: any[];
         tickCoordinates: any[];
@@ -4065,7 +4066,7 @@ export class ScaleOverlayTool extends AnnotationDisplayTool {
     // (undocumented)
     computeScaleSize: (worldWidthViewport: number, worldHeightViewport: number, location: any) => any;
     // (undocumented)
-    computeWorldScaleCoordinates: (scaleSize: any, location: any, topRight: any, pointSet: any) => any;
+    computeWorldScaleCoordinates: (scaleSize: any, location: any, pointSet: any) => any;
     // (undocumented)
     editData: {
         renderingEngine: any;
