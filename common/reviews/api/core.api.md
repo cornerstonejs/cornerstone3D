@@ -641,7 +641,9 @@ export { geometryLoader }
 // @public (undocumented)
 enum GeometryType {
     // (undocumented)
-    CONTOUR = "contour"
+    CONTOUR = "contour",
+    // (undocumented)
+    SURFACE = "Surface"
 }
 
 // @public (undocumented)
@@ -886,7 +888,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: ContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1773,6 +1775,14 @@ type PTScaling = {
 type PublicContourSetData = ContourSetData;
 
 // @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
+// @public (undocumented)
 type PublicViewportInput = {
     element: HTMLDivElement;
     viewportId: string;
@@ -2071,6 +2081,12 @@ type StackViewportScrollEventDetail = {
 };
 
 // @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
+
+// @public (undocumented)
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
@@ -2164,7 +2180,9 @@ declare namespace Types {
         ContourSetData,
         ContourData,
         IContourSet,
-        IContour
+        IContour,
+        PublicSurfaceData,
+        SurfaceData
     }
 }
 export { Types }

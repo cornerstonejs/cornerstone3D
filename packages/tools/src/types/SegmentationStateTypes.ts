@@ -1,10 +1,18 @@
 import * as Enums from '../enums';
-import { ContourConfig, ContourSegmentationData } from './ContourTypes';
+import {
+  ContourConfig,
+  ContourRenderingConfig,
+  ContourSegmentationData,
+} from './ContourTypes';
 import type {
   LabelmapConfig,
   LabelmapSegmentationData,
   LabelmapRenderingConfig,
 } from './LabelmapTypes';
+import {
+  SurfaceSegmentationData,
+  SurfaceRenderingConfig,
+} from './SurfaceTypes';
 
 /**
  * Four elements RGBA as 0-255
@@ -29,6 +37,8 @@ export type RepresentationConfig = {
   LABELMAP?: LabelmapConfig;
   /** contour configuration */
   CONTOUR?: ContourConfig;
+  /** surface configuration */
+  SURFACE?: any;
 };
 
 export type SegmentationRepresentationConfig = {
@@ -41,6 +51,7 @@ export type SegmentationRepresentationConfig = {
 export type SegmentationRepresentationData = {
   LABELMAP?: LabelmapSegmentationData;
   CONTOUR?: ContourSegmentationData;
+  SURFACE?: SurfaceSegmentationData;
 };
 
 /**
@@ -129,7 +140,14 @@ export type ToolGroupSpecificLabelmapRepresentation =
 
 export type ToolGroupSpecificContourRepresentation =
   ToolGroupSpecificRepresentationState & {
-    config: LabelmapRenderingConfig;
+    config: ContourRenderingConfig;
+    segmentationRepresentationSpecificConfig?: RepresentationConfig;
+    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
+  };
+
+export type ToolGroupSpecificSurfaceRepresentation =
+  ToolGroupSpecificRepresentationState & {
+    config: SurfaceRenderingConfig;
     segmentationRepresentationSpecificConfig?: RepresentationConfig;
     segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
   };
@@ -241,7 +259,10 @@ export type SegmentationPublicInput = {
   segmentationId: string;
   representation: {
     type: Enums.SegmentationRepresentations;
-    data: LabelmapSegmentationData | ContourSegmentationData;
+    data:
+      | LabelmapSegmentationData
+      | ContourSegmentationData
+      | SurfaceSegmentationData;
   };
 };
 

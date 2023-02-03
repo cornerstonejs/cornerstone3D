@@ -2197,7 +2197,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: ContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -3564,6 +3564,14 @@ type PTScaling = {
 type PublicContourSetData = ContourSetData;
 
 // @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
+// @public (undocumented)
 type PublicToolProps = SharedToolProp & {
     name?: string;
 };
@@ -4020,6 +4028,7 @@ export function removeTool(ToolClass: any): void;
 type RepresentationConfig = {
     LABELMAP?: LabelmapConfig;
     CONTOUR?: ContourConfig;
+    SURFACE?: any;
 };
 
 // @public (undocumented)
@@ -4160,6 +4169,7 @@ type SegmentationRepresentationConfig = {
 type SegmentationRepresentationData = {
     LABELMAP?: LabelmapSegmentationData;
     CONTOUR?: ContourSegmentationData;
+    SURFACE?: SurfaceSegmentationData;
 };
 
 // @public (undocumented)
@@ -4185,7 +4195,9 @@ enum SegmentationRepresentations {
     // (undocumented)
     Contour = "CONTOUR",
     // (undocumented)
-    Labelmap = "LABELMAP"
+    Labelmap = "LABELMAP",
+    // (undocumented)
+    Surface = "SURFACE"
 }
 
 // @public (undocumented)
@@ -4499,6 +4511,12 @@ type StyleSpecifier = {
     toolGroupId?: string;
     toolName?: string;
     annotationUID?: string;
+};
+
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
 };
 
 // @public (undocumented)

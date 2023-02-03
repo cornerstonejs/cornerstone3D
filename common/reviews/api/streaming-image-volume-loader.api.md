@@ -481,6 +481,8 @@ type FlipDirection = {
 enum GeometryType {
     // (undocumented)
     CONTOUR = 'contour',
+    // (undocumented)
+    SURFACE = 'Surface',
 }
 
 // @public (undocumented)
@@ -624,7 +626,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: ContourSet | Surface;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -1232,6 +1234,14 @@ type PTScaling = {
 // @public (undocumented)
 type PublicContourSetData = ContourSetData;
 
+// @public (undocumented)
+type PublicSurfaceData = {
+    id: string;
+    data: SurfaceData;
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
 // @public
 type PublicViewportInput = {
     element: HTMLDivElement;
@@ -1359,6 +1369,12 @@ export class StreamingImageVolume extends ImageVolume {
         callbacks: Array<(...args: unknown[]) => void>;
     };
 }
+
+// @public (undocumented)
+type SurfaceData = {
+    points: number[];
+    polys: number[];
+};
 
 // @public
 type TransformMatrix2D = [number, number, number, number, number, number];

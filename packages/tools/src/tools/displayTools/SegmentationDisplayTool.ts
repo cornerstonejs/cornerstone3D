@@ -15,6 +15,7 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../types/SegmentationStateTypes';
+import { surfaceDisplay } from './Surface';
 
 /**
  * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
@@ -149,6 +150,14 @@ class SegmentationDisplayTool extends BaseTool {
           } else if (representation.type == Representations.Contour) {
             viewportsRenderList.push(
               contourDisplay.render(
+                viewport as Types.IVolumeViewport,
+                representation,
+                config
+              )
+            );
+          } else if (representation.type == Representations.Surface) {
+            viewportsRenderList.push(
+              surfaceDisplay.render(
                 viewport as Types.IVolumeViewport,
                 representation,
                 config

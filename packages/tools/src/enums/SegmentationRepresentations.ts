@@ -6,7 +6,7 @@
 enum SegmentationRepresentations {
   Labelmap = 'LABELMAP',
   Contour = 'CONTOUR',
-  // Todo: add more representations
+  Surface = 'SURFACE',
 }
 
 export default SegmentationRepresentations;
