@@ -278,5 +278,6 @@ export interface ScaleOverlayAnnotation extends Annotation {
     handles: {
       points: Types.Point3[];
     };
+    viewportId: string;
   };
 }
