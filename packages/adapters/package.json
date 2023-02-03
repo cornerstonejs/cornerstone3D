@@ -14,7 +14,7 @@
     "exports": {
         ".": "./dist/@cornerstonejs/adapters.es.js"
     },
-    "typings": "./dist/@cornerstonejs/dts",
+    "types": "./dist/@cornerstonejs/dts/index.d.ts",
     "publishConfig": {
         "access": "public"
     },
