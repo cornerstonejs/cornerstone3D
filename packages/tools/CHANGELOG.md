@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.41.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.40.2...@cornerstonejs/tools@0.41.0) (2023-02-03)
+
+
+### Features
+
+* **ScaleOverlayTool:** Add scale overlay tool ([#386](https://github.com/cornerstonejs/cornerstone3D-beta/issues/386)) ([45d863e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/45d863ede9c46d129443063bde97e0c708cdbf37))
+
+
+
+
+
 ## [0.40.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.40.1...@cornerstonejs/tools@0.40.2) (2023-02-03)
 
 **Note:** Version bump only for package @cornerstonejs/tools
