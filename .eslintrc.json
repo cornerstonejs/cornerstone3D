@@ -16,7 +16,7 @@
   // eslint-plugin-import
   // - import
   "plugins": [
-    "@typescript-eslint",
+    "@typescript-eslint/eslint-plugin",
     "import",
     "eslint-plugin-tsdoc",
     "prettier"
