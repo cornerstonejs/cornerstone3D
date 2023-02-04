@@ -185,6 +185,10 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       }
 
       if (shouldReset) {
+        model.scalarTexture.setOglNorm16Ext(
+          model.context.getExtension('EXT_texture_norm16')
+        );
+
         model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
         model.scalarTexture.resetFormatAndType();
 

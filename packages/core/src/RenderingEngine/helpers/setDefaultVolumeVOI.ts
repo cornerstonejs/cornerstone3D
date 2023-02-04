@@ -131,16 +131,6 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
   const voxelsPerImage = scalarData.length / numImages;
   const bytePerPixel = scalarData.BYTES_PER_ELEMENT;
 
-  let type;
-
-  if (scalarData instanceof Uint8Array) {
-    type = 'Uint8Array';
-  } else if (scalarData instanceof Float32Array) {
-    type = 'Float32Array';
-  } else {
-    throw new Error('Unsupported array type');
-  }
-
   const scalingParameters: ScalingParameters = {
     rescaleSlope: modalityLutModule.rescaleSlope,
     rescaleIntercept: modalityLutModule.rescaleIntercept,
@@ -162,12 +152,6 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
   const byteOffset = imageIdIndex * bytesPerImage;
 
   const options = {
-    targetBuffer: {
-      arrayBuffer: scalarData.buffer,
-      offset: byteOffset,
-      length: voxelsPerImage,
-      type,
-    },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
     preScale: {

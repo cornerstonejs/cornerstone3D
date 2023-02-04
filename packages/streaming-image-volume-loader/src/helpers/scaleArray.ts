@@ -8,9 +8,9 @@ import type { Types } from '@cornerstonejs/core';
  * @returns The array is being scaled
  */
 export default function scaleArray(
-  array: Float32Array | Uint8Array,
+  array: Float32Array | Uint8Array | Uint16Array | Int16Array,
   scalingParameters: Types.ScalingParameters
-): Float32Array | Uint8Array {
+): Float32Array | Uint8Array | Uint16Array | Int16Array {
   const arrayLength = array.length;
   const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
 

@@ -18,7 +18,7 @@ const cloneIfNecessary = (value, optionsArgument) => {
   const clone = optionsArgument && optionsArgument.clone === true;
 
   return clone && isMergeableObject(value)
-    ? deepmerge(emptyTarget(value), value, optionsArgument)
+    ? deepMerge(emptyTarget(value), value, optionsArgument)
     : value;
 };
 
@@ -29,7 +29,7 @@ const defaultArrayMerge = (target, source, optionsArgument) => {
     if (typeof destination[i] === 'undefined') {
       destination[i] = cloneIfNecessary(e, optionsArgument);
     } else if (isMergeableObject(e)) {
-      destination[i] = deepmerge(target[i], e, optionsArgument);
+      destination[i] = deepMerge(target[i], e, optionsArgument);
     } else if (target.indexOf(e) === -1) {
       destination.push(cloneIfNecessary(e, optionsArgument));
     }
@@ -50,7 +50,7 @@ const mergeObject = (target, source, optionsArgument) => {
     if (!isMergeableObject(source[key]) || !target[key]) {
       destination[key] = cloneIfNecessary(source[key], optionsArgument);
     } else {
-      destination[key] = deepmerge(target[key], source[key], optionsArgument);
+      destination[key] = deepMerge(target[key], source[key], optionsArgument);
     }
   });
 
@@ -59,12 +59,12 @@ const mergeObject = (target, source, optionsArgument) => {
 
 /**
  * Merge two objects, recursively merging any objects that are arrays
- * @param [target] - The target object.
- * @param [source] - The source object to merge into the target object.
- * @param [optionsArgument] - The options object.
+ * @param target - The target object.
+ * @param source - The source object to merge into the target object.
+ * @param optionsArgument - The options object.
  * @returns The merged object.
  */
-const deepmerge = (target = {}, source = {}, optionsArgument = undefined) => {
+const deepMerge = (target = {}, source = {}, optionsArgument = undefined) => {
   const array = Array.isArray(source);
   const options = optionsArgument || { arrayMerge: defaultArrayMerge };
   const arrayMerge = options.arrayMerge || defaultArrayMerge;
@@ -78,4 +78,4 @@ const deepmerge = (target = {}, source = {}, optionsArgument = undefined) => {
   return mergeObject(target, source, optionsArgument);
 };
 
-export default deepmerge;
+export default deepMerge;

@@ -5,7 +5,6 @@ import {
 
 // Lodash/common JS functionality
 import debounce from './debounce';
-import deepMerge from './deepMerge';
 import throttle from './throttle';
 import isObject from './isObject';
 import clip from './clip';
@@ -43,7 +42,6 @@ export {
   viewportFilters,
   drawing,
   debounce,
-  deepMerge,
   dynamicVolume,
   throttle,
   orientation,

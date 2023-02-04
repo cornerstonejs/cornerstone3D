@@ -268,6 +268,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       type = 'Uint8Array';
     } else if (scalarData instanceof Float32Array) {
       type = 'Float32Array';
+    } else if (scalarData instanceof Uint16Array) {
+      type = 'Uint16Array';
+    } else if (scalarData instanceof Int16Array) {
+      type = 'Int16Array';
     } else {
       throw new Error('Unsupported array type');
     }
@@ -455,18 +459,40 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
       const offset = options.targetBuffer.offset; // in bytes
       const length = options.targetBuffer.length; // in frames
+      const pixelData = image.pixelData
+        ? image.pixelData
+        : image.getPixelData();
+
       try {
         if (scalarData instanceof Float32Array) {
           const bytesInFloat = 4;
-          const floatView = new Float32Array(image.pixelData);
+          const floatView = new Float32Array(pixelData);
           if (floatView.length !== length) {
             throw 'Error pixelData length does not match frame length';
           }
+          // since set is based on the underlying type,
+          // we need to divide the offset bytes by the byte type
           scalarData.set(floatView, offset / bytesInFloat);
+        }
+        if (scalarData instanceof Int16Array) {
+          const bytesInInt16 = 2;
+          const intView = new Int16Array(pixelData);
+          if (intView.length !== length) {
+            throw 'Error pixelData length does not match frame length';
+          }
+          scalarData.set(intView, offset / bytesInInt16);
+        }
+        if (scalarData instanceof Uint16Array) {
+          const bytesInUint16 = 2;
+          const intView = new Uint16Array(pixelData);
+          if (intView.length !== length) {
+            throw 'Error pixelData length does not match frame length';
+          }
+          scalarData.set(intView, offset / bytesInUint16);
         }
         if (scalarData instanceof Uint8Array) {
           const bytesInUint8 = 1;
-          const intView = new Uint8Array(image.pixelData);
+          const intView = new Uint8Array(pixelData);
           if (intView.length !== length) {
             throw 'Error pixelData length does not match frame length';
           }
