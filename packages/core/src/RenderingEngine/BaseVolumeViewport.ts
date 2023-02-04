@@ -18,12 +18,24 @@ import type {
   ActorEntry,
   FlipDirection,
   VolumeViewportProperties,
+  VOIRange,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { Events, BlendModes, OrientationAxis } from '../enums';
+import {
+  Events,
+  BlendModes,
+  OrientationAxis,
+  VOILUTFunctionType,
+} from '../enums';
 import eventTarget from '../eventTarget';
-import { actorIsA, imageIdToURI, triggerEvent } from '../utilities';
+import {
+  actorIsA,
+  imageIdToURI,
+  triggerEvent,
+  createSigmoidRGBTransferFunction,
+  createLinearRGBTransferFunction,
+} from '../utilities';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import { RENDERING_DEFAULTS } from '../constants';
@@ -40,6 +52,10 @@ import { RENDERING_DEFAULTS } from '../constants';
 abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
+
+  // Viewport Properties
+  private voiRange: VOIRange;
+  private VOILUTFunction: VOILUTFunctionType;
 
   constructor(props: ViewportInput) {
     super(props);
@@ -151,14 +167,35 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   /**
    * Sets the properties for the volume viewport on the volume
+   * Sets the VOILUTFunction property for the volume viewport on the volume
+   *
+   * @param VOILUTFunction - Sets the voi mode (LINEAR, EXACT_LINEAR, or SIGMOID)
+   * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
+   * @param suppressEvents - If true, the viewport will not emit events
+   */
+  private setVOILUTFunction(
+    voiLUTFunction: VOILUTFunctionType,
+    volumeId?: string,
+    suppressEvents?: boolean
+  ): void {
+    // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
+    if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
+      voiLUTFunction = VOILUTFunctionType.LINEAR;
+    }
+    this.VOILUTFunction = voiLUTFunction;
+    this.setVOI(this.voiRange, volumeId, suppressEvents);
+  }
+
+  /**
+   * Sets the properties for the volume viewport on the volume
    * (if fusion, it sets it for the first volume in the fusion)
    *
    * @param voiRange - Sets the lower and upper voi
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
-  public setProperties(
-    { voiRange }: VolumeViewportProperties = {},
+  private setVOI(
+    voiRange: VOIRange,
     volumeId?: string,
     suppressEvents = false
   ): void {
@@ -188,24 +225,72 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       volumeId = actorEntries[0].uid;
     }
 
-    if (!voiRange) {
-      return;
+    let voiRangeToUse = voiRange;
+    if (typeof voiRangeToUse === 'undefined') {
+      const imageData = volumeActor.getMapper().getInputData();
+      const range = imageData.getPointData().getScalars().getRange();
+      const maxVoiRange = { lower: range[0], upper: range[1] };
+      voiRangeToUse = maxVoiRange;
     }
 
-    // Todo: later when we have more properties, refactor the setVoiRange code below
-    const { lower, upper } = voiRange;
-    volumeActor.getProperty().getRGBTransferFunction(0).setRange(lower, upper);
+    // scaling logic here
+    // https://github.com/Kitware/vtk-js/blob/c6f2e12cddfe5c0386a73f0793eb6d9ab20d573e/Sources/Rendering/OpenGL/VolumeMapper/index.js#L957-L972
+    // Todo, windowlevelTool needs to send property instead of
+    // directly changing the transferfunction range which is not valid for sigmoid
+    if (this.VOILUTFunction === VOILUTFunctionType.SIGMOID) {
+      const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
+      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+    } else {
+      const cfun = createLinearRGBTransferFunction(voiRangeToUse);
+      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+    }
+    this.voiRange = voiRangeToUse;
 
     if (!suppressEvents) {
       const eventDetail: VoiModifiedEventDetail = {
         viewportId: this.id,
         range: voiRange,
         volumeId: volumeId,
+        VOILUTFunction: this.VOILUTFunction,
       };
 
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
     }
   }
+
+  /**
+   * Sets the properties for the volume viewport on the volume
+   * (if fusion, it sets it for the first volume in the fusion)
+   *
+   * @param voiRange - Sets the lower and upper voi
+   * @param VOILUTFunction - Sets the voi mode (LINEAR, EXACT_LINEAR, or SIGMOID)
+   * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
+   * @param suppressEvents - If true, the viewport will not emit events
+   */
+  public setProperties(
+    { voiRange, VOILUTFunction }: VolumeViewportProperties = {},
+    volumeId?: string,
+    suppressEvents = false
+  ): void {
+    if (voiRange) {
+      this.setVOI(voiRange, volumeId, suppressEvents);
+    }
+
+    if (VOILUTFunction) {
+      this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
+    }
+  }
+
+  /**
+   * Retrieve the viewport properties
+   * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
+   */
+  public getProperties = (): VolumeViewportProperties => {
+    return {
+      voiRange: this.voiRange,
+      VOILUTFunction: this.VOILUTFunction,
+    };
+  };
 
   /**
    * Creates volume actors for all volumes defined in the `volumeInputArray`.
@@ -247,6 +332,18 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.id,
         suppressEvents
       );
+
+      if (i === 0 && !this.voiRange) {
+        const voiRange = actor
+          .getProperty()
+          .getRGBTransferFunction(0)
+          // @ts-ignore: vtk d ts problem
+          .getRange();
+        this.voiRange = {
+          lower: voiRange[0],
+          upper: voiRange[1],
+        };
+      }
 
       // We cannot use only volumeId since then we cannot have for instance more
       // than one representation of the same volume (since actors would have the
@@ -312,6 +409,17 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.id,
         suppressEvents
       );
+      if (i === 0 && !this.voiRange) {
+        const voiRange = actor
+          .getProperty()
+          .getRGBTransferFunction(0)
+          // @ts-ignore: vtk d ts problem
+          .getRange();
+        this.voiRange = {
+          lower: voiRange[0],
+          upper: voiRange[1],
+        };
+      }
 
       if (visibility === false) {
         actor.setVisibility(false);

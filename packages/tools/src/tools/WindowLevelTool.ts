@@ -1,8 +1,6 @@
 import { BaseTool } from './base';
 import {
   getEnabledElement,
-  Enums,
-  triggerEvent,
   VolumeViewport,
   StackViewport,
   utilities,
@@ -40,13 +38,11 @@ class WindowLevelTool extends BaseTool {
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewportId, viewport } = enabledElement;
+    const { renderingEngine, viewport } = enabledElement;
 
     let volumeId,
-      volumeActor,
       lower,
       upper,
-      rgbTransferFunction,
       modality,
       newRange,
       viewportsContainingVolumeUID;
@@ -55,14 +51,12 @@ class WindowLevelTool extends BaseTool {
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
       volumeId = targetId.split('volumeId:')[1];
-      const actorEntry = viewport.getActor(volumeId);
-      volumeActor = actorEntry.actor as Types.VolumeActor;
-      rgbTransferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
       );
-      [lower, upper] = rgbTransferFunction.getRange();
+      const properties = viewport.getProperties();
+      ({ lower, upper } = properties.voiRange);
       const volume = cache.getVolume(volumeId);
       modality = volume.metadata.Modality;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
@@ -97,12 +91,6 @@ class WindowLevelTool extends BaseTool {
       });
     }
 
-    const eventDetail: Types.EventTypes.VoiModifiedEventDetail = {
-      volumeId,
-      viewportId,
-      range: newRange,
-    };
-
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
         voiRange: newRange,
@@ -112,14 +100,16 @@ class WindowLevelTool extends BaseTool {
       return;
     }
 
-    // Only trigger event for volume since the stack event is triggered inside
-    // the stackViewport, Todo: we need the setProperties API on the volume viewport
-    triggerEvent(element, Enums.Events.VOI_MODIFIED, eventDetail);
-    rgbTransferFunction.setRange(newRange.lower, newRange.upper);
+    if (viewport instanceof VolumeViewport) {
+      viewport.setProperties({
+        voiRange: newRange,
+      });
 
-    viewportsContainingVolumeUID.forEach((vp) => {
-      vp.render();
-    });
+      viewportsContainingVolumeUID.forEach((vp) => {
+        vp.render();
+      });
+      return;
+    }
   }
 
   getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }) {

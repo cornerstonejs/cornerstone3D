@@ -1,4 +1,6 @@
 import csUtils from './invertRgbTransferFunction';
+import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction';
+import createLinearRGBTransferFunction from './createLinearRGBTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
 import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
@@ -40,6 +42,8 @@ import * as windowLevel from './windowLevel';
 
 export {
   csUtils as invertRgbTransferFunction,
+  createSigmoidRGBTransferFunction,
+  createLinearRGBTransferFunction,
   scaleRgbTransferFunction,
   triggerEvent,
   imageIdToURI,

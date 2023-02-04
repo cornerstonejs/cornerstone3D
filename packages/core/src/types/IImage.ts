@@ -39,6 +39,8 @@ interface IImage {
   windowCenter: number[] | number;
   /** windowWidth from metadata */
   windowWidth: number[] | number;
+  /** voiLUTFunction from metadata */
+  voiLUTFunction: string;
   /** function that returns the pixelData as an array */
   getPixelData: () => Array<number>;
   getCanvas: () => HTMLCanvasElement;
