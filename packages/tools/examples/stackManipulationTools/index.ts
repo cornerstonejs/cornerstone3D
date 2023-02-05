@@ -3,6 +3,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -24,6 +25,11 @@ const {
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
+const toolGroupId = 'STACK_TOOL_GROUP_ID';
+const leftClickTools = [WindowLevelTool.toolName, StackRotateTool.toolName];
+const defaultLeftClickTool = leftClickTools[0];
+let currentLeftClickTool = leftClickTools[0];
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Basic Stack Manipulation',
@@ -44,10 +50,34 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Left Click: Window/Level\nMiddle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+  'Middle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
 
 content.append(instructions);
 // ============================= //
+
+addDropdownToToolbar({
+  options: {
+    values: leftClickTools,
+    defaultValue: defaultLeftClickTool,
+  },
+  onSelectedValueChange: (selectedValue) => {
+    console.log('>>>>> selectedValue :: ', selectedValue);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    console.log('>>>>> toolGroup :: ', toolGroup);
+
+    toolGroup.setToolPassive(currentLeftClickTool);
+
+    toolGroup.setToolActive(<string>selectedValue, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
+
+    currentLeftClickTool = selectedValue;
+  },
+});
 
 /**
  * Runs the demo
@@ -55,8 +85,6 @@ content.append(instructions);
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -78,7 +106,7 @@ async function run() {
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
+  toolGroup.setToolActive(defaultLeftClickTool, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
