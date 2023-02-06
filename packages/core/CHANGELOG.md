@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.30.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.29.1...@cornerstonejs/core@0.30.0) (2023-02-06)
+
+
+### Features
+
+* **StackViewport:** rework rotation for stack viewport ([#388](https://github.com/cornerstonejs/cornerstone3D-beta/issues/388)) ([cfdb0b3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cfdb0b38e5cfee93f7c0d241a75498e08dcec6e8)), closes [#372](https://github.com/cornerstonejs/cornerstone3D-beta/issues/372)
+
+
+
+
+
 ## [0.29.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.29.0...@cornerstonejs/core@0.29.1) (2023-02-03)
 
 
