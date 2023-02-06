@@ -4435,6 +4435,19 @@ declare namespace stackPrefetch {
 }
 
 // @public (undocumented)
+export class StackRotateTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
+    // (undocumented)
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+}
+
+// @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
     constructor(toolProps?: {}, defaultToolProps?: {
         supportedInteractionTypes: string[];
