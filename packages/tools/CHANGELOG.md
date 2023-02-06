@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.42.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.41.1...@cornerstonejs/tools@0.42.0) (2023-02-06)
+
+
+### Features
+
+* **stackRotate:** Add stack rotate tool ([#329](https://github.com/cornerstonejs/cornerstone3D-beta/issues/329)) ([e2fbf6e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e2fbf6e26b7f63d8923d050d8fff10a4dfad34bb))
+
+
+
+
+
 ## [0.41.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.41.0...@cornerstonejs/tools@0.41.1) (2023-02-06)
 
 **Note:** Version bump only for package @cornerstonejs/tools
