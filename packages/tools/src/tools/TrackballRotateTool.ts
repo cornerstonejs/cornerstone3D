@@ -1,6 +1,6 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
-import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
