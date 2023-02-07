@@ -54,8 +54,6 @@ class TrackballRotateTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
-    // console.log(newPosition);
-
     viewport.setCamera({
       position: newPosition,
       viewUp: newViewUp,
@@ -86,15 +84,10 @@ class TrackballRotateTool extends BaseTool {
       lastPointsCanvas[1] / height,
     ];
 
-    // console.log(normalizedPosition[0] - normalizedPreviousPosition[0]);
-
     const center: Types.Point2 = [width * 0.5, height * 0.5];
     // NOTE: centerWorld corresponds to the focal point in cornerstone3D
     const centerWorld = viewport.canvasToWorld(center);
     const normalizedCenter = [0.5, 0.5];
-    // const normalizedCenter = center;
-    // console.log(centerWorld);
-
 
     const radsq = (1.0 + Math.abs(normalizedCenter[0])) ** 2.0;
     const op = [normalizedPreviousPosition[0], 0, 0];
