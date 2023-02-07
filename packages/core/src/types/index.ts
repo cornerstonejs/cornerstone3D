@@ -13,7 +13,11 @@ import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
 import type { IViewport, PublicViewportInput } from './IViewport';
 import type { VolumeActor, Actor, ActorEntry } from './IActor';
-import type { IImageLoadObject, IVolumeLoadObject } from './ILoadObject';
+import type {
+  IImageLoadObject,
+  IVolumeLoadObject,
+  IGeometryLoadObject,
+} from './ILoadObject';
 import type Metadata from './Metadata';
 import type OrientationVectors from './OrientationVectors';
 import type Point2 from './Point2';
@@ -40,6 +44,7 @@ import type ICachedImage from './ICachedImage';
 import type ICachedVolume from './ICachedVolume';
 import type IStackViewport from './IStackViewport';
 import type IVolumeViewport from './IVolumeViewport';
+import type ViewportPreset from './ViewportPreset';
 
 // CPU types
 import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
@@ -58,6 +63,15 @@ import type * as EventTypes from './EventTypes';
 import type IRenderingEngine from './IRenderingEngine';
 import type ActorSliceRange from './ActorSliceRange';
 import type ImageSliceData from './ImageSliceData';
+import type IGeometry from './IGeometry';
+import type {
+  PublicContourSetData,
+  ContourSetData,
+  ContourData,
+} from './ContourData';
+import type ICachedGeometry from './ICachedGeometry';
+import type { IContourSet } from './IContourSet';
+import type { IContour } from './IContour';
 
 export type {
   ICamera,
@@ -93,6 +107,7 @@ export type {
   IVolumeLoadObject,
   IVolumeInput,
   VolumeInputCallback,
+  ViewportPreset,
   //
   Metadata,
   OrientationVectors,
@@ -123,4 +138,14 @@ export type {
   CustomEventType,
   ActorSliceRange,
   ImageSliceData,
+  // Geometry
+  IGeometry,
+  IGeometryLoadObject,
+  ICachedGeometry,
+  // Contour
+  PublicContourSetData,
+  ContourSetData,
+  ContourData,
+  IContourSet,
+  IContour,
 };

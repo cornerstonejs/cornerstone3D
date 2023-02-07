@@ -2,6 +2,7 @@ import { getEnabledElement, Types } from '@cornerstonejs/core';
 import {
   mouseEventListeners,
   wheelEventListener,
+  touchEventListeners,
   keyEventListener,
 } from '../eventListeners';
 import {
@@ -10,7 +11,7 @@ import {
   mouseToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
-  //   touchToolEventDispatcher,
+  touchToolEventDispatcher,
 } from '../eventDispatchers';
 // ~~
 
@@ -32,13 +33,7 @@ function removeEnabledElement(
   const { element, viewportId } = elementDisabledEvt.detail;
 
   _resetSvgNodeCache(element);
-
-  const viewportNode = element;
-  const svgLayer = viewportNode.querySelector('svg');
-  const internalViewportNode = element.querySelector(`div.${VIEWPORT_ELEMENT}`);
-  if (svgLayer) {
-    internalViewportNode.removeChild(svgLayer);
-  }
+  _removeSvgNode(element);
 
   // Remove this element from the annotation rendering engine
   annotationRenderingEngine.removeViewportElement(viewportId, element);
@@ -46,6 +41,7 @@ function removeEnabledElement(
   // Listeners
   mouseEventListeners.disable(element);
   wheelEventListener.disable(element);
+  touchEventListeners.disable(element);
   keyEventListener.disable(element);
   // labelmap
 
@@ -56,7 +52,7 @@ function removeEnabledElement(
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(element);
   keyboardToolEventDispatcher.disable(element);
-  // touchToolEventDispatcher.disable(canvas);
+  touchToolEventDispatcher.disable(element);
 
   // State
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?
@@ -109,6 +105,14 @@ function _resetSvgNodeCache(element: HTMLDivElement) {
   const elementHash = `${viewportId}:${renderingEngineId}`;
 
   delete state.svgNodeCache[elementHash];
+}
+
+function _removeSvgNode(element: HTMLDivElement) {
+  const internalViewportNode = element.querySelector(`div.${VIEWPORT_ELEMENT}`);
+  const svgLayer = internalViewportNode.querySelector('svg');
+  if (svgLayer) {
+    internalViewportNode.removeChild(svgLayer);
+  }
 }
 
 /**

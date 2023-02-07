@@ -29,6 +29,7 @@ const {
   EllipticalROITool,
   BidirectionalTool,
   AngleTool,
+  CobbAngleTool,
   ToolGroupManager,
   ArrowAnnotateTool,
   StackScrollMouseWheelTool,
@@ -71,6 +72,7 @@ const toolsNames = [
   EllipticalROITool.toolName,
   BidirectionalTool.toolName,
   AngleTool.toolName,
+  CobbAngleTool.toolName,
   ArrowAnnotateTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
@@ -139,6 +141,7 @@ async function run() {
   cornerstoneTools.addTool(EllipticalROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(AngleTool);
+  cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
@@ -153,6 +156,7 @@ async function run() {
   toolGroup.addTool(EllipticalROITool.toolName);
   toolGroup.addTool(BidirectionalTool.toolName);
   toolGroup.addTool(AngleTool.toolName);
+  toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
@@ -173,6 +177,7 @@ async function run() {
   toolGroup.setToolPassive(EllipticalROITool.toolName);
   toolGroup.setToolPassive(BidirectionalTool.toolName);
   toolGroup.setToolPassive(AngleTool.toolName);
+  toolGroup.setToolPassive(CobbAngleTool.toolName);
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
@@ -182,7 +187,6 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-    type: 'STACK',
   });
 
   // Instantiate a rendering engine

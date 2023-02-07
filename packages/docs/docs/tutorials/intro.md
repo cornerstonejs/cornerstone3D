@@ -49,7 +49,6 @@ In order for `Cornerstone3D` to properly show the properties of an image such
 as voi, suv values, etc., it needs metadata (in addition to the image data itself).
 Therefore, proper metadata providers should be registered with `Cornerstone3D` so that it can work as intended. Examples of such providers are
 
-- `WADORSHeaderProvider` for keeping naturalized metadata for proper PT SUV calculations
 
 
 ### Library Initialization

@@ -20,7 +20,7 @@ export default function filterToolsWithMoveableHandles(
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
 ): ToolsWithMoveableHandles[] {
-  const proximity = 6;
+  const proximity = interactionType === 'touch' ? 36 : 6;
   const toolsWithMoveableHandles = [];
 
   ToolAndAnnotations.forEach(({ tool, annotations }) => {

@@ -1,6 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
   cache,
@@ -157,7 +158,7 @@ describe('Probe Tool: ', () => {
         } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
         // Mouse Down
-        let evt = new MouseEvent('mousedown', {
+        const mouseDownEvt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           pageX: pageX1,
@@ -165,15 +166,17 @@ describe('Probe Tool: ', () => {
           clientX: clientX1,
           clientY: clientY1,
         });
-        element.dispatchEvent(evt);
-
         // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
+        const mouseUpEvt = new MouseEvent('mouseup');
 
-        // Since there is tool rendering happening for any mouse event
-        // we just attach a listener before the last one -> mouse up
-        addEventListenerForAnnotationRendered();
-        document.dispatchEvent(evt);
+        performMouseDownAndUp(
+          element,
+          mouseDownEvt,
+          mouseUpEvt,
+          // Since there is tool rendering happening for any mouse event
+          // we just attach a listener before the last one -> mouse up
+          addEventListenerForAnnotationRendered
+        );
       });
 
       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
@@ -252,7 +255,7 @@ describe('Probe Tool: ', () => {
         });
       };
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, async () => {
         const index1 = [11, 20, 0]; // 255
         const index2 = [20, 20, 0]; // 0
 
@@ -275,7 +278,7 @@ describe('Probe Tool: ', () => {
         } = createNormalizedMouseEvent(imageData, index2, element, vp);
 
         // Mouse Down
-        let evt1 = new MouseEvent('mousedown', {
+        const mouseDownEvt1 = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           pageX: pageX1,
@@ -283,14 +286,14 @@ describe('Probe Tool: ', () => {
           clientX: clientX1,
           clientY: clientY1,
         });
-        element.dispatchEvent(evt1);
 
         // Mouse Up instantly after
-        evt1 = new MouseEvent('mouseup');
-        document.dispatchEvent(evt1);
+        const mouseUpEvt1 = new MouseEvent('mouseup');
+
+        await performMouseDownAndUp(element, mouseDownEvt1, mouseUpEvt1);
 
         // Mouse Down
-        let evt2 = new MouseEvent('mousedown', {
+        const mouseDownEvt2 = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           pageX: pageX2,
@@ -298,13 +301,16 @@ describe('Probe Tool: ', () => {
           clientX: clientX2,
           clientY: clientY2,
         });
-        element.dispatchEvent(evt2);
 
         // Mouse Up instantly after
-        evt2 = new MouseEvent('mouseup');
+        const mouseUpEvt2 = new MouseEvent('mouseup');
 
-        addEventListenerForAnnotationRendered();
-        document.dispatchEvent(evt2);
+        performMouseDownAndUp(
+          element,
+          mouseDownEvt2,
+          mouseUpEvt2,
+          addEventListenerForAnnotationRendered
+        );
       });
 
       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
@@ -373,7 +379,7 @@ describe('Probe Tool: ', () => {
         } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
         // Mouse Down
-        let evt = new MouseEvent('mousedown', {
+        const mouseDownEvt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           pageX: pageX1,
@@ -381,13 +387,16 @@ describe('Probe Tool: ', () => {
           clientX: clientX1,
           clientY: clientY1,
         });
-        element.dispatchEvent(evt);
 
         // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
+        const mouseUpEvt = new MouseEvent('mouseup');
 
-        addEventListenerForAnnotationRendered();
-        document.dispatchEvent(evt);
+        performMouseDownAndUp(
+          element,
+          mouseDownEvt,
+          mouseUpEvt,
+          addEventListenerForAnnotationRendered
+        );
       });
 
       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
@@ -456,7 +465,7 @@ describe('Probe Tool: ', () => {
         } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
         // Mouse Down
-        let evt = new MouseEvent('mousedown', {
+        const mouseDownEvt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           pageX: pageX1,
@@ -464,13 +473,18 @@ describe('Probe Tool: ', () => {
           clientX: clientX1,
           clientY: clientY1,
         });
-        element.dispatchEvent(evt);
 
         // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
+        const mouseUpEvt = new MouseEvent('mouseup');
 
-        addEventListenerForAnnotationRendered();
-        document.dispatchEvent(evt);
+        performMouseDownAndUp(
+          element,
+          mouseDownEvt,
+          mouseUpEvt,
+          addEventListenerForAnnotationRendered
+        );
+        element.dispatchEvent(mouseDownEvt);
+        document.dispatchEvent(mouseDownEvt);
       });
 
       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
@@ -536,7 +550,7 @@ describe('Probe Tool: ', () => {
         } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
         // Mouse Down
-        let evt = new MouseEvent('mousedown', {
+        const mouseDownEvt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           clientX: clientX1,
@@ -544,13 +558,16 @@ describe('Probe Tool: ', () => {
           pageX: pageX1,
           pageY: pageY1,
         });
-        element.dispatchEvent(evt);
 
         // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
+        const mouseUpEvt = new MouseEvent('mouseup');
 
-        addEventListenerForAnnotationRendered();
-        document.dispatchEvent(evt);
+        performMouseDownAndUp(
+          element,
+          mouseDownEvt,
+          mouseUpEvt,
+          addEventListenerForAnnotationRendered
+        );
       });
 
       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
@@ -619,7 +636,7 @@ describe('Probe Tool: ', () => {
         });
       };
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.IMAGE_RENDERED, async () => {
         const index1 = [11, 20, 0]; // 255
         const index2 = [40, 40, 0]; // 0
 
@@ -643,7 +660,7 @@ describe('Probe Tool: ', () => {
         p2 = worldCoord2;
 
         // Mouse Down
-        let evt = new MouseEvent('mousedown', {
+        const mouseDownEvt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           clientX: clientX1,
@@ -651,14 +668,14 @@ describe('Probe Tool: ', () => {
           pageX: pageX1,
           pageY: pageY1,
         });
-        element.dispatchEvent(evt);
 
         // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
-        document.dispatchEvent(evt);
+        const mouseUpEvt = new MouseEvent('mouseup');
+
+        await performMouseDownAndUp(element, mouseDownEvt, mouseUpEvt);
 
         // Grab the probe tool again
-        evt = new MouseEvent('mousedown', {
+        let evt = new MouseEvent('mousedown', {
           target: element,
           buttons: 1,
           clientX: clientX1,

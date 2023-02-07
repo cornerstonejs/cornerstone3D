@@ -7,9 +7,11 @@ type ToolBindingKeyboardType =
 
 type IToolBinding = {
   /** Mouse button bindings e.g., MouseBindings.Primary/Secondary etc. */
-  mouseButton: ToolBindingMouseType;
+  mouseButton?: ToolBindingMouseType;
   /** Keyboard bindings e.g., KeyboardBindings.Shift/Ctrl etc. */
   modifierKey?: ToolBindingKeyboardType;
+  /** Number of touch points */
+  numTouchPoints?: number;
 };
 
 type SetToolBindingsType = {

@@ -5,7 +5,7 @@ import {
 import { EventTypes } from '../../types';
 import { Events } from '../../enums';
 import { getRenderingEngine } from '../getRenderingEngine';
-import VolumeViewport from '../VolumeViewport';
+import BaseVolumeViewport from '../BaseVolumeViewport';
 
 // Keeping track of previous imageIndex for each viewportId
 type VolumeImageState = Record<string, number>;
@@ -35,9 +35,9 @@ function volumeNewImageEventDispatcher(
   const renderingEngine = getRenderingEngine(renderingEngineId);
   const viewport = renderingEngine.getViewport(viewportId);
 
-  if (!(viewport instanceof VolumeViewport)) {
+  if (!(viewport instanceof BaseVolumeViewport)) {
     throw new Error(
-      `volumeNewImageEventDispatcher: viewport is not a VolumeViewport`
+      `volumeNewImageEventDispatcher: viewport is not a BaseVolumeViewport`
     );
   }
 
@@ -45,8 +45,16 @@ function volumeNewImageEventDispatcher(
     state[viewport.id] = 0;
   }
 
-  const { numberOfSlices, imageIndex } =
-    getImageSliceDataForVolumeViewport(viewport);
+  const sliceData = getImageSliceDataForVolumeViewport(viewport);
+
+  if (!sliceData) {
+    console.warn(
+      `volumeNewImageEventDispatcher: sliceData is undefined for viewport ${viewport.id}`
+    );
+    return;
+  }
+
+  const { numberOfSlices, imageIndex } = sliceData;
 
   if (state[viewport.id] === imageIndex) {
     return;

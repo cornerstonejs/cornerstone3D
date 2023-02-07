@@ -12,7 +12,7 @@ type ModesFilter = Array<ToolModes>;
  * @param modesFilter - An array of entries from the `ToolModes` enum.
  */
 export default function getToolsWithModesForMouseEvent(
-  evt: EventTypes.NormalizedMouseEventType,
+  evt: EventTypes.MouseMoveEventType,
   modesFilter: ModesFilter,
   evtButton?: any
 ) {

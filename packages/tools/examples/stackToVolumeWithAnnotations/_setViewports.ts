@@ -10,7 +10,7 @@ import { StreamingImageVolume } from '@cornerstonejs/streaming-image-volume-load
 import { Types as cstTypes } from '@cornerstonejs/tools';
 
 const { ViewportType } = Enums;
-const VOLUME_LOADER_SCHEME = 'streaming-wadors';
+const VOLUME_LOADER_SCHEME = 'wadors';
 
 function _convertVolumeToStackViewport(
   renderingEngine: Types.IRenderingEngine,

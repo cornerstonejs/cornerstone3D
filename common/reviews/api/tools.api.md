@@ -105,7 +105,7 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => AngleAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => AngleAnnotation;
     // (undocumented)
     angleStartedNotYetCompleted: boolean;
     // (undocumented)
@@ -117,6 +117,8 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -126,9 +128,11 @@ export class AngleTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     _getTextLines(data: any, targetId: any): string[];
     // (undocumented)
-    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: AngleAnnotation, handle: ToolHandle): void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -138,17 +142,13 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AngleAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -310,7 +310,7 @@ enum AnnotationStyleStates {
 // @public (undocumented)
 export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
-    abstract addNewAnnotation(evt: EventTypes_2.MouseDownActivateEventType, interactionType: InteractionTypes): Annotation;
+    abstract addNewAnnotation(evt: EventTypes_2.InteractionEventType, interactionType: InteractionTypes): Annotation;
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
@@ -318,7 +318,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     getLinkedTextBoxStyle(specifications: StyleSpecifier, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
-    abstract handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
+    abstract handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
     // (undocumented)
     abstract isPointNearTool(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
@@ -326,7 +326,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    abstract toolSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes): void;
+    abstract toolSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes): void;
 }
 
 // @public (undocumented)
@@ -347,7 +347,7 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => ArrowAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ArrowAnnotation;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -357,7 +357,9 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
     // (undocumented)
-    doubleClickCallback: (evt: EventTypes_2.MouseUpEventType) => void;
+    doubleClickCallback: (evt: EventTypes_2.TouchTapEventType) => void;
+    // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
         annotation: any;
@@ -368,7 +370,9 @@ export class ArrowAnnotateTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: ArrowAnnotation, handle: ToolHandle, interactionType?: string): void;
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: ArrowAnnotation, handle: ToolHandle): void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -380,19 +384,17 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: ArrowAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: ArrowAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
+    // (undocumented)
+    touchTapCallback: (evt: EventTypes_2.TouchTapEventType) => void;
 }
 
 // @public (undocumented)
@@ -482,7 +484,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation(evt: EventTypes_2.MouseDownActivateEventType): BidirectionalAnnotation;
+    addNewAnnotation(evt: EventTypes_2.InteractionEventType): BidirectionalAnnotation;
     // (undocumented)
     _calculateCachedStats: (annotation: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
@@ -494,6 +496,12 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: any) => void;
     // (undocumented)
+    _dragDrawCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragModifyHandle: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -503,13 +511,13 @@ export class BidirectionalTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     _getSignedAngle: (vector1: any, vector2: any) => number;
     // (undocumented)
     _getTextLines: (data: any, targetId: any) => string[];
     // (undocumented)
-    _handleDragModify: (evt: any) => void;
-    // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: BidirectionalAnnotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: BidirectionalAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -521,12 +529,6 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    _mouseDragDrawCallback: (evt: MouseMoveEventType | MouseDragEventType) => void;
-    // (undocumented)
-    _mouseDragModifyCallback: (evt: MouseDragEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
     _movingLongAxisWouldPutItThroughShortAxis: (firstLineSegment: any, secondLineSegment: any) => boolean;
     // (undocumented)
     preventHandleOutsideImage: boolean;
@@ -537,7 +539,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: BidirectionalAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: BidirectionalAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -556,7 +558,15 @@ type BoundsIJK = [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 export class BrushTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => void;
+    invalidateBrushCursor(): void;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    onSetToolPassive: () => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
@@ -618,6 +628,8 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         segmentation: any;
@@ -633,15 +645,13 @@ export class CircleScissorsTool extends BaseTool {
         centerCanvas?: Array<number>;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -653,6 +663,62 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
+
+// @public (undocumented)
+export class CobbAngleTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => AngleAnnotation;
+    // (undocumented)
+    angleStartedNotYetCompleted: boolean;
+    // (undocumented)
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _getTextLines(data: any, targetId: any): string[];
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, handle: ToolHandle, interactionType?: string): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: AngleAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
+    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: AngleAnnotation, interactionType: InteractionTypes) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
 
 // @public (undocumented)
 type Color = [number, number, number, number];
@@ -700,6 +766,32 @@ declare namespace CONSTANTS {
     }
 }
 export { CONSTANTS }
+
+// @public (undocumented)
+type ContourData = {
+    points: Point3[];
+    type: ContourType;
+    color?: Point3;
+};
+
+// @public (undocumented)
+type ContourSegmentationData = {
+    geometryIds: string[];
+};
+
+// @public (undocumented)
+type ContourSetData = {
+    id: string;
+    data: ContourData[];
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
+// @public (undocumented)
+function copyPoints(points: ITouchPoints): ITouchPoints;
+
+// @public (undocumented)
+function copyPointsList(points: ITouchPoints[]): ITouchPoints[];
 
 // @public (undocumented)
 const CORNERSTONE_COLOR_LUT: number[][];
@@ -1021,7 +1113,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType, interactionType: string) => CrosshairsAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => CrosshairsAnnotation;
     // (undocumented)
     _applyDeltaShiftToSelectedViewportCameras(renderingEngine: any, viewportsAnnotationsToUpdate: any, delta: any): void;
     // (undocumented)
@@ -1039,9 +1131,13 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: any) => void;
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
     } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     _filterAnnotationsByUniqueViewportOrientations: (enabledElement: any, annotations: any) => any[];
     // (undocumented)
@@ -1067,7 +1163,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _getViewportsInfo: () => Types_2.IViewportId[];
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation) => void;
     // (undocumented)
     initializeViewport: ({ renderingEngineId, viewportId, }: Types_2.IViewportId) => {
         normal: Types_2.Point3;
@@ -1080,11 +1176,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _jump: (enabledElement: any, jumpWorld: any) => boolean;
     // (undocumented)
-    _mouseDragCallback: (evt: MouseDragEventType) => void;
-    // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredToolAnnotations: Annotations) => boolean;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     onCameraModified: (evt: any) => void;
     // (undocumented)
@@ -1112,7 +1204,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: Annotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes) => void;
     // (undocumented)
     _unsubscribeToViewportNewVolumeSet(viewportsInfo: any): void;
 }
@@ -1262,7 +1354,9 @@ export class DragProbeTool extends ProbeTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    postMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => ProbeAnnotation;
+    postMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
+    // (undocumented)
+    postTouchStartCallback: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -1396,7 +1490,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => EllipticalROIAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => EllipticalROIAnnotation;
     // (undocumented)
     _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
@@ -1406,7 +1500,11 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: any) => void;
     // (undocumented)
-    _dragHandle: (evt: any) => void;
+    _dragDrawCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragHandle: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
         annotation: any;
@@ -1421,11 +1519,13 @@ export class EllipticalROITool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     _getCanvasEllipseCenter(ellipseCanvasPoints: Types_2.Point2[]): Types_2.Point2;
     // (undocumented)
     _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[];
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -1437,12 +1537,6 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    _mouseDragDrawCallback: (evt: MouseMoveEventType | MouseDragEventType) => void;
-    // (undocumented)
-    _mouseDragModifyCallback: (evt: MouseDragEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
     _pointInEllipseCanvas(ellipse: any, location: Types_2.Point2): boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
@@ -1451,7 +1545,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: EllipticalROIAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: EllipticalROIAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -1466,7 +1560,8 @@ declare namespace Enums {
         ToolModes,
         AnnotationStyleStates,
         Events,
-        SegmentationRepresentations
+        SegmentationRepresentations,
+        Swipe
     }
 }
 export { Enums }
@@ -1520,7 +1615,21 @@ enum Events {
     // (undocumented)
     SEGMENTATION_REPRESENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_MODIFIED",
     // (undocumented)
-    SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED"
+    SEGMENTATION_REPRESENTATION_REMOVED = "CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_REMOVED",
+    // (undocumented)
+    TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
+    // (undocumented)
+    TOUCH_END = "CORNERSTONE_TOOLS_TOUCH_END",
+    // (undocumented)
+    TOUCH_PRESS = "CORNERSTONE_TOOLS_TOUCH_PRESS",
+    // (undocumented)
+    TOUCH_START = "CORNERSTONE_TOOLS_TOUCH_START",
+    // (undocumented)
+    TOUCH_START_ACTIVATE = "CORNERSTONE_TOOLS_TOUCH_START_ACTIVATE",
+    // (undocumented)
+    TOUCH_SWIPE = "CORNERSTONE_TOOLS_SWIPE",
+    // (undocumented)
+    TOUCH_TAP = "CORNERSTONE_TOOLS_TAP"
 }
 
 // @public (undocumented)
@@ -1580,8 +1689,12 @@ declare namespace EventTypes {
 
 declare namespace EventTypes_2 {
     export {
-        NormalizedMouseEventDetail,
+        InteractionStartType,
+        InteractionEndType,
+        InteractionEventType,
+        NormalizedInteractionEventDetail,
         NormalizedMouseEventType,
+        NormalizedTouchEventType,
         AnnotationAddedEventDetail,
         AnnotationAddedEventType,
         AnnotationCompletedEventDetail,
@@ -1615,15 +1728,29 @@ declare namespace EventTypes_2 {
         KeyUpEventDetail,
         KeyUpEventType,
         MouseDownEventDetail,
+        TouchStartEventDetail,
         MouseDownEventType,
+        TouchStartEventType,
         MouseDownActivateEventDetail,
+        TouchStartActivateEventDetail,
         MouseDownActivateEventType,
+        TouchStartActivateEventType,
         MouseDragEventDetail,
+        TouchDragEventDetail,
         MouseDragEventType,
+        TouchDragEventType,
         MouseUpEventDetail,
+        TouchEndEventDetail,
         MouseUpEventType,
+        TouchEndEventType,
         MouseClickEventDetail,
         MouseClickEventType,
+        TouchTapEventDetail,
+        TouchTapEventType,
+        TouchSwipeEventDetail,
+        TouchSwipeEventType,
+        TouchPressEventDetail,
+        TouchPressEventType,
         MouseMoveEventDetail,
         MouseMoveEventType,
         MouseDoubleClickEventDetail,
@@ -1658,6 +1785,26 @@ function findClosestPoint(sourcePoints: Array<Types_2.Point2>, targetPoint: Type
 type FlipDirection = {
     flipHorizontal?: boolean;
     flipVertical?: boolean;
+};
+
+// @public (undocumented)
+function floodFill(getter: FloodFillGetter, seed: Types_2.Point2 | Types_2.Point3, options?: FloodFillOptions): FloodFillResult;
+
+// @public (undocumented)
+type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
+
+// @public (undocumented)
+type FloodFillOptions = {
+    onFlood?: (x: any, y: any) => void;
+    onBoundary?: (x: any, y: any) => void;
+    equals?: (a: any, b: any) => boolean;
+    diagonals?: boolean;
+};
+
+// @public (undocumented)
+type FloodFillResult = {
+    flooded: Types_2.Point2[] | Types_2.Point3[];
+    boundaries: Types_2.Point2[] | Types_2.Point3[];
 };
 
 // @public (undocumented)
@@ -1742,6 +1889,12 @@ function getBoundingBoxAroundShape(points: Types_2.Point3[], dimensions?: Types_
 function getBoundsIJKFromRectangleAnnotations(annotations: any, referenceVolume: any, options?: Options): any;
 
 // @public (undocumented)
+function getBrushSizeForToolGroup(toolGroupId: string): void;
+
+// @public (undocumented)
+function getBrushThresholdForToolGroup(toolGroupId: string): any;
+
+// @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
@@ -1772,6 +1925,18 @@ function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapCon
 function getDefaultSegmentationStateManager(): SegmentationStateManager;
 
 // @public (undocumented)
+function getDeltaDistance(currentPoints: IPoints[], lastPoints: IPoints[]): IDistance;
+
+// @public (undocumented)
+function getDeltaDistanceBetweenIPoints(currentPoints: IPoints[], lastPoints: IPoints[]): IDistance;
+
+// @public (undocumented)
+function getDeltaPoints(currentPoints: IPoints[], lastPoints: IPoints[]): IPoints;
+
+// @public (undocumented)
+function getDeltaRotation(currentPoints: ITouchPoints[], lastPoints: ITouchPoints[]): void;
+
+// @public (undocumented)
 function getFirstIntersectionWithPolyline(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): Types_2.Point2 | undefined;
 
 // @public (undocumented)
@@ -1788,6 +1953,12 @@ function getGlobalRepresentationConfig(representationType: SegmentationRepresent
 
 // @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
+function getMeanPoints(points: IPoints[]): IPoints;
+
+// @public (undocumented)
+function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
 function getNumberOfAnnotations(toolName: string, frameOfReferenceUID?: string): number;
@@ -1896,6 +2067,22 @@ interface ICache {
 }
 
 // @public (undocumented)
+interface ICachedGeometry {
+    // (undocumented)
+    geometry?: IGeometry;
+    // (undocumented)
+    geometryId: string;
+    // (undocumented)
+    geometryLoadObject: IGeometryLoadObject;
+    // (undocumented)
+    loaded: boolean;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    timeStamp: number;
+}
+
+// @public (undocumented)
 interface ICachedImage {
     // (undocumented)
     image?: IImage;
@@ -1944,6 +2131,60 @@ interface ICamera {
     viewUp?: Point3;
 }
 
+// @public (undocumented)
+interface IContour {
+    // (undocumented)
+    color: any;
+    // (undocumented)
+    getColor(): Point3;
+    // (undocumented)
+    getFlatPointsArray(): number[];
+    getPoints(): Point3[];
+    // (undocumented)
+    _getSizeInBytes(): number;
+    // (undocumented)
+    getType(): ContourType;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    points: Point3[];
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
+
+// @public
+interface IContourSet {
+    // (undocumented)
+    contours: IContour[];
+    // (undocumented)
+    _createEachContour(data: ContourData[]): void;
+    // (undocumented)
+    readonly frameOfReferenceUID: string;
+    // (undocumented)
+    getColor(): any;
+    getContours(): IContour[];
+    getFlatPointsArray(): Point3[];
+    getNumberOfContours(): number;
+    getNumberOfPointsArray(): number[];
+    getNumberOfPointsInAContour(contourIndex: number): number;
+    getPointsInContour(contourIndex: number): Point3[];
+    // (undocumented)
+    getSizeInBytes(): number;
+    getTotalNumberOfPoints(): number;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
+
+// @public (undocumented)
+type IDistance = {
+    page: number;
+    client: number;
+    canvas: number;
+    world: number;
+};
+
 // @public
 interface IEnabledElement {
     FrameOfReferenceUID: string;
@@ -1951,6 +2192,25 @@ interface IEnabledElement {
     renderingEngineId: string;
     viewport: IStackViewport | IVolumeViewport;
     viewportId: string;
+}
+
+// @public (undocumented)
+interface IGeometry {
+    // (undocumented)
+    data: ContourSet;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    type: GeometryType;
+}
+
+// @public (undocumented)
+interface IGeometryLoadObject {
+    cancelFn?: () => void;
+    decache?: () => void;
+    promise: Promise<IGeometry>;
 }
 
 // @public
@@ -2203,7 +2463,16 @@ export function init(defaultConfiguration?: {}): void;
 function initElementCursor(element: HTMLDivElement, cursor: MouseCursor | null): void;
 
 // @public (undocumented)
-type InteractionTypes = 'Mouse';
+type InteractionEndType = Types_2.CustomEventType<InteractionEndEventDetail>;
+
+// @public (undocumented)
+type InteractionEventType = Types_2.CustomEventType<InteractionEventDetail>;
+
+// @public (undocumented)
+type InteractionStartType = Types_2.CustomEventType<InteractionStartEventDetail>;
+
+// @public (undocumented)
+type InteractionTypes = 'Mouse' | 'Touch';
 
 // @public (undocumented)
 function interpolateAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
@@ -2361,15 +2630,23 @@ interface ISynchronizerEventHandler {
 
 // @public (undocumented)
 type IToolBinding = {
-    mouseButton: ToolBindingMouseType;
+    mouseButton?: ToolBindingMouseType;
     modifierKey?: ToolBindingKeyboardType;
+    numTouchPoints?: number;
 };
+
+// @public (undocumented)
+type IToolClassReference = new <T extends BaseTool>(config: any) => T;
 
 // @public (undocumented)
 interface IToolGroup {
     // (undocumented)
     addTool: {
         (toolName: string, toolConfiguration?: any): void;
+    };
+    // (undocumented)
+    addToolInstance: {
+        (ttoolName: string, parentClassName: string, configuration?: any): void;
     };
     // (undocumented)
     addViewport: {
@@ -2433,6 +2710,17 @@ interface IToolGroup {
     viewportsInfo: Array<Types_2.IViewportId>;
 }
 
+// @public (undocumented)
+type ITouchPoints = IPoints & {
+    touch: {
+        identifier: string;
+        radiusX: number;
+        radiusY: number;
+        force: number;
+        rotationAngle: number;
+    };
+};
+
 // @public
 interface IViewport {
     _actors: Map<string, any>;
@@ -2456,10 +2744,12 @@ interface IViewport {
     getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;
+    getRotation: () => number;
     getZoom(): number;
     id: string;
     isDisabled: boolean;
     options: ViewportInputOptions;
+    removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;
     renderingEngineId: string;
@@ -2714,7 +3004,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => LengthAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LengthAnnotation;
     // (undocumented)
     _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
@@ -2726,6 +3016,8 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -2735,9 +3027,11 @@ export class LengthTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     _getTextLines(data: any, targetId: any): string[];
     // (undocumented)
-    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: LengthAnnotation, handle: ToolHandle, interactionType?: string): void;
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation, handle: ToolHandle): void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -2749,17 +3043,13 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: LengthAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
 }
@@ -2795,6 +3085,10 @@ export class MagnifyTool extends BaseTool {
     // (undocumented)
     _deactivateDraw: (element: HTMLDivElement) => void;
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragEndCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         referencedImageId: string;
         viewportIdsToRender: string[];
@@ -2805,13 +3099,9 @@ export class MagnifyTool extends BaseTool {
     // (undocumented)
     _getReferencedImageId(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): string;
     // (undocumented)
-    mouseDragCallback: () => void;
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType) => void;
-    // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    preTouchStartCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     static toolName: any;
 }
@@ -2892,12 +3182,8 @@ enum MouseBindings {
 }
 
 // @public (undocumented)
-type MouseClickEventDetail = NormalizedMouseEventDetail & {
+type MouseClickEventDetail = NormalizedInteractionEventDetail & MouseCustomEventDetail & MousePointsDetail & {
     mouseButton: number;
-    startPoints: IPoints;
-    lastPoints: IPoints;
-    currentPoints: IPoints;
-    deltaPoints: IPoints;
 };
 
 // @public (undocumented)
@@ -2919,54 +3205,37 @@ class MouseCursor {
 }
 
 // @public (undocumented)
-type MouseDoubleClickEventDetail = NormalizedMouseEventDetail & {
-    startPoints: IPoints;
-    lastPoints: IPoints;
-    currentPoints: IPoints;
-    deltaPoints: IPoints;
-};
+type MouseDoubleClickEventDetail = NormalizedInteractionEventDetail & MouseCustomEventDetail & MousePointsDetail;
 
 // @public (undocumented)
 type MouseDoubleClickEventType = Types_2.CustomEventType<MouseDoubleClickEventDetail>;
 
 // @public (undocumented)
-type MouseDownActivateEventDetail = NormalizedMouseEventDetail & {
+type MouseDownActivateEventDetail = NormalizedInteractionEventDetail & MousePointsDetail & MouseCustomEventDetail & {
     mouseButton: number;
-    startPoints: IPoints;
-    lastPoints: IPoints;
-    currentPoints: IPoints;
-    deltaPoints: IPoints;
 };
 
 // @public (undocumented)
 type MouseDownActivateEventType = Types_2.CustomEventType<MouseDownActivateEventDetail>;
 
 // @public (undocumented)
-type MouseDownEventDetail = NormalizedMouseEventDetail & {
+type MouseDownEventDetail = NormalizedInteractionEventDetail & MouseCustomEventDetail & MousePointsDetail & {
     mouseButton: number;
-    startPoints: IPoints;
-    lastPoints: IPoints;
-    currentPoints: IPoints;
-    deltaPoints: IPoints;
 };
 
 // @public (undocumented)
 type MouseDownEventType = Types_2.CustomEventType<MouseDownEventDetail>;
 
 // @public (undocumented)
-type MouseDragEventDetail = NormalizedMouseEventDetail & {
+type MouseDragEventDetail = NormalizedInteractionEventDetail & MouseCustomEventDetail & MousePointsDetail & {
     mouseButton: number;
-    startPoints: IPoints;
-    lastPoints: IPoints;
-    currentPoints: IPoints;
-    deltaPoints: IPoints;
 };
 
 // @public (undocumented)
 type MouseDragEventType = Types_2.CustomEventType<MouseDragEventDetail>;
 
 // @public (undocumented)
-type MouseMoveEventDetail = NormalizedMouseEventDetail & {
+type MouseMoveEventDetail = NormalizedInteractionEventDetail & MouseCustomEventDetail & {
     currentPoints: IPoints;
 };
 
@@ -2974,19 +3243,15 @@ type MouseMoveEventDetail = NormalizedMouseEventDetail & {
 type MouseMoveEventType = Types_2.CustomEventType<MouseMoveEventDetail>;
 
 // @public (undocumented)
-type MouseUpEventDetail = NormalizedMouseEventDetail & {
+type MouseUpEventDetail = NormalizedInteractionEventDetail & MouseCustomEventDetail & MousePointsDetail & {
     mouseButton: number;
-    startPoints: IPoints;
-    lastPoints: IPoints;
-    currentPoints: IPoints;
-    deltaPoints: IPoints;
 };
 
 // @public (undocumented)
 type MouseUpEventType = Types_2.CustomEventType<MouseUpEventDetail>;
 
 // @public (undocumented)
-type MouseWheelEventDetail = NormalizedMouseEventDetail & {
+type MouseWheelEventDetail = NormalizedInteractionEventDetail & MouseCustomEventDetail & {
     detail: Record<string, any>;
     wheel: {
         spinX: number;
@@ -3002,8 +3267,7 @@ type MouseWheelEventDetail = NormalizedMouseEventDetail & {
 type MouseWheelEventType = Types_2.CustomEventType<MouseWheelEventDetail>;
 
 // @public (undocumented)
-type NormalizedMouseEventDetail = {
-    event: Record<string, unknown> | MouseEvent;
+type NormalizedInteractionEventDetail = {
     eventName: string;
     renderingEngineId: string;
     viewportId: string;
@@ -3012,7 +3276,10 @@ type NormalizedMouseEventDetail = {
 };
 
 // @public (undocumented)
-type NormalizedMouseEventType = Types_2.CustomEventType<NormalizedMouseEventDetail>;
+type NormalizedMouseEventType = Types_2.CustomEventType<MouseCustomEventDetail>;
+
+// @public (undocumented)
+type NormalizedTouchEventType = Types_2.CustomEventType<TouchCustomEventDetail>;
 
 declare namespace orientation_2 {
     export {
@@ -3028,16 +3295,25 @@ type OrientationVectors = {
 };
 
 // @public (undocumented)
+export class PaintFillTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 export class PanTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
+    _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
-    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
 }
 
 declare namespace planar {
@@ -3099,13 +3375,13 @@ interface PlanarFreehandROIAnnotation extends Annotation {
 export class PlanarFreehandROITool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => PlanarFreehandROIAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -3123,7 +3399,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: PlanarFreehandROIAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
     // (undocumented)
@@ -3231,7 +3507,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => ProbeAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
     _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
@@ -3239,11 +3515,15 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: any) => void;
     // (undocumented)
+    _dragCallback: (evt: any) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
         newAnnotation?: boolean;
     } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     eventDispatchDetail: {
         viewportId: string;
@@ -3256,7 +3536,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     _getValueForModality(value: any, imageVolume: any, modality: any): {};
     // (undocumented)
-    handleSelectedCallback(evt: EventTypes_2.MouseDownEventType, annotation: ProbeAnnotation, handle: ToolHandle, interactionType?: string): void;
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: ProbeAnnotation): void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -3265,10 +3545,6 @@ export class ProbeTool extends AnnotationTool {
     isPointNearTool(): boolean;
     // (undocumented)
     mouseDragCallback: any;
-    // (undocumented)
-    _mouseDragCallback: (evt: any) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -3284,6 +3560,9 @@ type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
 };
+
+// @public (undocumented)
+type PublicContourSetData = ContourSetData;
 
 // @public (undocumented)
 type PublicToolProps = SharedToolProp & {
@@ -3366,7 +3645,7 @@ interface RectangleROIStartEndThresholdAnnotation extends Annotation {
 export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => {
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => {
         highlighted: boolean;
         invalidated: boolean;
         metadata: {
@@ -3454,7 +3733,7 @@ interface RectangleROIThresholdAnnotation extends Annotation {
 export class RectangleROIThresholdTool extends RectangleROITool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => {
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => {
         highlighted: boolean;
         invalidated: boolean;
         metadata: {
@@ -3501,7 +3780,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
 }
 
 // @public (undocumented)
-function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, referenceVolumes: Types_2.IImageVolume[], options: ThresholdRangeOptions_2): Types_2.IImageVolume;
+function rectangleROIThresholdVolumeByRange(annotationUIDs: string[], segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation_2[], options: ThresholdOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
 export class RectangleROITool extends AnnotationTool {
@@ -3511,7 +3790,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
-    addNewAnnotation: (evt: EventTypes_2.MouseDownActivateEventType) => RectangleROIAnnotation;
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => RectangleROIAnnotation;
     // (undocumented)
     _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
@@ -3520,6 +3799,8 @@ export class RectangleROITool extends AnnotationTool {
     _deactivateDraw: (element: any) => void;
     // (undocumented)
     _deactivateModify: (element: any) => void;
+    // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
         annotation: any;
@@ -3530,6 +3811,8 @@ export class RectangleROITool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     _getRectangleImageCoordinates: (points: Array<Types_2.Point2>) => {
         left: number;
         top: number;
@@ -3539,7 +3822,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[] | undefined;
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, handle: ToolHandle, interactionType?: string) => void;
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: RectangleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -3549,17 +3832,13 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     isPointNearTool: (element: HTMLDivElement, annotation: RectangleROIAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseMoveEventType | EventTypes_2.MouseDragEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: RectangleROIAnnotation, interactionType: InteractionTypes) => void;
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: RectangleROIAnnotation) => void;
 }
 
 declare namespace rectangleROITool {
@@ -3576,6 +3855,8 @@ export class RectangleScissorsTool extends BaseTool {
     // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         segmentationId: string;
@@ -3590,15 +3871,13 @@ export class RectangleScissorsTool extends BaseTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -3643,7 +3922,7 @@ export class ReferenceCursors extends AnnotationDisplayTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
-    mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType) => boolean;
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     onCameraModified: (evt: any) => void;
     // (undocumented)
@@ -3741,6 +4020,7 @@ export function removeTool(ToolClass: any): void;
 // @public (undocumented)
 type RepresentationConfig = {
     LABELMAP?: LabelmapConfig;
+    CONTOUR?: ContourConfig;
 };
 
 // @public (undocumented)
@@ -3751,6 +4031,72 @@ type RepresentationPublicInput = {
 
 // @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
+
+// @public (undocumented)
+interface ScaleOverlayAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        handles: {
+            points: Types_2.Point3[];
+        };
+        viewportId: string;
+    };
+}
+
+// @public (undocumented)
+export class ScaleOverlayTool extends AnnotationDisplayTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    computeCanvasScaleCoordinates: (canvasSize: any, canvasCoordinates: any, vscaleBounds: any, hscaleBounds: any, location: any) => any;
+    // (undocumented)
+    computeEndScaleTicks: (canvasCoordinates: any, location: any) => {
+        endTick1: any[][];
+        endTick2: any[][];
+    };
+    // (undocumented)
+    computeInnerScaleTicks: (scaleSize: number, location: string, annotationUID: string, leftTick: any[][], rightTick: any[][]) => {
+        tickIds: any[];
+        tickUIDs: any[];
+        tickCoordinates: any[];
+    };
+    // (undocumented)
+    computeScaleBounds: (canvasSize: any, horizontalReduction: any, verticalReduction: any, location: any) => {
+        height: any;
+        width: any;
+    };
+    // (undocumented)
+    computeScaleSize: (worldWidthViewport: number, worldHeightViewport: number, location: any) => any;
+    // (undocumented)
+    computeWorldScaleCoordinates: (scaleSize: any, location: any, pointSet: any) => any;
+    // (undocumented)
+    editData: {
+        renderingEngine: any;
+        viewport: any;
+        annotation: ScaleOverlayAnnotation;
+    } | null;
+    // (undocumented)
+    _getTextLines(scaleSize: number): string[] | undefined;
+    // (undocumented)
+    _init: () => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    onCameraModified: (evt: Types_2.EventTypes.CameraModifiedEvent) => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: any;
+}
 
 // @public (undocumented)
 type Scaling = {
@@ -3813,7 +4159,12 @@ declare namespace segmentation_2 {
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
         rectangleROIThresholdVolumeByRange,
-        triggerSegmentationRender
+        triggerSegmentationRender,
+        floodFill,
+        getBrushSizeForToolGroup,
+        setBrushSizeForToolGroup,
+        getBrushThresholdForToolGroup,
+        setBrushThresholdForToolGroup
     }
 }
 
@@ -3875,6 +4226,7 @@ type SegmentationRepresentationConfig = {
 // @public (undocumented)
 type SegmentationRepresentationData = {
     LABELMAP?: LabelmapSegmentationData;
+    CONTOUR?: ContourSegmentationData;
 };
 
 // @public (undocumented)
@@ -3897,6 +4249,8 @@ type SegmentationRepresentationRemovedEventType = Types_2.CustomEventType<Segmen
 
 // @public (undocumented)
 enum SegmentationRepresentations {
+    // (undocumented)
+    Contour = "CONTOUR",
     // (undocumented)
     Labelmap = "LABELMAP"
 }
@@ -3954,6 +4308,12 @@ function setAnnotationSelected(annotationUID: string, selected?: boolean, preser
 
 // @public (undocumented)
 function setAnnotationVisibility(annotationUID: string, visible?: boolean): void;
+
+// @public (undocumented)
+function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number): void;
+
+// @public (undocumented)
+function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2): void;
 
 // @public (undocumented)
 function setColorForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, color: Color): void;
@@ -4022,6 +4382,8 @@ export class SphereScissorsTool extends BaseTool {
     // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         segmentation: any;
@@ -4038,15 +4400,13 @@ export class SphereScissorsTool extends BaseTool {
         centerCanvas?: Array<number>;
     } | null;
     // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => true;
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => true;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -4075,6 +4435,19 @@ declare namespace stackPrefetch {
 }
 
 // @public (undocumented)
+export class StackRotateTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
+    // (undocumented)
+    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+}
+
+// @public (undocumented)
 export class StackScrollMouseWheelTool extends BaseTool {
     constructor(toolProps?: {}, defaultToolProps?: {
         supportedInteractionTypes: string[];
@@ -4097,17 +4470,17 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     deltaY: number;
     // (undocumented)
-    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
+    _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     _getNumberOfSlices(viewport: any): number;
     // (undocumented)
     _getPixelPerImage(viewport: any): number;
     // (undocumented)
-    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
 }
 
 // @public
@@ -4241,6 +4614,18 @@ type SVGPoint_2 = {
 };
 
 // @public (undocumented)
+enum Swipe {
+    // (undocumented)
+    DOWN = "DOWN",
+    // (undocumented)
+    LEFT = "LEFT",
+    // (undocumented)
+    RIGHT = "RIGHT",
+    // (undocumented)
+    UP = "UP"
+}
+
+// @public (undocumented)
 export class Synchronizer {
     constructor(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler);
     // (undocumented)
@@ -4310,7 +4695,7 @@ type TextBoxHandle = {
 };
 
 // @public (undocumented)
-function thresholdVolumeByRange(segmentationVolume: Types_2.IImageVolume, referenceVolume: Types_2.IImageVolume, options: ThresholdRangeOptions): Types_2.IImageVolume;
+function thresholdVolumeByRange(segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation[], options: ThresholdRangeOptions): Types_2.IImageVolume;
 
 // @public (undocumented)
 function throttle(func: Function, wait?: number, options?: {
@@ -4410,7 +4795,8 @@ declare namespace ToolSpecificAnnotationTypes {
         ArrowAnnotation,
         AngleAnnotation,
         ReferenceCursor,
-        ReferenceLineAnnotation
+        ReferenceLineAnnotation,
+        ScaleOverlayAnnotation
     }
 }
 
@@ -4423,19 +4809,85 @@ type ToolStyleConfig = {
     global?: AnnotationStyle_2;
 };
 
+declare namespace touch {
+    export {
+        getMeanPoints,
+        getMeanTouchPoints,
+        copyPoints,
+        copyPointsList,
+        getDeltaDistanceBetweenIPoints,
+        getDeltaPoints,
+        getDeltaDistance,
+        getDeltaRotation
+    }
+}
+
+// @public (undocumented)
+type TouchDragEventDetail = NormalizedInteractionEventDetail & TouchCustomEventDetail & TouchPointsDetail;
+
+// @public (undocumented)
+type TouchDragEventType = Types_2.CustomEventType<TouchDragEventDetail>;
+
+// @public (undocumented)
+type TouchEndEventDetail = NormalizedInteractionEventDetail & TouchPointsDetail & TouchCustomEventDetail;
+
+// @public (undocumented)
+type TouchEndEventType = Types_2.CustomEventType<TouchEndEventDetail>;
+
+// @public (undocumented)
+type TouchPressEventDetail = NormalizedInteractionEventDetail & TouchCustomEventDetail & {
+    startPointsList: ITouchPoints[];
+    lastPointsList: ITouchPoints[];
+    startPoints: ITouchPoints;
+    lastPoints: ITouchPoints;
+};
+
+// @public (undocumented)
+type TouchPressEventType = Types_2.CustomEventType<TouchPressEventDetail>;
+
+// @public (undocumented)
+type TouchStartActivateEventDetail = NormalizedInteractionEventDetail & TouchCustomEventDetail & TouchPointsDetail;
+
+// @public (undocumented)
+type TouchStartActivateEventType = Types_2.CustomEventType<TouchStartActivateEventDetail>;
+
+// @public (undocumented)
+type TouchStartEventDetail = NormalizedInteractionEventDetail & TouchCustomEventDetail & TouchPointsDetail;
+
+// @public (undocumented)
+type TouchStartEventType = Types_2.CustomEventType<TouchStartEventDetail>;
+
+// @public (undocumented)
+type TouchSwipeEventDetail = NormalizedInteractionEventDetail & TouchCustomEventDetail & {
+    swipe: Swipe;
+};
+
+// @public (undocumented)
+type TouchSwipeEventType = Types_2.CustomEventType<TouchSwipeEventDetail>;
+
+// @public (undocumented)
+type TouchTapEventDetail = NormalizedInteractionEventDetail & TouchCustomEventDetail & {
+    currentPointsList: ITouchPoints[];
+    currentPoints: ITouchPoints;
+    taps: number;
+};
+
+// @public (undocumented)
+type TouchTapEventType = Types_2.CustomEventType<TouchTapEventDetail>;
+
 // @public (undocumented)
 export class TrackballRotateTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
+    _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
-    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    touchDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
 }
 
 // @public
@@ -4508,11 +4960,14 @@ declare namespace Types {
         PublicToolProps,
         EventTypes_2 as EventTypes,
         IPoints,
+        ITouchPoints,
+        IDistance,
         IToolBinding,
         SetToolBindingsType,
         ToolOptionsType,
         InteractionTypes,
         IToolGroup,
+        IToolClassReference,
         ISynchronizerEventHandler,
         ToolHandle,
         AnnotationHandle,
@@ -4534,7 +4989,11 @@ declare namespace Types {
         ScrollOptions_2 as ScrollOptions,
         CINETypes,
         BoundsIJK,
-        SVGDrawingHelper
+        SVGDrawingHelper,
+        FloodFillResult,
+        FloodFillGetter,
+        FloodFillOptions,
+        ContourSegmentationData
     }
 }
 export { Types }
@@ -4553,6 +5012,7 @@ declare namespace utilities {
         throttle,
         orientation_2 as orientation,
         isObject,
+        touch,
         triggerEvent,
         calibrateImageSpacing,
         segmentation_2 as segmentation,
@@ -4604,7 +5064,32 @@ type ViewportInputOptions = {
     background?: [number, number, number];
     orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
+    parallelProjection?: boolean;
 };
+
+// @public (undocumented)
+interface ViewportPreset {
+    // (undocumented)
+    ambient: string;
+    // (undocumented)
+    colorTransfer: string;
+    // (undocumented)
+    diffuse: string;
+    // (undocumented)
+    gradientOpacity: string;
+    // (undocumented)
+    interpolation: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    scalarOpacity: string;
+    // (undocumented)
+    shade: string;
+    // (undocumented)
+    specular: string;
+    // (undocumented)
+    specularPower: string;
+}
 
 declare namespace visibility {
     export {
@@ -4732,8 +5217,6 @@ export class WindowLevelTool extends BaseTool {
         supportedInteractionTypes: string[];
     });
     // (undocumented)
-    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
-    // (undocumented)
     _getImageDynamicRangeFromMiddleSlice: (scalarData: any, dimensions: any) => number;
     // (undocumented)
     _getImageDynamicRangeFromViewport(viewport: any): number;
@@ -4761,11 +5244,11 @@ export class WindowLevelTool extends BaseTool {
         upper: any;
     };
     // (undocumented)
-    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
 }
 
 // @public (undocumented)
@@ -4774,21 +5257,27 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     dirVec: Types_2.Point3;
     // (undocumented)
-    _dragCallback(evt: EventTypes_2.MouseDragEventType): void;
+    _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
-    _dragParallelProjection: (evt: EventTypes_2.MouseDragEventType, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, camera: Types_2.ICamera) => void;
+    _dragParallelProjection: (evt: EventTypes_2.InteractionEventType, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, camera: Types_2.ICamera, pinch?: boolean) => void;
     // (undocumented)
-    _dragPerspectiveProjection: (evt: any, viewport: any, camera: any) => void;
+    _dragPerspectiveProjection: (evt: EventTypes_2.InteractionEventType, viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, camera: Types_2.ICamera, pinch?: boolean) => void;
     // (undocumented)
     initialMousePosWorld: Types_2.Point3;
     // (undocumented)
-    mouseDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    _panCallback(evt: EventTypes_2.InteractionEventType): void;
+    // (undocumented)
+    _pinchCallback(evt: EventTypes_2.InteractionEventType): void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    preTouchStartCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     static toolName: any;
     // (undocumented)
-    touchDragCallback: (evt: EventTypes_2.MouseDragEventType) => void;
+    touchDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
 }
 
 // (No @packageDocumentation comment for this package)

@@ -28,7 +28,8 @@
     "strict": true,
     "strictNullChecks": false,
     "target": "es5", // esnext | es5
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "resolveJsonModule": true
   },
   "exclude": [
     "node_modules",

@@ -1,0 +1,202 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
+    <link href="../bootstrap.min.css" rel="stylesheet">
+
+    <link href="../cornerstone.min.css" rel="stylesheet">
+
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h1>Example of displaying a DICOM P10 multiframe images using Cornerstone</h1>
+        <p class="lead">
+            Enter a URL for a DICOM P10 multiframe sop instance to view it using cornerstone.
+            <button id="toggleCollapseInfo" class="btn btn-primary" type="button">
+                Click for more info
+            </button>
+        </p>
+    </div>
+    <div id="collapseInfo" class="collapse" style="display:none;">
+        <p>
+            This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
+            SOP instance using HTTP and display it in your web browser using cornerstone.
+            Not all transfer syntaxes are currently supported,
+            <a href="https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
+                click here for the full list.
+            </a>
+            For WADO-URI requests,
+            you can request that the server return the SOP Instance in explicit little endian by
+            appending the following query string to your URL:
+            <code>&transferSyntax=1.2.840.10008.1.2.1</code>
+        </p>
+        <strong>If you get an HTTP error and your URL is correct, it is probably because the server is not configured to
+            allow <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross Origin Requests</a>.
+            Most browsers will allow you to enable cross domain requests via settings or command line switches,
+            you can start chrome with the command line switch <code>--disable-web-security</code> to allow cross origin requests.
+            See the  <a href="http://enable-cors.org/">Enable CORS site</a> for information about CORS.
+        </strong>
+        <br>
+        <br>
+        <p>
+            Looking for a CORS proxy?  Try <a href="https://www.npmjs.com/package/corsproxy">CORSProxy</a>
+        </p>
+        <strong>Use of this example require IE10+ or any other modern browser.</strong>
+        <hr>
+    </div>
+    <div id="loadProgress">Image Load Progress:</div>
+
+    <div class="row">
+        <form id="form" class="form-horizontal">
+            <div class="form-group">
+                <label class="control-label col-sm-1" for="wadoURL">URL</label>
+                <div class="col-sm-8">
+                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/testImages/CT0012.fragmented_no_bot_jpeg_baseline.51.dcm">
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="downloadAndView" class="btn btn-primary">Download and View</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <br>
+    <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
+         oncontextmenu="return false"
+         class='disable-selection noIbar'
+         unselectable='on'
+         onselectstart='return false;'
+         onmousedown='return false;'>
+        <div id="dicomImage"
+             style="width:512px;height:512px;top:0px;left:0px; position:absolute">
+        </div>
+    </div>
+</div>
+</body>
+
+<!-- include the cornerstone library -->
+<script src="../cornerstone.min.js"></script>
+<SCRIPT src="../cornerstoneMath.min.js"></SCRIPT>
+<SCRIPT src="../cornerstoneTools.min.js"></SCRIPT>
+
+<!-- include the dicomParser library as the WADO image loader depends on it -->
+<script src="../dicomParser.min.js"></script>
+
+<!-- include the cornerstoneWADOImageLoader library -->
+<script src="../dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
+
+<!-- Lines ONLY required for this example to run without building the project -->
+<script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
+<script src="../utils/initializeWebWorkers.js"></script>
+
+<script>
+    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+
+    cornerstoneWADOImageLoader.configure({
+        beforeSend: function(xhr) {
+            // Add custom headers here (e.g. auth tokens)
+            //xhr.setRequestHeader('x-auth-token', 'my auth token');
+        }
+    });
+
+    var loaded = false;
+
+    function loadAndViewImage(url) {
+        var element = document.getElementById('dicomImage');
+
+        // since this is a multi-frame example, we need to load the DICOM SOP Instance into memory and parse it
+        // so we know the number of frames it has so we can create the stack.  Calling load() will increment the reference
+        // count so it will stay in memory until unload() is explicitly called and all other reference counts
+        // held by the cornerstone cache are gone.  See below for more info
+        cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.load(url, cornerstoneWADOImageLoader.internal.xhrRequest).then(function(dataSet) {
+            // dataset is now loaded, get the # of frames so we can build the array of imageIds
+            var numFrames = dataSet.intString('x00280008');
+            var FrameRate = 1000/dataSet.floatString('x00181063');
+            if(!numFrames) {
+                alert('Missing element NumberOfFrames (0028,0008)');
+                return;
+            }
+
+            var imageIds = [];
+            var imageIdRoot = 'wadouri:' + url;
+
+            for(var i=0; i < numFrames; i++) {
+                var imageId = imageIdRoot + "?frame="+i;
+                imageIds.push(imageId);
+            }
+
+            var stack = {
+                currentImageIdIndex : 0,
+                imageIds: imageIds
+            };
+
+            // Load and cache the first image frame.  Each imageId cached by cornerstone increments
+            // the reference count to make sure memory is cleaned up properly.
+            cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
+                console.log(image);
+                // now that we have an image frame in the cornerstone cache, we can decrement
+                // the reference count added by load() above when we loaded the metadata.  This way
+                // cornerstone will free all memory once all imageId's are removed from the cache
+                cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.unload(url);
+
+                cornerstone.displayImage(element, image);
+                if(loaded === false) {
+                    cornerstoneTools.wwwc.activate(element, 1); // ww/wc is the default tool for left mouse button
+                    // Set the stack as tool state
+                    cornerstoneTools.addStackStateManager(element, ['stack', 'playClip']);
+                    cornerstoneTools.addToolState(element, 'stack', stack);
+                    // Start playing the clip
+                    cornerstoneTools.playClip(element, FrameRate);
+                    loaded = true;
+                }
+            }, function(err) {
+                alert(err);
+            });
+            /*}
+             catch(err) {
+             alert(err);
+             }*/
+        });
+
+    }
+
+    function downloadAndView() {
+        const url = document.getElementById('wadoURL').value;
+
+        // image enable the dicomImage element and activate a few tools
+        loadAndViewImage(url);
+
+        return false;
+    }
+
+    cornerstone.events.addEventListener('cornerstoneimageloadprogress', function(event) {
+        const eventData = event.detail;
+        const loadProgress = document.getElementById('loadProgress');
+        loadProgress.textContent = `Image Load Progress: ${eventData.percentComplete}%`;
+    });
+
+    const element = document.getElementById('dicomImage');
+    cornerstone.enable(element);
+    cornerstoneTools.mouseInput.enable(element);
+    cornerstoneTools.mouseWheelInput.enable(element);
+
+    document.getElementById('downloadAndView').addEventListener('click', function(e) {
+        downloadAndView();
+    });
+
+    const form = document.getElementById('form');
+    form.addEventListener('submit', function() {
+        downloadAndView();
+        return false;
+    });
+
+    document.getElementById('toggleCollapseInfo').addEventListener('click', function() {
+        if (document.getElementById('collapseInfo').style.display === 'none') {
+            document.getElementById('collapseInfo').style.display = 'block';
+        } else {
+            document.getElementById('collapseInfo').style.display = 'none';
+        }
+    });
+</script>
+</html>

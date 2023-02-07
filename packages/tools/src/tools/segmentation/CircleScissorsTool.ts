@@ -25,6 +25,8 @@ import {
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -76,9 +78,7 @@ class CircleScissorsTool extends BaseTool {
    * @returns The annotation object.
    *
    */
-  preMouseDownCallback = (
-    evt: EventTypes.MouseDownActivateEventType
-  ): boolean => {
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -116,7 +116,7 @@ class CircleScissorsTool extends BaseTool {
     const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const { volumeId } = representationData[type];
+    const { volumeId } = representationData[type] as LabelmapSegmentationData;
     const segmentation = cache.getVolume(volumeId);
 
     // Todo: Used for drawing the svg only, we might not need it at all
@@ -169,7 +169,7 @@ class CircleScissorsTool extends BaseTool {
     return true;
   };
 
-  _mouseDragCallback = (evt: EventTypes.MouseDragEventType) => {
+  _dragCallback = (evt: EventTypes.InteractionEventType) => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -217,9 +217,7 @@ class CircleScissorsTool extends BaseTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  _mouseUpCallback = (
-    evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
-  ) => {
+  _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -272,24 +270,26 @@ class CircleScissorsTool extends BaseTool {
    * Add event handlers for the modify event loop, and prevent default event propagation.
    */
   _activateDraw = (element) => {
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_UP, this._endCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    // element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
   };
 
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.
    */
   _deactivateDraw = (element) => {
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    // element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   /**

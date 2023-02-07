@@ -38,32 +38,19 @@ being called.
 You can also run each example locally. It should be noted that `Cornerstone3D` is a
 monorepo and contains three packages (`core`, `tools`, `streaming-image-volume`). Examples
 for each of these packages are included in the `examples` directory inside each package.
-To run the example you need to change directory to the package root and run `yarn run example ExampleName` (this is a limitation
-and we will be working on a better solution to run examples from the root of the monorepo).
+You can run each example by using its name as an argument to the `example` script. For instance,
+It should be noted that the example name is not case sensitive, and even it can
+suggest the name of the example you are looking for if you make a typo.
+
+```bash
 
 1. Clone the repository
 2. `yarn install`
-3. Run example
-   - For `core` examples:
-   ```bash
-   cd packages/core
-   yarn run example ExampleName
-   # for instance:
-   # yarn run example volumeAPI
-   ```
-   - For `tools` examples:
-   ```bash
-   cd packages/tools
-   yarn run example ExampleName
-   # for instance:
-   # yarn run example petCt
-   ```
-   - For `streaming-image-volume` examples:
-   ```bash
-   cd packages/streaming-image-volume
-   yarn run example ExampleName
-   ```
+3. `yarn run example petct` // this should be run from the root of the repository
+
+```
 
 :::note Important
-Example names are case sensitive, and they match their folder name
+Use the root of the repository as the working directory when running the example.
+Previously, you had to run the example in each package directory. This is no longer the case.
 :::

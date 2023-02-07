@@ -29,6 +29,7 @@ import {
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
+  StackRotateTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
@@ -49,9 +50,12 @@ import {
   SegmentationDisplayTool,
   BrushTool,
   AngleTool,
+  CobbAngleTool,
   MagnifyTool,
   ReferenceCursors,
   ReferenceLines,
+  PaintFillTool,
+  ScaleOverlayTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -73,6 +77,7 @@ export {
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
+  StackRotateTool,
   StackScrollMouseWheelTool,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
@@ -87,9 +92,11 @@ export {
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   AngleTool,
+  CobbAngleTool,
   MagnifyTool,
   ReferenceCursors,
   ReferenceLines,
+  ScaleOverlayTool,
   // Segmentation Display
   SegmentationDisplayTool,
   // Segmentation Editing Tools
@@ -103,6 +110,7 @@ export {
   synchronizers,
   Synchronizer,
   SynchronizerManager,
+  PaintFillTool,
   Types,
   state,
   // ToolGroups

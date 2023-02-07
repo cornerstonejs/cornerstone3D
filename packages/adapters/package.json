@@ -1,0 +1,49 @@
+{
+    "name": "@cornerstonejs/adapters",
+    "version": "0.2.1",
+    "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
+    "src": "src/index.ts",
+    "main": "src/index.ts",
+    "files": [
+        "dist"
+    ],
+    "directories": {
+        "example": "examples",
+        "build": "dist"
+    },
+    "exports": {
+        ".": "./dist/@cornerstonejs/adapters.es.js"
+    },
+    "types": "./dist/@cornerstonejs/dts/index.d.ts",
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "test": "jest --testTimeout 60000",
+        "build": "rollup -c rollup.config.mjs",
+        "build:all": "yarn build",
+        "build:examples": "npm run build && npx cpx 'dist/**/*.{js,map}' examples/js",
+        "start": "rollup -c -w",
+        "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+        "lint": "eslint --fix ."
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dcmjs-org/dcmjs.git"
+    },
+    "author": "@cornerstonejs (formerly Steve Pieper from dcmjs)",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/cornerstonejs/cornerstone3D-beta/issues"
+    },
+    "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages/adapters/README.md",
+    "dependencies": {
+        "@babel/runtime-corejs2": "^7.17.8",
+        "dcmjs": "^0.29.4",
+        "gl-matrix": "^3.4.3",
+        "lodash.clonedeep": "^4.5.0",
+        "loglevelnext": "^3.0.1",
+        "ndarray": "^1.0.19",
+        "pako": "^2.0.4"
+    }
+}

@@ -1,8 +1,5 @@
 import { imageLoader, volumeLoader } from '@cornerstonejs/core';
-import {
-  cornerstoneStreamingImageVolumeLoader,
-  sharedArrayBufferImageLoader,
-} from '@cornerstonejs/streaming-image-volume-loader';
+import { cornerstoneStreamingImageVolumeLoader } from '@cornerstonejs/streaming-image-volume-loader';
 
 export default function initVolumeLoader() {
   volumeLoader.registerUnknownVolumeLoader(
@@ -11,10 +8,5 @@ export default function initVolumeLoader() {
   volumeLoader.registerVolumeLoader(
     'cornerstoneStreamingImageVolume',
     cornerstoneStreamingImageVolumeLoader
-  );
-
-  imageLoader.registerImageLoader(
-    'streaming-wadors',
-    sharedArrayBufferImageLoader
   );
 }

@@ -42,6 +42,10 @@
         "name": "Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
       },
+      "volumeViewport3D": {
+        "name": "3D Volume Rendering",
+        "description": "Demonstrates how to 3D render a volume and apply a preset"
+      },
       "volumeEvents": {
         "name": "Volume Viewport Events",
         "description": "Demonstrates the Events that are fired during interaction with a Volume Viewport"
@@ -62,6 +66,10 @@
         "name": "Legacy DICOMweb (WADO-URI) Support",
         "description": "Demonstrates how to support retrieval of entire Part 10 DICOM files directly via URL"
       },
+      "volumeBasicWadoUri": {
+        "name": "Basic Volume using streaming WADOURI",
+        "description": "Demonstrates how to displays a DICOM series (via URL) in a Volume viewport"
+      },
       "webLoader": {
         "name": "Load Web images of PNG or JPG format",
         "description": "Demonstrates how render web images in a stack viewport"
@@ -81,6 +89,10 @@
       "stackManipulationTools": {
         "name": "Stack Manipulation Tools",
         "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
+      },
+      "stackManipulationToolsTouch": {
+        "name": "Stack Manipulation Tools Touch",
+        "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling for mobile touch"
       },
       "annotationToolModes": {
         "name": "Annotation Tool Modes",
@@ -130,6 +142,10 @@
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
       },
+      "contourSegmentationRepresentation": {
+        "name": "Contour Segmentation Representation",
+        "description": "Demonstrates how to use the Contour Segmentation Representation"
+      },
       "segmentationSwapping": {
         "name": "Segmentation Swapping",
         "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
@@ -169,6 +185,10 @@
       "referenceCursors": {
         "name": "Referencing Cursors",
         "description": "Demonstrates how to synchronize the cursor between multiple viewports"
+      },
+      "doubleClickWithStackAnnotationTools": {
+        "name": "Double Click With Stack Annotation Tools",
+        "description": "Demonstrates double click detection before/during/after using various annotation tools on a stack viewport."
       }
     },
     "tools-advanced": {
@@ -211,6 +231,10 @@
       "cancelAnnotationDrawing": {
         "name": "Cancel Annotation Drawing",
         "description": "Demonstrates how to use the keyboard (ESC) key to cancel annotation drawing."
+      },
+      "scaleOverlayTool": {
+        "name": "Scale Overlay Tool",
+        "description": "Demonstrates the scale overlay tool for rendering a scale on a viewport showing the real world size of the image."
       }
     }
   }

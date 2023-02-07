@@ -3,6 +3,146 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.30.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.30.0...@cornerstonejs/core@0.30.1) (2023-02-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+
+
+
+
+# [0.30.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.29.1...@cornerstonejs/core@0.30.0) (2023-02-06)
+
+
+### Features
+
+* **StackViewport:** rework rotation for stack viewport ([#388](https://github.com/cornerstonejs/cornerstone3D-beta/issues/388)) ([cfdb0b3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cfdb0b38e5cfee93f7c0d241a75498e08dcec6e8)), closes [#372](https://github.com/cornerstonejs/cornerstone3D-beta/issues/372)
+
+
+
+
+
+## [0.29.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.29.0...@cornerstonejs/core@0.29.1) (2023-02-03)
+
+
+### Bug Fixes
+
+* **SliceRange:** slice range for oblique image ([#408](https://github.com/cornerstonejs/cornerstone3D-beta/issues/408)) ([7138372](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7138372b185b5d7c2cc76a8e2b257a94e1751f42))
+
+
+
+
+
+# [0.29.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.28.0...@cornerstonejs/core@0.29.0) (2023-02-01)
+
+
+### Features
+
+* **Segmentation:** Add contour representation for segmentations ([#384](https://github.com/cornerstonejs/cornerstone3D-beta/issues/384)) ([541a351](https://github.com/cornerstonejs/cornerstone3D-beta/commit/541a3519cd78437db020d1bc561d3b2755ec9c7c))
+
+
+
+
+
+# [0.28.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.2...@cornerstonejs/core@0.28.0) (2023-01-26)
+
+
+### Features
+
+* **doubleClick:** Add Double click detection ([#375](https://github.com/cornerstonejs/cornerstone3D-beta/issues/375)) ([#382](https://github.com/cornerstonejs/cornerstone3D-beta/issues/382)) ([8e4be96](https://github.com/cornerstonejs/cornerstone3D-beta/commit/8e4be962c8f9d6c226095a573905087842995f89))
+
+
+
+
+
+## [0.27.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.1...@cornerstonejs/core@0.27.2) (2023-01-23)
+
+
+### Bug Fixes
+
+* **StackViewport:** Reset camera bug when rotation happens on StackViewport ([#374](https://github.com/cornerstonejs/cornerstone3D-beta/issues/374)) ([598e95f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/598e95f0d1fe6aea5e8e9d37cc61c355cc704c70)), closes [#372](https://github.com/cornerstonejs/cornerstone3D-beta/issues/372)
+
+
+
+
+
+## [0.27.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.27.0...@cornerstonejs/core@0.27.1) (2023-01-20)
+
+
+### Bug Fixes
+
+* monochrome1 bug for stackviewport ([#378](https://github.com/cornerstonejs/cornerstone3D-beta/issues/378)) ([f542d9c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f542d9ce8bd755f87aa6b316c56001a253d591ae))
+
+
+
+
+
+# [0.27.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.26.0...@cornerstonejs/core@0.27.0) (2023-01-20)
+
+
+### Features
+
+* option to use Arraybuffer for volume loader instead of sharedArrayBuffer ([#358](https://github.com/cornerstonejs/cornerstone3D-beta/issues/358)) ([ab8237c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ab8237cf6b9672e4837ec27b73b75d38e85305f0))
+
+
+
+
+
+# [0.26.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.25.1...@cornerstonejs/core@0.26.0) (2023-01-13)
+
+
+### Features
+
+* add support for WADO-URI Streaming Volume Loading ([#354](https://github.com/cornerstonejs/cornerstone3D-beta/issues/354)) ([a1e4a36](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a1e4a36e92870ca65c7b9cc1b738aa219686e861))
+
+
+
+
+
+## [0.25.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.25.0...@cornerstonejs/core@0.25.1) (2023-01-11)
+
+
+### Bug Fixes
+
+* colored images using rgba in CPU rendering [#338](https://github.com/cornerstonejs/cornerstone3D-beta/issues/338) ([#345](https://github.com/cornerstonejs/cornerstone3D-beta/issues/345)) ([90bcc7b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/90bcc7b5a8380adbc03af34f7c00c72795fe003c))
+
+
+
+
+
+# [0.25.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.24.0...@cornerstonejs/core@0.25.0) (2023-01-06)
+
+
+### Features
+
+* **volumeLoader:** no need for streaming-wadors imageLoader anymore since streaming volume loader will use cswil wadors image loader ([#340](https://github.com/cornerstonejs/cornerstone3D-beta/issues/340)) ([0b5f785](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0b5f785041a6f92443b58f6d72c8c965a29b35fc))
+
+
+
+
+
+# [0.24.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.23.0...@cornerstonejs/core@0.24.0) (2023-01-06)
+
+
+### Features
+
+* improved example runner to handle casing and partial match ([#347](https://github.com/cornerstonejs/cornerstone3D-beta/issues/347)) ([9e8fa12](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9e8fa122f766c1fceff4e3d4fe3cd0f68963c92b))
+
+
+
+
+
+# [0.23.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.22.3...@cornerstonejs/core@0.23.0) (2022-12-09)
+
+
+### Features
+
+* Add new 3D volume viewport ([#281](https://github.com/cornerstonejs/cornerstone3D-beta/issues/281)) ([57cf7ac](https://github.com/cornerstonejs/cornerstone3D-beta/commit/57cf7ac3bfd83d35d68f54b1f00f03583ed8e998))
+
+
+
+
+
 ## [0.22.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.22.2...@cornerstonejs/core@0.22.3) (2022-12-01)
 
 

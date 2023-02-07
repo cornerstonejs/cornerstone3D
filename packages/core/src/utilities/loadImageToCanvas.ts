@@ -1,6 +1,6 @@
 import { IImage } from '../types';
 
-import { loadAndCacheImage } from '../imageLoader';
+import { loadAndCacheImage } from '../loaders/imageLoader';
 import * as metaData from '../metaData';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';

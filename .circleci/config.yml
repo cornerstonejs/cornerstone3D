@@ -43,6 +43,7 @@ jobs:
             - packages/core/dist
             - packages/tools/dist
             - packages/streaming-image-volume-loader/dist
+            - packages/adapters/dist
 
   API_CHECK:
     <<: *defaults
@@ -86,12 +87,12 @@ jobs:
             mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking
             no\n" > ~/.ssh/config
       - add_ssh_keys:
-          fingerprints: 27:de:10:86:44:ca:ab:a8:f2:c2:66:bc:f1:c3:19:d6
+          fingerprints: 7e:0f:5b:bb:e3:7a:2e:2f:b4:85:bd:66:09:69:cb:f2
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
       - run: git config --global user.email "contact@ohif.org"
       - run: git config --global user.name "ohif-bot"
       - run: npx lerna version
-      - run: npx lerna publish from-package
+      - run: npx lerna publish from-package --no-verify-access
 
 workflows:
   version: 2
@@ -133,3 +134,5 @@ workflows:
           requires:
             - BUILD
             - TEST
+
+# VS Code Extension Version: 1.5.1

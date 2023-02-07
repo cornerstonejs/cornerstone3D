@@ -4,7 +4,7 @@ import {
   VOIRange,
   ScalingParameters,
 } from '../../types';
-import { loadAndCacheImage } from '../../imageLoader';
+import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import { getMinMax, windowLevel } from '../../utilities';
 import { RequestType } from '../../enums';

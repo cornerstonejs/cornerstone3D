@@ -12,9 +12,12 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addSliderToToolbar,
+  addDropdownToToolbar,
   setCtTransferFunctionForVolumeActor,
+  setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import perfusionColorMap from './preset';
 
 // This is for debugging purposes
 console.warn(
@@ -41,7 +44,13 @@ const { ViewportType } = Enums;
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
+const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
+const ptVolumeName = 'PT_VOLUME_ID';
+const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const volumeId = ptVolumeId;
+
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
@@ -98,8 +107,27 @@ content.append(instructions);
 // ============================= //
 
 let numSlicesToProject = 3;
-let lowerThreshold = 100;
-let upperThreshold = 500;
+let ctLowerThreshold = -900;
+let ctUpperThreshold = -700;
+const overwrite = true;
+
+let ptLowerThreshold = 0;
+let ptUpperThreshold = 5;
+let overlapType = 0;
+
+addDropdownToToolbar({
+  options: {
+    values: ['All voxels', 'Any voxel'],
+    defaultValue: 'Any voxel',
+  },
+  onSelectedValueChange: (selectedValue) => {
+    if (selectedValue === 'All voxels') {
+      overlapType = 1;
+    } else if (selectedValue === 'Any voxel') {
+      overlapType = 0;
+    }
+  },
+});
 
 addButtonToToolbar({
   title: 'Execute threshold',
@@ -121,65 +149,84 @@ addButtonToToolbar({
       return;
     }
 
-    const { metadata } = annotation; // assuming they are all overlayed on the same toolGroup
-    const viewport = metadata.enabledElement.viewport as Types.IVolumeViewport;
-
-    const volumeActorInfo = viewport.getDefaultActor();
-
     // Todo: this only works for volumeViewport
-    const { uid } = volumeActorInfo;
-    const referenceVolume = cache.getVolume(uid);
+    const ctVolume = cache.getVolume(ctVolumeId);
+    const ptVolume = cache.getVolume(ptVolumeId);
     const segmentationVolume = cache.getVolume(segmentationId);
 
     csToolsUtils.segmentation.rectangleROIThresholdVolumeByRange(
       selectedAnnotationUIDs,
       segmentationVolume,
-      [referenceVolume],
+      [
+        { volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold },
+        { volume: ptVolume, lower: ptLowerThreshold, upper: ptUpperThreshold },
+      ],
       {
         numSlicesToProject,
-        lower: lowerThreshold,
-        upper: upperThreshold,
-        overwrite: false,
+        overwrite,
+        overlapType,
       }
     );
   },
 });
 
 addSliderToToolbar({
-  title: `Number of Slices to Segment: ${numSlicesToProject
-    .toString()
-    .padStart(4)}`,
-  range: [1, 5],
+  title: `#Slices to Segment: ${numSlicesToProject}`,
+  range: [1, 10],
   defaultValue: numSlicesToProject,
   onSelectedValueChange: (value) => {
     numSlicesToProject = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `Number of Slices to Segment: ${value}`;
+    label.innerText = `#Slices to Segment: ${value}`;
   },
 });
 
 addSliderToToolbar({
-  title: `Lower Threshold: ${lowerThreshold}`,
-  range: [100, 400],
-  defaultValue: lowerThreshold,
+  title: `PT Lower Thresh: ${ptLowerThreshold}`,
+  range: [0, 10],
+  defaultValue: ptLowerThreshold,
   onSelectedValueChange: (value) => {
-    lowerThreshold = Number(value);
+    ptLowerThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `Lower Threshold: ${value}`;
+    label.innerText = `PT Lower Thresh: ${value}`;
   },
 });
 
 addSliderToToolbar({
-  title: `Upper Threshold: ${upperThreshold.toString().padStart(4)}`,
-  range: [500, 1000],
-  defaultValue: upperThreshold,
+  title: `PT Upper Thresh: ${ptUpperThreshold}`,
+  range: [0, 10],
+  defaultValue: ptUpperThreshold,
   onSelectedValueChange: (value) => {
-    upperThreshold = Number(value);
+    ptUpperThreshold = Number(value);
   },
   updateLabelOnChange: (value, label) => {
-    label.innerText = `Upper Threshold: ${value}`;
+    label.innerText = `PT Upper Thresh: ${value}`;
+  },
+});
+
+addSliderToToolbar({
+  title: `CT Lower Thresh: ${ctLowerThreshold}`,
+  range: [-1000, 1000],
+  defaultValue: ctLowerThreshold,
+  onSelectedValueChange: (value) => {
+    ctLowerThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
+    label.innerText = `CT Lower Thresh: ${value}`;
+  },
+});
+
+addSliderToToolbar({
+  title: `CT Upper Thresh: ${ctUpperThreshold}`,
+  range: [-1000, 1000],
+  defaultValue: ctUpperThreshold,
+  onSelectedValueChange: (value) => {
+    ctUpperThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
+    label.innerText = `CT Upper Thresh: ${value}`;
   },
 });
 
@@ -258,19 +305,32 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  const wadoRsRoot = 'https://domvja9iplmyu.cloudfront.net/dicomweb';
+  const StudyInstanceUID =
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339';
+
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const ctImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-    type: 'VOLUME',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
+    wadoRsRoot,
+  });
+
+  const ptImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
+    wadoRsRoot,
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+    imageIds: ctImageIds,
+  });
+  // Define a volume in memory
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+    imageIds: ptImageIds,
   });
 
   // Add some segmentations based on the source data volume
@@ -321,13 +381,33 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
-  // Set the volume to load
-  volume.load();
+  // Set the volumes to load
+  ptVolume.load();
+  ctVolume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [viewportId1, viewportId2, viewportId3]
+  );
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: ctVolumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+      {
+        volumeId: ptVolumeId,
+        callback: ({ volumeActor }) =>
+          setPetColorMapTransferFunctionForVolumeActor({
+            volumeActor,
+            preset: perfusionColorMap,
+          }),
+      },
+    ],
     [viewportId1, viewportId2, viewportId3]
   );
 

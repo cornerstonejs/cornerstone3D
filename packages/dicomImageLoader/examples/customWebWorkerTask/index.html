@@ -1,0 +1,357 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <!-- twitter bootstrap CSS stylesheet - included to make things pretty, not needed or used by cornerstone -->
+    <link href="../bootstrap.min.css" rel="stylesheet">
+
+    <link href="../cornerstone.min.css" rel="stylesheet">
+
+</head>
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <h1>Example of using a custom web worker</h1>
+        <p class="lead">
+            Enter a URL for a DICOM P10 object below to view it using cornerstone.
+            <button id="toggleCollapseInfo" class="btn btn-primary" type="button">
+                Click for more info
+            </button>
+        </p>
+    </div>
+    <div id="collapseInfo" class="collapse" style="display:none;">
+        <p>
+            This example illustrates how to use the cornerstoneWADOImageLoader to get a DICOM P10
+            SOP instance using HTTP and display it in your web browser using cornerstone.
+            Not all transfer syntaxes are currently supported,
+            <a href="https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
+                click here for the full list.
+            </a>
+            For WADO-URI requests,
+            you can request that the server return the SOP Instance in explicit little endian by
+            appending the following query string to your URL:
+            <code>&transferSyntax=1.2.840.10008.1.2.1</code>
+        </p>
+        <P>
+            Use the query string parameter <i>frame</i> to specify which frame to display from a multiframe
+            object (defaults to the first frame if not specified). <code>?frame=2</code>
+        </P>
+        <strong>If you get an HTTP error and your URL is correct, it is probably because the server is not configured to
+            allow <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross Origin Requests</a>.
+            Most browsers will allow you to enable cross domain requests via settings or command line switches,
+            you can start chrome with the command line switch <code>--disable-web-security</code> to allow cross origin requests.
+            See the  <a href="http://enable-cors.org/">Enable CORS site</a> for information about CORS.
+        </strong>
+        <br>
+        <br>
+        <p>
+            Looking for a CORS proxy?  Try <a href="https://www.npmjs.com/package/corsproxy">CORSProxy</a>
+        </p>
+        <strong>Use of this example require IE10+ or any other modern browser.</strong>
+        <hr>
+    </div>
+
+    <div class="row">
+        <form id="form" class="form-horizontal">
+            <div class="form-group">
+                <label class="control-label col-sm-1" for="wadoURL">URL</label>
+                <div class="col-sm-8">
+                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/testImages/CT2_J2KR">
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="downloadAndView" class="btn btn-primary">Download and View</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="startWebWorker" class="btn btn-primary">Start 1 Sleep Tasks</button>
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="start10WebWorkers" class="btn btn-primary">Start 10 Sleep Tasks</button>
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="sharpen" class="btn btn-primary">Sharpen Image</button>
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="edgeDetect" class="btn btn-primary">Edge Enhance</button>
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="boxBlur" class="btn btn-primary">Box Blur</button>
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="gaussianBlur" class="btn btn-primary">Gaussian Blur</button>
+                </div>
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="emboss" class="btn btn-primary">Emboss</button>
+                </div>
+
+                <div class="col-sm-3">
+                    <button class="form-control" type="button" id="unsharp" class="btn btn-primary">Unsharp</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <br>
+    <div class="row">
+        <div class="col-md-6">
+            <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
+                 oncontextmenu="return false"
+                 class='disable-selection noIbar'
+                 unselectable='on'
+                 onselectstart='return false;'
+                 onmousedown='return false;'>
+                <div id="dicomImage"
+                     style="width:512px;height:512px;top:0px;left:0px; position:absolute">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <span>Max Web Workers: </span><span id="maxWebWorkers"></span><br>
+            <span>Num Web Workers: </span><span id="numWebWorkers"></span><br>
+            <span>Num Queued Tasks: </span><span id="numQueuedTasks"></span><br>
+            <span>Num Tasks Executing: </span><span id="numTasksExecuting"></span><br>
+            <span>Total Tasks Executed: </span><span id="totalTasksExecuted"></span><br>
+            <span>Total Task Execution Time: </span><span id="totalTaskExecutionTime"></span><br>
+            <span>Total Task Delay Time: </span><span id="totalTaskDelayTime"></span><br>
+        </div>
+    </div>
+</div>
+</body>
+
+<!-- include the cornerstone library -->
+<script src="../cornerstone.min.js"></script>
+<SCRIPT src="../cornerstoneMath.min.js"></SCRIPT>
+<SCRIPT src="../cornerstoneTools.min.js"></SCRIPT>
+
+<!-- include the dicomParser library as the WADO image loader depends on it -->
+<script src="../dicomParser.min.js"></script>
+
+<!-- include the cornerstoneWADOImageLoader library -->
+<script src="../dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
+
+<!-- Lines ONLY required for this example to run without building the project -->
+<script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
+<script src="../utils/customWebWorkersConfig.js"></script>
+
+<script>
+    // Initialize the web worker manager with our custom web worker task
+    // window.customWebWorkerConfig contains custom web worker config and a fallback in case there is no dist folder
+    config = window.customWebWorkerConfig;
+
+    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
+    document.getElementById('numWebWorkers').textContent = config.maxWebWorkers;
+
+    let loaded = false;
+    let loadedImage;
+
+    function loadAndViewImage(imageId) {
+        const element = document.getElementById('dicomImage');
+        try {
+            const start = new Date().getTime();
+            cornerstone.loadAndCacheImage(imageId).then(function(image) {
+                console.log(image);
+                loadedImage = image;
+                updateStatistics();
+                const viewport = cornerstone.getDefaultViewportForImage(element, image);
+                cornerstone.displayImage(element, image, viewport);
+                if(loaded === false) {
+                    cornerstoneTools.mouseInput.enable(element);
+                    cornerstoneTools.mouseWheelInput.enable(element);
+                    cornerstoneTools.wwwc.activate(element, 1); // ww/wc is the default tool for left mouse button
+                    cornerstoneTools.pan.activate(element, 2); // pan is the default tool for middle mouse button
+                    cornerstoneTools.zoom.activate(element, 4); // zoom is the default tool for right mouse button
+                    cornerstoneTools.zoomWheel.activate(element); // zoom is the default tool for middle mouse wheel
+                    loaded = true;
+                }
+
+            }, function(err) {
+                alert(err);
+            });
+        }
+        catch(err) {
+            alert(err);
+        }
+    }
+
+    function downloadAndView(){
+        let url = document.getElementById('wadoURL').value;
+
+        // prefix the url with wadouri: so cornerstone can find the image loader
+        url = "wadouri:" + url;
+
+        // image enable the dicomImage element and activate a few tools
+        loadAndViewImage(url);
+    }
+
+    function getUrlWithoutFrame() {
+        const url = document.getElementById('wadoURL').value;
+        const frameIndex = url.indexOf('frame=');
+        if(frameIndex !== -1) {
+            url = url.substr(0, frameIndex-1);
+        }
+        return url;
+    }
+
+    function updateStatistics() {
+        var stats = cornerstoneWADOImageLoader.webWorkerManager.getStatistics();
+        document.getElementById('maxWebWorkers').textContent = stats.maxWebWorkers;
+        document.getElementById('numWebWorkers').textContent = stats.numWebWorkers;
+        document.getElementById('numQueuedTasks').textContent = stats.numTasksQueued;
+        document.getElementById('numTasksExecuting').textContent = stats.numTasksExecuting;
+        document.getElementById('totalTasksExecuted').textContent = stats.numTasksCompleted;
+        document.getElementById('totalTaskExecutionTime').textContent = stats.totalTaskTimeInMS;
+        document.getElementById('totalTaskDelayTime').textContent = stats.totalTimeDelayedInMS;
+    }
+
+    var sleepTaskLoaded = false;
+
+    function startWebWorker() {
+        // dyanmically load the sleep task
+        if(!sleepTaskLoaded) {
+            sleepTaskLoaded = true;
+            // TODO: This URL probably won't work on hosted site
+            cornerstoneWADOImageLoader.webWorkerManager.loadWebWorkerTask(
+              `${window.location.protocol}//${window.location.host}/examples/customWebWorkerTask/sleepTask.js`,{
+                        'sleepTask' : {
+                            sleepTime: 3000
+                        }
+                    }
+            );
+        }
+
+        const task = cornerstoneWADOImageLoader.webWorkerManager.addTask('sleepTask', {},-10);
+        const promise = task.promise;
+        promise.then(function(result) {
+            console.log('sleep task completed');
+            updateStatistics();
+        });
+        updateStatistics();
+    }
+
+    const element = document.getElementById('dicomImage');
+    cornerstone.enable(element);
+
+    document.getElementById('downloadAndView').addEventListener('click', function(e) {
+        downloadAndView();
+    });
+    document.getElementById('startWebWorker').addEventListener('click', function(e) {
+        startWebWorker();
+    });
+    document.getElementById('start10WebWorkers').addEventListener('click', function(e) {
+        for(let i=0; i < 10; i++) {
+            startWebWorker();
+        }
+    });
+
+
+
+    function convolute(kernel, multiplier, calculateWWWC) {
+        const promise = cornerstoneWADOImageLoader.webWorkerManager.addTask('convolveTask', {
+            pixelData :loadedImage.getPixelData(),
+            kernel : kernel,
+            multiplier: multiplier,
+            imageFrame: {
+                typedArrayName: loadedImage.getPixelData().constructor.name,
+                width : loadedImage.width,
+                height : loadedImage.height
+            }
+        }, -8).promise;
+        promise.then(function(result) {
+            console.log('convolveTask task completed');
+            result.pixelData = new Int16Array(result.pixelData);
+
+            const sharpenedImage = {
+                color: false,
+                columns: loadedImage.columns,
+                rows: loadedImage.rows,
+                width: loadedImage.width,
+                height: loadedImage.height,
+                imageId: new Date().toISOString(),
+                maxPixelValue: result.minMax.max,
+                minPixelValue: result.minMax.min,
+                windowWidth: calculateWWWC ? (result.minMax.max - result.minMax.max) : loadedImage.windowWidth,
+                windowLevel: calculateWWWC ? ((result.minMax.max + result.minMax.max) / 2) : loadedImage.windowLevel,
+                sizeInBytes: loadedImage.sizeInBytes,
+                render: loadedImage.render,
+                slope: loadedImage.slope,
+                intercept: loadedImage.intercept,
+                invert: loadedImage.invert,
+                getPixelData: function () {
+                    return result.pixelData;
+                }
+            };
+
+            cornerstone.displayImage(element, sharpenedImage);
+            loadedImage = sharpenedImage;
+            updateStatistics();
+        });
+    }
+
+    document.getElementById('sharpen').addEventListener('click', function(e) {
+        convolute([
+            [ 0,-1, 0],
+            [-1, 5,-1],
+            [ 0,-1, 0]
+        ], 1);
+    });
+    document.getElementById('edgeDetect').addEventListener('click', function(e) {
+        convolute([
+            [-1,-1,-1],
+            [-1, 9,-1],
+            [-1,-1,-1]
+        ], 1);
+    });
+    document.getElementById('boxBlur').addEventListener('click', function(e) {
+        convolute([
+            [1,1,1],
+            [1,1,1],
+            [1,1,1]
+        ], 1/9);
+    });
+    document.getElementById('gaussianBlur').addEventListener('click', function(e) {
+        convolute([
+            [1,2,1],
+            [2,4,2],
+            [1,2,1]
+        ], 1/16);
+    });
+    document.getElementById('emboss').addEventListener('click', function(e) {
+        convolute([
+            [-2,1,0],
+            [-1,1,1],
+            [ 0,1,2]
+        ], 1/3);
+    });
+
+    document.getElementById('unsharp').addEventListener('click', function(e) {
+        convolute([
+            [ 1, 4,   6, 4, 1],
+            [ 4,16,  24,16, 4],
+            [ 6,24,-476,24, 6],
+            [ 4,16,  24,16, 4],
+            [ 1, 4,   6, 4, 1],
+        ], -1/256);
+    });
+
+    const form = document.getElementById('form');
+    form.addEventListener('submit', function() {
+        downloadAndView();
+        return false;
+    });
+
+    document.getElementById('toggleCollapseInfo').addEventListener('click', function() {
+        if (document.getElementById('collapseInfo').style.display === 'none') {
+            document.getElementById('collapseInfo').style.display = 'block';
+        } else {
+            document.getElementById('collapseInfo').style.display = 'none';
+        }
+    });
+
+    // set an interval timer to periodically update the statistics for a real time view of
+    // what the web workers are doing
+    setInterval(function() {
+        updateStatistics();
+    }, 100);
+</script>
+</html>

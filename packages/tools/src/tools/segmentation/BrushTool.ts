@@ -8,9 +8,14 @@ import type {
   SVGDrawingHelper,
 } from '../../types';
 import { BaseTool } from '../base';
-
-import { fillInsideCircle } from './strategies/fillCircle';
-import { Events } from '../../enums';
+import { fillInsideSphere } from './strategies/fillSphere';
+import { eraseInsideSphere } from './strategies/eraseSphere';
+import {
+  thresholdInsideCircle,
+  fillInsideCircle,
+} from './strategies/fillCircle';
+import { eraseInsideCircle } from './strategies/eraseCircle';
+import { Events, ToolModes } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -25,6 +30,7 @@ import {
   state as segmentationState,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 /**
  * @public
@@ -32,10 +38,11 @@ import {
 class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
-    segmentation: any; //
+    segmentation: Types.IImageVolume;
+    imageVolume: Types.IImageVolume; //
     segmentsLocked: number[]; //
   } | null;
-  private _hoverData: {
+  private _hoverData?: {
     brushCursor: any;
     segmentationId: string;
     segmentIndex: number;
@@ -44,7 +51,6 @@ class BrushTool extends BaseTool {
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
   };
-  private _isDrawing: boolean;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -52,11 +58,19 @@ class BrushTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
-          FILL_INSIDE: fillInsideCircle,
-          // ERASE_INSIDE: eraseInsideCircle,
+          FILL_INSIDE_CIRCLE: fillInsideCircle,
+          THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
+          ERASE_INSIDE_CIRCLE: eraseInsideCircle,
+          FILL_INSIDE_SPHERE: fillInsideSphere,
+          ERASE_INSIDE_SPHERE: eraseInsideSphere,
         },
-        defaultStrategy: 'FILL_INSIDE',
-        activeStrategy: 'FILL_INSIDE',
+        strategySpecificConfiguration: {
+          THRESHOLD_INSIDE_CIRCLE: {
+            threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
+          },
+        },
+        defaultStrategy: 'FILL_INSIDE_CIRCLE',
+        activeStrategy: 'FILL_INSIDE_CIRCLE',
         brushSize: 25,
       },
     }
@@ -64,22 +78,35 @@ class BrushTool extends BaseTool {
     super(toolProps, defaultToolProps);
   }
 
+  onSetToolPassive = () => {
+    this.disableCursor();
+  };
+
+  onSetToolEnabled = () => {
+    this.disableCursor();
+  };
+
+  onSetToolDisabled = () => {
+    this.disableCursor();
+  };
+
+  private disableCursor() {
+    this._hoverData = undefined;
+  }
+
   preMouseDownCallback = (
     evt: EventTypes.MouseDownActivateEventType
   ): boolean => {
     const eventData = evt.detail;
-    const { currentPoints, element } = eventData;
-    const worldPos = currentPoints.world;
-    const canvasPos = currentPoints.canvas;
+    const { element } = eventData;
 
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
-    const { canvasToWorld } = viewport;
 
-    this._isDrawing = true;
+    if (viewport instanceof StackViewport) {
+      throw new Error('Not implemented yet');
+    }
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
     const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
@@ -90,72 +117,28 @@ class BrushTool extends BaseTool {
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
-      activeSegmentationRepresentation;
-    const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId);
+    const { segmentationId, type } = activeSegmentationRepresentation;
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
-      segmentIndex
-    );
 
     const { representationData } =
       segmentationState.getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with this tool?
-    const { volumeId } = representationData[type];
+    const { volumeId } = representationData[type] as LabelmapSegmentationData;
     const segmentation = cache.getVolume(volumeId);
 
-    // Todo: Used for drawing the svg only, we might not need it at all
-    const centerCanvas = canvasPos;
+    const actors = viewport.getActors();
 
-    const radius = this.configuration.brushSize;
-
-    const bottomCanvas: Types.Point2 = [
-      centerCanvas[0],
-      centerCanvas[1] + radius,
-    ];
-    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius];
-    const leftCanvas: Types.Point2 = [
-      centerCanvas[0] - radius,
-      centerCanvas[1],
-    ];
-    const rightCanvas: Types.Point2 = [
-      centerCanvas[0] + radius,
-      centerCanvas[1],
-    ];
-
-    const brushCursor = {
-      metadata: {
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: '',
-        toolName: this.getToolName(),
-        segmentColor,
-      },
-      data: {
-        invalidated: true,
-        handles: {
-          points: [
-            canvasToWorld(bottomCanvas),
-            canvasToWorld(topCanvas),
-            canvasToWorld(leftCanvas),
-            canvasToWorld(rightCanvas),
-          ],
-        },
-        cachedStats: {},
-      },
-    };
+    // Note: For tools that need the source data. Assumed to use
+    // First volume actor for now.
+    const firstVolumeActorUID = actors[0].uid;
+    const imageVolume = cache.getVolume(firstVolumeActorUID);
 
     const viewportIdsToRender = [viewport.id];
 
-    // this.updateCursor()
-
     this._editData = {
       segmentation,
+      imageVolume,
       segmentsLocked,
     };
 
@@ -173,24 +156,19 @@ class BrushTool extends BaseTool {
     return true;
   };
 
-  mouseMoveCallback = (evt: EventTypes.MouseMoveEventType): void => {
-    this.updateCursor(evt);
+  mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (this.mode === ToolModes.Active) {
+      this.updateCursor(evt);
+    }
   };
 
-  private updateCursor(
-    evt:
-      | EventTypes.MouseMoveEventType
-      | EventTypes.MouseDragEventType
-      | EventTypes.MouseUpEventType
-  ) {
-    const brushSize = this.configuration.brushSize;
+  private updateCursor(evt: EventTypes.InteractionEventType) {
     const eventData = evt.detail;
     const { element } = eventData;
     const { currentPoints } = eventData;
-    const canvasPos = currentPoints.canvas;
+    const centerCanvas = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
-    const { canvasToWorld } = viewport;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
@@ -211,7 +189,6 @@ class BrushTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
 
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
     const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
@@ -220,25 +197,7 @@ class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
 
-    const centerCanvas = canvasPos;
-
     // Center of circle in canvas Coordinates
-
-    const radius = brushSize;
-
-    const bottomCanvas: Types.Point2 = [
-      centerCanvas[0],
-      centerCanvas[1] + radius,
-    ];
-    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius];
-    const leftCanvas: Types.Point2 = [
-      centerCanvas[0] - radius,
-      centerCanvas[1],
-    ];
-    const rightCanvas: Types.Point2 = [
-      centerCanvas[0] + radius,
-      centerCanvas[1],
-    ];
 
     const brushCursor = {
       metadata: {
@@ -249,18 +208,7 @@ class BrushTool extends BaseTool {
         toolName: this.getToolName(),
         segmentColor,
       },
-      data: {
-        invalidated: true,
-        handles: {
-          points: [
-            canvasToWorld(bottomCanvas),
-            canvasToWorld(topCanvas),
-            canvasToWorld(leftCanvas),
-            canvasToWorld(rightCanvas),
-          ],
-        },
-        cachedStats: {},
-      },
+      data: {},
     };
 
     this._hoverData = {
@@ -273,24 +221,24 @@ class BrushTool extends BaseTool {
       viewportIdsToRender,
     };
 
+    this._calculateCursor(element, centerCanvas);
+
     triggerAnnotationRenderForViewportUIDs(
       renderingEngine,
       viewportIdsToRender
     );
   }
 
-  private _mouseDragCallback = (evt: EventTypes.MouseDragEventType): void => {
-    this._isDrawing = true;
-    const brushSize = this.configuration.brushSize;
+  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
-    const { currentPoints } = eventData;
-    const currentCanvasPoints = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
-    const { canvasToWorld } = viewport;
+    const { renderingEngine } = enabledElement;
 
-    const { segmentation, segmentsLocked } = this._editData;
+    const { imageVolume, segmentation, segmentsLocked } = this._editData;
+
+    this.updateCursor(evt);
+
     const {
       segmentIndex,
       segmentationId,
@@ -299,11 +247,38 @@ class BrushTool extends BaseTool {
       viewportIdsToRender,
     } = this._hoverData;
 
-    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
     const { data } = brushCursor;
+    const { viewPlaneNormal, viewUp } = brushCursor.metadata;
 
+    triggerAnnotationRenderForViewportUIDs(
+      renderingEngine,
+      viewportIdsToRender
+    );
+
+    const operationData = {
+      points: data.handles.points,
+      volume: segmentation, // todo: just pass the segmentationId instead
+      imageVolume,
+      segmentIndex,
+      segmentsLocked,
+      viewPlaneNormal,
+      toolGroupId: this.toolGroupId,
+      segmentationId,
+      segmentationRepresentationUID,
+      viewUp,
+      strategySpecificConfiguration:
+        this.configuration.strategySpecificConfiguration,
+    };
+
+    this.applyActiveStrategy(enabledElement, operationData);
+  };
+
+  private _calculateCursor(element, centerCanvas) {
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const { canvasToWorld } = viewport;
+    const { brushSize } = this.configuration;
     // Center of circle in canvas Coordinates
-    const centerCanvas = currentCanvasPoints;
 
     const radius = brushSize;
 
@@ -321,6 +296,13 @@ class BrushTool extends BaseTool {
       centerCanvas[1],
     ];
 
+    const { brushCursor } = this._hoverData;
+    const { data } = brushCursor;
+
+    if (data.handles === undefined) {
+      data.handles = {};
+    }
+
     data.handles.points = [
       canvasToWorld(bottomCanvas),
       canvasToWorld(topCanvas),
@@ -328,33 +310,14 @@ class BrushTool extends BaseTool {
       canvasToWorld(rightCanvas),
     ];
 
-    data.invalidated = true;
+    data.invalidated = false;
+  }
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportIdsToRender
-    );
-
-    const operationData = {
-      points: data.handles.points,
-      volume: segmentation, // todo: just pass the segmentationId instead
-      segmentIndex,
-      segmentsLocked,
-      viewPlaneNormal,
-      toolGroupId: this.toolGroupId,
-      segmentationId,
-      segmentationRepresentationUID,
-      viewUp,
-    };
-
-    this.applyActiveStrategy(enabledElement, operationData);
-  };
-
-  private _mouseUpCallback = (evt: EventTypes.MouseUpEventType): void => {
+  private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { segmentation, segmentsLocked } = this._editData;
+    const { imageVolume, segmentation, segmentsLocked } = this._editData;
     const {
       segmentIndex,
       segmentationId,
@@ -373,7 +336,6 @@ class BrushTool extends BaseTool {
     const { viewport } = enabledElement;
 
     this._editData = null;
-    this._isDrawing = false;
     this.updateCursor(evt);
 
     if (viewport instanceof StackViewport) {
@@ -383,6 +345,7 @@ class BrushTool extends BaseTool {
     const operationData = {
       points: data.handles.points,
       volume: segmentation,
+      imageVolume,
       segmentIndex,
       segmentsLocked,
       viewPlaneNormal,
@@ -390,6 +353,8 @@ class BrushTool extends BaseTool {
       segmentationId,
       segmentationRepresentationUID,
       viewUp,
+      strategySpecificConfiguration:
+        this.configuration.strategySpecificConfiguration,
     };
 
     this.applyActiveStrategy(enabledElement, operationData);
@@ -401,19 +366,16 @@ class BrushTool extends BaseTool {
   private _activateDraw = (element: HTMLDivElement): void => {
     element.addEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.addEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
-
-    //element.addEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    //element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   };
 
   /**
@@ -422,20 +384,25 @@ class BrushTool extends BaseTool {
   private _deactivateDraw = (element: HTMLDivElement): void => {
     element.removeEventListener(
       Events.MOUSE_UP,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_DRAG,
-      this._mouseDragCallback as EventListener
+      this._dragCallback as EventListener
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
-      this._mouseUpCallback as EventListener
+      this._endCallback as EventListener
     );
-
-    //element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback)
-    //element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback)
   };
+
+  public invalidateBrushCursor() {
+    if (this._hoverData !== undefined) {
+      const { data } = this._hoverData.brushCursor;
+
+      data.invalidated = true;
+    }
+  }
 
   renderAnnotation(
     enabledElement: Types.IEnabledElement,
@@ -444,6 +411,7 @@ class BrushTool extends BaseTool {
     if (!this._hoverData) {
       return;
     }
+
     const { viewport } = enabledElement;
 
     const viewportIdsToRender = this._hoverData.viewportIdsToRender;
@@ -453,6 +421,15 @@ class BrushTool extends BaseTool {
     }
 
     const brushCursor = this._hoverData.brushCursor;
+
+    if (brushCursor.data.invalidated === true) {
+      const { centerCanvas } = this._hoverData;
+      const { element } = viewport;
+
+      // This can be set true when changing the brush size programmatically
+      // whilst the cursor is being rendered.
+      this._calculateCursor(element, centerCanvas);
+    }
 
     const toolMetadata = brushCursor.metadata;
     const annotationUID = toolMetadata.brushCursorUID;

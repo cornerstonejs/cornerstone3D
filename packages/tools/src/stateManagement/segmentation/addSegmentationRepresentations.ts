@@ -7,6 +7,7 @@ import Representations from '../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../store/ToolGroupManager';
 
 import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
+import { contourDisplay } from '../../tools/displayTools/Contour';
 
 /**
  * Set the specified segmentation representations on the viewports of the specified
@@ -53,6 +54,13 @@ async function _addSegmentationRepresentation(
   if (representationInput.type === Representations.Labelmap) {
     segmentationRepresentationUID =
       await labelmapDisplay.addSegmentationRepresentation(
+        toolGroupId,
+        representationInput,
+        toolGroupSpecificRepresentationConfig
+      );
+  } else if (representationInput.type === Representations.Contour) {
+    segmentationRepresentationUID =
+      await contourDisplay.addSegmentationRepresentation(
         toolGroupId,
         representationInput,
         toolGroupSpecificRepresentationConfig

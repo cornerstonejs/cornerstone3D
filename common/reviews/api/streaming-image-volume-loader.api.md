@@ -53,6 +53,29 @@ type CameraModifiedEventDetail = {
 };
 
 // @public (undocumented)
+type ContourData = {
+    points: Point3[];
+    type: ContourType;
+    color?: Point3;
+};
+
+// @public (undocumented)
+type ContourSetData = {
+    id: string;
+    data: ContourData[];
+    frameOfReferenceUID: string;
+    color?: Point3;
+};
+
+// @public (undocumented)
+enum ContourType {
+    // (undocumented)
+    CLOSED_PLANAR = 'CLOSED_PLANAR',
+    // (undocumented)
+    OPEN_PLANAR = 'OPEN_PLANAR',
+}
+
+// @public (undocumented)
 export function cornerstoneStreamingImageVolumeLoader(volumeId: string, options: {
     imageIds: string[];
 }): IVolumeLoader;
@@ -368,26 +391,28 @@ enum Events {
     CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
     ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
     ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
+    GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
     IMAGE_CACHE_IMAGE_ADDED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED',
     IMAGE_CACHE_IMAGE_REMOVED = 'CORNERSTONE_IMAGE_CACHE_IMAGE_REMOVED',
     IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR',
     IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
     IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
     IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
-    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
 
+    IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
     IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
     IMAGE_VOLUME_MODIFIED = 'CORNERSTONE_IMAGE_VOLUME_MODIFIED',
     PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
     STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
     STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
     STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
+
     VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
 
     VOLUME_CACHE_VOLUME_ADDED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_ADDED',
-
     VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
     VOLUME_LOADED = 'CORNERSTONE_VOLUME_LOADED',
+
     VOLUME_LOADED_FAILED = 'CORNERSTONE_VOLUME_LOADED_FAILED',
 
     VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
@@ -453,6 +478,12 @@ type FlipDirection = {
 };
 
 // @public (undocumented)
+enum GeometryType {
+    // (undocumented)
+    CONTOUR = 'contour',
+}
+
+// @public (undocumented)
 interface ICache {
     getCacheSize: () => number;
     getImageLoadObject: (imageId: string) => IImageLoadObject | void;
@@ -468,6 +499,22 @@ interface ICache {
     volumeLoadObject: IVolumeLoadObject
     ) => Promise<any>;
     setMaxCacheSize: (maxCacheSize: number) => void;
+}
+
+// @public (undocumented)
+interface ICachedGeometry {
+    // (undocumented)
+    geometry?: IGeometry;
+    // (undocumented)
+    geometryId: string;
+    // (undocumented)
+    geometryLoadObject: IGeometryLoadObject;
+    // (undocumented)
+    loaded: boolean;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    timeStamp: number;
 }
 
 // @public (undocumented)
@@ -519,6 +566,52 @@ interface ICamera {
     viewUp?: Point3;
 }
 
+// @public (undocumented)
+interface IContour {
+    // (undocumented)
+    color: any;
+    // (undocumented)
+    getColor(): Point3;
+    // (undocumented)
+    getFlatPointsArray(): number[];
+    getPoints(): Point3[];
+    // (undocumented)
+    _getSizeInBytes(): number;
+    // (undocumented)
+    getType(): ContourType;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    points: Point3[];
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
+
+// @public
+interface IContourSet {
+    // (undocumented)
+    contours: IContour[];
+    // (undocumented)
+    _createEachContour(data: ContourData[]): void;
+    // (undocumented)
+    readonly frameOfReferenceUID: string;
+    // (undocumented)
+    getColor(): any;
+    getContours(): IContour[];
+    getFlatPointsArray(): Point3[];
+    getNumberOfContours(): number;
+    getNumberOfPointsArray(): number[];
+    getNumberOfPointsInAContour(contourIndex: number): number;
+    getPointsInContour(contourIndex: number): Point3[];
+    // (undocumented)
+    getSizeInBytes(): number;
+    getTotalNumberOfPoints(): number;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly sizeInBytes: number;
+}
+
 // @public
 interface IEnabledElement {
     FrameOfReferenceUID: string;
@@ -526,6 +619,25 @@ interface IEnabledElement {
     renderingEngineId: string;
     viewport: IStackViewport | IVolumeViewport;
     viewportId: string;
+}
+
+// @public (undocumented)
+interface IGeometry {
+    // (undocumented)
+    data: ContourSet;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    sizeInBytes: number;
+    // (undocumented)
+    type: GeometryType;
+}
+
+// @public (undocumented)
+interface IGeometryLoadObject {
+    cancelFn?: () => void;
+    decache?: () => void;
+    promise: Promise<IGeometry>;
 }
 
 // @public
@@ -903,10 +1015,12 @@ interface IViewport {
     getPan(): Point2;
     getRenderer(): void;
     getRenderingEngine(): any;
+    getRotation: () => number;
     getZoom(): number;
     id: string;
     isDisabled: boolean;
     options: ViewportInputOptions;
+    removeActors(actorUIDs: Array<string>): void;
     removeAllActors(): void;
     render(): void;
     renderingEngineId: string;
@@ -1116,6 +1230,9 @@ type PTScaling = {
     suvbwToSuvbsa?: number;
 };
 
+// @public (undocumented)
+type PublicContourSetData = ContourSetData;
+
 // @public
 type PublicViewportInput = {
     element: HTMLDivElement;
@@ -1146,11 +1263,14 @@ type ScalingParameters = {
     suvbsa?: number;
 };
 
-// @public (undocumented)
-export function sharedArrayBufferImageLoader(imageId: string, options?: Record<string, any>): {
-    promise: Promise<Record<string, any>>;
-    cancelFn: () => void;
-};
+// @public
+enum SharedArrayBufferModes {
+    AUTO = 'auto',
+    // (undocumented)
+    FALSE = 'false',
+    // (undocumented)
+    TRUE = 'true',
+}
 
 // @public
 type StackNewImageEvent = CustomEvent_2<StackNewImageEventDetail>;
@@ -1213,11 +1333,12 @@ export class StreamingImageVolume extends ImageVolume {
         imageIdIndex: number;
         options: {
             targetBuffer: {
-                arrayBuffer: ArrayBufferLike;
+                arrayBuffer: SharedArrayBuffer;
                 offset: number;
                 length: number;
                 type: any;
             };
+            skipCreateImage: boolean;
             preScale: {
                 enabled: boolean;
                 scalingParameters: Types.ScalingParameters;
@@ -1248,13 +1369,40 @@ type ViewportInputOptions = {
     background?: [number, number, number];
     orientation?: OrientationAxis | OrientationVectors;
     suppressEvents?: boolean;
+    parallelProjection?: boolean;
 };
+
+// @public (undocumented)
+interface ViewportPreset {
+    // (undocumented)
+    ambient: string;
+    // (undocumented)
+    colorTransfer: string;
+    // (undocumented)
+    diffuse: string;
+    // (undocumented)
+    gradientOpacity: string;
+    // (undocumented)
+    interpolation: string;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    scalarOpacity: string;
+    // (undocumented)
+    shade: string;
+    // (undocumented)
+    specular: string;
+    // (undocumented)
+    specularPower: string;
+}
 
 // @public
 enum ViewportType {
     ORTHOGRAPHIC = 'orthographic',
     PERSPECTIVE = 'perspective',
     STACK = 'stack',
+    // (undocumented)
+    VOLUME_3D = 'volume3d',
 }
 
 // @public (undocumented)

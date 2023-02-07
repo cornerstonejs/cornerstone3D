@@ -26,7 +26,7 @@ const {
  * Activates the closed contour edit event loop.
  */
 function activateClosedContourEdit(
-  evt: EventTypes.MouseDownActivateEventType,
+  evt: EventTypes.InteractionEventType,
   annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
 ): void {
@@ -75,6 +75,19 @@ function activateClosedContourEdit(
     this.mouseUpClosedContourEditCallback
   );
 
+  element.addEventListener(
+    Events.TOUCH_END,
+    this.mouseUpClosedContourEditCallback
+  );
+  element.addEventListener(
+    Events.TOUCH_DRAG,
+    this.mouseDragClosedContourEditCallback
+  );
+  element.addEventListener(
+    Events.TOUCH_TAP,
+    this.mouseUpClosedContourEditCallback
+  );
+
   hideElementCursor(element);
 }
 
@@ -97,6 +110,19 @@ function deactivateClosedContourEdit(element: HTMLDivElement): void {
     this.mouseUpClosedContourEditCallback
   );
 
+  element.removeEventListener(
+    Events.TOUCH_END,
+    this.mouseUpClosedContourEditCallback
+  );
+  element.removeEventListener(
+    Events.TOUCH_DRAG,
+    this.mouseDragClosedContourEditCallback
+  );
+  element.removeEventListener(
+    Events.TOUCH_TAP,
+    this.mouseUpClosedContourEditCallback
+  );
+
   resetElementCursor(element);
 }
 
@@ -106,7 +132,7 @@ function deactivateClosedContourEdit(element: HTMLDivElement): void {
  * a way that requires a new edit to keep the contour a simple polygon.
  */
 function mouseDragClosedContourEditCallback(
-  evt: EventTypes.MouseDragEventType
+  evt: EventTypes.InteractionEventType
 ): Types.Point2[] {
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
@@ -183,9 +209,7 @@ function mouseDragClosedContourEditCallback(
 /**
  * Finish the current edit, and start a new one.
  */
-function finishEditAndStartNewEdit(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
-): void {
+function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;
   const enabledElement = getEnabledElement(element);
@@ -234,7 +258,7 @@ function finishEditAndStartNewEdit(
  * intended crossing points.
  */
 function fuseEditPointsWithClosedContour(
-  evt: EventTypes.MouseDragEventType | EventTypes.MouseMoveEventType
+  evt: EventTypes.InteractionEventType
 ): Types.Point2[] {
   const { prevCanvasPoints, editCanvasPoints, startCrossingIndex, snapIndex } =
     this.editData;
@@ -386,7 +410,7 @@ function fuseEditPointsWithClosedContour(
  * Completes the edit of the closed contour when the mouse button is released.
  */
 function mouseUpClosedContourEditCallback(
-  evt: EventTypes.MouseUpEventType | EventTypes.MouseClickEventType
+  evt: EventTypes.InteractionEventType
 ): void {
   const eventDetail = evt.detail;
   const { element } = eventDetail;

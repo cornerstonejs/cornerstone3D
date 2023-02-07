@@ -19,6 +19,10 @@ import {
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import {
+  convertMultiframeImageIds,
+  prefetchMetadataInformation,
+} from '../../../../utils/demo/helpers/convertMultiframeImageIds';
 
 // This is for debugging purposes
 console.warn(
@@ -149,8 +153,9 @@ function handleDragOver(evt) {
   evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
 }
 
-function loadAndViewImage(imageId) {
-  const stack = [imageId];
+async function loadAndViewImage(imageId) {
+  await prefetchMetadataInformation([imageId]);
+  const stack = convertMultiframeImageIds([imageId]);
   // Set the stack on the viewport
   viewport.setStack(stack).then(() => {
     // Set the VOI of the stack

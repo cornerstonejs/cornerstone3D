@@ -86,7 +86,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (evt: EventTypes.MouseDownActivateEventType) => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;

@@ -9,6 +9,7 @@ import {
 } from './RenderingEngine';
 import RenderingEngine from './RenderingEngine';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
+import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
@@ -28,20 +29,24 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
+  getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
+  setUseSharedArrayBuffer,
   resetUseCPURendering,
+  resetUseSharedArrayBuffer,
 } from './init';
 
 // Classes
 import Settings from './Settings';
 
 // Namespaces
-import * as volumeLoader from './volumeLoader';
-import * as imageLoader from './imageLoader';
+import * as volumeLoader from './loaders/volumeLoader';
+import * as imageLoader from './loaders/imageLoader';
+import * as geometryLoader from './loaders/geometryLoader';
 import * as Types from './types';
 import * as utilities from './utilities';
-import { registerImageLoader } from './imageLoader'; // since it is used by CSWIL right now
+import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
 
@@ -62,6 +67,7 @@ export {
   //
   Settings,
   // Rendering Engine
+  BaseVolumeViewport,
   VolumeViewport,
   Viewport,
   StackViewport,
@@ -100,4 +106,10 @@ export {
   getShouldUseCPURendering,
   setUseCPURendering,
   resetUseCPURendering,
+  // SharedArrayBuffer
+  getShouldUseSharedArrayBuffer,
+  setUseSharedArrayBuffer,
+  resetUseSharedArrayBuffer,
+  // Geometry Loader
+  geometryLoader,
 };

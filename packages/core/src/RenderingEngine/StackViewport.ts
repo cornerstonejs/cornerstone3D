@@ -18,6 +18,7 @@ import {
   windowLevel as windowLevelUtil,
   imageIdToURI,
   isImageActor,
+  actorIsA,
 } from '../utilities';
 import {
   Point2,
@@ -43,7 +44,7 @@ import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { getColormap } from './helpers/cpuFallback/colors/index';
 
-import { loadAndCacheImage } from '../imageLoader';
+import { loadAndCacheImage } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import InterpolationType from '../enums/InterpolationType';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
@@ -141,7 +142,6 @@ class StackViewport extends Viewport implements IStackViewport {
   private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
   private voiApplied = false;
-  private rotationCache = 0;
   private _publishCalibratedEvent = false;
   private _calibrationEvent: CalibrationEvent;
   private _cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
@@ -154,6 +154,9 @@ class StackViewport extends Viewport implements IStackViewport {
   // TODO: These should not be here and will be nuked
   public modality: string; // this is needed for tools
   public scaling: Scaling;
+
+  // Camera properties
+  private initialViewUp: Point3;
 
   /**
    * Constructor for the StackViewport class
@@ -170,7 +173,7 @@ class StackViewport extends Viewport implements IStackViewport {
         canvas: this.canvas,
         renderingTools: {},
         transform: new Transform(),
-        viewport: {},
+        viewport: { rotation: 0 },
       };
     } else {
       const renderer = this.getRenderer();
@@ -178,14 +181,14 @@ class StackViewport extends Viewport implements IStackViewport {
       renderer.setActiveCamera(camera);
 
       const viewPlaneNormal = <Point3>[0, 0, -1];
-      const viewUp = <Point3>[0, -1, 0];
+      this.initialViewUp = <Point3>[0, -1, 0];
 
       camera.setDirectionOfProjection(
         -viewPlaneNormal[0],
         -viewPlaneNormal[1],
         -viewPlaneNormal[2]
       );
-      camera.setViewUp(...viewUp);
+      camera.setViewUp(...this.initialViewUp);
       camera.setParallelProjection(true);
       camera.setThicknessFromFocalPoint(0.1);
       // @ts-ignore: vtkjs incorrect typing
@@ -258,11 +261,11 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
 
+    const { actor } = defaultActor;
     const vtkImageData = actor.getMapper().getInputData();
     return {
       dimensions: vtkImageData.getDimensions(),
@@ -564,8 +567,9 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     if (typeof rotation !== 'undefined') {
-      if (this.rotationCache !== rotation) {
-        this.setRotation(this.rotationCache, rotation);
+      // TODO: check with VTK about rounding errors here.
+      if (this.getRotation() !== rotation) {
+        this.setRotation(rotation);
       }
     }
   }
@@ -577,7 +581,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public getProperties = (): StackViewportProperties => {
     return {
       voiRange: this.voiRange,
-      rotation: this.rotationCache,
+      rotation: this.getRotation(),
       interpolationType: this.interpolationType,
       invert: this.invert,
     };
@@ -646,7 +650,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.setProperties(
       {
         voiRange: this.voiRange,
-        rotation: this.rotation,
         interpolationType: this.interpolationType,
         invert: this.invert,
       },
@@ -665,10 +668,10 @@ class StackViewport extends Viewport implements IStackViewport {
 
     // If camera is rotated, we need the correct rotated viewUp along the
     // viewPlaneNormal vector
-    if (this.rotation) {
+    if (viewport.rotation) {
       const rotationMatrix = mat4.fromRotation(
         mat4.create(),
-        (this.rotation * Math.PI) / 180,
+        (viewport.rotation * Math.PI) / 180,
         viewPlaneNormal
       );
       viewUp = vec3.transformMat4(
@@ -784,7 +787,7 @@ class StackViewport extends Viewport implements IStackViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation: this.rotation,
+      rotation: this.getRotation(),
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
@@ -813,13 +816,69 @@ class StackViewport extends Viewport implements IStackViewport {
     this.setVOIGPU(voiRange, suppressEvents);
   }
 
-  private setRotation(rotationCache: number, rotation: number): void {
+  getRotation = (): number => {
+    if (this.useCPURendering) {
+      return this.getRotationCPU();
+    } else {
+      return this.getRotationGPU();
+    }
+  };
+
+  private getRotationCPU = (): number => {
+    const { viewport } = this._cpuFallbackEnabledElement;
+    return viewport.rotation;
+  };
+
+  /**
+   * Gets the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently.
+   *
+   * @returns the rotation resulting from the value set in setRotation AND taking into
+   * account any flips that occurred subsequently.
+   */
+  private getRotationGPU = (): number => {
+    const {
+      viewUp: currentViewUp,
+      viewPlaneNormal,
+      flipVertical,
+    } = this.getCamera();
+
+    // The initial view up vector without any rotation, but incorporating vertical flip.
+    const initialViewUp = flipVertical
+      ? vec3.negate(vec3.create(), this.initialViewUp)
+      : this.initialViewUp;
+
+    // The angle between the initial and current view up vectors.
+    // TODO: check with VTK about rounding errors here.
+    const initialToCurrentViewUpAngle =
+      (vec3.angle(initialViewUp, currentViewUp) * 180) / Math.PI;
+
+    // Now determine if initialToCurrentViewUpAngle is positive or negative by comparing
+    // the direction of the initial/current view up cross product with the current
+    // viewPlaneNormal.
+
+    const initialToCurrentViewUpCross = vec3.cross(
+      vec3.create(),
+      initialViewUp,
+      currentViewUp
+    );
+
+    // The sign of the dot product of the start/end view up cross product and
+    // the viewPlaneNormal indicates a positive or negative rotation respectively.
+    const normalDot = vec3.dot(initialToCurrentViewUpCross, viewPlaneNormal);
+
+    return normalDot >= 0
+      ? initialToCurrentViewUpAngle
+      : (360 - initialToCurrentViewUpAngle) % 360;
+  };
+
+  private setRotation(rotation: number): void {
     const previousCamera = this.getCamera();
 
     if (this.useCPURendering) {
-      this.setRotationCPU(rotationCache, rotation);
+      this.setRotationCPU(rotation);
     } else {
-      this.setRotationGPU(rotationCache, rotation);
+      this.setRotationGPU(rotation);
     }
 
     // New camera after rotation
@@ -831,7 +890,7 @@ class StackViewport extends Viewport implements IStackViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation: this.rotation,
+      rotation,
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
@@ -855,22 +914,26 @@ class StackViewport extends Viewport implements IStackViewport {
     this.setInvertColorGPU(invert);
   }
 
-  private setRotationCPU(rotationCache: number, rotation: number): void {
+  private setRotationCPU(rotation: number): void {
     const { viewport } = this._cpuFallbackEnabledElement;
 
     viewport.rotation = rotation;
-    this.rotationCache = rotation;
-    this.rotation = rotation;
   }
 
-  private setRotationGPU(rotationCache: number, rotation: number): void {
+  private setRotationGPU(rotation: number): void {
+    const { flipVertical } = this.getCamera();
+
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
-    this.getVtkActiveCamera().roll(rotationCache);
+    const initialViewUp = flipVertical
+      ? vec3.negate(vec3.create(), this.initialViewUp)
+      : this.initialViewUp;
+
+    this.setCamera({
+      viewUp: initialViewUp as Point3,
+    });
 
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotation);
-    this.rotationCache = rotation;
-    this.rotation = rotation;
   }
 
   private setInterpolationTypeGPU(interpolationType: InterpolationType): void {
@@ -880,10 +943,10 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
+    const { actor } = defaultActor;
     const volumeProperty = actor.getProperty();
 
     // @ts-ignore
@@ -921,23 +984,22 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
 
     // Duplicated logic to make sure typescript stops complaining
     // about vtkActor not having the correct property
-    if (actor.isA('vtkVolume')) {
-      const volumeActor = actor as VolumeActor;
+    if (actorIsA(defaultActor, 'vtkVolume')) {
+      const volumeActor = defaultActor.actor as VolumeActor;
       const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
 
       if ((!this.invert && invert) || (this.invert && !invert)) {
         invertRgbTransferFunction(tfunc);
       }
       this.invert = invert;
-    } else if (actor.isA('vtkImageSlice')) {
-      const imageSliceActor = actor as vtkImageSlice;
+    } else if (actorIsA(defaultActor, 'vtkImageSlice')) {
+      const imageSliceActor = defaultActor.actor as vtkImageSlice;
       const tfunc = imageSliceActor.getProperty().getRGBTransferFunction(0);
 
       if ((!this.invert && invert) || (this.invert && !invert)) {
@@ -1002,12 +1064,10 @@ class StackViewport extends Viewport implements IStackViewport {
       return;
     }
 
-    const { actor } = defaultActor;
-
-    if (!isImageActor(actor)) {
+    if (!isImageActor(defaultActor)) {
       return;
     }
-
+    const { actor } = defaultActor;
     const imageActor = actor as ImageActor;
 
     let voiRangeToUse = voiRange;
@@ -1255,7 +1315,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
     this.stackInvalidated = true;
-    this.rotationCache = 0;
     this.flipVertical = false;
     this.flipHorizontal = false;
     this.voiApplied = false;
@@ -1517,7 +1576,7 @@ class StackViewport extends Viewport implements IStackViewport {
         preScale: {
           enabled: true,
         },
-        useRGBA: false,
+        useRGBA: true,
       };
 
       imageLoadPoolManager.addRequest(
@@ -1670,21 +1729,16 @@ class StackViewport extends Viewport implements IStackViewport {
         cameraProps.focalPoint
       );
 
-      // store rotation cache since reset camera will reset it
-      const rotationCache = this.rotationCache;
-
       // Reset the camera to point to the new slice location, reset camera doesn't
       // modify the direction of projection and viewUp
       this.resetCameraNoEvent();
 
-      // restore the rotation cache for the new slice
-      this.setRotation(rotationCache, rotationCache);
-
-      // set the flip back to the previous value since the restore camera props
+      // set the flip and view up back to the previous value since the restore camera props
       // rely on the correct flip value
       this.setCameraNoEvent({
         flipHorizontal: previousCameraProps.flipHorizontal,
         flipVertical: previousCameraProps.flipVertical,
+        viewUp: previousCameraProps.viewUp,
       });
 
       const { focalPoint } = this.getCamera();
@@ -1703,8 +1757,6 @@ class StackViewport extends Viewport implements IStackViewport {
         panCache as Point3
       );
 
-      // Restore rotation for the new slice of the image
-      this.rotationCache = 0;
       this._setPropertiesFromCache();
 
       return;
@@ -1747,6 +1799,9 @@ class StackViewport extends Viewport implements IStackViewport {
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);
 
     this.setCameraNoEvent({ viewUp, viewPlaneNormal });
+
+    // Setting this makes the following comment about resetCameraNoEvent not modifying viewUp true.
+    this.initialViewUp = viewUp;
 
     // Reset the camera to point to the new slice location, reset camera doesn't
     // modify the direction of projection and viewUp
@@ -1806,6 +1861,13 @@ class StackViewport extends Viewport implements IStackViewport {
     cfun.addRGBPoint(upper, 1.0, 1.0, 1.0);
     actor.getProperty().setRGBTransferFunction(0, cfun);
 
+    let invert = false;
+    if (imagePixelModule.photometricInterpretation === 'MONOCHROME1') {
+      invert = true;
+    }
+
+    this.setProperties({ invert });
+
     // Saving position of camera on render, to cache the panning
     const { focalPoint } = this.getCamera();
     this.cameraFocalPointOnRender = focalPoint;
@@ -1851,8 +1913,6 @@ class StackViewport extends Viewport implements IStackViewport {
       this.resetCameraGPU(resetPan, resetZoom);
     }
 
-    this.rotation = 0;
-    this.rotationCache = 0;
     return true;
   }
 
@@ -1883,7 +1943,14 @@ class StackViewport extends Viewport implements IStackViewport {
     // Todo: we need to make the rotation a camera properties so that
     // we can reset it there, right now it is not possible to reset the rotation
     // without this
-    this.getVtkActiveCamera().roll(this.rotationCache);
+
+    // We do not know the ordering of various flips and rotations that have been applied,
+    // so the rotation and flip must be reset together.
+    this.setCamera({
+      flipHorizontal: false,
+      flipVertical: false,
+      viewUp: this.initialViewUp,
+    });
 
     // For stack Viewport we since we have only one slice
     // it should be enough to reset the camera to the center of the image
@@ -2112,7 +2179,7 @@ class StackViewport extends Viewport implements IStackViewport {
     vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
     vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
 
-    return worldPos as Point3;
+    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
   };
 
   private worldToCanvasCPU = (worldPos: Point3): Point2 => {

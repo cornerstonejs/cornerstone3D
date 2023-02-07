@@ -11,6 +11,11 @@ type ViewportInputOptions = {
   orientation?: OrientationAxis | OrientationVectors;
   /** whether the events should be suppressed and not fired*/
   suppressEvents?: boolean;
+  /**
+   * parallel projection settings, Note that this will only be used for VOLUME_3D viewport. You can't modify the
+   * parallel projection of a stack viewport or volume viewport using viewport input options.
+   */
+  parallelProjection?: boolean;
 };
 
 export default ViewportInputOptions;

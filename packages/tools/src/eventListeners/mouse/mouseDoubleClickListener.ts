@@ -35,7 +35,21 @@ function mouseDoubleClickListener(evt: MouseEvent): void {
     deltaPoints,
   };
 
-  triggerEvent(element, Events.MOUSE_DOUBLE_CLICK, eventDetail);
+  const consumed = !triggerEvent(
+    element,
+    Events.MOUSE_DOUBLE_CLICK,
+    eventDetail
+  );
+
+  if (consumed) {
+    // The Events.MOUSE_DOUBLE_CLICK was consumed, thus no other listener should handle this 'dblclick' event.
+
+    // Use stopImmediatePropagation to lessen the possibility that a third party 'dblclick'
+    // listener receives this event. However, there still is no guarantee
+    // that any third party listener has not already handled the event.
+    evt.stopImmediatePropagation();
+    evt.preventDefault();
+  }
 }
 
 export default mouseDoubleClickListener;

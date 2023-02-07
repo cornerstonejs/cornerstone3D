@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
+  addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -28,13 +29,16 @@ const {
   SphereScissorsTool,
   CircleScissorsTool,
   BrushTool,
+  PaintFillTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
+  utilities: cstUtils,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
+const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -88,29 +92,91 @@ instructions.innerText = `
 
 content.append(instructions);
 
+const brushInstanceNames = {
+  CircularBrush: 'CircularBrush',
+  CircularEraser: 'CircularEraser',
+  SphereBrush: 'SphereBrush',
+  SphereEraser: 'SphereEraser',
+  ThresholdBrush: 'ThresholdBrush',
+};
+
+const brushStrategies = {
+  [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
+  [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
+  [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
+  [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
+  [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
+};
+
+const brushValues = [
+  brushInstanceNames.CircularBrush,
+  brushInstanceNames.CircularEraser,
+  brushInstanceNames.SphereBrush,
+  brushInstanceNames.SphereEraser,
+  brushInstanceNames.ThresholdBrush,
+];
+
 const optionsValues = [
-  BrushTool.toolName,
+  ...brushValues,
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
   SphereScissorsTool.toolName,
+  PaintFillTool.toolName,
 ];
 
 // ============================= //
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
-  onSelectedValueChange: (toolNameAsStringOrNumber) => {
-    const toolName = String(toolNameAsStringOrNumber);
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const name = String(nameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-    // Set the other tools disabled so we don't get conflicts.
-    // Note we only strictly need to change the one which is currently active.
-    optionsValues.forEach((toolName) => {
-      toolGroup.setToolDisabled(toolName);
-    });
+    // Set the currently active tool disabled
+    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
 
-    toolGroup.setToolActive(toolName, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
-    });
+    if (toolName) {
+      toolGroup.setToolDisabled(toolName);
+    }
+
+    if (brushValues.includes(name)) {
+      toolGroup.setToolActive(name, {
+        bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
+    } else {
+      const toolName = name;
+
+      toolGroup.setToolActive(toolName, {
+        bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
+    }
+  },
+});
+
+const thresholdOptions = ['CT Fat: (-150, -70)', 'CT Bone: (200, 1000)'];
+
+addDropdownToToolbar({
+  options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const name = String(nameAsStringOrNumber);
+
+    let threshold;
+    if (name === thresholdOptions[0]) {
+      threshold = [-150, -70];
+    } else if (name == thresholdOptions[1]) {
+      threshold = [100, 1000];
+    }
+
+    segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
+  },
+});
+
+addSliderToToolbar({
+  title: 'Brush Size',
+  range: [5, 50],
+  defaultValue: 25,
+  onSelectedValueChange: (valueAsStringOrNumber) => {
+    const value = Number(valueAsStringOrNumber);
+    segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
   },
 });
 
@@ -155,6 +221,7 @@ async function run() {
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
   cornerstoneTools.addTool(SphereScissorsTool);
+  cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -170,10 +237,45 @@ async function run() {
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(SphereScissorsTool.toolName);
-  toolGroup.addTool(BrushTool.toolName);
+  toolGroup.addTool(PaintFillTool.toolName);
+  toolGroup.addToolInstance(
+    brushInstanceNames.CircularBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.CircularBrush,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.CircularEraser,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.CircularEraser,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.SphereBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.SphereBrush,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.SphereEraser,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.SphereEraser,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.ThresholdBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.ThresholdBrush,
+    }
+  );
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(BrushTool.toolName, {
+  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -201,8 +303,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-    type: 'VOLUME',
+    wadoRsRoot: 'https://d1qmxk7r72ysft.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory

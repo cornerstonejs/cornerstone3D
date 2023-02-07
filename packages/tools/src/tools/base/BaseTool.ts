@@ -4,7 +4,7 @@ import deepMerge from '../../utilities/deepMerge';
 import { ToolModes } from '../../enums';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
-interface IBaseTool {
+export interface IBaseTool {
   /** ToolGroup ID the tool instance belongs to */
   toolGroupId: string;
   /** Tool supported interaction types */
@@ -120,13 +120,16 @@ abstract class BaseTool implements IBaseTool {
 
     // If volume not specified, then return the actorUID for the
     // default actor - first actor
-    const actors = viewport.getActors();
+    const actorEntries = viewport.getActors();
 
-    if (!actors && !actors.length) {
+    if (!actorEntries) {
       return;
     }
 
-    return actors[0].uid;
+    // find the first image actor of instance type vtkVolume
+    return actorEntries.find(
+      (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+    )?.uid;
   }
 
   /**

@@ -19,7 +19,7 @@ const { addCanvasPointsToArray, getFirstIntersectionWithPolyline } = polyline;
  * so that the edit can be executed in-line.
  */
 function checkForFirstCrossing(
-  evt: EventTypes.MouseDragEventType,
+  evt: EventTypes.InteractionEventType,
   isClosedContour: boolean
 ): void {
   const eventDetail = evt.detail;
@@ -159,7 +159,7 @@ function removePointsUpUntilFirstCrossing(isClosedContour: boolean): void {
  * second time.
  */
 function checkForSecondCrossing(
-  evt: EventTypes.MouseDragEventType,
+  evt: EventTypes.InteractionEventType,
   isClosedContour: boolean
 ): boolean {
   const eventDetail = evt.detail;
@@ -279,7 +279,7 @@ function findSnapIndex(): number {
  * contours twisted.
  */
 function checkAndRemoveCrossesOnEditLine(
-  evt: EventTypes.MouseDragEventType
+  evt: EventTypes.InteractionEventType
 ): number | undefined {
   const eventDetail = evt.detail;
   const { currentPoints, lastPoints } = eventDetail;

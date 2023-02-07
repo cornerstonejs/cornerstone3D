@@ -3,6 +3,7 @@ import ToolModes from './ToolModes';
 import AnnotationStyleStates from './AnnotationStyleStates';
 import Events from './Events';
 import SegmentationRepresentations from './SegmentationRepresentations';
+import { Swipe } from './Touch';
 
 export {
   MouseBindings,
@@ -11,4 +12,5 @@ export {
   AnnotationStyleStates,
   Events,
   SegmentationRepresentations,
+  Swipe,
 };

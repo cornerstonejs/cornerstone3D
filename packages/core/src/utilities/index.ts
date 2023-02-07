@@ -25,13 +25,14 @@ import imageToWorldCoords from './imageToWorldCoords';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
-import isImageActor from './isImageActor';
+import { isImageActor, actorIsA } from './actorCheck';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
 import getClosestStackImageIndexForPoint from './getClosestStackImageIndexForPoint';
 import calculateViewportsSpatialRegistration from './calculateViewportsSpatialRegistration';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
+import applyPreset from './applyPreset';
 
 // name spaces
 import * as planar from './planar';
@@ -68,10 +69,12 @@ export {
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
   isImageActor,
+  actorIsA,
   getViewportsWithImageURI,
   getClosestStackImageIndexForPoint,
   calculateViewportsSpatialRegistration,
   spatialRegistrationMetadataProvider,
   getViewportImageCornersInWorld,
   hasNaNValues,
+  applyPreset,
 };

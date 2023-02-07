@@ -140,6 +140,6 @@ if (configuration.examples) {
   if (options.build == true) {
     shell.exec(`webpack --progress --config ${webpackConfigPath}`);
   } else {
-    shell.exec(`webpack serve --progress --config ${webpackConfigPath}`);
+    shell.exec(`webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`);
   }
 }

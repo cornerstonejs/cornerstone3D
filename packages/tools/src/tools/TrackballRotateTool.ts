@@ -11,8 +11,8 @@ import { BaseTool } from './base';
  */
 class TrackballRotateTool extends BaseTool {
   static toolName;
-  touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
-  mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
+  touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
+  mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -63,7 +63,7 @@ class TrackballRotateTool extends BaseTool {
 
   // pseudocode inspired from
   // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js
-  _dragCallback(evt: EventTypes.MouseDragEventType): void {
+  _dragCallback(evt: EventTypes.InteractionEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;
     const currentPointsCanvas = currentPoints.canvas;
     const lastPointsCanvas = lastPoints.canvas;
