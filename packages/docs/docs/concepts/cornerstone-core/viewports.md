@@ -20,14 +20,27 @@ viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MP
 
 </div>
 
-## VolumeViewport
-
-- Suitable for rendering a volumetric data which is considered as one 3D image.
-- Having a VolumeViewport enables Multi-planar reformation or reconstruction (MPR) by design, in which you can visualize the volume from various different orientations without addition of performance costs.
-
 ## StackViewport
 
 - Suitable for rendering a stack of images, that might or might not belong to the same image.
 - Stack can include 2D images of various shapes, size and direction
 
-Both `StackViewport` and `VolumeViewport` are created via the `RenderingEngine` API.
+## VolumeViewport
+
+- Suitable for rendering a volumetric data which is considered as one 3D image.
+- Having a VolumeViewport enables Multi-planar reformation or reconstruction (MPR) by design, in which you can visualize the volume from various different orientations without addition of performance costs.
+- For having image fusion between two series
+
+
+
+## 3D Viewport
+
+- Sutiable for actual 3D rendering of a volumetric data.
+- For having different types of presets such as Bone, Soft Tissue, Lung, etc.
+
+
+:::note
+
+Both `StackViewport` and `VolumeViewport`, `VolumeViewport3D` are created via the `RenderingEngine` API.
+
+:::
