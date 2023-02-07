@@ -143,7 +143,8 @@ class PlanarFreehandROITool extends AnnotationTool {
   private activateOpenContourEndEdit: (
     evt: EventTypes.InteractionEventType,
     annotation: PlanarFreehandROIAnnotation,
-    viewportIdsToRender: string[]
+    viewportIdsToRender: string[],
+    handle: ToolHandle | null
   ) => void;
   private cancelDrawing: (element: HTMLDivElement) => void;
   private cancelClosedContourEdit: (element: HTMLDivElement) => void;
@@ -307,7 +308,8 @@ class PlanarFreehandROITool extends AnnotationTool {
    */
   handleSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: PlanarFreehandROIAnnotation
+    annotation: PlanarFreehandROIAnnotation,
+    handle: ToolHandle
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -317,7 +319,12 @@ class PlanarFreehandROITool extends AnnotationTool {
       this.getToolName()
     );
 
-    this.activateOpenContourEndEdit(evt, annotation, viewportIdsToRender);
+    this.activateOpenContourEndEdit(
+      evt,
+      annotation,
+      viewportIdsToRender,
+      handle
+    );
   };
 
   /**
@@ -605,33 +612,35 @@ class PlanarFreehandROITool extends AnnotationTool {
 
         if (!this.configuration.calculateStats) return;
 
-        const { data } = annotation;
-        if (
-          !data.cachedStats[targetId] ||
-          data.cachedStats[targetId].areaUnit === undefined
-        ) {
-          data.cachedStats[targetId] = {
-            Modality: null,
-            area: null,
-            max: null,
-            mean: null,
-            stdDev: null,
-            areaUnit: null,
-          };
+        if (!this.commonData?.movingTextBox) {
+          const { data } = annotation;
+          if (
+            !data.cachedStats[targetId] ||
+            data.cachedStats[targetId].areaUnit === undefined
+          ) {
+            data.cachedStats[targetId] = {
+              Modality: null,
+              area: null,
+              max: null,
+              mean: null,
+              stdDev: null,
+              areaUnit: null,
+            };
 
-          this._calculateCachedStats(
-            annotation,
-            viewport,
-            renderingEngine,
-            enabledElement
-          );
-        } else if (annotation.invalidated) {
-          this._throttledCalculateCachedStats(
-            annotation,
-            viewport,
-            renderingEngine,
-            enabledElement
-          );
+            this._calculateCachedStats(
+              annotation,
+              viewport,
+              renderingEngine,
+              enabledElement
+            );
+          } else if (annotation.invalidated) {
+            this._throttledCalculateCachedStats(
+              annotation,
+              viewport,
+              renderingEngine,
+              enabledElement
+            );
+          }
         }
 
         this._renderStats(

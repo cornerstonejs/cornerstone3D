@@ -58,6 +58,7 @@ function activateClosedContourEdit(
     spacing,
     xDir,
     yDir,
+    movingTextBox: false,
   };
 
   state.isInteractingWithTool = true;
