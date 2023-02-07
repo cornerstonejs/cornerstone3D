@@ -1,6 +1,6 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -54,6 +54,8 @@ class TrackballRotateTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
+    // console.log(newPosition);
+
     viewport.setCamera({
       position: newPosition,
       viewUp: newViewUp,
@@ -84,10 +86,15 @@ class TrackballRotateTool extends BaseTool {
       lastPointsCanvas[1] / height,
     ];
 
+    // console.log(normalizedPosition[0] - normalizedPreviousPosition[0]);
+
     const center: Types.Point2 = [width * 0.5, height * 0.5];
     // NOTE: centerWorld corresponds to the focal point in cornerstone3D
     const centerWorld = viewport.canvasToWorld(center);
     const normalizedCenter = [0.5, 0.5];
+    // const normalizedCenter = center;
+    // console.log(centerWorld);
+
 
     const radsq = (1.0 + Math.abs(normalizedCenter[0])) ** 2.0;
     const op = [normalizedPreviousPosition[0], 0, 0];
@@ -113,18 +120,23 @@ class TrackballRotateTool extends BaseTool {
         rotateIncrementDegrees;
 
       const upVec = camera.viewUp;
+      const atV = camera.viewPlaneNormal;
+      const leftV: Types.Point3 = [0, 0, 0];
+      const forwardV: Types.Point3 = [0, 0, 0];
+      vtkMath.cross(upVec, atV, leftV);
+      vtkMath.cross(leftV, upVec, forwardV);
+      vtkMath.normalize(forwardV);
+
       vtkMath.normalize(upVec);
 
-      this.rotateCamera(viewport, centerWorld, upVec, angleX);
+      this.rotateCamera(viewport, centerWorld, forwardV, angleX);
 
       const angleY =
         (normalizedPreviousPosition[1] - normalizedPosition[1]) *
         rotateIncrementDegrees;
 
-      const atV = camera.viewPlaneNormal;
-      const upV = camera.viewUp;
       const rightV: Types.Point3 = [0, 0, 0];
-      vtkMath.cross(upV, atV, rightV);
+      vtkMath.cross(upVec, atV, rightV);
       vtkMath.normalize(rightV);
 
       this.rotateCamera(viewport, centerWorld, rightV, angleY);
