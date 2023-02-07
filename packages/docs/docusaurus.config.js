@@ -137,11 +137,15 @@ module.exports = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/cornerstonejs/cornerstone',
+              href: 'https://github.com/cornerstonejs/cornerstone3D-beta/',
             },
             {
               label: 'Twitter',
               href: 'https://twitter.com/OHIFviewer',
+            },
+            {
+              label: 'Slack',
+              href: 'https://join.slack.com/t/cornerstonejs/shared_invite/zt-1orclt43p-BqXxKHiuiHCtchuY9yY70Q',
             },
           ],
         },
