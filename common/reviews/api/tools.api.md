@@ -3357,6 +3357,7 @@ interface PlanarFreehandROIAnnotation extends Annotation {
                 };
             };
         };
+        cachedStats?: ROICachedStats;
     };
     // (undocumented)
     metadata: {
@@ -3377,11 +3378,15 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => PlanarFreehandROIAnnotation;
     // (undocumented)
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[];
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -3394,6 +3399,8 @@ export class PlanarFreehandROITool extends AnnotationTool {
     mouseDragCallback: any;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _renderStats: (annotation: any, viewport: any, enabledElement: any, svgDrawingHelper: any) => void;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
