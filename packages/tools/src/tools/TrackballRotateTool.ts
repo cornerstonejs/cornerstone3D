@@ -120,8 +120,9 @@ class TrackballRotateTool extends BaseTool {
       vtkMath.cross(upVec, atV, rightV);
       vtkMath.normalize(rightV);
 
-      vtkMath.cross(rightV, upVec, forwardV);
+      vtkMath.cross(atV, rightV, forwardV);
       vtkMath.normalize(forwardV);
+      vtkMath.normalize(upVec);
 
       this.rotateCamera(viewport, centerWorld, forwardV, angleX);
 
