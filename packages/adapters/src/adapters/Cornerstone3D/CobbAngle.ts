@@ -8,8 +8,25 @@ const MEASUREMENT_TYPE = "CobbAngle";
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${MEASUREMENT_TYPE}`;
 
 class CobbAngle {
+    public static toolType = MEASUREMENT_TYPE;
+    public static utilityToolType = MEASUREMENT_TYPE;
+    public static TID300Representation = TID300CobbAngle;
+    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
+        if (!TrackingIdentifier.includes(":")) {
+            return false;
+        }
+
+        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
+
+        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
+            return false;
+        }
+
+        return toolType === MEASUREMENT_TYPE;
+    };
+
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
-    static getMeasurementData(
+    public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
@@ -64,7 +81,7 @@ class CobbAngle {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    public static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
@@ -101,24 +118,6 @@ class CobbAngle {
         };
     }
 }
-
-CobbAngle.toolType = MEASUREMENT_TYPE;
-CobbAngle.utilityToolType = MEASUREMENT_TYPE;
-console.log("TID300CobbAngle=", TID300CobbAngle);
-CobbAngle.TID300Representation = TID300CobbAngle;
-CobbAngle.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === MEASUREMENT_TYPE;
-};
 
 MeasurementReport.registerTool(CobbAngle);
 

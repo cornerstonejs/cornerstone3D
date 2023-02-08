@@ -10,6 +10,23 @@ const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${PLANARFREEHANDROI}`
 const closedContourThreshold = 1e-5;
 
 class PlanarFreehandROI {
+    public static toolType = PLANARFREEHANDROI;
+    public static utilityToolType = PLANARFREEHANDROI;
+    public static TID300Representation = TID300Polyline;
+    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
+        if (!TrackingIdentifier.includes(":")) {
+            return false;
+        }
+
+        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
+
+        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
+            return false;
+        }
+
+        return toolType === PLANARFREEHANDROI;
+    };
+
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -53,7 +70,7 @@ class PlanarFreehandROI {
             isOpenContour = false;
         }
 
-        let points = [];
+        const points = [];
 
         if (isOpenContour) {
             points.push(worldCoords[0], worldCoords[worldCoords.length - 1]);
@@ -114,23 +131,6 @@ class PlanarFreehandROI {
         };
     }
 }
-
-PlanarFreehandROI.toolType = PLANARFREEHANDROI;
-PlanarFreehandROI.utilityToolType = PLANARFREEHANDROI;
-PlanarFreehandROI.TID300Representation = TID300Polyline;
-PlanarFreehandROI.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === PLANARFREEHANDROI;
-};
 
 MeasurementReport.registerTool(PlanarFreehandROI);
 
