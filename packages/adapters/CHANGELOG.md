@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.3.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.2.1...@cornerstonejs/adapters@0.3.0) (2023-02-08)
+
+
+### Features
+
+* **adapters:** Add adapters for Rectangle, Angle and fix generate DICOM ([#427](https://github.com/dcmjs-org/dcmjs/issues/427)) ([b8ca75e](https://github.com/dcmjs-org/dcmjs/commit/b8ca75e6ba378f175bd987d07f094f44b41a46cf))
+
+
+
+
+
 ## [0.2.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.2.0...@cornerstonejs/adapters@0.2.1) (2023-02-03)
 
 

@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.43.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.42.1...@cornerstonejs/tools@0.43.0) (2023-02-08)
+
+
+### Features
+
+* **adapters:** Add adapters for Rectangle, Angle and fix generate DICOM ([#427](https://github.com/cornerstonejs/cornerstone3D-beta/issues/427)) ([b8ca75e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b8ca75e6ba378f175bd987d07f094f44b41a46cf))
+
+
+
+
+
 ## [0.42.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.42.0...@cornerstonejs/tools@0.42.1) (2023-02-07)
 
 **Note:** Version bump only for package @cornerstonejs/tools
