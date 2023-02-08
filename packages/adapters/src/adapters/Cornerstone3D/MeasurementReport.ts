@@ -255,7 +255,7 @@ export default class MeasurementReport {
             const instance = metadataProvider.getInstance(imageId);
 
             const { sopInstanceUID, sopClassUID } = sopCommonModule;
-            const { seriesInstanceUID } = instance;
+            const { SeriesInstanceUID: seriesInstanceUID } = instance;
 
             sopInstanceUIDsToSeriesInstanceUIDMap[sopInstanceUID] =
                 seriesInstanceUID;
@@ -319,7 +319,7 @@ export default class MeasurementReport {
 
         const contentItem = tid1500MeasurementReport.contentItem(
             derivationSourceDatasets,
-            { sopInstanceUIDsToSeriesInstanceUIDMap }
+            { ...options, sopInstanceUIDsToSeriesInstanceUIDMap }
         );
 
         // Merge the derived dataset with the content from the Measurement Report
