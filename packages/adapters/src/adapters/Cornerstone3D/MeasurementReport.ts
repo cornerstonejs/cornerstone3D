@@ -17,7 +17,7 @@ const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
 const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 
-const codeValueMatch = (group, code, oldCode) => {
+const codeValueMatch = (group, code, oldCode?) => {
     const { ConceptNameCodeSequence } = group;
     if (!ConceptNameCodeSequence) return;
     const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
@@ -82,13 +82,17 @@ function getMeasurementGroup(
 }
 
 export default class MeasurementReport {
+    public static MEASUREMENT_BY_TOOLTYPE = {};
+    public static CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE = {};
+    public static CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE = {};
+
     static getCornerstoneLabelFromDefaultState(defaultState) {
         const { findingSites = [], finding } = defaultState;
 
         const cornersoneFreeTextCodingValue =
             Cornerstone3DCodingScheme.codeValues.CORNERSTONEFREETEXT;
 
-        let freeTextLabel = findingSites.find(
+        const freeTextLabel = findingSites.find(
             fs => fs.CodeValue === cornersoneFreeTextCodingValue
         );
 
@@ -132,10 +136,7 @@ export default class MeasurementReport {
         return _meta;
     }
 
-    static generateDerivationSourceDataset(
-        StudyInstanceUID,
-        SeriesInstanceUID
-    ) {
+    static generateDerivationSourceDataset = instance => {
         const _vrMap = {
             PixelData: "OW"
         };
@@ -143,14 +144,13 @@ export default class MeasurementReport {
         const _meta = MeasurementReport.generateDatasetMeta();
 
         const derivationSourceDataset = {
-            StudyInstanceUID,
-            SeriesInstanceUID,
+            ...instance,
             _meta: _meta,
             _vrMap: _vrMap
         };
 
         return derivationSourceDataset;
-    }
+    };
 
     static getSetupMeasurementData(
         MeasurementGroup,
@@ -193,6 +193,7 @@ export default class MeasurementReport {
         });
 
         const defaultState = {
+            description: undefined,
             sopInstanceUid: ReferencedSOPInstanceUID,
             annotation: {
                 annotationUID: DicomMetaDictionary.uid(),
@@ -251,13 +252,10 @@ export default class MeasurementReport {
                 "sopCommonModule",
                 imageId
             );
-            const generalSeriesModule = metadataProvider.get(
-                "generalSeriesModule",
-                imageId
-            );
+            const instance = metadataProvider.getInstance(imageId);
 
             const { sopInstanceUID, sopClassUID } = sopCommonModule;
-            const { studyInstanceUID, seriesInstanceUID } = generalSeriesModule;
+            const { SeriesInstanceUID: seriesInstanceUID } = instance;
 
             sopInstanceUIDsToSeriesInstanceUIDMap[sopInstanceUID] =
                 seriesInstanceUID;
@@ -269,10 +267,7 @@ export default class MeasurementReport {
             ) {
                 // Entry not present for series, create one.
                 const derivationSourceDataset =
-                    MeasurementReport.generateDerivationSourceDataset(
-                        studyInstanceUID,
-                        seriesInstanceUID
-                    );
+                    MeasurementReport.generateDerivationSourceDataset(instance);
 
                 derivationSourceDatasets.push(derivationSourceDataset);
             }
@@ -283,10 +278,10 @@ export default class MeasurementReport {
 
             const ReferencedSOPSequence = {
                 ReferencedSOPClassUID: sopClassUID,
-                ReferencedSOPInstanceUID: sopInstanceUID
+                ReferencedSOPInstanceUID: sopInstanceUID,
+                ReferencedFrameNumber: undefined
             };
 
-            const instance = metadataProvider.get("instance", imageId);
             if (
                 (instance &&
                     instance.NumberOfFrames &&
@@ -320,11 +315,11 @@ export default class MeasurementReport {
             options
         );
 
-        const report = new StructuredReport(derivationSourceDatasets);
+        const report = new StructuredReport(derivationSourceDatasets, options);
 
         const contentItem = tid1500MeasurementReport.contentItem(
             derivationSourceDatasets,
-            { sopInstanceUIDsToSeriesInstanceUIDMap }
+            { ...options, sopInstanceUIDsToSeriesInstanceUIDMap }
         );
 
         // Merge the derived dataset with the content from the Measurement Report
@@ -336,17 +331,13 @@ export default class MeasurementReport {
 
     /**
      * Generate Cornerstone tool state from dataset
-     * @param {object} dataset dataset
-     * @param {object} hooks
-     * @param {function} hooks.getToolClass Function to map dataset to a tool class
-     * @returns
      */
     static generateToolState(
         dataset,
         sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
         metadata,
-        hooks = {}
+        hooks
     ) {
         // For now, bail out if the dataset is not a TID1500 SR with length measurements
         if (dataset.ContentTemplateSequence.TemplateIdentifier !== "1500") {
@@ -396,17 +387,17 @@ export default class MeasurementReport {
 
             const TrackingIdentifierValue = TrackingIdentifierGroup.TextValue;
 
-            const toolClass = hooks.getToolClass
-                ? hooks.getToolClass(
-                      measurementGroup,
-                      dataset,
-                      registeredToolClasses
-                  )
-                : registeredToolClasses.find(tc =>
-                      tc.isValidCornerstoneTrackingIdentifier(
-                          TrackingIdentifierValue
-                      )
-                  );
+            const toolClass =
+                hooks?.getToolClass?.(
+                    measurementGroup,
+                    dataset,
+                    registeredToolClasses
+                ) ||
+                registeredToolClasses.find(tc =>
+                    tc.isValidCornerstoneTrackingIdentifier(
+                        TrackingIdentifierValue
+                    )
+                );
 
             if (toolClass) {
                 const measurement = toolClass.getMeasurementData(
@@ -439,7 +430,3 @@ export default class MeasurementReport {
             toolClass.utilityToolType;
     }
 }
-
-MeasurementReport.MEASUREMENT_BY_TOOLTYPE = {};
-MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE = {};
-MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE = {};

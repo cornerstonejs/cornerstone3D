@@ -11,7 +11,24 @@ const SHORT_AXIS = "Short Axis";
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${BIDIRECTIONAL}`;
 
 class Bidirectional {
-    static getMeasurementData(
+    public static toolType = BIDIRECTIONAL;
+    public static utilityToolType = BIDIRECTIONAL;
+    public static TID300Representation = TID300Bidirectional;
+    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
+        if (!TrackingIdentifier.includes(":")) {
+            return false;
+        }
+
+        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
+
+        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
+            return false;
+        }
+
+        return toolType === BIDIRECTIONAL;
+    };
+
+    public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
@@ -102,16 +119,16 @@ class Bidirectional {
         const { points } = handles;
 
         // Find the length and width point pairs by comparing the distances of the points at 0,1 to points at 2,3
-        let firstPointPairs = [points[0], points[1]];
-        let secondPointPairs = [points[2], points[3]];
+        const firstPointPairs = [points[0], points[1]];
+        const secondPointPairs = [points[2], points[3]];
 
-        let firstPointPairsDistance = Math.sqrt(
+        const firstPointPairsDistance = Math.sqrt(
             Math.pow(firstPointPairs[0][0] - firstPointPairs[1][0], 2) +
                 Math.pow(firstPointPairs[0][1] - firstPointPairs[1][1], 2) +
                 Math.pow(firstPointPairs[0][2] - firstPointPairs[1][2], 2)
         );
 
-        let secondPointPairsDistance = Math.sqrt(
+        const secondPointPairsDistance = Math.sqrt(
             Math.pow(secondPointPairs[0][0] - secondPointPairs[1][0], 2) +
                 Math.pow(secondPointPairs[0][1] - secondPointPairs[1][1], 2) +
                 Math.pow(secondPointPairs[0][2] - secondPointPairs[1][2], 2)
@@ -173,23 +190,6 @@ class Bidirectional {
         };
     }
 }
-
-Bidirectional.toolType = BIDIRECTIONAL;
-Bidirectional.utilityToolType = BIDIRECTIONAL;
-Bidirectional.TID300Representation = TID300Bidirectional;
-Bidirectional.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === BIDIRECTIONAL;
-};
 
 MeasurementReport.registerTool(Bidirectional);
 

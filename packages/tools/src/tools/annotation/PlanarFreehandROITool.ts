@@ -582,9 +582,10 @@ class PlanarFreehandROITool extends AnnotationTool {
     if (!(isDrawing || isEditingOpen || isEditingClosed)) {
       // No annotations are currently being modified, so we can just use the
       // render contour method to render all of them
-      annotations.forEach((annotation) =>
-        this.renderContour(enabledElement, svgDrawingHelper, annotation)
-      );
+      annotations.forEach((annotation) => {
+        if (!annotation) return;
+        this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      });
 
       return renderStatus;
     }
