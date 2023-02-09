@@ -503,32 +503,12 @@ export function getMouseButton(): number {
 }
 
 /**
- * Adds a capture phase double click listener to the document that ignores double
- * click events as determined by this module.
- */
-export function addIgnoreDoubleClickCaptureListener() {
-  document.addEventListener('dblclick', _mouseDoubleClickIgnoreListener, {
-    capture: true,
-  });
-}
-
-/**
- * Removes a capture phase double click listener from the document that ignores double
- * click events as determined by this module.
- */
-export function removeIgnoreDoubleClickCaptureListener() {
-  document.removeEventListener('dblclick', _mouseDoubleClickIgnoreListener, {
-    capture: true,
-  });
-}
-
-/**
  * Handles a dblclick event to determine if it should be ignored based on the
  * double click state's ignoreDoubleClick flag. stopImmediatePropagation and
- * preventDefault are used to ingore the event.
+ * preventDefault are used to ignore the event.
  * @param evt browser dblclick event
  */
-function _mouseDoubleClickIgnoreListener(evt: MouseEvent) {
+export function mouseDoubleClickIgnoreListener(evt: MouseEvent) {
   if (doubleClickState.ignoreDoubleClick) {
     doubleClickState.ignoreDoubleClick = false;
 

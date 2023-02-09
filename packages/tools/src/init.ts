@@ -14,10 +14,6 @@ import {
 } from './eventListeners';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
-import {
-  addIgnoreDoubleClickCaptureListener,
-  removeIgnoreDoubleClickCaptureListener,
-} from './eventListeners/mouse/mouseDownListener';
 
 let csToolsInitialized = false;
 
@@ -35,12 +31,6 @@ export function init(defaultConfiguration = {}): void {
   _addCornerstoneEventListeners();
   _addCornerstoneToolsEventListeners();
 
-  // A separate double click listener at the document root. Separate
-  // from the {@link mouseDoubleClickListener} because...
-  // - it listens on the capture phase (and not the typical bubble phase)
-  // - the data used to ignore the double click is private to the mouseDownListener module
-  addIgnoreDoubleClickCaptureListener();
-
   csToolsInitialized = true;
 }
 
@@ -52,8 +42,6 @@ export function init(defaultConfiguration = {}): void {
 export function destroy(): void {
   _removeCornerstoneEventListeners();
   _removeCornerstoneToolsEventListeners();
-
-  removeIgnoreDoubleClickCaptureListener();
 
   // Important: destroy ToolGroups first, in order for cleanup to work correctly for the
   // added tools.
