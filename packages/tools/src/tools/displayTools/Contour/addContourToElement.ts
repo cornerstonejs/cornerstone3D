@@ -61,4 +61,75 @@ function addContourToElement(
   viewport.addActor({ actor: actor1, uid: actorUID });
 }
 
-export default addContourToElement;
+function addContourSetToElement(
+  element: HTMLDivElement,
+  contourSet: Types.IContourSet,
+  actorUID: string
+): void {
+  const enabledElement = getEnabledElement(element);
+  const { renderingEngine, viewport } = enabledElement;
+  const { id: viewportId } = viewport;
+
+  // Default to true since we are setting a new segmentation, however,
+  // in the event listener, we will make other segmentations visible/invisible
+  // based on the config
+  const visibility = true;
+  const immediateRender = false;
+  const suppressEvents = true;
+
+  const actor1 = vtkActor.newInstance();
+  let color;
+
+  const pointArray = [];
+
+  const points = vtkPoints.newInstance();
+  const lines = vtkCellArray.newInstance();
+
+  // this variable will indicate the index of the first point in the current line
+  // so we can correctly generate the point index list to add in the cellArray
+  let pointIndex = 0;
+  contourSet.getContours().forEach((contour: Types.IContour) => {
+    const pointList = contour.getPoints();
+    const flatPoints = contour.getFlatPointsArray();
+    color = contour.getColor();
+    const type = contour.getType();
+
+    // creating a point index list that defines a line
+    const pointIndexes = pointList.map((_, i) => i + pointIndex);
+
+    // if close planar, add the first point index to the list
+    if (type === Enums.ContourType.CLOSED_PLANAR) {
+      pointIndexes.push(pointIndexes[0]);
+    }
+
+    const linePoints = Float32Array.from(flatPoints);
+    // add the curent points into the point list
+    pointArray.push(...linePoints);
+    // add the point indexes into the cell array
+    lines.insertNextCell([...pointIndexes]);
+    // update the first point index
+    pointIndex = pointIndex + pointList.length;
+  });
+
+  // converts the pointArray into vtkPoints
+  points.setData(pointArray, 3);
+
+  // creates the polydata
+  const polygon = vtkPolyData.newInstance();
+  polygon.setPoints(points);
+  polygon.setLines(lines);
+
+  const mapper1 = vtkMapper.newInstance();
+  mapper1.setInputData(polygon);
+  actor1.setMapper(mapper1);
+  actor1.getProperty().setLineWidth(4);
+
+  // despite each contour can have its own color, we assign the last color to
+  // all contours
+  const colorToUse = color.map((c) => c / 255);
+  actor1.getProperty().setColor(colorToUse[0], colorToUse[1], colorToUse[2]);
+
+  viewport.addActor({ actor: actor1, uid: actorUID });
+}
+
+export { addContourToElement, addContourSetToElement };
