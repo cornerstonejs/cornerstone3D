@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.43.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.43.1...@cornerstonejs/tools@0.43.2) (2023-02-10)
+
+
+### Bug Fixes
+
+* use one actor for a contourset rendering ([#432](https://github.com/cornerstonejs/cornerstone3D-beta/issues/432)) ([c92f8be](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c92f8beafb6731eb0b81ef295ff2774192cfd7ed))
+
+
+
+
+
 ## [0.43.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.43.0...@cornerstonejs/tools@0.43.1) (2023-02-10)
 
 
