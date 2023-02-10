@@ -3,7 +3,7 @@ import { SharedArrayBufferModes } from './enums';
 
 let csRenderInitialized = false;
 let useCPURendering = false;
-let useSharedArrayBuffer = true;
+let useSharedArrayBuffer = false;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 
 // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
@@ -71,7 +71,7 @@ async function init(defaultConfiguration = {}): Promise<boolean> {
     }
   }
 
-  setUseSharedArrayBuffer(sharedArrayBufferMode);
+  // setUseSharedArrayBuffer(sharedArrayBufferMode);
 
   csRenderInitialized = true;
   return csRenderInitialized;
