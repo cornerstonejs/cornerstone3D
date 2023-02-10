@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.43.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.43.0...@cornerstonejs/tools@0.43.1) (2023-02-10)
+
+
+### Bug Fixes
+
+* **trackball:** rotate was wrong on mouse drag ([#424](https://github.com/cornerstonejs/cornerstone3D-beta/issues/424)) ([99c1a0a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/99c1a0a35dd52ddec26551de75656cdda7149b39))
+
+
+
+
+
 # [0.43.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.42.1...@cornerstonejs/tools@0.43.0) (2023-02-08)
 
 
