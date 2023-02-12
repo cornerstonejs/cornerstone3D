@@ -2424,11 +2424,9 @@ type VOI = {
 // @public (undocumented)
 enum VOILUTFunctionType {
     // (undocumented)
-    EXACT_LINEAR = "EXACT_LINEAR",
-    // (undocumented)
     LINEAR = "LINEAR",
     // (undocumented)
-    SIGMOID = "SIGMOID"
+    SAMPLED_SIGMOID = "SIGMOID"
 }
 
 // @public (undocumented)
