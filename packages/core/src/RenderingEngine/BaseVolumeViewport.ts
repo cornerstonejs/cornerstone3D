@@ -169,7 +169,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * Sets the properties for the volume viewport on the volume
    * Sets the VOILUTFunction property for the volume viewport on the volume
    *
-   * @param VOILUTFunction - Sets the voi mode (LINEAR, EXACT_LINEAR, or SIGMOID)
+   * @param VOILUTFunction - Sets the voi mode (LINEAR or SAMPLED_SIGMOID)
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
@@ -235,9 +235,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     // scaling logic here
     // https://github.com/Kitware/vtk-js/blob/c6f2e12cddfe5c0386a73f0793eb6d9ab20d573e/Sources/Rendering/OpenGL/VolumeMapper/index.js#L957-L972
-    // Todo, windowlevelTool needs to send property instead of
-    // directly changing the transferfunction range which is not valid for sigmoid
-    if (this.VOILUTFunction === VOILUTFunctionType.SIGMOID) {
+    if (this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
       const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
       volumeActor.getProperty().setRGBTransferFunction(0, cfun);
     } else {
@@ -263,7 +261,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * (if fusion, it sets it for the first volume in the fusion)
    *
    * @param voiRange - Sets the lower and upper voi
-   * @param VOILUTFunction - Sets the voi mode (LINEAR, EXACT_LINEAR, or SIGMOID)
+   * @param VOILUTFunction - Sets the voi mode (LINEAR, or SAMPLED_SIGMOID)
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */

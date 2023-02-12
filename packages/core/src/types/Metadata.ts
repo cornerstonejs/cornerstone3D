@@ -32,7 +32,7 @@ type Metadata = {
   Rows: number;
   /** Window Level/Center for the image */
   voiLut: Array<VOI>;
-  /** VOILUTFunction for the image which is LINEAR, EXACT_LINEAR, or SIGMOID */
+  /** VOILUTFunction for the image which is LINEAR or SAMPLED_SIGMOID */
   VOILUTFunction: string;
 };
 

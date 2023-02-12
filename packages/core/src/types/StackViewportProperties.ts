@@ -8,7 +8,7 @@ import { VOIRange } from './voi';
 type StackViewportProperties = {
   /** voi range (upper, lower) for the viewport */
   voiRange?: VOIRange;
-  /** VOILUTFunction type which is LINEAR, EXACT_LINEAR, or SIGMOID */
+  /** VOILUTFunction type which is LINEAR or SAMPLED_SIGMOID */
   VOILUTFunction?: VOILUTFunctionType;
   /** invert flag - whether the image is inverted */
   invert?: boolean;

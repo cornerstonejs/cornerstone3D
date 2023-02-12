@@ -1117,7 +1117,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // scaling logic here
     // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/ImageMapper/index.js#L540-L549
     imageActor.getProperty().setUseLookupTableScalarRange(true);
-    if (this.VOILUTFunction === VOILUTFunctionType.SIGMOID) {
+    if (this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
       const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
       if (this.invert) {
         invertRgbTransferFunction(cfun);

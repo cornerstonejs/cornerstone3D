@@ -7,7 +7,7 @@ import VOILUTFunctionType from '../enums/VOILUTFunctionType';
 type VolumeViewportProperties = {
   /** voi range (upper, lower) for the viewport */
   voiRange?: VOIRange;
-  /** VOILUTFunction type which is LINEAR, EXACT_LINEAR, or SIGMOID */
+  /** VOILUTFunction type which is LINEAR or SAMPLED_SIGMOID */
   VOILUTFunction?: VOILUTFunctionType;
 };
 
