@@ -54,7 +54,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   private _FrameOfReferenceUID: string;
 
   // Viewport Properties
-  private voiRange: VOIRange;
+  // TODO: similar to setVoi, this is only applicable to first volume
   private VOILUTFunction: VOILUTFunctionType;
 
   constructor(props: ViewportInput) {
@@ -183,7 +183,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       voiLUTFunction = VOILUTFunctionType.LINEAR;
     }
     this.VOILUTFunction = voiLUTFunction;
-    this.setVOI(this.voiRange, volumeId, suppressEvents);
+    this.setVOI(undefined, volumeId, suppressEvents);
   }
 
   /**
@@ -242,7 +242,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       const cfun = createLinearRGBTransferFunction(voiRangeToUse);
       volumeActor.getProperty().setRGBTransferFunction(0, cfun);
     }
-    this.voiRange = voiRangeToUse;
 
     if (!suppressEvents) {
       const eventDetail: VoiModifiedEventDetail = {
@@ -284,8 +283,25 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
    */
   public getProperties = (): VolumeViewportProperties => {
+    const actorEntries = this.getActors();
+    const voiRanges = actorEntries.map((actorEntry) => {
+      const volumeActor = actorEntry.actor as vtkVolume;
+      const volumeId = actorEntry.uid;
+      const voiRange = volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0)
+        // @ts-ignore: vtk d ts problem
+        .getRange();
+      return {
+        volumeId,
+        voiRange: {
+          lower: voiRange[0],
+          upper: voiRange[1],
+        },
+      };
+    });
     return {
-      voiRange: this.voiRange,
+      voiRange: voiRanges[0].voiRange, // TODO: handle multiple actors instead of just first.
       VOILUTFunction: this.VOILUTFunction,
     };
   };
@@ -330,18 +346,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.id,
         suppressEvents
       );
-
-      if (i === 0 && !this.voiRange) {
-        const voiRange = actor
-          .getProperty()
-          .getRGBTransferFunction(0)
-          // @ts-ignore: vtk d ts problem
-          .getRange();
-        this.voiRange = {
-          lower: voiRange[0],
-          upper: voiRange[1],
-        };
-      }
 
       // We cannot use only volumeId since then we cannot have for instance more
       // than one representation of the same volume (since actors would have the
@@ -407,17 +411,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         this.id,
         suppressEvents
       );
-      if (i === 0 && !this.voiRange) {
-        const voiRange = actor
-          .getProperty()
-          .getRGBTransferFunction(0)
-          // @ts-ignore: vtk d ts problem
-          .getRange();
-        this.voiRange = {
-          lower: voiRange[0],
-          upper: voiRange[1],
-        };
-      }
 
       if (visibility === false) {
         actor.setVisibility(false);

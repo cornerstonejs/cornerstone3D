@@ -69,7 +69,7 @@ addButtonToToolbar({
 
     // Set a range to highlight bones
     viewport.setProperties({
-      VOILUTFunction: Enums.VOILUTFunctionType.SIGMOID,
+      VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
     });
 
     viewport.render();
