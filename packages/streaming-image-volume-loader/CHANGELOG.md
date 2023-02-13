@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.12.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.11.8...@cornerstonejs/streaming-image-volume-loader@0.12.0) (2023-02-13)
+
+
+### Features
+
+* **voi:** added support for sigmoid voiLUTFunction for StackViewport and VolumeViewport ([#224](https://github.com/cornerstonejs/cornerstone3D-beta/issues/224)) ([2fcec22](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2fcec22fc7a27cad75d41713339f7e030d653f80))
+
+
+
+
+
 ## [0.11.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.11.7...@cornerstonejs/streaming-image-volume-loader@0.11.8) (2023-02-07)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
