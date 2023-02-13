@@ -576,7 +576,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
-    const renderStatus = false;
+    let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
 
@@ -609,88 +609,92 @@ class PlanarFreehandROITool extends AnnotationTool {
       // render contour method to render all of them
       annotations.forEach((annotation) => {
         this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      });
+    } else {
+      // One of the annotations will need special rendering treatment, render all
+      // other annotations not being interacted with using the standard renderContour
+      // rendering path.
+      const activeAnnotationUID = this.commonData.annotation.annotationUID;
 
-        if (!this.configuration.calculateStats) return;
-
-        if (!this.commonData?.movingTextBox) {
-          const { data } = annotation;
-          if (
-            !data.cachedStats[targetId] ||
-            data.cachedStats[targetId].areaUnit === undefined
-          ) {
-            data.cachedStats[targetId] = {
-              Modality: null,
-              area: null,
-              max: null,
-              mean: null,
-              stdDev: null,
-              areaUnit: null,
-            };
-
-            this._calculateCachedStats(
-              annotation,
-              viewport,
-              renderingEngine,
-              enabledElement
+      annotations.forEach((annotation) => {
+        if (annotation.annotationUID === activeAnnotationUID) {
+          if (isDrawing) {
+            this.renderContourBeingDrawn(
+              enabledElement,
+              svgDrawingHelper,
+              annotation
             );
-          } else if (annotation.invalidated) {
-            this._throttledCalculateCachedStats(
-              annotation,
-              viewport,
-              renderingEngine,
-              enabledElement
+          } else if (isEditingClosed) {
+            this.renderClosedContourBeingEdited(
+              enabledElement,
+              svgDrawingHelper,
+              annotation
+            );
+          } else if (isEditingOpen) {
+            this.renderOpenContourBeingEdited(
+              enabledElement,
+              svgDrawingHelper,
+              annotation
+            );
+          } else {
+            throw new Error(
+              `Unknown ${this.getToolName()} annotation rendering state`
             );
           }
+        } else {
+          this.renderContour(enabledElement, svgDrawingHelper, annotation);
         }
-
-        this._renderStats(
-          annotation,
-          viewport,
-          enabledElement,
-          svgDrawingHelper
-        );
       });
 
-      return renderStatus;
+      // Todo: return boolean flag for each rendering route in the planar tool.
+      renderStatus = true;
     }
 
-    // One of the annotations will need special rendering treatment, render all
-    // other annotations not being interacted with using the standard renderContour
-    // rendering path.
-    const activeAnnotationUID = this.commonData.annotation.annotationUID;
+    if (!this.configuration.calculateStats) return;
 
     annotations.forEach((annotation) => {
-      if (annotation.annotationUID === activeAnnotationUID) {
-        if (isDrawing) {
-          this.renderContourBeingDrawn(
-            enabledElement,
-            svgDrawingHelper,
-            annotation
+      const activeAnnotationUID = this.commonData?.annotation.annotationUID;
+      if (
+        annotation.annotationUID === activeAnnotationUID &&
+        !this.commonData?.movingTextBox
+      )
+        return;
+
+      if (!this.commonData?.movingTextBox) {
+        const { data } = annotation;
+        if (
+          !data.cachedStats[targetId] ||
+          data.cachedStats[targetId].areaUnit === undefined
+        ) {
+          data.cachedStats[targetId] = {
+            Modality: null,
+            area: null,
+            max: null,
+            mean: null,
+            stdDev: null,
+            areaUnit: null,
+          };
+
+          this._calculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
+            enabledElement
           );
-        } else if (isEditingClosed) {
-          this.renderClosedContourBeingEdited(
-            enabledElement,
-            svgDrawingHelper,
-            annotation
-          );
-        } else if (isEditingOpen) {
-          this.renderOpenContourBeingEdited(
-            enabledElement,
-            svgDrawingHelper,
-            annotation
-          );
-        } else {
-          throw new Error(
-            `Unknown ${this.getToolName()} annotation rendering state`
+        } else if (annotation.invalidated) {
+          this._throttledCalculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
+            enabledElement
           );
         }
-      } else {
-        this.renderContour(enabledElement, svgDrawingHelper, annotation);
       }
+
+      this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
     });
 
-    // Todo: return boolean flag for each rendering route in the planar tool.
-    return true;
+    return renderStatus;
   };
 
   _calculateCachedStats = (
