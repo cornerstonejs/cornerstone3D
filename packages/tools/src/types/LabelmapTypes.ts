@@ -36,6 +36,8 @@ export type LabelmapRenderingConfig = {
 };
 
 export type LabelmapSegmentationData = {
-  volumeId: string;
-  referencedVolumeId?: string;
+  /** The labelmap volume URI */
+  volumeURI: string;
+  /** the volumeURI of the referenced Volume from which the labelmap volume was created */
+  referencedVolumeURI?: string;
 };

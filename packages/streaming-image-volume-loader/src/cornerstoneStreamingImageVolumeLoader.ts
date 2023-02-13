@@ -36,7 +36,7 @@ function cornerstoneStreamingImageVolumeLoader(
   options: {
     imageIds: string[];
   }
-): IVolumeLoader {
+): Types.IVolumeLoadObject {
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
       'ImageIds must be provided to create a streaming image volume'
@@ -227,6 +227,9 @@ function cornerstoneStreamingImageVolumeLoader(
       streamingImageVolumePromise.then((streamingImageVolume) => {
         streamingImageVolume.cancelLoading();
       });
+    },
+    decache: () => {
+      streamingImageVolume.vtkOpenGLTexture.releaseGraphicsResources();
     },
   };
 }

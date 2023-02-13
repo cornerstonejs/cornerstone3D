@@ -16,7 +16,7 @@ import {
   invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
   windowLevel as windowLevelUtil,
-  imageIdToURI,
+  idToURI,
   isImageActor,
   actorIsA,
 } from '../utilities';
@@ -2390,7 +2390,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public hasImageURI = (imageURI: string): boolean => {
     const imageIds = this.imageIds;
     for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) return true;
+      if (idToURI(imageIds[i]) === imageURI) return true;
     }
 
     return false;

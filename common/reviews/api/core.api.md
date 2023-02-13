@@ -775,6 +775,8 @@ interface ICachedImage {
     // (undocumented)
     imageId: string;
     // (undocumented)
+    imageLoaderId: string;
+    // (undocumented)
     imageLoadObject: IImageLoadObject;
     // (undocumented)
     loaded: boolean;
@@ -798,6 +800,8 @@ interface ICachedVolume {
     volume?: IImageVolume;
     // (undocumented)
     volumeId: string;
+    // (undocumented)
+    volumeLoaderId: string;
     // (undocumented)
     volumeLoadObject: IVolumeLoadObject;
 }
@@ -1123,9 +1127,6 @@ type ImageCacheImageRemovedEvent = CustomEvent_2<ImageCacheImageRemovedEventDeta
 type ImageCacheImageRemovedEventDetail = {
     imageId: string;
 };
-
-// @public (undocumented)
-function imageIdToURI(imageId: string): string;
 
 // @public (undocumented)
 type ImageLoadedEvent = CustomEvent_2<ImageLoadedEventDetail>;
@@ -2201,7 +2202,7 @@ declare namespace utilities {
         createLinearRGBTransferFunction,
         scaleRGBTransferFunction as scaleRgbTransferFunction,
         triggerEvent,
-        imageIdToURI,
+        idToURI,
         metadataProvider as calibratedPixelSpacingMetadataProvider,
         uuidv4,
         planar,

@@ -47,7 +47,7 @@ segmentation.addSegmentations([
     representation: {
       type: Enums.SegmentationRepresentations.Labelmap,
       data: {
-        volumeId: segmentationId,
+        volumeURI: segmentationId,
       },
     },
   },

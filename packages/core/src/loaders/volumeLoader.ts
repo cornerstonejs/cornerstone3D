@@ -3,7 +3,6 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import cloneDeep from 'lodash.clonedeep';
 
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import type * as Types from '../types';
@@ -151,7 +150,7 @@ export function loadVolume(
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
   return volumeLoadObject.promise.then((volume: Types.IImageVolume) => {
-    volume.imageData = createInternalVTKRepresentation(volume);
+    volume.imageData = _createInternalVTKRepresentation(volume);
     return volume;
   });
 }
@@ -184,7 +183,7 @@ export async function createAndCacheVolume(
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
   volumeLoadObject.promise.then((volume: Types.IImageVolume) => {
-    volume.imageData = createInternalVTKRepresentation(volume);
+    volume.imageData = _createInternalVTKRepresentation(volume);
   });
 
   cache.putVolumeLoadObject(volumeId, volumeLoadObject).catch((err) => {

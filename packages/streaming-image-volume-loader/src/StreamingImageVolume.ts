@@ -250,9 +250,7 @@ export default class StreamingImageVolume extends ImageVolume {
       imageId: string,
       scalingParameters
     ) => {
-      // Check if there is a cached image for the same imageURI (different
-      // data loader scheme)
-      const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
+      const cachedImageObject = cache.getImageObject(imageId);
 
       // check if we are still loading the volume and we have not canceled loading
       if (!loadStatus.loading) {
@@ -262,21 +260,26 @@ export default class StreamingImageVolume extends ImageVolume {
       if (!cachedImage || !cachedImage.image) {
         return updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
       }
-      const imageScalarData = this._scaleIfNecessary(
-        cachedImage.image,
-        scalingParameters
-      );
-      // todo add scaling and slope
+
+      // However, if there this is an image that was retrieved from the image
+      // cache that can be for two reasons: 1) the image was loaded by another
+      // imageLoader (stackViewport) 2) the image was cached by a decached volume
+      // So, we need to make sure that the propr scaling are applied to the image
+      // before updating the texture (since we don't know if the image was scaled
+      // previously by the other loader as per configuration of the volume)
       const { pixelsPerImage, bytesPerImage } = this._cornerstoneImageMetaData;
       const TypedArray = this.scalarData.constructor;
       let byteOffset = bytesPerImage * imageIdIndex;
 
-      //    create a view on the volume arraybuffer
+      // create a view on the volume arraybuffer
       const bytePerPixel = bytesPerImage / pixelsPerImage;
 
       if (this.scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
         byteOffset *= this.scalarData.BYTES_PER_ELEMENT / bytePerPixel;
       }
+
+      // Get the view of the volume array buffer to properly scale that portion
+      // of the volume by the scaling parameters
 
       // @ts-ignore
       const volumeBufferView = new TypedArray(
@@ -284,8 +287,15 @@ export default class StreamingImageVolume extends ImageVolume {
         byteOffset,
         pixelsPerImage
       );
-      cachedImage.imageLoadObject.promise
+
+      cachedImageObject.imageLoadObject.promise
         .then((image) => {
+          const imageScalarData = this._scaleIfNecessary(
+            image,
+            scalingParameters
+          );
+
+          // set the new scaled data to the volume buffer view
           volumeBufferView.set(imageScalarData);
           updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
         })

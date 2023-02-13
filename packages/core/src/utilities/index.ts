@@ -7,7 +7,7 @@ import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
 import getMinMax from './getMinMax';
 import getRuntimeId from './getRuntimeId';
-import imageIdToURI from './imageIdToURI';
+import idToURI from './idToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import isEqual from './isEqual';
 import isOpposite from './isOpposite';
@@ -36,6 +36,8 @@ import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataPr
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
 import applyPreset from './applyPreset';
+import createAndCacheDerivedVolume from './createAndCacheDerivedVolume';
+import createLocalVolume from './createLocalVolume';
 
 // name spaces
 import * as planar from './planar';
@@ -48,7 +50,7 @@ export {
   createLinearRGBTransferFunction,
   scaleRgbTransferFunction,
   triggerEvent,
-  imageIdToURI,
+  idToURI,
   calibratedPixelSpacingMetadataProvider,
   uuidv4,
   planar,
@@ -83,4 +85,6 @@ export {
   getViewportImageCornersInWorld,
   hasNaNValues,
   applyPreset,
+  createAndCacheDerivedVolume,
+  createLocalVolume,
 };

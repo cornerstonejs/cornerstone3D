@@ -86,9 +86,9 @@ Next, we can deal with volume loading. First, let's load the actual
 CT volume we are intending to use for rendering.
 
 ```js
-const volumeName = 'CT_VOLUME_ID';
+const referencedVolumeURI = 'CT_VOLUME_URI';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const volumeId = `${volumeLoaderScheme}:${referencedVolumeURI}`;
 
 // Define a volume in memory for CT
 const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -96,14 +96,14 @@ const volume = await volumeLoader.createAndCacheVolume(volumeId, {
 });
 ```
 
-We need another volume for segmentation (we don't want to modify the CT volume for segmentation). We can use the CT volume (`volumeId`) as a reference for metadata to create a new volume for segmentation.
+We need another volume for segmentation (we don't want to modify the CT volume for segmentation). We can use the CT volume (`volumeURI`) as a reference for metadata to create a new volume for segmentation.
 
 ```js
-const segmentationId = 'MY_SEGMENTATION_ID';
+const segmentationURI = 'MY_SEGMENTATION';
 
 // Create a segmentation of the same resolution as the source data for the CT volume
-await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-  volumeId: segmentationId,
+await utilities.createAndCacheDerivedVolume(referencedVolumeURI, {
+  volumeURI: segmentationURI,
 });
 ```
 
@@ -111,17 +111,17 @@ Then, add the created segmentation to the `Cornerstone3DTools` segmentation stat
 
 ```js
 // Add the segmentations to state. As seen the labelmap data
-// which is the cached volumeId is provided to the state
+// which is the cached volumeURI is provided to the state
 segmentation.addSegmentations([
   {
-    segmentationId,
+    segmentationId: segmentationURI,
     representation: {
       // The type of segmentation
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
       // The actual segmentation data, in the case of labelmap this is a
       // reference to the source volume of the segmentation.
       data: {
-        volumeId: segmentationId,
+        volumeURI: segmentationURI,
       },
     },
   },
@@ -262,11 +262,13 @@ content.appendChild(viewportGrid);
 addTool(SegmentationDisplayTool);
 addTool(BrushTool);
 
-const volumeName = 'CT_VOLUME_ID';
-const toolGroupId = 'CT_TOOLGROUP';
+const volumeURI = 'CT_VOLUME';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const volumeId = `${volumeLoaderScheme}:${volumeURI}`;
+
 const segmentationId = 'MY_SEGMENTATION_ID';
+
+const toolGroupId = 'CT_TOOLGROUP';
 // Define tool groups to add the segmentation display tool to
 const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 

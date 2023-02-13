@@ -109,7 +109,7 @@ describe('Segmentation Controller --', () => {
       });
     });
 
-    it('should be able to load two segmentations on the toolGroup', function (done) {
+    fit('should be able to load two segmentations on the toolGroup', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.AXIAL

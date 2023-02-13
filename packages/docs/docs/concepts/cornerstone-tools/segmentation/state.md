@@ -54,7 +54,7 @@ Each segmentation object has the following properties:
   cachedStats: {},
   representationData: {
     LABELMAP: {
-      volumeId: 'segmentation1',
+      volumeURI: 'segmentation1',
     },
     CONTOUR: {
       geometryIds: ['contourSet1', 'contourSet2'],
@@ -89,7 +89,7 @@ segmentation.addSegmentations([
     representation: {
       type: Enums.SegmentationRepresentations.Labelmap,
       data: {
-        volumeId: segmentationId,
+        volumeURI: segmentationId,
       },
     },
   },

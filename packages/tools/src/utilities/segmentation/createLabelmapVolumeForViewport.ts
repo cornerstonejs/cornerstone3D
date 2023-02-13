@@ -1,7 +1,6 @@
 import { _cloneDeep } from 'lodash.clonedeep';
 import {
   getEnabledElementByIds,
-  volumeLoader,
   VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -61,11 +60,11 @@ export default async function createLabelmapVolumeForViewport(input: {
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
     const properties = _cloneDeep(options);
-    await volumeLoader.createLocalVolume(properties, segmentationId);
+    await csUtils.createLocalVolume(properties, segmentationId);
   } else {
     // create a labelmap from a reference volume
     const { uid: volumeId } = viewport.getDefaultActor();
-    await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    await csUtils.createAndCacheDerivedVolume(volumeId, {
       volumeId: segmentationId,
     });
   }
