@@ -35,7 +35,6 @@ export default class StreamingImageVolume extends ImageVolume {
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
     super(imageVolumeProperties);
-
     this.imageIds = streamingProperties.imageIds;
     this.loadStatus = streamingProperties.loadStatus;
 
@@ -52,7 +51,7 @@ export default class StreamingImageVolume extends ImageVolume {
     const pixelsPerImage =
       this.dimensions[0] * this.dimensions[1] * numComponents;
 
-    const { PhotometricInterpretation, voiLut } = this.metadata;
+    const { PhotometricInterpretation, voiLut, VOILUTFunction } = this.metadata;
 
     let windowCenter = [];
     let windowWidth = [];
@@ -79,6 +78,7 @@ export default class StreamingImageVolume extends ImageVolume {
       spacing: this.spacing,
       dimensions: this.dimensions,
       PhotometricInterpretation,
+      voiLUTFunction: VOILUTFunction,
       invert: PhotometricInterpretation === 'MONOCHROME1',
     };
   }
@@ -191,7 +191,6 @@ export default class StreamingImageVolume extends ImageVolume {
     const { cachedFrames } = loadStatus;
 
     const { imageIds, vtkOpenGLTexture, imageData, metadata, volumeId } = this;
-
     const { FrameOfReferenceUID } = metadata;
     loadStatus.loading = true;
 
@@ -656,6 +655,7 @@ export default class StreamingImageVolume extends ImageVolume {
       dimensions,
       spacing,
       invert,
+      voiLUTFunction,
     } = this._cornerstoneImageMetaData;
 
     // 1. Grab the buffer and it's type
@@ -707,6 +707,7 @@ export default class StreamingImageVolume extends ImageVolume {
       intercept,
       windowCenter,
       windowWidth,
+      voiLUTFunction,
       color,
       numComps: numComponents,
       rows: dimensions[0],

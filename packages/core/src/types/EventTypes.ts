@@ -7,7 +7,7 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-
+import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
 /**
  * CAMERA_MODIFIED Event's data
  */
@@ -36,6 +36,8 @@ type VoiModifiedEventDetail = {
   range: VOIRange;
   /** Unique ID for the volume in the cache */
   volumeId?: string;
+  /** VOILUTFunction */
+  VOILUTFunction?: VOILUTFunctionType;
 };
 
 /**

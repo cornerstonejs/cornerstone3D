@@ -7,6 +7,7 @@ import OrientationAxis from './OrientationAxis';
 import SharedArrayBufferModes from './SharedArrayBufferModes';
 import GeometryType from './GeometryType';
 import ContourType from './ContourType';
+import VOILUTFunctionType from './VOILUTFunctionType';
 
 export {
   Events,
@@ -18,4 +19,5 @@ export {
   SharedArrayBufferModes,
   GeometryType,
   ContourType,
+  VOILUTFunctionType,
 };
