@@ -26,6 +26,10 @@
         "name": "Stack Viewport API",
         "description": "Demonstrates how to interact with a Stack viewport (e.g. Set VOI Range, Next/Previous Images, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
       },
+      "stackVoiSigmoid": {
+        "name": "Stack Sigmoid LUT",
+        "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
+      },
       "stackEvents": {
         "name": "Stack Viewport Events",
         "description": "Demonstrates the Events that are fired during interaction with a Stack Viewport"
@@ -41,6 +45,10 @@
       "volumeAPI": {
         "name": "Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "volumeVoiSigmoid": {
+        "name": "Volume Sigmoid LUT",
+        "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
       },
       "volumeViewport3D": {
         "name": "3D Volume Rendering",

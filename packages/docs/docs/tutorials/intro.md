@@ -21,9 +21,6 @@ How to run it?
 # from the root of the library
 yarn install
 
-# change folder to tools package
-cd packages/tools
-
 # run the tutorial example
 yarn run example tutorial
 ```

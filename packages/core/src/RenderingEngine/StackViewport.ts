@@ -6,7 +6,6 @@ import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
@@ -15,6 +14,7 @@ import {
   triggerEvent,
   isEqual,
   invertRgbTransferFunction,
+  createSigmoidRGBTransferFunction,
   windowLevel as windowLevelUtil,
   imageIdToURI,
   isImageActor,
@@ -47,6 +47,7 @@ import { getColormap } from './helpers/cpuFallback/colors/index';
 import { loadAndCacheImage } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import InterpolationType from '../enums/InterpolationType';
+import VOILUTFunctionType from '../enums/VOILUTFunctionType';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
@@ -66,6 +67,7 @@ import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import isRgbaSourceRgbDest from './helpers/isRgbaSourceRgbDest';
+import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -78,6 +80,7 @@ interface ImagePixelModule {
   pixelRepresentation: string;
   windowWidth: number;
   windowCenter: number;
+  voiLUTFunction: VOILUTFunctionType;
   modality: string;
 }
 
@@ -133,6 +136,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Viewport Properties
   private voiRange: VOIRange;
+  private VOILUTFunction: VOILUTFunctionType;
   private initialVOIRange: VOIRange;
   private invert = false;
   private interpolationType: InterpolationType;
@@ -397,9 +401,9 @@ class StackViewport extends Viewport implements IStackViewport {
 
     const voiLutModule = metaData.get('voiLutModule', imageId);
 
-    let windowWidth, windowCenter;
+    let windowWidth, windowCenter, voiLUTFunction;
     if (voiLutModule) {
-      ({ windowWidth, windowCenter } = voiLutModule);
+      ({ windowWidth, windowCenter, voiLUTFunction } = voiLutModule);
 
       if (Array.isArray(windowWidth)) {
         windowWidth = windowWidth[0];
@@ -407,6 +411,12 @@ class StackViewport extends Viewport implements IStackViewport {
 
       if (Array.isArray(windowCenter)) {
         windowCenter = windowCenter[0];
+      }
+
+      // when cornerstoneWADOImageLoader uses cornerstonejs/core types
+      // this marshalling step can be removed.
+      if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
+        voiLUTFunction = VOILUTFunctionType.LINEAR;
       }
     }
 
@@ -438,6 +448,7 @@ class StackViewport extends Viewport implements IStackViewport {
         pixelRepresentation,
         windowWidth,
         windowCenter,
+        voiLUTFunction,
         modality,
       },
     };
@@ -546,6 +557,7 @@ class StackViewport extends Viewport implements IStackViewport {
   public setProperties(
     {
       voiRange,
+      VOILUTFunction,
       invert,
       interpolationType,
       rotation,
@@ -556,6 +568,10 @@ class StackViewport extends Viewport implements IStackViewport {
     // which will apply the default voi
     if (typeof voiRange !== 'undefined' || !this.voiApplied) {
       this.setVOI(voiRange, suppressEvents);
+    }
+
+    if (typeof VOILUTFunction !== 'undefined') {
+      this.setVOILUTFunction(VOILUTFunction, suppressEvents);
     }
 
     if (typeof invert !== 'undefined') {
@@ -582,6 +598,7 @@ class StackViewport extends Viewport implements IStackViewport {
     return {
       voiRange: this.voiRange,
       rotation: this.getRotation(),
+      VOILUTFunction: this.VOILUTFunction,
       interpolationType: this.interpolationType,
       invert: this.invert,
     };
@@ -896,6 +913,25 @@ class StackViewport extends Viewport implements IStackViewport {
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
   }
 
+  private setVOILUTFunction(
+    voiLUTFunction: VOILUTFunctionType,
+    suppressEvents?: boolean
+  ): void {
+    if (this.useCPURendering) {
+      throw new Error('VOI LUT function is not supported in CPU rendering');
+    }
+
+    // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
+    if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
+      voiLUTFunction = VOILUTFunctionType.LINEAR;
+    }
+
+    this.VOILUTFunction = voiLUTFunction;
+
+    const { voiRange } = this.getProperties();
+    this.setVOI(voiRange, suppressEvents);
+  }
+
   private setInterpolationType(interpolationType: InterpolationType): void {
     if (this.useCPURendering) {
       this.setInterpolationTypeCPU(interpolationType);
@@ -1010,6 +1046,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setVOICPU(voiRange: VOIRange, suppressEvents?: boolean): void {
+    // TODO: Account for VOILUTFunction
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
     if (!viewport || !image) {
@@ -1069,21 +1106,30 @@ class StackViewport extends Viewport implements IStackViewport {
     }
     const { actor } = defaultActor;
     const imageActor = actor as ImageActor;
-
     let voiRangeToUse = voiRange;
     if (typeof voiRangeToUse === 'undefined') {
       const imageData = imageActor.getMapper().getInputData();
       const range = imageData.getPointData().getScalars().getRange();
-      voiRangeToUse = { lower: range[0], upper: range[1] };
+      const maxVoiRange = { lower: range[0], upper: range[1] };
+      voiRangeToUse = maxVoiRange;
     }
 
-    const { windowWidth, windowCenter } = windowLevelUtil.toWindowLevel(
-      voiRangeToUse.lower,
-      voiRangeToUse.upper
-    );
-
-    imageActor.getProperty().setColorWindow(windowWidth);
-    imageActor.getProperty().setColorLevel(windowCenter);
+    // scaling logic here
+    // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/ImageMapper/index.js#L540-L549
+    imageActor.getProperty().setUseLookupTableScalarRange(true);
+    if (this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
+      const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
+      if (this.invert) {
+        invertRgbTransferFunction(cfun);
+      }
+      imageActor.getProperty().setRGBTransferFunction(0, cfun);
+    } else {
+      const cfun = createLinearRGBTransferFunction(voiRangeToUse);
+      if (this.invert) {
+        invertRgbTransferFunction(cfun);
+      }
+      imageActor.getProperty().setRGBTransferFunction(0, cfun);
+    }
 
     this.voiApplied = true;
     this.voiRange = voiRangeToUse;
@@ -1092,6 +1138,7 @@ class StackViewport extends Viewport implements IStackViewport {
       const eventDetail: VoiModifiedEventDetail = {
         viewportId: this.id,
         range: voiRangeToUse,
+        VOILUTFunction: this.VOILUTFunction,
       };
 
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
@@ -1815,7 +1862,8 @@ class StackViewport extends Viewport implements IStackViewport {
     activeCamera.setFreezeFocalPoint(true);
 
     // set voi for the first time
-    const { windowCenter, windowWidth } = imagePixelModule;
+    const { windowCenter, windowWidth, voiLUTFunction } = imagePixelModule;
+
     let voiRange =
       typeof windowCenter === 'number' && typeof windowWidth === 'number'
         ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
@@ -1839,6 +1887,14 @@ class StackViewport extends Viewport implements IStackViewport {
       // In that case we want to keep the applied VOI range.
       voiRange = this.voiRange;
     }
+
+    // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
+    if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
+      this.VOILUTFunction = VOILUTFunctionType.LINEAR;
+    } else {
+      this.VOILUTFunction = voiLUTFunction;
+    }
+
     this.setProperties({ voiRange });
 
     // At the moment it appears that vtkImageSlice actors do not automatically
@@ -1846,20 +1902,10 @@ class StackViewport extends Viewport implements IStackViewport {
     // Note: the 1024 here is what VTK would normally do to resample a color transfer function
     // before it is put into the GPU. Setting it with a length of 1024 allows us to
     // avoid that resampling step.
-    const cfun = vtkColorTransferFunction.newInstance();
-    let lower = 0;
-    let upper = 1024;
-    if (
-      voiRange &&
-      voiRange.lower !== undefined &&
-      voiRange.upper !== undefined
-    ) {
-      lower = voiRange.lower;
-      upper = voiRange.upper;
+    if (actor.getProperty().getRGBTransferFunction(0) === null) {
+      const cfun = createLinearRGBTransferFunction(voiRange);
+      actor.getProperty().setRGBTransferFunction(0, cfun);
     }
-    cfun.addRGBPoint(lower, 0.0, 0.0, 0.0);
-    cfun.addRGBPoint(upper, 1.0, 1.0, 1.0);
-    actor.getProperty().setRGBTransferFunction(0, cfun);
 
     let invert = false;
     if (imagePixelModule.photometricInterpretation === 'MONOCHROME1') {

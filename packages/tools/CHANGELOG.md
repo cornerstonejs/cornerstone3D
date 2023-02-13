@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.44.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.43.2...@cornerstonejs/tools@0.44.0) (2023-02-13)
+
+
+### Features
+
+* **voi:** added support for sigmoid voiLUTFunction for StackViewport and VolumeViewport ([#224](https://github.com/cornerstonejs/cornerstone3D-beta/issues/224)) ([2fcec22](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2fcec22fc7a27cad75d41713339f7e030d653f80))
+
+
+
+
+
+## [0.43.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.43.1...@cornerstonejs/tools@0.43.2) (2023-02-10)
+
+
+### Bug Fixes
+
+* use one actor for a contourset rendering ([#432](https://github.com/cornerstonejs/cornerstone3D-beta/issues/432)) ([c92f8be](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c92f8beafb6731eb0b81ef295ff2774192cfd7ed))
+
+
+
+
+
+## [0.43.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.43.0...@cornerstonejs/tools@0.43.1) (2023-02-10)
+
+
+### Bug Fixes
+
+* **trackball:** rotate was wrong on mouse drag ([#424](https://github.com/cornerstonejs/cornerstone3D-beta/issues/424)) ([99c1a0a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/99c1a0a35dd52ddec26551de75656cdda7149b39))
+
+
+
+
+
+# [0.43.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.42.1...@cornerstonejs/tools@0.43.0) (2023-02-08)
+
+
+### Features
+
+* **adapters:** Add adapters for Rectangle, Angle and fix generate DICOM ([#427](https://github.com/cornerstonejs/cornerstone3D-beta/issues/427)) ([b8ca75e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b8ca75e6ba378f175bd987d07f094f44b41a46cf))
+
+
+
+
+
 ## [0.42.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.42.0...@cornerstonejs/tools@0.42.1) (2023-02-07)
 
 **Note:** Version bump only for package @cornerstonejs/tools

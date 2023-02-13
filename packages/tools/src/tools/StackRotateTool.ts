@@ -54,7 +54,7 @@ class StackRotateTool extends BaseTool {
 
     if (Number.isNaN(angle)) return;
 
-    const { rotation } = viewport.getProperties();
+    const { rotation } = (viewport as Types.IStackViewport).getProperties();
     viewport.setProperties({ rotation: rotation + angle });
 
     viewport.render();

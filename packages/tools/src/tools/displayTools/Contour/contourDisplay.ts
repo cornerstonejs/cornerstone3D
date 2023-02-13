@@ -18,7 +18,10 @@ import {
 
 import { deepMerge } from '../../../utilities';
 import removeContourFromElement from './removeContourFromElement';
-import addContourToElement from './addContourToElement';
+import {
+  addContourToElement,
+  addContourSetToElement,
+} from './addContourToElement';
 
 /**
  * It adds a new segmentation representation to the segmentation state
@@ -181,12 +184,25 @@ function _renderContourSets(
 function _renderContourSet(
   viewport: Types.IVolumeViewport,
   contourSet: Types.IContourSet,
-  segmentationRepresentationUID: string
+  segmentationRepresentationUID: string,
+  separated = false
 ): void {
-  contourSet.getContours().forEach((contour: Types.IContour, index) => {
-    const contourUID = `${segmentationRepresentationUID}_${contourSet.id}_${index}}`;
-    _renderContour(viewport, contour, contourUID);
-  });
+  if (separated) {
+    contourSet.getContours().forEach((contour: Types.IContour, index) => {
+      const contourUID = `${segmentationRepresentationUID}_${contourSet.id}_${index}}`;
+      _renderContour(viewport, contour, contourUID);
+    });
+  } else {
+    const contourUID = `${segmentationRepresentationUID}_${contourSet.id}`;
+    const actorUID = contourUID;
+    const actorEntry = viewport.getActor(actorUID);
+
+    if (!actorEntry) {
+      addContourSetToElement(viewport.element, contourSet, actorUID);
+    } else {
+      throw new Error('Not implemented yet. (Update contour)');
+    }
+  }
 
   viewport.resetCamera();
   viewport.render();
