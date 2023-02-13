@@ -34,6 +34,7 @@ import {
   imageIdToURI,
   triggerEvent,
   createSigmoidRGBTransferFunction,
+  getVoiFromSigmoidRGBTransferFunction,
   createLinearRGBTransferFunction,
 } from '../utilities';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
@@ -182,8 +183,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
       voiLUTFunction = VOILUTFunctionType.LINEAR;
     }
+    const { voiRange } = this.getProperties();
     this.VOILUTFunction = voiLUTFunction;
-    this.setVOI(undefined, volumeId, suppressEvents);
+    this.setVOI(voiRange, volumeId, suppressEvents);
   }
 
   /**
@@ -287,17 +289,17 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const voiRanges = actorEntries.map((actorEntry) => {
       const volumeActor = actorEntry.actor as vtkVolume;
       const volumeId = actorEntry.uid;
-      const voiRange = volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
+      const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+      let lower, upper;
+      if (this.VOILUTFunction === 'SIGMOID') {
+        [lower, upper] = getVoiFromSigmoidRGBTransferFunction(cfun);
+      } else {
         // @ts-ignore: vtk d ts problem
-        .getRange();
+        [lower, upper] = cfun.getRange();
+      }
       return {
         volumeId,
-        voiRange: {
-          lower: voiRange[0],
-          upper: voiRange[1],
-        },
+        voiRange: { lower, upper },
       };
     });
     return {
