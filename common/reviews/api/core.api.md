@@ -721,6 +721,9 @@ function getViewportsWithImageURI(imageURI: string, renderingEngineId?: string):
 function getViewportsWithVolumeId(volumeId: string, renderingEngineId?: string): Array<IVolumeViewport>;
 
 // @public (undocumented)
+function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [number, number];
+
+// @public (undocumented)
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 
 // @public (undocumented)
@@ -2194,6 +2197,7 @@ declare namespace utilities {
     export {
         invertRgbTransferFunction,
         createSigmoidRGBTransferFunction,
+        getVoiFromSigmoidRGBTransferFunction,
         createLinearRGBTransferFunction,
         scaleRGBTransferFunction as scaleRgbTransferFunction,
         triggerEvent,
