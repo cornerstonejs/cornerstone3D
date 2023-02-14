@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "0.13.10",
+  "version": "0.13.11",
   "private": true,
   "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "scripts": {
@@ -30,7 +30,7 @@
   "dependencies": {
     "@cornerstonejs/core": "^0.31.0",
     "@cornerstonejs/streaming-image-volume-loader": "^0.12.0",
-    "@cornerstonejs/tools": "^0.44.0",
+    "@cornerstonejs/tools": "^0.45.0",
     "@docusaurus/core": "2.3.1",
     "@docusaurus/module-type-aliases": "2.3.1",
     "@docusaurus/preset-classic": "2.3.1",

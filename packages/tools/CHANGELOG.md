@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.45.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.44.0...@cornerstonejs/tools@0.45.0) (2023-02-14)
+
+
+### Features
+
+* include segment labels in segmentation state ([#433](https://github.com/cornerstonejs/cornerstone3D-beta/issues/433)) ([412a914](https://github.com/cornerstonejs/cornerstone3D-beta/commit/412a914682b27b0f5b39f942986cd09c375107d1))
+
+
+
+
+
 # [0.44.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.43.2...@cornerstonejs/tools@0.44.0) (2023-02-13)
 
 
