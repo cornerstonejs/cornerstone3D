@@ -4134,6 +4134,9 @@ type Segmentation = {
     cachedStats: {
         [key: string]: number;
     };
+    segmentLabels: {
+        [key: string]: string;
+    };
     representationData: SegmentationRepresentationData;
 };
 
