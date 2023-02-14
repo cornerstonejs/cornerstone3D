@@ -19,6 +19,7 @@ function normalizeSegmentationInput(
   return {
     segmentationId,
     cachedStats: {},
+    segmentLabels: {},
     label: null,
     segmentsLocked: new Set(),
     type: representation.type,
