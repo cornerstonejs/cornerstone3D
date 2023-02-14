@@ -67,6 +67,7 @@ export type Segmentation = {
    * If there is any derived statistics for the segmentation (e.g., mean, volume, etc)
    */
   cachedStats: { [key: string]: number };
+  segmentLabels: { [key: string]: string };
   /**
    * Representations of the segmentation. Each segmentation "can" be viewed
    * in various representations. For instance, if a DICOM SEG is loaded, the main
