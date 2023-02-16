@@ -1,5 +1,9 @@
-import { getEnabledElement, Types } from '@cornerstonejs/core';
-import { vec3 } from 'gl-matrix';
+import {
+  BaseVolumeViewport,
+  getEnabledElement,
+  Types,
+} from '@cornerstonejs/core';
+import { mat4, vec3 } from 'gl-matrix';
 import { BaseTool } from './base';
 import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
 import { PublicToolProps, ToolProps, EventTypes } from '../types';
@@ -43,7 +47,7 @@ class StackRotateTool extends BaseTool {
       [centerWorld, currentPointWorld]
     );
 
-    const { viewPlaneNormal } = camera;
+    const { viewPlaneNormal, viewUp } = camera;
 
     const v1 = vec3.sub(vec3.create(), centerWorld, startPointWorld);
     const v2 = vec3.sub(vec3.create(), centerWorld, currentPointWorld);
@@ -54,8 +58,16 @@ class StackRotateTool extends BaseTool {
 
     if (Number.isNaN(angle)) return;
 
-    const { rotation } = (viewport as Types.IStackViewport).getProperties();
-    viewport.setProperties({ rotation: rotation + angle });
+    if (viewport instanceof BaseVolumeViewport) {
+      const rotAngle = (angle * Math.PI) / 180;
+      const rotMat = mat4.identity(new Float32Array(16));
+      mat4.rotate(rotMat, rotMat, rotAngle, viewPlaneNormal);
+      const rotatedViewUp = vec3.transformMat4(vec3.create(), viewUp, rotMat);
+      viewport.setCamera({ viewUp: rotatedViewUp as Types.Point3 });
+    } else {
+      const { rotation } = (viewport as Types.IStackViewport).getProperties();
+      viewport.setProperties({ rotation: rotation + angle });
+    }
 
     viewport.render();
   }
