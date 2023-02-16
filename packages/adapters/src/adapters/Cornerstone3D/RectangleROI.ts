@@ -60,8 +60,8 @@ class RectangleROI {
                 points: [
                     worldCoords[0],
                     worldCoords[1],
-                    worldCoords[2],
-                    worldCoords[3]
+                    worldCoords[3],
+                    worldCoords[2]
                 ],
                 activeHandleIndex: 0,
                 textBox: {
@@ -100,7 +100,13 @@ class RectangleROI {
         const { area, perimeter } = cachedStats;
 
         return {
-            points: corners,
+            points: [
+                corners[0],
+                corners[1],
+                corners[3],
+                corners[2],
+                corners[0]
+            ],
             area,
             perimeter,
             trackingIdentifierTextValue,
