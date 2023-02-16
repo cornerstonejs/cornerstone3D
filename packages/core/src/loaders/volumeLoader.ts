@@ -34,14 +34,9 @@ interface LocalVolumeOptions {
   direction: Mat3;
 }
 
-function createInternalVTKRepresentation({
-  dimensions,
-  metadata,
-  spacing,
-  direction,
-  origin,
-  scalarData,
-}): vtkImageDataType {
+function createInternalVTKRepresentation(volume): vtkImageDataType {
+  const { dimensions, metadata, spacing, direction, origin, scalarData } =
+    volume;
   const { PhotometricInterpretation } = metadata;
 
   let numComponents = 1;
@@ -49,19 +44,25 @@ function createInternalVTKRepresentation({
     numComponents = 3;
   }
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: numComponents,
-    values: scalarData,
-  });
-
   const imageData = vtkImageData.newInstance();
+  const scalarDataArrays = volume.getScalarDataArrays();
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
-  imageData.getPointData().setScalars(scalarArray);
+
+  scalarDataArrays.forEach((scalarDataArray, i) => {
+    const vtkScalarArray = vtkDataArray.newInstance({
+      name: `timePoint-${i}`,
+      numberOfComponents: numComponents,
+      values: scalarDataArray,
+    });
+
+    imageData.getPointData().addArray(vtkScalarArray);
+  });
+
+  imageData.getPointData().setActiveScalars('timePoint-0');
 
   return imageData;
 }

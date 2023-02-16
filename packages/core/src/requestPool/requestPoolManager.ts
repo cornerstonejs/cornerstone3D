@@ -289,9 +289,12 @@ class RequestPoolManager {
     }
 
     if (this.grabDelay !== undefined) {
-      this.timeoutHandle = window.setTimeout(() => {
-        this.startGrabbing();
-      }, this.grabDelay);
+      if (!this.timeoutHandle) {
+        this.timeoutHandle = window.setTimeout(() => {
+          this.timeoutHandle = 0;
+          this.startGrabbing();
+        }, this.grabDelay);
+      }
     } else {
       this.startGrabbing();
     }

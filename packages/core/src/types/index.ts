@@ -6,7 +6,7 @@ import type ICache from './ICache';
 import type IVolume from './IVolume';
 import type { VOI, VOIRange } from './voi';
 import type ImageLoaderFn from './ImageLoaderFn';
-import type IImageVolume from './IImageVolume';
+import type { IImageVolume, VolumeTimePoints } from './IImageVolume';
 import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
@@ -82,6 +82,7 @@ export type {
   IVolume,
   IViewportId,
   IImageVolume,
+  VolumeTimePoints,
   IRenderingEngine,
   ScalingParameters,
   PTScaling,

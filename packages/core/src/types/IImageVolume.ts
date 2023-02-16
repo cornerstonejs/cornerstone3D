@@ -1,6 +1,17 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { Metadata, Point3, IImageLoadObject, Mat3 } from '../types';
 
+type VolumeTimePoints = {
+  timePoints: {
+    /** imageIds of each timepoint  */
+    imageIds: Array<string>;
+    /** volume scalar data  */
+    scalarData: Float32Array | Uint8Array;
+  }[];
+  /** optional current time point index */
+  activeTimePointIndex: number;
+};
+
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
  * with appropriate typings for the other types of volume that don't have images (nrrd, nifti)
@@ -43,6 +54,8 @@ interface IImageVolume {
   loadStatus?: Record<string, any>;
   /** imageIds of the volume (if it is built of separate imageIds) */
   imageIds?: Array<string>;
+  /** optional 4D volume data that contains all time points (imageIds and buffers) */
+  timePointsData?: VolumeTimePoints;
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string; // if volume is derived from another volume
   /** whether the metadata for the pixel spacing is not undefined  */
@@ -57,4 +70,4 @@ interface IImageVolume {
   cancelLoading?: () => void;
 }
 
-export default IImageVolume;
+export { IImageVolume as default, IImageVolume, VolumeTimePoints };

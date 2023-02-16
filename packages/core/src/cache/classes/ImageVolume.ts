@@ -1,5 +1,12 @@
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
-import { IVolume, Metadata, Point3, IImageVolume, Mat3 } from '../../types';
+import {
+  IVolume,
+  Metadata,
+  Point3,
+  IImageVolume,
+  VolumeTimePoints,
+  Mat3,
+} from '../../types';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -44,6 +51,8 @@ export class ImageVolume implements IImageVolume {
   loadStatus?: Record<string, any>;
   /** optional image ids for the volume if it is made of separated images */
   imageIds?: Array<string>;
+  /** optional 4D volume data that contains all time points (imageIds and buffers) */
+  timePointsData?: VolumeTimePoints;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
   /** whether the metadata for the pixel spacing is not undefined  */
