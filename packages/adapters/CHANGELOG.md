@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.3.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.3.0...@cornerstonejs/adapters@0.3.1) (2023-02-16)
+
+
+### Bug Fixes
+
+* **adapter:** The rectangle encoding of SR ([#437](https://github.com/dcmjs-org/dcmjs/issues/437)) ([bff23ec](https://github.com/dcmjs-org/dcmjs/commit/bff23ecfe551312a1339211ddb7838993514a377))
+
+
+
+
+
 # [0.3.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.2.1...@cornerstonejs/adapters@0.3.0) (2023-02-08)
 
 
