@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.45.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.45.0...@cornerstonejs/tools@0.45.1) (2023-02-16)
+
+
+### Bug Fixes
+
+* **doubleClick:** mouseDoubleClickIgnoreListener is now added to each viewport element instead of the document element ([#429](https://github.com/cornerstonejs/cornerstone3D-beta/issues/429)) ([360e2a9](https://github.com/cornerstonejs/cornerstone3D-beta/commit/360e2a9fa2efa690d2e4baec424699a6c66af4a2)), closes [#375](https://github.com/cornerstonejs/cornerstone3D-beta/issues/375)
+
+
+
+
+
 # [0.45.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.44.0...@cornerstonejs/tools@0.45.0) (2023-02-14)
 
 
