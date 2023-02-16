@@ -131,8 +131,16 @@ export default function sortImageIdsAndGetSpacing(
     sortedImageIds[0]
   );
 
+  // if zspacing = 0, use sliceThickness if possible
   if (zSpacing === 0) {
-    zSpacing = sliceThickness;
+    if (sliceThickness) {
+      console.log('Could not calculate zSpacing. Using sliceThickness');
+      zSpacing = sliceThickness;
+    } else {
+      console.log(
+        'Could not calculate zSpacing. The VolumeViewport is compromised.'
+      );
+    }
   }
   const result: SortedImageIdsItem = {
     zSpacing,
