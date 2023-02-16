@@ -131,15 +131,19 @@ export default function sortImageIdsAndGetSpacing(
     sortedImageIds[0]
   );
 
-  // if zspacing = 0, use sliceThickness if possible
+  // We implemented these lines for multiframe dicom files that does not have
+  // position for each frame, leading to incorrect calculation of zSpacing = 0
+  // If possible, we use the sliceThickness, but we warn about this dicom file
+  // weirdness. If sliceThickness is not available, we set to 1 just to render
   if (zSpacing === 0) {
     if (sliceThickness) {
       console.log('Could not calculate zSpacing. Using sliceThickness');
       zSpacing = sliceThickness;
     } else {
       console.log(
-        'Could not calculate zSpacing. The VolumeViewport is compromised.'
+        'Could not calculate zSpacing. The VolumeViewport visualization is compromised. Setting zSpacing to 1 to render'
       );
+      zSpacing = 1;
     }
   }
   const result: SortedImageIdsItem = {
