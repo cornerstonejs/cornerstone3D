@@ -252,7 +252,7 @@ export default class MeasurementReport {
                 "sopCommonModule",
                 imageId
             );
-            const instance = metadataProvider.getInstance(imageId);
+            const instance = metadataProvider.get("instance", imageId);
 
             const { sopInstanceUID, sopClassUID } = sopCommonModule;
             const { SeriesInstanceUID: seriesInstanceUID } = instance;
