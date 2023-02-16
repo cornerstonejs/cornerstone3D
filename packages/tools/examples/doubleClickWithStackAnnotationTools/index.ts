@@ -45,7 +45,12 @@ setTitleAndDescription(
 );
 
 const content = document.getElementById('content');
+content.style.display = 'flex';
+content.style.flexDirection = 'column';
+content.style.alignItems = 'flex-start';
+
 const element = document.createElement('div');
+const elementWrapper = document.createElement('div');
 
 // Disable right click context menu so we can have right click tools
 element.oncontextmenu = (e) => e.preventDefault();
@@ -55,7 +60,7 @@ element.id = 'cornerstone-element';
 // It is best to listen for the browser double click event on an ancestor of the viewport
 // element instead of the viewport element itself. This is so that in case CS3D needs to
 // handle the double click first (e.g. edit arrow annotation) and stop its propagation.
-content.addEventListener('dblclick', () => {
+elementWrapper.addEventListener('dblclick', () => {
   toggleCanvasSize();
 
   browserDoubleClickEventStatus.style.visibility = '';
@@ -86,15 +91,17 @@ element.addEventListener(Events.MOUSE_CLICK, () => {
   statusDiv.style.backgroundColor = '#00ff00';
 });
 
-content.appendChild(element);
+elementWrapper.appendChild(element);
+content.appendChild(elementWrapper);
 
 // double click status info elements
 const statusDiv = document.createElement('div');
 statusDiv.style.width = element.style.width;
+statusDiv.style.marginTop = '16px';
 
 content.append(statusDiv);
 
-const browserDoubleClickEventStatus = document.createElement('p');
+const browserDoubleClickEventStatus = document.createElement('span');
 browserDoubleClickEventStatus.style.visibility = 'hidden';
 statusDiv.append(browserDoubleClickEventStatus);
 
