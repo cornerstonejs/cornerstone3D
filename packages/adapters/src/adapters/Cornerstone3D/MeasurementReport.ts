@@ -1,5 +1,6 @@
 import { normalizers, data, utilities, derivations } from "dcmjs";
 
+import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { toArray, codeMeaningEquals } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
 
@@ -82,6 +83,7 @@ function getMeasurementGroup(
 }
 
 export default class MeasurementReport {
+    public static CORNERSTONE_3D_TAG = CORNERSTONE_3D_TAG;
     public static MEASUREMENT_BY_TOOLTYPE = {};
     public static CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE = {};
     public static CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE = {};
@@ -419,7 +421,11 @@ export default class MeasurementReport {
         return measurementData;
     }
 
-    static registerTool(toolClass) {
+    /**
+     * Register a new tool type.
+     * @param toolClass to perform I/O to DICOM for this tool
+     */
+    public static registerTool(toolClass) {
         MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE[
             toolClass.utilityToolType
         ] = toolClass;

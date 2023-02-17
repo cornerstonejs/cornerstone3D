@@ -2,6 +2,7 @@ import { vec3 } from "gl-matrix";
 import { utilities } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
+import isValidCornerstoneTrackingIdentifier from "./isValidCornerstoneTrackingIdentifier";
 
 const { Ellipse: TID300Ellipse } = utilities.TID300;
 
@@ -11,6 +12,12 @@ const EPSILON = 1e-4;
 const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ELLIPTICALROI}`;
 
 class EllipticalROI {
+    static toolType = ELLIPTICALROI;
+    static utilityToolType = ELLIPTICALROI;
+    static TID300Representation = TID300Ellipse;
+    static isValidCornerstoneTrackingIdentifier =
+        isValidCornerstoneTrackingIdentifier.bind(EllipticalROI);
+
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -149,7 +156,7 @@ class EllipticalROI {
         const topBottomLength = Math.abs(top[1] - bottom[1]);
         const leftRightLength = Math.abs(left[0] - right[0]);
 
-        let points = [];
+        const points = [];
         if (topBottomLength > leftRightLength) {
             // major axis is bottom to top
             points.push({ x: top[0], y: top[1] });
@@ -179,25 +186,6 @@ class EllipticalROI {
         };
     }
 }
-
-EllipticalROI.toolType = ELLIPTICALROI;
-EllipticalROI.utilityToolType = ELLIPTICALROI;
-EllipticalROI.TID300Representation = TID300Ellipse;
-EllipticalROI.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    // The following is needed since the new cornerstone3D has changed
-    // the EllipticalRoi toolName (which was in the old cornerstone) to EllipticalROI
-    return toolType.toLowerCase() === ELLIPTICALROI.toLowerCase();
-};
 
 MeasurementReport.registerTool(EllipticalROI);
 
