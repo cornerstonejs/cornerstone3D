@@ -9,14 +9,13 @@ const { Ellipse: TID300Ellipse } = utilities.TID300;
 const ELLIPTICALROI = "EllipticalROI";
 const EPSILON = 1e-4;
 
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ELLIPTICALROI}`;
-
 class EllipticalROI {
+    static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ELLIPTICALROI}`;
     static toolType = ELLIPTICALROI;
     static utilityToolType = ELLIPTICALROI;
     static TID300Representation = TID300Ellipse;
     static isValidCornerstoneTrackingIdentifier =
-        isValidCornerstoneTrackingIdentifier.bind(EllipticalROI);
+        isValidCornerstoneTrackingIdentifier;
 
     static getMeasurementData(
         MeasurementGroup,
@@ -180,7 +179,7 @@ class EllipticalROI {
         return {
             area,
             points,
-            trackingIdentifierTextValue,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []
         };
