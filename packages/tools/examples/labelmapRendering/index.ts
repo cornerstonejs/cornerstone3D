@@ -30,16 +30,13 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const highResSegmentationId = 'HIGH_RES_SEGMENTATION_ID';
-const lowResSegmentationId = 'LOW_RES_SEGMENTATION_ID';
-
-// The amount we should downsample the second example segementation (should be a factor of 2)
-const DOWN_SAMPLE_RATE = 8;
+const segmentationId = 'MY_SEGMENTATION_ID';
+const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Segmentation Rendering with different resolution to source data',
-  'Here we demonstrate that the segmentation resolution need not be the same as the source data.'
+  'Labelmap Rendering over source data',
+  'Here we demonstrate rendering of a mock ellipsoid labelmap over source data'
 );
 
 const size = '500px';
@@ -52,45 +49,42 @@ viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
+const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
 element2.style.width = size;
 element2.style.height = size;
+element3.style.width = size;
+element3.style.height = size;
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p');
-instructions.innerText = `
-  Both viewports contain the same source data, yet they display different segmentations.
-  The segmentation on the left viewport is the same resolution as the source data,
-  yet the segmentation on the right viewport is downsampled by a factor of ${DOWN_SAMPLE_RATE}
-`;
-
-content.append(instructions);
 // ============================= //
 
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
-function fillSegmentationWithCircles(segmentationVolume) {
+function createMockEllipsoidSegmentation(segmentationVolume) {
   const scalarData = segmentationVolume.scalarData;
-
-  let voxelIndex = 0;
-
   const { dimensions } = segmentationVolume;
 
-  const center = [dimensions[0] / 2, dimensions[1] / 2];
-  const outerRadius = dimensions[0] / 4;
-  const innerRadius = dimensions[0] / 8;
+  const center = [dimensions[0] / 2, dimensions[1] / 2, dimensions[2] / 2];
+  const outerRadius = 50;
+  const innerRadius = 10;
+
+  let voxelIndex = 0;
 
   for (let z = 0; z < dimensions[2]; z++) {
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
         const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) + (y - center[1]) * (y - center[1])
+          (x - center[0]) * (x - center[0]) +
+            (y - center[1]) * (y - center[1]) +
+            (z - center[2]) * (z - center[2])
         );
         if (distanceFromCenter < innerRadius) {
           scalarData[voxelIndex] = 1;
@@ -104,92 +98,34 @@ function fillSegmentationWithCircles(segmentationVolume) {
   }
 }
 
-async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
+async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   // using volumeLoader.createAndCacheDerivedVolume.
-  const highResSegmentationVolume =
-    await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-      volumeId: highResSegmentationId,
-    });
-
-  // Create a segmentation at a lower resolution than the source data,
-  // using custom properties and
-  const highResDimensions = highResSegmentationVolume.dimensions;
-  const highResSpacing = highResSegmentationVolume.spacing;
-
-  const direction = [];
-
-  for (let i = 0; i < 9; i++) {
-    direction[i] = highResSegmentationVolume.direction[i];
-  }
-
-  const localVolumeOptions = {
-    scalarData: new Uint8Array(
-      highResSegmentationVolume.scalarData.length /
-        (DOWN_SAMPLE_RATE * DOWN_SAMPLE_RATE)
-    ),
-    metadata: highResSegmentationVolume.metadata, // Just use the same metadata for the example.
-    dimensions: [
-      highResDimensions[0] / DOWN_SAMPLE_RATE,
-      highResDimensions[1] / DOWN_SAMPLE_RATE,
-      highResDimensions[2],
-    ] as Types.Point3,
-    spacing: [
-      highResSpacing[0] * DOWN_SAMPLE_RATE,
-      highResSpacing[1] * DOWN_SAMPLE_RATE,
-      highResSpacing[2],
-    ] as Types.Point3,
-    origin: [...highResSegmentationVolume.origin] as Types.Point3,
-    direction: direction as Types.Mat3,
-  };
-
-  const lowResSegmentationVolume = await volumeLoader.createLocalVolume(
-    localVolumeOptions,
-    lowResSegmentationId
+  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
+    volumeId,
+    {
+      volumeId: segmentationId,
+    }
   );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
     {
-      segmentationId: highResSegmentationId,
+      segmentationId,
       representation: {
         // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         // The actual segmentation data, in the case of labelmap this is a
         // reference to the source volume of the segmentation.
         data: {
-          volumeId: highResSegmentationId,
-        },
-      },
-    },
-    {
-      segmentationId: lowResSegmentationId,
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          volumeId: lowResSegmentationId,
+          volumeId: segmentationId,
         },
       },
     },
   ]);
 
   // Add some data to the segmentations
-  fillSegmentationWithCircles(highResSegmentationVolume);
-  fillSegmentationWithCircles(lowResSegmentationVolume);
-
-  // Add segmentation representations to the toolgroups
-  segmentation.addSegmentationRepresentations(highResToolGroupId, [
-    {
-      segmentationId: highResSegmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-  segmentation.addSegmentationRepresentations(lowResToolGroupId, [
-    {
-      segmentationId: lowResSegmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  createMockEllipsoidSegmentation(segmentationVolume);
 }
 
 /**
@@ -203,16 +139,10 @@ async function run() {
   cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
-  const highResToolGroupId = 'HIGH_RESOLUTION_TOOLGROUP_ID';
-  const lowResToolGroupId = 'LOW_RESOLUTION_TOOLGROUP_ID';
-  const highResToolGroup = ToolGroupManager.createToolGroup(highResToolGroupId);
-  const lowResToolGroup = ToolGroupManager.createToolGroup(lowResToolGroupId);
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  highResToolGroup.addTool(SegmentationDisplayTool.toolName);
-  lowResToolGroup.addTool(SegmentationDisplayTool.toolName);
-
-  highResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  lowResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup.addTool(SegmentationDisplayTool.toolName);
+  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -223,23 +153,22 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  const smallVolumeImageIds = [imageIds[0], imageIds[1]];
-
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: smallVolumeImageIds,
+    imageIds,
   });
 
   // Add some segmentations based on the source data volume
-  addSegmentations(highResToolGroupId, lowResToolGroupId);
+  await addSegmentationsToState();
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId1 = 'CT_AXIAL_STACK_1';
-  const viewportId2 = 'CT_AXIAL_STACK_2';
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_CORONAL';
 
   const viewportInputArray = [
     {
@@ -256,7 +185,16 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -264,8 +202,9 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  highResToolGroup.addViewport(viewportId1, renderingEngineId);
-  lowResToolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Set the volume to load
   volume.load();
@@ -274,11 +213,19 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
-    [viewportId1, viewportId2]
+    [viewportId1, viewportId2, viewportId3]
   );
 
+  // // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2]);
+  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
 }
 
 run();
