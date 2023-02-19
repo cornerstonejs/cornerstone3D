@@ -9,10 +9,10 @@ import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
 import { PublicToolProps, ToolProps, EventTypes } from '../types';
 
 /**
- * The StackRotateTool is a tool that allows the user to rotate
- * the image on stack viewport by pressing the mouse click and dragging
+ * The PlanarRotateTool is a tool that allows the user to rotate
+ * the image on the viewport by pressing the mouse click and dragging
  */
-class StackRotateTool extends BaseTool {
+class PlanarRotateTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
@@ -73,5 +73,5 @@ class StackRotateTool extends BaseTool {
   }
 }
 
-StackRotateTool.toolName = 'StackRotate';
-export default StackRotateTool;
+PlanarRotateTool.toolName = 'StackRotate';
+export default PlanarRotateTool;
