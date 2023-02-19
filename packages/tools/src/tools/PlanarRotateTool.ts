@@ -10,7 +10,7 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
 
 /**
  * The PlanarRotateTool is a tool that allows the user to rotate
- * the image on the viewport by pressing the mouse click and dragging
+ * the image by pressing the mouse click and dragging
  */
 class PlanarRotateTool extends BaseTool {
   static toolName;
