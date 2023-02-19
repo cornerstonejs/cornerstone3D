@@ -73,5 +73,5 @@ class PlanarRotateTool extends BaseTool {
   }
 }
 
-PlanarRotateTool.toolName = 'StackRotate';
+PlanarRotateTool.toolName = 'PlanarRotate';
 export default PlanarRotateTool;
