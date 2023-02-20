@@ -10,6 +10,18 @@ import { LoaderDecodeOptions } from './LoaderDecodeOptions';
 import { CornerstoneWadoLoaderIImage } from './CornerstoneWadoLoaderIImage';
 import { CornerstoneWadoLoaderIImageLoadObject } from './CornerstoneWadoLoaderIImageLoadObject';
 import { CornerstoneLoadImageOptions } from './CornerstoneLoadImageOptions';
+import { CornerstoneWadoLoaderLut } from './CornerstoneWadoLoaderLut';
+import {
+  CornerstoneMetaDataTypes,
+  CornerstoneMetadataGeneralSeriesModule,
+  CornerstoneMetadataImagePixelModule,
+  CornerstoneMetadataImagePlaneModule,
+  CornerstoneMetadataPatientStudyModule,
+  CornerstoneMetadataSopCommonModule,
+  CornerstoneMetadataTransferSyntax,
+  DicomDateObject,
+  DicomTimeObject,
+} from './MetadataModules';
 
 export {
   ImageFrame,
@@ -23,4 +35,14 @@ export {
   CornerstoneWadoLoaderIImage,
   CornerstoneWadoLoaderIImageLoadObject,
   CornerstoneLoadImageOptions,
+  CornerstoneMetaDataTypes,
+  CornerstoneMetadataGeneralSeriesModule,
+  CornerstoneMetadataImagePixelModule,
+  CornerstoneMetadataImagePlaneModule,
+  CornerstoneMetadataPatientStudyModule,
+  CornerstoneMetadataSopCommonModule,
+  CornerstoneMetadataTransferSyntax,
+  DicomDateObject,
+  DicomTimeObject,
+  CornerstoneWadoLoaderLut,
 };
