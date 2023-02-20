@@ -1,6 +1,10 @@
-import getValue from './getValue.js';
+import { WADORSMetaDataElement } from '../../../types';
+import getValue from './getValue';
 
-function getNumberValue(element, index) {
+function getNumberValue(
+  element: WADORSMetaDataElement,
+  index?: number
+): number {
   const value = getValue(element, index);
 
   if (value === undefined) {

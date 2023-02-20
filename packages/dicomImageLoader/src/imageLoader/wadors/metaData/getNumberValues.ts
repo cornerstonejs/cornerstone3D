@@ -1,3 +1,5 @@
+import { WADORSMetaDataElement } from '../../../types';
+
 /**
  * Returns the values as an array of javascript numbers
  *
@@ -5,7 +7,10 @@
  * @param [minimumLength] - the minimum number of values
  * @returns {*}
  */
-function getNumberValues(element, minimumLength) {
+function getNumberValues(
+  element: WADORSMetaDataElement,
+  minimumLength?: number
+): number[] {
   if (!element) {
     return;
   }
@@ -18,10 +23,10 @@ function getNumberValues(element, minimumLength) {
     return;
   }
 
-  const values = [];
+  const values: number[] = [];
 
   for (let i = 0; i < element.Value.length; i++) {
-    values.push(parseFloat(element.Value[i]));
+    values.push(parseFloat(element.Value[i] as string));
   }
 
   return values;

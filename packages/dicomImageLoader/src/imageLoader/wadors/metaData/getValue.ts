@@ -1,3 +1,5 @@
+import { WADORSMetaDataElement } from '../../../types';
+
 /**
  * Returns the raw value
  *
@@ -6,7 +8,11 @@
  * @param [defaultValue] - The default value to return if the element does not exist
  * @returns {*}
  */
-function getValue(element, index, defaultValue) {
+function getValue(
+  element: WADORSMetaDataElement,
+  index?: number,
+  defaultValue?: number | string
+): number[] | string[] | string | number {
   index = index || 0;
   if (!element) {
     return defaultValue;
