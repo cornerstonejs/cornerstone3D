@@ -1,6 +1,5 @@
 const path = require('path');
 const webpack = require('webpack');
-
 const rootPath = process.cwd();
 const context = path.join(rootPath, 'src');
 const codecs = path.join(rootPath, 'codecs');
@@ -13,7 +12,7 @@ module.exports = {
   mode: 'development',
   context,
   entry: {
-    cornerstoneDICOMImageLoader: './imageLoader/index.js',
+    cornerstoneWADOImageLoader: './imageLoader/index.ts',
   },
   target: 'web',
   output: {
@@ -36,6 +35,7 @@ module.exports = {
     },
   },
   resolve: {
+    extensions: ['.ts', '.js'],
     fallback: {
       fs: false,
       path: false,
@@ -44,21 +44,21 @@ module.exports = {
   module: {
     noParse: [/(codecs)/],
     rules: [
-      // {
-      //   enforce: 'pre',
-      //   test: /\.js$/,
-      //   exclude: /(node_modules)|(codecs)/,
-      //   loader: 'eslint-loader',
-      //   options: {
-      //     failOnError: false,
-      //   },
-      // },
+      {
+        enforce: 'pre',
+        test: /\.(mjs|js|ts)$/,
+        exclude: /(node_modules)|(codecs)/,
+        loader: 'eslint-loader',
+        options: {
+          failOnError: false,
+        },
+      },
       {
         test: /\.wasm/,
         type: 'asset/resource',
       },
       {
-        test: /\.worker\.js$/,
+        test: /\.worker\.(mjs|js|ts)$/,
         use: [
           {
             loader: 'worker-loader',
@@ -69,7 +69,7 @@ module.exports = {
         ],
       },
       {
-        test: /\.js$/,
+        test: /\.(mjs|js|ts)$/,
         exclude: [/(node_modules)/, /(codecs)/],
         use: {
           loader: 'babel-loader',

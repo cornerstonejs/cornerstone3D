@@ -1,4 +1,10 @@
-export default function (imageFrame, colorBuffer, useRGBA) {
+import { ByteArray } from 'dicom-parser';
+
+export default function (
+  imageFrame: ByteArray,
+  colorBuffer: ByteArray,
+  useRGBA: boolean
+): void {
   if (imageFrame === undefined) {
     throw new Error('decodeRGB: rgbBuffer must not be undefined');
   }

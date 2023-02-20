@@ -1,8 +1,7 @@
 /* eslint import/extensions:0 */
-import registerLoaders from './imageLoader/registerLoaders.js';
+import registerLoaders from './imageLoader/registerLoaders';
 
 let cornerstone;
-
 let dicomParser;
 
 const external = {
@@ -13,8 +12,8 @@ const external = {
   },
   get cornerstone() {
     if (!cornerstone) {
-      if (window && window.cornerstone) {
-        cornerstone = window.cornerstone;
+      if (window && (window as any).cornerstone) {
+        cornerstone = (window as any).cornerstone;
 
         registerLoaders(cornerstone);
       } else {
@@ -31,8 +30,8 @@ const external = {
   },
   get dicomParser() {
     if (!dicomParser) {
-      if (window && window.dicomParser) {
-        dicomParser = window.dicomParser;
+      if (window && (window as any).dicomParser) {
+        dicomParser = (window as any).dicomParser;
       } else {
         throw new Error(
           'cornerstoneWADOImageLoader requires a copy of dicomParser to work properly. Please add cornerstoneWADOImageLoader.external.dicomParser = dicomParser; to your application.'
