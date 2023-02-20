@@ -1,7 +1,6 @@
 // Not used for now due to issues with experimental output modules
 const path = require('path');
 const webpack = require('webpack');
-
 const rootPath = process.cwd();
 const context = path.join(rootPath, 'src');
 const outputPath = path.join(rootPath, 'dist');
@@ -13,7 +12,7 @@ const config = {
   mode: 'development',
   context,
   entry: {
-    cornerstoneDICOMImageLoader: './imageLoader/index.js',
+    cornerstoneWADOImageLoader: './imageLoader/index.ts',
   },
   target: 'web',
   output: {
@@ -36,6 +35,7 @@ const config = {
     },
   },
   resolve: {
+    extensions: ['.ts', '.js'],
     fallback: {
       fs: false,
       path: false,
@@ -58,7 +58,7 @@ const config = {
         type: 'asset/resource',
       },
       {
-        test: /\.js$/,
+        test: /\.(mjs|js|ts)$/,
         exclude: [/(node_modules)/, /(codecs)/],
         use: {
           loader: 'babel-loader',
