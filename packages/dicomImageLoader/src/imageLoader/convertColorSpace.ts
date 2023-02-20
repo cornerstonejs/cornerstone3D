@@ -5,7 +5,7 @@ import {
   convertYBRFull422ByPixel,
   convertYBRFullByPlane,
   convertPALETTECOLOR,
-} from './colorSpaceConverters/index.js';
+} from './colorSpaceConverters/index';
 
 function convertRGB(imageFrame, colorBuffer, useRGBA) {
   if (imageFrame.planarConfiguration === 0) {

@@ -3,6 +3,7 @@ import { CornerstoneWadoLoaderLoadRequestFunction } from 'dicom-image-loader/src
 
 export interface CornerstoneLoadImageOptions {
   useRGBA?: boolean;
+  skipCreateImage?: boolean;
   preScale?: {
     enabled: boolean;
     scalingParameters?: Types.ScalingParameters;

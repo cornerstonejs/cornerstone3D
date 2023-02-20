@@ -1,15 +1,18 @@
-import { getOptions } from './internal/options.js';
-import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
+import { ByteArray } from 'dicom-parser';
 
-import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame.js';
-import calculateMinMax from '../shared/calculateMinMax.js';
+import { getOptions } from './internal/options';
+import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
+
+import calculateMinMax from '../shared/calculateMinMax';
+import { default as decodeImageFrameHandler } from '../shared/decodeImageFrame';
+import { ImageFrame } from '../types';
 
 async function processDecodeTask(
-  imageFrame,
-  transferSyntax,
-  pixelData,
+  imageFrame: ImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
   options
-) {
+): Promise<ImageFrame> {
   const loaderOptions = getOptions();
   const { strict, decodeConfig } = loaderOptions;
 
@@ -29,12 +32,12 @@ async function processDecodeTask(
 }
 
 function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
-  canvas,
+  imageFrame: ImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  canvas: HTMLCanvasElement,
   options = {}
-) {
+): Promise<ImageFrame> {
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
       // Implicit VR Little Endian

@@ -1,5 +1,11 @@
-function isJPEGBaseline8BitColor(imageFrame, transferSyntax) {
-  transferSyntax = transferSyntax || imageFrame.transferSyntax;
+import { ImageFrame } from '../types';
+
+function isJPEGBaseline8BitColor(
+  imageFrame: ImageFrame,
+  transferSyntax: string
+): boolean {
+  /** @todo check as any */
+  transferSyntax = transferSyntax || (imageFrame as any).transferSyntax;
 
   if (
     imageFrame.bitsAllocated === 8 &&

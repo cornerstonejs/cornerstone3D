@@ -23,6 +23,21 @@ import {
   DicomTimeObject,
 } from './MetadataModules';
 
+import {
+  CornerstoneWadoWebWorkerOptions,
+  CornerstoneWadoWebWorkerDecodeConfig,
+  CornerstoneWadoWebWorkerTaskOptions,
+  CornerstoneWadoWorkerTaskTypes,
+  CornerstoneWorkerTask,
+  CornerstoneWadoWebWorkerDecodeTaskData,
+  CornerstoneWadoWebWorkerDecodeData,
+  CornerstoneWadoWebWorkerLoadData,
+  CornerstoneWadoWebWorkerInitializeData,
+  CornerstoneWadoWebWorkerData,
+  CornerstoneWadoWebWorkerResponse,
+  CornerstoneWebWorkerDeferredObject,
+} from './WebWorkerTypes';
+
 export {
   ImageFrame,
   LoaderDecodeOptions,
@@ -45,4 +60,16 @@ export {
   DicomDateObject,
   DicomTimeObject,
   CornerstoneWadoLoaderLut,
+  CornerstoneWadoWebWorkerOptions,
+  CornerstoneWadoWebWorkerDecodeConfig,
+  CornerstoneWadoWebWorkerTaskOptions,
+  CornerstoneWadoWorkerTaskTypes,
+  CornerstoneWorkerTask,
+  CornerstoneWadoWebWorkerDecodeTaskData,
+  CornerstoneWadoWebWorkerDecodeData,
+  CornerstoneWadoWebWorkerLoadData,
+  CornerstoneWadoWebWorkerInitializeData,
+  CornerstoneWadoWebWorkerData,
+  CornerstoneWadoWebWorkerResponse,
+  CornerstoneWebWorkerDeferredObject,
 };
