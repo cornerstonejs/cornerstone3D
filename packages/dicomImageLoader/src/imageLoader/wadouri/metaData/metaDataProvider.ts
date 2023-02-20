@@ -10,6 +10,7 @@ import { getDirectFrameInformation } from '../combineFrameInstanceDataset.js';
 import multiframeDataset from '../retrieveMultiframeDataset.js';
 
 function metaDataProvider(type, imageId) {
+  const { dicomParser } = external;
   const parsedImageId = parseImageId(imageId);
 
   if (type === 'multiframeModule') {
@@ -28,8 +29,6 @@ function metaDataProvider(type, imageId) {
 
     return multiframeInfo;
   }
-
-  const { dicomParser } = external;
 
   const dataSet = dataSetCacheManager.get(parsedImageId.url);
 
@@ -78,14 +77,14 @@ function metaDataProvider(type, imageId) {
 
     if (imageOrientationPatient) {
       rowCosines = [
-        parseFloat(imageOrientationPatient[0]),
-        parseFloat(imageOrientationPatient[1]),
-        parseFloat(imageOrientationPatient[2]),
+        parseFloat(imageOrientationPatient[0] as any),
+        parseFloat(imageOrientationPatient[1] as any),
+        parseFloat(imageOrientationPatient[2] as any),
       ];
       columnCosines = [
-        parseFloat(imageOrientationPatient[3]),
-        parseFloat(imageOrientationPatient[4]),
-        parseFloat(imageOrientationPatient[5]),
+        parseFloat(imageOrientationPatient[3] as any),
+        parseFloat(imageOrientationPatient[4] as any),
+        parseFloat(imageOrientationPatient[5] as any),
       ];
     }
 

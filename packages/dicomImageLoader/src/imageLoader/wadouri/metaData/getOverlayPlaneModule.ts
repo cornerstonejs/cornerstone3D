@@ -1,4 +1,6 @@
-export default function getOverlayPlaneModule(dataSet) {
+import { DataSet } from 'dicom-parser';
+
+export default function getOverlayPlaneModule(dataSet: DataSet) {
   const overlays = [];
 
   for (let overlayGroup = 0x00; overlayGroup <= 0x1e; overlayGroup += 0x02) {
