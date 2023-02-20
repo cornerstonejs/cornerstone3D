@@ -1,8 +1,5 @@
 import { LoaderDecodeOptions } from './LoaderDecodeOptions';
-import {
-  CornerstoneWadoLoaderXhrRequestError,
-  CornerstoneWadoLoaderXhrRequestParams,
-} from './XHRRequest';
+import { LoaderXhrRequestError, LoaderXhrRequestParams } from './XHRRequest';
 
 export interface LoaderOptions {
   // callback to open the object
@@ -10,14 +7,14 @@ export interface LoaderOptions {
     xhr: XMLHttpRequest,
     url: string,
     defaultHeaders: Record<string, string>,
-    params: CornerstoneWadoLoaderXhrRequestParams
+    params: LoaderXhrRequestParams
   ) => void;
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
   beforeSend?: (
     xhr: XMLHttpRequest,
     imageId: string,
     defaultHeaders: Record<string, string>,
-    params: CornerstoneWadoLoaderXhrRequestParams
+    params: LoaderXhrRequestParams
   ) => Record<string, string> | void;
   // callback allowing modification of the xhr response before creating image objects
   beforeProcessing?: (xhr: XMLHttpRequest) => Promise<ArrayBuffer>;
@@ -27,7 +24,7 @@ export interface LoaderOptions {
   onloadend?: (event: ProgressEvent<EventTarget>, params: any) => void;
   onreadystatechange?: (event: Event, params: any) => void;
   onprogress?: (event: ProgressEvent<EventTarget>, params: any) => void;
-  errorInterceptor?: (error: CornerstoneWadoLoaderXhrRequestError) => void;
+  errorInterceptor?: (error: LoaderXhrRequestError) => void;
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
 }

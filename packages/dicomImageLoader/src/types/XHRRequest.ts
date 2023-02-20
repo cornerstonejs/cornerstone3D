@@ -1,4 +1,4 @@
-export interface CornerstoneWadoLoaderXhrRequestError extends Error {
+export interface LoaderXhrRequestError extends Error {
   request: XMLHttpRequest;
   response: any;
   status: number;
@@ -7,7 +7,7 @@ export interface CornerstoneWadoLoaderXhrRequestError extends Error {
 /**
  * @description mutable object
  */
-export interface CornerstoneWadoLoaderXhrRequestParams {
+export interface LoaderXhrRequestParams {
   url?: string;
   deferred?: {
     resolve: (value: ArrayBuffer | PromiseLike<ArrayBuffer>) => void;
@@ -16,6 +16,6 @@ export interface CornerstoneWadoLoaderXhrRequestParams {
   imageId?: string;
 }
 
-export interface CornerstoneWadoLoaderXhrRequestPromise<T> extends Promise<T> {
+export interface LoaderXhrRequestPromise<T> extends Promise<T> {
   xhr?: XMLHttpRequest;
 }
