@@ -1,16 +1,24 @@
-import external from '../externalModules.js';
-import getImageFrame from './getImageFrame.js';
-import decodeImageFrame from './decodeImageFrame.js';
-import isColorImageFn from './isColorImage.js';
-import convertColorSpace from './convertColorSpace.js';
-import getMinMax from '../shared/getMinMax.js';
-import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor.js';
-import { getOptions } from './internal/options.js';
-import getScalingParameters from './getScalingParameters.js';
+import { ByteArray } from 'dicom-parser';
+import external from '../externalModules';
+import getMinMax from '../shared/getMinMax';
+import {
+  CornerstoneLoadImageOptions,
+  CornerstoneMetadataImagePlaneModule,
+  CornerstoneMetadataSopCommonModule,
+  CornerstoneWadoLoaderIImage,
+  ImageFrame,
+} from '../types';
+import convertColorSpace from './convertColorSpace';
+import decodeImageFrame from './decodeImageFrame';
+import getImageFrame from './getImageFrame';
+import getScalingParameters from './getScalingParameters';
+import { getOptions } from './internal/options';
+import isColorImageFn from './isColorImage';
+import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
 let lastImageIdDrawn = '';
 
-function isModalityLUTForDisplay(sopClassUid) {
+function isModalityLUTForDisplay(sopClassUid: string): boolean {
   // special case for XA and XRF
   // https://groups.google.com/forum/#!searchin/comp.protocols.dicom/Modality$20LUT$20XA/comp.protocols.dicom/UBxhOZ2anJ0/D0R_QP8V2wIJ
   return (
@@ -54,7 +62,7 @@ function convertToIntPixelData(floatPixelData) {
  * can transfer array buffers but not typed arrays
  * @param imageFrame
  */
-function setPixelDataType(imageFrame) {
+function setPixelDataType(imageFrame: ImageFrame) {
   if (imageFrame.bitsAllocated === 32) {
     imageFrame.pixelData = new Float32Array(imageFrame.pixelData);
   } else if (imageFrame.bitsAllocated === 16) {
@@ -76,7 +84,15 @@ function setPixelDataType(imageFrame) {
  * @param imageFrame - decoded image in RGBA
  * @param targetBuffer - target buffer to write to
  */
-function removeAFromRGBA(imageFrame, targetBuffer) {
+function removeAFromRGBA(
+  imageFrame:
+    | Float32Array // populated later after decoding
+    | Int16Array
+    | Uint16Array
+    | Uint8Array
+    | Uint8ClampedArray,
+  targetBuffer: Uint8ClampedArray
+) {
   const numPixels = imageFrame.length / 4;
 
   let rgbIndex = 0;
@@ -93,7 +109,12 @@ function removeAFromRGBA(imageFrame, targetBuffer) {
   return targetBuffer;
 }
 
-function createImage(imageId, pixelData, transferSyntax, options = {}) {
+function createImage(
+  imageId: string,
+  pixelData: ByteArray,
+  transferSyntax: string,
+  options: CornerstoneLoadImageOptions = {}
+): Promise<CornerstoneWadoLoaderIImage> {
   // whether to use RGBA for color images, default true as cs-legacy uses RGBA
   // but we don't need RGBA in cs3d, and it's faster, and memory-efficient
   // in cs3d
@@ -147,9 +168,9 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
 
   const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
 
-  return new Promise((resolve, reject) => {
+  return new Promise<CornerstoneWadoLoaderIImage>((resolve, reject) => {
     // eslint-disable-next-line complexity
-    decodePromise.then(function (imageFrame) {
+    decodePromise.then(function (imageFrame: ImageFrame) {
       // if it is desired to skip creating image, return the imageFrame
       // after the decode. This might be useful for some applications
       // that only need the decoded pixel data and not the image object
@@ -162,7 +183,7 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
       let alreadyTyped = false;
 
       if (options.targetBuffer) {
-        let offset, length;
+        let offset: number, length: number;
         // If we have a target buffer, write to that instead. This helps reduce memory duplication.
 
         ({ offset, length } = options.targetBuffer);
@@ -222,13 +243,13 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
         setPixelDataType(imageFrame);
       }
 
-      const imagePlaneModule =
+      const imagePlaneModule: CornerstoneMetadataImagePlaneModule =
         cornerstone.metaData.get('imagePlaneModule', imageId) || {};
       const voiLutModule =
         cornerstone.metaData.get('voiLutModule', imageId) || {};
       const modalityLutModule =
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
-      const sopCommonModule =
+      const sopCommonModule: CornerstoneMetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
       const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
@@ -278,7 +299,8 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
 
           convertColorSpace(imageFrame, imageData.data, true);
 
-          const colorBuffer = new imageData.data.constructor(
+          /** @todo check as any */
+          const colorBuffer = new (imageData.data as any).constructor(
             (imageData.data.length / 4) * 3
           );
 
@@ -286,14 +308,15 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
           imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
         }
 
+        /** @todo check as any */
         // calculate smallest and largest PixelValue of the converted pixelData
-        const minMax = getMinMax(imageFrame.pixelData);
+        const minMax = getMinMax(imageFrame.pixelData as any);
 
         imageFrame.smallestPixelValue = minMax.min;
         imageFrame.largestPixelValue = minMax.max;
       }
 
-      const image = {
+      const image: CornerstoneWadoLoaderIImage = {
         imageId,
         color: isColorImage,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
@@ -326,6 +349,9 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
         floatPixelData: undefined,
         imageFrame,
         rgba: isColorImage && useRGBA,
+        getPixelData: undefined,
+        getCanvas: undefined,
+        numComps: undefined,
       };
 
       // If pixel data is intrinsically floating 32 array, we convert it to int for
@@ -343,9 +369,11 @@ function createImage(imageId, pixelData, transferSyntax, options = {}) {
         image.slope = results.slope;
         image.intercept = results.intercept;
         image.floatPixelData = floatPixelData;
-        image.getPixelData = () => results.intPixelData;
+        /** @todo check as any */
+        image.getPixelData = () => results.intPixelData as any;
       } else {
-        image.getPixelData = () => imageFrame.pixelData;
+        /** @todo check as any */
+        image.getPixelData = () => imageFrame.pixelData as any;
       }
 
       if (image.color) {

@@ -1,20 +1,22 @@
-import webWorkerManager from './webWorkerManager.js';
-import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
+import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
+import webWorkerManager from './webWorkerManager';
 
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
-import { inflateRaw } from 'pako/lib/inflate.js';
+import { ByteArray } from 'dicom-parser';
+import { inflateRaw } from 'pako/lib/inflate';
+import { ImageFrame, LoaderDecodeOptions } from '../types';
 
 window.pako = { inflateRaw };
 
 function processDecodeTask(
-  imageFrame,
-  transferSyntax,
-  pixelData,
+  imageFrame: ImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
   options,
-  decodeConfig
-) {
+  decodeConfig: LoaderDecodeOptions
+): Promise<ImageFrame> {
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]

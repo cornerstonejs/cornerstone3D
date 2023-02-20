@@ -1,4 +1,4 @@
-export default function (photoMetricInterpretation) {
+export default function (photoMetricInterpretation: string): boolean {
   return (
     photoMetricInterpretation === 'RGB' ||
     photoMetricInterpretation === 'PALETTE COLOR' ||
