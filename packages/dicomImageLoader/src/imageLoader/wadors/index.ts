@@ -4,13 +4,13 @@ import {
   getNumberValues,
   getValue,
   metaDataProvider,
-} from './metaData/index.js';
+} from './metaData/index';
 
-import findIndexOfString from './findIndexOfString.js';
-import getPixelData from './getPixelData.js';
-import metaDataManager from './metaDataManager.js';
-import loadImage from './loadImage.js';
-import register from './register.js';
+import findIndexOfString from './findIndexOfString';
+import getPixelData from './getPixelData';
+import metaDataManager from './metaDataManager';
+import loadImage from './loadImage';
+import register from './register';
 
 const metaData = {
   getNumberString,

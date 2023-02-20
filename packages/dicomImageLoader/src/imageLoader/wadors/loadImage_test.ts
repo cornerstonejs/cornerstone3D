@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getTransferSyntaxForContentType } from './loadImage.js';
+import { getTransferSyntaxForContentType } from './loadImage';
 
 const cases = [
   // Test default case for missing or unspecified TS

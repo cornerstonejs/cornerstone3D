@@ -1,4 +1,4 @@
-import getTagValue from './getTagValue.js';
+import getTagValue from './getTagValue';
 
 function getFrameInformation(
   PerFrameFunctionalGroupsSequence,
