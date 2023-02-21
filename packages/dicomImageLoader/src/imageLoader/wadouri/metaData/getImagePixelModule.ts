@@ -1,4 +1,4 @@
-import { CornerstoneMetadataImagePixelModule } from '../../../types';
+import { MetadataImagePixelModule } from '../../../types';
 import { DataSet } from 'dicom-parser';
 
 function getLutDescriptor(dataSet: DataSet, tag: string) {
@@ -31,7 +31,7 @@ function getLutData(lutDataSet: DataSet, tag: string, lutDescriptor): number[] {
 
 function populatePaletteColorLut(
   dataSet: DataSet,
-  imagePixelModule: CornerstoneMetadataImagePixelModule
+  imagePixelModule: MetadataImagePixelModule
 ) {
   imagePixelModule.redPaletteColorLookupTableDescriptor = getLutDescriptor(
     dataSet,
@@ -99,7 +99,7 @@ function populatePaletteColorLut(
 
 function populateSmallestLargestPixelValues(
   dataSet: DataSet,
-  imagePixelModule: CornerstoneMetadataImagePixelModule
+  imagePixelModule: MetadataImagePixelModule
 ) {
   const pixelRepresentation = dataSet.uint16('x00280103');
 
@@ -112,9 +112,7 @@ function populateSmallestLargestPixelValues(
   }
 }
 
-function getImagePixelModule(
-  dataSet: DataSet
-): CornerstoneMetadataImagePixelModule {
+function getImagePixelModule(dataSet: DataSet): MetadataImagePixelModule {
   const imagePixelModule = {
     samplesPerPixel: dataSet.uint16('x00280002'),
     photometricInterpretation: dataSet.string('x00280004'),
@@ -126,7 +124,7 @@ function getImagePixelModule(
     pixelRepresentation: dataSet.uint16('x00280103'),
     planarConfiguration: dataSet.uint16('x00280006'),
     pixelAspectRatio: dataSet.string('x00280034'),
-  } as CornerstoneMetadataImagePixelModule;
+  } as MetadataImagePixelModule;
 
   populateSmallestLargestPixelValues(dataSet, imagePixelModule);
 

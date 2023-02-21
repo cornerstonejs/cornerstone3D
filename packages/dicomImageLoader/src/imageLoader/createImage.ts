@@ -3,8 +3,8 @@ import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
 import {
   CornerstoneLoadImageOptions,
-  CornerstoneMetadataImagePlaneModule,
-  CornerstoneMetadataSopCommonModule,
+  MetadataImagePlaneModule,
+  MetadataSopCommonModule,
   CornerstoneWadoLoaderIImage,
   ImageFrame,
 } from '../types';
@@ -243,13 +243,13 @@ function createImage(
         setPixelDataType(imageFrame);
       }
 
-      const imagePlaneModule: CornerstoneMetadataImagePlaneModule =
+      const imagePlaneModule: MetadataImagePlaneModule =
         cornerstone.metaData.get('imagePlaneModule', imageId) || {};
       const voiLutModule =
         cornerstone.metaData.get('voiLutModule', imageId) || {};
       const modalityLutModule =
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
-      const sopCommonModule: CornerstoneMetadataSopCommonModule =
+      const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
       const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
