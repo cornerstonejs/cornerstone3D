@@ -4,12 +4,12 @@
 import cornerstoneWADOImageLoaderWebWorker from '../webWorker/index.worker';
 
 import {
-  CornerstoneWadoWebWorkerOptions,
-  CornerstoneWadoWorkerTaskTypes,
-  CornerstoneWorkerTask,
-  CornerstoneWadoWebWorkerDecodeTaskData,
-  CornerstoneWadoWebWorkerResponse,
-  CornerstoneWebWorkerDeferredObject,
+  WebWorkerOptions,
+  WorkerTaskTypes,
+  WorkerTask,
+  WebWorkerDecodeTaskData,
+  WebWorkerResponse,
+  WebWorkerDeferredObject,
 } from '../types';
 
 // This is for the Webpack 5 approch but it's currently broken
@@ -25,19 +25,19 @@ import { getOptions } from './internal/options';
 // the taskId to assign to the next task added via addTask()
 let nextTaskId = 0;
 
-const tasks: CornerstoneWorkerTask[] = [];
+const tasks: WorkerTask[] = [];
 
 // array of web workers to dispatch decode tasks to
 const webWorkers: {
   worker: Worker;
   status: 'ready' | 'busy' | 'initializing';
-  task?: CornerstoneWorkerTask;
+  task?: WorkerTask;
 }[] = [];
 
 // The options for CornerstoneWADOImageLoader
 const options = getOptions();
 
-const defaultConfig: CornerstoneWadoWebWorkerOptions = {
+const defaultConfig: WebWorkerOptions = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
   startWebWorkersOnDemand: true,
   webWorkerTaskPaths: [],
@@ -49,7 +49,7 @@ const defaultConfig: CornerstoneWadoWebWorkerOptions = {
   },
 };
 
-let config: CornerstoneWadoWebWorkerOptions;
+let config: WebWorkerOptions;
 
 const statistics = {
   maxWebWorkers: 0,
@@ -113,9 +113,7 @@ function startTaskOnWebWorker() {
  * Function to handle a message from a web worker
  * @param msg
  */
-function handleMessageFromWorker(
-  msg: MessageEvent<CornerstoneWadoWebWorkerResponse>
-) {
+function handleMessageFromWorker(msg: MessageEvent<WebWorkerResponse>) {
   // console.log('handleMessageFromWorker', msg.data);
   if (msg.data.taskType === 'initialize') {
     webWorkers[msg.data.workerIndex].status = 'ready';
@@ -187,7 +185,7 @@ function spawnWebWorker() {
  * Initialization function for the web worker manager - spawns web workers
  * @param configObject
  */
-function initialize(configObject?: CornerstoneWadoWebWorkerOptions): void {
+function initialize(configObject?: WebWorkerOptions): void {
   configObject = configObject || defaultConfig;
 
   // prevent being initialized more than once
@@ -258,8 +256,8 @@ function loadWebWorkerTask(sourcePath: string, taskConfig): void {
  * @returns {*}
  */
 function addTask<T = any>(
-  taskType: CornerstoneWadoWorkerTaskTypes,
-  data: CornerstoneWadoWebWorkerDecodeTaskData,
+  taskType: WorkerTaskTypes,
+  data: WebWorkerDecodeTaskData,
   priority = 0,
   transferList: Transferable[]
 ): { taskId: number; promise: Promise<T> } {
@@ -267,7 +265,7 @@ function addTask<T = any>(
     initialize();
   }
 
-  let deferred: CornerstoneWebWorkerDeferredObject<T> = {
+  let deferred: WebWorkerDeferredObject<T> = {
     resolve: undefined,
     reject: undefined,
   };

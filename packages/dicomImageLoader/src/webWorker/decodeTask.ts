@@ -3,19 +3,19 @@ import { initialize as initializeJPEGLS } from '../shared/decoders/decodeJPEGLS.
 import calculateMinMax from '../shared/calculateMinMax.js';
 import decodeImageFrame from '../shared/decodeImageFrame.js';
 import {
-  CornerstoneWadoWebWorkerTaskOptions,
-  CornerstoneWadoWebWorkerDecodeData,
+  WebWorkerTaskOptions,
+  WebWorkerDecodeData,
   ImageFrame,
 } from '../types';
 
 // the configuration object for the decodeTask
-let decodeConfig: CornerstoneWadoWebWorkerTaskOptions;
+let decodeConfig: WebWorkerTaskOptions;
 
 /**
  * Function to control loading and initializing the codecs
  * @param config
  */
-function loadCodecs(config: CornerstoneWadoWebWorkerTaskOptions) {
+function loadCodecs(config: WebWorkerTaskOptions) {
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
     initializeJPEG2000(config.decodeTask);
@@ -26,7 +26,7 @@ function loadCodecs(config: CornerstoneWadoWebWorkerTaskOptions) {
 /**
  * Task initialization function
  */
-function initialize(config: CornerstoneWadoWebWorkerTaskOptions) {
+function initialize(config: WebWorkerTaskOptions) {
   decodeConfig = config;
 
   loadCodecs(config);
@@ -36,7 +36,7 @@ function initialize(config: CornerstoneWadoWebWorkerTaskOptions) {
  * Task handler function
  */
 async function handler(
-  data: CornerstoneWadoWebWorkerDecodeData,
+  data: WebWorkerDecodeData,
   doneCallback: (imageFrame: ImageFrame, pixelData: Transferable[]) => void
 ) {
   // Load the codecs if they aren't already loaded

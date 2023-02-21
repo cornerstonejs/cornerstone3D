@@ -4,13 +4,13 @@ import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
 // Webpack asset/resource copies this to our output folder
 import charlsWasm from '@cornerstonejs/codec-charls/dist/charlswasm_decode.wasm';
 import { ByteArray } from 'dicom-parser';
-import { ImageFrame, CornerstoneWadoWebWorkerDecodeConfig } from '../../types';
+import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
 // import charlsWasm from '@cornerstonejs/codec-charls/dist/debug/charlswasm.wasm';
 
 const local = {
   codec: undefined,
   decoder: undefined,
-  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
+  decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
 function getExceptionMessage(exception) {
@@ -20,7 +20,7 @@ function getExceptionMessage(exception) {
 }
 
 export function initialize(
-  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+  decodeConfig?: WebWorkerDecodeConfig
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
 
