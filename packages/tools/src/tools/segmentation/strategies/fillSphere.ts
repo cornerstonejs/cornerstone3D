@@ -28,14 +28,19 @@ function fillSphere(
     points,
   } = operationData;
 
-  const { scalarData, imageData } = segmentation;
+  const { scalarData, imageData, dimensions } = segmentation;
+  const scalarIndex = [];
 
   const callback = ({ index, value }) => {
     if (segmentsLocked.includes(value)) {
       return;
     }
     scalarData[index] = segmentIndex;
+    scalarIndex.push(index);
   };
+
+  console.log(dimensions);
+  const yMultiple = dimensions[1];
 
   pointInSurroundingSphereCallback(
     imageData,
