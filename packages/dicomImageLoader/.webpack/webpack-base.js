@@ -4,6 +4,7 @@ const rootPath = process.cwd();
 const context = path.join(rootPath, 'src');
 const codecs = path.join(rootPath, 'codecs');
 const outputPath = path.join(rootPath, 'dist');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 const BundleAnalyzerPlugin =
   require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
@@ -45,15 +46,6 @@ module.exports = {
     noParse: [/(codecs)/],
     rules: [
       {
-        enforce: 'pre',
-        test: /\.(mjs|js|ts)$/,
-        exclude: /(node_modules)|(codecs)/,
-        loader: 'eslint-loader',
-        options: {
-          failOnError: false,
-        },
-      },
-      {
         test: /\.wasm/,
         type: 'asset/resource',
       },
@@ -88,6 +80,6 @@ module.exports = {
   // experiments: {
   //   asyncWebAssembly: true,
   // },
-  plugins: [new webpack.ProgressPlugin()],
+  plugins: [new ESLintPlugin(), new webpack.ProgressPlugin()],
   // plugins: [new webpack.ProgressPlugin(), new BundleAnalyzerPlugin()],
 };

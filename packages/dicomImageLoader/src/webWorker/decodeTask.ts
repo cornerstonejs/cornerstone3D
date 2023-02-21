@@ -1,7 +1,7 @@
-import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000.js';
-import { initialize as initializeJPEGLS } from '../shared/decoders/decodeJPEGLS.js';
-import calculateMinMax from '../shared/calculateMinMax.js';
-import decodeImageFrame from '../shared/decodeImageFrame.js';
+import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000';
+import { initialize as initializeJPEGLS } from '../shared/decoders/decodeJPEGLS';
+import calculateMinMax from '../shared/calculateMinMax';
+import decodeImageFrame from '../shared/decodeImageFrame';
 import {
   WebWorkerTaskOptions,
   WebWorkerDecodeData,

@@ -1,5 +1,5 @@
-import loadImage from './loadImage.js';
-import { metaDataProvider } from './metaData/index.js';
+import loadImage from './loadImage';
+import { metaDataProvider } from './metaData/index';
 
 export default function (cornerstone) {
   // register wadors scheme and metadata provider

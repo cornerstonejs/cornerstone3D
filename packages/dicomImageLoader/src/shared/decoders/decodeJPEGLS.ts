@@ -1,11 +1,12 @@
 import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
-// import charlsFactory from '@cornerstonejs/codec-charls/dist/debug/charlswasm.js';
 
-// Webpack asset/resource copies this to our output folder
-import charlsWasm from '@cornerstonejs/codec-charls/dist/charlswasm_decode.wasm';
+const charlsWasm = new URL(
+  '@cornerstonejs/codec-charls/dist/charlswasm_decode.wasm',
+  import.meta.url
+);
+
 import { ByteArray } from 'dicom-parser';
 import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
-// import charlsWasm from '@cornerstonejs/codec-charls/dist/debug/charlswasm.wasm';
 
 const local = {
   codec: undefined,

@@ -1,6 +1,11 @@
-import openJphFactory from '@cornerstonejs/codec-openjph/dist/openjphjs';
-import openjphWasm from '@cornerstonejs/codec-openjph/dist/openjphjs.wasm';
 import { ByteArray } from 'dicom-parser';
+import openJphFactory from '@cornerstonejs/codec-openjph';
+
+const openjphWasm = new URL(
+  '@cornerstonejs/codec-openjph/dist/openjphjs.wasm',
+  import.meta.url
+);
+
 import { LoaderDecodeOptions } from '../../types';
 
 const local: {

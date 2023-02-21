@@ -1,8 +1,12 @@
+import { ByteArray } from 'dicom-parser';
+
 import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
 
-// Webpack asset/resource copies this to our output folder
-import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode.wasm';
-import { ByteArray } from 'dicom-parser';
+const libjpegTurboWasm = new URL(
+  '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode.wasm',
+  import.meta.url
+);
+
 import { ImageFrame } from '../../types';
 
 const local = {

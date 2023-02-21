@@ -1,4 +1,4 @@
-import getTagValue from '../getTagValue.js';
+import getTagValue from '../getTagValue';
 
 export default function fixNMMetadata(metaData) {
   if (!metaData['00200032'] || metaData['00200037']) {

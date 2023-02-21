@@ -1,6 +1,6 @@
-import getValue from './metaData/getValue.js';
-import imageIdToURI from '../imageIdToURI.js';
-import { metadataByImageURI } from './metaDataManager.js';
+import getValue from './metaData/getValue';
+import imageIdToURI from '../imageIdToURI';
+import { metadataByImageURI } from './metaDataManager';
 
 // get metadata information for the first frame
 function _retrieveMultiframeMetadata(imageURI) {

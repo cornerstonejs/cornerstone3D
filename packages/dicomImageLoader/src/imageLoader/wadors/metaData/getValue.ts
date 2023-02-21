@@ -22,7 +22,7 @@ function getValue(
     return defaultValue;
   }
   // make sure we have the specified index
-  if (element.Value.length <= index) {
+  if ((element.Value as any).length <= index) {
     return defaultValue;
   }
 
