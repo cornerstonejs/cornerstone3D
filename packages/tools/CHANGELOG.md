@@ -82,7 +82,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-* **stackRotate:** Add stack rotate tool ([#329](https://github.com/cornerstonejs/cornerstone3D-beta/issues/329)) ([e2fbf6e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e2fbf6e26b7f63d8923d050d8fff10a4dfad34bb))
+* **planarRotate:** Add planar rotate tool ([#329](https://github.com/cornerstonejs/cornerstone3D-beta/issues/329)) ([e2fbf6e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e2fbf6e26b7f63d8923d050d8fff10a4dfad34bb))
 
 
 

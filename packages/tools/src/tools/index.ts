@@ -3,7 +3,7 @@ import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import WindowLevelTool from './WindowLevelTool';
 import StackScrollTool from './StackScrollTool';
-import StackRotateTool from './StackRotateTool';
+import PlanarRotateTool from './PlanarRotateTool';
 import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
 import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
@@ -48,7 +48,7 @@ export {
   DragProbeTool,
   WindowLevelTool,
   StackScrollTool,
-  StackRotateTool,
+  PlanarRotateTool,
   StackScrollMouseWheelTool,
   ZoomTool,
   VolumeRotateMouseWheelTool,
