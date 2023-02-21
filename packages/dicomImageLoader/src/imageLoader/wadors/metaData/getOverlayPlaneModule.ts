@@ -12,7 +12,7 @@ export default function getOverlayPlaneModule(metaData: WADORSMetaData) {
       groupStr = `x600${overlayGroup.toString(16)}`;
     }
 
-    const data = getValue(metaData[`${groupStr}3000`]) as number[];
+    const data = getValue(metaData[`${groupStr}3000`]) as any;
 
     if (!data) {
       continue;

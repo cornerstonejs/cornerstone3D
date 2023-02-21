@@ -8,7 +8,7 @@ import { ByteArray } from 'dicom-parser';
 import { inflateRaw } from 'pako/lib/inflate';
 import { ImageFrame, LoaderDecodeOptions } from '../types';
 
-window.pako = { inflateRaw };
+(window as any).pako = { inflateRaw };
 
 function processDecodeTask(
   imageFrame: ImageFrame,

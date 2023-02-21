@@ -11,7 +11,7 @@ function getNumberValue(
     return;
   }
 
-  return parseFloat(value);
+  return parseFloat(value as string);
 }
 
 export default getNumberValue;

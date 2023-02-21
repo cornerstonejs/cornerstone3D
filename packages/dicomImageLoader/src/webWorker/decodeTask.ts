@@ -56,7 +56,7 @@ async function handler(
     // decodeTask are webworker specific, but decodeConfig are the configs
     // that are passed in from the user. We need to merge them together
     Object.assign(decodeConfig.decodeTask, data.data.decodeConfig),
-    data.data.optionsm
+    data.data.options
   );
 
   if (!imageFrame.pixelData) {
@@ -69,6 +69,7 @@ async function handler(
 
   // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
   // typed arrays
+  // @ts-ignore
   imageFrame.pixelData = imageFrame.pixelData.buffer;
 
   doneCallback?.(imageFrame, [imageFrame.pixelData]);

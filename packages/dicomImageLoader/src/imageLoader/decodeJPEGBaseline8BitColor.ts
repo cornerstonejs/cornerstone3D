@@ -68,7 +68,7 @@ function decodeJPEGBaseline8BitColor(
         imageFrame.decodeTimeInMS = end - start;
 
         // calculate smallest and largest PixelValue
-        const minMax = getMinMax(imageFrame.pixelData);
+        const minMax = getMinMax(imageFrame.pixelData as any);
 
         imageFrame.smallestPixelValue = minMax.min;
         imageFrame.largestPixelValue = minMax.max;

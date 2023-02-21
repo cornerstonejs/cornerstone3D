@@ -20,7 +20,7 @@ function getNumberString(
     return;
   }
 
-  return parseFloat(value);
+  return parseFloat(value as string);
 }
 
 export default getNumberString;

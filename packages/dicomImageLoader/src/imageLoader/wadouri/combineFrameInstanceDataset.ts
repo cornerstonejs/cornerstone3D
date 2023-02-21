@@ -38,7 +38,7 @@ function getFrameInformation(
   (SharedFunctionalGroupsSequence
     ? Object.values(SharedFunctionalGroupsSequence.items[0].dataSet.elements)
     : []
-  ).map((it) => (shared[it.tag] = it));
+  ).map((it: any) => (shared[it.tag] = it));
 
   const perFrame = {};
 
@@ -47,7 +47,7 @@ function getFrameInformation(
         PerFrameFunctionalGroupsSequence.items[frameNumber - 1].dataSet.elements
       )
     : []
-  ).map((it) => (perFrame[it.tag] = it));
+  ).map((it: any) => (perFrame[it.tag] = it));
 
   return {
     shared,

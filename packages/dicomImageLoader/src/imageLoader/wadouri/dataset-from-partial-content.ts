@@ -101,6 +101,10 @@ export default async function dataSetFromPartialContent(
     const { fetchedLength, lengthToFetch } = _options;
 
     // Use passed xhr loader to re-fetch new byte range
+
+    // Todo: the following might be wrong, does it return array buffer or
+    // something else?
+    // @ts-ignore
     const { arrayBuffer } = await loadRequest(uri, imageId, {
       byteRange: `${fetchedLength}-${fetchedLength + lengthToFetch}`,
     });
