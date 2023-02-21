@@ -1,4 +1,4 @@
-export interface CornerstoneWadoLoaderLut {
+export interface LutType {
   id: string;
   firstValueMapped: number;
   numBitsPerEntry: number;

@@ -3,8 +3,8 @@ import external from '../../externalModules';
 import { xhrRequest } from '../internal/index';
 import dataSetFromPartialContent from './dataset-from-partial-content';
 import {
-  CornerstoneWadoLoaderLoadRequestFunction,
-  CornerstoneLoaderDataSetWithFetchMore,
+  LoadRequestFunction,
+  DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
 import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
 
@@ -14,7 +14,7 @@ export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
 }
 
 export interface CornerstoneWadoLoaderCachedPromise
-  extends Promise<DataSet | CornerstoneLoaderDataSetWithFetchMore> {
+  extends Promise<DataSet | DICOMLoaderDataSetWithFetchMore> {
   cacheCount?: number;
 }
 
@@ -78,7 +78,7 @@ function update(uri: string, dataSet: DataSet) {
 // loads the dicom dataset from the wadouri sp
 function load(
   uri: string,
-  loadRequest: CornerstoneWadoLoaderLoadRequestFunction = xhrRequest,
+  loadRequest: LoadRequestFunction = xhrRequest,
   imageId: string
 ): CornerstoneWadoLoaderCachedPromise {
   const { cornerstone, dicomParser } = external;
@@ -133,7 +133,7 @@ function load(
           const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
 
           // Reject the promise if parsing the dicom file fails
-          let dataSet: DataSet | CornerstoneLoaderDataSetWithFetchMore;
+          let dataSet: DataSet | DICOMLoaderDataSetWithFetchMore;
 
           try {
             if (partialContent.isPartialContent) {

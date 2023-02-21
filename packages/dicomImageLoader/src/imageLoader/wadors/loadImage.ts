@@ -1,11 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
+
 import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
-import {
-  CornerstoneWadoLoaderIImage,
-  CornerstoneWadoLoaderIImageLoadObject,
-  CornerstoneLoadImageOptions,
-} from '../../types';
+import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
@@ -75,7 +73,7 @@ function getImageRetrievalPool() {
 }
 
 export interface CornerstoneWadoRsLoaderOptions
-  extends CornerstoneLoadImageOptions {
+  extends DICOMLoaderImageOptions {
   requestType?: string;
   additionalDetails?: {
     imageId: string;
@@ -87,70 +85,68 @@ export interface CornerstoneWadoRsLoaderOptions
 function loadImage(
   imageId: string,
   options: CornerstoneWadoRsLoaderOptions = {}
-): CornerstoneWadoLoaderIImageLoadObject {
+): Types.IImageLoadObject {
   const imageRetrievalPool = getImageRetrievalPool();
 
   const start = new Date().getTime();
 
-  const promise = new Promise<CornerstoneWadoLoaderIImage>(
-    (resolve, reject) => {
-      // TODO: load bulk data items that we might need
+  const promise = new Promise<DICOMLoaderIImage>((resolve, reject) => {
+    // TODO: load bulk data items that we might need
 
-      // Uncomment this on to test jpegls codec in OHIF
-      // const mediaType = 'multipart/related; type="image/x-jls"';
-      // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
-      const mediaType =
-        'multipart/related; type=application/octet-stream; transfer-syntax=*';
-      // const mediaType =
-      //   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
+    // Uncomment this on to test jpegls codec in OHIF
+    // const mediaType = 'multipart/related; type="image/x-jls"';
+    // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
+    const mediaType =
+      'multipart/related; type=application/octet-stream; transfer-syntax=*';
+    // const mediaType =
+    //   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
 
-      function sendXHR(imageURI: string, imageId: string, mediaType: string) {
-        // get the pixel data from the server
-        return getPixelData(imageURI, imageId, mediaType)
-          .then((result) => {
-            const transferSyntax = getTransferSyntaxForContentType(
-              result.contentType
-            );
+    function sendXHR(imageURI: string, imageId: string, mediaType: string) {
+      // get the pixel data from the server
+      return getPixelData(imageURI, imageId, mediaType)
+        .then((result) => {
+          const transferSyntax = getTransferSyntaxForContentType(
+            result.contentType
+          );
 
-            const pixelData = result.imageFrame.pixelData;
-            const imagePromise = createImage(
-              imageId,
-              pixelData,
-              transferSyntax,
-              options
-            );
+          const pixelData = result.imageFrame.pixelData;
+          const imagePromise = createImage(
+            imageId,
+            pixelData,
+            transferSyntax,
+            options
+          );
 
-            imagePromise.then((image) => {
-              // add the loadTimeInMS property
-              const end = new Date().getTime();
+          imagePromise.then((image) => {
+            // add the loadTimeInMS property
+            const end = new Date().getTime();
 
-              image.loadTimeInMS = end - start;
-              resolve(image);
-            }, reject);
-          }, reject)
-          .catch((error) => {
-            reject(error);
-          });
-      }
-
-      const requestType = options.requestType || 'interaction';
-      const additionalDetails = options.additionalDetails || { imageId };
-      const priority = options.priority === undefined ? 5 : options.priority;
-      const addToBeginning = options.addToBeginning || false;
-      const uri = imageId.substring(7);
-
-      /**
-       * @todo check arguments
-       */
-      imageRetrievalPool.addRequest(
-        sendXHR.bind(this, uri, imageId, mediaType),
-        requestType,
-        additionalDetails,
-        priority,
-        addToBeginning
-      );
+            image.loadTimeInMS = end - start;
+            resolve(image);
+          }, reject);
+        }, reject)
+        .catch((error) => {
+          reject(error);
+        });
     }
-  );
+
+    const requestType = options.requestType || 'interaction';
+    const additionalDetails = options.additionalDetails || { imageId };
+    const priority = options.priority === undefined ? 5 : options.priority;
+    const addToBeginning = options.addToBeginning || false;
+    const uri = imageId.substring(7);
+
+    /**
+     * @todo check arguments
+     */
+    imageRetrievalPool.addRequest(
+      sendXHR.bind(this, uri, imageId, mediaType),
+      requestType,
+      additionalDetails,
+      priority,
+      addToBeginning
+    );
+  });
 
   return {
     promise,

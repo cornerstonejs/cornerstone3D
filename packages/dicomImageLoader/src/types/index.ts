@@ -7,12 +7,11 @@ import {
 import { WADORSMetaData, WADORSMetaDataElement } from './WADORSMetaData';
 import { LoaderOptions } from './LoaderOptions';
 import { LoaderDecodeOptions } from './LoaderDecodeOptions';
-import { CornerstoneWadoLoaderIImage } from './CornerstoneWadoLoaderIImage';
-import { CornerstoneWadoLoaderIImageLoadObject } from './CornerstoneWadoLoaderIImageLoadObject';
-import { CornerstoneLoadImageOptions } from './CornerstoneLoadImageOptions';
-import { CornerstoneWadoLoaderLut } from './CornerstoneWadoLoaderLut';
-import { CornerstoneWadoLoaderLoadRequestFunction } from './CornerstoneWadoLoaderLoadRequestFunction';
-import { CornerstoneLoaderDataSetWithFetchMore } from './CornerstoneLoaderDataSetWithFetchMore';
+import { DICOMLoaderIImage } from './DICOMLoaderIImage';
+import { DICOMLoaderImageOptions } from './DICOMLoaderImageOptions';
+import { LutType } from './LutType';
+import { LoadRequestFunction } from './LoadRequestFunction';
+import { DICOMLoaderDataSetWithFetchMore } from './DICOMLoaderDataSetWithFetchMore';
 import {
   MetaDataTypes,
   MetadataGeneralSeriesModule,
@@ -49,9 +48,8 @@ export {
   LoaderXhrRequestError,
   LoaderXhrRequestParams,
   LoaderXhrRequestPromise,
-  CornerstoneWadoLoaderIImage,
-  CornerstoneWadoLoaderIImageLoadObject,
-  CornerstoneLoadImageOptions,
+  DICOMLoaderIImage,
+  DICOMLoaderImageOptions,
   MetaDataTypes,
   MetadataGeneralSeriesModule,
   MetadataImagePixelModule,
@@ -61,7 +59,7 @@ export {
   MetadataTransferSyntax,
   DicomDateObject,
   DicomTimeObject,
-  CornerstoneWadoLoaderLut,
+  LutType,
   WebWorkerOptions,
   WebWorkerDecodeConfig,
   WebWorkerTaskOptions,
@@ -74,6 +72,6 @@ export {
   WebWorkerData,
   WebWorkerResponse,
   WebWorkerDeferredObject,
-  CornerstoneWadoLoaderLoadRequestFunction,
-  CornerstoneLoaderDataSetWithFetchMore,
+  LoadRequestFunction,
+  DICOMLoaderDataSetWithFetchMore,
 };

@@ -1,22 +1,19 @@
 import { DataSet } from 'dicom-parser';
+import { Types } from '@cornerstonejs/core';
 import createImage from '../createImage';
 import { xhrRequest } from '../internal/index';
 import dataSetCacheManager from './dataSetCacheManager';
 import {
-  CornerstoneWadoLoaderLoadRequestFunction,
-  CornerstoneWadoLoaderIImage,
-  CornerstoneWadoLoaderIImageLoadObject,
-  CornerstoneLoadImageOptions,
+  LoadRequestFunction,
+  DICOMLoaderIImage,
+  DICOMLoaderImageOptions,
 } from '../../types';
 import getPixelData from './getPixelData';
 import loadFileRequest from './loadFileRequest';
 import parseImageId from './parseImageId';
 
 // add a decache callback function to clear out our dataSetCacheManager
-function addDecache(
-  imageLoadObject: CornerstoneWadoLoaderIImageLoadObject,
-  imageId: string
-) {
+function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
   imageLoadObject.decache = function () {
     // console.log('decache');
     const parsedImageId = parseImageId(imageId);
@@ -30,13 +27,13 @@ function loadImageFromPromise(
   imageId: string,
   frame = 0,
   sharedCacheKey: string,
-  options: CornerstoneLoadImageOptions,
+  options: DICOMLoaderImageOptions,
   callbacks?: {
-    imageDoneCallback: (image: CornerstoneWadoLoaderIImage) => void;
+    imageDoneCallback: (image: DICOMLoaderIImage) => void;
   }
-): CornerstoneWadoLoaderIImageLoadObject {
+): Types.IImageLoadObject {
   const start = new Date().getTime();
-  const imageLoadObject: CornerstoneWadoLoaderIImageLoadObject = {
+  const imageLoadObject: Types.IImageLoadObject = {
     cancelFn: undefined,
     promise: undefined,
   };
@@ -99,41 +96,39 @@ function loadImageFromDataSet(
   frame = 0,
   sharedCacheKey: string,
   options
-): CornerstoneWadoLoaderIImageLoadObject {
+): Types.IImageLoadObject {
   const start = new Date().getTime();
 
-  const promise = new Promise<CornerstoneWadoLoaderIImage>(
-    (resolve, reject) => {
-      const loadEnd = new Date().getTime();
+  const promise = new Promise<DICOMLoaderIImage>((resolve, reject) => {
+    const loadEnd = new Date().getTime();
 
-      let imagePromise: Promise<CornerstoneWadoLoaderIImage>;
+    let imagePromise: Promise<DICOMLoaderIImage>;
 
-      try {
-        const pixelData = getPixelData(dataSet, frame);
-        const transferSyntax = dataSet.string('x00020010');
+    try {
+      const pixelData = getPixelData(dataSet, frame);
+      const transferSyntax = dataSet.string('x00020010');
 
-        imagePromise = createImage(imageId, pixelData, transferSyntax, options);
-      } catch (error) {
-        // Reject the error, and the dataSet
-        reject({
-          error,
-          dataSet,
-        });
+      imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+    } catch (error) {
+      // Reject the error, and the dataSet
+      reject({
+        error,
+        dataSet,
+      });
 
-        return;
-      }
-
-      imagePromise.then((image) => {
-        image.data = dataSet;
-        image.sharedCacheKey = sharedCacheKey;
-        const end = new Date().getTime();
-
-        image.loadTimeInMS = loadEnd - start;
-        image.totalTimeInMS = end - start;
-        resolve(image);
-      }, reject);
+      return;
     }
-  );
+
+    imagePromise.then((image) => {
+      image.data = dataSet;
+      image.sharedCacheKey = sharedCacheKey;
+      const end = new Date().getTime();
+
+      image.loadTimeInMS = loadEnd - start;
+      image.totalTimeInMS = end - start;
+      resolve(image);
+    }, reject);
+  });
 
   return {
     promise,
@@ -141,9 +136,7 @@ function loadImageFromDataSet(
   };
 }
 
-function getLoaderForScheme(
-  scheme: string
-): CornerstoneWadoLoaderLoadRequestFunction {
+function getLoaderForScheme(scheme: string): LoadRequestFunction {
   if (scheme === 'dicomweb' || scheme === 'wadouri') {
     return xhrRequest;
   } else if (scheme === 'dicomfile') {
@@ -153,8 +146,8 @@ function getLoaderForScheme(
 
 function loadImage(
   imageId: string,
-  options: CornerstoneLoadImageOptions = {}
-): CornerstoneWadoLoaderIImageLoadObject {
+  options: DICOMLoaderImageOptions = {}
+): Types.IImageLoadObject {
   const parsedImageId = parseImageId(imageId);
 
   options = Object.assign({}, options);
