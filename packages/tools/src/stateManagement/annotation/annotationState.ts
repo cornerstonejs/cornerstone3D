@@ -1,18 +1,17 @@
 import {
-  getEnabledElement,
   triggerEvent,
   eventTarget,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { Events } from '../../enums';
 import { Types } from '@cornerstonejs/core';
+import { Events } from '../../enums';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import { Annotations, Annotation } from '../../types/AnnotationTypes';
-
+import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
 import {
-  AnnotationAddedEventDetail,
-  AnnotationRemovedEventDetail,
-} from '../../types/EventTypes';
+  triggerAnnotationAddedForElement,
+  triggerAnnotationAddedForFOR,
+} from './helpers/state';
 
 /**
  * It returns the default annotations manager.
@@ -61,7 +60,7 @@ function getAnnotationManager(element?: HTMLDivElement) {
 function getAnnotations(
   toolName: string,
   FrameOfReferenceUID: string,
-  element?: HTMLDivElement,
+  element?: HTMLDivElement
 ): Annotations {
   const annotationManager = getAnnotationManager(element);
   return annotationManager.get(FrameOfReferenceUID, toolName);
@@ -76,9 +75,8 @@ function getAnnotations(
  */
 function addAnnotation(
   annotation: Annotation,
-  element?: HTMLDivElement,
+  element?: HTMLDivElement
 ): string {
-
   const annotationManager = getAnnotationManager(element);
 
   if (annotation.annotationUID === undefined) {
@@ -87,19 +85,13 @@ function addAnnotation(
 
   annotationManager.addAnnotation(annotation);
 
-  const enabledElement = getEnabledElement(element);
-  const { renderingEngine } = enabledElement;
-  const { viewportId } = enabledElement;
+  if (element) {
+    triggerAnnotationAddedForElement(annotation, element);
+  }
 
-  const eventType = Events.ANNOTATION_ADDED;
-
-  const eventDetail: AnnotationAddedEventDetail = {
-    annotation,
-    viewportId,
-    renderingEngineId: renderingEngine.id,
-  };
-
-  triggerEvent(eventTarget, eventType, eventDetail);
+  // if no element is provided, render all viewports that have the
+  // same frame of reference.
+  triggerAnnotationAddedForFOR(annotation);
 
   return annotation.annotationUID;
 }

@@ -13,6 +13,7 @@ const {
   Enums,
   volumeLoader,
   setVolumesForViewports,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -110,7 +111,6 @@ describe('Probe Tool: ', () => {
         128
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -120,7 +120,7 @@ describe('Probe Tool: ', () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
             ProbeTool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(1);
@@ -195,7 +195,6 @@ describe('Probe Tool: ', () => {
         256
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -205,7 +204,7 @@ describe('Probe Tool: ', () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
             ProbeTool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(2);
@@ -326,7 +325,6 @@ describe('Probe Tool: ', () => {
         512
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -336,7 +334,7 @@ describe('Probe Tool: ', () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
             ProbeTool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(1);
@@ -410,7 +408,6 @@ describe('Probe Tool: ', () => {
         512
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -420,7 +417,7 @@ describe('Probe Tool: ', () => {
           // Can successfully add probe tool to annotationManager
           const probeAnnotations = annotation.state.getAnnotations(
             ProbeTool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           expect(probeAnnotations).toBeDefined();
           expect(probeAnnotations.length).toBe(1);
@@ -496,7 +493,6 @@ describe('Probe Tool: ', () => {
         128
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -504,7 +500,7 @@ describe('Probe Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const probeAnnotations = annotation.state.getAnnotations(
             ProbeTool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined();
@@ -585,7 +581,6 @@ describe('Probe Tool: ', () => {
         256
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -596,7 +591,7 @@ describe('Probe Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const probeAnnotations = annotation.state.getAnnotations(
             ProbeTool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined();
@@ -745,7 +740,6 @@ describe('Probe Tool: ', () => {
         256
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -820,7 +814,7 @@ describe('Probe Tool: ', () => {
         setTimeout(() => {
           const probeAnnotations = annotation.state.getAnnotations(
             ProbeTool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           // Can successfully add Length tool to annotationManager
           expect(probeAnnotations).toBeDefined();

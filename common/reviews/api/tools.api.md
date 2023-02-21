@@ -41,7 +41,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-function addAnnotation(element: HTMLDivElement, annotation: Annotation): string;
+function addAnnotation(annotation: Annotation, element?: HTMLDivElement): string;
 
 // @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
@@ -1145,6 +1145,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
+    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotations;
+    // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
@@ -1865,7 +1867,7 @@ function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Po
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
 
 // @public (undocumented)
-function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
+function getAnnotations(toolName: string, FrameOfReferenceUID: string, element?: HTMLDivElement): Annotations;
 
 // @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
@@ -2029,6 +2031,9 @@ function getToolGroupSpecificConfig(toolGroupId: string): SegmentationRepresenta
 
 // @public (undocumented)
 function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresentationConfig;
+
+// @public (undocumented)
+function getToolGroupsWithToolName(toolName: string): IToolGroup[] | [];
 
 // @public (undocumented)
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
@@ -3914,7 +3919,7 @@ interface ReferenceCursor extends Annotation {
 export class ReferenceCursors extends AnnotationDisplayTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _addAnnotation(element: HTMLDivElement, annotation: Annotation): string | null;
+    _addAnnotation(annotation: Annotation, FrameOfReferenceUID: string): string | null;
     // (undocumented)
     createInitialAnnotation: (worldPos: Types_2.Point3, element: HTMLDivElement) => void;
     // (undocumented)
@@ -4737,7 +4742,8 @@ declare namespace ToolGroupManager {
         destroyToolGroup,
         getToolGroup,
         getToolGroupForViewport,
-        getAllToolGroups
+        getAllToolGroups,
+        getToolGroupsWithToolName
     }
 }
 export { ToolGroupManager }

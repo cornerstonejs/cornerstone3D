@@ -14,6 +14,7 @@ const {
   volumeLoader,
   setUseCPURendering,
   resetUseCPURendering,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -129,13 +130,12 @@ describe('Length Tool (CPU):', () => {
     const vp = this.renderingEngine.getViewport(viewportId);
 
     let p1, p2;
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const lengthAnnotations = annotation.state.getAnnotations(
           LengthTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(lengthAnnotations).toBeDefined();
@@ -229,7 +229,6 @@ describe('Length Tool (CPU):', () => {
       256
     );
     this.DOMElements.push(element);
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
@@ -240,7 +239,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const lengthAnnotations = annotation.state.getAnnotations(
           LengthTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(lengthAnnotations).toBeDefined();
@@ -368,7 +367,6 @@ describe('Length Tool (CPU):', () => {
       256
     );
     this.DOMElements.push(element);
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
@@ -379,7 +377,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const lengthAnnotations = annotation.state.getAnnotations(
           LengthTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(lengthAnnotations).toBeDefined();
@@ -502,7 +500,6 @@ describe('Length Tool (CPU):', () => {
       256
     );
     this.DOMElements.push(element);
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
@@ -513,7 +510,7 @@ describe('Length Tool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const lengthAnnotations = annotation.state.getAnnotations(
           LengthTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(lengthAnnotations).toBeDefined();

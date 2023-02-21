@@ -4,6 +4,7 @@ import destroy from './destroy';
 import getToolGroup from './getToolGroup';
 import getToolGroupForViewport from './getToolGroupForViewport';
 import getAllToolGroups from './getAllToolGroups';
+import getToolGroupsWithToolName from './getToolGroupsWithToolName';
 
 export {
   createToolGroup,
@@ -12,4 +13,5 @@ export {
   getToolGroup,
   getToolGroupForViewport,
   getAllToolGroups,
+  getToolGroupsWithToolName,
 };

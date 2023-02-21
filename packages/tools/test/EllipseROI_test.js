@@ -12,6 +12,7 @@ const {
   eventTarget,
   volumeLoader,
   setVolumesForViewports,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -112,7 +113,6 @@ describe('Ellipse Tool: ', () => {
         128
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -121,7 +121,7 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             EllipticalROITool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined();
@@ -218,7 +218,6 @@ describe('Ellipse Tool: ', () => {
         128
       );
       this.DOMElements.push(element);
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -226,7 +225,7 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             EllipticalROITool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined();
@@ -365,8 +364,6 @@ describe('Ellipse Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
-
       const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -439,7 +436,7 @@ describe('Ellipse Tool: ', () => {
         setTimeout(() => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             EllipticalROITool.toolName,
-            FrameOfReferenceUID
+            getEnabledElement(element).FrameOfReferenceUID
           );
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined();

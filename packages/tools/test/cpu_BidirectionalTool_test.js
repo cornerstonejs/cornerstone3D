@@ -15,6 +15,7 @@ const {
   volumeLoader,
   setUseCPURendering,
   resetUseCPURendering,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -126,8 +127,6 @@ describe('Bidirectional Tool (CPU): ', () => {
     );
     this.DOMElements.push(element);
 
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
-
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -137,7 +136,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -234,8 +233,6 @@ describe('Bidirectional Tool (CPU): ', () => {
     );
     this.DOMElements.push(element);
 
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
-
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -245,7 +242,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -380,8 +377,6 @@ describe('Bidirectional Tool (CPU): ', () => {
     );
     this.DOMElements.push(element);
 
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
-
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -391,7 +386,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -519,8 +514,6 @@ describe('Bidirectional Tool (CPU): ', () => {
     );
     this.DOMElements.push(element);
 
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
-
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -530,7 +523,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -715,8 +708,6 @@ describe('Bidirectional Tool (CPU): ', () => {
     );
     this.DOMElements.push(element);
 
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
-
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -791,7 +782,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       setTimeout(() => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();

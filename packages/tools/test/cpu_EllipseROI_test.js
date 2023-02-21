@@ -13,6 +13,7 @@ const {
   volumeLoader,
   setUseCPURendering,
   resetUseCPURendering,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -119,8 +120,6 @@ describe('EllipticalROITool (CPU):', () => {
     );
     this.DOMElements.push(element);
 
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
-
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -128,7 +127,7 @@ describe('EllipticalROITool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const ellipseAnnotations = annotation.state.getAnnotations(
           EllipticalROITool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(ellipseAnnotations).toBeDefined();
@@ -228,7 +227,6 @@ describe('EllipticalROITool (CPU):', () => {
 
     const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
     const vp = this.renderingEngine.getViewport(viewportId);
-    const { FrameOfReferenceUID } = cornerstone3D.getEnabledElement(element);
 
     let p1, p2;
 
@@ -301,7 +299,7 @@ describe('EllipticalROITool (CPU):', () => {
       setTimeout(() => {
         const ellipseAnnotations = annotation.state.getAnnotations(
           EllipticalROITool.toolName,
-          FrameOfReferenceUID
+          getEnabledElement(element).FrameOfReferenceUID
         );
         // Can successfully add Length tool to annotationManager
         expect(ellipseAnnotations).toBeDefined();
