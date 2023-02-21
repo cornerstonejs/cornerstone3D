@@ -1,4 +1,4 @@
-export type CornerstoneMetaDataTypes =
+export type MetaDataTypes =
   | 'generalSeriesModule'
   | 'patientStudyModule'
   | 'imagePlaneModule'
@@ -20,7 +20,7 @@ export interface DicomTimeObject {
   fractionalSeconds?: number;
 }
 
-export interface CornerstoneMetadataGeneralSeriesModule {
+export interface MetadataGeneralSeriesModule {
   modality: string;
   seriesInstanceUID: string;
   seriesNumber: number;
@@ -29,13 +29,13 @@ export interface CornerstoneMetadataGeneralSeriesModule {
   seriesTime: DicomTimeObject;
 }
 
-export interface CornerstoneMetadataPatientStudyModule {
+export interface MetadataPatientStudyModule {
   patientAge: number;
   patientSize: number;
   patientWeight: number;
 }
 
-export interface CornerstoneMetadataImagePlaneModule {
+export interface MetadataImagePlaneModule {
   frameOfReferenceUID: string;
   rows: string;
   columns: string;
@@ -50,7 +50,7 @@ export interface CornerstoneMetadataImagePlaneModule {
   columnPixelSpacing: number | null;
 }
 
-export interface CornerstoneMetadataImagePixelModule {
+export interface MetadataImagePixelModule {
   samplesPerPixel: number;
   photometricInterpretation: string;
   rows: number;
@@ -71,11 +71,11 @@ export interface CornerstoneMetadataImagePixelModule {
   largestPixelValue?: number;
 }
 
-export interface CornerstoneMetadataSopCommonModule {
+export interface MetadataSopCommonModule {
   sopClassUID: string;
   sopInstanceUID: string;
 }
 
-export interface CornerstoneMetadataTransferSyntax {
+export interface MetadataTransferSyntax {
   transferSyntaxUID: string;
 }

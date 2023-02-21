@@ -1,5 +1,5 @@
 import type * as cornerstoneImport from '@cornerstonejs/core';
-import { CornerstoneMetadataGeneralSeriesModule } from '../types';
+import { MetadataGeneralSeriesModule } from '../types';
 
 /**
  * It returns the scaling parameters for the image with the given imageId. This can be
@@ -14,7 +14,7 @@ export default function getScalingParameters(
 ) {
   const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
 
-  const generalSeriesModule: CornerstoneMetadataGeneralSeriesModule =
+  const generalSeriesModule: MetadataGeneralSeriesModule =
     metaData.get('generalSeriesModule', imageId) || {};
 
   const { modality } = generalSeriesModule;
