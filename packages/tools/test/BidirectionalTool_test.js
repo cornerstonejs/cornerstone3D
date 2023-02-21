@@ -150,8 +150,7 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -258,8 +257,7 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -376,8 +374,7 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -523,8 +520,7 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -700,8 +696,7 @@ describe('Cornerstone Tools: ', () => {
         expect(handles[1]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -926,8 +921,7 @@ describe('Cornerstone Tools: ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       }, 100);

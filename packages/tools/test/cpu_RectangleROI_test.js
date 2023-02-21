@@ -147,10 +147,7 @@ describe('RectangleROITool (CPU):', () => {
         // the rectangle is drawn on the strip
         expect(data[targets[0]].mean).toBe(255);
 
-        annotation.state.removeAnnotation(
-          rectangleAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
         done();
       });
     };
@@ -253,10 +250,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(data[targets[0]].mean).toBe(255);
         expect(data[targets[0]].stdDev).toBe(0);
 
-        annotation.state.removeAnnotation(
-          rectangleAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
         done();
       });
     };
@@ -394,10 +388,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(data[targets[0]].mean).toBe(255);
         expect(data[targets[0]].stdDev).toBe(0);
 
-        annotation.state.removeAnnotation(
-          rectangleAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
         done();
       });
     };
@@ -568,10 +559,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(handles[0]).toEqual(afterMoveFirstHandle);
         expect(handles[3]).toEqual(afterMoveSecondHandle);
 
-        annotation.state.removeAnnotation(
-          rectangleAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
         done();
       });
     };
@@ -881,10 +869,7 @@ describe('RectangleROITool (CPU):', () => {
         expect(handles[0]).toEqual(afterMoveFirstHandle);
         expect(handles[3]).toEqual(afterMoveSecondHandle);
 
-        annotation.state.removeAnnotation(
-          rectangleAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
         done();
       }, 100);
     };

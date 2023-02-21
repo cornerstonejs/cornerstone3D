@@ -197,7 +197,7 @@ class CrosshairsTool extends AnnotationTool {
 
     if (annotations.length) {
       // If found, it will override it by removing the annotation and adding it later
-      removeAnnotation(annotations[0].annotationUID, element);
+      removeAnnotation(annotations[0].annotationUID);
     }
 
     const annotation = {
@@ -281,14 +281,11 @@ class CrosshairsTool extends AnnotationTool {
         return;
       }
 
-      const { viewport } = enabledElement;
-      const { element } = viewport;
-
       const annotations = this._getAnnotations(enabledElement);
 
       if (annotations?.length) {
         annotations.forEach((annotation) => {
-          removeAnnotation(annotation.annotationUID, element);
+          removeAnnotation(annotation.annotationUID);
         });
       }
     });

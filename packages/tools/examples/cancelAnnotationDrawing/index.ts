@@ -65,7 +65,7 @@ const cancelToolDrawingAndRemove = (evt) => {
   const { element, key } = evt.detail;
   if (key === 'Escape') {
     const annotationUID = cornerstoneTools.cancelActiveManipulations(element);
-    cornerstoneTools.annotation.state.removeAnnotation(annotationUID, element);
+    cornerstoneTools.annotation.state.removeAnnotation(annotationUID);
   }
 };
 

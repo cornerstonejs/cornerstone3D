@@ -146,10 +146,7 @@ describe('ProbeTool (CPU):', () => {
         // The world coordinate is on the white bar so value is 255
         expect(data[targets[0]].value).toBe(255);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -250,14 +247,8 @@ describe('ProbeTool (CPU):', () => {
         expect(data[targets[0]].value).toBe(0);
 
         //
-        annotation.state.removeAnnotation(
-          firstProbeAnnotation.annotationUID,
-          element
-        );
-        annotation.state.removeAnnotation(
-          secondProbeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(firstProbeAnnotation.annotationUID);
+        annotation.state.removeAnnotation(secondProbeAnnotation.annotationUID);
 
         done();
       });
@@ -366,10 +357,7 @@ describe('ProbeTool (CPU):', () => {
         // The world coordinate is on the white bar so value is 255
         expect(data[targets[0]].value).toBe(255);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -453,10 +441,7 @@ describe('ProbeTool (CPU):', () => {
         // The world coordinate is on the white bar so value is 255
         expect(data[targets[0]].value).toBe(0);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -548,10 +533,7 @@ describe('ProbeTool (CPU):', () => {
         expect(handles[0][1]).toEqual(p2[1]);
         expect(handles[0][2]).toEqual(p2[2]);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       });
     };
@@ -740,10 +722,7 @@ describe('ProbeTool (CPU):', () => {
         expect(handles[0][1]).toEqual(p2[1]);
         expect(handles[0][2]).toEqual(p2[2]);
 
-        annotation.state.removeAnnotation(
-          probeAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
         done();
       }, 100);
     };

@@ -213,9 +213,7 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     annotationManager.restoreAnnotations(annotationsSnapshot);
 
     // Remove annotation by UID and FrameOfReferenceUID, and check it was removed.
-    annotationManager.removeAnnotation(annotationUID, {
-      FrameOfReferenceUID,
-    });
+    annotationManager.removeAnnotation(annotationUID);
     undefinedAnnotation = annotationManager.getAnnotation(annotationUID);
     expect(undefinedAnnotation).toBeUndefined();
 
@@ -223,10 +221,7 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     annotationManager.restoreAnnotations(annotationsSnapshot);
 
     // Remove annotation by UID, FrameOfReferenceUID and toolName, and check it was removed.
-    annotationManager.removeAnnotation(annotationUID, {
-      FrameOfReferenceUID,
-      toolName,
-    });
+    annotationManager.removeAnnotation(annotationUID);
     undefinedAnnotation = annotationManager.getAnnotation(annotationUID);
     expect(undefinedAnnotation).toBeUndefined();
   });

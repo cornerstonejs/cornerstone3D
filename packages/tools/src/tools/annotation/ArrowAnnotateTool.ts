@@ -315,13 +315,13 @@ class ArrowAnnotateTool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(annotation.annotationUID, element);
+      removeAnnotation(annotation.annotationUID);
     }
 
     if (newAnnotation) {
       this.configuration.getTextCallback((text) => {
         if (!text) {
-          removeAnnotation(annotation.annotationUID, element);
+          removeAnnotation(annotation.annotationUID);
           triggerAnnotationRenderForViewportIds(
             renderingEngine,
             viewportIdsToRender
