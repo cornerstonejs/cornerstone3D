@@ -1,6 +1,6 @@
 // This script will load the WebWorkers and Codecs from unpkg url
 try {
-  window.cornerstoneWADOImageLoader.webWorkerManager.initialize({
+  window.dicomImageLoader.webWorkerManager.initialize({
     maxWebWorkers: 4,
     startWebWorkersOnDemand: true,
     webWorkerTaskPaths: [],
@@ -12,5 +12,5 @@ try {
     },
   });
 } catch (error) {
-  throw new Error('cornerstoneWADOImageLoader is not loaded');
+  throw new Error('dicomImageLoader is not loaded');
 }

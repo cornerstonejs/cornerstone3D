@@ -17,10 +17,10 @@ function UrlExists(url) {
 }
 
 let webWorkerTaskPath =
-  'https://rawgit.com/cornerstonejs/cornerstoneWADOImageLoader/master/examples/customWebWorkerTask/convolveTask.js';
+  'https://rawgit.com/cornerstonejs/dicomImageLoader/master/examples/customWebWorkerTask/convolveTask.js';
 
 // If running with build completed and DIST folder present
-if (UrlExists('../../dist/cornerstoneWADOImageLoader.bundle.min.js')) {
+if (UrlExists('../../dist/dicomImageLoader.bundle.min.js')) {
   webWorkerTaskPath = `${window.location.protocol}//${window.location.host}/examples/customWebWorkerTask/convolveTask.js`;
 }
 

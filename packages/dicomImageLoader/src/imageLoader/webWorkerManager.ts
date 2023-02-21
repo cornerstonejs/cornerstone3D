@@ -1,7 +1,7 @@
 // Not sure why but webpack isn't splitting this out unless we explicitly use worker-loader!
 // eslint-disable-next-line
-// import cornerstoneWADOImageLoaderWebWorker from 'worker-loader!../webWorker/index.worker';
-import cornerstoneWADOImageLoaderWebWorker from '../webWorker/index.worker';
+// import dicomImageLoaderWebWorker from 'worker-loader!../webWorker/index.worker';
+import dicomImageLoaderWebWorker from '../webWorker/index.worker';
 
 import {
   WebWorkerOptions,
@@ -15,7 +15,7 @@ import {
 // This is for the Webpack 5 approch but it's currently broken
 // so we will continue relying on worker-loader for now
 // https://github.com/webpack/webpack/issues/13899
-/* const cornerstoneWADOImageLoaderWebWorkerPath = new URL(
+/* const dicomImageLoaderWebWorkerPath = new URL(
   '../webWorker/index',
   import.meta.url
 );*/
@@ -34,7 +34,7 @@ const webWorkers: {
   task?: WorkerTask;
 }[] = [];
 
-// The options for CornerstoneWADOImageLoader
+// The options for dicomImageLoader
 const options = getOptions();
 
 const defaultConfig: WebWorkerOptions = {
@@ -154,18 +154,18 @@ function spawnWebWorker() {
   }
 
   // spawn the webworker
-  const worker: Worker = new (cornerstoneWADOImageLoaderWebWorker as any)();
+  const worker: Worker = new (dicomImageLoaderWebWorker as any)();
 
   // This is for the Webpack 5 approach but it's currently broken
-  /* const worker = new Worker(cornerstoneWADOImageLoaderWebWorkerPath, {
-    name: `cornerstoneWADOImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
+  /* const worker = new Worker(dicomImageLoaderWebWorkerPath, {
+    name: `dicomImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
     type: 'module',
   });*/
 
   // const worker = new Worker(
-  //   './cornerstoneWADOImageLoaderWebWorker.bundle.min',
+  //   './dicomImageLoaderWebWorker.bundle.min',
   //   {
-  //     name: `cornerstoneWADOImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
+  //     name: `dicomImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
   //   }
   // );
 

@@ -84,6 +84,7 @@
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^0.0.7",
     "@cornerstonejs/codec-openjpeg": "^0.1.0",
     "@cornerstonejs/codec-openjph": "^1.0.3",
+    "@cornerstonejs/core": "^0.31.0",
     "coverage-istanbul-loader": "^3.0.5",
     "date-format": "^4.0.14",
     "dicom-parser": "^1.8.9",

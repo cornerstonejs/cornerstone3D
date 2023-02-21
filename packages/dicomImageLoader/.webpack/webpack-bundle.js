@@ -15,13 +15,13 @@ module.exports = {
   mode: 'production',
   context,
   entry: {
-    cornerstoneWADOImageLoader: './imageLoader/index.ts',
-    cornerstoneWADOImageLoaderNoWebWorkers: './imageLoader/index-noWorkers.ts',
+    dicomImageLoader: './imageLoader/index.ts',
+    dicomImageLoaderNoWebWorkers: './imageLoader/index-noWorkers.ts',
   },
   target: 'web',
   output: {
     library: {
-      name: 'cornerstoneWADOImageLoader',
+      name: 'dicomImageLoader',
       type: 'umd',
       umdNamedDefine: true,
     },
