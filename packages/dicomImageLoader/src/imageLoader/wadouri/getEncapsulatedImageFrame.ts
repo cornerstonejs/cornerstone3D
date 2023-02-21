@@ -1,17 +1,21 @@
-import external from '../../externalModules.js';
+import { ByteArray, DataSet } from 'dicom-parser';
+import external from '../../externalModules';
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.
  */
 
-function framesAreFragmented(dataSet) {
+function framesAreFragmented(dataSet: DataSet) {
   const numberOfFrames = dataSet.intString('x00280008');
   const pixelDataElement = dataSet.elements.x7fe00010;
 
   return numberOfFrames !== pixelDataElement.fragments.length;
 }
 
-export default function getEncapsulatedImageFrame(dataSet, frameIndex) {
+export default function getEncapsulatedImageFrame(
+  dataSet: DataSet,
+  frameIndex: number
+): ByteArray {
   const { dicomParser } = external;
 
   if (

@@ -4,21 +4,21 @@ import {
   getModalityLUTOutputPixelRepresentation,
   getNumberValues,
   metaDataProvider,
-} from './metaData/index.js';
+} from './metaData/index';
 
-import dataSetCacheManager from './dataSetCacheManager.js';
-import fileManager from './fileManager.js';
-import getEncapsulatedImageFrame from './getEncapsulatedImageFrame.js';
-import getUncompressedImageFrame from './getUncompressedImageFrame.js';
-import loadFileRequest from './loadFileRequest.js';
+import dataSetCacheManager from './dataSetCacheManager';
+import fileManager from './fileManager';
+import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
+import getUncompressedImageFrame from './getUncompressedImageFrame';
+import loadFileRequest from './loadFileRequest';
 import {
   loadImageFromPromise,
   getLoaderForScheme,
   loadImage,
-} from './loadImage.js';
-import parseImageId from './parseImageId.js';
-import unpackBinaryFrame from './unpackBinaryFrame.js';
-import register from './register.js';
+} from './loadImage';
+import parseImageId from './parseImageId';
+import unpackBinaryFrame from './unpackBinaryFrame';
+import register from './register';
 
 const metaData = {
   getImagePixelModule,
