@@ -7,19 +7,16 @@ import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_dec
 // This is closer to what Webpack 5 wants but it doesn't seem to work now
 // const wasm = new URL('./blah.wasm', import.meta.url)
 import openjpegWasm from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.wasm';
-import {
-  CornerstoneWadoImageFrame,
-  CornerstoneWadoWebWorkerDecodeConfig,
-} from '../../types';
+import { CornerstoneWadoImageFrame, WebWorkerDecodeConfig } from '../../types';
 
 const local = {
   codec: undefined,
   decoder: undefined,
-  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
+  decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
 export function initialize(
-  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+  decodeConfig?: WebWorkerDecodeConfig
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
 

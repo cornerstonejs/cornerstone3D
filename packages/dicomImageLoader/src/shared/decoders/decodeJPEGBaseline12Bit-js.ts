@@ -1,13 +1,13 @@
 import { ByteArray } from 'dicom-parser';
-import { ImageFrame, CornerstoneWadoWebWorkerDecodeConfig } from '../../types';
+import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
 
 const local = {
   JpegImage: undefined,
-  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
+  decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
 export function initialize(
-  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+  decodeConfig?: WebWorkerDecodeConfig
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
 

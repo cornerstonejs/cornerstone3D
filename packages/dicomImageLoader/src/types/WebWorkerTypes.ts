@@ -3,45 +3,42 @@ import ImageFrame from './ImageFrame';
 import { LoaderOptions } from './LoaderOptions';
 import { LoaderDecodeOptions } from './LoaderDecodeOptions';
 
-export interface CornerstoneWadoWebWorkerOptions {
+export interface WebWorkerOptions {
   maxWebWorkers?: number;
   startWebWorkersOnDemand?: boolean;
   webWorkerTaskPaths?: string[];
-  taskConfiguration?: CornerstoneWadoWebWorkerTaskOptions;
+  taskConfiguration?: WebWorkerTaskOptions;
 }
 
-export interface CornerstoneWadoWebWorkerDecodeConfig {
+export interface WebWorkerDecodeConfig {
   initializeCodecsOnStartup: boolean;
   strict?: boolean;
 }
 
-export interface CornerstoneWadoWebWorkerTaskOptions {
-  decodeTask: CornerstoneWadoWebWorkerDecodeConfig;
+export interface WebWorkerTaskOptions {
+  decodeTask: WebWorkerDecodeConfig;
 }
 
-export interface CornerstoneWebWorkerDeferredObject<T = any> {
+export interface WebWorkerDeferredObject<T = any> {
   resolve: (arg: T | PromiseLike<T>) => void;
   reject: (err: any) => void;
 }
-export type CornerstoneWadoWorkerTaskTypes =
-  | 'decodeTask'
-  | 'loadWebWorkerTask'
-  | 'initialize';
+export type WorkerTaskTypes = 'decodeTask' | 'loadWebWorkerTask' | 'initialize';
 
 // array of queued tasks sorted with highest priority task first
-export interface CornerstoneWorkerTask {
+export interface WorkerTask {
   taskId: number;
-  taskType: CornerstoneWadoWorkerTaskTypes;
+  taskType: WorkerTaskTypes;
   status: 'ready' | 'success' | 'failed';
   added: number;
   start?: number;
-  data: CornerstoneWadoWebWorkerDecodeTaskData;
-  deferred: CornerstoneWebWorkerDeferredObject;
+  data: WebWorkerDecodeTaskData;
+  deferred: WebWorkerDeferredObject;
   priority: number;
   transferList: Transferable[];
 }
 
-export interface CornerstoneWadoWebWorkerDecodeTaskData {
+export interface WebWorkerDecodeTaskData {
   imageFrame: ImageFrame;
   transferSyntax: string;
   pixelData: ByteArray;
@@ -49,32 +46,32 @@ export interface CornerstoneWadoWebWorkerDecodeTaskData {
   decodeConfig: LoaderDecodeOptions;
 }
 
-export interface CornerstoneWadoWebWorkerDecodeData {
+export interface WebWorkerDecodeData {
   taskType: 'decodeTask';
   workerIndex: number;
-  data: CornerstoneWadoWebWorkerDecodeTaskData;
+  data: WebWorkerDecodeTaskData;
 }
 
-export interface CornerstoneWadoWebWorkerLoadData {
+export interface WebWorkerLoadData {
   taskType: 'loadWebWorkerTask';
   workerIndex: number;
   sourcePath: string;
-  config: CornerstoneWadoWebWorkerOptions;
+  config: WebWorkerOptions;
 }
 
-export interface CornerstoneWadoWebWorkerInitializeData {
+export interface WebWorkerInitializeData {
   taskType: 'initialize';
   workerIndex: number;
-  config: CornerstoneWadoWebWorkerOptions;
+  config: WebWorkerOptions;
 }
 
-export type CornerstoneWadoWebWorkerData =
-  | CornerstoneWadoWebWorkerDecodeData
-  | CornerstoneWadoWebWorkerLoadData
-  | CornerstoneWadoWebWorkerInitializeData;
+export type WebWorkerData =
+  | WebWorkerDecodeData
+  | WebWorkerLoadData
+  | WebWorkerInitializeData;
 
-export interface CornerstoneWadoWebWorkerResponse {
-  taskType: CornerstoneWadoWorkerTaskTypes;
+export interface WebWorkerResponse {
+  taskType: WorkerTaskTypes;
   status: 'failed' | 'success';
   workerIndex: number;
   data?: ImageFrame;

@@ -1,22 +1,22 @@
 /// <reference lib="webworker" />
 
 import {
-  CornerstoneWadoWebWorkerData,
-  CornerstoneWadoWebWorkerDecodeData,
-  CornerstoneWadoWebWorkerInitializeData,
-  CornerstoneWadoWebWorkerOptions,
-  CornerstoneWadoWebWorkerTaskOptions,
-  CornerstoneWadoWorkerTaskTypes,
+  WebWorkerData,
+  WebWorkerDecodeData,
+  WebWorkerInitializeData,
+  WebWorkerOptions,
+  WebWorkerTaskOptions,
+  WorkerTaskTypes,
   ImageFrame,
 } from '../types';
 
 interface CornerstoneWadoWebWorkerTaskHandler {
-  taskType: CornerstoneWadoWorkerTaskTypes;
+  taskType: WorkerTaskTypes;
   handler: (
-    data: CornerstoneWadoWebWorkerDecodeData,
+    data: WebWorkerDecodeData,
     cb: (result: ImageFrame, transferables: Transferable[]) => void
   ) => void;
-  initialize: (config: CornerstoneWadoWebWorkerTaskOptions) => void;
+  initialize: (config: WebWorkerTaskOptions) => void;
 }
 
 // an object of task handlers
@@ -26,13 +26,13 @@ const taskHandlers: Record<string, CornerstoneWadoWebWorkerTaskHandler> = {};
 let initialized = false;
 
 // the configuration object passed in when the web worker manager is initialized
-let config: CornerstoneWadoWebWorkerOptions;
+let config: WebWorkerOptions;
 
 /**
  * Initialization function that loads additional web workers and initializes them
  * @param data
  */
-function initialize(data: CornerstoneWadoWebWorkerInitializeData) {
+function initialize(data: WebWorkerInitializeData) {
   // console.log('web worker initialize ', data.workerIndex);
   // prevent initialization from happening more than once
   if (initialized) {
@@ -106,9 +106,7 @@ function loadWebWorkerTask(data) {
  * Web worker message handler - dispatches messages to the registered task handlers
  * @param msg
  */
-self.onmessage = async function (
-  msg: MessageEvent<CornerstoneWadoWebWorkerData>
-) {
+self.onmessage = async function (msg: MessageEvent<WebWorkerData>) {
   if (!msg.data.taskType) {
     console.log(msg.data);
 
