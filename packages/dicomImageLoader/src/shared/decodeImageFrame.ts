@@ -1,4 +1,6 @@
 /* eslint-disable complexity */
+import { ByteArray } from 'dicom-parser';
+
 import decodeLittleEndian from './decoders/decodeLittleEndian.js';
 import decodeBigEndian from './decoders/decodeBigEndian.js';
 import decodeRLE from './decoders/decodeRLE.js';
@@ -10,6 +12,7 @@ import decodeJPEGLS from './decoders/decodeJPEGLS.js';
 import decodeJPEG2000 from './decoders/decodeJPEG2000.js';
 import decodeHTJ2K from './decoders/decodeHTJ2K.js';
 import scaleArray from './scaling/scaleArray.js';
+import { ImageFrame, LoaderDecodeOptions } from '../types';
 
 /**
  * Decodes the provided image frame.
@@ -17,12 +20,12 @@ import scaleArray from './scaling/scaleArray.js';
  * callbackFn that is called with the results.
  */
 async function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
-  decodeConfig,
+  imageFrame: ImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  decodeConfig: LoaderDecodeOptions,
   options,
-  callbackFn
+  callbackFn?: (...args: any[]) => void
 ) {
   const start = new Date().getTime();
 
@@ -158,7 +161,12 @@ async function decodeImageFrame(
   return postProcessed;
 }
 
-function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
+function postProcessDecodedPixels(
+  imageFrame: ImageFrame,
+  options,
+  start: number,
+  decodeConfig: LoaderDecodeOptions
+) {
   const { use16BitDataType } = decodeConfig || {};
 
   const shouldShift =

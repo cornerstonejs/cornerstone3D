@@ -1,10 +1,15 @@
+import { ByteArray } from 'dicom-parser';
+
 /**
  * Calculate the minimum and maximum values in an Array
  *
  * @param {Number[]} storedPixelData
  * @return {{min: Number, max: Number}}
  */
-function getMinMax(storedPixelData) {
+function getMinMax(storedPixelData: ByteArray | number[]): {
+  min: number;
+  max: number;
+} {
   // we always calculate the min max values since they are not always
   // present in DICOM and we don't want to trust them anyway as cornerstone
   // depends on us providing reliable values for these
