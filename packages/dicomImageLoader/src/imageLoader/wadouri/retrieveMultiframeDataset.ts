@@ -1,4 +1,4 @@
-import { loadedDataSets } from './dataSetCacheManager.js';
+import { loadedDataSets } from './dataSetCacheManager';
 
 function _get(uri) {
   if (!loadedDataSets[uri]) {
@@ -55,7 +55,7 @@ function generateMultiframeWADOURIs(uri) {
   const dataSet = _get(uri);
 
   if (_isMultiframeDataset(dataSet)) {
-    const numberOfFrames = dataSet.intString('x00280008');
+    const numberOfFrames = (dataSet as any).intString('x00280008');
 
     for (let i = 1; i <= numberOfFrames; i++) {
       listWADOURIs.push(`${uri}&frame=${i}`);

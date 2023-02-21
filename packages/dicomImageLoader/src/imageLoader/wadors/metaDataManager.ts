@@ -8,6 +8,7 @@ let metadataByImageURI = [];
 function add(imageId: string, metadata: WADORSMetaData) {
   const imageURI = imageIdToURI(imageId);
 
+  // @ts-ignore
   metadata.isMultiframe = multiframeMetadata.isMultiframe(metadata);
 
   metadataByImageURI[imageURI] = metadata;

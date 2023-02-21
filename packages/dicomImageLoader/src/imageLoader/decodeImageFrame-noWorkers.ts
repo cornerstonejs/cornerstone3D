@@ -24,6 +24,7 @@ async function processDecodeTask(
     options,
   ];
 
+  // @ts-ignore
   const decodedImageFrame = await decodeImageFrameHandler(...decodeArguments);
 
   calculateMinMax(decodedImageFrame, strict);

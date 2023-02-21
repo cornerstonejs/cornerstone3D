@@ -7,6 +7,7 @@ import {
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
 import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
+import multiframeDataset from './retrieveMultiframeDataset.js';
 
 export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
   cacheSizeInBytes: number;
@@ -107,7 +108,7 @@ function load(
   const promise: CornerstoneWadoLoaderCachedPromise = new Promise(
     (resolve, reject) => {
       loadDICOMPromise
-        .then(async function (dicomPart10AsArrayBuffer /* , xhr*/) {
+        .then(async function (dicomPart10AsArrayBuffer: any /* , xhr*/) {
           const partialContent = {
             isPartialContent: false,
             fileTotalLength: null,
@@ -239,3 +240,5 @@ export default {
   get,
   update,
 };
+
+export { loadedDataSets };

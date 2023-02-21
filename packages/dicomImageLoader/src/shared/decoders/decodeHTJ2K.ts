@@ -1,12 +1,4 @@
-// https://emscripten.org/docs/api_reference/module.html
-//import openJphFactory from '@cornerstonejs/codec-openjph';
-
-// Webpack asset/resource copies this to our output folder
-//import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
-// import openJphFactory from '../../../codecs/openjphjs.js';
-// import openjphWasm from '../../../codecs/openjphjs.wasm';
-
-import openJphFactory from '@cornerstonejs/codec-openjph/dist/openjphjs.js';
+import openJphFactory from '@cornerstonejs/codec-openjph/dist/openjphjs';
 import openjphWasm from '@cornerstonejs/codec-openjph/dist/openjphjs.wasm';
 import { ByteArray } from 'dicom-parser';
 import { LoaderDecodeOptions } from '../../types';
@@ -118,6 +110,7 @@ async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   const { buffer: b, byteOffset, byteLength } = pixelData;
   const pixelDataArrayBuffer = b.slice(byteOffset, byteOffset + byteLength);
 
+  // @ts-ignore
   pixelData = new pixelData.constructor(pixelDataArrayBuffer);
 
   const encodeOptions = {

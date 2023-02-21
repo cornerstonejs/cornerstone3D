@@ -6,13 +6,17 @@ let options: LoaderOptions = {
     xhr.open('get', url, true);
   },
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-  beforeSend(/* xhr, imageId */) {},
+  beforeSend(/* xhr, imageId */) {
+    // before send code
+  },
   // callback allowing modification of the xhr response before creating image objects
   beforeProcessing(xhr: XMLHttpRequest) {
     return Promise.resolve(xhr.response as ArrayBuffer);
   },
   // callback allowing modification of newly created image objects
-  imageCreated(/* image */) {},
+  imageCreated(/* image */) {
+    // image created code
+  },
   strict: false,
   decodeConfig: {
     convertFloatPixelDataToInt: true,

@@ -264,6 +264,7 @@ function postProcessDecodedPixels(
       typeof rescaleSlope === 'number' &&
       typeof rescaleIntercept === 'number'
     ) {
+      // @ts-ignore
       if (scaleArray(pixelDataArray, scalingParameters)) {
         imageFrame.preScale = {
           ...options.preScale,

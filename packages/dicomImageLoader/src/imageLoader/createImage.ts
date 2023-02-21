@@ -2,7 +2,7 @@ import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
 import {
-  DICOMLoaderImageOptions,
+  CornerstoneLoadImageOptions,
   MetadataImagePlaneModule,
   MetadataSopCommonModule,
   DICOMLoaderIImage,
@@ -113,8 +113,8 @@ function createImage(
   imageId: string,
   pixelData: ByteArray,
   transferSyntax: string,
-  options: DICOMLoaderImageOptions = {}
-): Promise<DICOMLoaderIImage> {
+  options: CornerstoneLoadImageOptions = {}
+): Promise<DICOMLoaderIImage | ImageFrame> {
   // whether to use RGBA for color images, default true as cs-legacy uses RGBA
   // but we don't need RGBA in cs3d, and it's faster, and memory-efficient
   // in cs3d
@@ -168,7 +168,7 @@ function createImage(
 
   const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
 
-  return new Promise<DICOMLoaderIImage>((resolve, reject) => {
+  return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
     decodePromise.then(function (imageFrame: ImageFrame) {
       // if it is desired to skip creating image, return the imageFrame

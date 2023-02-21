@@ -33,7 +33,7 @@ function getPixelData(
   uri: string,
   imageId: string,
   mediaType = 'application/octet-stream'
-) {
+): Promise<any> {
   const headers = {
     Accept: mediaType,
   };

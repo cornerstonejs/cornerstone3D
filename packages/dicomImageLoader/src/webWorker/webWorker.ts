@@ -132,9 +132,10 @@ self.onmessage = async function (msg: MessageEvent<WebWorkerData>) {
   // dispatch the message if there is a handler registered for it
   if (taskHandlers[msg.data.taskType]) {
     try {
-      const { result, transferList } = await taskHandlers[
-        msg.data.taskType
-      ].handler(msg.data);
+      // @ts-ignore
+      const { result, transferList } = (
+        (await taskHandlers[msg.data.taskType]) as any
+      ).handler(msg.data);
 
       self.postMessage(
         {
@@ -145,7 +146,7 @@ self.onmessage = async function (msg: MessageEvent<WebWorkerData>) {
         },
         transferList
       );
-    } catch (error) {
+    } catch (error: any) {
       console.log(`task ${msg.data.taskType} failed - ${error.message}`, error);
       self.postMessage({
         taskType: msg.data.taskType,
