@@ -11,6 +11,8 @@ import { CornerstoneWadoLoaderIImage } from './CornerstoneWadoLoaderIImage';
 import { CornerstoneWadoLoaderIImageLoadObject } from './CornerstoneWadoLoaderIImageLoadObject';
 import { CornerstoneLoadImageOptions } from './CornerstoneLoadImageOptions';
 import { CornerstoneWadoLoaderLut } from './CornerstoneWadoLoaderLut';
+import { CornerstoneWadoLoaderLoadRequestFunction } from './CornerstoneWadoLoaderLoadRequestFunction';
+import { CornerstoneLoaderDataSetWithFetchMore } from './CornerstoneLoaderDataSetWithFetchMore';
 import {
   CornerstoneMetaDataTypes,
   CornerstoneMetadataGeneralSeriesModule,
@@ -72,4 +74,6 @@ export {
   CornerstoneWadoWebWorkerData,
   CornerstoneWadoWebWorkerResponse,
   CornerstoneWebWorkerDeferredObject,
+  CornerstoneWadoLoaderLoadRequestFunction,
+  CornerstoneLoaderDataSetWithFetchMore,
 };
