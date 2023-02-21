@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { Types } from '@cornerstonejs/core';
 import { ByteArray, DataSet } from 'dicom-parser';
 import ImageFrame from './ImageFrame';
 

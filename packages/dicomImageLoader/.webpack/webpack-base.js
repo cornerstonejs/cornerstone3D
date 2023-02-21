@@ -12,7 +12,7 @@ module.exports = {
   mode: 'development',
   context,
   entry: {
-    cornerstoneWADOImageLoader: './imageLoader/index.ts',
+    dicomImageLoader: './imageLoader/index.ts',
   },
   target: 'web',
   output: {

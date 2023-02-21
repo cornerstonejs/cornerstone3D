@@ -5,10 +5,10 @@ import decodeTask from './decodeTask';
 // @ts-ignore
 registerTaskHandler(decodeTask);
 
-const cornerstoneWADOImageLoaderWebWorker = {
+const dicomImageLoaderWebWorker = {
   registerTaskHandler,
 };
 
 export { registerTaskHandler };
 
-export default cornerstoneWADOImageLoaderWebWorker;
+export default dicomImageLoaderWebWorker;

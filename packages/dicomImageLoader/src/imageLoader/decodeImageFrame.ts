@@ -188,12 +188,12 @@ function decodeImageFrame(
    // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
    else if(transferSyntax === "1.2.840.10008.1.2.4.92")
    {
-   return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+   return dicomImageLoader.decodeJPEG2000(dataSet, frame);
    }
    // JPEG 2000 Part 2 Multicomponent Image Compression
    else if(transferSyntax === "1.2.840.10008.1.2.4.93")
    {
-   return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+   return dicomImageLoader.decodeJPEG2000(dataSet, frame);
    }
    */
 

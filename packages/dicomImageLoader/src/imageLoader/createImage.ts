@@ -2,7 +2,7 @@ import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
 import {
-  CornerstoneLoadImageOptions,
+  DICOMLoaderImageOptions,
   MetadataImagePlaneModule,
   MetadataSopCommonModule,
   DICOMLoaderIImage,
@@ -113,7 +113,7 @@ function createImage(
   imageId: string,
   pixelData: ByteArray,
   transferSyntax: string,
-  options: CornerstoneLoadImageOptions = {}
+  options: DICOMLoaderImageOptions = {}
 ): Promise<DICOMLoaderIImage | ImageFrame> {
   // whether to use RGBA for color images, default true as cs-legacy uses RGBA
   // but we don't need RGBA in cs3d, and it's faster, and memory-efficient
@@ -316,7 +316,7 @@ function createImage(
         imageFrame.largestPixelValue = minMax.max;
       }
 
-      const image: DICOMLoaderIImage = {
+      const image = {
         imageId,
         color: isColorImage,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
@@ -352,7 +352,7 @@ function createImage(
         getPixelData: undefined,
         getCanvas: undefined,
         numComps: undefined,
-      };
+      } as DICOMLoaderIImage;
 
       // If pixel data is intrinsically floating 32 array, we convert it to int for
       // display in cornerstone. For other cases when pixel data is typed as

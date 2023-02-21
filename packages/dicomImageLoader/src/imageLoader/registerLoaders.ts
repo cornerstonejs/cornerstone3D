@@ -1,4 +1,3 @@
-import * as cornerstoneImport from '@cornerstonejs/core';
 import wadors from './wadors/index';
 import wadouri from './wadouri/index';
 
@@ -8,7 +7,7 @@ import wadouri from './wadouri/index';
  *
  * @param cornerstone The Cornerstone Core library to register the image loaders with
  */
-function registerLoaders(cornerstone: typeof cornerstoneImport): void {
+function registerLoaders(cornerstone: any): void {
   wadors.register(cornerstone);
   wadouri.register(cornerstone);
 }

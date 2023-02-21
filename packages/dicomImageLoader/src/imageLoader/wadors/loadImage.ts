@@ -117,7 +117,7 @@ function loadImage(
             options
           );
 
-          imagePromise.then((image) => {
+          imagePromise.then((image: any) => {
             // add the loadTimeInMS property
             const end = new Date().getTime();
 
