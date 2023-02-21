@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.46.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.45.1...@cornerstonejs/tools@0.46.0) (2023-02-21)
+
+
+### Features
+
+* **planarRotateTool:** rotate tool for volume viewport ([#436](https://github.com/cornerstonejs/cornerstone3D-beta/issues/436)) ([52e5739](https://github.com/cornerstonejs/cornerstone3D-beta/commit/52e57398fd3ddd8404787333e54edeb4ed53dfcb))
+
+
+
+
+
 ## [0.45.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.45.0...@cornerstonejs/tools@0.45.1) (2023-02-16)
 
 
