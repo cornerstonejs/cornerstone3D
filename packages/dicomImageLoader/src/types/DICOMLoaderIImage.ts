@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import { ByteArray, DataSet } from 'dicom-parser';
 import ImageFrame from './ImageFrame';
 
-export interface CornerstoneWadoLoaderIImage extends Types.IImage {
+export interface DICOMLoaderIImage extends Types.IImage {
   decodeTimeInMS: number;
   floatPixelData?: ByteArray | Float32Array;
   loadTimeInMS?: number;

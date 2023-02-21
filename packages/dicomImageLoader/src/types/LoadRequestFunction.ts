@@ -1,4 +1,4 @@
-export type CornerstoneWadoLoaderLoadRequestFunction = (
+export type LoadRequestFunction = (
   url: string,
   imageId: string,
   ...args: any[]

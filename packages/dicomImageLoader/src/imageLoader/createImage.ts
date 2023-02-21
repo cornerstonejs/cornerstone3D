@@ -2,10 +2,10 @@ import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
 import {
-  CornerstoneLoadImageOptions,
+  DICOMLoaderImageOptions,
   MetadataImagePlaneModule,
   MetadataSopCommonModule,
-  CornerstoneWadoLoaderIImage,
+  DICOMLoaderIImage,
   ImageFrame,
 } from '../types';
 import convertColorSpace from './convertColorSpace';
@@ -113,8 +113,8 @@ function createImage(
   imageId: string,
   pixelData: ByteArray,
   transferSyntax: string,
-  options: CornerstoneLoadImageOptions = {}
-): Promise<CornerstoneWadoLoaderIImage> {
+  options: DICOMLoaderImageOptions = {}
+): Promise<DICOMLoaderIImage> {
   // whether to use RGBA for color images, default true as cs-legacy uses RGBA
   // but we don't need RGBA in cs3d, and it's faster, and memory-efficient
   // in cs3d
@@ -168,7 +168,7 @@ function createImage(
 
   const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
 
-  return new Promise<CornerstoneWadoLoaderIImage>((resolve, reject) => {
+  return new Promise<DICOMLoaderIImage>((resolve, reject) => {
     // eslint-disable-next-line complexity
     decodePromise.then(function (imageFrame: ImageFrame) {
       // if it is desired to skip creating image, return the imageFrame
@@ -316,7 +316,7 @@ function createImage(
         imageFrame.largestPixelValue = minMax.max;
       }
 
-      const image: CornerstoneWadoLoaderIImage = {
+      const image: DICOMLoaderIImage = {
         imageId,
         color: isColorImage,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,

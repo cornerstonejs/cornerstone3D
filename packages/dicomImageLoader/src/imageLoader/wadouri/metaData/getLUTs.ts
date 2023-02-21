@@ -1,10 +1,7 @@
 import { DataSet, Element } from 'dicom-parser';
-import { CornerstoneWadoLoaderLut } from '../../../types';
+import { LutType } from '../../../types';
 
-function getLUT(
-  pixelRepresentation: number,
-  lutDataSet: DataSet
-): CornerstoneWadoLoaderLut {
+function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
   let numLUTEntries = lutDataSet.uint16('x00283002', 0);
 
   if (numLUTEntries === 0) {
@@ -38,14 +35,11 @@ function getLUT(
   return lut;
 }
 
-function getLUTs(
-  pixelRepresentation: number,
-  lutSequence: Element
-): CornerstoneWadoLoaderLut[] {
+function getLUTs(pixelRepresentation: number, lutSequence: Element): LutType[] {
   if (!lutSequence || !lutSequence.items || !lutSequence.items.length) {
     return;
   }
-  const luts: CornerstoneWadoLoaderLut[] = [];
+  const luts: LutType[] = [];
 
   for (let i = 0; i < lutSequence.items.length; i++) {
     const lutDataSet = lutSequence.items[i].dataSet;

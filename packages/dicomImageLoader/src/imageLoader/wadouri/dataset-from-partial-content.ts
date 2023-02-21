@@ -1,8 +1,8 @@
 import { DataSet } from 'dicom-parser';
 import external from '../../externalModules';
 import {
-  CornerstoneWadoLoaderLoadRequestFunction,
-  CornerstoneLoaderDataSetWithFetchMore,
+  LoadRequestFunction,
+  DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
 
 function fixFragments(dataSet: DataSet) {
@@ -74,14 +74,14 @@ function parsePartialByteArray(byteArray: Uint8Array) {
 
 export default async function dataSetFromPartialContent(
   byteArray: Uint8Array,
-  loadRequest: CornerstoneWadoLoaderLoadRequestFunction,
+  loadRequest: LoadRequestFunction,
   metadata: {
     uri: string;
     imageId: string;
     fileTotalLength: number | null;
   }
-): Promise<CornerstoneLoaderDataSetWithFetchMore> {
-  const dataSet: CornerstoneLoaderDataSetWithFetchMore =
+): Promise<DICOMLoaderDataSetWithFetchMore> {
+  const dataSet: DICOMLoaderDataSetWithFetchMore =
     parsePartialByteArray(byteArray);
   const { uri, imageId, fileTotalLength } = metadata;
 

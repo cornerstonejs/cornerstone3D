@@ -1,7 +1,7 @@
 import { Types } from '@cornerstonejs/core';
-import { CornerstoneWadoLoaderLoadRequestFunction } from 'dicomImageLoader/src/shared/types/load-request-function';
+import { LoadRequestFunction } from './LoadRequestFunction';
 
-export interface CornerstoneLoadImageOptions {
+export interface DICOMLoaderImageOptions {
   useRGBA?: boolean;
   skipCreateImage?: boolean;
   preScale?: {
@@ -14,5 +14,5 @@ export interface CornerstoneLoadImageOptions {
     length: number;
     offset: number;
   };
-  loader?: CornerstoneWadoLoaderLoadRequestFunction;
+  loader?: LoadRequestFunction;
 }
