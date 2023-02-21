@@ -1,4 +1,10 @@
-async function decodeLittleEndian(imageFrame, pixelData) {
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame } from '../../types';
+
+async function decodeLittleEndian(
+  imageFrame: ImageFrame,
+  pixelData: ByteArray
+): Promise<ImageFrame> {
   let arrayBuffer = pixelData.buffer;
 
   let offset = pixelData.byteOffset;

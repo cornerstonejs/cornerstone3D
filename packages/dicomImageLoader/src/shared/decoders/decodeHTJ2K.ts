@@ -8,14 +8,20 @@
 
 import openJphFactory from '@cornerstonejs/codec-openjph/dist/openjphjs.js';
 import openjphWasm from '@cornerstonejs/codec-openjph/dist/openjphjs.wasm';
+import { ByteArray } from 'dicom-parser';
+import { LoaderDecodeOptions } from '../../types';
 
-const local = {
+const local: {
+  codec: any;
+  decoder: any;
+  decodeConfig: LoaderDecodeOptions;
+} = {
   codec: undefined,
   decoder: undefined,
   decodeConfig: {},
 };
 
-export function initialize(decodeConfig) {
+export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.codec) {
@@ -32,7 +38,7 @@ export function initialize(decodeConfig) {
     },
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     openJphModule.then((instance) => {
       local.codec = instance;
       local.decoder = new instance.HTJ2KDecoder();
@@ -42,7 +48,7 @@ export function initialize(decodeConfig) {
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
-async function decodeAsync(compressedImageFrame, imageInfo) {
+async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
   const decoder = local.decoder;
 

@@ -1,14 +1,16 @@
-import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode.js';
+import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
 // import charlsFactory from '@cornerstonejs/codec-charls/dist/debug/charlswasm.js';
 
 // Webpack asset/resource copies this to our output folder
 import charlsWasm from '@cornerstonejs/codec-charls/dist/charlswasm_decode.wasm';
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame, CornerstoneWadoWebWorkerDecodeConfig } from '../../types';
 // import charlsWasm from '@cornerstonejs/codec-charls/dist/debug/charlswasm.wasm';
 
 const local = {
   codec: undefined,
   decoder: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
 };
 
 function getExceptionMessage(exception) {
@@ -17,7 +19,9 @@ function getExceptionMessage(exception) {
     : exception;
 }
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.codec) {
@@ -49,7 +53,10 @@ export function initialize(decodeConfig) {
  * @param {object}  imageInfo
  * @param {boolean} imageInfo.signed - (pixelRepresentation === 1)
  */
-async function decodeAsync(compressedImageFrame, imageInfo) {
+async function decodeAsync(
+  compressedImageFrame,
+  imageInfo
+): Promise<ImageFrame> {
   try {
     await initialize();
     const decoder = local.decoder;
@@ -113,7 +120,7 @@ async function decodeAsync(compressedImageFrame, imageInfo) {
   }
 }
 
-function getPixelData(frameInfo, decodedBuffer, signed) {
+function getPixelData(frameInfo, decodedBuffer: ByteArray, signed: boolean) {
   if (frameInfo.bitsPerSample > 8) {
     if (signed) {
       return new Int16Array(

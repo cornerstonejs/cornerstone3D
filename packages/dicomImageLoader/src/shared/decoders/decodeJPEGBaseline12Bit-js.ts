@@ -1,9 +1,14 @@
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame, CornerstoneWadoWebWorkerDecodeConfig } from '../../types';
+
 const local = {
   JpegImage: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
 };
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.JpegImage) {
@@ -11,14 +16,17 @@ export function initialize(decodeConfig) {
   }
 
   return new Promise((resolve, reject) => {
-    import('../../../codecs/jpeg.js').then(({ JpegImage }) => {
+    import('../../../codecs/jpeg').then(({ JpegImage }) => {
       local.JpegImage = JpegImage;
       resolve();
     }, reject);
   });
 }
 
-async function decodeJPEGBaseline12BitAsync(imageFrame, pixelData) {
+async function decodeJPEGBaseline12BitAsync(
+  imageFrame: ImageFrame,
+  pixelData: ByteArray
+): Promise<ImageFrame> {
   // check to make sure codec is loaded
   await initialize();
   if (typeof local.JpegImage === 'undefined') {

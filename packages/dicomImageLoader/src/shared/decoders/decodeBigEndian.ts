@@ -1,9 +1,15 @@
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame } from '../../types';
+
 /* eslint no-bitwise: 0 */
 function swap16(val) {
   return ((val & 0xff) << 8) | ((val >> 8) & 0xff);
 }
 
-async function decodeBigEndian(imageFrame, pixelData) {
+async function decodeBigEndian(
+  imageFrame: ImageFrame,
+  pixelData: ByteArray
+): Promise<ImageFrame> {
   if (imageFrame.bitsAllocated === 16) {
     let arrayBuffer = pixelData.buffer;
 

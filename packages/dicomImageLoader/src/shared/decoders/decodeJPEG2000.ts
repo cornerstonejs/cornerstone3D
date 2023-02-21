@@ -1,5 +1,5 @@
 // https://emscripten.org/docs/api_reference/module.html
-import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.js';
+import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
 
 // Webpack asset/resource copies this to our output folder
 
@@ -7,14 +7,20 @@ import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_dec
 // This is closer to what Webpack 5 wants but it doesn't seem to work now
 // const wasm = new URL('./blah.wasm', import.meta.url)
 import openjpegWasm from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.wasm';
+import {
+  CornerstoneWadoImageFrame,
+  CornerstoneWadoWebWorkerDecodeConfig,
+} from '../../types';
 
 const local = {
   codec: undefined,
   decoder: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
 };
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.codec) {
@@ -41,7 +47,10 @@ export function initialize(decodeConfig) {
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
-async function decodeAsync(compressedImageFrame, imageInfo) {
+async function decodeAsync(
+  compressedImageFrame,
+  imageInfo
+): Promise<CornerstoneWadoImageFrame> {
   await initialize();
   const decoder = local.decoder;
 
