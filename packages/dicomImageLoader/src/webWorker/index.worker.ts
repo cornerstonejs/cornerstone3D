@@ -1,5 +1,5 @@
-import { registerTaskHandler } from './webWorker.js';
-import decodeTask from './decodeTask.js';
+import { registerTaskHandler } from './webWorker';
+import decodeTask from './decodeTask';
 
 // register our task
 registerTaskHandler(decodeTask);

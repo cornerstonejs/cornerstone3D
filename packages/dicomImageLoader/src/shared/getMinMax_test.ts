@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import getMinMax from './getMinMax.js';
+import getMinMax from './getMinMax';
 
 describe('#getMinMax', () => {
   it('should return the right min and max values', () => {

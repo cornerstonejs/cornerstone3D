@@ -1,4 +1,4 @@
-import getMinMax from './getMinMax.js';
+import getMinMax from './getMinMax';
 
 /**
  * Check the minimum and maximum values in the imageFrame pixel data

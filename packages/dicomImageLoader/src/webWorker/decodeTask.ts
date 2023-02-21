@@ -2,15 +2,20 @@ import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2
 import { initialize as initializeJPEGLS } from '../shared/decoders/decodeJPEGLS.js';
 import calculateMinMax from '../shared/calculateMinMax.js';
 import decodeImageFrame from '../shared/decodeImageFrame.js';
+import {
+  CornerstoneWadoWebWorkerTaskOptions,
+  CornerstoneWadoWebWorkerDecodeData,
+  ImageFrame,
+} from '../types';
 
 // the configuration object for the decodeTask
-let decodeConfig;
+let decodeConfig: CornerstoneWadoWebWorkerTaskOptions;
 
 /**
  * Function to control loading and initializing the codecs
  * @param config
  */
-function loadCodecs(config) {
+function loadCodecs(config: CornerstoneWadoWebWorkerTaskOptions) {
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
     initializeJPEG2000(config.decodeTask);
@@ -21,7 +26,7 @@ function loadCodecs(config) {
 /**
  * Task initialization function
  */
-function initialize(config) {
+function initialize(config: CornerstoneWadoWebWorkerTaskOptions) {
   decodeConfig = config;
 
   loadCodecs(config);
@@ -30,7 +35,10 @@ function initialize(config) {
 /**
  * Task handler function
  */
-async function handler(data, doneCallback) {
+async function handler(
+  data: CornerstoneWadoWebWorkerDecodeData,
+  doneCallback: (imageFrame: ImageFrame, pixelData: Transferable[]) => void
+) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
@@ -48,7 +56,7 @@ async function handler(data, doneCallback) {
     // decodeTask are webworker specific, but decodeConfig are the configs
     // that are passed in from the user. We need to merge them together
     Object.assign(decodeConfig.decodeTask, data.data.decodeConfig),
-    data.data.options
+    data.data.optionsm
   );
 
   if (!imageFrame.pixelData) {

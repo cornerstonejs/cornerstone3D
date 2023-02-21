@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import calculateMinMax from './calculateMinMax.js';
+import calculateMinMax from './calculateMinMax';
 
 describe('#calculateMinMax', () => {
-  let imageFrame = {};
+  let imageFrame: any = {};
 
   beforeEach(() => {
     imageFrame = {
