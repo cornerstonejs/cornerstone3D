@@ -269,7 +269,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation);
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
 
@@ -554,11 +554,11 @@ class PlanarFreehandROITool extends AnnotationTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     const renderStatus = false;
-    const { viewport } = enabledElement;
+    const { viewport, FrameOfReferenceUID } = enabledElement;
     const { element } = viewport;
 
     let annotations = <PlanarFreehandROIAnnotation[]>(
-      getAnnotations(element, this.getToolName())
+      getAnnotations(this.getToolName(), FrameOfReferenceUID)
     );
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender

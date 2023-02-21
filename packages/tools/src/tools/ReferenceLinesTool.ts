@@ -101,7 +101,7 @@ class ReferenceLines extends AnnotationDisplayTool {
         },
       };
 
-      addAnnotation(element, newAnnotation);
+      addAnnotation(newAnnotation);
       annotation = newAnnotation;
     } else {
       this.editData.annotation.data.handles.points =

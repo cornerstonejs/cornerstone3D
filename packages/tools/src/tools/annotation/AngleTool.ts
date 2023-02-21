@@ -151,7 +151,7 @@ class AngleTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -603,10 +603,10 @@ class AngleTool extends AnnotationTool {
   ): boolean => {
     let renderStatus = false;
 
-    const { viewport } = enabledElement;
+    const { viewport, FrameOfReferenceUID } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

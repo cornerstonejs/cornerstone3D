@@ -180,7 +180,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // computed for later export
     this._computeProjectionPoints(annotation, imageVolume);
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -305,8 +305,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ): boolean => {
     let renderStatus = false;
     const annotations = getAnnotations(
-      enabledElement.viewport.element,
-      this.getToolName()
+      this.getToolName(),
+      enabledElement.FrameOfReferenceUID
     );
 
     if (!annotations?.length) {

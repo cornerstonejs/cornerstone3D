@@ -40,38 +40,46 @@ function getViewportSpecificAnnotationManager(
   return defaultFrameOfReferenceSpecificAnnotationManager;
 }
 
+function getAnnotationManager(element?: HTMLDivElement) {
+  if (element) {
+    return getViewportSpecificAnnotationManager(element);
+  }
+
+  return getDefaultAnnotationManager();
+}
+
 /**
- * Returns the annotations for the `FrameOfReference` of the `Viewport`
- * being viewed by the cornerstone3D enabled `element`.
+ * Returns the annotations for a given tool in the specified frame of reference.
+ * If element is provided, it will return the annotations for the viewport specific
+ * annotation manager.
  *
- * @param element - The HTML element.
  * @param toolName - The name of the tool.
+ * @param FrameOfReferenceUID - The Frame of Reference UID.
+ * @param element - The HTML element.
  * @returns The annotations corresponding to the Frame of Reference and the toolName.
  */
 function getAnnotations(
-  element: HTMLDivElement,
-  toolName: string
+  toolName: string,
+  FrameOfReferenceUID: string,
+  element?: HTMLDivElement,
 ): Annotations {
-  const enabledElement = getEnabledElement(element);
-  const annotationManager =
-    getViewportSpecificAnnotationManager(enabledElement);
-  const { FrameOfReferenceUID } = enabledElement;
-
+  const annotationManager = getAnnotationManager(element);
   return annotationManager.get(FrameOfReferenceUID, toolName);
 }
 
 /**
- * Add the annotation to the annotations for the `FrameOfReference` of the `Viewport`
- * being viewed by the cornerstone3D enabled `element`.
+ * Add the annotation to the annotation manager. If an element is provided,
+ * the annotation will be added to the viewport specific annotation manager.
  *
- * @param element - HTMLDivElement
  * @param annotation - The annotation that is being added to the annotations manager.
+ * @param element - HTMLDivElement
  */
 function addAnnotation(
-  element: HTMLDivElement,
-  annotation: Annotation
+  annotation: Annotation,
+  element?: HTMLDivElement,
 ): string {
-  const annotationManager = getViewportSpecificAnnotationManager(element);
+
+  const annotationManager = getAnnotationManager(element);
 
   if (annotation.annotationUID === undefined) {
     annotation.annotationUID = csUtils.uuidv4() as string;
@@ -126,11 +134,7 @@ function removeAnnotation(
   annotationUID: string,
   element?: HTMLDivElement
 ): void {
-  let annotationManager = getDefaultAnnotationManager();
-  if (element) {
-    annotationManager = getViewportSpecificAnnotationManager(element);
-  }
-
+  const annotationManager = getAnnotationManager(element);
   const annotation = annotationManager.getAnnotation(annotationUID);
 
   // no need to continue in case there is no annotation.
@@ -161,7 +165,7 @@ function getAnnotation(
   annotationUID: string,
   element?: HTMLDivElement
 ): Annotation {
-  const annotationManager = getViewportSpecificAnnotationManager(element);
+  const annotationManager = getAnnotationManager(element);
   const annotation = annotationManager.getAnnotation(annotationUID);
 
   return annotation;
@@ -173,11 +177,7 @@ function getAnnotation(
  * specified it will use the default annotation manager.
  */
 function removeAllAnnotations(element?: HTMLDivElement): void {
-  let annotationManager = getDefaultAnnotationManager();
-  if (element) {
-    annotationManager = getViewportSpecificAnnotationManager(element);
-  }
-
+  const annotationManager = getAnnotationManager(element);
   annotationManager.removeAllAnnotations();
 }
 

@@ -140,7 +140,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -412,8 +412,9 @@ class ArrowAnnotateTool extends AnnotationTool {
   doubleClickCallback = (evt: EventTypes.TouchTapEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+    const { FrameOfReferenceUID } = getEnabledElement(element);
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
 
     annotations = this.filterInteractableAnnotationsForElement(
       element,
@@ -656,10 +657,10 @@ class ArrowAnnotateTool extends AnnotationTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const { viewport } = enabledElement;
+    const { viewport, FrameOfReferenceUID } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

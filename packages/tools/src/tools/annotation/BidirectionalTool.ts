@@ -188,7 +188,7 @@ class BidirectionalTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -1020,9 +1020,9 @@ class BidirectionalTool extends AnnotationTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = true;
-    const { viewport } = enabledElement;
+    const { viewport, FrameOfReferenceUID } = enabledElement;
     const { element } = viewport;
-    let annotations = getAnnotations(viewport.element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
 
     if (!annotations?.length) {
       return renderStatus;

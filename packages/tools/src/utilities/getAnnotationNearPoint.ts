@@ -99,8 +99,8 @@ function findAnnotationNearPointByTool(
   // the first annotation that is found in the proximity. BUT, we are not using
   // the function anywhere.
   const annotations = getAnnotations(
-    enabledElement.viewport.element,
-    (tool.constructor as typeof BaseTool).toolName
+    (tool.constructor as typeof BaseTool).toolName,
+    enabledElement.FrameOfReferenceUID
   );
   const currentId = enabledElement.viewport?.getCurrentImageId?.();
   if (annotations?.length) {

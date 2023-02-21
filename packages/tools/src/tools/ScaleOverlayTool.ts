@@ -79,7 +79,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       getEnabledElementByIds(e.viewportId, e.renderingEngineId)
     );
 
-    let viewport = enabledElements[0].viewport;
+    let { viewport, FrameOfReferenceUID } = enabledElements[0];
 
     // onCameraModified, configuration.viewportId is set to the active
     // viewport Id, here we are setting the viewport variable to the
@@ -96,7 +96,6 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
 
-    const { element } = viewport;
     const { viewUp, viewPlaneNormal } = viewport.getCamera();
 
     const viewportCanvasCornersInWorld =
@@ -104,7 +103,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     let annotation = this.editData.annotation;
 
-    const annotations = getAnnotations(element, this.getToolName());
+    const annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
 
     // if annotations have been created, get the annotation for the
     // current viewport Id
@@ -135,7 +134,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
       viewportsWithAnnotations.push(viewport.id);
 
-      addAnnotation(element, newAnnotation);
+      addAnnotation(newAnnotation);
       annotation = newAnnotation;
     } else if (this.editData.annotation.data.viewportId == viewport.id) {
       this.editData.annotation.data.handles.points =
@@ -178,10 +177,9 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
     const location = this.configuration.scaleLocation;
-    const { viewport } = enabledElement;
-    const { element } = viewport;
+    const { viewport, FrameOfReferenceUID } = enabledElement;
 
-    const annotations = getAnnotations(element, this.getToolName());
+    const annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
     const annotation = annotations.filter(
       (thisAnnotation) => thisAnnotation.data.viewportId == viewport.id
     )[0];
