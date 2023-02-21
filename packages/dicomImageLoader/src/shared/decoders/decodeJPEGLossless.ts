@@ -1,9 +1,14 @@
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame, CornerstoneWadoWebWorkerDecodeConfig } from '../../types';
+
 const local = {
   jpeg: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as CornerstoneWadoWebWorkerDecodeConfig,
 };
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: CornerstoneWadoWebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.jpeg) {
@@ -11,14 +16,17 @@ export function initialize(decodeConfig) {
   }
 
   return new Promise((resolve, reject) => {
-    import('../../../codecs/jpegLossless.js').then((jpeg) => {
+    import('../../../codecs/jpegLossless').then((jpeg) => {
       local.jpeg = jpeg;
       resolve();
     }, reject);
   });
 }
 
-async function decodeJPEGLossless(imageFrame, pixelData) {
+async function decodeJPEGLossless(
+  imageFrame: ImageFrame,
+  pixelData: ByteArray
+): Promise<ImageFrame> {
   await initialize();
 
   // check to make sure codec is loaded

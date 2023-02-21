@@ -1,4 +1,7 @@
-export default function scaleArray(array, scalingParameters) {
+export default function scaleArray(
+  array: number[],
+  scalingParameters
+): boolean {
   const arrayLength = array.length;
   const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
 

@@ -1,14 +1,16 @@
-import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode.js';
+import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
 
 // Webpack asset/resource copies this to our output folder
 import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode.wasm';
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame } from '../../types';
 
 const local = {
   codec: undefined,
   decoder: undefined,
 };
 
-function initLibjpegTurbo() {
+function initLibjpegTurbo(): Promise<void> {
   if (local.codec) {
     return Promise.resolve();
   }
@@ -39,7 +41,10 @@ function initLibjpegTurbo() {
  * @param {object}  imageInfo
  * @param {boolean} imageInfo.signed -
  */
-async function decodeAsync(compressedImageFrame, imageInfo) {
+async function decodeAsync(
+  compressedImageFrame,
+  imageInfo
+): Promise<ImageFrame> {
   await initLibjpegTurbo();
   const decoder = local.decoder;
 
@@ -86,7 +91,7 @@ async function decodeAsync(compressedImageFrame, imageInfo) {
   };
 }
 
-function getPixelData(frameInfo, decodedBuffer) {
+function getPixelData(frameInfo, decodedBuffer: ByteArray) {
   if (frameInfo.isSigned) {
     return new Int8Array(
       decodedBuffer.buffer,
