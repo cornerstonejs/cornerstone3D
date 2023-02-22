@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.31.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.31.0...@cornerstonejs/core@0.31.1) (2023-02-22)
+
+
+### Bug Fixes
+
+* **voi:** linear transfer function for volume viewport([#444](https://github.com/cornerstonejs/cornerstone3D-beta/issues/444)) ([dcec5eb](https://github.com/cornerstonejs/cornerstone3D-beta/commit/dcec5ebafe3ba929735685a443ff28fe348c09c0))
+
+
+
+
+
 # [0.31.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.30.1...@cornerstonejs/core@0.31.0) (2023-02-13)
 
 
