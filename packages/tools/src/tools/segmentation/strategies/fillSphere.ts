@@ -39,9 +39,6 @@ function fillSphere(
     scalarIndex.push(index);
   };
 
-  console.log(dimensions);
-  const yMultiple = dimensions[1];
-
   pointInSurroundingSphereCallback(
     imageData,
     [points[0], points[1]],
@@ -49,7 +46,23 @@ function fillSphere(
     viewport as Types.IVolumeViewport
   );
 
-  triggerSegmentationDataModified(segmentationId);
+  const zMultiple = dimensions[0] * dimensions[1];
+  const minSlice = Math.floor(scalarIndex[0] / zMultiple);
+  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
+  const testArray = Array.from(
+    { length: maxSlice - minSlice + 1 },
+    (v, k) => k + minSlice
+  );
+
+  const wrongSliceArray = Array.from({ length: 21 });
+
+  // console.log(testArray);
+  const start = performance.now();
+
+  triggerSegmentationDataModified(segmentationId, testArray);
+
+  const end = performance.now();
+  console.log(`Execution time: ${end - start} ms`);
 }
 
 /**
