@@ -214,11 +214,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     let volumeActor;
 
     if (volumeId) {
-      const actorEntry = actorEntries.find((entry: ActorEntry) => {
-        return entry.uid === volumeId;
-      });
-
-      volumeActor = actorEntry?.actor as vtkVolume;
+      volumeActor = this.getActor(volumeId)?.actor as vtkVolume;
     }
 
     // // set it for the first volume (if there are more than one - fusion)
@@ -241,8 +237,18 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
       volumeActor.getProperty().setRGBTransferFunction(0, cfun);
     } else {
-      const cfun = createLinearRGBTransferFunction(voiRangeToUse);
-      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+      // TODO: refactor and make it work for PET series (inverted/colormap)
+      // const cfun = createLinearRGBTransferFunction(voiRangeToUse);
+      // volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+      // Moving from LINEAR to SIGMOID and back to LINEAR will not
+      // work until we implement it in a different way because the
+      // LINEAR transfer function is not recreated.
+      const { lower, upper } = voiRangeToUse;
+      volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0)
+        .setRange(lower, upper);
     }
 
     if (!suppressEvents) {
