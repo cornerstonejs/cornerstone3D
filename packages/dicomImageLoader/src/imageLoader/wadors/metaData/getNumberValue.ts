@@ -5,13 +5,13 @@ function getNumberValue(
   element: WADORSMetaDataElement,
   index?: number
 ): number {
-  const value = getValue(element, index);
+  const value = getValue<any>(element, index);
 
   if (value === undefined) {
     return;
   }
 
-  return parseFloat(value as string);
+  return parseFloat(value);
 }
 
 export default getNumberValue;

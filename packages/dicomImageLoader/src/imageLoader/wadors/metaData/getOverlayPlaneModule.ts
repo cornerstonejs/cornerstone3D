@@ -12,7 +12,12 @@ export default function getOverlayPlaneModule(metaData: WADORSMetaData) {
       groupStr = `x600${overlayGroup.toString(16)}`;
     }
 
-    const data = getValue(metaData[`${groupStr}3000`]) as any;
+    /**
+     * @todo there is a type issue with WADORSMetaData. Currently WADORSMetaData
+     * on includes  string[] | number[] | boolean. from the look of this, data
+     * is a more complex type
+     */
+    const data = getValue<any>(metaData[`${groupStr}3000`]);
 
     if (!data) {
       continue;

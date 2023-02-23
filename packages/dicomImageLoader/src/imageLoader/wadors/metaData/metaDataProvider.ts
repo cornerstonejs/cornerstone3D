@@ -56,15 +56,20 @@ function metaDataProvider(type, imageId) {
 
   if (type === 'generalSeriesModule') {
     return {
-      modality: getValue(metaData['00080060']),
-      seriesInstanceUID: getValue(metaData['0020000E']),
+      modality: getValue<string>(metaData['00080060']),
+      seriesInstanceUID: getValue<string>(metaData['0020000E']),
       seriesNumber: getNumberValue(metaData['00200011']),
-      studyInstanceUID: getValue(metaData['0020000D']),
-      seriesDate: dicomParser.parseDA(getValue(metaData['00080021'])),
-      seriesTime: dicomParser.parseTM(getValue(metaData['00080031'], 0, '')),
-      acquisitionDate: dicomParser.parseDA(getValue(metaData['00080022']), ''),
+      studyInstanceUID: getValue<string>(metaData['0020000D']),
+      seriesDate: dicomParser.parseDA(getValue<string>(metaData['00080021'])),
+      seriesTime: dicomParser.parseTM(
+        getValue<string>(metaData['00080031'], 0, '')
+      ),
+      acquisitionDate: dicomParser.parseDA(
+        getValue<string>(metaData['00080022']),
+        ''
+      ),
       acquisitionTime: dicomParser.parseTM(
-        getValue(metaData['00080032'], 0, '')
+        getValue<string>(metaData['00080032'], 0, '')
       ),
     };
   }
@@ -73,7 +78,7 @@ function metaDataProvider(type, imageId) {
     return {
       patientAge: getNumberValue(metaData['00101010']),
       patientSize: getNumberValue(metaData['00101020']),
-      patientSex: getValue(metaData['00100040']),
+      patientSex: getValue<'M' | 'F'>(metaData['00100040']),
       patientWeight: getNumberValue(metaData['00101030']),
     };
   }
@@ -99,19 +104,25 @@ function metaDataProvider(type, imageId) {
 
     if (imageOrientationPatient) {
       rowCosines = [
-        parseFloat(imageOrientationPatient[0] as any),
-        parseFloat(imageOrientationPatient[1] as any),
-        parseFloat(imageOrientationPatient[2] as any),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[0]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[1]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[2]),
       ];
       columnCosines = [
-        parseFloat(imageOrientationPatient[3] as any),
-        parseFloat(imageOrientationPatient[4] as any),
-        parseFloat(imageOrientationPatient[5] as any),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[3]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[4]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[5]),
       ];
     }
 
     return {
-      frameOfReferenceUID: getValue(metaData['00200052']),
+      frameOfReferenceUID: getValue<string>(metaData['00200052']),
       rows: getNumberValue(metaData['00280010']),
       columns: getNumberValue(metaData['00280011']),
       imageOrientationPatient,
@@ -174,8 +185,8 @@ function metaDataProvider(type, imageId) {
 
   if (type === 'sopCommonModule') {
     return {
-      sopClassUID: getValue(metaData['00080016']),
-      sopInstanceUID: getValue(metaData['00080018']),
+      sopClassUID: getValue<string>(metaData['00080016']),
+      sopInstanceUID: getValue<string>(metaData['00080018']),
     };
   }
 
@@ -209,7 +220,7 @@ function metaDataProvider(type, imageId) {
   // retrieved from the image
   if (type === 'transferSyntax') {
     return {
-      transferSyntaxUID: getValue(metaData['00020010']),
+      transferSyntaxUID: getValue<string>(metaData['00020010']),
     };
   }
 

@@ -27,7 +27,7 @@ function retrieveMultiframeMetadata(imageId) {
 
 function isMultiframe(metadata) {
   // Checks if dicomTag NumberOf Frames exists and it is greater than one
-  const numberOfFrames = getValue(metadata['00280008']);
+  const numberOfFrames = getValue<number>(metadata['00280008']);
 
   return numberOfFrames && numberOfFrames > 1;
 }
