@@ -1,6 +1,9 @@
-import { ByteArray } from 'dicom-parser';
-
+import type {
+  LibJpegTurbo8Bit,
+  OpenJpegModule,
+} from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
 import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
+import { ByteArray } from 'dicom-parser';
 
 const libjpegTurboWasm = new URL(
   '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode.wasm',
@@ -9,7 +12,10 @@ const libjpegTurboWasm = new URL(
 
 import { ImageFrame } from '../../types';
 
-const local = {
+const local: {
+  codec: OpenJpegModule;
+  decoder: LibJpegTurbo8Bit;
+} = {
   codec: undefined,
   decoder: undefined,
 };
@@ -22,7 +28,7 @@ function initLibjpegTurbo(): Promise<void> {
   const libjpegTurboModule = libjpegTurboFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return libjpegTurboWasm;
+        return libjpegTurboWasm.toString();
       }
 
       return f;

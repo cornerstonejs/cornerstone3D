@@ -1,4 +1,8 @@
 // https://emscripten.org/docs/api_reference/module.html
+import type {
+  J2KDecoder,
+  OpenJpegModule,
+} from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
 import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
 
 const openjpegWasm = new URL(
@@ -8,7 +12,11 @@ const openjpegWasm = new URL(
 
 import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
 
-const local = {
+const local: {
+  codec: OpenJpegModule;
+  decoder: J2KDecoder;
+  decodeConfig: WebWorkerDecodeConfig;
+} = {
   codec: undefined,
   decoder: undefined,
   decodeConfig: {} as WebWorkerDecodeConfig,
@@ -26,7 +34,7 @@ export function initialize(
   const openJpegModule = openJpegFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return openjpegWasm;
+        return openjpegWasm.toString();
       }
 
       return f;
