@@ -144,8 +144,10 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       throw new Error('imageIdIndex out of range');
     }
 
+    const scalarDataArrays = this.getScalarDataArrays();
     const scalarDataIndex = Math.floor(imageIdIndex / this.numFrames);
-    return (<Types.VolumeScalarData[]>this.scalarData)[scalarDataIndex];
+
+    return scalarDataArrays[scalarDataIndex];
   }
 
   protected invalidateVolume(immediate: boolean): void {

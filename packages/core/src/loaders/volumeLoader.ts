@@ -83,8 +83,9 @@ function createInternalVTKRepresentation(volume): vtkImageDataType {
   }
 
   const imageData = vtkImageData.newInstance();
-  const scalarDataArrays = volume.getScalarDataArrays();
+  const scalarData = volume.scalarData;
   const dataArrayAttrs = { numberOfComponents: numComponents };
+  const isBufferType = !!scalarData.buffer;
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
@@ -92,10 +93,10 @@ function createInternalVTKRepresentation(volume): vtkImageDataType {
   imageData.setOrigin(origin);
 
   // Add scalar datas to 3D or 4D volume
-  if (scalarDataArrays.length === 1) {
-    addScalarDataToImageData(imageData, scalarDataArrays[0], dataArrayAttrs);
+  if (isBufferType) {
+    addScalarDataToImageData(imageData, scalarData, dataArrayAttrs);
   } else {
-    addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
+    addScalarDataArraysToImageData(imageData, scalarData, dataArrayAttrs);
   }
 
   return imageData;
