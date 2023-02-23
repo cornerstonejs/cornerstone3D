@@ -120,14 +120,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   }
 
   /**
-   * Return the scalar data for 3D volumes or the active scalar data
-   * (current time point) for 4D volumes
-   */
-  public getScalarData(): Types.VolumeScalarData {
-    throw new Error('Abstract method');
-  }
-
-  /**
    * Return all scalar data objects (buffers) which will be only one for
    * 3D volumes and one per time point for 4D volumes
    * images of each 3D volume is stored

@@ -242,7 +242,7 @@ class VolumeViewport extends BaseVolumeViewport {
       index[1] * dimensions[0] +
       index[0];
 
-    return volume.scalarData[voxelIndex];
+    return volume.getScalarData()[voxelIndex];
   }
 
   public setBlendMode(

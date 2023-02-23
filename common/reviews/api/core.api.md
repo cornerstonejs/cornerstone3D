@@ -1070,11 +1070,13 @@ interface IImageVolume {
     // (undocumented)
     direction: Mat3;
     // (undocumented)
+    getScalarData(): VolumeScalarData;
+    // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
     imageData?: vtkImageData;
     // (undocumented)
-    imageIds?: Array<string>;
+    imageIds: Array<string>;
     // (undocumented)
     isPrescaled: boolean;
     // (undocumented)
@@ -1088,7 +1090,7 @@ interface IImageVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: any;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -1242,11 +1244,13 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     direction: Mat3;
     // (undocumented)
+    getScalarData(): VolumeScalarData;
+    // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
     imageData?: any;
     // (undocumented)
-    imageIds?: Array<string>;
+    imageIds: Array<string>;
     // (undocumented)
     isPrescaled: boolean;
     // (undocumented)
@@ -1260,7 +1264,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: Float32Array | Uint8Array;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -1561,7 +1565,7 @@ interface IVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: Float32Array | Uint8Array;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -2123,6 +2127,7 @@ declare namespace Types {
         IEnabledElement,
         ICache,
         IVolume,
+        VolumeScalarData,
         IViewportId,
         IImageVolume,
         IRenderingEngine,
@@ -2521,6 +2526,9 @@ type VolumeNewImageEventDetail = {
     viewportId: string;
     renderingEngineId: string;
 };
+
+// @public (undocumented)
+type VolumeScalarData = Float32Array | Uint8Array;
 
 // @public (undocumented)
 export class VolumeViewport extends BaseVolumeViewport {

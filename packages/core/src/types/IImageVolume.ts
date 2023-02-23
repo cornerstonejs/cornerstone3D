@@ -61,6 +61,9 @@ interface IImageVolume {
 
   //cancel load
   cancelLoading?: () => void;
+
+  /** return the volume scalar data */
+  getScalarData(): VolumeScalarData;
 }
 
 export default IImageVolume;

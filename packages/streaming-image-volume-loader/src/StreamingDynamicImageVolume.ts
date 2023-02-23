@@ -1,5 +1,4 @@
 import type { Types } from '@cornerstonejs/core';
-import { VolumeScalarData } from 'core/src/types';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
 
 type TimePoint = {
@@ -154,7 +153,7 @@ export default class StreamingDynamicImageVolume extends BaseStreamingImageVolum
    * @returns volume scalar data
    */
   public getScalarData(): Types.VolumeScalarData {
-    return (<VolumeScalarData[]>this.scalarData)[this._timePointIndex];
+    return (<Types.VolumeScalarData[]>this.scalarData)[this._timePointIndex];
   }
 
   /**

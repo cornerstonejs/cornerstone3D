@@ -2325,16 +2325,17 @@ interface IImageVolume {
     ) => IImageLoadObject;
     dimensions: Point3;
     direction: Mat3;
+    getScalarData(): VolumeScalarData;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
-    imageIds?: Array<string>;
+    imageIds: Array<string>;
     isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: any;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PET?: {
             SUVlbmFactor?: number;
@@ -2609,6 +2610,7 @@ interface IStreamingImageVolume extends ImageVolume {
 // @public (undocumented)
 interface IStreamingVolumeProperties {
     imageIds: Array<string>;
+
     loadStatus: {
         loaded: boolean;
         loading: boolean;
@@ -2785,7 +2787,7 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: Float32Array | Uint8Array;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PET?: {
             // @TODO: Do these values exist?
@@ -5211,6 +5213,9 @@ export class VolumeRotateMouseWheelTool extends BaseTool {
     // (undocumented)
     static toolName: any;
 }
+
+// @public (undocumented)
+type VolumeScalarData = Float32Array | Uint8Array;
 
 // @public
 type VolumeViewportProperties = {

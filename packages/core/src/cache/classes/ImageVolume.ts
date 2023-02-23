@@ -80,6 +80,14 @@ export class ImageVolume implements IImageVolume {
   }
 
   cancelLoading: () => void;
+
+  /**
+   * Return the scalar data for 3D volumes or the active scalar data
+   * (current time point) for 4D volumes
+   */
+  public getScalarData(): VolumeScalarData {
+    throw new Error('Abstract method');
+  }
 }
 
 export default ImageVolume;

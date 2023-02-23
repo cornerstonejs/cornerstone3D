@@ -30,7 +30,7 @@ function createMergedLabelmapForIndex(
 
   const labelmap = labelmaps[0];
 
-  const arrayType = labelmap.scalarData.constructor;
+  const arrayType = (labelmap.getScalarData() as any).constructor;
   const outputData = new arrayType(labelmap.scalarData.length);
 
   labelmaps.forEach((labelmap) => {
