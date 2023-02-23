@@ -23,7 +23,6 @@ const {
   setUseCPURendering,
   resetUseCPURendering,
   CONSTANTS,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;

@@ -53,17 +53,17 @@ function getAnnotationManager(element?: HTMLDivElement) {
  * annotation manager.
  *
  * @param toolName - The name of the tool.
- * @param FrameOfReferenceUID - The Frame of Reference UID.
+ * @param frameOfReferenceUID - The Frame of Reference UID.
  * @param element - The HTML element.
  * @returns The annotations corresponding to the Frame of Reference and the toolName.
  */
 function getAnnotations(
   toolName: string,
-  FrameOfReferenceUID: string,
+  frameOfReferenceUID: string,
   element?: HTMLDivElement
 ): Annotations {
   const annotationManager = getAnnotationManager(element);
-  return annotationManager.get(FrameOfReferenceUID, toolName);
+  return annotationManager.get(frameOfReferenceUID, toolName);
 }
 
 /**

@@ -30,7 +30,6 @@ const {
   volumeLoader,
   utilities,
   setVolumesForViewports,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { ViewportType, Events } = Enums;
