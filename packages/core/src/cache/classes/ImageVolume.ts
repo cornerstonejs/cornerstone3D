@@ -1,3 +1,4 @@
+import isTypedArray from '../../utilities/isTypedArray';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import {
   IVolume,
@@ -86,7 +87,11 @@ export class ImageVolume implements IImageVolume {
    * (current time point) for 4D volumes
    */
   public getScalarData(): VolumeScalarData {
-    throw new Error('Abstract method');
+    if (isTypedArray(this.scalarData)) {
+      return <VolumeScalarData>this.scalarData;
+    }
+
+    throw new Error('Unknow scalar data type');
   }
 }
 
