@@ -46,6 +46,9 @@ function fillSphere(
     viewport as Types.IVolumeViewport
   );
 
+  // Since the scalar indexes start from the top left corner of the cube, the first
+  // slice that needs to be rendered can be calculated from the first mask coordinate
+  // divided by the zMultiple, as well as the last slice for the last coordinate
   const zMultiple = dimensions[0] * dimensions[1];
   const minSlice = Math.floor(scalarIndex[0] / zMultiple);
   const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
