@@ -29,7 +29,7 @@ interface FilterInterface {
  * To get the stored annotations information you can use ToolState helpers.
  *
  */
-export default class FrameOfReferenceSpecificAnnotationManager {
+class FrameOfReferenceSpecificAnnotationManager {
   private annotations: AnnotationState;
   public readonly uid: string;
 
@@ -418,7 +418,4 @@ export default class FrameOfReferenceSpecificAnnotationManager {
   }
 }
 
-const defaultFrameOfReferenceSpecificAnnotationManager =
-  new FrameOfReferenceSpecificAnnotationManager('DEFAULT');
-
-export { defaultFrameOfReferenceSpecificAnnotationManager };
+export default FrameOfReferenceSpecificAnnotationManager;

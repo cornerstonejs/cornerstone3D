@@ -41,7 +41,10 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-function addAnnotation(annotation: Annotation, element?: HTMLDivElement): string;
+function addAnnotation(annotation: Annotation, annotationManagerSelector?: AnnotationManagerSelector): string;
+
+// @public (undocumented)
+function addAnnotationManager(annotationManagerSelector: any, annotationManager: any): void;
 
 // @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
@@ -1858,7 +1861,10 @@ function getAllSynchronizers(): Array<Synchronizer>;
 function getAllToolGroups(): Array<IToolGroup>;
 
 // @public (undocumented)
-function getAnnotation(annotationUID: string, element?: HTMLDivElement): Annotation;
+function getAnnotation(annotationUID: string, annotationManagerSelector?: AnnotationManagerSelector): Annotation;
+
+// @public (undocumented)
+function getAnnotationManager(annotationManagerSelector?: AnnotationManagerSelector): any;
 
 // @public (undocumented)
 function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Point2, proximity?: number): Annotation | null;
@@ -1867,7 +1873,7 @@ function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Po
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
 
 // @public (undocumented)
-function getAnnotations(toolName: string, FrameOfReferenceUID: string, element?: HTMLDivElement): Annotations;
+function getAnnotations(toolName: string, frameOfReferenceUID: string, annotationManagerSelector?: AnnotationManagerSelector): Annotations;
 
 // @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
@@ -1918,7 +1924,7 @@ function getConfiguration(): {
 };
 
 // @public (undocumented)
-function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
+function getDefaultAnnotationManager(): any;
 
 // @public (undocumented)
 function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapConfig;
@@ -1963,7 +1969,7 @@ function getMeanPoints(points: IPoints[]): IPoints;
 function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
-function getNumberOfAnnotations(toolName: string, frameOfReferenceUID?: string): number;
+function getNumberOfAnnotations(toolName: string, frameOfReferenceUID?: string, annotationManagerSelector?: AnnotationManagerSelector): number;
 
 // @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
@@ -2040,9 +2046,6 @@ function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
-
-// @public (undocumented)
-function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLDivElement): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
 function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, topLeftWorld: Types_2.Point3, bottomRightWorld: Types_2.Point3): {
@@ -4016,10 +4019,10 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
-function removeAllAnnotations(element?: HTMLDivElement): void;
+function removeAllAnnotations(annotationManagerSelector?: AnnotationManagerSelector): void;
 
 // @public (undocumented)
-function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
+function removeAnnotation(annotationUID: string, annotationManagerSelector?: AnnotationManagerSelector): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
@@ -4535,8 +4538,9 @@ declare namespace state_2 {
         getAnnotation,
         removeAnnotation,
         removeAllAnnotations,
-        getViewportSpecificAnnotationManager,
-        getDefaultAnnotationManager
+        getDefaultAnnotationManager,
+        addAnnotationManager,
+        getAnnotationManager
     }
 }
 

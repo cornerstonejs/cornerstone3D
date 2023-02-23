@@ -9,7 +9,8 @@ import {
   addAnnotation,
   removeAnnotation,
   getDefaultAnnotationManager,
-  getViewportSpecificAnnotationManager,
+  getAnnotationManager,
+  addAnnotationManager,
   getAnnotation,
   getNumberOfAnnotations,
 } from './annotation/annotationState';
@@ -30,7 +31,8 @@ export {
   getNumberOfAnnotations,
   removeAnnotation,
   getDefaultAnnotationManager,
-  getViewportSpecificAnnotationManager,
+  getAnnotationManager,
+  addAnnotationManager,
   getAnnotation,
   // segmentations
   addSegmentationRepresentations,
