@@ -12,15 +12,15 @@ import getValue from './getValue';
 function getNumberString(
   element: WADORSMetaDataElement,
   index: number,
-  defaultValue
-) {
-  const value = getValue(element, index, defaultValue);
+  defaultValue: number
+): number {
+  const value = getValue<any>(element, index, defaultValue);
 
   if (value === undefined) {
     return;
   }
 
-  return parseFloat(value as string);
+  return parseFloat(value);
 }
 
 export default getNumberString;
