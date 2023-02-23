@@ -91,7 +91,7 @@
       "volumePriorityLoading": {
         "name": "Prioritizing Slices during Volume Loading",
         "description": "Demonstrates how to customize the slice loading order using the streaming-image volume loader"
-      },
+      }
     },
     "tools-basic": {
       "multipleToolGroups": {
