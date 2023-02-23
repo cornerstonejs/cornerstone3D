@@ -1,3 +1,4 @@
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import {
   RenderingEngine,
   Types,
@@ -5,6 +6,7 @@ import {
   setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -101,11 +103,10 @@ addDropdownToToolbar({
 function addTimePointSlider(volume) {
   addSliderToToolbar({
     title: 'Time Point',
-    range: [0, volume.getTimePointsCount() - 1],
+    range: [0, volume.numTimePoints - 1],
     defaultValue: 0,
     onSelectedValueChange: (value) => {
-      const timePointIndex = Number(value);
-      volume.setTimePointIndex(timePointIndex);
+      volume.timePointIndex = Number(value);
     },
   });
 }
@@ -516,12 +517,13 @@ function setUpSynchronizers() {
 }
 
 async function setUpDisplay() {
+  const { metaDataManager } = cornerstoneWADOImageLoader.wadors;
   const wadoRsRoot = 'https://d28o5kq0jsoob5.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849';
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const ctImageIds = await createImageIdsAndCacheMetaData({
+  let ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID:
       '1.3.6.1.4.1.12842.1.1.14.4.20220915.121025.435.2500855592',
@@ -533,6 +535,16 @@ async function setUpDisplay() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
     wadoRsRoot,
+  });
+
+  // Limit to 565 images because it is currently crashing when all 763 images
+  // are loaded. There is a work in progress to fix that.
+  ctImageIds = ctImageIds.filter((imageId) => {
+    const instanceMetaData = metaDataManager.get(imageId);
+    const instanceTag = instanceMetaData['00200013'];
+    const instanceNumber = parseInt(instanceTag.Value[0]);
+
+    return instanceNumber <= 565;
   });
 
   // Define a volume in memory
@@ -766,6 +778,9 @@ function initCameraSynchronization(sViewport, tViewport) {
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+
+  // Increases cache size to 4GB to be able to store all PET/CT images
+  cache.setMaxCacheSize(4 * 1024 * 1024 * 1024);
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);

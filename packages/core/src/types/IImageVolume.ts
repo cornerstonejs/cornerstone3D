@@ -1,16 +1,11 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Metadata, Point3, IImageLoadObject, Mat3 } from '../types';
-
-type VolumeTimePoints = {
-  timePoints: {
-    /** imageIds of each timepoint  */
-    imageIds: Array<string>;
-    /** volume scalar data  */
-    scalarData: Float32Array | Uint8Array;
-  }[];
-  /** optional current time point index */
-  activeTimePointIndex: number;
-};
+import {
+  Metadata,
+  VolumeScalarData,
+  Point3,
+  IImageLoadObject,
+  Mat3,
+} from '../types';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -28,7 +23,7 @@ interface IImageVolume {
   /** volume origin - set to the imagePositionPatient of the last image in the volume */
   origin: Point3;
   /** volume scalar data */
-  scalarData: any;
+  scalarData: VolumeScalarData | Array<VolumeScalarData>;
   /** Whether preScaling has been performed on the volume */
   isPrescaled: boolean;
   /** volume scaling metadata */
@@ -53,9 +48,7 @@ interface IImageVolume {
   /** loading status object for the volume containing loaded/loading statuses */
   loadStatus?: Record<string, any>;
   /** imageIds of the volume (if it is built of separate imageIds) */
-  imageIds?: Array<string>;
-  /** optional 4D volume data that contains all time points (imageIds and buffers) */
-  timePointsData?: VolumeTimePoints;
+  imageIds: Array<string>;
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string; // if volume is derived from another volume
   /** whether the metadata for the pixel spacing is not undefined  */
@@ -70,4 +63,4 @@ interface IImageVolume {
   cancelLoading?: () => void;
 }
 
-export { IImageVolume as default, IImageVolume, VolumeTimePoints };
+export default IImageVolume;

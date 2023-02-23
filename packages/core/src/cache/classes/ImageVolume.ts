@@ -1,10 +1,10 @@
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import {
   IVolume,
+  VolumeScalarData,
   Metadata,
   Point3,
   IImageVolume,
-  VolumeTimePoints,
   Mat3,
 } from '../../types';
 
@@ -23,7 +23,7 @@ export class ImageVolume implements IImageVolume {
   /** volume origin, Note this is an opinionated origin for the volume */
   origin: Point3;
   /** volume scalar data  */
-  scalarData: Float32Array | Uint8Array;
+  scalarData: VolumeScalarData | Array<VolumeScalarData>;
   /** Whether preScaling has been performed on the volume */
   isPrescaled = false;
   /** volume scaling parameters if it contains scaled data */
@@ -50,9 +50,7 @@ export class ImageVolume implements IImageVolume {
   /** load status object for the volume */
   loadStatus?: Record<string, any>;
   /** optional image ids for the volume if it is made of separated images */
-  imageIds?: Array<string>;
-  /** optional 4D volume data that contains all time points (imageIds and buffers) */
-  timePointsData?: VolumeTimePoints;
+  imageIds: Array<string>;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
   /** whether the metadata for the pixel spacing is not undefined  */

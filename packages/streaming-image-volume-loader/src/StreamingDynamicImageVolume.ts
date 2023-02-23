@@ -1,50 +1,93 @@
 import type { Types } from '@cornerstonejs/core';
-import StreamingImageVolume from './StreamingImageVolume';
+import { VolumeScalarData } from 'core/src/types';
+import BaseStreamingImageVolume from './BaseStreamingImageVolume';
+
+type TimePoint = {
+  /** imageIds of each timepoint  */
+  imageIds: Array<string>;
+  /** volume scalar data  */
+  scalarData: Float32Array | Uint8Array;
+};
 
 /**
  * Streaming Image Volume Class that extends StreamingImageVolume base class.
  * It implements load method to load the imageIds and insert them into the volume.
  */
-export default class StreamingDynamicImageVolume extends StreamingImageVolume {
+export default class StreamingDynamicImageVolume extends BaseStreamingImageVolume {
+  private _numTimePoints: number;
+  private _timePoints: TimePoint[];
+  private _timePointIndex = 0;
+
   constructor(
     imageVolumeProperties: Types.IVolume,
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
-    super(imageVolumeProperties, streamingProperties);
-
-    this.imageIds = streamingProperties.timePointsData.timePoints.reduce(
-      (acc, cur) => acc.concat(cur.imageIds),
-      []
+    StreamingDynamicImageVolume._ensureValidData(
+      imageVolumeProperties,
+      streamingProperties
     );
 
-    this.timePointsData = streamingProperties.timePointsData;
-    this.initialize();
+    super(imageVolumeProperties, streamingProperties);
+    this._numTimePoints = (<Types.VolumeScalarData[]>this.scalarData).length;
+    this._timePoints = this._getTimePointsData();
   }
 
-  private _getTimePointsToLoad(timePointIndex?: number) {
-    const { timePoints } = this.timePointsData;
-    const returnAllTimePoints = timePointIndex === undefined;
+  private static _ensureValidData(
+    imageVolumeProperties: Types.IVolume,
+    streamingProperties: Types.IStreamingVolumeProperties
+  ): void {
+    const imageIds = streamingProperties.imageIds;
+    const scalarDataArrays = <Types.VolumeScalarData[]>(
+      imageVolumeProperties.scalarData
+    );
 
-    timePointIndex = timePointIndex ?? this.timePointsData.activeTimePointIndex;
+    if (imageIds.length % scalarDataArrays.length !== 0) {
+      throw new Error(
+        `Number of imageIds is not a multiple of ${scalarDataArrays.length}`
+      );
+    }
+  }
 
-    if (timePointIndex < 0 || timePointIndex >= timePoints.length) {
-      throw new Error('timePointIndex out of bounds');
+  /**
+   * Use the image ids and scalar data array to create TimePoint objects
+   * and make it a bit easier to work with when loading requests
+   */
+  private _getTimePointsData(): TimePoint[] {
+    const { imageIds } = this;
+    const scalarData = <Types.VolumeScalarData[]>this.scalarData;
+
+    const { numFrames } = this;
+    const numTimePoints = scalarData.length;
+    const timePoints: TimePoint[] = [];
+
+    for (let i = 0; i < numTimePoints; i++) {
+      const start = i * numFrames;
+      const end = start + numFrames;
+
+      timePoints.push({
+        imageIds: imageIds.slice(start, end),
+        scalarData: scalarData[i],
+      });
     }
 
-    const timePointsToLoad = [timePoints[timePointIndex]];
+    return timePoints;
+  }
 
-    if (returnAllTimePoints) {
-      let leftIndex = timePointIndex - 1;
-      let rightIndex = timePointIndex + 1;
+  private _getTimePointsToLoad() {
+    const timePoints = this._timePoints;
+    const initialTimePointIndex = this._timePointIndex;
+    const timePointsToLoad = [timePoints[initialTimePointIndex]];
 
-      while (leftIndex >= 0 || rightIndex < timePoints.length) {
-        if (leftIndex >= 0) {
-          timePointsToLoad.push(timePoints[leftIndex--]);
-        }
+    let leftIndex = initialTimePointIndex - 1;
+    let rightIndex = initialTimePointIndex + 1;
 
-        if (rightIndex < timePoints.length) {
-          timePointsToLoad.push(timePoints[rightIndex++]);
-        }
+    while (leftIndex >= 0 || rightIndex < timePoints.length) {
+      if (leftIndex >= 0) {
+        timePointsToLoad.push(timePoints[leftIndex--]);
+      }
+
+      if (rightIndex < timePoints.length) {
+        timePointsToLoad.push(timePoints[rightIndex++]);
       }
     }
 
@@ -57,13 +100,8 @@ export default class StreamingDynamicImageVolume extends StreamingImageVolume {
     return this.getImageIdsRequests(imageIds, scalarData, priority);
   };
 
-  private _getTimePointsRequests = (
-    priority: number,
-    options: {
-      timePointIndex?: number;
-    } = {}
-  ) => {
-    const timePoints = this._getTimePointsToLoad(options.timePointIndex);
+  private _getTimePointsRequests = (priority: number) => {
+    const timePoints = this._getTimePointsToLoad();
     let timePointsRequests = [];
 
     timePoints.forEach((timePoint) => {
@@ -74,60 +112,49 @@ export default class StreamingDynamicImageVolume extends StreamingImageVolume {
     return timePointsRequests;
   };
 
-  protected imageIdIndexToFrameIndex(imageIdIndex: number): number {
-    return imageIdIndex % this.numFrames;
+  /**
+   * Returns the active time point index
+   * @returns active time point index
+   */
+  public get timePointIndex(): number {
+    return this._timePointIndex;
   }
 
-  protected initialize(): void {
-    if (this.timePointsData) {
-      super.initialize();
-    }
-  }
-
-  public get numFrames(): number {
-    return this.timePointsData?.timePoints[0].imageIds.length ?? 0;
-  }
-
-  public getScalarDataArrays(): Array<Float32Array | Uint8Array> {
-    return (
-      this.timePointsData?.timePoints.map(({ scalarData }) => scalarData) ?? []
-    );
-  }
-
-  public getActiveScalarData(): Float32Array | Uint8Array {
-    const timePointIndex = this.getActiveTimePointIndex();
-    return this.timePointsData?.timePoints[timePointIndex].scalarData;
-  }
-
-  public getScalarDataByImageIdIndex(
-    imageIdIndex: number
-  ): Float32Array | Uint8Array {
-    if (imageIdIndex < 0 || imageIdIndex >= this.imageIds.length) {
-      throw new Error('imageIdIndex out of range');
+  /**
+   * Set the active time point index which also updates the active scalar data
+   * @returns current time point index
+   */
+  public set timePointIndex(newTimePointIndex: number) {
+    if (newTimePointIndex < 0 || newTimePointIndex >= this.numTimePoints) {
+      throw new Error(`Invalid timePointIndex (${newTimePointIndex})`);
     }
 
-    const timePointIndex = Math.floor(imageIdIndex / this.numFrames);
-    return this.timePointsData?.timePoints[timePointIndex].scalarData;
-  }
-
-  public getTimePointsCount(): number {
-    return this.timePointsData.timePoints.length;
-  }
-
-  public getActiveTimePointIndex(): number {
-    return this.timePointsData.activeTimePointIndex ?? 0;
-  }
-
-  public setTimePointIndex(timePointIndex: number): void {
-    if (timePointIndex < 0 || timePointIndex >= this.getTimePointsCount()) {
-      throw new Error('Invalid timePointIndex');
+    // Nothing to do when time point index does not change
+    if (this._timePointIndex === newTimePointIndex) {
+      return;
     }
 
-    const { imageData, timePointsData } = this;
+    const { imageData } = this;
 
-    timePointsData.activeTimePointIndex = timePointIndex;
-    imageData.getPointData().setActiveScalars(`timePoint-${timePointIndex}`);
-    this.invalidateVolume();
+    this._timePointIndex = newTimePointIndex;
+    imageData.getPointData().setActiveScalars(`timePoint-${newTimePointIndex}`);
+    this.invalidateVolume(true);
+  }
+
+  /**
+   * Returns the number of time points
+   * @returns number of time points
+   */
+  public get numTimePoints(): number {
+    return this._numTimePoints;
+  }
+
+  /**
+   * Return the active scalar data (buffer)
+   * @returns volume scalar data
+   */
+  public getScalarData(): Types.VolumeScalarData {
+    return (<VolumeScalarData[]>this.scalarData)[this._timePointIndex];
   }
 
   /**

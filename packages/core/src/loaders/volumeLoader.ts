@@ -34,9 +34,47 @@ interface LocalVolumeOptions {
   direction: Mat3;
 }
 
+/**
+ * Adds a single scalar data to a 3D volume
+ */
+function addScalarDataToImageData(
+  imageData: vtkImageDataType,
+  scalarData: Types.VolumeScalarData,
+  dataArrayAttrs
+) {
+  const scalarArray = vtkDataArray.newInstance({
+    name: `Pixels`,
+    values: scalarData,
+    ...dataArrayAttrs,
+  });
+
+  imageData.getPointData().setScalars(scalarArray);
+}
+
+/**
+ * Adds multiple scalar data (time points) to a 4D volume
+ */
+function addScalarDataArraysToImageData(
+  imageData: vtkImageDataType,
+  scalarDataArrays: Types.VolumeScalarData[],
+  dataArrayAttrs
+) {
+  scalarDataArrays.forEach((scalarData, i) => {
+    const vtkScalarArray = vtkDataArray.newInstance({
+      name: `timePoint-${i}`,
+      values: scalarData,
+      ...dataArrayAttrs,
+    });
+
+    imageData.getPointData().addArray(vtkScalarArray);
+  });
+
+  // Set the first as active otherwise nothing is displayed on the screen
+  imageData.getPointData().setActiveScalars('timePoint-0');
+}
+
 function createInternalVTKRepresentation(volume): vtkImageDataType {
-  const { dimensions, metadata, spacing, direction, origin, scalarData } =
-    volume;
+  const { dimensions, metadata, spacing, direction, origin } = volume;
   const { PhotometricInterpretation } = metadata;
 
   let numComponents = 1;
@@ -46,23 +84,19 @@ function createInternalVTKRepresentation(volume): vtkImageDataType {
 
   const imageData = vtkImageData.newInstance();
   const scalarDataArrays = volume.getScalarDataArrays();
+  const dataArrayAttrs = { numberOfComponents: numComponents };
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
 
-  scalarDataArrays.forEach((scalarDataArray, i) => {
-    const vtkScalarArray = vtkDataArray.newInstance({
-      name: `timePoint-${i}`,
-      numberOfComponents: numComponents,
-      values: scalarDataArray,
-    });
-
-    imageData.getPointData().addArray(vtkScalarArray);
-  });
-
-  imageData.getPointData().setActiveScalars('timePoint-0');
+  // Add scalar datas to 3D or 4D volume
+  if (scalarDataArrays.length === 1) {
+    addScalarDataToImageData(imageData, scalarDataArrays[0], dataArrayAttrs);
+  } else {
+    addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
+  }
 
   return imageData;
 }

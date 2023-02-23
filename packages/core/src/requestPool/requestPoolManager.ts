@@ -291,7 +291,7 @@ class RequestPoolManager {
     if (this.grabDelay !== undefined) {
       if (!this.timeoutHandle) {
         this.timeoutHandle = window.setTimeout(() => {
-          this.timeoutHandle = 0;
+          this.timeoutHandle = null;
           this.startGrabbing();
         }, this.grabDelay);
       }

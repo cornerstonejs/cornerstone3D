@@ -48,11 +48,12 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
     sizeInBytes,
   } = volumesInfo[0];
 
-  const sortedTimePoints = volumesInfo.map((volumeInfo) => {
-    return {
-      scalarData: volumeInfo.scalarData,
-      imageIds: volumeInfo.sortedImageIds,
-    };
+  const sortedImageIdsArrays = [];
+  const scalarDataArrays = [];
+
+  volumesInfo.forEach((volumeInfo) => {
+    sortedImageIdsArrays.push(volumeInfo.sortedImageIds);
+    scalarDataArrays.push(volumeInfo.scalarData);
   });
 
   let streamingImageVolume = new StreamingDynamicImageVolume(
@@ -64,14 +65,12 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
       spacing,
       origin,
       direction,
+      scalarData: scalarDataArrays,
       sizeInBytes,
     },
     // Streaming properties
     {
-      timePointsData: {
-        timePoints: sortedTimePoints,
-        activeTimePointIndex: 0,
-      },
+      imageIds: sortedImageIdsArrays.flat(),
       loadStatus: {
         // todo: loading and loaded should be on ImageVolume
         loaded: false,

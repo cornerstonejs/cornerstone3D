@@ -65,11 +65,11 @@ addDropdownToToolbar({
 function addTimePointSlider(volume) {
   addSliderToToolbar({
     title: 'Time Point',
-    range: [0, volume.getTimePointsCount() - 1],
+    range: [0, volume.numTimePoints - 1],
     defaultValue: 0,
     onSelectedValueChange: (value) => {
       const timePointIndex = Number(value);
-      volume.setTimePointIndex(timePointIndex);
+      volume.timePointIndex = timePointIndex;
     },
   });
 }
