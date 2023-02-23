@@ -77,14 +77,20 @@ function metaDataProvider(type, imageId) {
 
     if (imageOrientationPatient) {
       rowCosines = [
-        parseFloat(imageOrientationPatient[0] as any),
-        parseFloat(imageOrientationPatient[1] as any),
-        parseFloat(imageOrientationPatient[2] as any),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[0]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[1]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[2]),
       ];
       columnCosines = [
-        parseFloat(imageOrientationPatient[3] as any),
-        parseFloat(imageOrientationPatient[4] as any),
-        parseFloat(imageOrientationPatient[5] as any),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[3]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[4]),
+        // @ts-expect-error
+        parseFloat(imageOrientationPatient[5]),
       ];
     }
 

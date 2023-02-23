@@ -18,15 +18,20 @@ function getNumberValues(
   if (!element.Value) {
     return;
   }
+  // Make sure the Value is an array
+  if (!Array.isArray(element.Value)) {
+    return;
+  }
   // make sure we have the expected length
-  if (minimumLength && (element.Value as any).length < minimumLength) {
+  if (minimumLength && element.Value.length < minimumLength) {
     return;
   }
 
   const values: number[] = [];
 
-  for (let i = 0; i < (element.Value as any).length; i++) {
-    values.push(parseFloat(element.Value[i] as string));
+  for (let i = 0; i < element.Value.length; i++) {
+    // @ts-expect-error
+    values.push(parseFloat(element.Value[i]));
   }
 
   return values;
