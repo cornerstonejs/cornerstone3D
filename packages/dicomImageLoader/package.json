@@ -58,6 +58,7 @@
   "devDependencies": {
     "@babel/plugin-proposal-object-rest-spread": "^7.14.7",
     "@babel/runtime-corejs3": "^7.15.4",
+    "@types/emscripten": "^1.39.6",
     "@types/jasmine": "^4.3.1",
     "@types/karma": "^6.3.3",
     "chai": "^4.3.4",

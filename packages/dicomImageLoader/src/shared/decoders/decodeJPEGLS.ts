@@ -1,3 +1,7 @@
+import type {
+  CharlsModule,
+  JpegLSDecoder,
+} from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
 import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
 
 const charlsWasm = new URL(
@@ -8,7 +12,11 @@ const charlsWasm = new URL(
 import { ByteArray } from 'dicom-parser';
 import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
 
-const local = {
+const local: {
+  codec: CharlsModule;
+  decoder: JpegLSDecoder;
+  decodeConfig: WebWorkerDecodeConfig;
+} = {
   codec: undefined,
   decoder: undefined,
   decodeConfig: {} as WebWorkerDecodeConfig,
@@ -32,7 +40,7 @@ export function initialize(
   const charlsModule = charlsFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return charlsWasm;
+        return charlsWasm.toString();
       }
 
       return f;
