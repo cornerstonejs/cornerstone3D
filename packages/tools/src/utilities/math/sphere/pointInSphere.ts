@@ -21,8 +21,11 @@ export default function pointInSphere(
   pointLPS: Types.Point3
 ): boolean {
   const { center, radius } = sphere;
-  const [x, y, z] = pointLPS;
-  const [x0, y0, z0] = center;
 
-  return (x - x0) ** 2 + (y - y0) ** 2 + (z - z0) ** 2 <= radius ** 2;
+  return (
+    (pointLPS[0] - center[0]) ** 2 +
+      (pointLPS[1] - center[1]) ** 2 +
+      (pointLPS[2] - center[2]) ** 2 <=
+    radius ** 2
+  );
 }
