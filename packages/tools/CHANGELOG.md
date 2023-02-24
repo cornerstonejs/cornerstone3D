@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.46.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.46.2...@cornerstonejs/tools@0.46.3) (2023-02-24)
+
+
+### Performance Improvements
+
+* **sphereBrush:** tool optimization ([#447](https://github.com/cornerstonejs/cornerstone3D-beta/issues/447)) ([c314bfe](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c314bfe79f2efa9ed44630233ceb06736c735855))
+
+
+
+
+
 ## [0.46.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.46.1...@cornerstonejs/tools@0.46.2) (2023-02-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools
