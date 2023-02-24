@@ -1070,6 +1070,10 @@ interface IImageVolume {
     // (undocumented)
     direction: Mat3;
     // (undocumented)
+    getImageIdIndex(imageId: string): number;
+    // (undocumented)
+    getImageURIIndex(imageURI: string): number;
+    // (undocumented)
     getScalarData(): VolumeScalarData;
     // (undocumented)
     hasPixelSpacing: boolean;
@@ -1244,13 +1248,18 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     direction: Mat3;
     // (undocumented)
+    getImageIdIndex(imageId: string): number;
+    // (undocumented)
+    getImageURIIndex(imageURI: string): number;
+    // (undocumented)
     getScalarData(): VolumeScalarData;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
     imageData?: any;
     // (undocumented)
-    imageIds: Array<string>;
+    get imageIds(): Array<string>;
+    set imageIds(newImageIds: Array<string>);
     // (undocumented)
     isPrescaled: boolean;
     // (undocumented)
