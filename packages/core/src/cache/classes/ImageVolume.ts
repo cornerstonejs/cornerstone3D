@@ -1,4 +1,5 @@
 import isTypedArray from '../../utilities/isTypedArray';
+import { imageIdToURI } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import {
   IVolume,
@@ -13,6 +14,10 @@ import {
  * and the volume data along with the loading status.
  */
 export class ImageVolume implements IImageVolume {
+  private _imageIds: Array<string>;
+  private _imageIdsIndexMap = new Map();
+  private _imageURIsIndexMap = new Map();
+
   /** Read-only unique identifier for the volume */
   readonly volumeId: string;
   /** Dimensions of the volume */
@@ -50,8 +55,6 @@ export class ImageVolume implements IImageVolume {
   vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
   /** load status object for the volume */
   loadStatus?: Record<string, any>;
-  /** optional image ids for the volume if it is made of separated images */
-  imageIds: Array<string>;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
   /** whether the metadata for the pixel spacing is not undefined  */
@@ -80,6 +83,29 @@ export class ImageVolume implements IImageVolume {
     }
   }
 
+  /** return the image ids for the volume if it is made of separated images */
+  public get imageIds(): Array<string> {
+    return this._imageIds;
+  }
+
+  /** updates the image ids */
+  public set imageIds(newImageIds: Array<string>) {
+    this._imageIds = newImageIds;
+    this._reprocessImageIds();
+  }
+
+  private _reprocessImageIds() {
+    this._imageIdsIndexMap.clear();
+    this._imageURIsIndexMap.clear();
+
+    this._imageIds.forEach((imageId, i) => {
+      const imageURI = imageIdToURI(imageId);
+
+      this._imageIdsIndexMap.set(imageId, i);
+      this._imageURIsIndexMap.set(imageURI, i);
+    });
+  }
+
   cancelLoading: () => void;
 
   /**
@@ -92,6 +118,24 @@ export class ImageVolume implements IImageVolume {
     }
 
     throw new Error('Unknow scalar data type');
+  }
+
+  /**
+   * return the index of a given imageId
+   * @param imageId - imageId
+   * @returns imageId index
+   */
+  public getImageIdIndex(imageId: string): number {
+    return this._imageIdsIndexMap.get(imageId);
+  }
+
+  /**
+   * return the index of a given imageURI
+   * @param imageId - imageURI
+   * @returns imageURI index
+   */
+  public getImageURIIndex(imageURI: string): number {
+    return this._imageURIsIndexMap.get(imageURI);
   }
 }
 

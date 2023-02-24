@@ -64,6 +64,12 @@ interface IImageVolume {
 
   /** return the volume scalar data */
   getScalarData(): VolumeScalarData;
+
+  /** return the index of a given imageId */
+  getImageIdIndex(imageId: string): number;
+
+  /** return the index of a given imageURI */
+  getImageURIIndex(imageURI: string): number;
 }
 
 export default IImageVolume;

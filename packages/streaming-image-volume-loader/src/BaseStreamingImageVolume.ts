@@ -481,7 +481,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     // number of frames per time point. The frameIndex and imageIdIndex
     // will be the same when working with 3D datasets.
     const requests = imageIds.map((imageId, frameIndex) => {
-      const imageIdIndex = this.imageIds.indexOf(imageId);
+      const imageIdIndex = this.getImageIdIndex(imageId);
 
       if (cachedFrames[imageIdIndex]) {
         this.framesLoaded++;
