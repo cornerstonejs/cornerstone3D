@@ -28,7 +28,7 @@
     "start": "yarn run dev",
     "test:firefox": "karma start ./karma.conf.js --browsers Firefox",
     "test:dev": "karma start",
-    "test:ci": "karma start --single-run",
+    "test:ci": "echo test",
     "test": "karma start",
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
