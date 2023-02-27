@@ -28,11 +28,13 @@ const orientations = [
   Enums.OrientationAxis.CORONAL,
 ];
 
+const description = [
+  'Displays a 4D DICOM series in a Volume viewport.',
+  'DataSet: PET 255 x 255 images / 40 time points / 235 images per time point / 9,400 images total',
+].join('\n');
+
 // ======== Set up page ======== //
-setTitleAndDescription(
-  'Volume 4D',
-  'Displays a 4D DICOM series in a Volume viewport.'
-);
+setTitleAndDescription('Volume 4D', description);
 
 const content = document.getElementById('content');
 const element = document.createElement('div');

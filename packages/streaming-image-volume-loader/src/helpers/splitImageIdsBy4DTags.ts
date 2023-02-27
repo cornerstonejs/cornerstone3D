@@ -1,5 +1,6 @@
 import { metaData } from '@cornerstonejs/core';
 
+// TODO: add support for other 4D tags as listed below
 // Supported 4D Tags
 //   (0018,1060) Trigger Time                   [NOK]
 //   (0018,0081) Echo Time                      [NOK]
@@ -40,6 +41,12 @@ function splitFramesByFrameReferenceTime(imageIds: string[]): string[][] {
   return imageIdsGroups;
 }
 
+/**
+ * Split the imageIds array by 4D tags into groups. Each group must have the
+ * same number of imageIds or the same imageIds array passed in is returned.
+ * @param imageIds - array of imageIds
+ * @returns imageIds grouped by 4D tags
+ */
 function splitImageIdsBy4DTags(imageIds: string[]): string[][] {
   const fncList = [splitFramesByFrameReferenceTime];
 

@@ -619,6 +619,14 @@ interface IContourSet {
 }
 
 // @public
+interface IDynamicImageVolume extends IImageVolume {
+    getScalarDataArrays(): VolumeScalarData[];
+    get numTimePoints(): number;
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public
 interface IEnabledElement {
     FrameOfReferenceUID: string;
     renderingEngine: IRenderingEngine;
@@ -756,6 +764,7 @@ interface IImageVolume {
     imageId: string,
     imageIdIndex: number
     ) => IImageLoadObject;
+    destroy(): void;
     dimensions: Point3;
     direction: Mat3;
     getImageIdIndex(imageId: string): number;
@@ -764,13 +773,13 @@ interface IImageVolume {
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds: Array<string>;
+    isDynamicVolume(): boolean;
     isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PET?: {
             SUVlbmFactor?: number;
@@ -1328,12 +1337,14 @@ type StackViewportScrollEventDetail = {
 };
 
 // @public (undocumented)
-export class StreamingDynamicImageVolume extends BaseStreamingImageVolume {
+export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageLoadRequests: (priority: number) => any[];
     // (undocumented)
     getScalarData(): Types.VolumeScalarData;
+    // (undocumented)
+    isDynamicVolume(): boolean;
     // (undocumented)
     get numTimePoints(): number;
     // (undocumented)

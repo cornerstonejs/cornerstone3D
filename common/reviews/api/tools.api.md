@@ -2186,6 +2186,14 @@ type IDistance = {
 };
 
 // @public
+interface IDynamicImageVolume extends IImageVolume {
+    getScalarDataArrays(): VolumeScalarData[];
+    get numTimePoints(): number;
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public
 interface IEnabledElement {
     FrameOfReferenceUID: string;
     renderingEngine: IRenderingEngine;
@@ -2323,6 +2331,7 @@ interface IImageVolume {
     imageId: string,
     imageIdIndex: number
     ) => IImageLoadObject;
+    destroy(): void;
     dimensions: Point3;
     direction: Mat3;
     getImageIdIndex(imageId: string): number;
@@ -2331,13 +2340,13 @@ interface IImageVolume {
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
     imageIds: Array<string>;
+    isDynamicVolume(): boolean;
     isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PET?: {
             SUVlbmFactor?: number;

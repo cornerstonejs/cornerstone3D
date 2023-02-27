@@ -28,7 +28,8 @@ function fillSphere(
     points,
   } = operationData;
 
-  const { scalarData, imageData, dimensions } = segmentation;
+  const { imageData, dimensions } = segmentation;
+  const scalarData = segmentation.getScalarData();
   const scalarIndex = [];
 
   const callback = ({ index, value }) => {

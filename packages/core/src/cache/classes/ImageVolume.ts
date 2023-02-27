@@ -17,6 +17,8 @@ export class ImageVolume implements IImageVolume {
   private _imageIds: Array<string>;
   private _imageIdsIndexMap = new Map();
   private _imageURIsIndexMap = new Map();
+  /** volume scalar data 3D or 4D */
+  protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
 
   /** Read-only unique identifier for the volume */
   readonly volumeId: string;
@@ -28,8 +30,6 @@ export class ImageVolume implements IImageVolume {
   metadata: Metadata;
   /** volume origin, Note this is an opinionated origin for the volume */
   origin: Point3;
-  /** volume scalar data  */
-  scalarData: VolumeScalarData | Array<VolumeScalarData>;
   /** Whether preScaling has been performed on the volume */
   isPrescaled = false;
   /** volume scaling parameters if it contains scaled data */
@@ -108,6 +108,11 @@ export class ImageVolume implements IImageVolume {
 
   cancelLoading: () => void;
 
+  /** return true if it is a 4D volume or false if it is 3D volume */
+  public isDynamicVolume(): boolean {
+    return false;
+  }
+
   /**
    * Return the scalar data for 3D volumes or the active scalar data
    * (current time point) for 4D volumes
@@ -136,6 +141,14 @@ export class ImageVolume implements IImageVolume {
    */
   public getImageURIIndex(imageURI: string): number {
     return this._imageURIsIndexMap.get(imageURI);
+  }
+
+  /**
+   * destroy the volume and make it unusable
+   */
+  destroy(): void {
+    this.vtkOpenGLTexture.delete();
+    this.scalarData = null;
   }
 }
 

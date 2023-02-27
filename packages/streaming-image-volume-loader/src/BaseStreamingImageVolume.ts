@@ -53,14 +53,16 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    */
   private _getNumFrames(): number {
     const { imageIds, scalarData } = this;
-    const scalarDataCount = Array.isArray(scalarData) ? scalarData.length : 1;
+    const scalarDataCount = this.isDynamicVolume() ? scalarData.length : 1;
 
     return imageIds.length / scalarDataCount;
   }
 
   private _getScalarDataLength(): number {
     const { scalarData } = this;
-    return Array.isArray(scalarData) ? scalarData[0].length : scalarData.length;
+    return this.isDynamicVolume()
+      ? (<Types.VolumeScalarData[]>scalarData)[0].length
+      : (<Types.VolumeScalarData>scalarData).length;
   }
 
   /**
@@ -126,7 +128,9 @@ export default class BaseStreamingImageVolume extends ImageVolume {
    * @returns scalar data array
    */
   public getScalarDataArrays(): Types.VolumeScalarData[] {
-    return Array.isArray(this.scalarData) ? this.scalarData : [this.scalarData];
+    return this.isDynamicVolume()
+      ? <Types.VolumeScalarData[]>this.scalarData
+      : [<Types.VolumeScalarData>this.scalarData];
   }
 
   private _getScalarDataByImageIdIndex(

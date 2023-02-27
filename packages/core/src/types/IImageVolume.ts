@@ -22,8 +22,6 @@ interface IImageVolume {
   metadata: Metadata;
   /** volume origin - set to the imagePositionPatient of the last image in the volume */
   origin: Point3;
-  /** volume scalar data */
-  scalarData: VolumeScalarData | Array<VolumeScalarData>;
   /** Whether preScaling has been performed on the volume */
   isPrescaled: boolean;
   /** volume scaling metadata */
@@ -53,6 +51,8 @@ interface IImageVolume {
   referencedVolumeId?: string; // if volume is derived from another volume
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
+  /** return true if it is a 4D volume or false if it is 3D volume */
+  isDynamicVolume(): boolean;
   /** method to convert the volume data in the volume cache, to separate images in the image cache */
   convertToCornerstoneImage?: (
     imageId: string,
@@ -70,6 +70,9 @@ interface IImageVolume {
 
   /** return the index of a given imageURI */
   getImageURIIndex(imageURI: string): number;
+
+  /** destroy the volume and make it unusable */
+  destroy(): void;
 }
 
 export default IImageVolume;

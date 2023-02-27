@@ -73,7 +73,9 @@ function addScalarDataArraysToImageData(
   imageData.getPointData().setActiveScalars('timePoint-0');
 }
 
-function createInternalVTKRepresentation(volume): vtkImageDataType {
+function createInternalVTKRepresentation(
+  volume: Types.IImageVolume
+): vtkImageDataType {
   const { dimensions, metadata, spacing, direction, origin } = volume;
   const { PhotometricInterpretation } = metadata;
 
@@ -83,9 +85,7 @@ function createInternalVTKRepresentation(volume): vtkImageDataType {
   }
 
   const imageData = vtkImageData.newInstance();
-  const scalarData = volume.scalarData;
   const dataArrayAttrs = { numberOfComponents: numComponents };
-  const isBufferType = !!scalarData.buffer;
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
@@ -93,10 +93,16 @@ function createInternalVTKRepresentation(volume): vtkImageDataType {
   imageData.setOrigin(origin);
 
   // Add scalar datas to 3D or 4D volume
-  if (isBufferType) {
-    addScalarDataToImageData(imageData, scalarData, dataArrayAttrs);
+  if (volume.isDynamicVolume()) {
+    const scalarDataArrays = (<Types.IDynamicImageVolume>(
+      volume
+    )).getScalarDataArrays();
+
+    addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
   } else {
-    addScalarDataArraysToImageData(imageData, scalarData, dataArrayAttrs);
+    const scalarData = volume.getScalarData();
+
+    addScalarDataToImageData(imageData, scalarData, dataArrayAttrs);
   }
 
   return imageData;
@@ -260,8 +266,8 @@ export async function createAndCacheDerivedVolume(
     volumeId = uuidv4();
   }
 
-  const { metadata, dimensions, spacing, origin, direction, scalarData } =
-    referencedVolume;
+  const { metadata, dimensions, spacing, origin, direction } = referencedVolume;
+  const scalarData = referencedVolume.getScalarData();
   const scalarLength = scalarData.length;
 
   let numBytes, TypedArray;

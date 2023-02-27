@@ -65,10 +65,15 @@ const viewportIds = {
 };
 
 // ======== Set up page ======== //
-setTitleAndDescription(
-  'PET-CT',
-  'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
-);
+const description = [
+  'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold',
+  '',
+  'DataSets:',
+  ' - CT 972 x 972 images / 565 images total',
+  ' - PET 255 x 255 images / 40 time points / 235 images per time point / 9,400 images total',
+].join('\n');
+
+setTitleAndDescription('PET-CT', description);
 
 const optionsValues = [WindowLevelTool.toolName, CrosshairsTool.toolName];
 

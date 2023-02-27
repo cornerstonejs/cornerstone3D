@@ -12,7 +12,10 @@ type TimePoint = {
  * Streaming Image Volume Class that extends StreamingImageVolume base class.
  * It implements load method to load the imageIds and insert them into the volume.
  */
-export default class StreamingDynamicImageVolume extends BaseStreamingImageVolume {
+export default class StreamingDynamicImageVolume
+  extends BaseStreamingImageVolume
+  implements Types.IDynamicImageVolume
+{
   private _numTimePoints: number;
   private _timePoints: TimePoint[];
   private _timePointIndex = 0;
@@ -110,6 +113,11 @@ export default class StreamingDynamicImageVolume extends BaseStreamingImageVolum
 
     return timePointsRequests;
   };
+
+  /** return true if it is a 4D volume or false if it is 3D volume */
+  public isDynamicVolume(): boolean {
+    return true;
+  }
 
   /**
    * Returns the active time point index

@@ -883,6 +883,17 @@ interface IContourSet {
 }
 
 // @public (undocumented)
+interface IDynamicImageVolume extends IImageVolume {
+    // (undocumented)
+    getScalarDataArrays(): VolumeScalarData[];
+    // (undocumented)
+    get numTimePoints(): number;
+    // (undocumented)
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public (undocumented)
 interface IEnabledElement {
     // (undocumented)
     FrameOfReferenceUID: string;
@@ -1066,6 +1077,8 @@ interface IImageVolume {
     // (undocumented)
     convertToCornerstoneImage?: (imageId: string, imageIdIndex: number) => IImageLoadObject;
     // (undocumented)
+    destroy(): void;
+    // (undocumented)
     dimensions: Point3;
     // (undocumented)
     direction: Mat3;
@@ -1082,6 +1095,8 @@ interface IImageVolume {
     // (undocumented)
     imageIds: Array<string>;
     // (undocumented)
+    isDynamicVolume(): boolean;
+    // (undocumented)
     isPrescaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
@@ -1093,8 +1108,6 @@ interface IImageVolume {
     origin: Point3;
     // (undocumented)
     referencedVolumeId?: string;
-    // (undocumented)
-    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -1244,6 +1257,8 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     cancelLoading: () => void;
     // (undocumented)
+    destroy(): void;
+    // (undocumented)
     dimensions: Point3;
     // (undocumented)
     direction: Mat3;
@@ -1261,6 +1276,8 @@ export class ImageVolume implements IImageVolume {
     get imageIds(): Array<string>;
     set imageIds(newImageIds: Array<string>);
     // (undocumented)
+    isDynamicVolume(): boolean;
+    // (undocumented)
     isPrescaled: boolean;
     // (undocumented)
     loadStatus?: Record<string, any>;
@@ -1273,7 +1290,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: VolumeScalarData | Array<VolumeScalarData>;
+    protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -2139,6 +2156,7 @@ declare namespace Types {
         VolumeScalarData,
         IViewportId,
         IImageVolume,
+        IDynamicImageVolume,
         IRenderingEngine,
         ScalingParameters,
         PTScaling,

@@ -218,8 +218,7 @@ function cornerstoneStreamingImageVolumeLoader(
     promise: streamingImageVolumePromise,
     decache: () => {
       streamingImageVolumePromise.then((streamingImageVolume) => {
-        streamingImageVolume.vtkOpenGLTexture.delete();
-        streamingImageVolume.scalarData = null;
+        streamingImageVolume.destroy();
         streamingImageVolume = null;
       });
     },
