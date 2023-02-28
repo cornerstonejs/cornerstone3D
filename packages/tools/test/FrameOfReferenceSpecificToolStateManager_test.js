@@ -97,17 +97,10 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
       annotationManager.getAnnotation(annotationUID);
 
     const annotationFoundByAnnotationUIDAndFoR =
-      annotationManager.getAnnotation(annotationUID, {
-        FrameOfReferenceUID,
-      });
+      annotationManager.getAnnotation(annotationUID);
 
-    const annotationFoundByToolAllFilters = annotationManager.getAnnotation(
-      annotationUID,
-      {
-        FrameOfReferenceUID,
-        toolName,
-      }
-    );
+    const annotationFoundByToolAllFilters =
+      annotationManager.getAnnotation(annotationUID);
 
     expect(annotation).toEqual(annotationFoundByAnnotationUID);
     expect(annotation).toEqual(annotationFoundByAnnotationUIDAndFoR);
