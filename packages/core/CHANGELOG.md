@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.32.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.31.2...@cornerstonejs/core@0.32.0) (2023-02-28)
+
+
+### Features
+
+* **4D:** added support for 4D data rendering ([#438](https://github.com/cornerstonejs/cornerstone3D-beta/issues/438)) ([975e596](https://github.com/cornerstonejs/cornerstone3D-beta/commit/975e59629125fbf0ba5ea676fa14b71a2b30ca44))
+
+
+
+
+
 ## [0.31.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.31.1...@cornerstonejs/core@0.31.2) (2023-02-23)
 
 **Note:** Version bump only for package @cornerstonejs/core
