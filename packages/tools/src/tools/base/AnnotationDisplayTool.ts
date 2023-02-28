@@ -107,7 +107,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     // For each frame Of Reference
     framesOfReference.forEach((frameOfReference) => {
       const frameOfReferenceSpecificAnnotations =
-        stateManager.getFrameOfReferenceAnnotations(frameOfReference);
+        stateManager.getAnnotations(frameOfReference);
 
       const toolSpecificAnnotations =
         frameOfReferenceSpecificAnnotations[this.getToolName()];

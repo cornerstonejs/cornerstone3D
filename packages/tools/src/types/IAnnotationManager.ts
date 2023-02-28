@@ -20,7 +20,7 @@ interface IAnnotationManager {
    * @param element - The HTML element.
    * @returns The group key associated with the element.
    */
-  getGroupKey: (element: HTMLDivElement) => string;
+  getGroupKey: (options: Record<string, any>) => string;
 
   /**
    * Adds an annotation to the specified group.

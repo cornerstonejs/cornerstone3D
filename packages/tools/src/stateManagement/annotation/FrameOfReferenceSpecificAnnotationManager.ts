@@ -55,18 +55,25 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * manager adds them under the FrameOfReferenceUID for the element being
    * annotated.
    *
-   * @param element - The element to get the annotation state key for.
+   * @param options - The options object which can be used to get the key. It can be
+   * element or FrameOfReferenceUID (if element is not provided).
    * @returns - The annotation state key for the element.
    */
-  getGroupKey = (element: HTMLDivElement): string => {
+  getGroupKey = (options): string => {
+    const { element, FrameOfReferenceUID } = options;
+
+    if (FrameOfReferenceUID) {
+      return FrameOfReferenceUID;
+    }
+
     const enabledElement = getEnabledElement(element);
 
-    // Todo: What to do if no enabled element? Throw error? but it means usage of
-    // annotation manager is bound to an enabled element, which is not the case
-    // which should not be the case, since hydration of annotations can happen
-    // sooner than the element is enabled. Maybe we can subscribe to the
-    // ENABLE_ELEMENT event and then hydrate the annotations after if not enabled
-    // yet?
+    if (!enabledElement) {
+      throw new Error(
+        'Element not enabled, you must have an enabled element if you are not providing a FrameOfReferenceUID'
+      );
+    }
+
     return enabledElement.FrameOfReferenceUID;
   };
 
@@ -107,19 +114,20 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
   /**
    * Returns all the available frameOfReferences inside the state manager
-   * @returns - All the registered frame of references inside the manager
+   * @returns - All the added frames of references inside the manager
    */
   getFramesOfReference = (): Array<string> => {
     return Object.keys(this.annotations);
   };
 
   /**
-   * Returns the annotations associated with the specified group and tool, or
+   * Returns the annotations associated with the specified frameOfReference and tool, or
    * all annotations for the group if the tool name is not provided.
    *
-   * @param groupKey - The group key to retrieve annotations for (e.g. FrameOfReferenceUID).
+   * @param groupKey - The annotation group key to retrieve annotations for (in default manager it is FrameOfReferenceUID).
    * @param toolName - Optional. The name of the tool to retrieve annotations for.
-   * @returns The annotations associated with the specified group and tool, or all annotations for the group if the tool name is not provided.
+   * @returns The annotations associated with the specified group (default FrameOfReferenceUID) and tool,
+   * or all annotations for the group (FrameOfReferenceUID) if the tool name is not provided.
    */
   getAnnotations = (
     groupKey: string,
@@ -165,10 +173,10 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
   /**
    * A function that returns the number of annotations for a given tool in the
-   * specific frame of reference. IF no frame of reference is provided, it will
-   * return the number of annotations for the tool in all frames of references
+   * specific group (default FrameOfReferenceUID) IF no groupKey (FrameOfReferenceUID) is provided,
+   * it will return the number of annotations for the tool in all groups (FrameOfReferenceUIDs)
    *
-   * @param frameOfReferenceUID - The UID of the FrameOfReference to retrieve data for.
+   * @param groupKey - The annotation group key to retrieve annotations for (in default manager it is FrameOfReferenceUID).
    * @param toolName - The name of the tool to retrieve data for.
    *
    * @returns The number of annotations for a given tool in the state
@@ -197,6 +205,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * Adds an instance of `Annotation` to the `annotations`.
    *
    * @param annotation - The annotation to add.
+   * @param groupKey - The annotation group key to add the annotation to (in default manager it is FrameOfReferenceUID).
    */
   addAnnotation = (annotation: Annotation, groupKey?: string): void => {
     const { metadata } = annotation;
@@ -229,11 +238,9 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
   /**
    * Given the unique identified for the some `annotation`, removes the `annotation`
-   * from the `annotations`. Searches are more efficient if either/both of
-   * the `FrameOfReferenceUID` and the `toolName` are given by the `filter`.
+   * from the `annotations`.
    *
    * @param annotationUID - The unique identifier of the `annotation` to remove.
-   * @param filter - A `filter` which reduces the scope of the search.
    */
   removeAnnotation = (annotationUID: string): void => {
     const { annotations } = this;
@@ -264,10 +271,10 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
   };
 
   /**
-   * Removes all annotations associated with the specified group and tool, or
-   * all annotations for the group if the tool name is not provided.
+   * Removes all annotations associated with the specified group (FrameOfReferenceUID) and tool, or
+   * all annotations for the group (FrameOfReferenceUID) if the tool name is not provided.
    *
-   * @param groupKey - The group key to remove annotations for (e.g. FrameOfReferenceUID).
+   * @param groupKey - The group key to remove annotations for (in default manager it is FrameOfReferenceUID).
    * @param toolName - Optional. The name of the tool to remove annotations for.
    */
   removeAnnotations = (groupKey: string, toolName?: string): void => {
@@ -283,27 +290,23 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
   /**
    * Returns a section of the annotations. Useful for serialization.
-   *
-   * - If no arguments are given, the entire `AnnotationState` instance is returned.
-   * - If the `FrameOfReferenceUID` is given, the corresponding
-   * `FrameOfReferenceSpecificAnnotations` instance is returned.
-   * - If both the `FrameOfReferenceUID` and the `toolName` are are given, the
-   * corresponding `Annotations` instance is returned.
-   *
-   * @param FrameOfReferenceUID - A filter string for returning the `annotations` of a specific frame of reference.
-   * @param toolName - A filter string for returning `annotations` for a specific tool on a specific frame of reference.
-   *
-   * @returns The retrieved `annotation`.
+   * If both groupKey (default manager is FrameOfReferenceUID) and toolName are provided, returns the corresponding Annotations instance
+   * for that groupKey (FrameOfReferenceUID) and toolName.
+   * If only groupKey is provided, returns the corresponding FrameOfReferenceSpecificAnnotations instance
+   * for that groupKey.
+   * If neither groupKey nor toolName is provided, returns the entire AnnotationState object.
+   * @param groupKey - Optional. The group key (e.g. FrameOfReferenceUID) to retrieve annotations for.
+   * @param toolName - Optional. The name of the tool to retrieve annotations for.
+   * @returns A section of the annotations.
    */
   saveAnnotations = (
-    FrameOfReferenceUID?: string,
+    groupKey?: string,
     toolName?: string
   ): AnnotationState | GroupSpecificAnnotations | Annotations => {
     const annotations = this.annotations;
 
-    if (FrameOfReferenceUID && toolName) {
-      const frameOfReferenceSpecificAnnotations =
-        annotations[FrameOfReferenceUID];
+    if (groupKey && toolName) {
+      const frameOfReferenceSpecificAnnotations = annotations[groupKey];
 
       if (!frameOfReferenceSpecificAnnotations) {
         return;
@@ -313,9 +316,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
         frameOfReferenceSpecificAnnotations[toolName];
 
       return cloneDeep(toolSpecificAnnotations);
-    } else if (FrameOfReferenceUID) {
-      const frameOfReferenceSpecificAnnotations =
-        annotations[FrameOfReferenceUID];
+    } else if (groupKey) {
+      const frameOfReferenceSpecificAnnotations = annotations[groupKey];
 
       return cloneDeep(frameOfReferenceSpecificAnnotations);
     }
@@ -332,33 +334,32 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * - If both the `FrameOfReferenceUID` and the `toolName` are are given, the
    * corresponding `Annotations` instance is restored.
    *
-   * @param FrameOfReferenceUID - A filter string for restoring only the `annotations` of a specific frame of reference.
+   * @param groupKey - A filter string for restoring only the `annotations` of a specific frame of reference.
    * @param toolName - A filter string for restoring `annotation` for a specific tool on a specific frame of reference.
    */
   restoreAnnotations = (
     state: AnnotationState | GroupSpecificAnnotations | Annotations,
-    FrameOfReferenceUID?: string,
+    groupKey?: string,
     toolName?: string
   ): void => {
     const annotations = this.annotations;
 
-    if (FrameOfReferenceUID && toolName) {
+    if (groupKey && toolName) {
       // Set Annotations for FrameOfReferenceUID and toolName.
 
-      let frameOfReferenceSpecificAnnotations =
-        annotations[FrameOfReferenceUID];
+      let frameOfReferenceSpecificAnnotations = annotations[groupKey];
 
       if (!frameOfReferenceSpecificAnnotations) {
-        annotations[FrameOfReferenceUID] = {};
+        annotations[groupKey] = {};
 
-        frameOfReferenceSpecificAnnotations = annotations[FrameOfReferenceUID];
+        frameOfReferenceSpecificAnnotations = annotations[groupKey];
       }
 
       frameOfReferenceSpecificAnnotations[toolName] = <Annotations>state;
-    } else if (FrameOfReferenceUID) {
+    } else if (groupKey) {
       // Set FrameOfReferenceSpecificAnnotations for FrameOfReferenceUID.
 
-      annotations[FrameOfReferenceUID] = <GroupSpecificAnnotations>state;
+      annotations[groupKey] = <GroupSpecificAnnotations>state;
     } else {
       // Set entire annotations
       this.annotations = <AnnotationState>cloneDeep(state);
@@ -392,4 +393,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
   };
 }
 
+const defaultAnnotationStateManager =
+  new FrameOfReferenceSpecificAnnotationManager('DEFAULT');
+
+export { defaultAnnotationStateManager };
 export default FrameOfReferenceSpecificAnnotationManager;

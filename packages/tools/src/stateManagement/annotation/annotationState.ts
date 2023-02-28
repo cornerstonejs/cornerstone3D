@@ -4,7 +4,7 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import FrameOfReferenceSpecificAnnotationManager from './FrameOfReferenceSpecificAnnotationManager';
+import { defaultAnnotationStateManager } from './FrameOfReferenceSpecificAnnotationManager';
 import { Annotations, Annotation } from '../../types/AnnotationTypes';
 import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
 import {
@@ -12,151 +12,135 @@ import {
   triggerAnnotationAddedForFOR,
 } from './helpers/state';
 
-type AnnotationManagerSelector = string | HTMLDivElement;
-
-const DEFAULT_MANAGER_UID = 'DEFAULT';
-
-// map of all annotation managers
-const annotationManagers = new Map();
-
-annotationManagers.set(
-  DEFAULT_MANAGER_UID,
-  new FrameOfReferenceSpecificAnnotationManager(DEFAULT_MANAGER_UID)
-);
-
-/**
- * It adds an annotation manager to the annotationManagers map.
- * @param annotationManagerSelector - A unique identifier (string, or
- * HTMLDivElement) for the annotation manager.
- * @param annotationManager - The annotation manager that you want to add to the
- * list of annotation managers.
- */
-function addAnnotationManager(annotationManagerSelector, annotationManager) {
-  annotationManagers.set(annotationManagerSelector, annotationManager);
-}
+// our default annotation manager
+let defaultManager = defaultAnnotationStateManager;
 
 /**
  * It returns the default annotations manager.
  * @returns the singleton default annotations manager.
  */
-function getDefaultAnnotationManager() {
-  return annotationManagers.get(DEFAULT_MANAGER_UID);
-}
-
-function getAnnotationManager(
-  annotationManagerSelector?: AnnotationManagerSelector
-) {
-  let annotationManager = annotationManagers.get(annotationManagerSelector);
-
-  if (!annotationManager) {
-    annotationManager = annotationManagers.get(DEFAULT_MANAGER_UID);
-  }
-
-  return annotationManager;
+function getAnnotationManager() {
+  return defaultManager;
 }
 
 /**
- * Returns the annotations for a given tool in the specified frame of reference.
- * If element is provided, it will return the annotations for the viewport specific
- * annotation manager.
+ * Set the annotation manager to be used for rendering, adding, removing, etc.
+ * @param annotationManager - The annotation manager to be used
+ */
+function setAnnotationManager(annotationManager) {
+  defaultManager = annotationManager;
+}
+
+// set back to default frameOfReferenceSpecificAnnotationManager
+function resetAnnotationManager() {
+  defaultManager = defaultAnnotationStateManager;
+}
+
+/**
+ * Returns the annotations for a given tool with the provided options that is
+ * used to filter annotations based on the annotation manager.
+ *
+ * In our default implementation, the options are the element and/or the FrameOfReferenceUID.
+ * Hence, the getAnnotations function will return the annotations for the given tool
+ * that are associated with the FrameOfReferenceUID.
  *
  * @param toolName - The name of the tool.
- * @param frameOfReferenceUID - The Frame of Reference UID.
- * @param annotationManagerSelector - optional unique identifier (string, or HTMLDivElement)
- * for the annotation manager to be used, if not specified it will use the default
+ * @param options - The options to filter the annotations (element and/or FrameOfReferenceUID by default)
  * @returns The annotations corresponding to the Frame of Reference and the toolName.
  */
 function getAnnotations(
   toolName: string,
-  frameOfReferenceUID: string,
-  annotationManagerSelector?: AnnotationManagerSelector
+  options: Record<string, any>
 ): Annotations {
-  const annotationManager = getAnnotationManager(annotationManagerSelector);
-  return annotationManager.get(frameOfReferenceUID, toolName);
+  const manager = getAnnotationManager();
+  const groupKey = manager.getGroupKey(options);
+  return manager.getAnnotations(groupKey, toolName) as Annotations;
 }
 
 /**
- * Add the annotation to the annotation manager. If an element is provided,
- * the annotation will be added to the viewport specific annotation manager.
+ * Add the annotation to the annotation manager along with the options that is
+ * used to filter the annotation manager and the annotation group that
+ * the annotation belongs to.
+ *
+ * As a result, our default implementation will add the annotation to the
+ * default manager using the FrameOfReferenceUID as the group key.
  *
  * @param annotation - The annotation that is being added to the annotations manager.
- * @param annotationManagerSelector - optional unique identifier (string, or HTMLDivElement)
- * for the annotation manager to be used, if not specified it will use the default
+ * @param options - The options to filter the annotations (element and/or FrameOfReferenceUID by default)
  */
 function addAnnotation(
   annotation: Annotation,
-  annotationManagerSelector?: AnnotationManagerSelector
+  options: Record<string, any>
 ): string {
-  const annotationManager = getAnnotationManager(annotationManagerSelector);
-
   if (annotation.annotationUID === undefined) {
     annotation.annotationUID = csUtils.uuidv4() as string;
   }
 
-  annotationManager.addAnnotation(annotation);
+  const manager = getAnnotationManager();
+  const groupKey = manager.getGroupKey(options);
+
+  manager.addAnnotation(annotation, groupKey);
 
   // if the annotation manager selector is an element, trigger the
   // annotation added event for that element.
-  if (annotationManagerSelector instanceof HTMLElement) {
-    triggerAnnotationAddedForElement(annotation, annotationManagerSelector);
+  if (options.element instanceof HTMLElement) {
+    triggerAnnotationAddedForElement(
+      annotation,
+      options.element as HTMLDivElement
+    );
   }
 
   // if no element is provided, render all viewports that have the
   // same frame of reference.
+  // Todo: we should do something else here for other types of annotation managers.
   triggerAnnotationAddedForFOR(annotation);
 
   return annotation.annotationUID;
 }
 
 /**
- * Get the number of annotations for a given tool in the specified frame of reference.
- * If no frame of reference is specified, it will return the number of annotations
- * for all frames of reference.
+ * Get the number of annotations for a given tool with the provided options that is
+ * used to filter annotations based on the annotation manager.
+ *
+ * In our default implementation, the options are the element and/or the FrameOfReferenceUID.
+ * Hence, the getNumberOfAnnotations function will return the number of annotations for the given tool
+ * that are associated with the FrameOfReferenceUID.
  *
  * @param toolName - The name of the tool
- * @param frameOfReferenceUID - The frame of reference UID
- * @param annotationManagerSelector - optional unique identifier (string, or HTMLDivElement)
- * for the annotation manager to be used, if not specified it will use the default
+ * @param options - The options to filter the annotations (element and/or FrameOfReferenceUID by default)
  * @returns The number of annotations for a given frame of reference and tool name.
  */
 function getNumberOfAnnotations(
   toolName: string,
-  frameOfReferenceUID?: string,
-  annotationManagerSelector?: AnnotationManagerSelector
+  options: Record<string, any>
 ): number {
-  const annotationManager = getAnnotationManager(annotationManagerSelector);
-  return annotationManager.getNumberOfAnnotations(
-    toolName,
-    frameOfReferenceUID
-  );
+  const manager = getAnnotationManager();
+  const groupKey = manager.getGroupKey(options);
+
+  return manager.getNumberOfAnnotations(groupKey, toolName);
 }
 
 /**
  * Remove the annotation by UID of the annotation.
  * @param annotationUID - The unique identifier for the annotation.
- * @param annotationManagerSelector - optional unique identifier (string, or HTMLDivElement)
- * for the annotation manager to be used, if not specified it will use the default
  */
-function removeAnnotation(
-  annotationUID: string,
-  annotationManagerSelector?: AnnotationManagerSelector
-): void {
-  const annotationManager = getAnnotationManager(annotationManagerSelector);
-  const annotation = annotationManager.getAnnotation(annotationUID);
+function removeAnnotation(annotationUID: string): void {
+  const manager = getAnnotationManager();
+  const annotation = manager.getAnnotation(annotationUID);
 
   // no need to continue in case there is no annotation.
   if (!annotation) {
     return;
   }
 
-  annotationManager.removeAnnotation(annotationUID);
+  manager.removeAnnotation(annotationUID);
 
   // trigger annotation removed
   const eventType = Events.ANNOTATION_REMOVED;
 
   const eventDetail: AnnotationRemovedEventDetail = {
     annotation,
-    annotationManagerUID: annotationManager.uid,
+    annotationManagerUID: manager.uid,
   };
 
   triggerEvent(eventTarget, eventType, eventDetail);
@@ -165,15 +149,10 @@ function removeAnnotation(
 /**
  * Get the Annotation object by its UID
  * @param annotationUID - The unique identifier of the annotation.
- * @param annotationManagerSelector - optional unique identifier (string, or HTMLDivElement)
- * for the annotation manager to be used, if not specified it will use the default
  */
-function getAnnotation(
-  annotationUID: string,
-  annotationManagerSelector?: AnnotationManagerSelector
-): Annotation {
-  const annotationManager = getAnnotationManager(annotationManagerSelector);
-  const annotation = annotationManager.getAnnotation(annotationUID);
+function getAnnotation(annotationUID: string): Annotation {
+  const manager = getAnnotationManager();
+  const annotation = manager.getAnnotation(annotationUID);
 
   return annotation;
 }
@@ -183,11 +162,9 @@ function getAnnotation(
  * @param annotationManagerSelector - optional unique identifier (string, or HTMLDivElement)
  * for the annotation manager to be used, if not specified it will use the default
  */
-function removeAllAnnotations(
-  annotationManagerSelector?: AnnotationManagerSelector
-): void {
-  const annotationManager = getAnnotationManager(annotationManagerSelector);
-  annotationManager.removeAllAnnotations();
+function removeAllAnnotations(): void {
+  const manager = getAnnotationManager();
+  manager.removeAllAnnotations();
 }
 
 export {
@@ -197,7 +174,8 @@ export {
   getAnnotation,
   removeAnnotation,
   removeAllAnnotations,
-  getDefaultAnnotationManager,
-  addAnnotationManager,
+  // annotation manager
+  setAnnotationManager,
   getAnnotationManager,
+  resetAnnotationManager,
 };
