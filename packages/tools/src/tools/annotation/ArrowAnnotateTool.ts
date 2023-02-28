@@ -414,7 +414,10 @@ class ArrowAnnotateTool extends AnnotationTool {
     const { element } = eventDetail;
     const { FrameOfReferenceUID } = getEnabledElement(element);
 
-    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
+    let annotations = getAnnotations(this.getToolName(), {
+      FrameOfReferenceUID,
+      element,
+    });
 
     annotations = this.filterInteractableAnnotationsForElement(
       element,
@@ -660,7 +663,10 @@ class ArrowAnnotateTool extends AnnotationTool {
     const { viewport, FrameOfReferenceUID } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
+    let annotations = getAnnotations(this.getToolName(), {
+      FrameOfReferenceUID,
+      element,
+    });
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

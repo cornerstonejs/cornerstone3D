@@ -17,7 +17,7 @@ export default function filterToolsWithAnnotationsForElement(
   tools: AnnotationTool[]
 ): ToolAnnotationsPair[] {
   const result = [];
-  const {FrameOfReferenceUID} = getEnabledElement(element)
+  const { FrameOfReferenceUID } = getEnabledElement(element);
 
   for (let i = 0; i < tools.length; i++) {
     const tool = tools[i];
@@ -29,7 +29,7 @@ export default function filterToolsWithAnnotationsForElement(
 
     let annotations = getAnnotations(
       (tool.constructor as typeof BaseTool).toolName,
-      FrameOfReferenceUID,
+      { FrameOfReferenceUID, element }
     );
 
     if (!annotations) {

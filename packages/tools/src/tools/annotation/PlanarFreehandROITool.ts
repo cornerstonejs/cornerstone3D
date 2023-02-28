@@ -558,7 +558,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     const { element } = viewport;
 
     let annotations = <PlanarFreehandROIAnnotation[]>(
-      getAnnotations(this.getToolName(), FrameOfReferenceUID)
+      getAnnotations(this.getToolName(), { FrameOfReferenceUID, element })
     );
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender

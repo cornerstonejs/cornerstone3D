@@ -121,7 +121,11 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             EllipticalROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined();
@@ -225,7 +229,11 @@ describe('Ellipse Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             EllipticalROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined();
@@ -436,7 +444,11 @@ describe('Ellipse Tool: ', () => {
         setTimeout(() => {
           const ellipseAnnotations = annotation.state.getAnnotations(
             EllipticalROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add Length tool to annotationManager
           expect(ellipseAnnotations).toBeDefined();

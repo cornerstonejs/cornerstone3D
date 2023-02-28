@@ -130,7 +130,10 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -235,7 +238,10 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -347,7 +353,10 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -491,7 +500,10 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -628,7 +640,10 @@ describe('Cornerstone Tools: ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -887,7 +902,10 @@ describe('Cornerstone Tools: ', () => {
       setTimeout(() => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();

@@ -179,7 +179,18 @@ class ReferenceCursors extends AnnotationDisplayTool {
       },
     };
 
-    const annotationId = this._addAnnotation(annotation, FrameOfReferenceUID);
+    const annotationManagerOptions = {
+      element,
+      FrameOfReferenceUID,
+    };
+
+    const annotations = getAnnotations(
+      this.getToolName(),
+      annotationManagerOptions
+    );
+
+    if (annotations instanceof Array && annotations.length > 0) return null;
+    const annotationId = addAnnotation(annotation, annotationManagerOptions);
 
     if (annotationId === null) return;
 
@@ -192,19 +203,12 @@ class ReferenceCursors extends AnnotationDisplayTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  //custom addAnnotations to make sure there is never more than one cursor Annotation
-  _addAnnotation(
-    annotation: Annotation,
-    FrameOfReferenceUID: string
-  ): string | null {
-    const annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
-    if (annotations instanceof Array && annotations.length > 0) return null;
-    return addAnnotation(annotation);
-  }
-
   getActiveAnnotation(element: HTMLDivElement): null | Annotation {
     const { FrameOfReferenceUID } = getEnabledElement(element);
-    const annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
+    const annotations = getAnnotations(this.getToolName(), {
+      FrameOfReferenceUID,
+      element,
+    });
     if (annotations === undefined || annotations.length === 0) {
       return null;
     }
@@ -313,7 +317,10 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
     const { element } = viewport;
 
-    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
+    let annotations = getAnnotations(this.getToolName(), {
+      FrameOfReferenceUID,
+      element,
+    });
 
     if (!annotations?.length) {
       return renderStatus;

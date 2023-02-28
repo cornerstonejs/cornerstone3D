@@ -101,7 +101,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const calibratedIndexToWorld = calibratedImageData.getIndexToWorld();
 
     const imageURI = utilities.imageIdToURI(imageId);
-    const stateManager = getAnnotationManager(element);
+    const stateManager = getAnnotationManager();
     const framesOfReference = stateManager.getFramesOfReference();
 
     // For each frame Of Reference

@@ -304,16 +304,17 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const annotations = getAnnotations(
-      this.getToolName(),
-      enabledElement.FrameOfReferenceUID
-    );
+    const { FrameOfReferenceUID, viewport } = enabledElement;
+
+    const annotations = getAnnotations(this.getToolName(), {
+      FrameOfReferenceUID,
+      element: viewport.element,
+    });
 
     if (!annotations?.length) {
       return renderStatus;
     }
 
-    const { viewport } = enabledElement;
     const sliceIndex = viewport.getCurrentImageIdIndex();
 
     const styleSpecifier: StyleSpecifier = {

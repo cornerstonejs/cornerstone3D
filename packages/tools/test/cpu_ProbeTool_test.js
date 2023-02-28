@@ -128,7 +128,10 @@ describe('ProbeTool (CPU):', () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
           ProbeTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(1);
@@ -213,7 +216,10 @@ describe('ProbeTool (CPU):', () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
           ProbeTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(2);
@@ -337,7 +343,10 @@ describe('ProbeTool (CPU):', () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
           ProbeTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(1);
@@ -420,7 +429,10 @@ describe('ProbeTool (CPU):', () => {
         // Can successfully add probe tool to annotationManager
         const probeAnnotations = annotation.state.getAnnotations(
           ProbeTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         expect(probeAnnotations).toBeDefined();
         expect(probeAnnotations.length).toBe(1);
@@ -504,7 +516,10 @@ describe('ProbeTool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const probeAnnotations = annotation.state.getAnnotations(
           ProbeTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(probeAnnotations).toBeDefined();
@@ -691,7 +706,10 @@ describe('ProbeTool (CPU):', () => {
       setTimeout(() => {
         const probeAnnotations = annotation.state.getAnnotations(
           ProbeTool.toolName,
-          getEnabledElement(element).FrameOfReferenceUID
+          {
+            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
+            element,
+          }
         );
         // Can successfully add Length tool to annotationManager
         expect(probeAnnotations).toBeDefined();

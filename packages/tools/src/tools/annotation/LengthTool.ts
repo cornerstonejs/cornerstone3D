@@ -608,7 +608,10 @@ class LengthTool extends AnnotationTool {
     const { viewport, FrameOfReferenceUID } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
+    let annotations = getAnnotations(this.getToolName(), {
+      FrameOfReferenceUID,
+      element,
+    });
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

@@ -119,7 +119,11 @@ describe('Rectangle ROI Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
             RectangleROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -221,7 +225,11 @@ describe('Rectangle ROI Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
             RectangleROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -333,7 +341,11 @@ describe('Rectangle ROI Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
             RectangleROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -470,7 +482,11 @@ describe('Rectangle ROI Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
             RectangleROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -603,7 +619,11 @@ describe('Rectangle ROI Tool: ', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
             RectangleROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -950,7 +970,11 @@ describe('Rectangle ROI Tool: ', () => {
         setTimeout(() => {
           const rectangleAnnotations = annotation.state.getAnnotations(
             RectangleROITool.toolName,
-            getEnabledElement(element).FrameOfReferenceUID
+            {
+              FrameOfReferenceUID:
+                getEnabledElement(element).FrameOfReferenceUID,
+              element,
+            }
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();

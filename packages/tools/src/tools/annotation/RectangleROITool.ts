@@ -609,7 +609,10 @@ class RectangleROITool extends AnnotationTool {
     const { viewport, FrameOfReferenceUID } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
+    let annotations = getAnnotations(this.getToolName(), {
+      FrameOfReferenceUID,
+      element,
+    });
 
     if (!annotations?.length) {
       return renderStatus;
