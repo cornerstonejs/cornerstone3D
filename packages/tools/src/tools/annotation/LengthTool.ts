@@ -151,6 +151,8 @@ class LengthTool extends AnnotationTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -158,7 +160,7 @@ class LengthTool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -181,7 +183,7 @@ class LengthTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(annotation);
+    addAnnotation(annotation, { FrameOfReferenceUID, element });
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

@@ -121,6 +121,8 @@ class CobbAngleTool extends AnnotationTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -128,7 +130,7 @@ class CobbAngleTool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -151,7 +153,7 @@ class CobbAngleTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(annotation);
+    addAnnotation(annotation, { FrameOfReferenceUID, element });
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

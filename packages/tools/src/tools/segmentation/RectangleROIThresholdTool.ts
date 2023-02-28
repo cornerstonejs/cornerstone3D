@@ -100,6 +100,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       );
     }
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
     // Todo: how not to store enabledElement on the annotation, segmentationModule needs the element to
     // decide on the active segmentIndex, active segmentationIndex etc.
     const annotation = {
@@ -109,7 +110,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         enabledElement,
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
         toolName: this.getToolName(),
         volumeId,
@@ -135,7 +136,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       },
     };
 
-    addAnnotation(annotation);
+    addAnnotation(annotation, { FrameOfReferenceUID, element });
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

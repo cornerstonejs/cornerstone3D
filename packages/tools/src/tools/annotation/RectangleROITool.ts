@@ -156,6 +156,8 @@ class RectangleROITool extends AnnotationTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       invalidated: true,
       highlighted: true,
@@ -163,7 +165,7 @@ class RectangleROITool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -191,7 +193,7 @@ class RectangleROITool extends AnnotationTool {
       },
     };
 
-    addAnnotation(annotation);
+    addAnnotation(annotation, { FrameOfReferenceUID, element });
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

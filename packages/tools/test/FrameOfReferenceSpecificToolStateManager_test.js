@@ -30,7 +30,10 @@ function addAndReturnToolName0Annotation() {
     },
   };
 
-  annotationManager.addAnnotation(annotation);
+  annotationManager.addAnnotation(annotation, {
+    FrameOfReferenceUID,
+    element: null,
+  });
 
   return annotation;
 }
@@ -53,7 +56,10 @@ function addAndReturnToolName1Annotation() {
     },
   };
 
-  annotationManager.addAnnotation(annotation);
+  annotationManager.addAnnotation(annotation, {
+    FrameOfReferenceUID,
+    element: null,
+  });
 
   return annotation;
 }

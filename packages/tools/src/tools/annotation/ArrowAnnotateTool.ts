@@ -108,6 +108,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     );
 
     const { arrowFirst } = this.configuration;
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     const annotation = {
       highlighted: true,
@@ -116,7 +117,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -140,7 +141,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(annotation);
+    addAnnotation(annotation, { FrameOfReferenceUID, element });
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

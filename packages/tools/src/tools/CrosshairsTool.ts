@@ -220,7 +220,7 @@ class CrosshairsTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(annotation);
+    addAnnotation(annotation, { FrameOfReferenceUID, element });
 
     return {
       normal: viewPlaneNormal,
