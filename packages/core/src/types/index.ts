@@ -3,10 +3,11 @@
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
-import type IVolume from './IVolume';
+import type { IVolume, VolumeScalarData } from './IVolume';
 import type { VOI, VOIRange } from './voi';
 import type ImageLoaderFn from './ImageLoaderFn';
 import type IImageVolume from './IImageVolume';
+import type IDynamicImageVolume from './IDynamicImageVolume';
 import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
@@ -80,8 +81,10 @@ export type {
   IEnabledElement,
   ICache,
   IVolume,
+  VolumeScalarData,
   IViewportId,
   IImageVolume,
+  IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
   PTScaling,

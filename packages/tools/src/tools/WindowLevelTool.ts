@@ -150,7 +150,8 @@ class WindowLevelTool extends BaseTool {
 
     if (volumeId) {
       const imageVolume = cache.getVolume(volumeId);
-      const { dimensions, scalarData } = imageVolume;
+      const { dimensions } = imageVolume;
+      const scalarData = imageVolume.getScalarData();
       imageDynamicRange = this._getImageDynamicRangeFromMiddleSlice(
         scalarData,
         dimensions

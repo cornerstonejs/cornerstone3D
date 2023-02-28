@@ -47,11 +47,9 @@ function thresholdVolumeByRange(
   thresholdVolumeInformation: ThresholdInformation[],
   options: ThresholdRangeOptions
 ): Types.IImageVolume {
-  const {
-    scalarData,
-    spacing: segmentationSpacing,
-    imageData: segmentationImageData,
-  } = segmentationVolume;
+  const { spacing: segmentationSpacing, imageData: segmentationImageData } =
+    segmentationVolume;
+  const scalarData = segmentationVolume.getScalarData();
 
   const { overwrite, boundsIJK } = options;
   const overlapType = options?.overlapType || 0;
@@ -70,7 +68,8 @@ function thresholdVolumeByRange(
     const { imageData, spacing, dimensions } =
       thresholdVolumeInformation[i].volume;
 
-    const volumeSize = thresholdVolumeInformation[i].volume.scalarData.length;
+    const volumeSize =
+      thresholdVolumeInformation[i].volume.getScalarData().length;
     // discover the index of the volume the segmentation data is based on
     if (
       volumeSize === scalarData.length &&

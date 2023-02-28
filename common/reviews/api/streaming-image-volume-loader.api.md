@@ -4,6 +4,7 @@
 
 ```ts
 
+import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { mat4 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -74,6 +75,11 @@ enum ContourType {
     // (undocumented)
     OPEN_PLANAR = 'OPEN_PLANAR',
 }
+
+// @public (undocumented)
+export function cornerstoneStreamingDynamicImageVolumeLoader(volumeId: string, options: {
+    imageIds: string[];
+}): IVolumeLoader_2;
 
 // @public (undocumented)
 export function cornerstoneStreamingImageVolumeLoader(volumeId: string, options: {
@@ -613,6 +619,14 @@ interface IContourSet {
 }
 
 // @public
+interface IDynamicImageVolume extends IImageVolume {
+    getScalarDataArrays(): VolumeScalarData[];
+    get numTimePoints(): number;
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public
 interface IEnabledElement {
     FrameOfReferenceUID: string;
     renderingEngine: IRenderingEngine;
@@ -750,18 +764,22 @@ interface IImageVolume {
     imageId: string,
     imageIdIndex: number
     ) => IImageLoadObject;
+    destroy(): void;
     dimensions: Point3;
     direction: Mat3;
+    getImageIdIndex(imageId: string): number;
+    getImageURIIndex(imageURI: string): number;
+    getScalarData(): VolumeScalarData;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
-    imageIds?: Array<string>;
+    imageIds: Array<string>;
+    isDynamicVolume(): boolean;
     isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: any;
     scaling?: {
         PET?: {
             SUVlbmFactor?: number;
@@ -985,6 +1003,7 @@ interface IStreamingImageVolume extends ImageVolume {
 // @public (undocumented)
 interface IStreamingVolumeProperties {
     imageIds: Array<string>;
+
     loadStatus: {
         loaded: boolean;
         loading: boolean;
@@ -1056,7 +1075,7 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: Float32Array | Uint8Array;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PET?: {
             // @TODO: Do these values exist?
@@ -1318,16 +1337,24 @@ type StackViewportScrollEventDetail = {
 };
 
 // @public (undocumented)
-export class StreamingImageVolume extends ImageVolume {
+export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
-    cancelLoading: () => void;
+    getImageLoadRequests: (priority: number) => any[];
     // (undocumented)
-    clearLoadCallbacks(): void;
+    getScalarData(): Types.VolumeScalarData;
     // (undocumented)
-    convertToCornerstoneImage(imageId: string, imageIdIndex: number): Types.IImageLoadObject;
+    isDynamicVolume(): boolean;
     // (undocumented)
-    decache(completelyRemove?: boolean): void;
+    get numTimePoints(): number;
+    // (undocumented)
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public (undocumented)
+export class StreamingImageVolume extends BaseStreamingImageVolume {
+    constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageLoadRequests: (priority: number) => {
         callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
@@ -1347,20 +1374,13 @@ export class StreamingImageVolume extends ImageVolume {
             };
         };
         priority: number;
-        requestType: Enums.RequestType;
+        requestType: default_2;
         additionalDetails: {
             volumeId: string;
         };
     }[];
     // (undocumented)
-    load: (callback: (...args: unknown[]) => void, priority?: number) => void;
-    // (undocumented)
-    loadStatus: {
-        loaded: boolean;
-        loading: boolean;
-        cachedFrames: Array<boolean>;
-        callbacks: Array<(...args: unknown[]) => void>;
-    };
+    getScalarData(): Types.VolumeScalarData;
 }
 
 // @public
@@ -1503,6 +1523,9 @@ type VolumeNewImageEventDetail = {
     viewportId: string;
     renderingEngineId: string;
 };
+
+// @public (undocumented)
+type VolumeScalarData = Float32Array | Uint8Array;
 
 // @public
 type VolumeViewportProperties = {

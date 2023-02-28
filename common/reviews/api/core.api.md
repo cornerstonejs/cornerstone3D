@@ -883,6 +883,17 @@ interface IContourSet {
 }
 
 // @public (undocumented)
+interface IDynamicImageVolume extends IImageVolume {
+    // (undocumented)
+    getScalarDataArrays(): VolumeScalarData[];
+    // (undocumented)
+    get numTimePoints(): number;
+    // (undocumented)
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public (undocumented)
 interface IEnabledElement {
     // (undocumented)
     FrameOfReferenceUID: string;
@@ -1066,15 +1077,25 @@ interface IImageVolume {
     // (undocumented)
     convertToCornerstoneImage?: (imageId: string, imageIdIndex: number) => IImageLoadObject;
     // (undocumented)
+    destroy(): void;
+    // (undocumented)
     dimensions: Point3;
     // (undocumented)
     direction: Mat3;
+    // (undocumented)
+    getImageIdIndex(imageId: string): number;
+    // (undocumented)
+    getImageURIIndex(imageURI: string): number;
+    // (undocumented)
+    getScalarData(): VolumeScalarData;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
     imageData?: vtkImageData;
     // (undocumented)
-    imageIds?: Array<string>;
+    imageIds: Array<string>;
+    // (undocumented)
+    isDynamicVolume(): boolean;
     // (undocumented)
     isPrescaled: boolean;
     // (undocumented)
@@ -1087,8 +1108,6 @@ interface IImageVolume {
     origin: Point3;
     // (undocumented)
     referencedVolumeId?: string;
-    // (undocumented)
-    scalarData: any;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -1238,15 +1257,26 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     cancelLoading: () => void;
     // (undocumented)
+    destroy(): void;
+    // (undocumented)
     dimensions: Point3;
     // (undocumented)
     direction: Mat3;
+    // (undocumented)
+    getImageIdIndex(imageId: string): number;
+    // (undocumented)
+    getImageURIIndex(imageURI: string): number;
+    // (undocumented)
+    getScalarData(): VolumeScalarData;
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
     imageData?: any;
     // (undocumented)
-    imageIds?: Array<string>;
+    get imageIds(): Array<string>;
+    set imageIds(newImageIds: Array<string>);
+    // (undocumented)
+    isDynamicVolume(): boolean;
     // (undocumented)
     isPrescaled: boolean;
     // (undocumented)
@@ -1260,7 +1290,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: Float32Array | Uint8Array;
+    protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -1561,7 +1591,7 @@ interface IVolume {
     // (undocumented)
     referencedVolumeId?: string;
     // (undocumented)
-    scalarData: Float32Array | Uint8Array;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     // (undocumented)
     scaling?: {
         PET?: {
@@ -2123,8 +2153,10 @@ declare namespace Types {
         IEnabledElement,
         ICache,
         IVolume,
+        VolumeScalarData,
         IViewportId,
         IImageVolume,
+        IDynamicImageVolume,
         IRenderingEngine,
         ScalingParameters,
         PTScaling,
@@ -2521,6 +2553,9 @@ type VolumeNewImageEventDetail = {
     viewportId: string;
     renderingEngineId: string;
 };
+
+// @public (undocumented)
+type VolumeScalarData = Float32Array | Uint8Array;
 
 // @public (undocumented)
 export class VolumeViewport extends BaseVolumeViewport {

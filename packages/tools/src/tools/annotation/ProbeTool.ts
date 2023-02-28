@@ -608,7 +608,9 @@ class ProbeTool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, scalarData, imageData, metadata } = image;
+      const { dimensions, imageData, metadata } = image;
+      const scalarData =
+        'getScalarData' in image ? image.getScalarData() : image.scalarData;
 
       const modality = metadata.Modality;
       const index = transformWorldToIndex(imageData, worldPos);

@@ -2186,6 +2186,14 @@ type IDistance = {
 };
 
 // @public
+interface IDynamicImageVolume extends IImageVolume {
+    getScalarDataArrays(): VolumeScalarData[];
+    get numTimePoints(): number;
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public
 interface IEnabledElement {
     FrameOfReferenceUID: string;
     renderingEngine: IRenderingEngine;
@@ -2323,18 +2331,22 @@ interface IImageVolume {
     imageId: string,
     imageIdIndex: number
     ) => IImageLoadObject;
+    destroy(): void;
     dimensions: Point3;
     direction: Mat3;
+    getImageIdIndex(imageId: string): number;
+    getImageURIIndex(imageURI: string): number;
+    getScalarData(): VolumeScalarData;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
-    imageIds?: Array<string>;
+    imageIds: Array<string>;
+    isDynamicVolume(): boolean;
     isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: any;
     scaling?: {
         PET?: {
             SUVlbmFactor?: number;
@@ -2609,6 +2621,7 @@ interface IStreamingImageVolume extends ImageVolume {
 // @public (undocumented)
 interface IStreamingVolumeProperties {
     imageIds: Array<string>;
+
     loadStatus: {
         loaded: boolean;
         loading: boolean;
@@ -2785,7 +2798,7 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: Float32Array | Uint8Array;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PET?: {
             // @TODO: Do these values exist?
@@ -5211,6 +5224,9 @@ export class VolumeRotateMouseWheelTool extends BaseTool {
     // (undocumented)
     static toolName: any;
 }
+
+// @public (undocumented)
+type VolumeScalarData = Float32Array | Uint8Array;
 
 // @public
 type VolumeViewportProperties = {

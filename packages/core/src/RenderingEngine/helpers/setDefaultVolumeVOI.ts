@@ -115,7 +115,8 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * @returns The VOIRange with lower and upper values
  */
 async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
-  const { scalarData, imageIds } = imageVolume;
+  const { imageIds } = imageVolume;
+  const scalarData = imageVolume.getScalarData();
 
   // Get the middle image from the list of imageIds
   const imageIdIndex = Math.floor(imageIds.length / 2);

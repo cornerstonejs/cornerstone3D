@@ -38,7 +38,8 @@ function fillRectangle(
     segmentationId,
     constraintFn,
   } = operationData;
-  const { imageData, dimensions, scalarData } = segmentation;
+  const { imageData, dimensions } = segmentation;
+  const scalarData = segmentation.getScalarData();
 
   let rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(imageData, world);

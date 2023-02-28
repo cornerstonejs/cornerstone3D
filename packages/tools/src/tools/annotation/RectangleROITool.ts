@@ -898,8 +898,9 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, scalarData, imageData, metadata, hasPixelSpacing } =
-        image;
+      const { dimensions, imageData, metadata, hasPixelSpacing } = image;
+      const scalarData =
+        'getScalarData' in image ? image.getScalarData() : image.scalarData;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
 

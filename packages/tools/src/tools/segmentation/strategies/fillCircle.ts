@@ -39,7 +39,8 @@ function fillCircle(
     segmentationId,
     strategySpecificConfiguration,
   } = operationData;
-  const { imageData, dimensions, scalarData } = segmentationVolume;
+  const { imageData, dimensions } = segmentationVolume;
+  const scalarData = segmentationVolume.getScalarData();
   const { viewport } = enabledElement;
 
   // Average the points to get the center of the ellipse
@@ -127,7 +128,7 @@ function isWithinThreshold(
 ) {
   const { THRESHOLD_INSIDE_CIRCLE } = strategySpecificConfiguration;
 
-  const voxelValue = imageVolume.scalarData[index];
+  const voxelValue = imageVolume.getScalarData()[index];
   const { threshold } = THRESHOLD_INSIDE_CIRCLE;
 
   return threshold[0] <= voxelValue && voxelValue <= threshold[1];
