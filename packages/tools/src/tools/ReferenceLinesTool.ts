@@ -102,7 +102,7 @@ class ReferenceLines extends AnnotationDisplayTool {
         },
       };
 
-      addAnnotation(newAnnotation, { FrameOfReferenceUID, element });
+      addAnnotation(newAnnotation, element);
       annotation = newAnnotation;
     } else {
       this.editData.annotation.data.handles.points =

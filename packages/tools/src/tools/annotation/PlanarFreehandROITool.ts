@@ -271,7 +271,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       },
     };
 
-    addAnnotation(annotation, { FrameOfReferenceUID, element });
+    addAnnotation(annotation, element);
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
 

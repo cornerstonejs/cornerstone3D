@@ -190,7 +190,7 @@ class BidirectionalTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(annotation, { FrameOfReferenceUID, element });
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

@@ -135,10 +135,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
       viewportsWithAnnotations.push(viewport.id);
 
-      addAnnotation(newAnnotation, {
-        FrameOfReferenceUID,
-        element: viewport.element,
-      });
+      addAnnotation(newAnnotation, viewport.element);
       annotation = newAnnotation;
     } else if (this.editData.annotation.data.viewportId == viewport.id) {
       this.editData.annotation.data.handles.points =

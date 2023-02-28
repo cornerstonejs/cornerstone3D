@@ -136,7 +136,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       },
     };
 
-    addAnnotation(annotation, { FrameOfReferenceUID, element });
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
