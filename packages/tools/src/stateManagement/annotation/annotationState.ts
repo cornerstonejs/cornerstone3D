@@ -159,8 +159,6 @@ function getAnnotation(annotationUID: string): Annotation {
 
 /**
  * It removes all annotations from the default annotation manager
- * @param annotationManagerSelector - optional unique identifier (string, or HTMLDivElement)
- * for the annotation manager to be used, if not specified it will use the default
  */
 function removeAllAnnotations(): void {
   const manager = getAnnotationManager();
