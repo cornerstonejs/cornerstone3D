@@ -132,11 +132,7 @@ describe('LengthTool:', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined();
@@ -239,11 +235,7 @@ describe('LengthTool:', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined();
@@ -353,11 +345,7 @@ describe('LengthTool:', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined();
@@ -495,11 +483,7 @@ describe('LengthTool:', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined();
@@ -631,11 +615,7 @@ describe('LengthTool:', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined();
@@ -828,11 +808,7 @@ describe('LengthTool:', () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined();
@@ -852,11 +828,7 @@ describe('LengthTool:', () => {
 
           const annotationsAfterRemove = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
 
           expect(annotationsAfterRemove).not.toBeDefined();
@@ -1051,11 +1023,7 @@ describe('LengthTool:', () => {
         setTimeout(() => {
           const lengthAnnotations = annotation.state.getAnnotations(
             LengthTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element).FrameOfReferenceUID,
-              element,
-            }
+            element
           );
           // Can successfully add Length tool to annotationManager
           expect(lengthAnnotations).toBeDefined();

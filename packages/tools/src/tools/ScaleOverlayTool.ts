@@ -104,10 +104,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     let annotation = this.editData.annotation;
 
-    const annotations = getAnnotations(this.getToolName(), {
-      FrameOfReferenceUID,
-      element: viewport.element,
-    });
+    const annotations = getAnnotations(this.getToolName(), viewport.element);
 
     // if annotations have been created, get the annotation for the
     // current viewport Id
@@ -184,12 +181,9 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
     const location = this.configuration.scaleLocation;
-    const { viewport, FrameOfReferenceUID } = enabledElement;
+    const { viewport } = enabledElement;
 
-    const annotations = getAnnotations(this.getToolName(), {
-      FrameOfReferenceUID,
-      element: viewport.element,
-    });
+    const annotations = getAnnotations(this.getToolName(), viewport.element);
     const annotation = annotations.filter(
       (thisAnnotation) => thisAnnotation.data.viewportId == viewport.id
     )[0];

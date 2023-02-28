@@ -6,7 +6,7 @@ import {
   GroupSpecificAnnotations,
 } from '../../types/AnnotationTypes';
 
-import { IAnnotationManager } from '../../types';
+import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
 
 import {
   Enums,
@@ -55,17 +55,16 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * manager adds them under the FrameOfReferenceUID for the element being
    * annotated.
    *
-   * @param options - The options object which can be used to get the key. It can be
-   * element or FrameOfReferenceUID (if element is not provided).
+   * @param annotationGroupSelector - element or a string that is provided
+   * to the annotation manager to get the key.
    * @returns - The annotation state key for the element.
    */
-  getGroupKey = (options): string => {
-    const { element, FrameOfReferenceUID } = options;
-
-    if (FrameOfReferenceUID) {
-      return FrameOfReferenceUID;
+  getGroupKey = (annotationGroupSelector: AnnotationGroupSelector): string => {
+    if (typeof annotationGroupSelector === 'string') {
+      return annotationGroupSelector;
     }
 
+    const element = annotationGroupSelector;
     const enabledElement = getEnabledElement(element);
 
     if (!enabledElement) {
@@ -132,11 +131,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
   getAnnotations = (
     groupKey: string,
     toolName?: string
-  ): GroupSpecificAnnotations | Annotations | undefined => {
+  ): GroupSpecificAnnotations | Annotations => {
     const annotations = this.annotations;
 
     if (!annotations[groupKey]) {
-      return;
+      return [];
     }
 
     if (toolName) {

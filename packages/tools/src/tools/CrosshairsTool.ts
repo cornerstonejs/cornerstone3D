@@ -1384,11 +1384,8 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   _getAnnotations = (enabledElement: Types.IEnabledElement) => {
-    const { FrameOfReferenceUID, viewport } = enabledElement;
-    return getAnnotations(this.getToolName(), {
-      FrameOfReferenceUID,
-      element: viewport.element,
-    });
+    const { viewport } = enabledElement;
+    return getAnnotations(this.getToolName(), viewport.element);
   };
 
   _onNewVolume = (e: any) => {

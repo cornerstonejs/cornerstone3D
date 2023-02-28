@@ -1,3 +1,4 @@
+import AnnotationGroupSelector from './AnnotationGroupSelector';
 import {
   Annotation,
   Annotations,
@@ -14,13 +15,14 @@ interface IAnnotationManager {
    * that you can group them based on different aspects or you only have one group
    * totally.
    *
-   * This function returns the group key associated with the specified HTML element.
-   * Our default annotation manager returns the FrameOfReferenceUID for the
-   * enabled element
-   * @param element - The HTML element.
+   * This function returns the group key associated with the specified
+   * annotationGroupSelector. The annotationGroupSelector can be an HTML element
+   * or a string.
+   *
+   * @param annotationGroupSelector - The annotation group selector.
    * @returns The group key associated with the element.
    */
-  getGroupKey: (options: Record<string, any>) => string;
+  getGroupKey: (annotationGroupSelector: AnnotationGroupSelector) => string;
 
   /**
    * Adds an annotation to the specified group.

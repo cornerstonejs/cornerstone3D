@@ -179,18 +179,10 @@ class ReferenceCursors extends AnnotationDisplayTool {
       },
     };
 
-    const annotationManagerOptions = {
-      element,
-      FrameOfReferenceUID,
-    };
-
-    const annotations = getAnnotations(
-      this.getToolName(),
-      annotationManagerOptions
-    );
+    const annotations = getAnnotations(this.getToolName(), element);
 
     if (annotations instanceof Array && annotations.length > 0) return null;
-    const annotationId = addAnnotation(annotation, annotationManagerOptions);
+    const annotationId = addAnnotation(annotation, element);
 
     if (annotationId === null) return;
 
@@ -204,11 +196,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
   };
 
   getActiveAnnotation(element: HTMLDivElement): null | Annotation {
-    const { FrameOfReferenceUID } = getEnabledElement(element);
-    const annotations = getAnnotations(this.getToolName(), {
-      FrameOfReferenceUID,
-      element,
-    });
+    const annotations = getAnnotations(this.getToolName(), element);
     if (annotations === undefined || annotations.length === 0) {
       return null;
     }

@@ -50,6 +50,7 @@ import {
 import IToolClassReference from './IToolClassReference';
 import { ContourSegmentationData } from './ContourTypes';
 import IAnnotationManager from './IAnnotationManager';
+import AnnotationGroupSelector from './AnnotationGroupSelector';
 
 export type {
   // AnnotationState
@@ -61,6 +62,7 @@ export type {
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
   JumpToSliceOptions,
+  AnnotationGroupSelector,
   // Geometry
   PlanarBoundingBox,
   ToolProps,

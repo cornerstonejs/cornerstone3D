@@ -1,7 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import * as cornerstoneTools from '@cornerstonejs/tools';
 import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
@@ -15,7 +14,6 @@ const {
   volumeLoader,
   setUseCPURendering,
   resetUseCPURendering,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -136,10 +134,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          {
-            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
-            element,
-          }
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -245,10 +240,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          {
-            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
-            element,
-          }
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -392,10 +384,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          {
-            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
-            element,
-          }
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -532,10 +521,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          {
-            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
-            element,
-          }
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -794,10 +780,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       setTimeout(() => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
           BidirectionalTool.toolName,
-          {
-            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
-            element,
-          }
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();

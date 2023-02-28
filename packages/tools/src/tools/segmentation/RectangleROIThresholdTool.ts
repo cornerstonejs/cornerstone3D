@@ -173,12 +173,9 @@ class RectangleROIThresholdTool extends RectangleROITool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const { viewport, renderingEngineId, FrameOfReferenceUID } = enabledElement;
+    const { viewport, renderingEngineId } = enabledElement;
     const { element } = viewport;
-    let annotations = getAnnotations(this.getToolName(), {
-      FrameOfReferenceUID,
-      element,
-    });
+    let annotations = getAnnotations(this.getToolName(), element);
 
     if (!annotations?.length) {
       return renderStatus;

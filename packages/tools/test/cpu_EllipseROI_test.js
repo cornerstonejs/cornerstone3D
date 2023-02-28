@@ -13,7 +13,6 @@ const {
   volumeLoader,
   setUseCPURendering,
   resetUseCPURendering,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -127,10 +126,7 @@ describe('EllipticalROITool (CPU):', () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const ellipseAnnotations = annotation.state.getAnnotations(
           EllipticalROITool.toolName,
-          {
-            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
-            element,
-          }
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(ellipseAnnotations).toBeDefined();
@@ -302,10 +298,7 @@ describe('EllipticalROITool (CPU):', () => {
       setTimeout(() => {
         const ellipseAnnotations = annotation.state.getAnnotations(
           EllipticalROITool.toolName,
-          {
-            FrameOfReferenceUID: getEnabledElement(element).FrameOfReferenceUID,
-            element,
-          }
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(ellipseAnnotations).toBeDefined();

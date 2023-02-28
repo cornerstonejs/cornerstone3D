@@ -575,13 +575,10 @@ class CobbAngleTool extends AnnotationTool {
   ): boolean => {
     let renderStatus = false;
 
-    const { viewport, FrameOfReferenceUID } = enabledElement;
+    const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(this.getToolName(), {
-      FrameOfReferenceUID,
-      element,
-    });
+    let annotations = getAnnotations(this.getToolName(), element);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

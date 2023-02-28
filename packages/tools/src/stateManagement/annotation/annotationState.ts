@@ -7,6 +7,7 @@ import { Events } from '../../enums';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import { Annotations, Annotation } from '../../types/AnnotationTypes';
 import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
+import { AnnotationGroupSelector } from '../../types';
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
@@ -45,15 +46,16 @@ function resetAnnotationManager() {
  * that are associated with the FrameOfReferenceUID.
  *
  * @param toolName - The name of the tool.
- * @param options - The options to filter the annotations (element and/or FrameOfReferenceUID by default)
+ * @param annotationGroupSelector - element or FrameOfReferenceUID that is used
+ * to group annotations in the annotation manager.
  * @returns The annotations corresponding to the Frame of Reference and the toolName.
  */
 function getAnnotations(
   toolName: string,
-  options: Record<string, any>
+  annotationGroupSelector: AnnotationGroupSelector
 ): Annotations {
   const manager = getAnnotationManager();
-  const groupKey = manager.getGroupKey(options);
+  const groupKey = manager.getGroupKey(annotationGroupSelector);
   return manager.getAnnotations(groupKey, toolName) as Annotations;
 }
 
@@ -66,28 +68,26 @@ function getAnnotations(
  * default manager using the FrameOfReferenceUID as the group key.
  *
  * @param annotation - The annotation that is being added to the annotations manager.
- * @param options - The options to filter the annotations (element and/or FrameOfReferenceUID by default)
+ * @param annotationGroupSelector - element or FrameOfReferenceUID that is used
+ * to group annotations in the annotation manager.
  */
 function addAnnotation(
   annotation: Annotation,
-  options: Record<string, any>
+  annotationGroupSelector: AnnotationGroupSelector
 ): string {
   if (annotation.annotationUID === undefined) {
     annotation.annotationUID = csUtils.uuidv4() as string;
   }
 
   const manager = getAnnotationManager();
-  const groupKey = manager.getGroupKey(options);
+  const groupKey = manager.getGroupKey(annotationGroupSelector);
 
   manager.addAnnotation(annotation, groupKey);
 
   // if the annotation manager selector is an element, trigger the
   // annotation added event for that element.
-  if (options.element instanceof HTMLElement) {
-    triggerAnnotationAddedForElement(
-      annotation,
-      options.element as HTMLDivElement
-    );
+  if (annotationGroupSelector instanceof HTMLDivElement) {
+    triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
   }
 
   // if no element is provided, render all viewports that have the
@@ -107,15 +107,16 @@ function addAnnotation(
  * that are associated with the FrameOfReferenceUID.
  *
  * @param toolName - The name of the tool
- * @param options - The options to filter the annotations (element and/or FrameOfReferenceUID by default)
- * @returns The number of annotations for a given frame of reference and tool name.
+ * @param annotationGroupSelector - element or FrameOfReferenceUID that is used
+ * to group annotations in the annotation manager.
+ *
  */
 function getNumberOfAnnotations(
   toolName: string,
-  options: Record<string, any>
+  annotationGroupSelector: AnnotationGroupSelector
 ): number {
   const manager = getAnnotationManager();
-  const groupKey = manager.getGroupKey(options);
+  const groupKey = manager.getGroupKey(annotationGroupSelector);
 
   return manager.getNumberOfAnnotations(groupKey, toolName);
 }
