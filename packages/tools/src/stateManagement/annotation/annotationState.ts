@@ -4,7 +4,7 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import { defaultAnnotationStateManager } from './FrameOfReferenceSpecificAnnotationManager';
+import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import { Annotations, Annotation } from '../../types/AnnotationTypes';
 import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
 import {
@@ -13,7 +13,7 @@ import {
 } from './helpers/state';
 
 // our default annotation manager
-let defaultManager = defaultAnnotationStateManager;
+let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
 
 /**
  * It returns the default annotations manager.
@@ -33,7 +33,7 @@ function setAnnotationManager(annotationManager) {
 
 // set back to default frameOfReferenceSpecificAnnotationManager
 function resetAnnotationManager() {
-  defaultManager = defaultAnnotationStateManager;
+  defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
 }
 
 /**

@@ -393,8 +393,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
   };
 }
 
-const defaultAnnotationStateManager =
+const defaultFrameOfReferenceSpecificAnnotationManager =
   new FrameOfReferenceSpecificAnnotationManager('DEFAULT');
 
-export { defaultAnnotationStateManager };
+export { defaultFrameOfReferenceSpecificAnnotationManager };
 export default FrameOfReferenceSpecificAnnotationManager;

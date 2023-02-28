@@ -1,8 +1,7 @@
 import * as csTools from '../src/index';
 import * as cornerstone3D from '@cornerstonejs/core';
 
-const annotationManager =
-  csTools.annotation.state.getDefaultAnnotationManager();
+const annotationManager = csTools.annotation.state.getAnnotationManager();
 
 const FrameOfReferenceUID = 'MY_FRAME_OF_REFERENCE_UID';
 
@@ -30,10 +29,7 @@ function addAndReturnToolName0Annotation() {
     },
   };
 
-  annotationManager.addAnnotation(annotation, {
-    FrameOfReferenceUID,
-    element: null,
-  });
+  annotationManager.addAnnotation(annotation, FrameOfReferenceUID);
 
   return annotation;
 }
@@ -56,10 +52,7 @@ function addAndReturnToolName1Annotation() {
     },
   };
 
-  annotationManager.addAnnotation(annotation, {
-    FrameOfReferenceUID,
-    element: null,
-  });
+  annotationManager.addAnnotation(annotation, FrameOfReferenceUID);
 
   return annotation;
 }
@@ -125,6 +118,7 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     expect(frameOfReferenceSpecificAnnotations[toolName]).toBeDefined();
     expect(annotations[FrameOfReferenceUID]).toBeDefined();
   });
+
   it('should restore various parts of the annotations to the annotationManager', () => {
     const annotation_0 = addAndReturnToolName0Annotation();
     const annotation_1 = addAndReturnToolName1Annotation();

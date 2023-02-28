@@ -31,7 +31,7 @@ const { locking, selection } = annotation;
 const { ViewportType } = Enums;
 
 const defaultFrameOfReferenceSpecificAnnotationManager =
-  annotation.state.getDefaultAnnotationManager();
+  annotation.state.getAnnotationManager();
 
 const viewportId = 'CT_STACK';
 

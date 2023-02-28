@@ -8,11 +8,11 @@ import {
   getAnnotations,
   addAnnotation,
   removeAnnotation,
-  getDefaultAnnotationManager,
-  getAnnotationManager,
-  addAnnotationManager,
   getAnnotation,
   getNumberOfAnnotations,
+  setAnnotationManager,
+  getAnnotationManager,
+  resetAnnotationManager,
 } from './annotation/annotationState';
 
 import {
@@ -30,10 +30,10 @@ export {
   addAnnotation,
   getNumberOfAnnotations,
   removeAnnotation,
-  getDefaultAnnotationManager,
-  getAnnotationManager,
-  addAnnotationManager,
   getAnnotation,
+  setAnnotationManager,
+  getAnnotationManager,
+  resetAnnotationManager,
   // segmentations
   addSegmentationRepresentations,
   removeSegmentationsFromToolGroup,
