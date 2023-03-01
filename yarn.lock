@@ -5657,6 +5657,11 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
+"@types/jasmine@^4.3.1":
+  version "4.3.1"
+  resolved "https://registry.npmjs.org/@types/jasmine/-/jasmine-4.3.1.tgz#2d8ab5601c2fe7d9673dcb157e03f128ab5c5fff"
+  integrity sha512-Vu8l+UGcshYmV1VWwULgnV/2RDbBaO6i2Ptx7nd//oJPIZGhoI1YLST4VKagD2Pq/Bc2/7zvtvhM7F3p4SN7kQ==
+
 "@types/json-buffer@~3.0.0":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/@types/json-buffer/-/json-buffer-3.0.0.tgz#85c1ff0f0948fc159810d4b5be35bf8c20875f64"
@@ -5671,6 +5676,14 @@
   version "0.0.29"
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
+
+"@types/karma@^6.3.3":
+  version "6.3.3"
+  resolved "https://registry.npmjs.org/@types/karma/-/karma-6.3.3.tgz#fc48cc53d13ec9beeea3a2a47a2036ed7647ba29"
+  integrity sha512-nRMec4mTCt+tkpRqh5/pAxmnjzEgAaalIq7mdfLFH88gSRC8+bxejLiSjHMMT/vHIhJHqg4GPIGCnCFbwvDRww==
+  dependencies:
+    "@types/node" "*"
+    log4js "^6.4.1"
 
 "@types/keyv@*", "@types/keyv@^3.1.1":
   version "3.1.4"
@@ -10825,7 +10838,7 @@ eslint-import-resolver-node@^0.3.6:
     debug "^3.2.7"
     resolve "^1.20.0"
 
-eslint-loader@4.0.2:
+eslint-loader@4.0.2, eslint-loader@^4.0.2:
   version "4.0.2"
   resolved "https://registry.npmjs.org/eslint-loader/-/eslint-loader-4.0.2.tgz#386a1e21bcb613b3cf2d252a3b708023ccfb41ec"
   integrity sha512-EDpXor6lsjtTzZpLUn7KmXs02+nIjGcgees9BYjNkWra3jVq5vVa8IoCKgzT2M7dNNeoMBtaSG83Bd40N3poLw==

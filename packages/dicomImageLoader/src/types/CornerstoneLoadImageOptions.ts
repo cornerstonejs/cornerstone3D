@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import { CornerstoneWadoLoaderLoadRequestFunction } from 'dicom-image-loader/src/shared/types/load-request-function';
+import { CornerstoneWadoLoaderLoadRequestFunction } from 'dicomImageLoader/src/shared/types/load-request-function';
 
 export interface CornerstoneLoadImageOptions {
   useRGBA?: boolean;
