@@ -15,6 +15,7 @@ const {
   setVolumesForViewports,
   eventTarget,
   imageLoader,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;

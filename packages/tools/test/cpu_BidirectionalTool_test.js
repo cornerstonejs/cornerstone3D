@@ -1,7 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import * as cornerstoneTools from '@cornerstonejs/tools';
 import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
 
 const {
@@ -134,8 +133,8 @@ describe('Bidirectional Tool (CPU): ', () => {
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
-          element,
-          BidirectionalTool.toolName
+          BidirectionalTool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -154,8 +153,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -241,8 +239,8 @@ describe('Bidirectional Tool (CPU): ', () => {
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
-          element,
-          BidirectionalTool.toolName
+          BidirectionalTool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -264,8 +262,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -386,8 +383,8 @@ describe('Bidirectional Tool (CPU): ', () => {
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
-          element,
-          BidirectionalTool.toolName
+          BidirectionalTool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -409,8 +406,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -524,8 +520,8 @@ describe('Bidirectional Tool (CPU): ', () => {
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
-          element,
-          BidirectionalTool.toolName
+          BidirectionalTool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -584,8 +580,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(handles[1]).toEqual(afterMoveSecondHandle);
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       });
@@ -784,8 +779,8 @@ describe('Bidirectional Tool (CPU): ', () => {
 
       setTimeout(() => {
         const bidirectionalAnnotations = annotation.state.getAnnotations(
-          element,
-          BidirectionalTool.toolName
+          BidirectionalTool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(bidirectionalAnnotations).toBeDefined();
@@ -808,8 +803,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
         annotation.state.removeAnnotation(
-          bidirectionalAnnotation.annotationUID,
-          element
+          bidirectionalAnnotation.annotationUID
         );
         done();
       }, 100);

@@ -1,3 +1,7 @@
+import { vec2, vec3 } from 'gl-matrix';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
+
 import { AnnotationTool } from './base';
 
 import {
@@ -23,7 +27,6 @@ import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
 } from '../drawingSvg';
-import { vec2, vec3 } from 'gl-matrix';
 import { state } from '../store';
 import { Events } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
@@ -32,8 +35,7 @@ import {
   hideElementCursor,
 } from '../cursors/elementCursor';
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
+
 import * as lineSegment from '../utilities/math/line';
 import {
   Annotation,
@@ -47,7 +49,6 @@ import {
 } from '../types';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { MouseDragEventType } from '../types/EventTypes';
 import { CONSTANTS } from '@cornerstonejs/core';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
@@ -188,7 +189,7 @@ class CrosshairsTool extends AnnotationTool {
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera();
 
     // Check if there is already annotation for this viewport
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = this._getAnnotations(enabledElement);
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
@@ -196,7 +197,7 @@ class CrosshairsTool extends AnnotationTool {
 
     if (annotations.length) {
       // If found, it will override it by removing the annotation and adding it later
-      removeAnnotation(annotations[0].annotationUID, element);
+      removeAnnotation(annotations[0].annotationUID);
     }
 
     const annotation = {
@@ -219,7 +220,7 @@ class CrosshairsTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     return {
       normal: viewPlaneNormal,
@@ -280,14 +281,11 @@ class CrosshairsTool extends AnnotationTool {
         return;
       }
 
-      const { viewport } = enabledElement;
-      const { element } = viewport;
-
-      const annotations = getAnnotations(element, this.getToolName());
+      const annotations = this._getAnnotations(enabledElement);
 
       if (annotations?.length) {
         annotations.forEach((annotation) => {
-          removeAnnotation(annotation.annotationUID, element);
+          removeAnnotation(annotation.annotationUID);
         });
       }
     });
@@ -379,7 +377,7 @@ class CrosshairsTool extends AnnotationTool {
     const { viewport } = enabledElement;
     this._jump(enabledElement, jumpWorld);
 
-    const annotations = getAnnotations(element, this.getToolName());
+    const annotations = this._getAnnotations(enabledElement);
     const filteredAnnotations = this.filterInteractableAnnotationsForElement(
       viewport.element,
       annotations
@@ -532,10 +530,10 @@ class CrosshairsTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewportId } = enabledElement;
+    const { renderingEngine } = enabledElement;
     const viewport = enabledElement.viewport as Types.IVolumeViewport;
 
-    const annotations = getAnnotations(element, this.getToolName());
+    const annotations = this._getAnnotations(enabledElement);
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 
@@ -736,14 +734,14 @@ class CrosshairsTool extends AnnotationTool {
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
-    const annotations = getAnnotations(element, this.getToolName());
+    const annotations = this._getAnnotations(enabledElement);
     const camera = viewport.getCamera();
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 
     // viewport Annotation
     const viewportAnnotation = filteredToolAnnotations[0];
-    if (!annotations || !viewportAnnotation || !viewportAnnotation.data) {
+    if (!annotations?.length || !viewportAnnotation?.data) {
       // No annotations yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
       return renderStatus;
     }
@@ -1385,6 +1383,11 @@ class CrosshairsTool extends AnnotationTool {
     return renderStatus;
   };
 
+  _getAnnotations = (enabledElement: Types.IEnabledElement) => {
+    const { viewport } = enabledElement;
+    return getAnnotations(this.getToolName(), viewport.element);
+  };
+
   _onNewVolume = (e: any) => {
     const viewportsInfo = this._getViewportsInfo();
     this.computeToolCenter(viewportsInfo);
@@ -1845,7 +1848,7 @@ class CrosshairsTool extends AnnotationTool {
     state.isInteractingWithTool = true;
     const { viewport, renderingEngine } = enabledElement;
 
-    const annotations = getAnnotations(viewport.element, this.getToolName());
+    const annotations = this._getAnnotations(enabledElement);
 
     const delta: Types.Point3 = [0, 0, 0];
     vtkMath.subtract(jumpWorld, this.toolCenter, delta);
@@ -1957,9 +1960,8 @@ class CrosshairsTool extends AnnotationTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
-    const annotations = getAnnotations(
-      element,
-      this.getToolName()
+    const annotations = this._getAnnotations(
+      enabledElement
     ) as CrosshairsAnnotation[];
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);

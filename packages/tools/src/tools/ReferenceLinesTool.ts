@@ -82,6 +82,7 @@ class ReferenceLines extends AnnotationDisplayTool {
       csUtils.getViewportImageCornersInWorld(sourceViewport);
 
     let annotation = this.editData.annotation;
+    const FrameOfReferenceUID = sourceViewport.getFrameOfReferenceUID();
 
     if (!annotation) {
       const newAnnotation: ReferenceLineAnnotation = {
@@ -91,7 +92,7 @@ class ReferenceLines extends AnnotationDisplayTool {
           toolName: this.getToolName(),
           viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
           viewUp: <Types.Point3>[...viewUp],
-          FrameOfReferenceUID: sourceViewport.getFrameOfReferenceUID(),
+          FrameOfReferenceUID,
           referencedImageId: null,
         },
         data: {
@@ -101,7 +102,7 @@ class ReferenceLines extends AnnotationDisplayTool {
         },
       };
 
-      addAnnotation(element, newAnnotation);
+      addAnnotation(newAnnotation, element);
       annotation = newAnnotation;
     } else {
       this.editData.annotation.data.handles.points =

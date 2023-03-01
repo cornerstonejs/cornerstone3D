@@ -148,6 +148,8 @@ class ReferenceCursors extends AnnotationDisplayTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -155,7 +157,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -177,7 +179,10 @@ class ReferenceCursors extends AnnotationDisplayTool {
       },
     };
 
-    const annotationId = this._addAnnotation(element, annotation);
+    const annotations = getAnnotations(this.getToolName(), element);
+
+    if (annotations.length > 0) return null;
+    const annotationId = addAnnotation(annotation, element);
 
     if (annotationId === null) return;
 
@@ -190,19 +195,9 @@ class ReferenceCursors extends AnnotationDisplayTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
-  //custom addAnnotations to make sure there is never more than one cursor Annotation
-  _addAnnotation(
-    element: HTMLDivElement,
-    annotation: Annotation
-  ): string | null {
-    const annotations = getAnnotations(element, this.getToolName());
-    if (annotations instanceof Array && annotations.length > 0) return null;
-    return addAnnotation(element, annotation);
-  }
-
   getActiveAnnotation(element: HTMLDivElement): null | Annotation {
-    const annotations = getAnnotations(element, this.getToolName());
-    if (annotations === undefined || annotations.length === 0) {
+    const annotations = getAnnotations(this.getToolName(), element);
+    if (!annotations.length) {
       return null;
     }
     const targetAnnotation = annotations[0];
@@ -299,7 +294,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const { viewport } = enabledElement;
+    const { viewport, FrameOfReferenceUID } = enabledElement;
 
     const isElementWithCursor = this._elementWithCursor === viewport.element;
 
@@ -310,7 +305,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     if (!annotations?.length) {
       return renderStatus;

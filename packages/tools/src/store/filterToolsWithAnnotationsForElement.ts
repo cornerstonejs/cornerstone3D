@@ -2,6 +2,7 @@ import { getAnnotations } from '../stateManagement/annotation/annotationState';
 import { ToolAnnotationsPair } from '../types/InternalToolTypes';
 import type AnnotationTool from '../tools/base/AnnotationTool';
 import BaseTool from '../tools/base/BaseTool';
+import { getEnabledElement } from '@cornerstonejs/core';
 
 /**
  * Filters an array of tools, returning only tools which have annotation.
@@ -16,7 +17,6 @@ export default function filterToolsWithAnnotationsForElement(
   tools: AnnotationTool[]
 ): ToolAnnotationsPair[] {
   const result = [];
-
   for (let i = 0; i < tools.length; i++) {
     const tool = tools[i];
 
@@ -26,11 +26,11 @@ export default function filterToolsWithAnnotationsForElement(
     }
 
     let annotations = getAnnotations(
-      element,
-      (tool.constructor as typeof BaseTool).toolName
+      (tool.constructor as typeof BaseTool).toolName,
+      element
     );
 
-    if (!annotations) {
+    if (!annotations?.length) {
       continue;
     }
 

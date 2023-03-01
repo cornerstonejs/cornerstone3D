@@ -32,7 +32,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const { selection } = annotation;
 const defaultFrameOfReferenceSpecificAnnotationManager =
-  annotation.state.getDefaultAnnotationManager();
+  annotation.state.getAnnotationManager();
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix

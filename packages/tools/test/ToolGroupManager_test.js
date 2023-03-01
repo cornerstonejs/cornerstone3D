@@ -10,6 +10,7 @@ const {
   metaData,
   volumeLoader,
   imageLoader,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;

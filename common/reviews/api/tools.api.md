@@ -41,7 +41,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-function addAnnotation(element: HTMLDivElement, annotation: Annotation): string;
+function addAnnotation(annotation: Annotation, annotationGroupSelector: AnnotationGroupSelector): string;
 
 // @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
@@ -222,6 +222,9 @@ type AnnotationCompletedEventDetail = {
 type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedEventDetail>;
 
 // @public (undocumented)
+type AnnotationGroupSelector = HTMLDivElement | string;
+
+// @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
 
 // @public (undocumented)
@@ -278,7 +281,7 @@ type AnnotationSelectionChangeEventType = Types_2.CustomEventType<AnnotationSele
 
 // @public (undocumented)
 type AnnotationState = {
-    [key: string]: FrameOfReferenceSpecificAnnotations;
+    [key: string]: GroupSpecificAnnotations;
 };
 
 declare namespace AnnotationStyle {
@@ -1145,6 +1148,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _filterViewportWithSameOrientation: (enabledElement: any, referenceAnnotation: any, annotations: any) => any;
     // (undocumented)
+    _getAnnotations: (enabledElement: Types_2.IEnabledElement) => Annotations;
+    // (undocumented)
     _getAnnotationsForViewportsWithDifferentCameras: (enabledElement: any, annotations: any) => any;
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
@@ -1808,40 +1813,37 @@ type FloodFillResult = {
 };
 
 // @public (undocumented)
-class FrameOfReferenceSpecificAnnotationManager {
+class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     constructor(uid?: string);
     // (undocumented)
-    addAnnotation: (annotation: Annotation) => void;
+    addAnnotation: (annotation: Annotation, groupKey?: string) => void;
     // (undocumented)
-    get: (FrameOfReferenceUID: string, toolName: string) => Annotations | undefined;
+    getAnnotation: (annotationUID: string) => Annotation | undefined;
     // (undocumented)
-    getAnnotation: (annotationUID: string, filter?: FilterInterface) => Annotation | undefined;
-    // (undocumented)
-    getFrameOfReferenceAnnotations: (FrameOfReferenceUID: string) => FrameOfReferenceSpecificAnnotations;
+    getAnnotations: (groupKey: string, toolName?: string) => GroupSpecificAnnotations | Annotations;
     // (undocumented)
     getFramesOfReference: () => Array<string>;
     // (undocumented)
-    getNumberOfAnnotations: (toolName: string, frameOfReferenceUID?: string) => number;
+    getGroupKey: (annotationGroupSelector: AnnotationGroupSelector) => string;
     // (undocumented)
-    getNumberOfAnnotationsInFrameOfReference: (toolName: string, frameOfReferenceUID: string) => number;
+    getNumberOfAllAnnotations: () => number;
+    // (undocumented)
+    getNumberOfAnnotations: (groupKey: string, toolName?: string) => number;
     // (undocumented)
     _imageVolumeModifiedHandler: (evt: Types_2.EventTypes.ImageVolumeModifiedEvent) => void;
     // (undocumented)
     removeAllAnnotations: () => void;
     // (undocumented)
-    removeAnnotation: (annotationUID: string, filter?: FilterInterface) => void;
+    removeAnnotation: (annotationUID: string) => void;
     // (undocumented)
-    restoreAnnotations: (state: AnnotationState | FrameOfReferenceSpecificAnnotations | Annotations, FrameOfReferenceUID?: string, toolName?: string) => void;
+    removeAnnotations: (groupKey: string, toolName?: string) => void;
     // (undocumented)
-    saveAnnotations: (FrameOfReferenceUID?: string, toolName?: string) => AnnotationState | FrameOfReferenceSpecificAnnotations | Annotations;
+    restoreAnnotations: (state: AnnotationState | GroupSpecificAnnotations | Annotations, groupKey?: string, toolName?: string) => void;
+    // (undocumented)
+    saveAnnotations: (groupKey?: string, toolName?: string) => AnnotationState | GroupSpecificAnnotations | Annotations;
     // (undocumented)
     readonly uid: string;
 }
-
-// @public (undocumented)
-type FrameOfReferenceSpecificAnnotations = {
-    [key: string]: Annotations;
-};
 
 // @public (undocumented)
 function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpecificRepresentation;
@@ -1856,7 +1858,10 @@ function getAllSynchronizers(): Array<Synchronizer>;
 function getAllToolGroups(): Array<IToolGroup>;
 
 // @public (undocumented)
-function getAnnotation(annotationUID: string, element?: HTMLDivElement): Annotation;
+function getAnnotation(annotationUID: string): Annotation;
+
+// @public (undocumented)
+function getAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
 function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Point2, proximity?: number): Annotation | null;
@@ -1865,7 +1870,7 @@ function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Po
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
 
 // @public (undocumented)
-function getAnnotations(element: HTMLDivElement, toolName: string): Annotations;
+function getAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): Annotations;
 
 // @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
@@ -1916,9 +1921,6 @@ function getConfiguration(): {
 };
 
 // @public (undocumented)
-function getDefaultAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
-
-// @public (undocumented)
 function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapConfig;
 
 // @public (undocumented)
@@ -1961,7 +1963,7 @@ function getMeanPoints(points: IPoints[]): IPoints;
 function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
-function getNumberOfAnnotations(toolName: string, frameOfReferenceUID?: string): number;
+function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
 
 // @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
@@ -2031,13 +2033,13 @@ function getToolGroupSpecificConfig(toolGroupId: string): SegmentationRepresenta
 function getToolGroupSpecificConfig_2(toolGroupId: string): SegmentationRepresentationConfig;
 
 // @public (undocumented)
+function getToolGroupsWithToolName(toolName: string): IToolGroup[] | [];
+
+// @public (undocumented)
 function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
-
-// @public (undocumented)
-function getViewportSpecificAnnotationManager(element?: Types_2.IEnabledElement | HTMLDivElement): FrameOfReferenceSpecificAnnotationManager;
 
 // @public (undocumented)
 function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, topLeftWorld: Types_2.Point3, bottomRightWorld: Types_2.Point3): {
@@ -2046,7 +2048,34 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 };
 
 // @public (undocumented)
+type GroupSpecificAnnotations = {
+    [toolName: string]: Annotations;
+};
+
+// @public (undocumented)
 function hideElementCursor(element: HTMLDivElement): void;
+
+// @public (undocumented)
+interface IAnnotationManager {
+    // (undocumented)
+    addAnnotation: (annotation: Annotation, groupKey: string) => void;
+    // (undocumented)
+    getAnnotation: (annotationUID: string) => Annotation;
+    // (undocumented)
+    getAnnotations: (groupKey: string, toolName?: string) => GroupSpecificAnnotations | Annotations;
+    // (undocumented)
+    getGroupKey: (annotationGroupSelector: AnnotationGroupSelector) => string;
+    // (undocumented)
+    getNumberOfAllAnnotations: () => number;
+    // (undocumented)
+    getNumberOfAnnotations: (groupKey: string, toolName?: string) => number;
+    // (undocumented)
+    removeAllAnnotations: () => void;
+    // (undocumented)
+    removeAnnotation: (annotationUID: string) => void;
+    // (undocumented)
+    removeAnnotations: (groupKey: string) => void;
+}
 
 // @public (undocumented)
 interface ICache {
@@ -3927,8 +3956,6 @@ interface ReferenceCursor extends Annotation {
 export class ReferenceCursors extends AnnotationDisplayTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _addAnnotation(element: HTMLDivElement, annotation: Annotation): string | null;
-    // (undocumented)
     createInitialAnnotation: (worldPos: Types_2.Point3, element: HTMLDivElement) => void;
     // (undocumented)
     _currentCanvasPosition: null | Types_2.Point2;
@@ -4024,10 +4051,10 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
-function removeAllAnnotations(element?: HTMLDivElement): void;
+function removeAllAnnotations(): void;
 
 // @public (undocumented)
-function removeAnnotation(annotationUID: string, element?: HTMLDivElement): void;
+function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
@@ -4055,6 +4082,9 @@ type RepresentationPublicInput = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
 };
+
+// @public (undocumented)
+function resetAnnotationManager(): void;
 
 // @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
@@ -4334,6 +4364,9 @@ function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): vo
 function setAnnotationLocked(annotation: Annotation, locked?: boolean): void;
 
 // @public (undocumented)
+function setAnnotationManager(annotationManager: any): void;
+
+// @public (undocumented)
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
@@ -4543,8 +4576,9 @@ declare namespace state_2 {
         getAnnotation,
         removeAnnotation,
         removeAllAnnotations,
-        getViewportSpecificAnnotationManager,
-        getDefaultAnnotationManager
+        setAnnotationManager,
+        getAnnotationManager,
+        resetAnnotationManager
     }
 }
 
@@ -4750,7 +4784,8 @@ declare namespace ToolGroupManager {
         destroyToolGroup,
         getToolGroup,
         getToolGroupForViewport,
-        getAllToolGroups
+        getAllToolGroups,
+        getToolGroupsWithToolName
     }
 }
 export { ToolGroupManager }
@@ -4968,11 +5003,13 @@ declare namespace Types {
     export {
         Annotation,
         Annotations,
-        FrameOfReferenceSpecificAnnotations,
+        IAnnotationManager,
+        GroupSpecificAnnotations,
         AnnotationState,
         AnnotationStyle,
         ToolSpecificAnnotationTypes,
         JumpToSliceOptions,
+        AnnotationGroupSelector,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,

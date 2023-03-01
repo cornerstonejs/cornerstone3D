@@ -1,8 +1,8 @@
 import type {
   Annotation,
   Annotations,
-  FrameOfReferenceSpecificAnnotations,
   AnnotationState,
+  GroupSpecificAnnotations,
 } from './AnnotationTypes';
 import type * as EventTypes from './EventTypes';
 import type * as LabelmapTypes from './LabelmapTypes';
@@ -49,16 +49,20 @@ import {
 } from './FloodFillTypes';
 import IToolClassReference from './IToolClassReference';
 import { ContourSegmentationData } from './ContourTypes';
+import IAnnotationManager from './IAnnotationManager';
+import AnnotationGroupSelector from './AnnotationGroupSelector';
 
 export type {
   // AnnotationState
   Annotation,
   Annotations,
-  FrameOfReferenceSpecificAnnotations,
+  IAnnotationManager,
+  GroupSpecificAnnotations,
   AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
   JumpToSliceOptions,
+  AnnotationGroupSelector,
   // Geometry
   PlanarBoundingBox,
   ToolProps,

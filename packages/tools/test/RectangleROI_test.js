@@ -117,8 +117,8 @@ describe('Rectangle ROI Tool: ', () => {
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleROITool.toolName
+            RectangleROITool.toolName,
+            element
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -139,10 +139,7 @@ describe('Rectangle ROI Tool: ', () => {
           // the rectangle is drawn on the strip
           expect(data[targets[0]].mean).toBe(255);
 
-          annotation.state.removeAnnotation(
-            rectangleAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
           done();
         });
       };
@@ -222,8 +219,8 @@ describe('Rectangle ROI Tool: ', () => {
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleROITool.toolName
+            RectangleROITool.toolName,
+            element
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -242,10 +239,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(data[targets[0]].mean).toBe(255);
           expect(data[targets[0]].stdDev).toBe(0);
 
-          annotation.state.removeAnnotation(
-            rectangleAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
           done();
         });
       };
@@ -337,8 +331,8 @@ describe('Rectangle ROI Tool: ', () => {
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleROITool.toolName
+            RectangleROITool.toolName,
+            element
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -358,10 +352,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(data[targets[0]].mean).toBe(255);
           expect(data[targets[0]].stdDev).toBe(0);
 
-          annotation.state.removeAnnotation(
-            rectangleAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
           done();
         });
       };
@@ -477,8 +468,8 @@ describe('Rectangle ROI Tool: ', () => {
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleROITool.toolName
+            RectangleROITool.toolName,
+            element
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -498,10 +489,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(data[targets[0]].mean).toBe(255);
           expect(data[targets[0]].stdDev).toBe(0);
 
-          annotation.state.removeAnnotation(
-            rectangleAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
           done();
         });
       };
@@ -613,8 +601,8 @@ describe('Rectangle ROI Tool: ', () => {
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
           const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleROITool.toolName
+            RectangleROITool.toolName,
+            element
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -671,10 +659,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle);
           expect(handles[3]).toEqual(afterMoveSecondHandle);
 
-          annotation.state.removeAnnotation(
-            rectangleAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
           done();
         });
       };
@@ -963,8 +948,8 @@ describe('Rectangle ROI Tool: ', () => {
 
         setTimeout(() => {
           const rectangleAnnotations = annotation.state.getAnnotations(
-            element,
-            RectangleROITool.toolName
+            RectangleROITool.toolName,
+            element
           );
           // Can successfully add rectangleROI to annotationManager
           expect(rectangleAnnotations).toBeDefined();
@@ -1021,10 +1006,7 @@ describe('Rectangle ROI Tool: ', () => {
           expect(handles[0]).toEqual(afterMoveFirstHandle);
           expect(handles[3]).toEqual(afterMoveSecondHandle);
 
-          annotation.state.removeAnnotation(
-            rectangleAnnotation.annotationUID,
-            element
-          );
+          annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
           done();
         }, 100);
       };

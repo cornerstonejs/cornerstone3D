@@ -1,5 +1,5 @@
 import { eventTarget, Enums } from '@cornerstonejs/core';
-import { getDefaultAnnotationManager } from './stateManagement/annotation/annotationState';
+import { getAnnotationManager } from './stateManagement/annotation/annotationState';
 import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState';
 import { Events as TOOLS_EVENTS } from './enums';
 import { addEnabledElement, removeEnabledElement } from './store';
@@ -51,7 +51,7 @@ export function destroy(): void {
   resetCornerstoneToolsState();
 
   // remove all annotation.
-  const annotationManager = getDefaultAnnotationManager();
+  const annotationManager = getAnnotationManager();
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
   annotationManager.restoreAnnotations({});
