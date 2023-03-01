@@ -183,7 +183,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
   getNumberOfAnnotations = (groupKey: string, toolName?: string): number => {
     const annotations = this.getAnnotations(groupKey, toolName);
 
-    if (!annotations) {
+    if (!annotations.length) {
       return 0;
     }
 

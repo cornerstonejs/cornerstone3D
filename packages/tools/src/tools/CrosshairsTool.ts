@@ -741,7 +741,7 @@ class CrosshairsTool extends AnnotationTool {
 
     // viewport Annotation
     const viewportAnnotation = filteredToolAnnotations[0];
-    if (!annotations || !viewportAnnotation || !viewportAnnotation.data) {
+    if (!annotations?.length || !viewportAnnotation?.data) {
       // No annotations yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
       return renderStatus;
     }

@@ -181,7 +181,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
     const annotations = getAnnotations(this.getToolName(), element);
 
-    if (annotations instanceof Array && annotations.length > 0) return null;
+    if (annotations.length > 0) return null;
     const annotationId = addAnnotation(annotation, element);
 
     if (annotationId === null) return;
@@ -197,7 +197,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
   getActiveAnnotation(element: HTMLDivElement): null | Annotation {
     const annotations = getAnnotations(this.getToolName(), element);
-    if (annotations === undefined || annotations.length === 0) {
+    if (!annotations.length) {
       return null;
     }
     const targetAnnotation = annotations[0];
@@ -305,10 +305,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
     const { element } = viewport;
 
-    let annotations = getAnnotations(this.getToolName(), {
-      FrameOfReferenceUID,
-      element,
-    });
+    let annotations = getAnnotations(this.getToolName(), element);
 
     if (!annotations?.length) {
       return renderStatus;

@@ -413,11 +413,7 @@ describe('Cornerstone Tools: ', () => {
       setTimeout(() => {
         const crosshairAnnotations = annotation.state.getAnnotations(
           CrosshairsTool.toolName,
-          {
-            FrameOfReferenceUID:
-              getEnabledElement(element1).FrameOfReferenceUID,
-            element: element1,
-          }
+          element1
         );
 
         // First viewport is axial
@@ -491,11 +487,7 @@ describe('Cornerstone Tools: ', () => {
         setTimeout(() => {
           const crosshairAnnotationsAfter = annotation.state.getAnnotations(
             CrosshairsTool.toolName,
-            {
-              FrameOfReferenceUID:
-                getEnabledElement(element1).FrameOfReferenceUID,
-              element: element1,
-            }
+            element1
           );
           crosshairAnnotationsAfter.map((crosshairAnnotation) => {
             expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined();

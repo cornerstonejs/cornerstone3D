@@ -108,7 +108,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     // if annotations have been created, get the annotation for the
     // current viewport Id
-    if (annotations) {
+    if (annotations.length) {
       annotation = annotations.filter(
         (thisAnnotation) => thisAnnotation.data.viewportId == viewport.id
       )[0] as ScaleOverlayAnnotation;

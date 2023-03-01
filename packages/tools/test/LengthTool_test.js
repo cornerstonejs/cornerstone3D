@@ -831,7 +831,8 @@ describe('LengthTool:', () => {
             element
           );
 
-          expect(annotationsAfterRemove).not.toBeDefined();
+          expect(annotationsAfterRemove).toBeDefined();
+          expect(annotationsAfterRemove.length).toBe(0);
 
           done();
         });

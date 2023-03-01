@@ -41,7 +41,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-function addAnnotation(annotation: Annotation, options: Record<string, any>): string;
+function addAnnotation(annotation: Annotation, annotationGroupSelector: AnnotationGroupSelector): string;
 
 // @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
@@ -220,6 +220,9 @@ type AnnotationCompletedEventDetail = {
 
 // @public (undocumented)
 type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedEventDetail>;
+
+// @public (undocumented)
+type AnnotationGroupSelector = HTMLDivElement | string;
 
 // @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
@@ -1817,11 +1820,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     // (undocumented)
     getAnnotation: (annotationUID: string) => Annotation | undefined;
     // (undocumented)
-    getAnnotations: (groupKey: string, toolName?: string) => GroupSpecificAnnotations | Annotations | undefined;
+    getAnnotations: (groupKey: string, toolName?: string) => GroupSpecificAnnotations | Annotations;
     // (undocumented)
     getFramesOfReference: () => Array<string>;
     // (undocumented)
-    getGroupKey: (options: any) => string;
+    getGroupKey: (annotationGroupSelector: AnnotationGroupSelector) => string;
     // (undocumented)
     getNumberOfAllAnnotations: () => number;
     // (undocumented)
@@ -1867,7 +1870,7 @@ function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Po
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
 
 // @public (undocumented)
-function getAnnotations(toolName: string, options: Record<string, any>): Annotations;
+function getAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): Annotations;
 
 // @public (undocumented)
 function getAnnotationsLocked(): Array<Annotation>;
@@ -1960,7 +1963,7 @@ function getMeanPoints(points: IPoints[]): IPoints;
 function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
-function getNumberOfAnnotations(toolName: string, options: Record<string, any>): number;
+function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
 
 // @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
@@ -2061,7 +2064,7 @@ interface IAnnotationManager {
     // (undocumented)
     getAnnotations: (groupKey: string, toolName?: string) => GroupSpecificAnnotations | Annotations;
     // (undocumented)
-    getGroupKey: (options: Record<string, any>) => string;
+    getGroupKey: (annotationGroupSelector: AnnotationGroupSelector) => string;
     // (undocumented)
     getNumberOfAllAnnotations: () => number;
     // (undocumented)
@@ -4993,6 +4996,7 @@ declare namespace Types {
         AnnotationStyle,
         ToolSpecificAnnotationTypes,
         JumpToSliceOptions,
+        AnnotationGroupSelector,
         PlanarBoundingBox,
         ToolProps,
         PublicToolProps,

@@ -420,7 +420,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       annotations
     );
 
-    if (!annotations) {
+    if (!annotations?.length) {
       return;
     }
 

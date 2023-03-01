@@ -30,7 +30,7 @@ export default function filterToolsWithAnnotationsForElement(
       element
     );
 
-    if (!annotations) {
+    if (!annotations?.length) {
       continue;
     }
 
