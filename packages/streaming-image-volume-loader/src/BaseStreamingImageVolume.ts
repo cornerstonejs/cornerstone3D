@@ -544,7 +544,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         return imageLoader.loadImage(imageId, options).then(
           (image) => {
             // scalarData is the volume container we are progressively loading into
-            // image is the pixelData decoded from workers in cornerstoneWADOImageLoader
+            // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
             handleArrayBufferLoad(scalarData, image, options);
             successCallback(imageIdIndex, imageId, scalingParameters);
           },

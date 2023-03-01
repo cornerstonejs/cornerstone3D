@@ -67,7 +67,7 @@ export default function makeVolumeMetadata(
   } = metaData.get('imagePlaneModule', imageId0);
 
   // Map to dcmjs-style keywords. This is becoming the standard and makes it
-  // Easier to swap out cornerstoneWADOImageLoader at a later date.
+  // Easier to swap out cornerstoneDICOMImageLoader at a later date.
   return {
     BitsAllocated: bitsAllocated,
     BitsStored: bitsStored,

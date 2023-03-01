@@ -74,7 +74,7 @@ module.exports = {
   )}" },
       {
         from:
-          '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
+          '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
         to: '${destPath.replace(/\\/g, '/')}',
       },
       ],
@@ -100,7 +100,7 @@ module.exports = {
       )}',
       // We use this alias and the CopyPlugin to support using the dynamic-import version
       // of WADO Image Loader
-      'cornerstone-wado-image-loader': 'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
+      '@cornerstonejs/dicom-image-loader': '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

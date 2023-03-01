@@ -1408,7 +1408,7 @@ function getImageIdOfReferencedFrame(
         const imageIdFrameNumber = Number(imageId.split("frame=")[1]);
 
         return (
-            //frameNumber is zero indexed for cornerstoneWADOImageLoader image Ids.
+            //frameNumber is zero indexed for cornerstoneDICOMImageLoader image Ids.
             sopCommonModule.sopInstanceUID === sopInstanceUid &&
             imageIdFrameNumber === frameNumber - 1
         );

@@ -3,7 +3,7 @@ import dcmjs from 'dcmjs';
 import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
 import { utilities } from '@cornerstonejs/core';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
@@ -59,7 +59,7 @@ export default async function createImageIdsAndCacheMetaData({
       SOPInstanceUID +
       '/frames/1';
 
-    cornerstoneWADOImageLoader.wadors.metaDataManager.add(
+    cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
       imageId,
       instanceMetaData
     );
@@ -72,7 +72,7 @@ export default async function createImageIdsAndCacheMetaData({
 
   imageIds.forEach((imageId) => {
     let instanceMetaData =
-      cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+      cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
 
     // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
     instanceMetaData = removeInvalidTags(instanceMetaData);
