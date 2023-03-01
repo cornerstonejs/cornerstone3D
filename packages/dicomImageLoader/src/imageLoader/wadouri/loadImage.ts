@@ -7,6 +7,7 @@ import {
   LoadRequestFunction,
   DICOMLoaderIImage,
   DICOMLoaderImageOptions,
+  ImageFrame,
 } from '../../types';
 import getPixelData from './getPixelData';
 import loadFileRequest from './loadFileRequest';
@@ -55,6 +56,7 @@ function loadImageFromPromise(
 
         imagePromise.then(
           (image) => {
+            image = image as DICOMLoaderIImage;
             image.data = dataSet;
             image.sharedCacheKey = sharedCacheKey;
             const end = new Date().getTime();
@@ -99,39 +101,43 @@ function loadImageFromDataSet(
 ): Types.IImageLoadObject {
   const start = new Date().getTime();
 
-  const promise = new Promise<DICOMLoaderIImage>((resolve, reject) => {
-    const loadEnd = new Date().getTime();
+  const promise = new Promise<DICOMLoaderIImage | ImageFrame>(
+    (resolve, reject) => {
+      const loadEnd = new Date().getTime();
 
-    let imagePromise: Promise<DICOMLoaderIImage>;
+      let imagePromise: Promise<DICOMLoaderIImage | ImageFrame>;
 
-    try {
-      const pixelData = getPixelData(dataSet, frame);
-      const transferSyntax = dataSet.string('x00020010');
+      try {
+        const pixelData = getPixelData(dataSet, frame);
+        const transferSyntax = dataSet.string('x00020010');
 
-      imagePromise = createImage(imageId, pixelData, transferSyntax, options);
-    } catch (error) {
-      // Reject the error, and the dataSet
-      reject({
-        error,
-        dataSet,
-      });
+        imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+      } catch (error) {
+        // Reject the error, and the dataSet
+        reject({
+          error,
+          dataSet,
+        });
 
-      return;
+        return;
+      }
+
+      imagePromise.then((image) => {
+        image = image as DICOMLoaderIImage;
+
+        image.data = dataSet;
+        image.sharedCacheKey = sharedCacheKey;
+        const end = new Date().getTime();
+
+        image.loadTimeInMS = loadEnd - start;
+        image.totalTimeInMS = end - start;
+        resolve(image);
+      }, reject);
     }
-
-    imagePromise.then((image) => {
-      image.data = dataSet;
-      image.sharedCacheKey = sharedCacheKey;
-      const end = new Date().getTime();
-
-      image.loadTimeInMS = loadEnd - start;
-      image.totalTimeInMS = end - start;
-      resolve(image);
-    }, reject);
-  });
+  );
 
   return {
-    promise,
+    promise: promise as Promise<any>,
     cancelFn: undefined,
   };
 }

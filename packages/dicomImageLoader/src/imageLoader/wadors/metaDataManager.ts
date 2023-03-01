@@ -1,7 +1,7 @@
 import { WADORSMetaData } from '../../types';
-import imageIdToURI from '../imageIdToURI.js';
-import { combineFrameInstance } from './combineFrameInstance.js';
-import multiframeMetadata from './retrieveMultiframeMetadata.js';
+import imageIdToURI from '../imageIdToURI';
+import { combineFrameInstance } from './combineFrameInstance';
+import multiframeMetadata from './retrieveMultiframeMetadata';
 
 let metadataByImageURI = [];
 

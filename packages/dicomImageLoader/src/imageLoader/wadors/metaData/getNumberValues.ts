@@ -19,13 +19,13 @@ function getNumberValues(
     return;
   }
   // make sure we have the expected length
-  if (minimumLength && element.Value.length < minimumLength) {
+  if (minimumLength && (element.Value as any).length < minimumLength) {
     return;
   }
 
   const values: number[] = [];
 
-  for (let i = 0; i < element.Value.length; i++) {
+  for (let i = 0; i < (element.Value as any).length; i++) {
     values.push(parseFloat(element.Value[i] as string));
   }
 

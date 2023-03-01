@@ -7,7 +7,7 @@ import {
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
 import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
-import multiframeDataset from './retrieveMultiframeDataset.js';
+import multiframeDataset from './retrieveMultiframeDataset';
 
 export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
   cacheSizeInBytes: number;

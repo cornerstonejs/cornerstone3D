@@ -1,15 +1,15 @@
-import external from '../../../externalModules.js';
-import getNumberValues from './getNumberValues.js';
-import getNumberValue from './getNumberValue.js';
-import getOverlayPlaneModule from './getOverlayPlaneModule.js';
-import metaDataManager from '../metaDataManager.js';
-import getValue from './getValue.js';
-//import fixNMMetadata from './fixNMMetadata.js';
+import external from '../../../externalModules';
+import getNumberValues from './getNumberValues';
+import getNumberValue from './getNumberValue';
+import getOverlayPlaneModule from './getOverlayPlaneModule';
+import metaDataManager from '../metaDataManager';
+import getValue from './getValue';
+//import fixNMMetadata from './fixNMMetadata';
 import {
   getMultiframeInformation,
   getFrameInformation,
-} from '../combineFrameInstance.js';
-import multiframeMetadata from '../retrieveMultiframeMetadata.js';
+} from '../combineFrameInstance';
+import multiframeMetadata from '../retrieveMultiframeMetadata';
 
 function metaDataProvider(type, imageId) {
   if (type === 'multiframeModule') {
