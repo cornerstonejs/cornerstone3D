@@ -48,15 +48,15 @@ module.exports = {
   module: {
     noParse: [/(codecs)/],
     rules: [
-      {
-        enforce: 'pre',
-        test: /\.(mjs|js|ts)$/,
-        exclude: /(node_modules)|(codecs)/,
-        loader: 'eslint-loader',
-        options: {
-          failOnError: false,
-        },
-      },
+      // {
+      //   enforce: 'pre',
+      //   test: /\.(mjs|js|ts)$/,
+      //   exclude: /(node_modules)|(codecs)/,
+      //   loader: 'eslint-loader',
+      //   options: {
+      //     failOnError: false,
+      //   },
+      // },
       {
         test: /\.wasm/,
         type: 'asset/inline',

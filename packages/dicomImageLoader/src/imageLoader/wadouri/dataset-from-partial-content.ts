@@ -58,6 +58,8 @@ function parsePartialByteArray(byteArray: Uint8Array) {
     // other metadata headers aren't included.
     pixelDataSet = dicomParser.parseDicom(byteArray);
   } catch (err: any) {
+    // Todo: This is probably invalid handling - it expects the only reason to
+    //  fail is a partial dataset
     console.error(err);
     console.log('pixel data dataset:', err.dataSet);
     pixelDataSet = err.dataSet;

@@ -2,12 +2,9 @@ import type {
   CharlsModule,
   JpegLSDecoder,
 } from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
-import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
 
-const charlsWasm = new URL(
-  '@cornerstonejs/codec-charls/dist/charlswasm_decode.wasm',
-  import.meta.url
-);
+import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
+import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
 
 import { ByteArray } from 'dicom-parser';
 import { ImageFrame, WebWorkerDecodeConfig } from '../../types';

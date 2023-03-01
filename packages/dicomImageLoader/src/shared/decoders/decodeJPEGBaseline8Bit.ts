@@ -2,13 +2,12 @@ import type {
   LibJpegTurbo8Bit,
   OpenJpegModule,
 } from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
-import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
 import { ByteArray } from 'dicom-parser';
 
-const libjpegTurboWasm = new URL(
-  '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode.wasm',
-  import.meta.url
-);
+import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
+
+// Webpack asset/resource copies this to our output folder
+import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm';
 
 import { ImageFrame } from '../../types';
 

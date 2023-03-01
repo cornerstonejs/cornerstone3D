@@ -12,7 +12,11 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "license": "MIT",
-  "main": "./dist/cornerstoneDICOMImageLoader.bundle.min.js",
+  "main": "dist/dicomImageLoader.bundle.min.js",
+  "module": "dist/esm/src/imageLoader/index.js",
+  "files": [
+    "dist/"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/cornerstonejs/cornerstone3D-beta.git"
@@ -21,8 +25,10 @@
     "access": "public"
   },
   "scripts": {
-    "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
-    "build:all": "yarn run build:umd",
+    "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
+    "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
+    "build:esm": "tsc --project ./tsconfig.esm.json",
+    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle & yarn run:esm",
     "copy-dts": "echo 'not implemented yet'",
     "build": "yarn run build:all && yarn run copy-dts",
     "api-check": "echo 'not implemented yet'",
@@ -78,10 +84,10 @@
   },
   "dependencies": {
     "@babel/eslint-parser": "^7.19.1",
-    "@cornerstonejs/codec-charls": "^0.1.1",
-    "@cornerstonejs/codec-libjpeg-turbo-8bit": "^0.0.7",
-    "@cornerstonejs/codec-openjpeg": "^0.1.0",
-    "@cornerstonejs/codec-openjph": "^1.0.3",
+    "@cornerstonejs/codec-charls": "^1.2.3",
+    "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
+    "@cornerstonejs/codec-openjpeg": "^1.2.2",
+    "@cornerstonejs/codec-openjph": "^2.4.2",
     "@cornerstonejs/core": "^0.31.0",
     "coverage-istanbul-loader": "^3.0.5",
     "date-format": "^4.0.14",

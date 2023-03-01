@@ -12,15 +12,15 @@ const external = {
   },
   get cornerstone() {
     if (!cornerstone) {
-      if (window && (window as any).cornerstone) {
-        cornerstone = (window as any).cornerstone;
+      cornerstone = window && (window as any).cornerstone;
 
-        registerLoaders(cornerstone);
-      } else {
+      if (!cornerstone) {
         throw new Error(
           'dicomImageLoader requires a copy of Cornerstone to work properly. Please add dicomImageLoader.external.cornerstone = cornerstone; to your application.'
         );
       }
+
+      registerLoaders(cornerstone);
     }
 
     return cornerstone;
