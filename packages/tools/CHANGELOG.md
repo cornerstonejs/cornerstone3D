@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.48.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.47.0...@cornerstonejs/tools@0.48.0) (2023-03-01)
+
+
+### Features
+
+* **annotations:** rework annotation manager api and enable multi-manager setup ([#442](https://github.com/cornerstonejs/cornerstone3D-beta/issues/442)) ([60bd013](https://github.com/cornerstonejs/cornerstone3D-beta/commit/60bd0132785744c55cd52b6a7dfc4ee56408d373))
+
+
+
+
+
 # [0.47.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.46.3...@cornerstonejs/tools@0.47.0) (2023-02-28)
 
 
