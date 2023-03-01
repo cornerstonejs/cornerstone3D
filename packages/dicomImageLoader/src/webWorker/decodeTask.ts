@@ -48,7 +48,6 @@ async function handler(
   // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
   // not typed arrays
   const pixelData = new Uint8Array(data.data.pixelData);
-
   const imageFrame = await decodeImageFrame(
     data.data.imageFrame,
     data.data.transferSyntax,

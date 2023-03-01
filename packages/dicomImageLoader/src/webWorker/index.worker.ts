@@ -5,10 +5,10 @@ import decodeTask from './decodeTask';
 // @ts-ignore
 registerTaskHandler(decodeTask);
 
-const dicomImageLoaderWebWorker = {
+const cornerstoneDICOMImageLoaderWebWorker = {
   registerTaskHandler,
 };
 
 export { registerTaskHandler };
 
-export default dicomImageLoaderWebWorker;
+export default cornerstoneDICOMImageLoaderWebWorker;

@@ -133,18 +133,19 @@ self.onmessage = async function (msg: MessageEvent<WebWorkerData>) {
   if (taskHandlers[msg.data.taskType]) {
     try {
       // @ts-ignore
-      const { result, transferList } = (
-        (await taskHandlers[msg.data.taskType]) as any
-      ).handler(msg.data);
-
-      self.postMessage(
-        {
-          taskType: msg.data.taskType,
-          status: 'success',
-          result,
-          workerIndex: msg.data.workerIndex,
-        },
-        transferList
+      taskHandlers[msg.data.taskType].handler(
+        msg.data,
+        function (result, transferList) {
+          self.postMessage(
+            {
+              taskType: msg.data.taskType,
+              status: 'success',
+              result,
+              workerIndex: msg.data.workerIndex,
+            },
+            transferList
+          );
+        }
       );
     } catch (error: any) {
       console.log(`task ${msg.data.taskType} failed - ${error.message}`, error);

@@ -12,7 +12,7 @@ const config = {
   mode: 'development',
   context,
   entry: {
-    dicomImageLoader: './imageLoader/index.ts',
+    cornerstoneDICOMImageLoader: './imageLoader/index.ts',
   },
   target: 'web',
   output: {

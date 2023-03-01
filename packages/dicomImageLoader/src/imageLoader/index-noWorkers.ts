@@ -22,7 +22,7 @@ import { default as getPixelData } from './wadors/getPixelData';
 import { internal } from './internal/index';
 import { default as external } from '../externalModules';
 
-const dicomImageLoader = {
+const cornerstoneDICOMImageLoader = {
   convertRGBColorByPixel,
   convertRGBColorByPlane,
   convertYBRFullByPixel,
@@ -68,4 +68,4 @@ export {
   external,
 };
 
-export default dicomImageLoader;
+export default cornerstoneDICOMImageLoader;
