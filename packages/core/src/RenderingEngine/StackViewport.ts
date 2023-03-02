@@ -1013,7 +1013,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOICPU(voiRange: VOIRange, options): void {
+  private setVOICPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
     const { suppressEvents = false } = options;
     // TODO: Account for VOILUTFunction
     const { viewport, image } = this._cpuFallbackEnabledElement;
