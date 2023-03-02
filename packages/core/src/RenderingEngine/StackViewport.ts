@@ -136,7 +136,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
   // Viewport Properties
   private voiRange: VOIRange;
-  private voiRangeLocked = false;
+  private voiUpdatedWithSetProperties = false;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -588,7 +588,7 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
-    this.voiRangeLocked = false;
+    this.voiUpdatedWithSetProperties = false;
 
     this.fillWithBackgroundColor();
 
@@ -642,12 +642,11 @@ class StackViewport extends Viewport implements IStackViewport {
     // use the cached voiRange if the voiRange is locked (if the user has
     // manually set the voi with tools or setProperties api) otherwise,
     // use the voiRange for the current image from its metadata
-    const voiRange = this.voiRangeLocked
+    const voiRange = this.voiUpdatedWithSetProperties
       ? this.voiRange
       : this._getVOIRangeForCurrentImage();
 
-    const suppressEvents = true;
-    this.setVOI(voiRange, suppressEvents);
+    this.setVOI(voiRange);
     this.setInterpolationType(interpolationType);
     this.setInvertColor(invert);
   }
@@ -1109,8 +1108,8 @@ class StackViewport extends Viewport implements IStackViewport {
     this.voiRange = voiRangeToUse;
 
     // if voiRange is set by setProperties we need to lock it if it is not locked already
-    if (!this.voiRangeLocked) {
-      this.voiRangeLocked = voiUpdatedWithSetProperties;
+    if (!this.voiUpdatedWithSetProperties) {
+      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
     }
 
     if (suppressEvents) {
@@ -1857,7 +1856,7 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _getInitialVOIRange(imagePixelModule: ImagePixelModule) {
-    if (this.voiRange && this.voiRangeLocked) {
+    if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.voiRange;
     }
 
