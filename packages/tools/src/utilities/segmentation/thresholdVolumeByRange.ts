@@ -8,7 +8,7 @@ import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape'
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;
-  boundsIJK: BoundsIJK;
+  boundsIJK?: BoundsIJK;
   overlapType?: number;
 };
 

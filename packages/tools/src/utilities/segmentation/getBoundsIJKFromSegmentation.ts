@@ -19,6 +19,15 @@ function getBoundsIJKFromRectangleAnnotations(
 
   // If the tool is a 2D tool but has projection points, use them
 
+
+  const zMultiple = dimensions[0] * dimensions[1];
+  const minSlice = Math.floor(scalarIndex[0] / zMultiple);
+  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
+  const sliceArray = Array.from(
+    { length: maxSlice - minSlice + 1 },
+    (v, k) => k + minSlice
+  );
+
   const rectangleCornersIJK = referenceVolume;
   const boundsIJKShape = getBoundingBoxAroundShape(
     rectangleCornersIJK,

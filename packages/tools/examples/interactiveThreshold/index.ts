@@ -180,10 +180,6 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Execute threshold',
   onClick: () => {
-    const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
-      RectangleROIThresholdTool.toolName
-    ) as Array<string>;
-
     // const annotationUID = selectedAnnotationUIDs[0];
     // const annotation = cornerstoneTools.annotation.state.getAnnotation(
     //   annotationUID
@@ -197,7 +193,7 @@ addButtonToToolbar({
     const ctVolume = cache.getVolume(ctVolumeId);
     // const ptVolume = cache.getVolume(ptVolumeId);
     const segmentationVolume = cache.getVolume(segmentationId);
-    console.log(segmentationVolume.imageData.getBounds());
+    console.log(segmentationVolume);
 
     // csToolsUtils.segmentation.thresholdVolumeByRange(
     //   segmentationVolume,
