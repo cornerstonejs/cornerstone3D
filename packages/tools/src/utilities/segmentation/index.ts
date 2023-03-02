@@ -14,6 +14,7 @@ import {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
+import getBoundsIJKFromSegmentation from './getBoundsIJKFromSegmentation';
 
 export {
   thresholdVolumeByRange,
@@ -28,4 +29,5 @@ export {
   setBrushSizeForToolGroup,
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
+  getBoundsIJKFromSegmentation,
 };

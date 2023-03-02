@@ -19,6 +19,7 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 // eslint-disable-next-line import/extensions
 import perfusionColorMap from './preset.js';
+import { getBoundsIJKFromSegmentation } from 'tools/src/utilities/segmentation';
 
 // This is for debugging purposes
 console.warn(
@@ -182,11 +183,6 @@ addButtonToToolbar({
     const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
       RectangleROIThresholdTool.toolName
     ) as Array<string>;
-
-    if (!selectedAnnotationUIDs) {
-      throw new Error('No annotation selected ');
-    }
-    // console.log(selectedAnnotationUIDs);
 
     // const annotationUID = selectedAnnotationUIDs[0];
     // const annotation = cornerstoneTools.annotation.state.getAnnotation(
