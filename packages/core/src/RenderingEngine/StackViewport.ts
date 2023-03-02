@@ -117,6 +117,12 @@ type CalibrationEvent = {
   columnScale: number;
 };
 
+type SetVOIOptions = {
+  suppressEvents?: boolean;
+  forceRecreateLUTFunction?: boolean;
+  voiUpdatedWithSetProperties?: boolean;
+};
+
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal viewport, and an associated target output `canvas`.
@@ -543,7 +549,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // which will apply the default voi based on the range
     if (typeof voiRange !== 'undefined') {
       const voiUpdatedWithSetProperties = true;
-      this.setVOI(voiRange, suppressEvents, voiUpdatedWithSetProperties);
+      this.setVOI(voiRange, { suppressEvents, voiUpdatedWithSetProperties });
     }
 
     if (typeof VOILUTFunction !== 'undefined') {
@@ -801,14 +807,10 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOI = (
-    voiRange: VOIRange,
-    suppressEvents = false,
-    voiUpdatedWithSetProperties = false
-  ): void =>
+  private setVOI = (voiRange: VOIRange, options?: SetVOIOptions): void =>
     this.useCPURendering
-      ? this.setVOICPU(voiRange, suppressEvents, voiUpdatedWithSetProperties)
-      : this.setVOIGPU(voiRange, suppressEvents, voiUpdatedWithSetProperties);
+      ? this.setVOICPU(voiRange, options)
+      : this.setVOIGPU(voiRange, options);
 
   public getRotation = (): number =>
     this.useCPURendering ? this.getRotationCPU() : this.getRotationGPU();
@@ -892,10 +894,20 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    this.VOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+    const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+
+    let forceRecreateLUTFunction = false;
+    if (
+      this.VOILUTFunction !== VOILUTFunctionType.LINEAR &&
+      newVOILUTFunction === VOILUTFunctionType.LINEAR
+    ) {
+      forceRecreateLUTFunction = true;
+    }
+
+    this.VOILUTFunction = newVOILUTFunction;
 
     const { voiRange } = this.getProperties();
-    this.setVOI(voiRange, suppressEvents);
+    this.setVOI(voiRange, { suppressEvents, forceRecreateLUTFunction });
   }
 
   private setInterpolationType(interpolationType: InterpolationType): void {
@@ -1001,11 +1013,8 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOICPU(
-    voiRange: VOIRange,
-    suppressEvents = false,
-    voiUpdatedWithSetProperties = false
-  ): void {
+  private setVOICPU(voiRange: VOIRange, options): void {
+    const { suppressEvents = false } = options;
     // TODO: Account for VOILUTFunction
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
@@ -1054,11 +1063,13 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOIGPU(
-    voiRange: VOIRange,
-    suppressEvents = false,
-    voiUpdatedWithSetProperties = false
-  ): void {
+  private setVOIGPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
+    const {
+      suppressEvents = false,
+      forceRecreateLUTFunction = false,
+      voiUpdatedWithSetProperties = false,
+    } = options;
+
     const defaultActor = this.getDefaultActor();
     if (!defaultActor) {
       return;
@@ -1088,7 +1099,7 @@ class StackViewport extends Viewport implements IStackViewport {
       this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID;
 
     // use the old cfun if it exists for linear case
-    if (isSigmoidTFun || !transferFunction) {
+    if (isSigmoidTFun || !transferFunction || forceRecreateLUTFunction) {
       const transferFunctionCreator = isSigmoidTFun
         ? createSigmoidRGBTransferFunction
         : createLinearRGBTransferFunction;
@@ -1102,8 +1113,10 @@ class StackViewport extends Viewport implements IStackViewport {
       imageActor.getProperty().setRGBTransferFunction(0, transferFunction);
     }
 
-    // @ts-ignore vtk type error
-    transferFunction.setRange(voiRangeToUse.lower, voiRangeToUse.upper);
+    if (!isSigmoidTFun) {
+      // @ts-ignore vtk type error
+      transferFunction.setRange(voiRangeToUse.lower, voiRangeToUse.upper);
+    }
 
     this.voiRange = voiRangeToUse;
 
