@@ -628,7 +628,10 @@ class StackViewport extends Viewport implements IStackViewport {
     const voiRange = this._getVOIRangeForCurrentImage();
 
     this.setVOI(voiRange);
-    this.setRotation(0);
+
+    if (this.getRotation() !== 0) {
+      this.setRotation(0);
+    }
     this.setInterpolationType(InterpolationType.LINEAR);
     this.setInvertColor(false);
   }
@@ -1091,7 +1094,7 @@ class StackViewport extends Viewport implements IStackViewport {
         ? createSigmoidRGBTransferFunction
         : createLinearRGBTransferFunction;
 
-      transferFunction = transferFunctionCreator(voiRange);
+      transferFunction = transferFunctionCreator(voiRangeToUse);
 
       if (this.invert) {
         invertRgbTransferFunction(transferFunction);
@@ -1101,7 +1104,7 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     // @ts-ignore vtk type error
-    transferFunction.setRange(voiRange.lower, voiRange.upper);
+    transferFunction.setRange(voiRangeToUse.lower, voiRangeToUse.upper);
 
     this.voiRange = voiRangeToUse;
 
