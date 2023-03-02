@@ -137,7 +137,6 @@ class StackViewport extends Viewport implements IStackViewport {
   // Viewport Properties
   private voiRange: VOIRange;
   private voiRangeLocked = false;
-  private initialVOIApplied = false;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -542,8 +541,9 @@ class StackViewport extends Viewport implements IStackViewport {
   ): void {
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
-    if (typeof voiRange !== 'undefined' || !this.initialVOIApplied) {
-      this.setVOI(voiRange, suppressEvents);
+    if (typeof voiRange !== 'undefined') {
+      const voiUpdatedWithSetProperties = true;
+      this.setVOI(voiRange, suppressEvents, voiUpdatedWithSetProperties);
     }
 
     if (typeof VOILUTFunction !== 'undefined') {
@@ -627,17 +627,13 @@ class StackViewport extends Viewport implements IStackViewport {
   private _resetProperties() {
     const voiRange = this._getVOIRangeForCurrentImage();
 
-    this.setProperties({
-      voiRange,
-      rotation: 0,
-      interpolationType: InterpolationType.LINEAR,
-      invert: false,
-    });
+    this.setVOI(voiRange);
+    this.setRotation(0);
+    this.setInterpolationType(InterpolationType.LINEAR);
+    this.setInvertColor(false);
   }
 
   private _setPropertiesFromCache(): void {
-    const suppressEvents = true;
-
     const { interpolationType, invert } = this;
 
     // use the cached voiRange if the voiRange is locked (if the user has
@@ -647,14 +643,10 @@ class StackViewport extends Viewport implements IStackViewport {
       ? this.voiRange
       : this._getVOIRangeForCurrentImage();
 
-    this.setProperties(
-      {
-        voiRange,
-        interpolationType,
-        invert,
-      },
-      suppressEvents
-    );
+    const suppressEvents = true;
+    this.setVOI(voiRange, suppressEvents);
+    this.setInterpolationType(interpolationType);
+    this.setInvertColor(invert);
   }
 
   private getCameraCPU(): Partial<ICamera> {
@@ -807,10 +799,14 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOI = (voiRange: VOIRange, suppressEvents?: boolean): void =>
+  private setVOI = (
+    voiRange: VOIRange,
+    suppressEvents = false,
+    voiUpdatedWithSetProperties = false
+  ): void =>
     this.useCPURendering
-      ? this.setVOICPU(voiRange, suppressEvents)
-      : this.setVOIGPU(voiRange, suppressEvents);
+      ? this.setVOICPU(voiRange, suppressEvents, voiUpdatedWithSetProperties)
+      : this.setVOIGPU(voiRange, suppressEvents, voiUpdatedWithSetProperties);
 
   public getRotation = (): number =>
     this.useCPURendering ? this.getRotationCPU() : this.getRotationGPU();
@@ -1003,7 +999,11 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOICPU(voiRange: VOIRange, suppressEvents?: boolean): void {
+  private setVOICPU(
+    voiRange: VOIRange,
+    suppressEvents = false,
+    voiUpdatedWithSetProperties = false
+  ): void {
     // TODO: Account for VOILUTFunction
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
@@ -1042,7 +1042,6 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this.voiRange = voiRange;
-    this.initialVOIApplied = true;
     const eventDetail: VoiModifiedEventDetail = {
       viewportId: this.id,
       range: voiRange,
@@ -1053,7 +1052,11 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private setVOIGPU(voiRange: VOIRange, suppressEvents?: boolean): void {
+  private setVOIGPU(
+    voiRange: VOIRange,
+    suppressEvents = false,
+    voiUpdatedWithSetProperties = false
+  ): void {
     const defaultActor = this.getDefaultActor();
     if (!defaultActor) {
       return;
@@ -1101,7 +1104,11 @@ class StackViewport extends Viewport implements IStackViewport {
     transferFunction.setRange(voiRange.lower, voiRange.upper);
 
     this.voiRange = voiRangeToUse;
-    this.initialVOIApplied = true;
+
+    // if voiRange is set by setProperties we need to lock it if it is not locked already
+    if (!this.voiRangeLocked) {
+      this.voiRangeLocked = voiUpdatedWithSetProperties;
+    }
 
     if (suppressEvents) {
       return;
@@ -1338,7 +1345,6 @@ class StackViewport extends Viewport implements IStackViewport {
     this.stackInvalidated = true;
     this.flipVertical = false;
     this.flipHorizontal = false;
-    this.initialVOIApplied = false;
 
     this._resetProperties();
 
@@ -1833,10 +1839,10 @@ class StackViewport extends Viewport implements IStackViewport {
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
-    this.setProperties({
-      voiRange: this._getInitialVOIRange(imagePixelModule),
-      invert: imagePixelModule.photometricInterpretation === 'MONOCHROME1',
-    });
+    this.setVOI(this._getInitialVOIRange(imagePixelModule));
+    this.setInvertColor(
+      imagePixelModule.photometricInterpretation === 'MONOCHROME1'
+    );
 
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
@@ -1848,6 +1854,10 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _getInitialVOIRange(imagePixelModule: ImagePixelModule) {
+    if (this.voiRange && this.voiRangeLocked) {
+      return this.voiRange;
+    }
+
     const { windowCenter, windowWidth } = imagePixelModule;
     let voiRange = this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
 
@@ -1858,6 +1868,7 @@ class StackViewport extends Viewport implements IStackViewport {
     if (imagePixelModule.modality === 'PT' && isPreScaled) {
       voiRange = { lower: 0, upper: 5 };
     }
+
     return voiRange;
   }
 
