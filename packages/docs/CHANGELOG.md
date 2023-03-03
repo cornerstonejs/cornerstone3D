@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.15.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.14.0...docs@0.15.0) (2023-03-03)
+
+
+### Features
+
+* **dicomImageLoader types:** Add types to the dicom image loader ([#441](https://github.com/cornerstonejs/cornerstone3D-beta/issues/441)) ([10a3370](https://github.com/cornerstonejs/cornerstone3D-beta/commit/10a3370b7f23084d1f2c55506079c17dea959659)), closes [#449](https://github.com/cornerstonejs/cornerstone3D-beta/issues/449) [#450](https://github.com/cornerstonejs/cornerstone3D-beta/issues/450)
+
+
+
+
+
 # [0.14.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.13.17...docs@0.14.0) (2023-03-01)
 
 

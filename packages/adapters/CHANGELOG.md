@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.4.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.3.2...@cornerstonejs/adapters@0.4.0) (2023-03-03)
+
+
+### Features
+
+* **dicomImageLoader types:** Add types to the dicom image loader ([#441](https://github.com/dcmjs-org/dcmjs/issues/441)) ([10a3370](https://github.com/dcmjs-org/dcmjs/commit/10a3370b7f23084d1f2c55506079c17dea959659)), closes [#449](https://github.com/dcmjs-org/dcmjs/issues/449) [#450](https://github.com/dcmjs-org/dcmjs/issues/450)
+
+
+
+
+
 ## [0.3.2](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.3.1...@cornerstonejs/adapters@0.3.2) (2023-02-17)
 
 
