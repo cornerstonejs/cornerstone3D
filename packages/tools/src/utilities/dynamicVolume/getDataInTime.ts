@@ -40,7 +40,9 @@ function getDataInTime(
     // Get the index of every non-zero voxel in mask by mapping indexes to
     // new array, then using the array to filter
     const is = segmentationVolume.getScalarData().map((_, i) => i);
-    const indexArray = is.filter((i) => segmentationVolume.getScalarData[i] != 0);
+    const indexArray = is.filter(
+      (i) => segmentationVolume.getScalarData[i] != 0
+    );
     const dataInTime = _getTimePointDataMask(frames, indexArray, dynamicVolume);
 
     return dataInTime;
