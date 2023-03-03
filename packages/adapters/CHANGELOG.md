@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.4.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.4.0...@cornerstonejs/adapters@0.4.1) (2023-03-03)
+
+
+### Bug Fixes
+
+* **adapters:** Measurement reports can throw exceptions that prevent loading ([#458](https://github.com/dcmjs-org/dcmjs/issues/458)) ([7bc7d8a](https://github.com/dcmjs-org/dcmjs/commit/7bc7d8aaeb5aa0df91c24e278665d14f590ec234))
+
+
+
+
+
 # [0.4.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.3.2...@cornerstonejs/adapters@0.4.0) (2023-03-03)
 
 
