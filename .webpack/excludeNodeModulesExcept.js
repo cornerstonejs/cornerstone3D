@@ -4,7 +4,7 @@ function excludeNodeModulesExcept(modules) {
   });
 
   return function (modulePath) {
-    if (/cornerstoneDICOMImageLoader/.test(modulePath)) {
+    if (/cornerstoneWADOImageLoader/.test(modulePath)) {
       return true;
     }
 

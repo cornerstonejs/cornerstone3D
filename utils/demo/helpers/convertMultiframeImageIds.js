@@ -1,12 +1,11 @@
 import { metaData } from '@cornerstonejs/core';
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
-
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 /**
  * preloads imageIds metadata in memory
  **/
 async function prefetchMetadataInformation(imageIdsToPrefetch) {
   for (let i = 0; i < imageIdsToPrefetch.length; i++) {
-    await cornerstoneDICOMImageLoader.wadouri.loadImage(imageIdsToPrefetch[i])
+    await cornerstoneWADOImageLoader.wadouri.loadImage(imageIdsToPrefetch[i])
       .promise;
   }
 }
