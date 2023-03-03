@@ -13,7 +13,6 @@ const {
   metaData,
   volumeLoader,
   setVolumesForViewports,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType, InterpolationType } = Enums;
@@ -228,16 +227,16 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
         function secondImageRendered() {
           // Second render is as a result of scrolling
           const image = canvas.toDataURL('image/png');
+          element.removeEventListener(
+            Events.IMAGE_RENDERED,
+            secondImageRendered
+          );
+
           compareImages(
             image,
             imageURI_64_64_0_20_1_1_0_scrolled,
             'imageURI_64_64_0_20_1_1_0_scrolled'
           ).then(done, done.fail);
-
-          element.removeEventListener(
-            Events.IMAGE_RENDERED,
-            secondImageRendered
-          );
         }
       );
     }

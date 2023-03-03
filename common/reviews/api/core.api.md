@@ -1021,9 +1021,9 @@ interface IImage {
     // (undocumented)
     width: number;
     // (undocumented)
-    windowCenter: number;
+    windowCenter: number[] | number;
     // (undocumented)
-    windowWidth: number;
+    windowWidth: number[] | number;
 }
 
 // @public (undocumented)
