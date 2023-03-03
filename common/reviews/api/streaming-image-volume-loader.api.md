@@ -723,8 +723,8 @@ interface IImage {
     voiLUT?: CPUFallbackLUT;
     voiLUTFunction: string;
     width: number;
-    windowCenter: number[] | number;
-    windowWidth: number[] | number;
+    windowCenter: number;
+    windowWidth: number;
 }
 
 // @public

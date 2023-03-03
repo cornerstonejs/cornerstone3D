@@ -78,8 +78,8 @@ interface ImagePixelModule {
   highBit: number;
   photometricInterpretation: string;
   pixelRepresentation: string;
-  windowWidth: number;
-  windowCenter: number;
+  windowWidth: number | number[];
+  windowCenter: number | number[];
   voiLUTFunction: VOILUTFunctionType;
   modality: string;
 }
@@ -513,7 +513,9 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param imageId - a string representing the imageId for the image
    * @returns imagePlaneModule and imagePixelModule containing the metadata for the image
    */
-  private buildMetadata(imageId: string) {
+  private buildMetadata(image: IImage) {
+    const imageId = image.imageId;
+
     const {
       pixelRepresentation,
       bitsAllocated,
@@ -523,8 +525,10 @@ class StackViewport extends Viewport implements IStackViewport {
       samplesPerPixel,
     } = metaData.get('imagePixelModule', imageId);
 
-    const { windowWidth, windowCenter, voiLUTFunction } =
-      this._getVOIMetadata(imageId);
+    // we can grab the window center and width from the image object
+    // since it the loader already has used the metadata provider
+    // to get the values
+    const { windowWidth, windowCenter, voiLUTFunction } = image;
 
     const { modality } = metaData.get('generalSeriesModule', imageId);
     const imageIdScalingFactor = metaData.get('scalingModule', imageId);
@@ -534,7 +538,8 @@ class StackViewport extends Viewport implements IStackViewport {
     }
 
     this.modality = modality;
-    this.VOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
+    this.VOILUTFunction = voiLUTFunctionEnum;
 
     let imagePlaneModule = this._getImagePlaneModule(imageId);
 
@@ -553,8 +558,8 @@ class StackViewport extends Viewport implements IStackViewport {
         pixelRepresentation,
         windowWidth,
         windowCenter,
-        voiLUTFunction,
         modality,
+        voiLUTFunction: voiLUTFunctionEnum,
       },
     };
   }
@@ -732,7 +737,17 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _resetProperties() {
-    const voiRange = this._getVOIRangeForCurrentImage();
+    let voiRange;
+    if (this._isCurrentImagePTPrescaled()) {
+      // if not set via setProperties; if it is a PT image and is already prescaled,
+      // use the default range for PT
+      voiRange = this._getDefaultPTPrescaledVOIRange();
+    } else {
+      // if not set via setProperties; if it is not a PT image or is not prescaled,
+      // use the voiRange for the current image from its metadata if found
+      // otherwise, use the cached voiRange
+      voiRange = this._getVOIRangeForCurrentImage();
+    }
 
     this.setVOI(voiRange);
 
@@ -746,12 +761,21 @@ class StackViewport extends Viewport implements IStackViewport {
   private _setPropertiesFromCache(): void {
     const { interpolationType, invert } = this;
 
-    // use the cached voiRange if the voiRange is locked (if the user has
-    // manually set the voi with tools or setProperties api) otherwise,
-    // use the voiRange for the current image from its metadata
-    const voiRange = this.voiUpdatedWithSetProperties
-      ? this.voiRange
-      : this._getVOIRangeForCurrentImage();
+    let voiRange;
+    if (this.voiUpdatedWithSetProperties) {
+      // use the cached voiRange if the voiRange is locked (if the user has
+      // manually set the voi with tools or setProperties api)
+      voiRange = this.voiRange;
+    } else if (this._isCurrentImagePTPrescaled()) {
+      // if not set via setProperties; if it is a PT image and is already prescaled,
+      // use the default range for PT
+      voiRange = this._getDefaultPTPrescaledVOIRange();
+    } else {
+      // if not set via setProperties; if it is not a PT image or is not prescaled,
+      // use the voiRange for the current image from its metadata if found
+      // otherwise, use the cached voiRange
+      voiRange = this._getVOIRangeForCurrentImage() ?? this.voiRange;
+    }
 
     this.setVOI(voiRange);
     this.setInterpolationType(interpolationType);
@@ -1151,6 +1175,16 @@ class StackViewport extends Viewport implements IStackViewport {
       voiUpdatedWithSetProperties = false,
     } = options;
 
+    if (
+      voiRange &&
+      this.voiRange &&
+      this.voiRange.lower === voiRange.lower &&
+      this.voiRange.upper === voiRange.upper &&
+      !forceRecreateLUTFunction
+    ) {
+      return;
+    }
+
     const defaultActor = this.getDefaultActor();
     if (!defaultActor) {
       return;
@@ -1283,9 +1317,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
     // should be optional and used if provided through a metadata provider.
 
-    const { imagePlaneModule, imagePixelModule } = this.buildMetadata(
-      image.imageId
-    );
+    const { imagePlaneModule, imagePixelModule } = this.buildMetadata(image);
 
     let rowCosines, columnCosines;
 
@@ -1438,11 +1470,14 @@ class StackViewport extends Viewport implements IStackViewport {
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
+
+    // reset the stack
     this.stackInvalidated = true;
     this.flipVertical = false;
     this.flipHorizontal = false;
-
-    this._resetProperties();
+    this.voiRange = null;
+    this.interpolationType = InterpolationType.LINEAR;
+    this.invert = false;
 
     this.fillWithBackgroundColor();
 
@@ -1588,6 +1623,7 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
+        image.isPreScaled = image.preScale?.scaled;
         this.csImage = image;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
@@ -1601,8 +1637,6 @@ class StackViewport extends Viewport implements IStackViewport {
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
         const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
-
-        image.isPreScaled = image.preScale?.scaled;
 
         const viewport = getDefaultViewport(
           this.canvas,
@@ -1723,6 +1757,7 @@ class StackViewport extends Viewport implements IStackViewport {
         }
 
         // cornerstone image
+        image.isPreScaled = image.preScale?.scaled;
         this.csImage = image;
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
@@ -1935,7 +1970,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
-    this.setVOI(this._getInitialVOIRange(imagePixelModule));
+    this.setVOI(this._getInitialVOIRange(image));
     this.setInvertColor(
       imagePixelModule.photometricInterpretation === 'MONOCHROME1'
     );
@@ -1949,28 +1984,44 @@ class StackViewport extends Viewport implements IStackViewport {
     }
   }
 
-  private _getInitialVOIRange(imagePixelModule: ImagePixelModule) {
+  private _getInitialVOIRange(image: IImage) {
     if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.voiRange;
     }
+    const { windowCenter, windowWidth } = image;
 
-    const { windowCenter, windowWidth } = imagePixelModule;
     let voiRange = this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
 
-    // check if the image is already prescaled
-    const isPreScaled =
-      this.csImage.isPreScaled || this.csImage.preScale?.scaled;
-
-    if (imagePixelModule.modality === 'PT' && isPreScaled) {
-      voiRange = { lower: 0, upper: 5 };
-    }
+    // Get the range for the PT since if it is prescaled
+    // we set a default range of 0-5
+    voiRange = this._getPTPreScaledRange() || voiRange;
 
     return voiRange;
   }
 
+  private _getPTPreScaledRange() {
+    if (!this._isCurrentImagePTPrescaled()) {
+      return undefined;
+    }
+
+    return this._getDefaultPTPrescaledVOIRange();
+  }
+
+  private _isCurrentImagePTPrescaled() {
+    if (this.modality !== 'PT' || !this.csImage.isPreScaled) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private _getDefaultPTPrescaledVOIRange() {
+    return { lower: 0, upper: 5 };
+  }
+
   private _getVOIRangeFromWindowLevel(
-    windowWidth: number,
-    windowCenter: number
+    windowWidth: number | number[],
+    windowCenter: number | number[]
   ): { lower: number; upper: number } | undefined {
     return typeof windowCenter === 'number' && typeof windowWidth === 'number'
       ? windowLevelUtil.toLowHighRange(windowWidth, windowCenter)
@@ -2347,43 +2398,9 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   private _getVOIRangeForCurrentImage() {
-    const { windowCenter, windowWidth } = this._getVOIMetadata(
-      this.getCurrentImageId()
-    );
+    const { windowCenter, windowWidth } = this.csImage;
 
-    const voiRange = this._getVOIRangeFromWindowLevel(
-      windowWidth,
-      windowCenter
-    );
-    return voiRange;
-  }
-
-  private _getVOIMetadata(imageId: string) {
-    const voiLutModule = metaData.get('voiLutModule', imageId);
-
-    if (!voiLutModule) {
-      return {
-        windowWidth: undefined,
-        windowCenter: undefined,
-        voiLUTFunction: undefined,
-      };
-    }
-
-    let { windowWidth, windowCenter, voiLUTFunction } = voiLutModule;
-
-    if (Array.isArray(windowWidth)) {
-      windowWidth = windowWidth[0];
-    }
-
-    if (Array.isArray(windowCenter)) {
-      windowCenter = windowCenter[0];
-    }
-
-    // when cornerstoneWADOImageLoader uses cornerstonejs/core types
-    // this marshalling step can be removed.
-    voiLUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
-
-    return { windowWidth, windowCenter, voiLUTFunction };
+    return this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
   }
 
   private _getValidVOILUTFunction(voiLUTFunction: any) {
