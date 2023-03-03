@@ -376,43 +376,52 @@ export default class MeasurementReport {
         });
 
         measurementGroups.forEach(measurementGroup => {
-            const measurementGroupContentSequence = toArray(
-                measurementGroup.ContentSequence
-            );
-
-            const TrackingIdentifierGroup =
-                measurementGroupContentSequence.find(
-                    contentItem =>
-                        contentItem.ConceptNameCodeSequence.CodeMeaning ===
-                        TRACKING_IDENTIFIER
+            try {
+                const measurementGroupContentSequence = toArray(
+                    measurementGroup.ContentSequence
                 );
 
-            const TrackingIdentifierValue = TrackingIdentifierGroup.TextValue;
+                const TrackingIdentifierGroup =
+                    measurementGroupContentSequence.find(
+                        contentItem =>
+                            contentItem.ConceptNameCodeSequence.CodeMeaning ===
+                            TRACKING_IDENTIFIER
+                    );
 
-            const toolClass =
-                hooks?.getToolClass?.(
+                const TrackingIdentifierValue =
+                    TrackingIdentifierGroup.TextValue;
+
+                const toolClass =
+                    hooks?.getToolClass?.(
+                        measurementGroup,
+                        dataset,
+                        registeredToolClasses
+                    ) ||
+                    registeredToolClasses.find(tc =>
+                        tc.isValidCornerstoneTrackingIdentifier(
+                            TrackingIdentifierValue
+                        )
+                    );
+
+                if (toolClass) {
+                    const measurement = toolClass.getMeasurementData(
+                        measurementGroup,
+                        sopInstanceUIDToImageIdMap,
+                        imageToWorldCoords,
+                        metadata
+                    );
+
+                    console.log(`=== ${toolClass.toolType} ===`);
+                    console.log(measurement);
+
+                    measurementData[toolClass.toolType].push(measurement);
+                }
+            } catch (e) {
+                console.warn(
+                    "Unable to generate tool state for",
                     measurementGroup,
-                    dataset,
-                    registeredToolClasses
-                ) ||
-                registeredToolClasses.find(tc =>
-                    tc.isValidCornerstoneTrackingIdentifier(
-                        TrackingIdentifierValue
-                    )
+                    e
                 );
-
-            if (toolClass) {
-                const measurement = toolClass.getMeasurementData(
-                    measurementGroup,
-                    sopInstanceUIDToImageIdMap,
-                    imageToWorldCoords,
-                    metadata
-                );
-
-                console.log(`=== ${toolClass.toolType} ===`);
-                console.log(measurement);
-
-                measurementData[toolClass.toolType].push(measurement);
             }
         });
 
