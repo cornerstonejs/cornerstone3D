@@ -32,6 +32,7 @@ import * as rectangleROITool from './rectangleROITool';
 import * as stackPrefetch from './stackPrefetch';
 import * as viewport from './viewport';
 import * as touch from './touch';
+import * as dynamicVolume from './dynamicVolume';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -43,6 +44,7 @@ export {
   drawing,
   debounce,
   deepMerge,
+  dynamicVolume,
   throttle,
   orientation,
   isObject,
