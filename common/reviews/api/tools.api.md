@@ -1428,6 +1428,12 @@ function drawRect(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rec
 // @public (undocumented)
 function drawTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, textUID: string, textLines: Array<string>, position: Types_2.Point2, options?: {}): SVGRect;
 
+declare namespace dynamicVolume {
+    export {
+        getDataInTime
+    }
+}
+
 declare namespace elementCursor {
     export {
         initElementCursor,
@@ -1919,6 +1925,13 @@ function getConfiguration(): {
     maxImagesToPrefetch: number;
     preserveExistingPool: boolean;
 };
+
+// @public (undocumented)
+function getDataInTime(dynamicVolume: any, options: {
+    frameNumbers?: any;
+    maskVolumeId?: any;
+    imageCoordinate?: any;
+}): number[] | number[][];
 
 // @public (undocumented)
 function getDefaultRepresentationConfig(segmentation: Segmentation): LabelmapConfig;
@@ -5064,6 +5077,7 @@ declare namespace utilities {
         drawing_2 as drawing,
         debounce,
         deepmerge as deepMerge,
+        dynamicVolume,
         throttle,
         orientation_2 as orientation,
         isObject,
