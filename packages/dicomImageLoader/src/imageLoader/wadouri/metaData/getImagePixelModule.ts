@@ -1,4 +1,7 @@
-function getLutDescriptor(dataSet, tag) {
+import { MetadataImagePixelModule } from '../../../types';
+import { DataSet } from 'dicom-parser';
+
+function getLutDescriptor(dataSet: DataSet, tag: string) {
   if (!dataSet.elements[tag] || dataSet.elements[tag].length !== 6) {
     return;
   }
@@ -10,7 +13,7 @@ function getLutDescriptor(dataSet, tag) {
   ];
 }
 
-function getLutData(lutDataSet, tag, lutDescriptor) {
+function getLutData(lutDataSet: DataSet, tag: string, lutDescriptor): number[] {
   const lut = [];
   const lutData = lutDataSet.elements[tag];
 
@@ -26,7 +29,10 @@ function getLutData(lutDataSet, tag, lutDescriptor) {
   return lut;
 }
 
-function populatePaletteColorLut(dataSet, imagePixelModule) {
+function populatePaletteColorLut(
+  dataSet: DataSet,
+  imagePixelModule: MetadataImagePixelModule
+) {
   imagePixelModule.redPaletteColorLookupTableDescriptor = getLutDescriptor(
     dataSet,
     'x00281101'
@@ -91,7 +97,10 @@ function populatePaletteColorLut(dataSet, imagePixelModule) {
   );
 }
 
-function populateSmallestLargestPixelValues(dataSet, imagePixelModule) {
+function populateSmallestLargestPixelValues(
+  dataSet: DataSet,
+  imagePixelModule: MetadataImagePixelModule
+) {
   const pixelRepresentation = dataSet.uint16('x00280103');
 
   if (pixelRepresentation === 0) {
@@ -103,7 +112,7 @@ function populateSmallestLargestPixelValues(dataSet, imagePixelModule) {
   }
 }
 
-function getImagePixelModule(dataSet) {
+function getImagePixelModule(dataSet: DataSet): MetadataImagePixelModule {
   const imagePixelModule = {
     samplesPerPixel: dataSet.uint16('x00280002'),
     photometricInterpretation: dataSet.string('x00280004'),
@@ -115,7 +124,7 @@ function getImagePixelModule(dataSet) {
     pixelRepresentation: dataSet.uint16('x00280103'),
     planarConfiguration: dataSet.uint16('x00280006'),
     pixelAspectRatio: dataSet.string('x00280034'),
-  };
+  } as MetadataImagePixelModule;
 
   populateSmallestLargestPixelValues(dataSet, imagePixelModule);
 

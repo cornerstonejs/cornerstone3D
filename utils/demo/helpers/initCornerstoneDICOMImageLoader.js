@@ -7,7 +7,7 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
 
-export default function initCornerstoneWADOImageLoader() {
+export default function initCornerstoneDICOMImageLoader() {
   cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
   cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
   cornerstoneWADOImageLoader.configure({

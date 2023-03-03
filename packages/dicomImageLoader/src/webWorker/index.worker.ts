@@ -1,13 +1,14 @@
-import { registerTaskHandler } from './webWorker.js';
-import decodeTask from './decodeTask.js';
+import { registerTaskHandler } from './webWorker';
+import decodeTask from './decodeTask';
 
 // register our task
+// @ts-ignore
 registerTaskHandler(decodeTask);
 
-const cornerstoneWADOImageLoaderWebWorker = {
+const cornerstoneDICOMImageLoaderWebWorker = {
   registerTaskHandler,
 };
 
 export { registerTaskHandler };
 
-export default cornerstoneWADOImageLoaderWebWorker;
+export default cornerstoneDICOMImageLoaderWebWorker;

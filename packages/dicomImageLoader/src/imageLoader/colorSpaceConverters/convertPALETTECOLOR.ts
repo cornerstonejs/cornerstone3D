@@ -1,6 +1,7 @@
-/* eslint no-bitwise: 0 */
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame } from '../../types';
 
-function convertLUTto8Bit(lut, shift) {
+function convertLUTto8Bit(lut: number[], shift: number) {
   const numEntries = lut.length;
   const cleanedLUT = new Uint8ClampedArray(numEntries);
 
@@ -14,11 +15,15 @@ function convertLUTto8Bit(lut, shift) {
 /**
  * Convert pixel data with PALETTE COLOR Photometric Interpretation to RGBA
  *
- * @param {ImageFrame} imageFrame
- * @param {Uint8ClampedArray} colorBuffer
- * @returns {void}
+ * @param imageFrame - The ImageFrame to convert
+ * @param colorBuffer - The buffer to write the converted pixel data to
+ * @returns
  */
-export default function (imageFrame, colorBuffer, useRGBA) {
+export default function (
+  imageFrame: ImageFrame,
+  colorBuffer: ByteArray,
+  useRGBA: boolean
+): void {
   const numPixels = imageFrame.columns * imageFrame.rows;
   const pixelData = imageFrame.pixelData;
   const rData = imageFrame.redPaletteColorLookupTableData;

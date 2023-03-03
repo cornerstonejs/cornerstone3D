@@ -1,3 +1,5 @@
+import { MetadataGeneralSeriesModule } from '../types';
+
 /**
  * It returns the scaling parameters for the image with the given imageId. This can be
  * used to get passed (as an option) to the imageLoader in order to apply scaling to the image inside
@@ -5,10 +7,10 @@
  * @param imageId - The imageId of the image
  * @returns ScalingParameters
  */
-export default function getScalingParameters(metaData, imageId) {
+export default function getScalingParameters(metaData: any, imageId: string) {
   const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
 
-  const generalSeriesModule =
+  const generalSeriesModule: MetadataGeneralSeriesModule =
     metaData.get('generalSeriesModule', imageId) || {};
 
   const { modality } = generalSeriesModule;

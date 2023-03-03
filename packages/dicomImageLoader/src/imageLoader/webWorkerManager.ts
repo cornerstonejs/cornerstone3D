@@ -1,31 +1,43 @@
 // Not sure why but webpack isn't splitting this out unless we explicitly use worker-loader!
 // eslint-disable-next-line
-// import cornerstoneWADOImageLoaderWebWorker from 'worker-loader!../webWorker/index.worker.js';
-import cornerstoneWADOImageLoaderWebWorker from '../webWorker/index.worker.js';
+// import cornerstoneDICOMImageLoaderWebWorker from 'worker-loader!../webWorker/index.worker';
+import cornerstoneDICOMImageLoaderWebWorker from '../webWorker/index.worker';
+
+import {
+  WebWorkerOptions,
+  WorkerTaskTypes,
+  WorkerTask,
+  WebWorkerDecodeTaskData,
+  WebWorkerResponse,
+  WebWorkerDeferredObject,
+} from '../types';
 
 // This is for the Webpack 5 approch but it's currently broken
 // so we will continue relying on worker-loader for now
 // https://github.com/webpack/webpack/issues/13899
-/* const cornerstoneWADOImageLoaderWebWorkerPath = new URL(
-  '../webWorker/index.js',
+/* const cornerstoneDICOMImageLoaderWebWorkerPath = new URL(
+  '../webWorker/index',
   import.meta.url
 );*/
 
-import { getOptions } from './internal/options.js';
+import { getOptions } from './internal/options';
 
 // the taskId to assign to the next task added via addTask()
 let nextTaskId = 0;
 
-// array of queued tasks sorted with highest priority task first
-const tasks = [];
+const tasks: WorkerTask[] = [];
 
 // array of web workers to dispatch decode tasks to
-const webWorkers = [];
+const webWorkers: {
+  worker: Worker;
+  status: 'ready' | 'busy' | 'initializing';
+  task?: WorkerTask;
+}[] = [];
 
-// The options for CornerstoneWADOImageLoader
+// The options for cornerstoneDICOMImageLoader
 const options = getOptions();
 
-const defaultConfig = {
+const defaultConfig: WebWorkerOptions = {
   maxWebWorkers: navigator.hardwareConcurrency || 1,
   startWebWorkersOnDemand: true,
   webWorkerTaskPaths: [],
@@ -37,7 +49,7 @@ const defaultConfig = {
   },
 };
 
-let config;
+let config: WebWorkerOptions;
 
 const statistics = {
   maxWebWorkers: 0,
@@ -101,7 +113,7 @@ function startTaskOnWebWorker() {
  * Function to handle a message from a web worker
  * @param msg
  */
-function handleMessageFromWorker(msg) {
+function handleMessageFromWorker(msg: MessageEvent<WebWorkerResponse>) {
   // console.log('handleMessageFromWorker', msg.data);
   if (msg.data.taskType === 'initialize') {
     webWorkers[msg.data.workerIndex].status = 'ready';
@@ -142,18 +154,18 @@ function spawnWebWorker() {
   }
 
   // spawn the webworker
-  const worker = new cornerstoneWADOImageLoaderWebWorker();
+  const worker: Worker = new (cornerstoneDICOMImageLoaderWebWorker as any)();
 
   // This is for the Webpack 5 approach but it's currently broken
-  /* const worker = new Worker(cornerstoneWADOImageLoaderWebWorkerPath, {
-    name: `cornerstoneWADOImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
+  /* const worker = new Worker(cornerstoneDICOMImageLoaderWebWorkerPath, {
+    name: `cornerstoneDICOMImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
     type: 'module',
   });*/
 
   // const worker = new Worker(
-  //   './cornerstoneWADOImageLoaderWebWorker.bundle.min.js',
+  //   './cornerstoneDICOMImageLoaderWebWorker.bundle.min',
   //   {
-  //     name: `cornerstoneWADOImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
+  //     name: `cornerstoneDICOMImageLoaderWebWorkerPath-${webWorkers.length + 1}`,
   //   }
   // );
 
@@ -173,7 +185,7 @@ function spawnWebWorker() {
  * Initialization function for the web worker manager - spawns web workers
  * @param configObject
  */
-function initialize(configObject) {
+function initialize(configObject?: WebWorkerOptions): void {
   configObject = configObject || defaultConfig;
 
   // prevent being initialized more than once
@@ -197,7 +209,7 @@ function initialize(configObject) {
 /**
  * Terminate all running web workers.
  */
-function terminate() {
+function terminate(): void {
   for (let i = 0; i < webWorkers.length; i++) {
     webWorkers[i].worker.terminate();
   }
@@ -210,7 +222,7 @@ function terminate() {
  * @param sourcePath
  * @param taskConfig
  */
-function loadWebWorkerTask(sourcePath, taskConfig) {
+function loadWebWorkerTask(sourcePath: string, taskConfig): void {
   // add it to the list of web worker tasks paths so on demand web workers
   // load this properly
   config.webWorkerTaskPaths.push(sourcePath);
@@ -243,13 +255,21 @@ function loadWebWorkerTask(sourcePath, taskConfig) {
  * @param transferList - optional array of data to transfer to web worker
  * @returns {*}
  */
-function addTask(taskType, data, priority = 0, transferList) {
+function addTask<T = any>(
+  taskType: WorkerTaskTypes,
+  data: WebWorkerDecodeTaskData,
+  priority = 0,
+  transferList: Transferable[]
+): { taskId: number; promise: Promise<T> } {
   if (!config) {
     initialize();
   }
 
-  let deferred = {};
-  const promise = new Promise((resolve, reject) => {
+  let deferred: WebWorkerDeferredObject<T> = {
+    resolve: undefined,
+    reject: undefined,
+  };
+  const promise = new Promise<T>((resolve, reject) => {
     deferred = {
       resolve,
       reject,
@@ -257,7 +277,7 @@ function addTask(taskType, data, priority = 0, transferList) {
   });
 
   // find the right spot to insert this decode task (based on priority)
-  let i;
+  let i: number;
 
   for (i = 0; i < tasks.length; i++) {
     if (tasks[i].priority < priority) {
@@ -294,7 +314,7 @@ function addTask(taskType, data, priority = 0, transferList) {
  * @param priority - priority of the task (defaults to 0), > 0 is higher, < 0 is lower
  * @returns boolean - true on success, false if taskId not found
  */
-function setTaskPriority(taskId, priority = 0) {
+function setTaskPriority(taskId: number, priority = 0): boolean {
   // search for this taskId
   for (let i = 0; i < tasks.length; i++) {
     if (tasks[i].taskId === taskId) {
@@ -327,14 +347,18 @@ function setTaskPriority(taskId, priority = 0) {
  * @param reason - optional reason the task was rejected
  * @returns boolean - true on success, false if taskId not found
  */
-function cancelTask(taskId, reason) {
+function cancelTask(taskId: number, reason: string): boolean {
   // search for this taskId
   for (let i = 0; i < tasks.length; i++) {
     if (tasks[i].taskId === taskId) {
       // taskId found, remove it
+      /**
+       * @todo Check if this is a bug. Splice returns an array but task is
+       * treated as a single task object
+       */
       const task = tasks.splice(i, 1);
 
-      task.deferred.reject(reason);
+      (task as any).deferred.reject(reason);
 
       return true;
     }
@@ -347,7 +371,7 @@ function cancelTask(taskId, reason) {
  * Function to return the statistics on running web workers
  * @returns object containing statistics
  */
-function getStatistics() {
+function getStatistics(): typeof config {
   statistics.maxWebWorkers = config.maxWebWorkers;
   statistics.numWebWorkers = webWorkers.length;
   statistics.numTasksQueued = tasks.length;

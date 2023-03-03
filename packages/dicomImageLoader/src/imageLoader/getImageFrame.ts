@@ -1,8 +1,9 @@
-import external from '../externalModules.js';
+import external from '../externalModules';
+import { ImageFrame, MetadataImagePixelModule } from '../types';
 
-function getImageFrame(imageId) {
+function getImageFrame(imageId: string): ImageFrame {
   const { cornerstone } = external;
-  const imagePixelModule = cornerstone.metaData.get(
+  const imagePixelModule: MetadataImagePixelModule = cornerstone.metaData.get(
     'imagePixelModule',
     imageId
   );

@@ -1,14 +1,22 @@
-import charlsFactory from '@cornerstonejs/codec-charls/dist/charlswasm_decode.js';
-// import charlsFactory from '@cornerstonejs/codec-charls/dist/debug/charlswasm.js';
+import type {
+  CharlsModule,
+  JpegLSDecoder,
+} from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
 
-// Webpack asset/resource copies this to our output folder
-import charlsWasm from '@cornerstonejs/codec-charls/dist/charlswasm_decode.wasm';
-// import charlsWasm from '@cornerstonejs/codec-charls/dist/debug/charlswasm.wasm';
+import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
+import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
 
-const local = {
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+
+const local: {
+  codec: CharlsModule;
+  decoder: JpegLSDecoder;
+  decodeConfig: WebWorkerDecodeConfig;
+} = {
   codec: undefined,
   decoder: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
 function getExceptionMessage(exception) {
@@ -17,7 +25,9 @@ function getExceptionMessage(exception) {
     : exception;
 }
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: WebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.codec) {
@@ -27,7 +37,7 @@ export function initialize(decodeConfig) {
   const charlsModule = charlsFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return charlsWasm;
+        return charlsWasm.toString();
       }
 
       return f;
@@ -49,8 +59,12 @@ export function initialize(decodeConfig) {
  * @param {object}  imageInfo
  * @param {boolean} imageInfo.signed - (pixelRepresentation === 1)
  */
-async function decodeAsync(compressedImageFrame, imageInfo) {
+async function decodeAsync(
+  compressedImageFrame,
+  imageInfo
+): Promise<ImageFrame> {
   try {
+    console.debug('decodeAsync', compressedImageFrame, imageInfo);
     await initialize();
     const decoder = local.decoder;
 
@@ -113,7 +127,7 @@ async function decodeAsync(compressedImageFrame, imageInfo) {
   }
 }
 
-function getPixelData(frameInfo, decodedBuffer, signed) {
+function getPixelData(frameInfo, decodedBuffer: ByteArray, signed: boolean) {
   if (frameInfo.bitsPerSample > 8) {
     if (signed) {
       return new Int16Array(

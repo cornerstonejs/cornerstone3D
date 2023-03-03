@@ -1,4 +1,5 @@
-import getValue from './getValue.js';
+import { WADORSMetaDataElement } from '../../../types';
+import getValue from './getValue';
 
 /**
  * Returns the first string value as a Javascript number
@@ -8,8 +9,12 @@ import getValue from './getValue.js';
  * @param [defaultValue] - The default value to return if the element does not exist
  * @returns {*}
  */
-function getNumberString(element, index, defaultValue) {
-  const value = getValue(element, index, defaultValue);
+function getNumberString(
+  element: WADORSMetaDataElement,
+  index: number,
+  defaultValue: number
+): number {
+  const value = getValue<any>(element, index, defaultValue);
 
   if (value === undefined) {
     return;

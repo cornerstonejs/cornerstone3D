@@ -1,13 +1,16 @@
-import external from '../../externalModules.js';
-import getPixelData from './getPixelData.js';
-import createImage from '../createImage.js';
+import type { Types } from '@cornerstonejs/core';
+
+import external from '../../externalModules';
+import createImage from '../createImage';
+import getPixelData from './getPixelData';
+import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 /**
  * Helper method to extract the transfer-syntax from the response of the server.
  * @param {string} contentType The value of the content-type header as returned by the WADO-RS server.
  * @return The transfer-syntax as announced by the server, or Implicit Little Endian by default.
  */
-export function getTransferSyntaxForContentType(contentType) {
+export function getTransferSyntaxForContentType(contentType: string): string {
   const defaultTransferSyntax = '1.2.840.10008.1.2'; // Default is Implicit Little Endian.
 
   if (!contentType) {
@@ -16,7 +19,7 @@ export function getTransferSyntaxForContentType(contentType) {
 
   // Browse through the content type parameters
   const parameters = contentType.split(';');
-  const params = {};
+  const params: Record<string, string> = {};
 
   parameters.forEach((parameter) => {
     // Look for a transfer-syntax=XXXX pair
@@ -69,12 +72,25 @@ function getImageRetrievalPool() {
   return external.cornerstone.imageRetrievalPoolManager;
 }
 
-function loadImage(imageId, options = {}) {
+export interface CornerstoneWadoRsLoaderOptions
+  extends DICOMLoaderImageOptions {
+  requestType?: string;
+  additionalDetails?: {
+    imageId: string;
+  };
+  priority?: number;
+  addToBeginning?: boolean;
+}
+
+function loadImage(
+  imageId: string,
+  options: CornerstoneWadoRsLoaderOptions = {}
+): Types.IImageLoadObject {
   const imageRetrievalPool = getImageRetrievalPool();
 
   const start = new Date().getTime();
 
-  const promise = new Promise((resolve, reject) => {
+  const promise = new Promise<DICOMLoaderIImage>((resolve, reject) => {
     // TODO: load bulk data items that we might need
 
     // Uncomment this on to test jpegls codec in OHIF
@@ -85,7 +101,7 @@ function loadImage(imageId, options = {}) {
     // const mediaType =
     //   'multipart/related; type="image/jpeg"; transfer-syntax=1.2.840.10008.1.2.4.50';
 
-    function sendXHR(imageURI, imageId, mediaType) {
+    function sendXHR(imageURI: string, imageId: string, mediaType: string) {
       // get the pixel data from the server
       return getPixelData(imageURI, imageId, mediaType)
         .then((result) => {
@@ -101,7 +117,7 @@ function loadImage(imageId, options = {}) {
             options
           );
 
-          imagePromise.then((image) => {
+          imagePromise.then((image: any) => {
             // add the loadTimeInMS property
             const end = new Date().getTime();
 
@@ -120,6 +136,9 @@ function loadImage(imageId, options = {}) {
     const addToBeginning = options.addToBeginning || false;
     const uri = imageId.substring(7);
 
+    /**
+     * @todo check arguments
+     */
     imageRetrievalPool.addRequest(
       sendXHR.bind(this, uri, imageId, mediaType),
       requestType,

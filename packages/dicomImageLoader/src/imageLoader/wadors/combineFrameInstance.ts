@@ -1,4 +1,4 @@
-import getTagValue from './getTagValue.js';
+import getTagValue from './getTagValue';
 
 function getFrameInformation(
   PerFrameFunctionalGroupsSequence,
@@ -17,7 +17,7 @@ function getFrameInformation(
       ? Object.values(PerFrameFunctionalGroupsSequence[frameNumber - 1])
       : []
   )
-    .map((it) => it.Value[0])
+    .map((it: any) => it.Value[0])
     .filter((it) => it !== undefined && typeof it === 'object');
 
   return {

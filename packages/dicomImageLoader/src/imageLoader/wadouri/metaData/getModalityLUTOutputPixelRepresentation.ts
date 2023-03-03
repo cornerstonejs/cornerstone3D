@@ -1,6 +1,8 @@
 /* eslint no-bitwise: 0 */
 
-function getMinStoredPixelValue(dataSet) {
+import { DataSet } from 'dicom-parser';
+
+function getMinStoredPixelValue(dataSet: DataSet) {
   const pixelRepresentation = dataSet.uint16('x00280103');
   const bitsStored = dataSet.uint16('x00280101');
 
@@ -12,7 +14,7 @@ function getMinStoredPixelValue(dataSet) {
 }
 
 // 0 = unsigned / US, 1 = signed / SS
-function getModalityLUTOutputPixelRepresentation(dataSet) {
+function getModalityLUTOutputPixelRepresentation(dataSet: DataSet) {
   // CT SOP Classes are always signed
   const sopClassUID = dataSet.string('x00080016');
 

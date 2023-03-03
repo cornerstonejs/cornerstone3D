@@ -1,7 +1,8 @@
-import getEncapsulatedImageFrame from './getEncapsulatedImageFrame.js';
-import getUncompressedImageFrame from './getUncompressedImageFrame.js';
+import { ByteArray, DataSet } from 'dicom-parser';
+import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
+import getUncompressedImageFrame from './getUncompressedImageFrame';
 
-function getPixelData(dataSet, frameIndex = 0) {
+function getPixelData(dataSet: DataSet, frameIndex = 0): ByteArray {
   const pixelDataElement =
     dataSet.elements.x7fe00010 || dataSet.elements.x7fe00008;
 

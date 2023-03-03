@@ -1,20 +1,20 @@
-let files = [];
+let files: Blob[] = [];
 
-function add(file) {
+function add(file: Blob): string {
   const fileIndex = files.push(file);
 
   return `dicomfile:${fileIndex - 1}`;
 }
 
-function get(index) {
+function get(index: number): Blob {
   return files[index];
 }
 
-function remove(index) {
+function remove(index: number): void {
   files[index] = undefined;
 }
 
-function purge() {
+function purge(): void {
   files = [];
 }
 

@@ -1,6 +1,6 @@
-import getValue from './metaData/getValue.js';
-import imageIdToURI from '../imageIdToURI.js';
-import { metadataByImageURI } from './metaDataManager.js';
+import getValue from './metaData/getValue';
+import imageIdToURI from '../imageIdToURI';
+import { metadataByImageURI } from './metaDataManager';
 
 // get metadata information for the first frame
 function _retrieveMultiframeMetadata(imageURI) {
@@ -27,7 +27,7 @@ function retrieveMultiframeMetadata(imageId) {
 
 function isMultiframe(metadata) {
   // Checks if dicomTag NumberOf Frames exists and it is greater than one
-  const numberOfFrames = getValue(metadata['00280008']);
+  const numberOfFrames = getValue<number>(metadata['00280008']);
 
   return numberOfFrames && numberOfFrames > 1;
 }

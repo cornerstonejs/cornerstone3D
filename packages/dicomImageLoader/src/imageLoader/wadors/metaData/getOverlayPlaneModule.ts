@@ -1,7 +1,8 @@
-import getValue from './getValue.js';
-import getNumberValue from './getNumberValue.js';
+import getValue from './getValue';
+import getNumberValue from './getNumberValue';
+import { WADORSMetaData } from '../../../types';
 
-export default function getOverlayPlaneModule(metaData) {
+export default function getOverlayPlaneModule(metaData: WADORSMetaData) {
   const overlays = [];
 
   for (let overlayGroup = 0x00; overlayGroup <= 0x1e; overlayGroup += 0x02) {
@@ -11,7 +12,12 @@ export default function getOverlayPlaneModule(metaData) {
       groupStr = `x600${overlayGroup.toString(16)}`;
     }
 
-    const data = getValue(metaData[`${groupStr}3000`]);
+    /**
+     * @todo there is a type issue with WADORSMetaData. Currently WADORSMetaData
+     * on includes  string[] | number[] | boolean. from the look of this, data
+     * is a more complex type
+     */
+    const data = getValue<any>(metaData[`${groupStr}3000`]);
 
     if (!data) {
       continue;

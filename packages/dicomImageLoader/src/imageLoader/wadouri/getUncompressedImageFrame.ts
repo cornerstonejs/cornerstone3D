@@ -1,10 +1,14 @@
-import unpackBinaryFrame from './unpackBinaryFrame.js';
+import { DataSet } from 'dicom-parser';
+import unpackBinaryFrame from './unpackBinaryFrame';
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.
  */
 
-function getUncompressedImageFrame(dataSet, frameIndex) {
+function getUncompressedImageFrame(
+  dataSet: DataSet,
+  frameIndex: number
+): Uint8Array {
   const pixelDataElement =
     dataSet.elements.x7fe00010 || dataSet.elements.x7fe00008;
   const bitsAllocated = dataSet.uint16('x00280100');

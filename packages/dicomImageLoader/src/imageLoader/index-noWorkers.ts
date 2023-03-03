@@ -4,25 +4,25 @@ import {
   convertYBRFullByPixel,
   convertYBRFullByPlane,
   convertPALETTECOLOR,
-} from './colorSpaceConverters/index.js';
+} from './colorSpaceConverters/index';
 
-import { default as wadouri } from './wadouri/index.js';
-import { default as wadors } from './wadors/index.js';
-import { default as configure } from './configure.js';
-import { default as convertColorSpace } from './convertColorSpace.js';
-import { default as createImage } from './createImage.js';
-import { default as decodeImageFrame } from './decodeImageFrame-noWorkers.js';
-import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor.js';
-import { default as getImageFrame } from './getImageFrame.js';
-import { default as getMinMax } from '../shared/getMinMax.js';
-import { default as isColorImage } from './isColorImage.js';
-import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor.js';
-import { default as webWorkerManager } from './webWorkerManager.js';
-import { default as getPixelData } from './wadors/getPixelData.js';
-import { internal } from './internal/index.js';
-import { default as external } from '../externalModules.js';
+import { default as wadouri } from './wadouri/index';
+import { default as wadors } from './wadors/index';
+import { default as configure } from './configure';
+import { default as convertColorSpace } from './convertColorSpace';
+import { default as createImage } from './createImage';
+import { default as decodeImageFrame } from './decodeImageFrame-noWorkers';
+import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor';
+import { default as getImageFrame } from './getImageFrame';
+import { default as getMinMax } from '../shared/getMinMax';
+import { default as isColorImage } from './isColorImage';
+import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor';
+import { default as webWorkerManager } from './webWorkerManager';
+import { default as getPixelData } from './wadors/getPixelData';
+import { internal } from './internal/index';
+import { default as external } from '../externalModules';
 
-const cornerstoneWADOImageLoader = {
+const cornerstoneDICOMImageLoader = {
   convertRGBColorByPixel,
   convertRGBColorByPlane,
   convertYBRFullByPixel,
@@ -68,4 +68,4 @@ export {
   external,
 };
 
-export default cornerstoneWADOImageLoader;
+export default cornerstoneDICOMImageLoader;

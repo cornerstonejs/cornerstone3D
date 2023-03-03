@@ -1,20 +1,22 @@
-import webWorkerManager from './webWorkerManager.js';
-import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor.js';
+import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
+import webWorkerManager from './webWorkerManager';
 
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
-import { inflateRaw } from 'pako/lib/inflate.js';
+import { ByteArray } from 'dicom-parser';
+import { inflateRaw } from 'pako/lib/inflate';
+import { ImageFrame, LoaderDecodeOptions } from '../types';
 
-window.pako = { inflateRaw };
+(window as any).pako = { inflateRaw };
 
 function processDecodeTask(
-  imageFrame,
-  transferSyntax,
-  pixelData,
+  imageFrame: ImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
   options,
-  decodeConfig
-) {
+  decodeConfig: LoaderDecodeOptions
+): Promise<ImageFrame> {
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]
@@ -186,12 +188,12 @@ function decodeImageFrame(
    // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
    else if(transferSyntax === "1.2.840.10008.1.2.4.92")
    {
-   return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+   return cornerstoneDICOMImageLoader.decodeJPEG2000(dataSet, frame);
    }
    // JPEG 2000 Part 2 Multicomponent Image Compression
    else if(transferSyntax === "1.2.840.10008.1.2.4.93")
    {
-   return cornerstoneWADOImageLoader.decodeJPEG2000(dataSet, frame);
+   return cornerstoneDICOMImageLoader.decodeJPEG2000(dataSet, frame);
    }
    */
 

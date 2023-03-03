@@ -1,17 +1,38 @@
+/// <reference lib="webworker" />
+
+import {
+  WebWorkerData,
+  WebWorkerDecodeData,
+  WebWorkerInitializeData,
+  WebWorkerOptions,
+  WebWorkerTaskOptions,
+  WorkerTaskTypes,
+  ImageFrame,
+} from '../types';
+
+interface CornerstoneWadoWebWorkerTaskHandler {
+  taskType: WorkerTaskTypes;
+  handler: (
+    data: WebWorkerDecodeData,
+    cb: (result: ImageFrame, transferables: Transferable[]) => void
+  ) => void;
+  initialize: (config: WebWorkerTaskOptions) => void;
+}
+
 // an object of task handlers
-const taskHandlers = {};
+const taskHandlers: Record<string, CornerstoneWadoWebWorkerTaskHandler> = {};
 
 // Flag to ensure web worker is only initialized once
 let initialized = false;
 
 // the configuration object passed in when the web worker manager is initialized
-let config;
+let config: WebWorkerOptions;
 
 /**
  * Initialization function that loads additional web workers and initializes them
  * @param data
  */
-function initialize(data) {
+function initialize(data: WebWorkerInitializeData) {
   // console.log('web worker initialize ', data.workerIndex);
   // prevent initialization from happening more than once
   if (initialized) {
@@ -21,8 +42,11 @@ function initialize(data) {
   // save the config data
   config = data.config;
 
+  /**
+   * @todo review any
+   */
   // Additional web worker tasks can self-register by calling self.registerTaskHandler
-  self.registerTaskHandler = registerTaskHandler;
+  (self as any).registerTaskHandler = registerTaskHandler;
 
   // load any additional web worker tasks
   if (data.config.webWorkerTaskPaths) {
@@ -51,7 +75,9 @@ function initialize(data) {
  * Function exposed to web worker tasks to register themselves
  * @param taskHandler
  */
-export function registerTaskHandler(taskHandler) {
+export function registerTaskHandler(
+  taskHandler: CornerstoneWadoWebWorkerTaskHandler
+): false | void {
   if (taskHandlers[taskHandler.taskType]) {
     console.log(
       'attempt to register duplicate task handler "',
@@ -80,7 +106,7 @@ function loadWebWorkerTask(data) {
  * Web worker message handler - dispatches messages to the registered task handlers
  * @param msg
  */
-self.onmessage = async function (msg) {
+self.onmessage = async function (msg: MessageEvent<WebWorkerData>) {
   if (!msg.data.taskType) {
     console.log(msg.data);
 
@@ -106,20 +132,22 @@ self.onmessage = async function (msg) {
   // dispatch the message if there is a handler registered for it
   if (taskHandlers[msg.data.taskType]) {
     try {
-      const { result, transferList } = await taskHandlers[
-        msg.data.taskType
-      ].handler(msg.data);
-
-      self.postMessage(
-        {
-          taskType: msg.data.taskType,
-          status: 'success',
-          result,
-          workerIndex: msg.data.workerIndex,
-        },
-        transferList
+      // @ts-ignore
+      taskHandlers[msg.data.taskType].handler(
+        msg.data,
+        function (result, transferList) {
+          self.postMessage(
+            {
+              taskType: msg.data.taskType,
+              status: 'success',
+              result,
+              workerIndex: msg.data.workerIndex,
+            },
+            transferList
+          );
+        }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.log(`task ${msg.data.taskType} failed - ${error.message}`, error);
       self.postMessage({
         taskType: msg.data.taskType,

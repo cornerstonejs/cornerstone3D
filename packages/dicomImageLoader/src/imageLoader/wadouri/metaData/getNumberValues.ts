@@ -1,4 +1,10 @@
-function getNumberValues(dataSet, tag, minimumLength) {
+import { DataSet } from 'dicom-parser';
+
+function getNumberValues(
+  dataSet: DataSet,
+  tag: string,
+  minimumLength: number
+): number[] {
   const values = [];
   const valueAsString = dataSet.string(tag);
 

@@ -1,16 +1,21 @@
-import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000.js';
-import { initialize as initializeJPEGLS } from '../shared/decoders/decodeJPEGLS.js';
-import calculateMinMax from '../shared/calculateMinMax.js';
-import decodeImageFrame from '../shared/decodeImageFrame.js';
+import { initialize as initializeJPEG2000 } from '../shared/decoders/decodeJPEG2000';
+import { initialize as initializeJPEGLS } from '../shared/decoders/decodeJPEGLS';
+import calculateMinMax from '../shared/calculateMinMax';
+import decodeImageFrame from '../shared/decodeImageFrame';
+import {
+  WebWorkerTaskOptions,
+  WebWorkerDecodeData,
+  ImageFrame,
+} from '../types';
 
 // the configuration object for the decodeTask
-let decodeConfig;
+let decodeConfig: WebWorkerTaskOptions;
 
 /**
  * Function to control loading and initializing the codecs
  * @param config
  */
-function loadCodecs(config) {
+function loadCodecs(config: WebWorkerTaskOptions) {
   // Initialize the codecs
   if (config.decodeTask.initializeCodecsOnStartup) {
     initializeJPEG2000(config.decodeTask);
@@ -21,7 +26,7 @@ function loadCodecs(config) {
 /**
  * Task initialization function
  */
-function initialize(config) {
+function initialize(config: WebWorkerTaskOptions) {
   decodeConfig = config;
 
   loadCodecs(config);
@@ -30,7 +35,10 @@ function initialize(config) {
 /**
  * Task handler function
  */
-async function handler(data, doneCallback) {
+async function handler(
+  data: WebWorkerDecodeData,
+  doneCallback: (imageFrame: ImageFrame, pixelData: Transferable[]) => void
+) {
   // Load the codecs if they aren't already loaded
   loadCodecs(decodeConfig);
 
@@ -40,7 +48,6 @@ async function handler(data, doneCallback) {
   // convert pixel data from ArrayBuffer to Uint8Array since web workers support passing ArrayBuffers but
   // not typed arrays
   const pixelData = new Uint8Array(data.data.pixelData);
-
   const imageFrame = await decodeImageFrame(
     data.data.imageFrame,
     data.data.transferSyntax,
@@ -61,6 +68,7 @@ async function handler(data, doneCallback) {
 
   // convert from TypedArray to ArrayBuffer since web workers support passing ArrayBuffers but not
   // typed arrays
+  // @ts-ignore
   imageFrame.pixelData = imageFrame.pixelData.buffer;
 
   doneCallback?.(imageFrame, [imageFrame.pixelData]);

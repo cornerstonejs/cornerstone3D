@@ -1,6 +1,11 @@
-import external from '../../externalModules.js';
+import { DataSet } from 'dicom-parser';
+import external from '../../externalModules';
+import {
+  LoadRequestFunction,
+  DICOMLoaderDataSetWithFetchMore,
+} from '../../types';
 
-function fixFragments(dataSet) {
+function fixFragments(dataSet: DataSet) {
   // The partially parsed pixelData element has incorrect fragment
   // lengths because the byte array is truncated, so we manually set
   // it to the actual length.
@@ -23,7 +28,7 @@ function fixFragments(dataSet) {
   return dataSet;
 }
 
-function parsePartialByteArray(byteArray) {
+function parsePartialByteArray(byteArray: Uint8Array) {
   const { dicomParser } = external;
   /**
    * First parse just up to pixelData. This will make sure the
@@ -42,7 +47,7 @@ function parsePartialByteArray(byteArray) {
     // Re-fetch more of the file
   }
 
-  let pixelDataSet;
+  let pixelDataSet: DataSet;
 
   try {
     // This is expected to fail, since the file is incomplete, but
@@ -52,7 +57,9 @@ function parsePartialByteArray(byteArray) {
     // metadata header and regular datasets, so transfer syntax and
     // other metadata headers aren't included.
     pixelDataSet = dicomParser.parseDicom(byteArray);
-  } catch (err) {
+  } catch (err: any) {
+    // Todo: This is probably invalid handling - it expects the only reason to
+    //  fail is a partial dataset
     console.error(err);
     console.log('pixel data dataset:', err.dataSet);
     pixelDataSet = err.dataSet;
@@ -68,11 +75,16 @@ function parsePartialByteArray(byteArray) {
 }
 
 export default async function dataSetFromPartialContent(
-  byteArray,
-  loadRequest,
-  metadata
-) {
-  const dataSet = parsePartialByteArray(byteArray);
+  byteArray: Uint8Array,
+  loadRequest: LoadRequestFunction,
+  metadata: {
+    uri: string;
+    imageId: string;
+    fileTotalLength: number | null;
+  }
+): Promise<DICOMLoaderDataSetWithFetchMore> {
+  const dataSet: DICOMLoaderDataSetWithFetchMore =
+    parsePartialByteArray(byteArray);
   const { uri, imageId, fileTotalLength } = metadata;
 
   // Allow re-fetching of more of the file
@@ -91,6 +103,10 @@ export default async function dataSetFromPartialContent(
     const { fetchedLength, lengthToFetch } = _options;
 
     // Use passed xhr loader to re-fetch new byte range
+
+    // Todo: the following might be wrong, does it return array buffer or
+    // something else?
+    // @ts-ignore
     const { arrayBuffer } = await loadRequest(uri, imageId, {
       byteRange: `${fetchedLength}-${fetchedLength + lengthToFetch}`,
     });

@@ -1,10 +1,12 @@
-import getMinMax from '../shared/getMinMax.js';
+import { ByteArray } from 'dicom-parser';
+import getMinMax from '../shared/getMinMax';
+import { ImageFrame } from '../types';
 
 /**
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance
  */
 
-function arrayBufferToString(buffer) {
+function arrayBufferToString(buffer: ArrayBuffer) {
   return binaryToString(
     String.fromCharCode.apply(
       null,
@@ -13,7 +15,7 @@ function arrayBufferToString(buffer) {
   );
 }
 
-function binaryToString(binary) {
+function binaryToString(binary: string) {
   let error;
 
   try {
@@ -27,7 +29,11 @@ function binaryToString(binary) {
   }
 }
 
-function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
+function decodeJPEGBaseline8BitColor(
+  imageFrame: ImageFrame,
+  pixelData: ByteArray,
+  canvas: HTMLCanvasElement
+): Promise<ImageFrame> {
   const start = new Date().getTime();
   const imgBlob = new Blob([pixelData], { type: 'image/jpeg' });
 
@@ -50,7 +56,10 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
         imageFrame.columns = img.width;
         const context = canvas.getContext('2d');
 
-        context.drawImage(this, 0, 0);
+        /**
+         * @todo check this context
+         */
+        context.drawImage(this as any, 0, 0);
         const imageData = context.getImageData(0, 0, img.width, img.height);
         const end = new Date().getTime();
 
@@ -59,7 +68,7 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
         imageFrame.decodeTimeInMS = end - start;
 
         // calculate smallest and largest PixelValue
-        const minMax = getMinMax(imageFrame.pixelData);
+        const minMax = getMinMax(imageFrame.pixelData as any);
 
         imageFrame.smallestPixelValue = minMax.min;
         imageFrame.largestPixelValue = minMax.max;
@@ -73,10 +82,12 @@ function decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas) {
 
       if (fileReader.readAsBinaryString === undefined) {
         img.src = `data:image/jpeg;base64,${window.btoa(
-          arrayBufferToString(fileReader.result)
+          arrayBufferToString(fileReader.result as ArrayBuffer)
         )}`;
       } else {
-        img.src = `data:image/jpeg;base64,${window.btoa(fileReader.result)}`; // doesn't work on IE11
+        img.src = `data:image/jpeg;base64,${window.btoa(
+          fileReader.result as string
+        )}`; // doesn't work on IE11
       }
     };
 

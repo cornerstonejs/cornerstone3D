@@ -1,30 +1,33 @@
 const path = require('path');
 const webpack = require('webpack');
-
 const rootPath = process.cwd();
 const context = path.join(rootPath, 'src');
 const codecs = path.join(rootPath, 'codecs');
 const outputPath = path.join(rootPath, 'dist');
+const TerserPlugin = require('terser-webpack-plugin');
 
 const BundleAnalyzerPlugin =
   require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
+// The big difference between this and the dynamic-import version is that
+// the dynamic import version does not bundle the WASM modules into the WebWorker file
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   context,
   entry: {
-    cornerstoneDICOMImageLoader: './imageLoader/index.js',
+    cornerstoneDICOMImageLoader: './imageLoader/index.ts',
+    cornerstoneDICOMImageLoaderNoWebWorkers: './imageLoader/index-noWorkers.ts',
   },
   target: 'web',
   output: {
     library: {
-      name: '[name]',
+      name: 'cornerstoneDICOMImageLoader',
       type: 'umd',
       umdNamedDefine: true,
     },
     globalObject: 'this',
     path: outputPath,
-    publicPath: 'auto',
+    filename: '[name].bundle.min.js',
   },
   devtool: 'source-map',
   externals: {
@@ -36,6 +39,7 @@ module.exports = {
     },
   },
   resolve: {
+    extensions: ['.ts', '.js'],
     fallback: {
       fs: false,
       path: false,
@@ -46,7 +50,7 @@ module.exports = {
     rules: [
       // {
       //   enforce: 'pre',
-      //   test: /\.js$/,
+      //   test: /\.(mjs|js|ts)$/,
       //   exclude: /(node_modules)|(codecs)/,
       //   loader: 'eslint-loader',
       //   options: {
@@ -55,21 +59,22 @@ module.exports = {
       // },
       {
         test: /\.wasm/,
-        type: 'asset/resource',
+        type: 'asset/inline',
       },
       {
-        test: /\.worker\.js$/,
+        test: /\.worker\.(mjs|js|ts)$/,
         use: [
           {
             loader: 'worker-loader',
+            options: { inline: 'fallback' },
           },
-          // {
-          //   loader: 'babel-loader',
-          // },
+          {
+            loader: 'babel-loader',
+          },
         ],
       },
       {
-        test: /\.js$/,
+        test: /\.(mjs|js|ts)$/,
         exclude: [/(node_modules)/, /(codecs)/],
         use: {
           loader: 'babel-loader',
@@ -85,9 +90,17 @@ module.exports = {
       },
     ],
   },
-  // experiments: {
-  //   asyncWebAssembly: true,
-  // },
   plugins: [new webpack.ProgressPlugin()],
+  experiments: {
+    asyncWebAssembly: true,
+  },
+  optimization: {
+    // minimize: false,
+    minimizer: [
+      new TerserPlugin({
+        parallel: true,
+      }),
+    ],
+  },
   // plugins: [new webpack.ProgressPlugin(), new BundleAnalyzerPlugin()],
 };

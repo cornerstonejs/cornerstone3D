@@ -1,12 +1,14 @@
-import imageIdToURI from '../imageIdToURI.js';
-import { combineFrameInstance } from './combineFrameInstance.js';
-import multiframeMetadata from './retrieveMultiframeMetadata.js';
+import { WADORSMetaData } from '../../types';
+import imageIdToURI from '../imageIdToURI';
+import { combineFrameInstance } from './combineFrameInstance';
+import multiframeMetadata from './retrieveMultiframeMetadata';
 
 let metadataByImageURI = [];
 
-function add(imageId, metadata) {
+function add(imageId: string, metadata: WADORSMetaData) {
   const imageURI = imageIdToURI(imageId);
 
+  // @ts-ignore
   metadata.isMultiframe = multiframeMetadata.isMultiframe(metadata);
 
   metadataByImageURI[imageURI] = metadata;
@@ -16,7 +18,7 @@ function add(imageId, metadata) {
 // client and registered in metadataByImageURI for all the n frames. If an
 // iamgeid does not have metadata, or it does not have at all, or the imageid
 // belongs to a frame, not registered in metadataByImageURI
-function get(imageId) {
+function get(imageId: string): WADORSMetaData {
   const imageURI = imageIdToURI(imageId);
 
   // dealing first with the non multiframe information

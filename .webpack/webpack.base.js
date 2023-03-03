@@ -37,6 +37,10 @@ module.exports = (env, argv, { DIST_DIR }) => {
             envName: mode,
           },
         },
+        {
+          test: /\.wasm/,
+          type: 'asset/resource',
+        },
       ],
     },
     resolve: {
@@ -70,7 +74,7 @@ module.exports = (env, argv, { DIST_DIR }) => {
       // Show build progress
       new webpack.ProgressPlugin(),
       // Clear dist between builds
-      new CleanWebpackPlugin()
+      new CleanWebpackPlugin(),
     ],
   };
 

@@ -1,21 +1,20 @@
-// https://emscripten.org/docs/api_reference/module.html
-//import openJphFactory from '@cornerstonejs/codec-openjph';
+import { ByteArray } from 'dicom-parser';
+import openJphFactory from '@cornerstonejs/codec-openjph/wasmjs';
+import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
 
-// Webpack asset/resource copies this to our output folder
-//import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
-// import openJphFactory from '../../../codecs/openjphjs.js';
-// import openjphWasm from '../../../codecs/openjphjs.wasm';
+import { LoaderDecodeOptions } from '../../types';
 
-import openJphFactory from '@cornerstonejs/codec-openjph/dist/openjphjs.js';
-import openjphWasm from '@cornerstonejs/codec-openjph/dist/openjphjs.wasm';
-
-const local = {
+const local: {
+  codec: any;
+  decoder: any;
+  decodeConfig: LoaderDecodeOptions;
+} = {
   codec: undefined,
   decoder: undefined,
   decodeConfig: {},
 };
 
-export function initialize(decodeConfig) {
+export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.codec) {
@@ -32,7 +31,7 @@ export function initialize(decodeConfig) {
     },
   });
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     openJphModule.then((instance) => {
       local.codec = instance;
       local.decoder = new instance.HTJ2KDecoder();
@@ -42,7 +41,7 @@ export function initialize(decodeConfig) {
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
-async function decodeAsync(compressedImageFrame, imageInfo) {
+async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
   const decoder = local.decoder;
 
@@ -112,6 +111,7 @@ async function decodeAsync(compressedImageFrame, imageInfo) {
   const { buffer: b, byteOffset, byteLength } = pixelData;
   const pixelDataArrayBuffer = b.slice(byteOffset, byteOffset + byteLength);
 
+  // @ts-ignore
   pixelData = new pixelData.constructor(pixelDataArrayBuffer);
 
   const encodeOptions = {

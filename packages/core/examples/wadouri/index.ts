@@ -9,7 +9,7 @@ import {
   setTitleAndDescription,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
-import initCornerstoneWADOImageLoader from '../../../../utils/demo/helpers/initCornerstoneWADOImageLoader';
+import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader';
 import { init as csRenderInit } from '@cornerstonejs/core';
 
 // This is for debugging purposes
@@ -99,7 +99,7 @@ addButtonToToolbar({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  initCornerstoneWADOImageLoader();
+  initCornerstoneDICOMImageLoader();
   await csRenderInit();
 
   const renderingEngine = new RenderingEngine(renderingEngineId);

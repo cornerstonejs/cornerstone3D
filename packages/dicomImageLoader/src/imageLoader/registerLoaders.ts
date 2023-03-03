@@ -1,5 +1,5 @@
-import wadors from './wadors/index.js';
-import wadouri from './wadouri/index.js';
+import wadors from './wadors/index';
+import wadouri from './wadouri/index';
 
 /**
  * Register the WADO-URI and WADO-RS image loaders and metaData providers
@@ -7,7 +7,7 @@ import wadouri from './wadouri/index.js';
  *
  * @param cornerstone The Cornerstone Core library to register the image loaders with
  */
-function registerLoaders(cornerstone) {
+function registerLoaders(cornerstone: any): void {
   wadors.register(cornerstone);
   wadouri.register(cornerstone);
 }

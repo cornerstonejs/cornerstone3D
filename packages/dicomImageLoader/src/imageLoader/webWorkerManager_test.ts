@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import webWorkerManager from './webWorkerManager.js';
+import webWorkerManager from './webWorkerManager';
 
 const config = {
   maxWebWorkers: 2,

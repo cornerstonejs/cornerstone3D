@@ -1,15 +1,16 @@
-import external from '../../../externalModules.js';
-import getNumberValues from './getNumberValues.js';
-import parseImageId from '../parseImageId.js';
-import dataSetCacheManager from '../dataSetCacheManager.js';
-import getImagePixelModule from './getImagePixelModule.js';
-import getOverlayPlaneModule from './getOverlayPlaneModule.js';
-import getLUTs from './getLUTs.js';
-import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixelRepresentation.js';
-import { getDirectFrameInformation } from '../combineFrameInstanceDataset.js';
-import multiframeDataset from '../retrieveMultiframeDataset.js';
+import external from '../../../externalModules';
+import getNumberValues from './getNumberValues';
+import parseImageId from '../parseImageId';
+import dataSetCacheManager from '../dataSetCacheManager';
+import getImagePixelModule from './getImagePixelModule';
+import getOverlayPlaneModule from './getOverlayPlaneModule';
+import getLUTs from './getLUTs';
+import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixelRepresentation';
+import { getDirectFrameInformation } from '../combineFrameInstanceDataset';
+import multiframeDataset from '../retrieveMultiframeDataset';
 
 function metaDataProvider(type, imageId) {
+  const { dicomParser } = external;
   const parsedImageId = parseImageId(imageId);
 
   if (type === 'multiframeModule') {
@@ -28,8 +29,6 @@ function metaDataProvider(type, imageId) {
 
     return multiframeInfo;
   }
-
-  const { dicomParser } = external;
 
   const dataSet = dataSetCacheManager.get(parsedImageId.url);
 
@@ -78,13 +77,19 @@ function metaDataProvider(type, imageId) {
 
     if (imageOrientationPatient) {
       rowCosines = [
+        // @ts-expect-error
         parseFloat(imageOrientationPatient[0]),
+        // @ts-expect-error
         parseFloat(imageOrientationPatient[1]),
+        // @ts-expect-error
         parseFloat(imageOrientationPatient[2]),
       ];
       columnCosines = [
+        // @ts-expect-error
         parseFloat(imageOrientationPatient[3]),
+        // @ts-expect-error
         parseFloat(imageOrientationPatient[4]),
+        // @ts-expect-error
         parseFloat(imageOrientationPatient[5]),
       ];
     }

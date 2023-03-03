@@ -1,9 +1,14 @@
+import { ByteArray } from 'dicom-parser';
+import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+
 const local = {
   JpegImage: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: WebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.JpegImage) {
@@ -11,14 +16,18 @@ export function initialize(decodeConfig) {
   }
 
   return new Promise((resolve, reject) => {
-    import('../../../codecs/jpeg.js').then(({ JpegImage }) => {
+    // @ts-ignore
+    import('../../../codecs/jpeg').then(({ JpegImage }) => {
       local.JpegImage = JpegImage;
       resolve();
     }, reject);
   });
 }
 
-async function decodeJPEGBaseline12BitAsync(imageFrame, pixelData) {
+async function decodeJPEGBaseline12BitAsync(
+  imageFrame: ImageFrame,
+  pixelData: ByteArray
+): Promise<ImageFrame> {
   // check to make sure codec is loaded
   await initialize();
   if (typeof local.JpegImage === 'undefined') {

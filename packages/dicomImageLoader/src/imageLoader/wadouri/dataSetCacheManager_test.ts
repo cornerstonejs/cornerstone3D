@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import dataSetCacheManager from './dataSetCacheManager.js';
+import dataSetCacheManager from './dataSetCacheManager';
 
 describe('#getInfo', () => {
   it('should return cache info for an empty cache', function () {

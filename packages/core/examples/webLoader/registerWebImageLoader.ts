@@ -176,7 +176,7 @@ function registerWebImageLoader(imageLoader): void {
 }
 
 /**
- * Small stripped down loader from cornerstoneWADOImageLoader
+ * Small stripped down loader from cornerstoneDICOMImageLoader
  * Which doesn't create cornerstone images that we don't need
  */
 function _loadImageIntoBuffer(

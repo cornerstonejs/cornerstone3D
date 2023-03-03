@@ -413,7 +413,7 @@ class StackViewport extends Viewport implements IStackViewport {
         windowCenter = windowCenter[0];
       }
 
-      // when cornerstoneWADOImageLoader uses cornerstonejs/core types
+      // when cornerstoneDICOMImageLoader uses cornerstonejs/core types
       // this marshalling step can be removed.
       if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
         voiLUTFunction = VOILUTFunctionType.LINEAR;

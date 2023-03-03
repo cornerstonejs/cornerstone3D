@@ -1,12 +1,20 @@
-import createImage from '../createImage.js';
-import parseImageId from './parseImageId.js';
-import dataSetCacheManager from './dataSetCacheManager.js';
-import loadFileRequest from './loadFileRequest.js';
-import getPixelData from './getPixelData.js';
-import { xhrRequest } from '../internal/index.js';
+import { DataSet } from 'dicom-parser';
+import { Types } from '@cornerstonejs/core';
+import createImage from '../createImage';
+import { xhrRequest } from '../internal/index';
+import dataSetCacheManager from './dataSetCacheManager';
+import {
+  LoadRequestFunction,
+  DICOMLoaderIImage,
+  DICOMLoaderImageOptions,
+  ImageFrame,
+} from '../../types';
+import getPixelData from './getPixelData';
+import loadFileRequest from './loadFileRequest';
+import parseImageId from './parseImageId';
 
 // add a decache callback function to clear out our dataSetCacheManager
-function addDecache(imageLoadObject, imageId) {
+function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
   imageLoadObject.decache = function () {
     // console.log('decache');
     const parsedImageId = parseImageId(imageId);
@@ -16,16 +24,19 @@ function addDecache(imageLoadObject, imageId) {
 }
 
 function loadImageFromPromise(
-  dataSetPromise,
-  imageId,
+  dataSetPromise: Promise<DataSet>,
+  imageId: string,
   frame = 0,
-  sharedCacheKey,
-  options,
-  callbacks
-) {
+  sharedCacheKey: string,
+  options: DICOMLoaderImageOptions,
+  callbacks?: {
+    imageDoneCallback: (image: DICOMLoaderIImage) => void;
+  }
+): Types.IImageLoadObject {
   const start = new Date().getTime();
-  const imageLoadObject = {
+  const imageLoadObject: Types.IImageLoadObject = {
     cancelFn: undefined,
+    promise: undefined,
   };
 
   imageLoadObject.promise = new Promise((resolve, reject) => {
@@ -45,6 +56,7 @@ function loadImageFromPromise(
 
         imagePromise.then(
           (image) => {
+            image = image as DICOMLoaderIImage;
             image.data = dataSet;
             image.sharedCacheKey = sharedCacheKey;
             const end = new Date().getTime();
@@ -82,51 +94,55 @@ function loadImageFromPromise(
 
 function loadImageFromDataSet(
   dataSet,
-  imageId,
+  imageId: string,
   frame = 0,
-  sharedCacheKey,
+  sharedCacheKey: string,
   options
-) {
+): Types.IImageLoadObject {
   const start = new Date().getTime();
 
-  const promise = new Promise((resolve, reject) => {
-    const loadEnd = new Date().getTime();
+  const promise = new Promise<DICOMLoaderIImage | ImageFrame>(
+    (resolve, reject) => {
+      const loadEnd = new Date().getTime();
 
-    let imagePromise;
+      let imagePromise: Promise<DICOMLoaderIImage | ImageFrame>;
 
-    try {
-      const pixelData = getPixelData(dataSet, frame);
-      const transferSyntax = dataSet.string('x00020010');
+      try {
+        const pixelData = getPixelData(dataSet, frame);
+        const transferSyntax = dataSet.string('x00020010');
 
-      imagePromise = createImage(imageId, pixelData, transferSyntax, options);
-    } catch (error) {
-      // Reject the error, and the dataSet
-      reject({
-        error,
-        dataSet,
-      });
+        imagePromise = createImage(imageId, pixelData, transferSyntax, options);
+      } catch (error) {
+        // Reject the error, and the dataSet
+        reject({
+          error,
+          dataSet,
+        });
 
-      return;
+        return;
+      }
+
+      imagePromise.then((image) => {
+        image = image as DICOMLoaderIImage;
+
+        image.data = dataSet;
+        image.sharedCacheKey = sharedCacheKey;
+        const end = new Date().getTime();
+
+        image.loadTimeInMS = loadEnd - start;
+        image.totalTimeInMS = end - start;
+        resolve(image);
+      }, reject);
     }
-
-    imagePromise.then((image) => {
-      image.data = dataSet;
-      image.sharedCacheKey = sharedCacheKey;
-      const end = new Date().getTime();
-
-      image.loadTimeInMS = loadEnd - start;
-      image.totalTimeInMS = end - start;
-      resolve(image);
-    }, reject);
-  });
+  );
 
   return {
-    promise,
+    promise: promise as Promise<any>,
     cancelFn: undefined,
   };
 }
 
-function getLoaderForScheme(scheme) {
+function getLoaderForScheme(scheme: string): LoadRequestFunction {
   if (scheme === 'dicomweb' || scheme === 'wadouri') {
     return xhrRequest;
   } else if (scheme === 'dicomfile') {
@@ -134,7 +150,10 @@ function getLoaderForScheme(scheme) {
   }
 }
 
-function loadImage(imageId, options = {}) {
+function loadImage(
+  imageId: string,
+  options: DICOMLoaderImageOptions = {}
+): Types.IImageLoadObject {
   const parsedImageId = parseImageId(imageId);
 
   options = Object.assign({}, options);
@@ -148,7 +167,14 @@ function loadImage(imageId, options = {}) {
 
   // if the dataset for this url is already loaded, use it
   if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
-    const dataSet = dataSetCacheManager.get(parsedImageId.url, loader, imageId);
+    /**
+     * @todo The arguments to the dataSetCacheManager below are incorrect.
+     */
+    const dataSet: DataSet = (dataSetCacheManager as any).get(
+      parsedImageId.url,
+      loader,
+      imageId
+    );
 
     return loadImageFromDataSet(
       dataSet,

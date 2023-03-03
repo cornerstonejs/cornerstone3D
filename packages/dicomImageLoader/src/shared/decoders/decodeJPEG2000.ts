@@ -1,20 +1,32 @@
 // https://emscripten.org/docs/api_reference/module.html
-import openJpegFactory from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.js';
+import type {
+  J2KDecoder,
+  OpenJpegModule,
+} from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
+import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
 
 // Webpack asset/resource copies this to our output folder
 
 // TODO: At some point maybe we can use this instead.
 // This is closer to what Webpack 5 wants but it doesn't seem to work now
 // const wasm = new URL('./blah.wasm', import.meta.url)
-import openjpegWasm from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode.wasm';
+import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
 
-const local = {
+import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+
+const local: {
+  codec: OpenJpegModule;
+  decoder: J2KDecoder;
+  decodeConfig: WebWorkerDecodeConfig;
+} = {
   codec: undefined,
   decoder: undefined,
-  decodeConfig: {},
+  decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
-export function initialize(decodeConfig) {
+export function initialize(
+  decodeConfig?: WebWorkerDecodeConfig
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.codec) {
@@ -24,7 +36,7 @@ export function initialize(decodeConfig) {
   const openJpegModule = openJpegFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return openjpegWasm;
+        return openjpegWasm.toString();
       }
 
       return f;
@@ -41,7 +53,10 @@ export function initialize(decodeConfig) {
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
-async function decodeAsync(compressedImageFrame, imageInfo) {
+async function decodeAsync(
+  compressedImageFrame,
+  imageInfo
+): Promise<ImageFrame> {
   await initialize();
   const decoder = local.decoder;
 
