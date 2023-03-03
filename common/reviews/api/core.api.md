@@ -2012,9 +2012,9 @@ type StackNewImageEventDetail = {
 export class StackViewport extends Viewport implements IStackViewport {
     constructor(props: ViewportInput);
     // (undocumented)
-    addActor(actorEntry: ActorEntry): void;
+    addActor: (actorEntry: ActorEntry) => void;
     // (undocumented)
-    addActors(actors: Array<ActorEntry>): void;
+    addActors: (actors: Array<ActorEntry>) => void;
     // (undocumented)
     calibrateSpacing(imageId: string): void;
     // (undocumented)
@@ -2027,27 +2027,27 @@ export class StackViewport extends Viewport implements IStackViewport {
         renderingEngineId: string;
     };
     // (undocumented)
-    getActor(actorUID: string): ActorEntry;
+    getActor: (actorUID: string) => ActorEntry;
     // (undocumented)
-    getActors(): Array<ActorEntry>;
+    getActors: () => Array<ActorEntry>;
     // (undocumented)
-    getCamera(): ICamera;
+    getCamera: () => ICamera;
     // (undocumented)
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
-    getDefaultActor(): ActorEntry;
+    getDefaultActor: () => ActorEntry;
     // (undocumented)
     getFrameOfReferenceUID: () => string | undefined;
     // (undocumented)
-    getImageData(): IImageData | CPUIImageData;
+    getImageData: () => IImageData | CPUIImageData;
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
-    getRenderer(): any;
+    getRenderer: () => any;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -2059,9 +2059,9 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     modality: string;
     // (undocumented)
-    removeAllActors(): void;
+    removeAllActors: () => void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera: (resetPan?: boolean, resetZoom?: boolean) => boolean;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -2071,11 +2071,11 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     scroll(delta: number, debounce?: boolean, loop?: boolean): void;
     // (undocumented)
-    setActors(actors: Array<ActorEntry>): void;
+    setActors: (actors: Array<ActorEntry>) => void;
     // (undocumented)
-    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+    setCamera: (cameraInterface: ICamera, storeAsInitialCamera?: boolean) => void;
     // (undocumented)
-    setColormap(colormap: CPUFallbackColormapData): void;
+    setColormap: (colormap: CPUFallbackColormapData) => void;
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
@@ -2083,7 +2083,9 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
-    unsetColormap(): void;
+    setUseCPURendering(value: boolean): void;
+    // (undocumented)
+    unsetColormap: () => void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
