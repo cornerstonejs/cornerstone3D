@@ -14,6 +14,9 @@
     },
     "tools-advanced": {
       "description": "Advanced usage of Tools library"
+    },
+    "dicom-image-loader": {
+      "description": "usage of cornerstone dicom image loader"
     }
   },
   "examplesByCategory": {
@@ -251,6 +254,12 @@
       "scaleOverlayTool": {
         "name": "Scale Overlay Tool",
         "description": "Demonstrates the scale overlay tool for rendering a scale on a viewport showing the real world size of the image."
+      }
+    },
+    "dicom-image-loader": {
+      "wadoURI": {
+        "name": "WADO-URI (DICOM P10)",
+        "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
       }
     }
   }
