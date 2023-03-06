@@ -58,6 +58,7 @@
     "webpack:dynamic-import": "webpack --progress --config .webpack/webpack-dynamic-import",
     "webpack:bundle": "webpack --progress --config .webpack/webpack-bundle",
     "webpack:dynamic-import:watch": "webpack --progress --watch --config .webpack/webpack-dynamic-import",
+    "webpack:dynamic-import:debug": "webpack --progress --watch --config .webpack/webpack-dynamic-import-debug",
     "webpack:watch": "webpack --progress --watch  --config .webpack",
     "prepublishOnly": "yarn run build"
   },

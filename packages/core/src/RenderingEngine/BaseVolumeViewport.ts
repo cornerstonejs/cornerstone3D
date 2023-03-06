@@ -35,7 +35,6 @@ import {
   triggerEvent,
   createSigmoidRGBTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
-  createLinearRGBTransferFunction,
 } from '../utilities';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
@@ -241,7 +240,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       // const cfun = createLinearRGBTransferFunction(voiRangeToUse);
       // volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
-      // Moving from LINEAR to SIGMOID and back to LINEAR will not
+      // Todo: Moving from LINEAR to SIGMOID and back to LINEAR will not
       // work until we implement it in a different way because the
       // LINEAR transfer function is not recreated.
       const { lower, upper } = voiRangeToUse;

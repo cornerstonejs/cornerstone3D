@@ -2,11 +2,10 @@ const path = require('path');
 const merge = require('./merge');
 const rootPath = process.cwd();
 const baseConfig = require('./webpack-base');
-const TerserPlugin = require('terser-webpack-plugin');
 const outputPath = path.join(rootPath, 'dist', 'dynamic-import');
 
 const prodConfig = {
-  mode: 'production',
+  mode: 'development',
   stats: {
     children: true,
   },
@@ -20,12 +19,12 @@ const prodConfig = {
     filename: '[name].min.js',
   },
   optimization: {
-    // minimize: false,
-    minimizer: [
-      new TerserPlugin({
-        parallel: true,
-      }),
-    ],
+    minimize: false,
+    // minimizer: [
+    //   new TerserPlugin({
+    //     parallel: true,
+    //   }),
+    // ],
   },
 };
 

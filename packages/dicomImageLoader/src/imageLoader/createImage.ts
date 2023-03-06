@@ -336,6 +336,8 @@ function createImage(
         rows: imageFrame.rows,
         sizeInBytes: imageFrame.pixelData.byteLength,
         width: imageFrame.columns,
+        // use the first value for rendering, if other values
+        // are needed later, it can be grabbed again from the voiLUtModule
         windowCenter: voiLutModule.windowCenter
           ? voiLutModule.windowCenter[0]
           : undefined,
