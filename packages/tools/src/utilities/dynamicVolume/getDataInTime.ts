@@ -1,52 +1,59 @@
-import { utilities, cache } from '@cornerstonejs/core';
+import { utilities, cache, Types } from '@cornerstonejs/core';
+import { IDynamicImageVolume } from 'core/src/types';
 
 /**
+ * Gets the scalar data for a series of time points for either a single
+ * coordinate or a segmentation mask, it will return the an array of scalar
+ * data for a single coordinate or an array of arrays for a segmentation.
  *
  * @param dynamicVolume: 4D volume to compute time point data from
- * @param options: frameNumbers: which frames to us as timepoints, if left
+ * @param options: frameNumbers: which frames to use as timepoints, if left
  * blank, gets data timepoints over all frames
  * maskVolumeId: segmentationId to get timepoint data of
- * imageCoordinate: image coordinate to get timepoint data of
+ * imageCoordinate: world coordinate to get timepoint data of
  * @returns
  */
 function getDataInTime(
-  // dynamicVolumeId: string,
-  dynamicVolume: any,
+  dynamicVolume: IDynamicImageVolume,
   options: {
     frameNumbers?;
     maskVolumeId?;
     imageCoordinate?;
   }
 ): number[] | number[][] {
-  let frames;
   let dataInTime;
 
   // if frameNumbers is not provided, all frames are selected
-  if (!options.frameNumbers) {
-    frames = [...Array(dynamicVolume.numTimePoints).keys()];
-  } else {
-    frames = options.frameNumbers;
-  }
+  const frames = options.frameNumbers || [
+    ...Array(dynamicVolume.numTimePoints).keys(),
+  ];
 
+  // You only need to provide either maskVolumeId OR imageCoordinate.
   // Throws error if neither maskVolumeId or imageCoordinate is given,
   // throws error if BOTH maskVolumeId and imageCoordinate is given
   if (!options.maskVolumeId && !options.imageCoordinate) {
     throw new Error('No ROI provided');
-  } else if (options.maskVolumeId && options.imageCoordinate) {
+  }
+
+  if (options.maskVolumeId && options.imageCoordinate) {
     throw new Error('Please provide only one ROI');
-  } else if (options.maskVolumeId && !options.imageCoordinate) {
+  }
+
+  if (options.maskVolumeId) {
     const segmentationVolume = cache.getVolume(options.maskVolumeId);
 
     // Get the index of every non-zero voxel in mask by mapping indexes to
     // new array, then using the array to filter
-    const is = segmentationVolume.getScalarData().map((_, i) => i);
-    const indexArray = is.filter(
-      (i) => segmentationVolume.getScalarData[i] != 0
-    );
+    const indexArray = segmentationVolume
+      .getScalarData()
+      .map((_, i) => i)
+      .filter((i) => segmentationVolume.getScalarData()[i] !== 0);
     const dataInTime = _getTimePointDataMask(frames, indexArray, dynamicVolume);
 
     return dataInTime;
-  } else if (options.imageCoordinate && !options.maskVolumeId) {
+  }
+
+  if (options.imageCoordinate) {
     const dataInTime = _getTimePointDataCoordinate(
       frames,
       options.imageCoordinate,
@@ -92,11 +99,11 @@ function _getTimePointDataMask(frames, indexArray, volume) {
 
   for (let i = 0; i < indexArray.length; i++) {
     const indexValues = [];
-    for (let i = frames[0]; i < frames[0] + frames.length; i++) {
-      const activeScalarData = allScalarData[i];
+    for (let j = frames[0]; j < frames[0] + frames.length; j++) {
+      const activeScalarData = allScalarData[j];
       indexValues.push(activeScalarData[indexArray[i]]);
     }
-    value.push([indexValues]);
+    value.push(indexValues);
   }
   return value;
 }
