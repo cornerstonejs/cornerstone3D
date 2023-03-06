@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.49.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.49.0...@cornerstonejs/tools@0.49.1) (2023-03-06)
+
+
+### Bug Fixes
+
+* **voi:** stack viewport should prioritize image metadata for windowlevel and not persist ([#454](https://github.com/cornerstonejs/cornerstone3D-beta/issues/454)) ([420c812](https://github.com/cornerstonejs/cornerstone3D-beta/commit/420c8121cb0cdc4c321013ca807c6ca32901d7a6))
+
+
+
+
+
 # [0.49.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.48.0...@cornerstonejs/tools@0.49.0) (2023-03-03)
 
 
