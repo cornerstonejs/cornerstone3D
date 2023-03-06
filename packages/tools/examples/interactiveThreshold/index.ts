@@ -18,8 +18,6 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 // eslint-disable-next-line import/extensions
-import perfusionColorMap from './preset.js';
-import { getBoundsIJKFromSegmentation } from 'tools/src/utilities/segmentation';
 
 // This is for debugging purposes
 console.warn(
