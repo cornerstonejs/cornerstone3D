@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.50.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.49.1...@cornerstonejs/tools@0.50.0) (2023-03-06)
+
+
+### Features
+
+* **4d utility:** getDataInTime from 4D data ([#460](https://github.com/cornerstonejs/cornerstone3D-beta/issues/460)) ([57bd947](https://github.com/cornerstonejs/cornerstone3D-beta/commit/57bd947b5385f922ed6bdbab940c56dfd245c8b1))
+
+
+
+
+
 ## [0.49.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.49.0...@cornerstonejs/tools@0.49.1) (2023-03-06)
 
 
