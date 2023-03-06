@@ -73,6 +73,10 @@ const configuration = {
       path: 'packages/streaming-image-volume-loader/examples',
       regexp: 'index.ts',
     },
+    {
+      path: 'packages/dicomImageLoader/examples',
+      regexp: 'index.ts',
+    },
   ],
 };
 
@@ -158,6 +162,11 @@ if (configuration.examples) {
 
   // say name of running example
   console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
+  // run the build for dicom image loader
+
+  console.log('***************************', shell.pwd());
+  shell.cd('../../dicomImageLoader');
+  shell.exec(`yarn run webpack:dynamic-import`);
 
   if (buildExample) {
     var exBasePath = null;
@@ -178,8 +187,11 @@ if (configuration.examples) {
 
     // console.log('conf', conf);
     shell.ShellString(conf).to(webpackConfigPath);
+
     shell.cd(exBasePath);
-    shell.exec(`webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`);
+    shell.exec(
+      `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
+    );
   } else {
     console.log('=> To run an example:');
     console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');
