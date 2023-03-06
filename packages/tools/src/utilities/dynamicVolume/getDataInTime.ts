@@ -1,5 +1,5 @@
-import { utilities, cache } from '@cornerstonejs/core';
-import { IDynamicImageVolume } from 'core/src/types';
+import { utilities, cache, Types } from '@cornerstonejs/core';
+
 
 /**
  * Gets the scalar data for a series of time points for either a single
@@ -14,7 +14,7 @@ import { IDynamicImageVolume } from 'core/src/types';
  * @returns
  */
 function getDataInTime(
-  dynamicVolume: IDynamicImageVolume,
+  dynamicVolume: Types.IDynamicImageVolume,
   options: {
     frameNumbers?;
     maskVolumeId?;
