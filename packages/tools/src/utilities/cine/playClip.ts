@@ -19,26 +19,10 @@ const debounced = true;
 const loop = true;
 const cine4DEnabled = true;
 
-// type ScrollOptions = {
-//   loop: boolean;
-//   reverse: boolean;
-// };
-
-// type ScrollResult = {
-//   stop: boolean;
-// };
-
-type ScrollStepsInfo = {
-  numScrollSteps: number;
-  currentStepIndex: number;
-};
-
 type PlayClipContext = {
   get numScrollSteps(): number;
   get currentStepIndex(): number;
   get frameTimeVectorEnabled(): boolean;
-  // scroll(options: ScrollOptions): ScrollResult;
-  getScrollStepsInfo(): ScrollStepsInfo;
   scroll(delta: number): void;
 };
 
@@ -58,45 +42,9 @@ function createStackViewportPlayClipContext(
       // It is always in acquired orientation
       return true;
     },
-    getScrollStepsInfo(): ScrollStepsInfo {
-      const currentImageIdIndex = viewport.getTargetImageIdIndex();
-
-      return {
-        numScrollSteps: imageIds.length,
-        currentStepIndex: currentImageIdIndex,
-      };
-    },
     scroll(delta: number): void {
       scroll(viewport, { delta, debounceLoading: debounced });
     },
-    // scroll(options: ScrollOptions): ScrollResult {
-    //   const { loop, reverse } = options;
-    //   const currentImageIdIndex = viewport.getTargetImageIdIndex();
-
-    //   const imageCount = imageIds.length;
-    //   const scrollResult = { stop: false };
-    //   let newImageIdIndex = currentImageIdIndex + (reverse ? -1 : 1);
-
-    //   if (!loop && (newImageIdIndex < 0 || newImageIdIndex >= imageCount)) {
-    //     scrollResult.stop = true;
-    //     return scrollResult;
-    //   }
-
-    //   // Loop around if we go outside the stack
-    //   if (newImageIdIndex >= imageCount) {
-    //     newImageIdIndex = 0;
-    //   } else if (newImageIdIndex < 0) {
-    //     newImageIdIndex = imageCount - 1;
-    //   }
-
-    //   const delta = newImageIdIndex - currentImageIdIndex;
-
-    //   if (delta) {
-    //     scroll(viewport, { delta, debounceLoading: debounced });
-    //   }
-
-    //   return scrollResult;
-    // },
   };
 }
 
@@ -156,46 +104,10 @@ function createVolumeViewportPlayClipContext(
       // it may be flipped or rotated in plane
       return glMatrix.equals(dot, 1);
     },
-    getScrollStepsInfo(): ScrollStepsInfo {
-      const { numScrollSteps, currentStepIndex } = getScrollInfo();
-
-      return {
-        numScrollSteps,
-        currentStepIndex,
-      };
-    },
     scroll(delta: number): void {
       getScrollInfo().currentStepIndex += delta;
       scroll(viewport, { delta });
     },
-    // scroll(options: ScrollOptions): ScrollResult {
-    //   const { loop, reverse } = options;
-    //   const scrollResult = { stop: false };
-    //   const scrollInfo = getScrollInfo();
-    //   const { numScrollSteps, currentStepIndex } = scrollInfo;
-    //   let newFrameIndex = currentStepIndex + (reverse ? -1 : 1);
-
-    //   if (!loop && (newFrameIndex < 0 || newFrameIndex >= numScrollSteps)) {
-    //     scrollResult.stop = true;
-    //     return scrollResult;
-    //   }
-
-    //   // Loop around if we go outside the stack
-    //   if (newFrameIndex >= numScrollSteps) {
-    //     newFrameIndex = 0;
-    //   } else if (newFrameIndex < 0) {
-    //     newFrameIndex = numScrollSteps - 1;
-    //   }
-
-    //   const delta = newFrameIndex - currentStepIndex;
-
-    //   if (delta) {
-    //     scrollInfo.currentStepIndex = newFrameIndex;
-    //     scroll(viewport, { delta });
-    //   }
-
-    //   return scrollResult;
-    // },
   };
 }
 
@@ -213,45 +125,9 @@ function createDynamicVolumeViewportPlayClipContext(
       // Looping throught time does not uses frameTimeVector
       return false;
     },
-    getScrollStepsInfo(): ScrollStepsInfo {
-      const { numScrollSteps, currentStepIndex } = this;
-
-      return {
-        numScrollSteps,
-        currentStepIndex,
-      };
-    },
     scroll(delta: number): void {
       volume.timePointIndex += delta;
     },
-    // scroll(options: ScrollOptions): ScrollResult {
-    //   const { loop, reverse } = options;
-    //   const scrollResult = { stop: false };
-    //   const { numScrollSteps, currentStepIndex } = this;
-    //   let newTimepointIndex = currentStepIndex + (reverse ? -1 : 1);
-    //   const timePointIndexOutOfRange =
-    //     newTimepointIndex < 0 || newTimepointIndex >= numScrollSteps;
-
-    //   if (!loop && timePointIndexOutOfRange) {
-    //     scrollResult.stop = true;
-    //     return scrollResult;
-    //   }
-
-    //   // Loop around if we go outside the stack
-    //   if (newTimepointIndex >= numScrollSteps) {
-    //     newTimepointIndex = 0;
-    //   } else if (newTimepointIndex < 0) {
-    //     newTimepointIndex = numScrollSteps - 1;
-    //   }
-
-    //   const delta = newTimepointIndex - currentStepIndex;
-
-    //   if (delta) {
-    //     volume.timePointIndex += delta;
-    //   }
-
-    //   return scrollResult;
-    // },
   };
 }
 
@@ -359,23 +235,12 @@ function playClip(
 
   // This function encapsulates the frame rendering logic...
   const playClipAction = () => {
-    // const scrollResult = playClipContext.scroll({
-    //   loop,
-    //   reverse: playClipData.reverse,
-    // });
-
-    // const { loop, reverse } = options;
-    // const scrollResult = { stop: false };
     const { numScrollSteps, currentStepIndex } = playClipContext;
-    console.log('>>>>> numScrollSteps :: ', numScrollSteps);
-    console.log('>>>>> currentStepIndex :: ', currentStepIndex);
     let newStepIndex = currentStepIndex + (playClipData.reverse ? -1 : 1);
-    console.log('>>>>> newStepIndex :: ', newStepIndex);
     const newStepIndexOutOfRange =
       newStepIndex < 0 || newStepIndex >= numScrollSteps;
 
     if (!loop && newStepIndexOutOfRange) {
-      console.log('>>>>> STOP!');
       _stopClipWithData(playClipData);
       const eventDetail = { element };
 
@@ -385,17 +250,14 @@ function playClip(
 
     // Loop around if newStepIndex is out of range
     if (newStepIndex >= numScrollSteps) {
-      console.log('>>>>> newStepIndex :: SET TO ZERO');
       newStepIndex = 0;
     } else if (newStepIndex < 0) {
       newStepIndex = numScrollSteps - 1;
-      console.log(`>>>>> newStepIndex :: SET TO ${newStepIndex}`);
     }
 
     const delta = newStepIndex - currentStepIndex;
 
     if (delta) {
-      console.log(`>>>>> delta :: `, delta);
       playClipContext.scroll(delta);
     }
   };
@@ -412,7 +274,6 @@ function playClip(
       function playClipTimeoutHandler() {
         playClipData.intervalId = window.setTimeout(
           playClipTimeoutHandler,
-          // playClipTimeouts[stackData.targetImageIdIndex]
           playClipTimeouts[playClipContext.currentStepIndex]
         );
         playClipAction();
