@@ -1,5 +1,5 @@
 import { RenderingEngine, Types, Enums, metaData } from '@cornerstonejs/core';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import htmlSetup from './htmlSetup';
 import uids from './uids';
@@ -55,7 +55,7 @@ document
     // Add the file to the cornerstoneFileImageLoader and get unique
     // number for that file
     const file = e.target.files[0];
-    const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+    const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
     loadAndViewImage(imageId);
   });
 
@@ -143,7 +143,7 @@ function handleFileSelect(evt) {
 
   // this UI is only built for a single file so just dump the first one
   const file = files[0];
-  const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+  const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
   loadAndViewImage(imageId);
 }
 

@@ -164,7 +164,6 @@ if (configuration.examples) {
   console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
   // run the build for dicom image loader
 
-  console.log('***************************', shell.pwd());
   shell.cd('../../dicomImageLoader');
   shell.exec(`yarn run webpack:dynamic-import`);
 

@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@cornerstonejs/core": "^0.33.1",
+    "@cornerstonejs/dicom-image-loader": "^0.2.1",
     "@cornerstonejs/streaming-image-volume-loader": "^0.14.1",
     "@cornerstonejs/tools": "^0.49.1",
     "@docusaurus/core": "2.3.1",
@@ -38,7 +39,6 @@
     "@mdx-js/react": "^1.6.21",
     "@svgr/webpack": "^6.2.1",
     "clsx": "^1.1.1",
-    "cornerstone-wado-image-loader": "^4.8.0",
     "dcmjs": "^0.24.4",
     "detect-gpu": "^4.0.45",
     "dicom-parser": "^1.8.11",
