@@ -15,9 +15,9 @@ function getVolumeViewportScrollInfo(
   // Find out current frameIndex
   const fraction = (current - min) / (max - min);
   const floatingStepNumber = fraction * numScrollSteps;
-  const currentFrameIndex = Math.round(floatingStepNumber);
+  const currentStepIndex = Math.round(floatingStepNumber);
 
-  return { numScrollSteps, currentFrameIndex };
+  return { numScrollSteps, currentStepIndex };
 }
 
 export default getVolumeViewportScrollInfo;

@@ -220,7 +220,10 @@ async function run() {
     const instanceTag = instanceMetaData['00200013'];
     const instanceNumber = parseInt(instanceTag.Value[0]);
 
-    return instanceNumber >= 8696;
+    return instanceNumber >= 5876; // 15 TPs
+    // return instanceNumber >= 7051; // 10 TPs
+    // return instanceNumber >= 8226; // 5 TPs
+    // return instanceNumber >= 8696; // 3 TPs
   });
 
   console.log(`A total of ${imageIds.length} will be loaded`);
