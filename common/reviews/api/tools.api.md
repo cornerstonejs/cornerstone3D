@@ -1927,7 +1927,7 @@ function getConfiguration(): {
 };
 
 // @public (undocumented)
-function getDataInTime(dynamicVolume: any, options: {
+function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
     frameNumbers?: any;
     maskVolumeId?: any;
     imageCoordinate?: any;
