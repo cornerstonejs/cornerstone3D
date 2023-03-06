@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.2.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.2.1...@cornerstonejs/dicom-image-loader@0.2.2) (2023-03-06)
+
+
+### Bug Fixes
+
+* **dicomLoader:** data type view after scaling ([#463](https://github.com/cornerstonejs/cornerstone3D-beta/issues/463)) ([af1ba2e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/af1ba2e6dedb666ea0881161655e50187d2d1e5e))
+
+
+
+
+
 ## [0.2.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.2.0...@cornerstonejs/dicom-image-loader@0.2.1) (2023-03-06)
 
 
