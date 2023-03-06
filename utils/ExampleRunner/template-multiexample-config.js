@@ -9,7 +9,7 @@ const csStreamingBasePath = path.resolve(
   './packages/streaming-image-volume-loader/src/index'
 );
 const csDICOMImageLoaderDistPath = path.resolve(
-  './packages/dicom-image-loader/src/imageLoader/index'
+  'packages/dicomImageLoader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js'
 );
 
 module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
