@@ -36,30 +36,9 @@ export function scrollVolume(
   volumeId: string,
   delta: number
 ) {
-  const camera = viewport.getCamera();
+  const { sliceRange, spacingInNormalDirection, camera } =
+    csUtils.getVolumeSliceRangeInfo(viewport, volumeId);
   const { focalPoint, viewPlaneNormal, position } = camera;
-  const { spacingInNormalDirection, actorUID } =
-    csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
-
-  if (!actorUID) {
-    throw new Error(
-      `Could not find image volume with id ${volumeId} in the viewport`
-    );
-  }
-
-  const actorEntry = viewport.getActor(actorUID);
-
-  if (!actorEntry) {
-    console.warn('No actor found for with actorUID of', actorUID);
-    return;
-  }
-
-  const volumeActor = actorEntry.actor as Types.VolumeActor;
-  const sliceRange = csUtils.getSliceRange(
-    volumeActor,
-    viewPlaneNormal,
-    focalPoint
-  );
 
   const { newFocalPoint, newPosition } = csUtils.snapFocalPointToSlice(
     focalPoint,

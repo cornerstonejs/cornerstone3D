@@ -1,16 +1,223 @@
+import { vec3 } from 'gl-matrix';
 import {
-  utilities,
+  utilities as csUtils,
   getEnabledElement,
   StackViewport,
+  VolumeViewport,
 } from '@cornerstonejs/core';
+
+import { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState } from './state';
 import { CINETypes } from '../../types';
+import scroll from '../scroll';
 
-const { triggerEvent } = utilities;
+const { triggerEvent } = csUtils;
 
 const debounced = true;
 const loop = true;
+
+type ScrollOptions = {
+  loop: boolean;
+  reverse: boolean;
+};
+
+type ScrollResult = {
+  stop: boolean;
+};
+
+type PlayClipContext = {
+  get numScrollSteps(): number;
+  get currentFrameIndex(): number;
+  get frameTimeVectorEnabled(): boolean;
+  scroll(options: ScrollOptions): ScrollResult;
+};
+
+type ClipActionData = {
+  stop: boolean;
+  delta: number;
+};
+
+function createStackViewportPlayClipContext(
+  viewport: StackViewport
+): PlayClipContext {
+  // const stackData = {
+  //   targetImageIdIndex: viewport.getTargetImageIdIndex(),
+  //   imageIds: viewport.getImageIds(),
+  // };
+
+  const imageIds = viewport.getImageIds();
+
+  return {
+    get numScrollSteps(): number {
+      return imageIds.length;
+    },
+    get currentFrameIndex(): number {
+      return viewport.getTargetImageIdIndex();
+    },
+    get frameTimeVectorEnabled(): boolean {
+      return true;
+    },
+    // getScrollInfo() {
+    //   return {
+    //     numScrollSteps: stackData.imageIds.length,
+    //     currentFrameIndex: 0,
+    //   };
+    // },
+    // getActionData(options) {
+    //   const reverse = !!options?.reverse;
+    //   const targetImageIdIndex = viewport.getTargetImageIdIndex();
+    //   const imageCount = imageIds.length;
+    //   const actionData = { stop: false, delta: 0 };
+    //   let newImageIdIndex = targetImageIdIndex;
+
+    //   newImageIdIndex += reverse ? -1 : 1;
+
+    //   if (!loop && (newImageIdIndex < 0 || newImageIdIndex >= imageCount)) {
+    //     actionData.stop = true;
+    //   }
+
+    //   // Loop around if we go outside the stack
+    //   if (newImageIdIndex >= imageCount) {
+    //     newImageIdIndex = 0;
+    //   } else if (newImageIdIndex < 0) {
+    //     newImageIdIndex = imageCount - 1;
+    //   }
+
+    //   actionData.delta = newImageIdIndex - targetImageIdIndex;
+
+    //   return actionData;
+    // },
+    scroll(options: ScrollOptions): ScrollResult {
+      const { loop, reverse } = options;
+      const currentImageIdIndex = viewport.getTargetImageIdIndex();
+
+      const imageCount = imageIds.length;
+      const scrollResult = { stop: false };
+      let newImageIdIndex = currentImageIdIndex + (reverse ? -1 : 1);
+
+      if (!loop && (newImageIdIndex < 0 || newImageIdIndex >= imageCount)) {
+        scrollResult.stop = true;
+        return scrollResult;
+      }
+
+      // Loop around if we go outside the stack
+      if (newImageIdIndex >= imageCount) {
+        newImageIdIndex = 0;
+      } else if (newImageIdIndex < 0) {
+        newImageIdIndex = imageCount - 1;
+      }
+
+      const delta = newImageIdIndex - currentImageIdIndex;
+
+      if (delta) {
+        scroll(viewport, { delta, debounceLoading: debounced });
+      }
+
+      return scrollResult;
+    },
+  };
+}
+
+function createVolumeViewportPlayClipContext(
+  viewport: VolumeViewport
+): PlayClipContext {
+  const actorEntry = viewport.getDefaultActor();
+
+  if (!actorEntry) {
+    console.warn('No actor found');
+  }
+
+  const volumeId = actorEntry.uid;
+  console.log('>>>>> volumeId :: ', volumeId);
+
+  const cachedScrollInfo = {
+    viewPlaneNormal: vec3.create(),
+    scrollInfo: null,
+  };
+
+  const getScrollInfo = () => {
+    const camera = viewport.getCamera();
+    const updateCache =
+      !cachedScrollInfo.scrollInfo ||
+      !vec3.equals(camera.viewPlaneNormal, cachedScrollInfo.viewPlaneNormal);
+
+    // Number of steps would change only after rotating the volume so it
+    // caches the result and recomputes only when necessary. Until it is
+    // rotated the current frame is updated locally
+    if (updateCache) {
+      console.log('>>>>> updateCache :: YES');
+      const scrollInfo = csUtils.getVolumeViewportScrollInfo(
+        viewport,
+        volumeId
+      );
+
+      cachedScrollInfo.viewPlaneNormal = camera.viewPlaneNormal;
+      cachedScrollInfo.scrollInfo = scrollInfo;
+    } else {
+      console.log('>>>>> updateCache :: NO');
+    }
+
+    return cachedScrollInfo.scrollInfo;
+  };
+
+  return {
+    get numScrollSteps(): number {
+      return getScrollInfo().numScrollSteps;
+    },
+    get currentFrameIndex(): number {
+      return getScrollInfo().currentFrameIndex;
+    },
+    get frameTimeVectorEnabled(): boolean {
+      return false;
+    },
+    scroll(options: ScrollOptions): ScrollResult {
+      const { loop, reverse } = options;
+      const scrollResult = { stop: false };
+      const scrollInfo = getScrollInfo();
+      const { numScrollSteps, currentFrameIndex } = scrollInfo;
+      let newFrameIndex = currentFrameIndex + (reverse ? -1 : 1);
+
+      if (!loop && (newFrameIndex < 0 || newFrameIndex >= numScrollSteps)) {
+        scrollResult.stop = true;
+        return scrollResult;
+      }
+
+      // Loop around if we go outside the stack
+      if (newFrameIndex >= numScrollSteps) {
+        newFrameIndex = 0;
+      } else if (newFrameIndex < 0) {
+        newFrameIndex = numScrollSteps - 1;
+      }
+
+      const delta = newFrameIndex - currentFrameIndex;
+
+      if (delta) {
+        scrollInfo.currentFrameIndex = newFrameIndex;
+        scroll(viewport, { delta });
+      }
+
+      return scrollResult;
+    },
+  };
+}
+
+function createDynamicVolumeViewportPlayClipContext(viewport) {
+  return { viewport };
+}
+
+function createPlayClipContext(viewport): PlayClipContext {
+  if (viewport instanceof StackViewport) {
+    return createStackViewportPlayClipContext(viewport);
+  }
+
+  if (viewport instanceof VolumeViewport) {
+    return createVolumeViewportPlayClipContext(viewport);
+  }
+
+  throw new Error('Unknown viewport type');
+}
+
 /**
  * Starts playing a clip or adjusts the frame rate of an already playing clip.  framesPerSecond is
  * optional and defaults to 30 if not specified.  A negative framesPerSecond will play the clip in reverse.
@@ -38,17 +245,12 @@ function playClip(
   }
 
   const { viewport } = enabledElement;
+  const playClipContext = createPlayClipContext(viewport);
 
-  if (!(viewport instanceof StackViewport)) {
-    throw new Error(
-      'playClip: element must be a stack viewport, volume viewport playClip not yet implemented'
-    );
-  }
-
-  const stackData = {
-    targetImageIdIndex: viewport.getTargetImageIdIndex(),
-    imageIds: viewport.getImageIds(),
-  };
+  // const stackData = {
+  //   targetImageIdIndex: viewport.getTargetImageIdIndex(),
+  //   imageIds: viewport.getImageIds(),
+  // };
 
   let playClipData = getToolState(element);
 
@@ -85,7 +287,9 @@ function playClip(
   if (
     playClipData.ignoreFrameTimeVector !== true &&
     playClipData.frameTimeVector &&
-    playClipData.frameTimeVector.length === stackData.imageIds.length
+    // playClipData.frameTimeVector.length === stackData.imageIds.length
+    playClipData.frameTimeVector.length === playClipContext.numScrollSteps &&
+    playClipContext.frameTimeVectorEnabled
   ) {
     const { timeouts, isTimeVarying } = _getPlayClipTimeouts(
       playClipData.frameTimeVector,
@@ -96,51 +300,87 @@ function playClip(
     playClipIsTimeVarying = isTimeVarying;
   }
 
+  // const getStackClipActionData = (loop): ClipActionData => {
+  //   const actionData = { stop: false, delta: 0 };
+
+  //   const stackData = {
+  //     targetImageIdIndex: viewport.getTargetImageIdIndex(),
+  //     imageIds: viewport.getImageIds(),
+  //   };
+
+  //   let newImageIdIndex = stackData.targetImageIdIndex;
+  //   const imageCount = stackData.imageIds.length;
+
+  //   newImageIdIndex += playClipData.reverse ? -1 : 1;
+
+  //   if (!loop && (newImageIdIndex < 0 || newImageIdIndex >= imageCount)) {
+  //     actionData.stop = true;
+  //   }
+
+  //   // Loop around if we go outside the stack
+  //   if (newImageIdIndex >= imageCount) {
+  //     newImageIdIndex = 0;
+  //   } else if (newImageIdIndex < 0) {
+  //     newImageIdIndex = imageCount - 1;
+  //   }
+
+  //   actionData.delta = newImageIdIndex - stackData.targetImageIdIndex;
+
+  //   return actionData;
+  // };
+
+  // const getVolumeClipActionData = (loop): ClipActionData => {
+  //   throw new Error('IMPLEMENT');
+  //   return { stop: false, delta: 1 };
+  // };
+
   // This function encapsulates the frame rendering logic...
   const playClipAction = () => {
-    // Hoisting of context variables
-    const stackData = {
-      targetImageIdIndex: viewport.getTargetImageIdIndex(),
-      imageIds: viewport.getImageIds(),
-    };
+    // console.log('>>>>> playClipAction');
 
-    let newImageIdIndex = stackData.targetImageIdIndex;
-    const imageCount = stackData.imageIds.length;
+    // const { stop, delta } =
+    //   viewport instanceof StackViewport
+    //     ? getStackClipActionData(loop)
+    //     : getVolumeClipActionData(loop);
 
-    if (playClipData.reverse) {
-      newImageIdIndex--;
-    } else {
-      newImageIdIndex++;
-    }
+    // if (stop) {
+    //   _stopClipWithData(playClipData);
+    //   const eventDetail = { element };
 
-    if (
-      !playClipData.loop &&
-      (newImageIdIndex < 0 || newImageIdIndex >= imageCount)
-    ) {
+    //   triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, eventDetail);
+    //   return;
+    // }
+
+    // if (delta) {
+    //   const options = { delta, debounceLoading: debounced };
+    //   scroll(viewport, options);
+    // }
+
+    const scrollResult = playClipContext.scroll({
+      loop,
+      reverse: playClipData.reverse,
+    });
+
+    if (scrollResult.stop) {
       _stopClipWithData(playClipData);
-      const eventDetail = {
-        element,
-      };
+      const eventDetail = { element };
 
       triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, eventDetail);
-
-      return;
-    }
-
-    // Loop around if we go outside the stack
-    if (newImageIdIndex >= imageCount) {
-      newImageIdIndex = 0;
-    }
-
-    if (newImageIdIndex < 0) {
-      newImageIdIndex = imageCount - 1;
-    }
-
-    if (newImageIdIndex !== stackData.targetImageIdIndex) {
-      const delta = newImageIdIndex - stackData.targetImageIdIndex;
-      viewport.scroll(delta, debounced, loop);
     }
   };
+
+  // const playVolumeClipAction = () => {
+  //   const volumeId = 'asdasdasd';
+  //   const delta = 1;
+  //   const options = { volumeId, delta };
+
+  //   scroll(viewport, options);
+
+  //   console.log('>>>>> playVolumeClipAction');
+  // };
+
+  // const fnPlayClipAction =
+  //   viewport instanceof VolumeViewport ? playVolumeClipAction : playClipAction;
 
   // If playClipTimeouts array is available, not empty and its elements are NOT uniform ...
   // ... (at least one timeout is different from the others), use alternate setTimeout implementation
@@ -154,7 +394,8 @@ function playClip(
       function playClipTimeoutHandler() {
         playClipData.intervalId = window.setTimeout(
           playClipTimeoutHandler,
-          playClipTimeouts[stackData.targetImageIdIndex]
+          // playClipTimeouts[stackData.targetImageIdIndex]
+          playClipTimeouts[playClipContext.currentFrameIndex]
         );
         playClipAction();
       },
