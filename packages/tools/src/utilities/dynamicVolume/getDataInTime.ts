@@ -1,4 +1,4 @@
-import { utilities, cache, Types } from '@cornerstonejs/core';
+import { utilities, cache } from '@cornerstonejs/core';
 import { IDynamicImageVolume } from 'core/src/types';
 
 /**
