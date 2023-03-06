@@ -1,6 +1,5 @@
 import { utilities, cache, Types } from '@cornerstonejs/core';
 
-
 /**
  * Gets the scalar data for a series of time points for either a single
  * coordinate or a segmentation mask, it will return the an array of scalar
