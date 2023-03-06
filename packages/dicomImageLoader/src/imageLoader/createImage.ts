@@ -62,11 +62,17 @@ function convertToIntPixelData(floatPixelData) {
  * can transfer array buffers but not typed arrays
  * @param imageFrame
  */
-function setPixelDataType(imageFrame: ImageFrame) {
+function setPixelDataType(imageFrame, preScale) {
+  const isScaled = preScale?.scaled;
+  const scalingParmeters = preScale?.scalingParameters;
+  const rescaleSlope = scalingParmeters?.rescaleSlope;
+  const rescaleIntercept = scalingParmeters?.rescaleIntercept;
+  const isNegative = rescaleSlope < 0 || rescaleIntercept < 0;
+
   if (imageFrame.bitsAllocated === 32) {
     imageFrame.pixelData = new Float32Array(imageFrame.pixelData);
   } else if (imageFrame.bitsAllocated === 16) {
-    if (imageFrame.pixelRepresentation === 0) {
+    if (imageFrame.pixelRepresentation === 0 && !(isScaled && isNegative)) {
       imageFrame.pixelData = new Uint16Array(imageFrame.pixelData);
     } else {
       imageFrame.pixelData = new Int16Array(imageFrame.pixelData);
@@ -240,7 +246,7 @@ function createImage(
       }
 
       if (!alreadyTyped) {
-        setPixelDataType(imageFrame);
+        setPixelDataType(imageFrame, imageFrame.preScale);
       }
 
       const imagePlaneModule: MetadataImagePlaneModule =

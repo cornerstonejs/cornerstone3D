@@ -202,6 +202,11 @@ function metaDataProvider(type, imageId) {
         radiopharmaceuticalStartTime: dicomParser.parseTM(
           getValue(radiopharmaceuticalInfo['00181072'], 0, '')
         ),
+        radiopharmaceuticalStartDateTime: getValue(
+          radiopharmaceuticalInfo['00181078'],
+          0,
+          ''
+        ),
         radionuclideTotalDose: getNumberValue(
           radiopharmaceuticalInfo['00181074']
         ),
