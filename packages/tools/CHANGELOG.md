@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.50.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.50.0...@cornerstonejs/tools@0.50.1) (2023-03-07)
+
+
+### Bug Fixes
+
+* **windowLevelTool:** WWWL multipler too high when burned in pixels are present ([#462](https://github.com/cornerstonejs/cornerstone3D-beta/issues/462)) ([47bfa46](https://github.com/cornerstonejs/cornerstone3D-beta/commit/47bfa46caa563bfc131487bac0c5c517e65128bf))
+
+
+
+
+
 # [0.50.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.49.1...@cornerstonejs/tools@0.50.0) (2023-03-06)
 
 
