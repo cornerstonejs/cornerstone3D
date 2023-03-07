@@ -152,9 +152,19 @@ class WindowLevelTool extends BaseTool {
       const imageVolume = cache.getVolume(volumeId);
       const { dimensions } = imageVolume;
       const scalarData = imageVolume.getScalarData();
-      imageDynamicRange = this._getImageDynamicRangeFromMiddleSlice(
+      const calculatedDynamicRange = this._getImageDynamicRangeFromMiddleSlice(
         scalarData,
         dimensions
+      );
+      const BitsStored = imageVolume?.metadata?.BitsStored;
+      const metadataDynamicRange = BitsStored ? 2 ** BitsStored : Infinity;
+      // Burned in Pixels often use pixel values above the BitsStored.
+      // This results in a multiplier which is way higher than what you would
+      // want in practice. Thus we take the min between the metadata dynamic
+      // range and actual middel slice dynamic range.
+      imageDynamicRange = Math.min(
+        calculatedDynamicRange,
+        metadataDynamicRange
       );
     } else {
       imageDynamicRange = this._getImageDynamicRangeFromViewport(viewport);
@@ -167,7 +177,6 @@ class WindowLevelTool extends BaseTool {
     if (ratio > 1) {
       multiplier = Math.round(ratio);
     }
-
     return multiplier;
   }
 
