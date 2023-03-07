@@ -27,9 +27,6 @@
   "dependencies": {
     "@cornerstonejs/core": "^0.33.1"
   },
-  "peerDependencies": {
-    "@cornerstonejs/calculate-suv": "1.0.2"
-  },
   "devDependencies": {
     "@cornerstonejs/calculate-suv": "1.0.2"
   },
