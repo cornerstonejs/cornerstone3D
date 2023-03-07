@@ -33,7 +33,10 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // ======== Set up page ======== //
-setTitleAndDescription('CINE Tool', 'Show the usage of the CINE Tool.');
+setTitleAndDescription(
+  'CINE Tool',
+  'Show the usage of the CINE Tool to play stack and volume viewports.'
+);
 
 const size = '500px';
 const inactiveBorder = 'solid 5px rgba(0, 0, 0, 0)';
@@ -41,9 +44,9 @@ const activeBorder = 'solid 5px rgba(255, 0, 0, 1)';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 const numViewports = 4;
-const elementsMap = new Map();
 const elements = [];
-let framesPerSecond = 24;
+const defaultFramesPerSecond = 24;
+let framesPerSecond = defaultFramesPerSecond;
 let activeElement = null;
 
 viewportGrid.style.display = 'flex';
@@ -68,8 +71,6 @@ for (let i = 0; i < numViewports; i++) {
 
   // Disable right click context menu so we can have right click tools
   element.oncontextmenu = (e) => e.preventDefault();
-
-  elementsMap.set(element, { fps: framesPerSecond });
 }
 
 content.appendChild(viewportGrid);
@@ -104,7 +105,6 @@ addButtonToToolbar({
   title: 'Play Clip',
   onClick: () => {
     csToolsUtilities.cine.playClip(activeElement, { framesPerSecond });
-    elementsMap.set(activeElement, { fps: framesPerSecond });
   },
 });
 
@@ -124,7 +124,6 @@ addSliderToToolbar({
     csToolsUtilities.cine.stopClip(activeElement);
     framesPerSecond = Number(value);
     csToolsUtilities.cine.playClip(activeElement, { framesPerSecond });
-    elementsMap.set(activeElement, { fps: framesPerSecond });
   },
   updateLabelOnChange: (value, label) => {
     label.innerText = ` Frames per second: ${value}`;
@@ -143,9 +142,11 @@ function setActiveElement(element) {
   activeElement = element;
   activeElement.style.border = activeBorder;
 
-  const { fps } = elementsMap.get(activeElement);
+  const { framesPerSecond: fps = defaultFramesPerSecond } =
+    csToolsUtilities.cine.getToolState(activeElement) ?? {};
 
   (<HTMLInputElement>document.querySelector('#fpsSlider')).value = fps;
+
   (<HTMLElement>(
     document.querySelector('#fpsSlider-label')
   )).innerText = ` Frames per second: ${fps}`;
@@ -155,8 +156,6 @@ function setActiveElement(element) {
  * Runs the demo
  */
 async function run() {
-  setActiveElement(elements[0]);
-
   // Init Cornerstone and related libraries
   await initDemo();
 
@@ -215,10 +214,10 @@ async function run() {
 
   // Create a stack viewport
   const viewportIds = [
-    'CT_STACK',
     'CT_AXIAL_STACK',
-    'CT_SAGITTAL_STACK',
-    'CT_OBLIQUE_STACK',
+    'CT_CORONAL_VOLUME',
+    'CT_SAGITTAL_VOLUME',
+    'CT_OBLIQUE_VOLUME',
   ];
 
   const viewportInputArray = [
@@ -267,16 +266,6 @@ async function run() {
     },
   ];
 
-  // const viewportInput = {
-  //   viewportId: viewportIds[0],
-  //   type: ViewportType.STACK,
-  //   element: elements[0],
-  //   defaultOptions: {
-  //     background: <Types.Point3>[0.2, 0, 0.2],
-  //   },
-  // };
-
-  // renderingEngine.enableElement(viewportInput);
   renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewport
@@ -312,6 +301,9 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+
+  // Set the first viewport as active
+  setActiveElement(elements[0]);
 }
 
 run();

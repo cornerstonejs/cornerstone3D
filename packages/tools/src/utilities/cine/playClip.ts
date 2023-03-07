@@ -17,7 +17,7 @@ const { triggerEvent } = csUtils;
 
 const debounced = true;
 const loop = true;
-const cine4DEnabled = true;
+const cine4DEnabled = false;
 
 type PlayClipContext = {
   get numScrollSteps(): number;
