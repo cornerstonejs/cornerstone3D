@@ -226,7 +226,7 @@ async function run() {
     // return instanceNumber >= 8696; // 3 TPs
   });
 
-  console.log(`A total of ${imageIds.length} will be loaded`);
+  console.log(`A total of ${imageIds.length} images will be loaded`);
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
