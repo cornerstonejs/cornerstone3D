@@ -265,7 +265,7 @@
       }
     },
     "dicom-image-loader": {
-      "wadoURI": {
+      "dicomImageLoaderWADOURI": {
         "name": "WADO-URI (DICOM P10)",
         "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
       }
