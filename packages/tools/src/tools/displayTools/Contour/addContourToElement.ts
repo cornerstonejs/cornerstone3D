@@ -5,9 +5,8 @@ import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 
-// Todo: this seems to have performance issues when there are many contours
-// Maybe we should not create one actor per contour, but rather one actor per
-// contourSet?
+// Note: this seems to have performance issues when there are many contours
+// but just a few contours is fine. so just keeping it here for now.
 function addContourToElement(
   element: HTMLDivElement,
   contour: Types.IContour,
@@ -55,69 +54,4 @@ function addContourToElement(
   return actor;
 }
 
-function addContourSetToElement(
-  element: HTMLDivElement,
-  contourSet: Types.IContourSet,
-  actorUID: string
-): vtkActor {
-  const enabledElement = getEnabledElement(element);
-  const { viewport } = enabledElement;
-
-  const actor = vtkActor.newInstance();
-  let color;
-
-  const pointArray = [];
-
-  const points = vtkPoints.newInstance();
-  const lines = vtkCellArray.newInstance();
-
-  // this variable will indicate the index of the first point in the current line
-  // so we can correctly generate the point index list to add in the cellArray
-  let pointIndex = 0;
-  contourSet.getContours().forEach((contour: Types.IContour) => {
-    const pointList = contour.getPoints();
-    const flatPoints = contour.getFlatPointsArray();
-    color = contour.getColor();
-    const type = contour.getType();
-
-    // creating a point index list that defines a line
-    const pointIndexes = pointList.map((_, i) => i + pointIndex);
-
-    // if close planar, add the first point index to the list
-    if (type === Enums.ContourType.CLOSED_PLANAR) {
-      pointIndexes.push(pointIndexes[0]);
-    }
-
-    const linePoints = Float32Array.from(flatPoints);
-    // add the current points into the point list
-    pointArray.push(...linePoints);
-    // add the point indexes into the cell array
-    lines.insertNextCell([...pointIndexes]);
-    // update the first point index
-    pointIndex = pointIndex + pointList.length;
-  });
-
-  // converts the pointArray into vtkPoints
-  points.setData(pointArray, 3);
-
-  // creates the polyData
-  const polygon = vtkPolyData.newInstance();
-  polygon.setPoints(points);
-  polygon.setLines(lines);
-
-  const mapper = vtkMapper.newInstance();
-  mapper.setInputData(polygon);
-  actor.setMapper(mapper);
-  actor.getProperty().setLineWidth(4);
-
-  // despite each contour can have its own color, we assign the last color to
-  // all contours
-  const colorToUse = color.map((c) => c / 255);
-  actor.getProperty().setColor(colorToUse[0], colorToUse[1], colorToUse[2]);
-
-  viewport.addActor({ actor: actor, uid: actorUID });
-
-  return actor;
-}
-
-export { addContourToElement, addContourSetToElement };
+export default addContourToElement;
