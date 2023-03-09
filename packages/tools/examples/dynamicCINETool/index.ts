@@ -35,6 +35,9 @@ const {
 
 const MAX_NUM_TIMEPOINTS = 40;
 
+// If needed a checkbox may be added to the UI instead
+const dynamicCineEnabled = true;
+
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
@@ -46,8 +49,8 @@ const viewportIds = [
   'PT_OBLIQUE_VOLUME',
 ];
 
-const inactiveBorder = 'solid 5px rgba(0, 0, 0, 0)';
-const activeBorder = 'solid 5px rgba(255, 0, 0, 1)';
+const inactiveViewportBorder = 'none';
+const activeViewportBorder = 'none';
 const defaultFramesPerSecond = 24;
 const toolGroupId = 'VOLUME_TOOL_GROUP_ID';
 const numViewports = 4;
@@ -220,7 +223,7 @@ function initViewportLayout() {
     element.style.height = size;
     element.style.padding = '1px';
     element.style.marginTop = '5px';
-    element.style.border = inactiveBorder;
+    element.style.border = inactiveViewportBorder;
 
     elements.push(element);
     viewportGrid.appendChild(element);
@@ -441,8 +444,10 @@ async function loadTimePoints(numTimePoints) {
 }
 
 function startCine() {
-  csToolsUtilities.cine.stopClip(activeElement);
-  csToolsUtilities.cine.playClip(activeElement, { framesPerSecond });
+  csToolsUtilities.cine.playClip(activeElement, {
+    framesPerSecond,
+    dynamicCineEnabled,
+  });
 }
 
 /**
@@ -451,16 +456,14 @@ function startCine() {
  */
 function setActiveElement(element) {
   if (activeElement) {
-    activeElement.style.border = inactiveBorder;
+    activeElement.style.border = inactiveViewportBorder;
   }
 
   activeElement = element;
-  activeElement.style.border = activeBorder;
+  activeElement.style.border = activeViewportBorder;
 
   const { framesPerSecond: fps = defaultFramesPerSecond } =
     csToolsUtilities.cine.getToolState(activeElement) ?? {};
-
-  // const toolState = csToolsUtilities.cine.getToolState(activeElement) ?? {};
 
   const fpsSliderElem = <HTMLInputElement>document.querySelector('#fpsSlider');
   const fpsSliderLabelElem = <HTMLElement>(

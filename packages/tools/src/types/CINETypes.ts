@@ -1,3 +1,5 @@
+import { Types } from '@cornerstonejs/core';
+
 type PlayClipOptions = {
   framesPerSecond?: number;
   frameTimeVector?: number[];
@@ -20,11 +22,11 @@ interface ToolData {
   dynamicCineEnabled?: boolean;
 }
 
-type PlayClipContext = {
+type CinePlayContext = {
   get numScrollSteps(): number;
   get currentStepIndex(): number;
   get frameTimeVectorEnabled(): boolean;
   scroll(delta: number): void;
 };
 
-export type { PlayClipOptions, ToolData, PlayClipContext };
+export type { PlayClipOptions, ToolData, CinePlayContext };
