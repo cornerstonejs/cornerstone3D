@@ -17,6 +17,8 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { viewport } from 'tools/src/utilities';
+
 // eslint-disable-next-line import/extensions
 
 // This is for debugging purposes
@@ -29,7 +31,6 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  RectangleROIThresholdTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
@@ -112,8 +113,8 @@ content.append(instructions);
 // let numSlicesToProject = 3;
 let ctLowerThreshold = -900;
 let ctUpperThreshold = -700;
-const overwrite = true;
-let overlapType = 0;
+const overwrite = false;
+const overlapType = 0;
 
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
@@ -178,36 +179,25 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Execute threshold',
   onClick: () => {
-    // const annotationUID = selectedAnnotationUIDs[0];
-    // const annotation = cornerstoneTools.annotation.state.getAnnotation(
-    //   annotationUID
-    // ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIThresholdAnnotation;
-
-    // if (!annotation) {
-    //   return;
-    // }
-
-    // Todo: this only works for volumeViewport
     const ctVolume = cache.getVolume(ctVolumeId);
-    // const ptVolume = cache.getVolume(ptVolumeId);
     const segmentationVolume = cache.getVolume(segmentationId);
-    console.log(segmentationVolume);
+    console.log(ctVolume.direction);
+    console.log(segmentationVolume.direction);
 
-    // csToolsUtils.segmentation.thresholdVolumeByRange(
-    //   segmentationVolume,
-    //   [{ volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold }],
-    //   // {
-    //   //   overwrite,
-    //   //   segmentationVolume.getBoundsIJKFromRectangleAnnotations,
-    //   //   overlapType,
-    //   // }
-    // );
+    const test = csToolsUtils.segmentation.thresholdSegmentationByRange(
+      segmentationVolume,
+      [{ volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold }],
+      {
+        overwrite,
+        overlapType,
+      }
+    );
   },
 });
 
 addSliderToToolbar({
   title: `CT Lower Thresh: ${ctLowerThreshold}`,
-  range: [-1000, 1000],
+  range: [-3024, 1000],
   defaultValue: ctLowerThreshold,
   onSelectedValueChange: (value) => {
     ctLowerThreshold = Number(value);
@@ -442,8 +432,7 @@ async function run() {
       },
     ]);
 
-  console.log(segmentationRepresentationByUID);
-  segmentationRepresentationByUID = segmentationRepresentationByUIDs[0];
+  segmentationRepresentationByUID = segmentationRepresentationByUIDs;
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

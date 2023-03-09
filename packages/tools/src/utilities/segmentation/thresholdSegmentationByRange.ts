@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import { ImageVolume, Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
 import { pointInShapeCallback } from '../../utilities';
@@ -8,7 +8,7 @@ import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape'
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;
-  boundsIJK: BoundsIJK;
+  boundsIJK?: BoundsIJK;
   overlapType?: number;
 };
 
@@ -42,7 +42,7 @@ const equalsCheck = (a, b) => {
  *
  * @returns segmented volume
  */
-function thresholdVolumeByRange(
+function thresholdSegmentationByRange(
   segmentationVolume: Types.IImageVolume,
   thresholdVolumeInformation: ThresholdInformation[],
   options: ThresholdRangeOptions
@@ -50,16 +50,14 @@ function thresholdVolumeByRange(
   const { spacing: segmentationSpacing, imageData: segmentationImageData } =
     segmentationVolume;
   const scalarData = segmentationVolume.getScalarData();
+  const scalarIndexArray = scalarData
+    .map((_, i) => i)
+    .filter((i) => scalarData[i] !== 0);
 
-  const { overwrite, boundsIJK } = options;
+  const segmentationIndex = scalarData[scalarIndexArray[0]];
+
+  const { overwrite } = options;
   const overlapType = options?.overlapType || 0;
-
-  // set the segmentation to all zeros
-  if (overwrite) {
-    for (let i = 0; i < scalarData.length; i++) {
-      scalarData[i] = 0;
-    }
-  }
 
   // prepare a list of volume information objects for callback functions
   const volumeInfoList = [];
@@ -79,7 +77,9 @@ function thresholdVolumeByRange(
     }
 
     // prepare information used in callback functions
-    const referenceValues = imageData.getPointData().getScalars().getData();
+    // const referenceValues = imageData.getPointData().getScalars().getData();
+    const referenceValues =
+      thresholdVolumeInformation[i].volume.getScalarData();
     const lower = thresholdVolumeInformation[i].lower;
     const upper = thresholdVolumeInformation[i].upper;
 
@@ -138,11 +138,10 @@ function thresholdVolumeByRange(
   };
 
   // range checks a voxel in a volume with same dimension as the segmentation
-  const testRange = (volumeInfo, pointIJK) => {
+  const testRange = (volumeInfo, currentIndex) => {
     const { imageData, referenceValues, lower, upper } = volumeInfo;
-    const offset = imageData.computeOffsetIndex(pointIJK);
 
-    const value = referenceValues[offset];
+    const value = referenceValues[currentIndex];
     if (value <= lower || value >= upper) {
       return false;
     } else {
@@ -188,34 +187,33 @@ function thresholdVolumeByRange(
    * volume (the reference for segmentation volume creation) and voxels in other
    * volumes.
    */
-  const callback = ({ index, pointIJK, pointLPS }) => {
+
+  const segThreshold = (currentIndex, currentVolume) => {
     let insert = volumeInfoList.length > 0;
-    for (let i = 0; i < volumeInfoList.length; i++) {
-      // if volume has the same size as segmentation volume, just range check
-      if (volumeInfoList[i].volumeSize === scalarData.length) {
-        insert = testRange(volumeInfoList[i], pointIJK);
-      } else {
-        // if not, need to calculate overlaps
-        insert = testOverlapRange(
-          volumeInfoList[i],
-          volumeInfoList[baseVolumeIdx].spacing,
-          pointLPS
-        );
-      }
-      if (!insert) {
-        break;
-      }
+    // if volume has the same size as segmentation volume, just range check
+    if (volumeInfoList[currentVolume].volumeSize === scalarData.length) {
+      insert = testRange(volumeInfoList[currentVolume], currentIndex);
+    } else {
+      // if not, need to calculate overlaps
+      console.log('else ran');
     }
 
     // Todo: make the segmentIndex a parameter
-    if (insert) scalarData[index] = 1;
+    if (insert) scalarData[currentIndex] = segmentationIndex;
+    else if (!insert) scalarData[currentIndex] = 0;
   };
 
-  pointInShapeCallback(segmentationImageData, () => true, callback, boundsIJK);
+  for (let k = 0; k < volumeInfoList.length; k++) {
+    for (let i = 0; i < scalarIndexArray.length; i++) {
+      segThreshold(scalarIndexArray[i], k);
+    }
+  }
+
+  // const overlapTest = testOverlapRange(volumeInfoList[0], volumeInfoList[baseVolumeIdx].spacing, )
 
   triggerSegmentationDataModified(segmentationVolume.volumeId);
 
   return segmentationVolume;
 }
 
-export default thresholdVolumeByRange;
+export default thresholdSegmentationByRange;
