@@ -103,7 +103,7 @@ function playClip(
       targetImageIdIndex: viewport.getTargetImageIdIndex(),
       imageIds: viewport.getImageIds(),
     };
-    
+
     let newImageIdIndex = stackData.targetImageIdIndex;
     const imageCount = stackData.imageIds.length;
 
@@ -182,6 +182,7 @@ function playClip(
  */
 function stopClip(element: HTMLDivElement): void {
   const enabledElement = getEnabledElement(element);
+  if (!enabledElement) return;
   const { viewport } = enabledElement;
 
   const cineToolData = getToolState(viewport.element);

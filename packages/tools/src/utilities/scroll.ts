@@ -47,10 +47,13 @@ export function scrollVolume(
     );
   }
 
-  const actorEntry = viewport.getActor(imageVolume.volumeId);
+  const actorEntry = viewport
+    .getActors()
+    .find((it) => it.referenceId === imageVolume.volumeId);
 
   if (!actorEntry) {
     console.warn('No actor found for with actorUID of', imageVolume.volumeId);
+    return;
   }
 
   const volumeActor = actorEntry.actor as Types.VolumeActor;
