@@ -74,7 +74,7 @@ import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 
-export {
+export type {
   ICamera,
   IStackViewport,
   IVolumeViewport,
