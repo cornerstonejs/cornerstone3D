@@ -1,11 +1,14 @@
-import { Types, utilities as csUtils } from '@cornerstonejs/core';
+import { IVolumeViewport } from '../types';
+import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
 
 function getVolumeViewportScrollInfo(
-  viewport: Types.IVolumeViewport,
+  viewport: IVolumeViewport,
   volumeId: string
 ) {
-  const { sliceRange, spacingInNormalDirection } =
-    csUtils.getVolumeSliceRangeInfo(viewport, volumeId);
+  const { sliceRange, spacingInNormalDirection } = getVolumeSliceRangeInfo(
+    viewport,
+    volumeId
+  );
 
   const { min, max, current } = sliceRange;
 

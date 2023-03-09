@@ -1,18 +1,24 @@
-import { Types, utilities as csUtils } from '@cornerstonejs/core';
-import { ActorSliceRange } from '../types';
+import getSliceRange from './getSliceRange';
+import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
+import {
+  ActorSliceRange,
+  IVolumeViewport,
+  ICamera,
+  VolumeActor,
+} from '../types';
 
 function getVolumeSliceRangeInfo(
-  viewport: Types.IVolumeViewport,
+  viewport: IVolumeViewport,
   volumeId: string
 ): {
   sliceRange: ActorSliceRange;
   spacingInNormalDirection: number;
-  camera: Types.ICamera;
+  camera: ICamera;
 } {
   const camera = viewport.getCamera();
   const { focalPoint, viewPlaneNormal } = camera;
   const { spacingInNormalDirection, imageVolume } =
-    csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
+    getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
 
   if (!imageVolume) {
     throw new Error(
@@ -26,12 +32,8 @@ function getVolumeSliceRangeInfo(
     console.warn('No actor found for with actorUID of', imageVolume.volumeId);
   }
 
-  const volumeActor = actorEntry.actor as Types.VolumeActor;
-  const sliceRange = csUtils.getSliceRange(
-    volumeActor,
-    viewPlaneNormal,
-    focalPoint
-  );
+  const volumeActor = actorEntry.actor as VolumeActor;
+  const sliceRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
 
   return {
     sliceRange,
