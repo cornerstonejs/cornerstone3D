@@ -3,6 +3,7 @@ export default function addSliderToToolbar({
   title,
   range,
   defaultValue,
+  container,
   onSelectedValueChange,
   updateLabelOnChange,
 }: {
@@ -10,10 +11,10 @@ export default function addSliderToToolbar({
   title: string;
   range: number[];
   defaultValue: number;
+  container?: HTMLElement;
   onSelectedValueChange: (value: string) => void;
   updateLabelOnChange?: (value: string, label: HTMLElement) => void;
 }) {
-  const toolbar = document.getElementById('demo-toolbar');
   const label = document.createElement('label');
   const input = document.createElement('input');
 
@@ -42,6 +43,7 @@ export default function addSliderToToolbar({
     }
   };
 
-  toolbar.append(label);
-  toolbar.append(input);
+  container = container ?? document.getElementById('demo-toolbar');
+  container.append(label);
+  container.append(input);
 }

@@ -15,20 +15,13 @@ import scroll from '../scroll';
 
 const { triggerEvent } = csUtils;
 
+const defaultDynamicCineEnabled = true;
 const debounced = true;
 const loop = true;
-const cine4DEnabled = false;
-
-type PlayClipContext = {
-  get numScrollSteps(): number;
-  get currentStepIndex(): number;
-  get frameTimeVectorEnabled(): boolean;
-  scroll(delta: number): void;
-};
 
 function createStackViewportPlayClipContext(
   viewport: StackViewport
-): PlayClipContext {
+): CINETypes.PlayClipContext {
   const imageIds = viewport.getImageIds();
 
   return {
@@ -51,7 +44,7 @@ function createStackViewportPlayClipContext(
 function createVolumeViewportPlayClipContext(
   viewport: VolumeViewport,
   volume: Types.IImageVolume
-): PlayClipContext {
+): CINETypes.PlayClipContext {
   const actorEntry = viewport.getDefaultActor();
 
   if (!actorEntry) {
@@ -113,7 +106,7 @@ function createVolumeViewportPlayClipContext(
 
 function createDynamicVolumeViewportPlayClipContext(
   volume: Types.IDynamicImageVolume
-): PlayClipContext {
+): CINETypes.PlayClipContext {
   return {
     get numScrollSteps(): number {
       return volume.numTimePoints;
@@ -131,7 +124,10 @@ function createDynamicVolumeViewportPlayClipContext(
   };
 }
 
-function createPlayClipContext(viewport): PlayClipContext {
+function createPlayClipContext(
+  viewport,
+  playClipOptions: CINETypes.PlayClipOptions
+): CINETypes.PlayClipContext {
   if (viewport instanceof StackViewport) {
     return createStackViewportPlayClipContext(viewport);
   }
@@ -146,7 +142,7 @@ function createPlayClipContext(viewport): PlayClipContext {
     const volumeId = actorEntry.uid;
     const volume = cache.getVolume(volumeId);
 
-    if (cine4DEnabled && volume.isDynamicVolume()) {
+    if (playClipOptions.dynamicCineEnabled && volume.isDynamicVolume()) {
       return createDynamicVolumeViewportPlayClipContext(
         <Types.IDynamicImageVolume>volume
       );
@@ -184,8 +180,12 @@ function playClip(
     );
   }
 
+  // 4D Cine is enabled by default
+  playClipOptions.dynamicCineEnabled =
+    playClipOptions.dynamicCineEnabled ?? true;
+
   const { viewport } = enabledElement;
-  const playClipContext = createPlayClipContext(viewport);
+  const playClipContext = createPlayClipContext(viewport, playClipOptions);
   let playClipData = getToolState(element);
 
   if (!playClipData) {
@@ -199,12 +199,15 @@ function playClip(
       speed: playClipOptions.frameTimeVectorSpeedMultiplier ?? 1,
       reverse: playClipOptions.reverse ?? false,
       loop: playClipOptions.loop ?? true,
+      dynamicCineEnabled: playClipOptions.dynamicCineEnabled,
     };
     addToolState(element, playClipData);
   } else {
     // Make sure the specified clip is not running before any property update
     _stopClipWithData(playClipData);
   }
+
+  playClipData.dynamicCineEnabled = playClipOptions.dynamicCineEnabled;
 
   // If a framesPerSecond is specified and is valid, update the playClipData now
   if (

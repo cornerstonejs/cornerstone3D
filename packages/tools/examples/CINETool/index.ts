@@ -79,7 +79,7 @@ const viewportsDescription = document.createElement('p');
 viewportsDescription.innerHTML = `
   <b>Viewports:</b>
   <ol>
-    <li>Stack / Axial</li>
+    <li>Stack / Axial (as the slices are loading one by one, the first couple of loops will be slower than the rest)</li>
     <li>Volume / Coronal</li>
     <li>Volume / Sagittal</li>
     <li>Volume / Oblique</li>
@@ -93,7 +93,6 @@ instructions.innerText = `
   - Click on Play Clip to start the CINE tool
   - Click on Stop Clip to stop the CINE tool
   - Drag the frame slider to change the frames per second rate
-  - Note: as the slices are loading one by one, the first couple of loops will be slower than the rest
 `;
 
 content.append(instructions);

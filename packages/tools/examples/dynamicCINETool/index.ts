@@ -1,290 +1,8 @@
-// import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
-// import {
-//   RenderingEngine,
-//   Types,
-//   Enums,
-//   volumeLoader,
-//   utilities as csUtils,
-// } from '@cornerstonejs/core';
-// import {
-//   initDemo,
-//   createImageIdsAndCacheMetaData,
-//   setPetTransferFunctionForVolumeActor,
-//   setTitleAndDescription,
-//   addButtonToToolbar,
-//   addSliderToToolbar,
-// } from '../../../../utils/demo/helpers';
-// import * as cornerstoneTools from '@cornerstonejs/tools';
-
-// // This is for debugging purposes
-// console.warn(
-//   'Click on index.ts to open source code for this example --------->'
-// );
-
-// const {
-//   WindowLevelTool,
-//   PanTool,
-//   ZoomTool,
-//   ToolGroupManager,
-//   Enums: csToolsEnums,
-//   utilities: csToolsUtilities,
-// } = cornerstoneTools;
-
-// const { ViewportType } = Enums;
-// const { MouseBindings } = csToolsEnums;
-
-// // ======== Set up page ======== //
-// setTitleAndDescription('CINE Tool', 'Show the usage of the CINE Tool.');
-
-// const content = document.getElementById('content');
-// const element = document.createElement('div');
-
-// // Disable right click context menu so we can have right click tools
-// element.oncontextmenu = (e) => e.preventDefault();
-
-// element.id = 'cornerstone-element';
-// element.style.width = '500px';
-// element.style.height = '500px';
-
-// content.appendChild(element);
-
-// const instructions = document.createElement('p');
-// instructions.innerText = `
-//   - Click on Play Clip to start the CINE tool
-//   - Click on Stop Clip to stop the CINE tool
-//   - Drag the frame slider to change the frames per second rate
-//   - Note: as the slices are loading one by one, the first couple of loops will be slower than the rest
-// `;
-
-// content.append(instructions);
-// // ============================= //
-
-// const toolGroupId = 'STACK_TOOL_GROUP_ID';
-// let framesPerSecond = 1; // 24;
-
-// addButtonToToolbar({
-//   title: 'Play Clip',
-//   onClick: () => {
-//     csToolsUtilities.cine.playClip(element, { framesPerSecond });
-//   },
-// });
-
-// addButtonToToolbar({
-//   title: 'Stop Clip',
-//   onClick: () => {
-//     csToolsUtilities.cine.stopClip(element);
-//   },
-// });
-
-// addSliderToToolbar({
-//   title: `Frame per second`,
-//   range: [1, 100],
-//   defaultValue: framesPerSecond,
-//   onSelectedValueChange: (value) => {
-//     csToolsUtilities.cine.stopClip(element);
-//     framesPerSecond = Number(value);
-//     csToolsUtilities.cine.playClip(element, { framesPerSecond });
-//   },
-//   updateLabelOnChange: (value, label) => {
-//     label.innerText = `Frames per second: ${value}`;
-//   },
-// });
-// /**
-//  * Runs the demo
-//  */
-// async function run() {
-//   const { metaDataManager } = cornerstoneWADOImageLoader.wadors;
-
-//   // Init Cornerstone and related libraries
-//   await initDemo();
-
-//   // Add tools to Cornerstone3D
-//   cornerstoneTools.addTool(WindowLevelTool);
-//   cornerstoneTools.addTool(PanTool);
-//   cornerstoneTools.addTool(ZoomTool);
-
-//   // Define a tool group, which defines how mouse events map to tool commands for
-//   // Any viewport using the group
-//   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-//   // Add the tools to the tool group
-//   toolGroup.addTool(WindowLevelTool.toolName);
-//   toolGroup.addTool(PanTool.toolName);
-//   toolGroup.addTool(ZoomTool.toolName);
-
-//   // Set the initial state of the tools, here we set one tool active on left click.
-//   // This means left click will draw that tool.
-//   toolGroup.setToolActive(WindowLevelTool.toolName, {
-//     bindings: [
-//       {
-//         mouseButton: MouseBindings.Primary, // Left Click
-//       },
-//     ],
-//   });
-
-//   toolGroup.setToolActive(PanTool.toolName, {
-//     bindings: [
-//       {
-//         mouseButton: MouseBindings.Auxiliary,
-//       },
-//     ],
-//   });
-
-//   toolGroup.setToolActive(ZoomTool.toolName, {
-//     bindings: [
-//       {
-//         mouseButton: MouseBindings.Secondary,
-//       },
-//     ],
-//   });
-
-// // ====================================================[ 3D VOLUME ]====================================================
-
-// //   // Get Cornerstone imageIds and fetch metadata into RAM
-// //   const imageIds = await createImageIdsAndCacheMetaData({
-// //     StudyInstanceUID:
-// //       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-// //     SeriesInstanceUID:
-// //       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-// //     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-// //   });
-
-// //   // Instantiate a rendering engine
-// //   const renderingEngineId = 'myRenderingEngine';
-// //   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-// //   // Create a stack viewport
-// //   const viewportId = 'CT_STACK';
-// //   const viewportInput = {
-// //     viewportId,
-// //     type: ViewportType.ORTHOGRAPHIC, // ViewportType.STACK
-// //     element,
-// //     defaultOptions: {
-// //       orientation: Enums.OrientationAxis.ACQUISITION,
-// //       background: <Types.Point3>[0.2, 0, 0.2],
-// //     },
-// //   };
-
-// //   renderingEngine.enableElement(viewportInput);
-
-// //   // // Set the tool group on the viewport
-// //   // toolGroup.addViewport(viewportId, renderingEngineId);
-
-// //   // Get the volume viewport that was created
-// //   const viewport = <Types.IVolumeViewport>(
-// //     renderingEngine.getViewport(viewportId)
-// //   );
-
-// //   const volumeName = 'CT_VOLUME'; // Id of the volume less loader prefix
-// //   const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-// //   const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-
-// //   // Define a volume in memory
-// //   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-// //     imageIds,
-// //   });
-
-// //   // Set the volume to load
-// //   volume.load();
-
-// //   // Set the volume on the viewport
-// //   viewport.setVolumes([
-// //     { volumeId, /* callback: setPetTransferFunctionForVolumeActor */ },
-// //   ]);
-
-// //   window.viewport = viewport;
-// //   window.volume = volume;
-
-// //   // Set the stack on the viewport
-// //   // viewport.setStack(imageIds);
-
-// //   // Render the image
-// //   viewport.render();
-// // }
-
-// // run();
-
-// // ====================================================[ 4D VOLUME ]====================================================
-
-//   let imageIds = await createImageIdsAndCacheMetaData({
-//     StudyInstanceUID:
-//       '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
-//     SeriesInstanceUID:
-//       '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
-//     wadoRsRoot: 'https://d28o5kq0jsoob5.cloudfront.net/dicomweb',
-//   });
-
-//   imageIds = imageIds.filter((imageId) => {
-//     const instanceMetaData = metaDataManager.get(imageId);
-//     const instanceTag = instanceMetaData['00200013'];
-//     const instanceNumber = parseInt(instanceTag.Value[0]);
-
-//     return instanceNumber >= 5876; // 15 TPs
-//     // return instanceNumber >= 7051; // 10 TPs
-//     // return instanceNumber >= 8226; // 5 TPs
-//     // return instanceNumber >= 8696; // 3 TPs
-//   });
-
-//   console.log(`A total of ${imageIds.length} images will be loaded`);
-
-//   // Instantiate a rendering engine
-//   const renderingEngineId = 'myRenderingEngine';
-//   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-//   // Create a stack viewport
-//   const viewportId = 'PT_4D_VOLUME';
-//   const viewportInput = {
-//     viewportId,
-//     type: ViewportType.ORTHOGRAPHIC, // ViewportType.STACK
-//     element,
-//     defaultOptions: {
-//       orientation: Enums.OrientationAxis.ACQUISITION,
-//       background: <Types.Point3>[0.2, 0, 0.2],
-//     },
-//   };
-
-//   renderingEngine.enableElement(viewportInput);
-
-//   // // Set the tool group on the viewport
-//   // toolGroup.addViewport(viewportId, renderingEngineId);
-
-//   // Get the volume viewport that was created
-//   const viewport = <Types.IVolumeViewport>(
-//     renderingEngine.getViewport(viewportId)
-//   );
-
-//   const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
-//   const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
-//   const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-
-//   // Define a volume in memory
-//   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-//     imageIds,
-//   });
-
-//   // Set the volume to load
-//   volume.load();
-
-//   // Set the volume on the viewport
-//   viewport.setVolumes([
-//     { volumeId, callback: setPetTransferFunctionForVolumeActor },
-//   ]);
-
-//   window.viewport = viewport;
-//   window.volume = volume;
-
-//   // Render the image
-//   viewport.render();
-// }
-
-// run();
-
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import {
   RenderingEngine,
   Types,
   Enums,
-  utilities as csUtils,
   volumeLoader,
   setVolumesForViewports,
   cache,
@@ -295,6 +13,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addSliderToToolbar,
+  addDropdownToToolbar,
   setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -308,13 +27,32 @@ const {
   WindowLevelTool,
   PanTool,
   ZoomTool,
+  StackScrollMouseWheelTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   utilities: csToolsUtilities,
 } = cornerstoneTools;
 
+const MAX_NUM_TIMEPOINTS = 40;
+
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
+
+const renderingEngineId = 'myRenderingEngine';
+const viewportIds = [
+  'PT_AXIAL_VOLUME',
+  'PT_CORONAL_VOLUME',
+  'PT_SAGITTAL_VOLUME',
+  'PT_OBLIQUE_VOLUME',
+];
+
+const inactiveBorder = 'solid 5px rgba(0, 0, 0, 0)';
+const activeBorder = 'solid 5px rgba(255, 0, 0, 1)';
+const defaultFramesPerSecond = 24;
+const toolGroupId = 'VOLUME_TOOL_GROUP_ID';
+const numViewports = 4;
+let framesPerSecond = defaultFramesPerSecond;
+let activeElement = null;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -322,202 +60,197 @@ setTitleAndDescription(
   'Show the usage of the CINE Tool and 4D volumes.'
 );
 
-const size = '500px';
-const inactiveBorder = 'solid 5px rgba(0, 0, 0, 0)';
-const activeBorder = 'solid 5px rgba(255, 0, 0, 1)';
-const content = document.getElementById('content');
-const viewportGrid = document.createElement('div');
-const numViewports = 4;
-const elements = [];
-const defaultFramesPerSecond = 24;
-let framesPerSecond = defaultFramesPerSecond;
-let activeElement = null;
-
-viewportGrid.style.display = 'flex';
-viewportGrid.style.flexDirection = 'row';
-
-for (let i = 0; i < numViewports; i++) {
-  const element = document.createElement('div');
-
-  element.id = 'cornerstone-element';
-  element.style.width = size;
-  element.style.height = size;
-  element.style.padding = '1px';
-  element.style.marginTop = '5px';
-  element.style.border = inactiveBorder;
-
-  elements.push(element);
-  viewportGrid.appendChild(element);
-
-  element.addEventListener('click', function () {
-    setActiveElement(this);
-  });
-
-  // Disable right click context menu so we can have right click tools
-  element.oncontextmenu = (e) => e.preventDefault();
+function createChildEl(parent, tagName) {
+  const child = document.createElement(tagName);
+  parent.append(child);
+  return child;
 }
 
-content.appendChild(viewportGrid);
+function createFirstStageLayout() {
+  const container = document.createElement('div');
+  const titleEl = createChildEl(container, 'div');
+  const toolBarEl = createChildEl(container, 'div');
+  const dropdownLabel = createChildEl(toolBarEl, 'span');
+  const dropDownOptions = [];
+  let numTimePoints = 5;
 
-const instructions = document.createElement('p');
-instructions.innerText = `
-  - Click on Play Clip to start the CINE tool
-  - Click on Stop Clip to stop the CINE tool
-  - Drag the frame slider to change the frames per second rate
-  - Note: as the slices are loading one by one, the first couple of loops will be slower than the rest
-`;
+  container.id = 'firstStageContainer';
+  container.style.transition = 'opacity 0.3s';
 
-content.append(instructions);
-// ============================= //
+  titleEl.innerHTML = 'Stage 1: Load';
+  titleEl.style.fontWeight = 'bold';
 
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
+  dropdownLabel.innerHTML = 'Time points to load: ';
 
-addButtonToToolbar({
-  title: 'Play Clip',
-  onClick: () => {
-    csToolsUtilities.cine.playClip(activeElement, { framesPerSecond });
-  },
-});
-
-addButtonToToolbar({
-  title: 'Stop Clip',
-  onClick: () => {
-    csToolsUtilities.cine.stopClip(activeElement);
-  },
-});
-
-addSliderToToolbar({
-  id: 'fpsSlider',
-  title: ` Frames per second: ${framesPerSecond}`,
-  range: [1, 100],
-  defaultValue: framesPerSecond,
-  onSelectedValueChange: (value) => {
-    csToolsUtilities.cine.stopClip(activeElement);
-    framesPerSecond = Number(value);
-    csToolsUtilities.cine.playClip(activeElement, { framesPerSecond });
-  },
-  updateLabelOnChange: (value, label) => {
-    label.innerText = ` Frames per second: ${value}`;
-  },
-});
-
-/**
- * Updated active element's style and stores it
- * @param element - Cornerstone element
- */
-function setActiveElement(element) {
-  if (activeElement) {
-    activeElement.style.border = inactiveBorder;
+  for (let i = 1; i <= MAX_NUM_TIMEPOINTS; i++) {
+    dropDownOptions.push(i);
   }
 
-  activeElement = element;
-  activeElement.style.border = activeBorder;
+  addDropdownToToolbar({
+    id: 'numTimePointsDropdown',
+    options: {
+      values: dropDownOptions,
+      defaultValue: numTimePoints,
+    },
+    container: toolBarEl,
+    onSelectedValueChange: (value) => {
+      numTimePoints = <number>value;
+    },
+  });
 
-  const { framesPerSecond: fps = defaultFramesPerSecond } =
-    csToolsUtilities.cine.getToolState(activeElement) ?? {};
+  addButtonToToolbar({
+    id: 'btnLoadTimePoints',
+    title: 'Load',
+    container: toolBarEl,
+    onClick: () => {
+      const dropdown = <HTMLSelectElement>(
+        document.getElementById('numTimePointsDropdown')
+      );
+      const btnLoadTimePoints = <HTMLButtonElement>(
+        document.getElementById('btnLoadTimePoints')
+      );
+      const secondStageContainer = <HTMLDivElement>(
+        document.getElementById('secondStageContainer')
+      );
 
-  (<HTMLInputElement>document.querySelector('#fpsSlider')).value = fps;
+      container.style.opacity = '0.4';
+      dropdown.disabled = true;
+      btnLoadTimePoints.disabled = true;
+      secondStageContainer.style.opacity = '1';
 
-  (<HTMLElement>(
-    document.querySelector('#fpsSlider-label')
-  )).innerText = ` Frames per second: ${fps}`;
+      secondStageContainer.addEventListener(
+        'transitionend',
+        () => loadTimePoints(numTimePoints),
+        { once: true }
+      );
+    },
+  });
+
+  return container;
 }
 
-/**
- * Runs the demo
- */
-async function run() {
-  const { metaDataManager } = cornerstoneWADOImageLoader.wadors;
+function createSecondStageLayout() {
+  const container = document.createElement('div');
+  const titleEl = createChildEl(container, 'div');
+  const firstRowEl = createChildEl(container, 'div');
+  const secondRowEl = createChildEl(container, 'div');
+  const infoEl = createChildEl(secondRowEl, 'span');
 
-  // Init Cornerstone and related libraries
-  await initDemo();
+  container.id = 'secondStageContainer';
+  container.style.opacity = '0';
+  container.style.transition = 'opacity 0.3s';
 
-  // Increases cache size to 4GB to be able to store all PET/CT images
-  cache.setMaxCacheSize(4 * 1024 * 1024 * 1024);
+  titleEl.innerText = 'Stage 2: Interact';
+  titleEl.style.fontWeight = 'bold';
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
+  infoEl.innerText = 'Global 4D Cine ';
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Add the tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-
-  // Set the initial state of the tools, here we set one tool active on left click.
-  // This means left click will draw that tool.
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
+  addSliderToToolbar({
+    id: 'fpsSlider',
+    title: ` Time points per second: ${framesPerSecond}`,
+    range: [1, 100],
+    defaultValue: framesPerSecond,
+    container: firstRowEl,
+    onSelectedValueChange: (value) => {
+      framesPerSecond = Number(value);
+      startCine();
+    },
+    updateLabelOnChange: (value, label) => {
+      label.innerText = ` Time points per second: ${value}`;
+    },
   });
 
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary,
-      },
-    ],
+  addButtonToToolbar({
+    title: 'Play Clip',
+    container: secondRowEl,
+    onClick: () => {
+      startCine();
+    },
   });
 
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
+  addButtonToToolbar({
+    title: 'Stop Clip',
+    container: secondRowEl,
+    onClick: () => {
+      csToolsUtilities.cine.stopClip(activeElement);
+    },
   });
 
-  // // Get Cornerstone imageIds and fetch metadata into RAM
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  //   wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-  // });
+  return container;
+}
 
-  let imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
-    wadoRsRoot: 'https://d28o5kq0jsoob5.cloudfront.net/dicomweb',
-  });
+function initLayout() {
+  const content = document.getElementById('content');
+  const stagesContainer = document.createElement('div');
+  const firstStageContainer = createFirstStageLayout();
+  const secondStageContainer = createSecondStageLayout();
 
-  imageIds = imageIds.filter((imageId) => {
-    const instanceMetaData = metaDataManager.get(imageId);
-    const instanceTag = instanceMetaData['00200013'];
-    const instanceNumber = parseInt(instanceTag.Value[0]);
+  firstStageContainer.style.borderTop = 'dashed 1px #000';
+  firstStageContainer.style.borderBottom = 'dashed 1px #000';
+  secondStageContainer.style.borderBottom = 'dashed 1px #000';
 
-    // return instanceNumber >= 5876; // 15 TPs
-    // return instanceNumber >= 7051; // 10 TPs
-    // return instanceNumber >= 8226; // 5 TPs
-    // return instanceNumber >= 8696; // 3 TPs
-    return instanceNumber >= 8931; // 2 TPs
-    // return instanceNumber >= 9166; // 1 TPs
-  });
+  firstStageContainer.style.padding = '10px 0';
+  secondStageContainer.style.padding = '10px 0';
 
-  console.log(`A total of ${imageIds.length} images will be loaded`);
+  stagesContainer.append(firstStageContainer);
+  stagesContainer.append(secondStageContainer);
 
+  content.append(stagesContainer);
+
+  // Removing it because it is not needed and to prevent any css applied to
+  // it (eg: margin, padding, etc) from breaking the layout of this page
+  document.getElementById('demo-toolbar').remove();
+}
+
+// Creates all viewports elements and add the instructions
+function initViewportLayout() {
+  const size = '500px';
+  const content = document.getElementById('content');
+  const viewportGrid = document.createElement('div');
+  const elements = [];
+
+  viewportGrid.style.display = 'flex';
+  viewportGrid.style.flexDirection = 'row';
+
+  for (let i = 0; i < numViewports; i++) {
+    const element = document.createElement('div');
+
+    element.id = 'cornerstone-element';
+    element.style.width = size;
+    element.style.height = size;
+    element.style.padding = '1px';
+    element.style.marginTop = '5px';
+    element.style.border = inactiveBorder;
+
+    elements.push(element);
+    viewportGrid.appendChild(element);
+
+    element.addEventListener('click', function () {
+      setActiveElement(this);
+    });
+
+    // Disable right click context menu so we can have right click tools
+    element.oncontextmenu = (e) => e.preventDefault();
+  }
+
+  content.appendChild(viewportGrid);
+
+  const instructions = document.createElement('p');
+  instructions.innerText = `
+    - Click on Play Clip to start the CINE tool
+    - Click on Stop Clip to stop the CINE tool
+    - Drag the frame slider to change the frames per second rate
+  `;
+
+  content.append(instructions);
+
+  return elements;
+}
+
+function initViewports(volume, toolGroup, elements) {
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create a stack viewport
-  const viewportIds = [
-    'PT_AXIAL_VOLUME',
-    'PT_CORONAL_VOLUME',
-    'PT_SAGITTAL_VOLUME',
-    'PT_OBLIQUE_VOLUME',
-  ];
+  const { volumeId } = volume;
 
   const viewportInputArray = [
     {
@@ -572,60 +305,172 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  // =============================[ Single Volume ]=============================
-
-  // // Define a unique id for the volume
-  // const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
-  // const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
-  // const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-
-  // // Define a volume in memory
-  // const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-  //   imageIds,
-  // });
-
-  // // Load PT volume
-  // volume.load();
-
-  // // Set volumes on the viewports
-  // setVolumesForViewports(
-  //   renderingEngine,
-  //   [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
-  //   viewportIds
-  // );
-
-  // ============================[ Multiple Volumes ]===========================
-
-  for (let i = 0, len = viewportInputArray.length; i < len; i++) {
-    const viewportInput = viewportInputArray[i];
-    const { viewportId } = viewportInput;
-
-    // Define a unique id for the volume
-    const volumeName = `PT_VOLUME_ID_${i}`; // Id of the volume less loader prefix
-    const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
-    const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-    console.log('>>>>> volumeId :: ', volumeId);
-
-    // Define a volume in memory
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-      imageIds,
-    });
-
-    // Load PT volume
-    volume.load();
-
-    setVolumesForViewports(
-      renderingEngine,
-      [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
-      [viewportId]
-    );
-  }
+  // Set volumes on the viewports
+  setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
+    viewportIds
+  );
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
 
   // Set the first viewport as active
   setActiveElement(elements[0]);
+
+  return viewportIds;
 }
 
-run();
+async function createVolume(numTimePoints: number): any {
+  const { metaDataManager } = cornerstoneWADOImageLoader.wadors;
+
+  if (numTimePoints < 1 || numTimePoints > MAX_NUM_TIMEPOINTS) {
+    throw new Error('numTimePoints is out of range');
+  }
+
+  let imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
+    wadoRsRoot: 'https://d28o5kq0jsoob5.cloudfront.net/dicomweb',
+  });
+
+  const NUM_IMAGES_PER_TIME_POINT = 235;
+  const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
+  const numImagesToLoad = numTimePoints * NUM_IMAGES_PER_TIME_POINT;
+
+  // Load the last N time points because they have a better image quality
+  // and first ones are white or contains only a few black pixels
+  const firstInstanceNumber = TOTAL_NUM_IMAGES - numImagesToLoad + 1;
+
+  imageIds = imageIds.filter((imageId) => {
+    const instanceMetaData = metaDataManager.get(imageId);
+    const instanceTag = instanceMetaData['00200013'];
+    const instanceNumber = parseInt(instanceTag.Value[0]);
+
+    return instanceNumber >= firstInstanceNumber;
+  });
+
+  // Define a unique id for the volume
+  const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
+  const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
+  const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  console.log(`A total of ${imageIds.length} images are going to be loaded`);
+
+  return volume;
+}
+
+function initTools() {
+  // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(WindowLevelTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+
+  // Define a tool group, which defines how mouse events map to tool commands for
+  // Any viewport using the group
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Add the tools to the tool group
+  toolGroup.addTool(WindowLevelTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+
+  // Set the initial state of the tools, here we set one tool active on left click.
+  // This means left click will draw that tool.
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  return toolGroup;
+}
+
+/**
+ * Runs the demo
+ */
+async function loadTimePoints(numTimePoints) {
+  // Init Cornerstone and related libraries
+  await initDemo();
+
+  // Increases cache size to 4GB to be able to store all PET/CT images
+  cache.setMaxCacheSize(4 * 1024 * 1024 * 1024);
+
+  // Creates all viewports elements and add the instructions
+  const elements = initViewportLayout();
+
+  // Create and load PT volume
+  const volume = await createVolume(numTimePoints);
+
+  // Initialize cornerstone tools
+  const toolGroup = initTools();
+
+  // Initialize cornerstone viewports
+  initViewports(volume, toolGroup, elements);
+
+  volume.load();
+}
+
+function startCine() {
+  csToolsUtilities.cine.stopClip(activeElement);
+  csToolsUtilities.cine.playClip(activeElement, { framesPerSecond });
+}
+
+/**
+ * Updated active element's style and stores it
+ * @param element - Cornerstone element
+ */
+function setActiveElement(element) {
+  if (activeElement) {
+    activeElement.style.border = inactiveBorder;
+  }
+
+  activeElement = element;
+  activeElement.style.border = activeBorder;
+
+  const { framesPerSecond: fps = defaultFramesPerSecond } =
+    csToolsUtilities.cine.getToolState(activeElement) ?? {};
+
+  // const toolState = csToolsUtilities.cine.getToolState(activeElement) ?? {};
+
+  const fpsSliderElem = <HTMLInputElement>document.querySelector('#fpsSlider');
+  const fpsSliderLabelElem = <HTMLElement>(
+    document.querySelector('#fpsSlider-label')
+  );
+
+  // Update all FPS related inputs/vars
+  framesPerSecond = fps;
+  fpsSliderElem.value = fps.toString();
+  fpsSliderLabelElem.innerText = ` Time points per second: ${fps}`;
+}
+
+initLayout();
