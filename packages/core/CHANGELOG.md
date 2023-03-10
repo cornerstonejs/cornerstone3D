@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.33.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.1...@cornerstonejs/core@0.33.2) (2023-03-10)
+
+
+### Bug Fixes
+
+* **scroll:** Scrolling failed to find the volume with segmentation ([#470](https://github.com/cornerstonejs/cornerstone3D-beta/issues/470)) ([79b8c96](https://github.com/cornerstonejs/cornerstone3D-beta/commit/79b8c96f111563dd0850f72d89e7c43e8b0cbd5c))
+
+
+
+
+
 ## [0.33.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.0...@cornerstonejs/core@0.33.1) (2023-03-06)
 
 
