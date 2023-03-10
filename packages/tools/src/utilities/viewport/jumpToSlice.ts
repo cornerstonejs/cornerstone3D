@@ -23,7 +23,7 @@ async function jumpToSlice(
   element: HTMLDivElement,
   options = {} as JumpToSliceOptions
 ): Promise<void> {
-  const { imageIndex, debounceLoading } = options;
+  const { imageIndex, debounceLoading, volumeId } = options;
   const enabledElement = getEnabledElement(element);
 
   if (!enabledElement) {
@@ -40,7 +40,7 @@ async function jumpToSlice(
   const imageIndexToJump = _getImageIndexToJump(numberOfSlices, imageIndex);
   const delta = imageIndexToJump - currentImageIndex;
 
-  scroll(viewport, { delta, debounceLoading });
+  scroll(viewport, { delta, debounceLoading, volumeId });
 }
 
 function _getImageSliceData(

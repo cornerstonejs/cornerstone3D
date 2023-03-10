@@ -1,7 +1,11 @@
 import cache from '../cache/cache';
+import { EPSILON } from '../constants';
 // import type { VolumeViewport } from '../RenderingEngine'
 import { ICamera, IImageVolume, IVolumeViewport } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+
+// One EPSILON part larger multiplier
+const EPSILON_PART = 1 + EPSILON;
 
 /**
  * Given a volume viewport and camera, find the target volume.
@@ -25,45 +29,57 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 ): {
   imageVolume: IImageVolume;
   spacingInNormalDirection: number;
+  actorUID: string;
 } {
   const { viewPlaneNormal } = camera;
   const volumeActors = viewport.getActors();
 
   if (!volumeActors || !volumeActors.length) {
-    return { spacingInNormalDirection: null, imageVolume: null };
+    return {
+      spacingInNormalDirection: null,
+      imageVolume: null,
+      actorUID: null,
+    };
   }
 
   const imageVolumes = volumeActors
     .map((va) => {
       // prefer the referenceUID if it is set, since it can be a derived actor
       // and the uid does not necessarily match the volumeId
-      const uid = va.referenceId ?? va.uid;
-      return cache.getVolume(uid);
+      const actorUID = va.referenceId ?? va.uid;
+      return cache.getVolume(actorUID);
     })
     .filter((iv) => !!iv);
 
   // If a volumeId is defined, set that volume as the target
   if (targetVolumeId) {
-    const imageVolume = imageVolumes.find(
+    const imageVolumeIndex = imageVolumes.findIndex(
       (iv) => iv.volumeId === targetVolumeId
     );
 
+    const imageVolume = imageVolumes[imageVolumeIndex];
+    const { uid: actorUID } = volumeActors[imageVolumeIndex];
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
     );
 
-    return { imageVolume, spacingInNormalDirection };
+    return { imageVolume, spacingInNormalDirection, actorUID };
   }
 
   if (!imageVolumes.length) {
-    return { spacingInNormalDirection: null, imageVolume: null };
+    return {
+      spacingInNormalDirection: null,
+      imageVolume: null,
+      actorUID: null,
+    };
   }
 
   // Fetch volume actor with finest resolution in direction of projection.
   const smallest = {
     spacingInNormalDirection: Infinity,
     imageVolume: null,
+    actorUID: null,
   };
 
   for (let i = 0; i < imageVolumes.length; i++) {
@@ -74,9 +90,16 @@ export default function getTargetVolumeAndSpacingInNormalDir(
       viewPlaneNormal
     );
 
-    if (spacingInNormalDirection < smallest.spacingInNormalDirection) {
+    // Allow for EPSILON part larger requirement to prefer earlier volumes
+    // when the spacing is within a factor of EPSILON.  Use a factor because
+    // that deals with very small or very large volumes effectively.
+    if (
+      spacingInNormalDirection * EPSILON_PART <
+      smallest.spacingInNormalDirection
+    ) {
       smallest.spacingInNormalDirection = spacingInNormalDirection;
       smallest.imageVolume = imageVolume;
+      smallest.actorUID = volumeActors[i].uid;
     }
   }
 

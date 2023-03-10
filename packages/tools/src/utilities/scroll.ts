@@ -38,19 +38,20 @@ export function scrollVolume(
 ) {
   const camera = viewport.getCamera();
   const { focalPoint, viewPlaneNormal, position } = camera;
-  const { spacingInNormalDirection, imageVolume } =
+  const { spacingInNormalDirection, actorUID } =
     csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
 
-  if (!imageVolume) {
+  if (!actorUID) {
     throw new Error(
       `Could not find image volume with id ${volumeId} in the viewport`
     );
   }
 
-  const actorEntry = viewport.getActor(imageVolume.volumeId);
+  const actorEntry = viewport.getActor(actorUID);
 
   if (!actorEntry) {
-    console.warn('No actor found for with actorUID of', imageVolume.volumeId);
+    console.warn('No actor found for with actorUID of', actorUID);
+    return;
   }
 
   const volumeActor = actorEntry.actor as Types.VolumeActor;
