@@ -11,12 +11,11 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addButtonToToolbar,
-  addSliderToToolbar,
-  addDropdownToToolbar,
   setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import createSecondStageLayout from './createSecondStageLayout';
+import createFirstStageLayout from './createFirstStageLayout';
 
 // This is for debugging purposes
 console.warn(
@@ -63,130 +62,19 @@ setTitleAndDescription(
   'Show the usage of the CINE Tool and 4D volumes.'
 );
 
-function createChildEl(parent, tagName) {
-  const child = document.createElement(tagName);
-  parent.append(child);
-  return child;
-}
-
-function createFirstStageLayout() {
-  const container = document.createElement('div');
-  const titleEl = createChildEl(container, 'div');
-  const toolBarEl = createChildEl(container, 'div');
-  const dropdownLabel = createChildEl(toolBarEl, 'span');
-  const dropDownOptions = [];
-  let numTimePoints = 5;
-
-  container.id = 'firstStageContainer';
-  container.style.transition = 'opacity 0.3s';
-
-  titleEl.innerHTML = 'Stage 1: Load';
-  titleEl.style.fontWeight = 'bold';
-
-  dropdownLabel.innerHTML = 'Time points to load: ';
-
-  for (let i = 1; i <= MAX_NUM_TIMEPOINTS; i++) {
-    dropDownOptions.push(i);
-  }
-
-  addDropdownToToolbar({
-    id: 'numTimePointsDropdown',
-    options: {
-      values: dropDownOptions,
-      defaultValue: numTimePoints,
-    },
-    container: toolBarEl,
-    onSelectedValueChange: (value) => {
-      numTimePoints = <number>value;
-    },
-  });
-
-  addButtonToToolbar({
-    id: 'btnLoadTimePoints',
-    title: 'Load',
-    container: toolBarEl,
-    onClick: () => {
-      const dropdown = <HTMLSelectElement>(
-        document.getElementById('numTimePointsDropdown')
-      );
-      const btnLoadTimePoints = <HTMLButtonElement>(
-        document.getElementById('btnLoadTimePoints')
-      );
-      const secondStageContainer = <HTMLDivElement>(
-        document.getElementById('secondStageContainer')
-      );
-
-      container.style.opacity = '0.4';
-      dropdown.disabled = true;
-      btnLoadTimePoints.disabled = true;
-      secondStageContainer.style.opacity = '1';
-
-      secondStageContainer.addEventListener(
-        'transitionend',
-        () => loadTimePoints(numTimePoints),
-        { once: true }
-      );
-    },
-  });
-
-  return container;
-}
-
-function createSecondStageLayout() {
-  const container = document.createElement('div');
-  const titleEl = createChildEl(container, 'div');
-  const firstRowEl = createChildEl(container, 'div');
-  const secondRowEl = createChildEl(container, 'div');
-  const infoEl = createChildEl(secondRowEl, 'span');
-
-  container.id = 'secondStageContainer';
-  container.style.opacity = '0';
-  container.style.transition = 'opacity 0.3s';
-
-  titleEl.innerText = 'Stage 2: Interact';
-  titleEl.style.fontWeight = 'bold';
-
-  infoEl.innerText = 'Global 4D Cine ';
-
-  addSliderToToolbar({
-    id: 'fpsSlider',
-    title: ` Time points per second: ${framesPerSecond}`,
-    range: [1, 100],
-    defaultValue: framesPerSecond,
-    container: firstRowEl,
-    onSelectedValueChange: (value) => {
-      framesPerSecond = Number(value);
-      startCine();
-    },
-    updateLabelOnChange: (value, label) => {
-      label.innerText = ` Time points per second: ${value}`;
-    },
-  });
-
-  addButtonToToolbar({
-    title: 'Play Clip',
-    container: secondRowEl,
-    onClick: () => {
-      startCine();
-    },
-  });
-
-  addButtonToToolbar({
-    title: 'Stop Clip',
-    container: secondRowEl,
-    onClick: () => {
-      csToolsUtilities.cine.stopClip(activeElement);
-    },
-  });
-
-  return container;
-}
-
 function initLayout() {
   const content = document.getElementById('content');
   const stagesContainer = document.createElement('div');
-  const firstStageContainer = createFirstStageLayout();
-  const secondStageContainer = createSecondStageLayout();
+  const firstStageContainer = createFirstStageLayout({
+    onLoadTimePoints: loadTimePoints,
+  });
+
+  const secondStageContainer = createSecondStageLayout({
+    initialFramesPerSecond: framesPerSecond,
+    onFramesPerSecondUpdated,
+    onCineStart: startCine,
+    onCineStop: stopCine,
+  });
 
   firstStageContainer.style.borderTop = 'dashed 1px #000';
   firstStageContainer.style.borderBottom = 'dashed 1px #000';
@@ -448,6 +336,15 @@ function startCine() {
     framesPerSecond,
     dynamicCineEnabled,
   });
+}
+
+function stopCine() {
+  csToolsUtilities.cine.stopClip(activeElement);
+}
+
+function onFramesPerSecondUpdated(value) {
+  framesPerSecond = Number(value);
+  startCine();
 }
 
 /**

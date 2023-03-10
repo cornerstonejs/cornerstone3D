@@ -1,6 +1,12 @@
 import { IVolumeViewport } from '../types';
 import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
 
+/**
+ * Calculates the number os steps the volume can scroll based on its orientation
+ * @param viewport - Volume viewport
+ * @param volumeId - Id of one of the volumes loaded on the given viewport
+ * @returns number of steps the volume can scroll and its current position
+ */
 function getVolumeViewportScrollInfo(
   viewport: IVolumeViewport,
   volumeId: string

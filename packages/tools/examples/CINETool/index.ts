@@ -284,6 +284,8 @@ async function run() {
 
   volume.load();
 
+  const volumeViewportsIds = [];
+
   for (const viewportInput of viewportInputArray) {
     const { viewportId, type } = viewportInput;
 
@@ -294,8 +296,12 @@ async function run() {
       viewport.setStack(imageIds);
       viewport.render();
     } else if (type === ViewportType.ORTHOGRAPHIC) {
-      setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
+      volumeViewportsIds.push(viewportId);
     }
+  }
+
+  if (volumeViewportsIds.length) {
+    setVolumesForViewports(renderingEngine, [{ volumeId }], volumeViewportsIds);
   }
 
   // Render the image

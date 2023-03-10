@@ -55,7 +55,7 @@ function playClip(
   let playClipData = getToolState(element);
 
   const isDynamicCinePlaying =
-    playClipOptions.dynamicCineEnabled && volume.isDynamicVolume();
+    playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume();
 
   // If user is trying to play CINE for a 4D volume it first needs
   // to stop CINE that has may be playing for any other viewport.
@@ -216,7 +216,7 @@ function _stopDynamicVolumeCine(element) {
   // If the current viewport has a 4D volume loaded it may be playing
   // if it is also loaded on another viewport and user has started CINE
   // for that one. This guarantees the other viewport will also be stopped.
-  if (volume.isDynamicVolume) {
+  if (volume?.isDynamicVolume()) {
     const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
 
     dynamicVolumesPlayingMap.delete(volume.volumeId);
@@ -302,6 +302,7 @@ function _getVolumeFromViewport(viewport): Types.IImageVolume {
 
   if (!actorEntry) {
     console.warn('No actor found');
+    return;
   }
 
   const volumeId = actorEntry.uid;
@@ -334,13 +335,7 @@ function _createVolumeViewportCinePlayContext(
   viewport: VolumeViewport,
   volume: Types.IImageVolume
 ): CINETypes.CinePlayContext {
-  const actorEntry = viewport.getDefaultActor();
-
-  if (!actorEntry) {
-    console.warn('No actor found');
-  }
-
-  const volumeId = actorEntry.uid;
+  const { volumeId } = volume;
   const cachedScrollInfo = {
     viewPlaneNormal: vec3.create(),
     scrollInfo: null,
@@ -408,6 +403,7 @@ function _createDynamicVolumeViewportCinePlayContext(
       return false;
     },
     scroll(delta: number): void {
+      // Updating this property (setter) makes it move to the desired time point
       volume.timePointIndex += delta;
     },
   };
@@ -424,7 +420,7 @@ function _createCinePlayContext(
   if (viewport instanceof VolumeViewport) {
     const volume = _getVolumeFromViewport(viewport);
 
-    if (playClipOptions.dynamicCineEnabled && volume.isDynamicVolume()) {
+    if (playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume()) {
       return _createDynamicVolumeViewportCinePlayContext(
         <Types.IDynamicImageVolume>volume
       );

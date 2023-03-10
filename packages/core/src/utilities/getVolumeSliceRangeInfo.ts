@@ -7,6 +7,12 @@ import {
   VolumeActor,
 } from '../types';
 
+/**
+ * Calculates the slice range for the given volume based on its orientation
+ * @param viewport - Volume viewport
+ * @param volumeId - Id of one of the volumes loaded on the given viewport
+ * @returns slice range information
+ */
 function getVolumeSliceRangeInfo(
   viewport: IVolumeViewport,
   volumeId: string
