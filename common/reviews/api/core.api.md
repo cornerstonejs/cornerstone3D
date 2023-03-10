@@ -709,7 +709,7 @@ function getSpacingInNormalDirection(imageVolume: IImageVolume, viewPlaneNormal:
 function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
-    uid: string;
+    actorUID: string;
 };
 
 // @public (undocumented)
