@@ -23,10 +23,10 @@ console.warn(
 );
 
 const {
-  WindowLevelTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
+  CrosshairsTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   utilities: csToolsUtilities,
@@ -48,10 +48,21 @@ const viewportIds = [
   'PT_OBLIQUE_VOLUME',
 ];
 
+const viewportColors = {
+  [viewportIds[0]]: 'rgb(200, 0, 0)',
+  [viewportIds[1]]: 'rgb(200, 200, 0)',
+  [viewportIds[2]]: 'rgb(0, 200, 0)',
+};
+
+const viewportReferenceLineControllable = viewportIds.slice();
+const viewportReferenceLineDraggableRotatable = viewportIds.slice();
+const viewportReferenceLineSlabThicknessControlsOn = viewportIds.slice();
+
 const inactiveViewportBorder = 'none';
 const activeViewportBorder = 'none';
 const defaultFramesPerSecond = 24;
-const toolGroupId = 'VOLUME_TOOL_GROUP_ID';
+const mprToolGroupId = 'VOLUME_MPR_TOOL_GROUP_ID';
+const obliqueToolGroupId = 'VOLUME_OBLIQUE_TOOL_GROUP_ID';
 const numViewports = 4;
 let framesPerSecond = defaultFramesPerSecond;
 let activeElement = null;
@@ -127,10 +138,20 @@ function initViewportLayout() {
   content.appendChild(viewportGrid);
 
   const instructions = document.createElement('p');
-  instructions.innerText = `
-    - Click on Play Clip to start the CINE tool
-    - Click on Stop Clip to stop the CINE tool
-    - Drag the frame slider to change the frames per second rate
+  instructions.innerHTML = `
+    <b>Instructions</b>
+    <ul>
+      <li>Click on Play Clip to start the CINE tool</li>
+      <li>Click on Stop Clip to stop the CINE tool</li>
+      <li>Drag the frame slider to change the frames per second rate</li>
+    </ul>
+    <b>Tools</b>
+    <ul>
+      <li>Crosshairs: left button</li>
+      <li>Pan: middle button</li>
+      <li>Zoom: right button</li>
+      <li>Scroll: scroll wheel</li>
+    <ul>
   `;
 
   content.append(instructions);
@@ -138,7 +159,7 @@ function initViewportLayout() {
   return elements;
 }
 
-function initViewports(volume, toolGroup, elements) {
+function initViewports(volume, elements) {
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
   const { volumeId } = volume;
@@ -190,11 +211,6 @@ function initViewports(volume, toolGroup, elements) {
   ];
 
   renderingEngine.setViewports(viewportInputArray);
-
-  // Set the tool group on the viewport
-  viewportIds.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineId)
-  );
 
   // Set volumes on the viewports
   setVolumesForViewports(
@@ -258,52 +274,83 @@ async function createVolume(numTimePoints: number): any {
   return volume;
 }
 
-function initTools() {
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(WindowLevelTool);
+function getReferenceLineColor(viewportId) {
+  return viewportColors[viewportId];
+}
+
+function getReferenceLineControllable(viewportId) {
+  return viewportReferenceLineControllable.includes(viewportId);
+}
+
+function getReferenceLineDraggableRotatable(viewportId) {
+  return viewportReferenceLineDraggableRotatable.includes(viewportId);
+}
+
+function getReferenceLineSlabThicknessControlsOn(viewportId) {
+  return viewportReferenceLineSlabThicknessControlsOn.includes(viewportId);
+}
+
+function initCornerstoneTools() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+}
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+function initCrosshairsTool(toolGroup) {
+  cornerstoneTools.addTool(CrosshairsTool);
 
+  toolGroup.addTool(CrosshairsTool.toolName, {
+    getReferenceLineColor,
+    getReferenceLineControllable,
+    getReferenceLineDraggableRotatable,
+    getReferenceLineSlabThicknessControlsOn,
+  });
+
+  toolGroup.setToolActive(CrosshairsTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+}
+
+function initTools(toolGroup, options?) {
   // Add the tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
-  // Set the initial state of the tools, here we set one tool active on left click.
-  // This means left click will draw that tool.
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
-
   toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary,
-      },
-    ],
+    bindings: [{ mouseButton: MouseBindings.Auxiliary }],
   });
 
   toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
   });
 
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
+  if ((options ?? {}).initCrosshairsTool === true) {
+    initCrosshairsTool(toolGroup);
+  }
+
   return toolGroup;
+}
+
+/**
+ * Define a tool group, which defines how mouse events map to tool commands for
+ * any viewport using the group
+ */
+function createToolGroups() {
+  const mprToolGroup = ToolGroupManager.createToolGroup(mprToolGroupId);
+  const obliqueToolGroup = ToolGroupManager.createToolGroup(obliqueToolGroupId);
+
+  // Set the tool group on the viewport. Add only the first three viewports
+  // because crosshairs can work with up to three viewports
+  viewportIds.slice(0, 3).forEach((viewportId, i) => {
+    mprToolGroup.addViewport(viewportId, renderingEngineId);
+  });
+
+  obliqueToolGroup.addViewport(viewportIds[3], renderingEngineId);
+
+  return { mprToolGroup, obliqueToolGroup };
 }
 
 /**
@@ -322,11 +369,15 @@ async function loadTimePoints(numTimePoints) {
   // Create and load PT volume
   const volume = await createVolume(numTimePoints);
 
-  // Initialize cornerstone tools
-  const toolGroup = initTools();
-
   // Initialize cornerstone viewports
-  initViewports(volume, toolGroup, elements);
+  initViewports(volume, elements);
+
+  const { mprToolGroup, obliqueToolGroup } = createToolGroups();
+
+  // Initialize cornerstone tools
+  initCornerstoneTools();
+  initTools(mprToolGroup, { initCrosshairsTool: true });
+  initTools(obliqueToolGroup);
 
   volume.load();
 }

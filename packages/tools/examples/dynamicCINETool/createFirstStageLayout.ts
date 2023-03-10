@@ -16,7 +16,7 @@ function createFirstStageLayout({
   const toolBarEl = createChildEl(container, 'div');
   const dropdownLabel = createChildEl(toolBarEl, 'span');
   const dropDownOptions = [];
-  let numTimePoints = 5;
+  let numTimePoints = 1;
 
   container.id = 'firstStageContainer';
   container.style.transition = 'opacity 0.3s';
