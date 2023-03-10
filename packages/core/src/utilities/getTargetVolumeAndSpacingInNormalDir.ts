@@ -25,12 +25,13 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 ): {
   imageVolume: IImageVolume;
   spacingInNormalDirection: number;
+  uid: string;
 } {
   const { viewPlaneNormal } = camera;
   const volumeActors = viewport.getActors();
 
   if (!volumeActors || !volumeActors.length) {
-    return { spacingInNormalDirection: null, imageVolume: null };
+    return { spacingInNormalDirection: null, imageVolume: null, uid: null };
   }
 
   const imageVolumes = volumeActors
@@ -44,26 +45,29 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 
   // If a volumeId is defined, set that volume as the target
   if (targetVolumeId) {
-    const imageVolume = imageVolumes.find(
+    const imageVolumeIndex = imageVolumes.findIndex(
       (iv) => iv.volumeId === targetVolumeId
     );
 
+    const imageVolume = imageVolumes[imageVolumeIndex];
+    const { uid } = volumeActors[imageVolumeIndex];
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
     );
 
-    return { imageVolume, spacingInNormalDirection };
+    return { imageVolume, spacingInNormalDirection, uid };
   }
 
   if (!imageVolumes.length) {
-    return { spacingInNormalDirection: null, imageVolume: null };
+    return { spacingInNormalDirection: null, imageVolume: null, uid: null };
   }
 
   // Fetch volume actor with finest resolution in direction of projection.
   const smallest = {
     spacingInNormalDirection: Infinity,
     imageVolume: null,
+    uid: null,
   };
 
   for (let i = 0; i < imageVolumes.length; i++) {
@@ -74,9 +78,12 @@ export default function getTargetVolumeAndSpacingInNormalDir(
       viewPlaneNormal
     );
 
-    if (spacingInNormalDirection < smallest.spacingInNormalDirection) {
+    // Allow for 1/1000 part larger requirement to prefer earlier volumes
+    // when the spacing is all essentially the same.
+    if (spacingInNormalDirection * 1.001 < smallest.spacingInNormalDirection) {
       smallest.spacingInNormalDirection = spacingInNormalDirection;
       smallest.imageVolume = imageVolume;
+      smallest.uid = volumeActors[i].uid;
     }
   }
 
