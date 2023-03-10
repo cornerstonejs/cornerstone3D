@@ -2943,6 +2943,7 @@ function jumpToSlice(element: HTMLDivElement, options?: JumpToSliceOptions): Pro
 type JumpToSliceOptions = {
     imageIndex: number;
     debounceLoading?: boolean;
+    volumeId?: string;
 };
 
 // @public (undocumented)
