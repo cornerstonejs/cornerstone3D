@@ -616,10 +616,19 @@ declare namespace cine {
     }
 }
 
+// @public (undocumented)
+type CinePlayContext = {
+    get numScrollSteps(): number;
+    get currentStepIndex(): number;
+    get frameTimeVectorEnabled(): boolean;
+    scroll(delta: number): void;
+};
+
 declare namespace CINETypes {
     export {
         PlayClipOptions,
-        ToolData
+        ToolData,
+        CinePlayContext
     }
 }
 
@@ -3497,6 +3506,7 @@ type PlayClipOptions = {
     frameTimeVector?: number[];
     reverse?: boolean;
     loop?: boolean;
+    dynamicCineEnabled?: boolean;
     frameTimeVectorSpeedMultiplier?: number;
 };
 
@@ -4771,6 +4781,8 @@ function throttle(func: Function, wait?: number, options?: {
 
 // @public (undocumented)
 interface ToolData {
+    // (undocumented)
+    dynamicCineEnabled?: boolean;
     // (undocumented)
     framesPerSecond: number;
     // (undocumented)

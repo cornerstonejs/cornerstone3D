@@ -1,13 +1,18 @@
 export default function addDropDownToToolbar({
+  id,
   options,
+  container,
   onSelectedValueChange,
 }: {
+  id?: string;
   options: { values: number[] | string[]; defaultValue: number | string };
+  container?: HTMLElement;
   onSelectedValueChange: (value: number | string) => void;
 }) {
   const { values, defaultValue } = options;
-  const toolbar = document.getElementById('demo-toolbar');
   const select = document.createElement('select');
+
+  select.id = id;
 
   values.forEach((value) => {
     const optionElement = document.createElement('option');
@@ -30,5 +35,6 @@ export default function addDropDownToToolbar({
     }
   };
 
-  toolbar.append(select);
+  container = container ?? document.getElementById('demo-toolbar');
+  container.append(select);
 }

@@ -25,6 +25,8 @@ import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvas from './renderToCanvas';
 import worldToImageCoords from './worldToImageCoords';
 import imageToWorldCoords from './imageToWorldCoords';
+import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
+import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
@@ -71,6 +73,8 @@ export {
   renderToCanvas,
   worldToImageCoords,
   imageToWorldCoords,
+  getVolumeSliceRangeInfo,
+  getVolumeViewportScrollInfo,
   getSliceRange,
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,

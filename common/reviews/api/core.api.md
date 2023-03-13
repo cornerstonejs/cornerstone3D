@@ -728,7 +728,20 @@ function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 
 // @public (undocumented)
+function getVolumeSliceRangeInfo(viewport: IVolumeViewport, volumeId: string): {
+    sliceRange: ActorSliceRange;
+    spacingInNormalDirection: number;
+    camera: ICamera;
+};
+
+// @public (undocumented)
 function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport, renderingEngineId?: string): Array<IVolumeViewport>;
+
+// @public (undocumented)
+function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string): {
+    numScrollSteps: number;
+    currentStepIndex: number;
+};
 
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
@@ -2259,6 +2272,8 @@ declare namespace utilities {
         renderToCanvas,
         worldToImageCoords,
         imageToWorldCoords,
+        getVolumeSliceRangeInfo,
+        getVolumeViewportScrollInfo,
         getSliceRange,
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
