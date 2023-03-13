@@ -36,8 +36,13 @@ export function scrollVolume(
   volumeId: string,
   delta: number
 ) {
-  const { sliceRange, spacingInNormalDirection, camera } =
-    csUtils.getVolumeSliceRangeInfo(viewport, volumeId);
+  const sliceRangeInfo = csUtils.getVolumeSliceRangeInfo(viewport, volumeId);
+
+  if (!sliceRangeInfo) {
+    return;
+  }
+
+  const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
   const { focalPoint, viewPlaneNormal, position } = camera;
 
   const { newFocalPoint, newPosition } = csUtils.snapFocalPointToSlice(

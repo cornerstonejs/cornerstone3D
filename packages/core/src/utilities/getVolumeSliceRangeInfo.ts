@@ -23,19 +23,20 @@ function getVolumeSliceRangeInfo(
 } {
   const camera = viewport.getCamera();
   const { focalPoint, viewPlaneNormal } = camera;
-  const { spacingInNormalDirection, imageVolume } =
+  const { spacingInNormalDirection, actorUID } =
     getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
 
-  if (!imageVolume) {
+  if (!actorUID) {
     throw new Error(
       `Could not find image volume with id ${volumeId} in the viewport`
     );
   }
 
-  const actorEntry = viewport.getActor(imageVolume.volumeId);
+  const actorEntry = viewport.getActor(actorUID);
 
   if (!actorEntry) {
-    console.warn('No actor found for with actorUID of', imageVolume.volumeId);
+    console.warn('No actor found for with actorUID of', actorUID);
+    return null;
   }
 
   const volumeActor = actorEntry.actor as VolumeActor;
