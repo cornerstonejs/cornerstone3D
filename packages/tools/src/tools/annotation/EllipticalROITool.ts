@@ -212,6 +212,7 @@ class EllipticalROITool extends AnnotationTool {
           activeHandleIndex: null,
         },
         cachedStats: {},
+        initialRotation: viewport.getRotation(),
       },
     };
 
@@ -759,10 +760,23 @@ class EllipticalROITool extends AnnotationTool {
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
+      let canvasCoordinates = points.map((p) => viewport.worldToCanvas(p)) as [
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2
+      ];
+      const rotation = Math.abs(viewport.getRotation() - data.initialRotation);
+      if (rotation == 90 || rotation == 270) {
+        const center = [
+          (canvasCoordinates[0][0] + canvasCoordinates[1][0]) / 2,
+          (canvasCoordinates[0][1] + canvasCoordinates[1][1]) / 2,
+        ];
 
-      const canvasCoordinates = points.map((p) =>
-        viewport.worldToCanvas(p)
-      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+        canvasCoordinates = canvasCoordinates.map((p) =>
+          this._rotatePoint(p, center, -rotation)
+        );
+      }
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates)
       );
@@ -879,7 +893,8 @@ class EllipticalROITool extends AnnotationTool {
           lineDash,
           lineWidth,
         },
-        dataId
+        dataId,
+        rotation
       );
 
       // draw center point, if "centerPointRadius" configuration is valid.
@@ -951,6 +966,15 @@ class EllipticalROITool extends AnnotationTool {
     }
 
     return renderStatus;
+  };
+
+  _rotatePoint = (point, center, angle) => {
+    const angleRadians = angle * (Math.PI / 180);
+    const cos = Math.cos(angleRadians);
+    const sin = Math.sin(angleRadians);
+    const x = point[0] - center[0];
+    const y = point[1] - center[1];
+    return [x * cos - y * sin + center[0], x * sin + y * cos + center[1]];
   };
 
   _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {

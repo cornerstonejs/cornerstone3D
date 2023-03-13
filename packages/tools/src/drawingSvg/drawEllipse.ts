@@ -12,7 +12,8 @@ function drawEllipse(
   corner1: Types.Point2,
   corner2: Types.Point2,
   options = {},
-  dataId = ''
+  dataId = '',
+  rotation = 0
 ): void {
   const { color, width, lineWidth, lineDash } = Object.assign(
     {
@@ -30,15 +31,21 @@ function drawEllipse(
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'ellipse', ellipseUID);
   const existingEllipse = svgDrawingHelper.getSvgNode(svgNodeHash);
-
+  let radiusX, radiusY;
   const w = Math.abs(corner1[0] - corner2[0]);
   const h = Math.abs(corner1[1] - corner2[1]);
   const xMin = Math.min(corner1[0], corner2[0]);
   const yMin = Math.min(corner1[1], corner2[1]);
 
   const center = [xMin + w / 2, yMin + h / 2];
-  const radiusX = w / 2;
-  const radiusY = h / 2;
+
+  if (rotation == 90 || rotation == 270) {
+    radiusX = h / 2;
+    radiusY = w / 2;
+  } else {
+    radiusX = w / 2;
+    radiusY = h / 2;
+  }
 
   const attributes = {
     cx: `${center[0]}`,
