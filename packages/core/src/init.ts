@@ -2,7 +2,7 @@ import { getGPUTier } from 'detect-gpu';
 import { SharedArrayBufferModes } from './enums';
 let csRenderInitialized = false;
 let useSharedArrayBuffer = true;
-let sharedArrayBufferMode = SharedArrayBufferModes.AUTO;
+let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
 // TODO: move sharedArrayBuffer into config.
@@ -10,9 +10,9 @@ import { Cornerstone3DConfig } from './types';
 const defaultConfig = {
   detectGPU: {},
   rendering: {
-    preferSizeOverAccuracy: true,
+    preferSizeOverAccuracy: false,
     useCPURendering: false,
-    useNorm16Texture: _hasNorm16TextureSupport(),
+    useNorm16Texture: false, // _hasNorm16TextureSupport(),
   },
   // cache
   // ...
@@ -21,9 +21,9 @@ const defaultConfig = {
 let config = {
   detectGPU: {},
   rendering: {
-    preferSizeOverAccuracy: true,
+    preferSizeOverAccuracy: false,
     useCPURendering: false,
-    useNorm16Texture: _hasNorm16TextureSupport(),
+    useNorm16Texture: false, // _hasNorm16TextureSupport(),
   },
   // cache
   // ...
