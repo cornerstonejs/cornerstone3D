@@ -775,7 +775,12 @@ class EllipticalROITool extends AnnotationTool {
 
         canvasCoordinates = canvasCoordinates.map((p) =>
           this._rotatePoint(p, center, -rotation)
-        );
+        ) as [
+          Types.Point2,
+          Types.Point2,
+          Types.Point2,
+          Types.Point2
+        ];
       }
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates)
@@ -974,7 +979,7 @@ class EllipticalROITool extends AnnotationTool {
     const sin = Math.sin(angleRadians);
     const x = point[0] - center[0];
     const y = point[1] - center[1];
-    return [x * cos - y * sin + center[0], x * sin + y * cos + center[1]];
+    return [x * cos - y * sin + center[0], x * sin + y * cos + center[1]] as Types.Point2;
   };
 
   _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
