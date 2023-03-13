@@ -1375,7 +1375,7 @@ function drawArrow(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ar
 function drawCircle(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, circleUID: string, center: Types_2.Point2, radius: number, options?: {}): void;
 
 // @public (undocumented)
-function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}, dataId?: string): void;
+function drawEllipse(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, ellipseUID: string, corner1: Types_2.Point2, corner2: Types_2.Point2, options?: {}, dataId?: string, rotation: any): void;
 
 // @public (undocumented)
 function drawHandles(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
@@ -1479,6 +1479,7 @@ interface EllipticalROIAnnotation extends Annotation {
         };
         label: string;
         cachedStats?: ROICachedStats;
+        intialRotation?: any;
     };
 }
 
@@ -1540,6 +1541,8 @@ export class EllipticalROITool extends AnnotationTool {
     _pointInEllipseCanvas(ellipse: any, location: Types_2.Point2): boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _rotatePoint: (point: any, center: any, angle: any) => any;
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
