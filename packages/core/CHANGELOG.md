@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.34.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.2...@cornerstonejs/core@0.34.0) (2023-03-13)
+
+
+### Features
+
+* **cine:** added support for 4D volumes ([#471](https://github.com/cornerstonejs/cornerstone3D-beta/issues/471)) ([4e62137](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4e62137004a340420d7c5c56c6ad5bebb7a8021c)), closes [#470](https://github.com/cornerstonejs/cornerstone3D-beta/issues/470)
+
+
+
+
+
 ## [0.33.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.1...@cornerstonejs/core@0.33.2) (2023-03-10)
 
 
