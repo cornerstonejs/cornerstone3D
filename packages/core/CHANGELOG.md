@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.35.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.34.0...@cornerstonejs/core@0.35.0) (2023-03-13)
+
+
+### Features
+
+* **rendering:** 16 bit texture support with flag ([#420](https://github.com/cornerstonejs/cornerstone3D-beta/issues/420)) ([f14073e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f14073e13836e33f85a1cf7aec566ab782174def))
+
+
+
+
+
 # [0.34.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.2...@cornerstonejs/core@0.34.0) (2023-03-13)
 
 
