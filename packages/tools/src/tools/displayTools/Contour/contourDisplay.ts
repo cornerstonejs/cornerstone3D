@@ -4,6 +4,7 @@ import {
   Types,
   utilities,
   Enums,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -16,7 +17,6 @@ import {
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 
-import { deepMerge } from '../../../utilities';
 import removeContourFromElement from './removeContourFromElement';
 import {
   addContourToElement,
@@ -62,7 +62,7 @@ async function addSegmentationRepresentation(
     // the first one
     const currentToolGroupConfig =
       SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-    const mergedConfig = deepMerge(
+    const mergedConfig = csUtils.deepMerge(
       currentToolGroupConfig,
       toolGroupSpecificConfig
     );

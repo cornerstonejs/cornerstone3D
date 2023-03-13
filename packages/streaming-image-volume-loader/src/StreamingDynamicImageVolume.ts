@@ -5,7 +5,7 @@ type TimePoint = {
   /** imageIds of each timepoint  */
   imageIds: Array<string>;
   /** volume scalar data  */
-  scalarData: Float32Array | Uint8Array;
+  scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
 };
 
 /**

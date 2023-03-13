@@ -3,7 +3,7 @@ import type Point3 from './Point3';
 import type Metadata from './Metadata';
 import Mat3 from './Mat3';
 
-type VolumeScalarData = Float32Array | Uint8Array;
+type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 /**
  * Cornerstone ImageVolume interface.

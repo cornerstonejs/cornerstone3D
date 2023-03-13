@@ -35,6 +35,8 @@ import {
   setUseSharedArrayBuffer,
   resetUseCPURendering,
   resetUseSharedArrayBuffer,
+  getConfiguration,
+  setConfiguration,
 } from './init';
 
 // Classes
@@ -58,8 +60,12 @@ import {
 export type { Types };
 
 export {
+  // init
   init,
   isCornerstoneInitialized,
+  // configs
+  getConfiguration,
+  setConfiguration,
   // enums
   Enums,
   CONSTANTS,

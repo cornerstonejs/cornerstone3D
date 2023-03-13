@@ -1,5 +1,9 @@
 import { BaseTool } from '../base';
-import { getEnabledElementByIds, Types } from '@cornerstonejs/core';
+import {
+  getEnabledElementByIds,
+  Types,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
 import { labelmapDisplay } from './Labelmap';
@@ -10,7 +14,6 @@ import { getToolGroup } from '../../store/ToolGroupManager';
 
 import { PublicToolProps, ToolProps } from '../../types';
 
-import { deepMerge } from '../../utilities';
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
@@ -182,7 +185,7 @@ class SegmentationDisplayTool extends BaseTool {
     const globalConfig = segmentationConfig.getGlobalConfig();
 
     // merge two configurations and override the global config
-    const mergedConfig = deepMerge(globalConfig, toolGroupConfig);
+    const mergedConfig = csUtils.deepMerge(globalConfig, toolGroupConfig);
 
     return mergedConfig;
   }

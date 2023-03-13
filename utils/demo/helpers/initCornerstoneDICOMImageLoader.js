@@ -6,6 +6,8 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
+const { preferSizeOverAccuracy, useNorm16Texture } =
+  cornerstone.getConfiguration().rendering;
 
 export default function initCornerstoneDICOMImageLoader() {
   cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
@@ -14,6 +16,7 @@ export default function initCornerstoneDICOMImageLoader() {
     useWebWorkers: true,
     decodeConfig: {
       convertFloatPixelDataToInt: false,
+      use16BitDataType: preferSizeOverAccuracy || useNorm16Texture,
     },
   });
 

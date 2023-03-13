@@ -183,7 +183,7 @@ class PaintFillTool extends BaseTool {
   };
 
   private generateHelpers = (
-    scalarData: Float32Array | Uint8Array,
+    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array,
     dimensions: Types.Point3,
     seedIndex3D: Types.Point3,
     fixedDimension = 2
