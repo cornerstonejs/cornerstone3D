@@ -1,15 +1,14 @@
 import {
   cache,
+  Enums,
   getEnabledElementByIds,
   Types,
-  utilities,
-  Enums,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import Representations from '../../../enums/SegmentationRepresentations';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
   RepresentationPublicInput,
@@ -17,11 +16,11 @@ import {
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 
-import removeContourFromElement from './removeContourFromElement';
 import {
-  addContourToElement,
   addContourSetToElement,
+  addContourToElement,
 } from './addContourToElement';
+import { default as removeContourFromElement } from './removeContourFromElement';
 
 /**
  * It adds a new segmentation representation to the segmentation state
@@ -48,7 +47,6 @@ async function addSegmentationRepresentation(
     segmentationRepresentationUID,
     type: Representations.Contour,
     segmentsHidden,
-    visibility,
     colorLUTIndex,
     active,
     segmentationRepresentationSpecificConfig: {},
@@ -133,7 +131,6 @@ async function render(
     active,
     segmentationId,
     segmentationRepresentationUID,
-    visibility,
     segmentsHidden,
   } = representation;
 
