@@ -36,7 +36,7 @@ async function addSegmentationRepresentation(
   toolGroupSpecificConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
   const { segmentationId } = representationInput;
-  const segmentationRepresentationUID = utilities.uuidv4();
+  const segmentationRepresentationUID = csUtils.uuidv4();
   // Todo: make these configurable during representation input by user
   const segmentsHidden = new Set() as Set<number>;
   const visibility = true;
