@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.52.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.52.1...@cornerstonejs/tools@0.52.2) (2023-03-15)
+
+
+### Bug Fixes
+
+* **segmentation:** segmentation could not render segment while invisible ([#477](https://github.com/cornerstonejs/cornerstone3D-beta/issues/477)) ([199b139](https://github.com/cornerstonejs/cornerstone3D-beta/commit/199b1390f367c42b49c1a7ba01ab0f176d0789f4))
+
+
+
+
+
 ## [0.52.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.52.0...@cornerstonejs/tools@0.52.1) (2023-03-15)
 
 **Note:** Version bump only for package @cornerstonejs/tools
