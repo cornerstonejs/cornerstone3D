@@ -15,11 +15,8 @@ function getSegmentationIndices(segmentationId) {
 
 /**
  * Set the visibility of a segmentation representation for a given tool group. It fires
- * a SEGMENTATION_REPRESENTATION_MODIFIED event. If the visibility is set to true, and
- * the segmentation representation had some segments hidden, it will show all the segments.
- * And if the visibility is set to false, and it had some segments shown, it will hide all
- * the segments.
- *
+ * a SEGMENTATION_REPRESENTATION_MODIFIED event. Visibility true will show all segments
+ * and visibility false will hide all segments"
  *
  * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  * @param toolGroupId - The Id of the tool group that contains the segmentation.
