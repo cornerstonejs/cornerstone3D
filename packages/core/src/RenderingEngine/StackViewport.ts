@@ -158,6 +158,7 @@ class StackViewport extends Viewport implements IStackViewport {
   private _cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
   // CPU fallback
   private useCPURendering: boolean;
+  private use16BitTexture = false;
   private cpuImagePixelData: number[];
   private cpuRenderingInvalidated: boolean;
   private csImage: IImage;
@@ -1423,16 +1424,13 @@ class StackViewport extends Viewport implements IStackViewport {
     TypedArray,
   }): void {
     let pixelArray;
-    const { useNorm16Texture, preferSizeOverAccuracy } =
-      getConfiguration().rendering;
-    const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
-
+    this.use16BitTexture = this._shouldUse16BitTexture();
     switch (bitsAllocated) {
       case 8:
         pixelArray = new Uint8Array(numVoxels * numComps);
         break;
       case 16:
-        if (use16BitDataType) {
+        if (this.use16BitTexture) {
           pixelArray = new TypedArray(numVoxels * numComps);
         } else {
           pixelArray = new Float32Array(numVoxels * numComps);
@@ -1543,7 +1541,8 @@ class StackViewport extends Viewport implements IStackViewport {
       yVoxels === image.rows &&
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
       isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines) &&
-      dataType === image.getPixelData().constructor.name
+      (!this.use16BitTexture ||
+        dataType === image.getPixelData().constructor.name)
     );
   }
 
@@ -1984,6 +1983,12 @@ class StackViewport extends Viewport implements IStackViewport {
     if (this._publishCalibratedEvent) {
       this.triggerCalibrationEvent();
     }
+  }
+
+  private _shouldUse16BitTexture() {
+    const { useNorm16Texture, preferSizeOverAccuracy } =
+      getConfiguration().rendering;
+    return useNorm16Texture || preferSizeOverAccuracy;
   }
 
   private _getInitialVOIRange(image: IImage) {
