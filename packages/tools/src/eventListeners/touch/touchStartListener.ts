@@ -37,7 +37,6 @@ interface ITouchTapListnenerState {
   tapTimeout: ReturnType<typeof setTimeout>;
   taps: number;
   tapToleranceMs: number;
-  startTime: Date;
 }
 
 interface ITouchStartListenerState {
@@ -121,7 +120,6 @@ const defaultTapState: ITouchTapListnenerState = {
       touch: null,
     },
   ],
-  startTime: null,
   taps: 0,
   tapTimeout: null,
   tapMaxDistance: 24,
@@ -394,12 +392,7 @@ function _checkTouchTap(evt: TouchEvent): void {
     tapState.renderingEngineId = state.renderingEngineId;
     tapState.viewportId = state.viewportId;
     tapState.startPointsList = state.startPointsList;
-    tapState.startTime = new Date();
   }
-
-  // check that taps are within interval
-  if (currentTime - tapState.startTime.getTime() > tapState.tapToleranceMs)
-    return;
 
   // subsequent tap is on a different element
   if (
@@ -432,7 +425,6 @@ function _checkTouchTap(evt: TouchEvent): void {
   if (distanceFromStart > tapState.tapMaxDistance) return;
 
   clearTimeout(tapState.tapTimeout);
-  tapState.startTime = new Date();
   tapState.taps += 1;
 
   tapState.tapTimeout = setTimeout(() => {
