@@ -22,17 +22,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
     }
 
     if (orientation && orientation !== OrientationAxis.ACQUISITION) {
-      const { viewPlaneNormal, viewUp } =
-        this._getOrientationVectors(orientation);
-      const camera = this.getVtkActiveCamera();
-      camera.setDirectionOfProjection(
-        -viewPlaneNormal[0],
-        -viewPlaneNormal[1],
-        -viewPlaneNormal[2]
-      );
-      camera.setViewUpFrom(viewUp);
-
-      this.resetCamera();
+      this.applyViewOrientation(orientation);
     }
   }
 

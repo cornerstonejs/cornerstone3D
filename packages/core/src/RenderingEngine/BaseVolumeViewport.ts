@@ -95,6 +95,22 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return false;
   }
 
+  protected applyViewOrientation(
+    orientation: OrientationAxis | OrientationVectors
+  ) {
+    const { viewPlaneNormal, viewUp } =
+      this._getOrientationVectors(orientation);
+    const camera = this.getVtkActiveCamera();
+    camera.setDirectionOfProjection(
+      -viewPlaneNormal[0],
+      -viewPlaneNormal[1],
+      -viewPlaneNormal[2]
+    );
+    camera.setViewUpFrom(viewUp);
+
+    this.resetCamera();
+  }
+
   private initializeVolumeNewImageEventDispatcher(): void {
     const volumeNewImageHandlerBound = volumeNewImageHandler.bind(this);
     const volumeNewImageCleanUpBound = volumeNewImageCleanUp.bind(this);

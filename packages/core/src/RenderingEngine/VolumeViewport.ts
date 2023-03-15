@@ -35,17 +35,7 @@ class VolumeViewport extends BaseVolumeViewport {
     // if the camera is set to be acquisition axis then we need to skip
     // it for now until the volume is set
     if (orientation && orientation !== OrientationAxis.ACQUISITION) {
-      const { viewPlaneNormal, viewUp } =
-        this._getOrientationVectors(orientation);
-      const camera = this.getVtkActiveCamera();
-      camera.setDirectionOfProjection(
-        -viewPlaneNormal[0],
-        -viewPlaneNormal[1],
-        -viewPlaneNormal[2]
-      );
-      camera.setViewUpFrom(viewUp);
-
-      this.resetCamera();
+      this.applyViewOrientation(orientation);
       return;
     }
 
