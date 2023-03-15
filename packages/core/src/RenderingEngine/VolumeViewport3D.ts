@@ -1,6 +1,6 @@
+import { OrientationAxis } from '../enums';
 import type { ViewportInput } from '../types/IViewport';
 import BaseVolumeViewport from './BaseVolumeViewport';
-import { RENDERING_DEFAULTS } from '../constants';
 
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
@@ -13,12 +13,26 @@ class VolumeViewport3D extends BaseVolumeViewport {
   constructor(props: ViewportInput) {
     super(props);
 
-    const { parallelProjection } = this.options;
+    const { parallelProjection, orientation } = this.options;
 
     const activeCamera = this.getVtkActiveCamera();
 
     if (parallelProjection != null) {
       activeCamera.setParallelProjection(parallelProjection);
+    }
+
+    if (orientation && orientation !== OrientationAxis.ACQUISITION) {
+      const { viewPlaneNormal, viewUp } =
+        this._getOrientationVectors(orientation);
+      const camera = this.getVtkActiveCamera();
+      camera.setDirectionOfProjection(
+        -viewPlaneNormal[0],
+        -viewPlaneNormal[1],
+        -viewPlaneNormal[2]
+      );
+      camera.setViewUpFrom(viewUp);
+
+      this.resetCamera();
     }
   }
 

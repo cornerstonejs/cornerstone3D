@@ -70,6 +70,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
     // (undocumented)
+    protected _getOrientationVectors(orientation: OrientationAxis | OrientationVectors): OrientationVectors;
+    // (undocumented)
     getProperties: () => VolumeViewportProperties;
     // (undocumented)
     getSlabThickness(): number;
