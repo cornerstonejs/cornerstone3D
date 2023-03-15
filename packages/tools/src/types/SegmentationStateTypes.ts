@@ -101,9 +101,7 @@ export type ToolGroupSpecificRepresentationState = {
    */
   active: boolean;
   /**
-   * Hidden segment indices in the segmentation, if it contains only -1
-   * then all segments are invisible, otherwise only the segments in this
-   * set are invisible
+   * Hidden segment indices in the segmentation
    */
   segmentsHidden: Set<number>;
   /**

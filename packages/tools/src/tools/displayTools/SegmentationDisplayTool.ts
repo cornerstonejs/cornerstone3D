@@ -63,7 +63,7 @@ class SegmentationDisplayTool extends BaseTool {
       return;
     }
 
-    // for each segmentationData, make the visibility false
+    // for each segmentationData, make the visibility true
     toolGroupSegmentationRepresentations.forEach(
       (segmentationRepresentation) => {
         setSegmentationVisibility(
