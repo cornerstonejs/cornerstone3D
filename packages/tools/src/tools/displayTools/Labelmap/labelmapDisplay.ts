@@ -1,5 +1,5 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 
 import {
   cache,
@@ -8,9 +8,9 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import Representations from '../../../enums/SegmentationRepresentations';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import type { LabelmapConfig } from '../../../types/LabelmapTypes';
 import {
@@ -45,7 +45,6 @@ async function addSegmentationRepresentation(
 
   // Todo: make these configurable during representation input by user
   const segmentsHidden = new Set() as Set<number>;
-  const visibility = true;
   const colorLUTIndex = 0;
   const active = true;
   const cfun = vtkColorTransferFunction.newInstance();
@@ -58,7 +57,6 @@ async function addSegmentationRepresentation(
     segmentationRepresentationUID,
     type: Representations.Labelmap,
     segmentsHidden,
-    visibility,
     colorLUTIndex,
     active,
     segmentationRepresentationSpecificConfig: {},
@@ -150,7 +148,6 @@ async function render(
     active,
     segmentationId,
     segmentationRepresentationUID,
-    visibility,
     segmentsHidden,
     config: renderingConfig,
   } = representation;
@@ -197,8 +194,7 @@ async function render(
     representation,
     active,
     renderInactiveSegmentations,
-    segmentsHidden,
-    visibility
+    segmentsHidden
   );
 }
 
@@ -212,8 +208,7 @@ function _setLabelmapColorAndOpacity(
   segmentationRepresentation: ToolGroupSpecificRepresentation,
   isActiveLabelmap: boolean,
   renderInactiveSegmentations: boolean,
-  segmentsHidden: Set<number>,
-  visibility = true
+  segmentsHidden: Set<number>
 ): void {
   const { segmentSpecificConfig, segmentationRepresentationSpecificConfig } =
     segmentationRepresentation;
@@ -301,8 +296,7 @@ function _setLabelmapColorAndOpacity(
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
   // we are rendering inactive labelmap
-  const visible =
-    visibility && (isActiveLabelmap || renderInactiveSegmentations);
+  const visible = isActiveLabelmap || renderInactiveSegmentations;
   volumeActor.setVisibility(visible);
 }
 

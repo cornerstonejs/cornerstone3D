@@ -4473,6 +4473,12 @@ function setSegmentSpecificConfig(toolGroupId: string, segmentationRepresentatio
 function setSegmentSpecificRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, config: SegmentSpecificRepresentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
+function setSegmentsVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndices: number[], visibility: boolean): void;
+
+// @public (undocumented)
+function setSegmentVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, visibility: boolean): void;
+
+// @public (undocumented)
 type SetToolBindingsType = {
     bindings: IToolBinding[];
 };
@@ -4482,9 +4488,6 @@ function setToolGroupSpecificConfig(toolGroupId: string, config: SegmentationRep
 
 // @public (undocumented)
 function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresentationConfig: SegmentationRepresentationConfig): void;
-
-// @public (undocumented)
-function setVisibilityForSegmentIndex(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number, visibility: boolean): void;
 
 // @public (undocumented)
 function showAllAnnotations(): void;
@@ -4861,7 +4864,6 @@ type ToolGroupSpecificRepresentationState = {
     type: Enums.SegmentationRepresentations;
     active: boolean;
     segmentsHidden: Set<number>;
-    visibility: boolean;
     colorLUTIndex: number;
 };
 
@@ -5213,7 +5215,8 @@ declare namespace visibility_2 {
     export {
         setSegmentationVisibility,
         getSegmentationVisibility,
-        setVisibilityForSegmentIndex
+        setSegmentVisibility,
+        setSegmentsVisibility
     }
 }
 

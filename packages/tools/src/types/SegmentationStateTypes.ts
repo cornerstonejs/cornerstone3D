@@ -2,8 +2,8 @@ import * as Enums from '../enums';
 import { ContourConfig, ContourSegmentationData } from './ContourTypes';
 import type {
   LabelmapConfig,
-  LabelmapSegmentationData,
   LabelmapRenderingConfig,
+  LabelmapSegmentationData,
 } from './LabelmapTypes';
 
 /**
@@ -104,10 +104,6 @@ export type ToolGroupSpecificRepresentationState = {
    * Hidden segment indices in the segmentation
    */
   segmentsHidden: Set<number>;
-  /**
-   * Whether the segmentation is visible
-   */
-  visibility: boolean;
   /**
    * The index of the colorLUT from the state that this segmentationData is
    * using to render
