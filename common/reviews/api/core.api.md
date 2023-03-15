@@ -2640,6 +2640,15 @@ export class VolumeViewport extends BaseVolumeViewport {
 }
 
 // @public (undocumented)
+export class VolumeViewport3D extends BaseVolumeViewport {
+    constructor(props: ViewportInput);
+    // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
+}
+
+// @public (undocumented)
 type VolumeViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
