@@ -39,7 +39,7 @@
     "@svgr/webpack": "^6.2.1",
     "clsx": "^1.1.1",
     "cornerstone-wado-image-loader": "^4.10.2",
-    "dcmjs": "^0.24.4",
+    "dcmjs": "^0.24.5",
     "detect-gpu": "^4.0.45",
     "dicom-parser": "^1.8.11",
     "dicomweb-client": "^0.8.4",

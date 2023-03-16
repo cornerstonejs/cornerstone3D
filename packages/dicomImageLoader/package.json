@@ -70,7 +70,7 @@
     "@types/karma": "^6.3.3",
     "chai": "^4.3.4",
     "concat": "^1.0.3",
-    "core-js": "^3.26.1",
+    "core-js": ">=3.30.0",
     "coveralls": "^3.1.1",
     "docdash": "^1.2.0",
     "exports-loader": "^3.0.0",

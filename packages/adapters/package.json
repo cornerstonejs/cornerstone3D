@@ -39,11 +39,13 @@
         "url": "https://github.com/cornerstonejs/cornerstone3D-beta/issues"
     },
     "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages/adapters/README.md",
-    "dependencies": {
-        "@babel/runtime-corejs2": "^7.17.8",
+    "peerDependencies": {
         "dcmjs": "^0.29.5",
         "gl-matrix": "^3.4.3",
         "lodash.clonedeep": "^4.5.0",
         "ndarray": "^1.0.19"
+    },
+    "dependencies": {
+        "@babel/runtime-corejs2": "^7.17.8"
     }
 }
