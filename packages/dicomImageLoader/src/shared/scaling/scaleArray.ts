@@ -1,5 +1,10 @@
 export default function scaleArray(
-  array: number[],
+  array:
+    | Uint8Array
+    | Float32Array
+    | Int16Array
+    | Uint16Array
+    | Uint8ClampedArray,
   scalingParameters
 ): boolean {
   const arrayLength = array.length;

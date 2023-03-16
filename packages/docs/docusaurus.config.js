@@ -145,7 +145,7 @@ module.exports = {
             },
             {
               label: 'Slack',
-              href: 'https://join.slack.com/t/cornerstonejs/shared_invite/zt-1orclt43p-BqXxKHiuiHCtchuY9yY70Q',
+              href: 'https://join.slack.com/t/cornerstonejs/shared_invite/zt-1r8xb2zau-dOxlD6jit3TN0Uwf928w9Q',
             },
           ],
         },
