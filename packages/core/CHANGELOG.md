@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.35.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.35.1...@cornerstonejs/core@0.35.2) (2023-03-16)
+
+
+### Bug Fixes
+
+* **stackViewport:** check same image was broken after 16 bit texture ([#483](https://github.com/cornerstonejs/cornerstone3D-beta/issues/483)) ([dddfb05](https://github.com/cornerstonejs/cornerstone3D-beta/commit/dddfb05cccc7ba6f8195b26f4f13c755397731ee))
+
+
+
+
+
 ## [0.35.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.35.0...@cornerstonejs/core@0.35.1) (2023-03-15)
 
 **Note:** Version bump only for package @cornerstonejs/core
