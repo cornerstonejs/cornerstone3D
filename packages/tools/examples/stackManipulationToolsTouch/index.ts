@@ -55,6 +55,23 @@ instructions.innerText = `
 content.append(instructions);
 // ============================= //
 
+element.addEventListener(csToolsEnums.Events.TOUCH_SWIPE, (evt: Event) => {
+  const swiped = document.createElement('p');
+  swiped.innerText = `Swiped: ${(<CustomEvent>evt).detail.swipe}`;
+  content.append(swiped);
+  setTimeout(() => {
+    swiped.remove();
+  }, 1000);
+});
+
+element.addEventListener(csToolsEnums.Events.TOUCH_TAP, (evt) => {
+  const tapped = document.createElement('p');
+  tapped.innerText = `Tapped: ${(<CustomEvent>evt).detail.taps}`;
+  content.append(tapped);
+  setTimeout(() => {
+    tapped.remove();
+  }, 1000);
+});
 /**
  * Runs the demo
  */
