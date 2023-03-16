@@ -4276,7 +4276,8 @@ declare namespace segmentation_2 {
         getBrushSizeForToolGroup,
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
-        setBrushThresholdForToolGroup
+        setBrushThresholdForToolGroup,
+        thresholdSegmentationByRange
     }
 }
 
@@ -4801,6 +4802,9 @@ type TextBoxHandle = {
     };
     worldPosition: Types_2.Point3;
 };
+
+// @public (undocumented)
+function thresholdSegmentationByRange(segmentationVolume: Types_2.IImageVolume, segmentationIndex: number, thresholdVolumeInformation: ThresholdInformation_3[], overlapType: number): Types_2.IImageVolume;
 
 // @public (undocumented)
 function thresholdVolumeByRange(segmentationVolume: Types_2.IImageVolume, thresholdVolumeInformation: ThresholdInformation[], options: ThresholdRangeOptions): Types_2.IImageVolume;
