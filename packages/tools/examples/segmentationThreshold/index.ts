@@ -17,9 +17,8 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { viewport } from 'tools/src/utilities';
-
 // eslint-disable-next-line import/extensions
+import perfusionColorMap from './preset';
 
 // This is for debugging purposes
 console.warn(
@@ -53,6 +52,8 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 
 const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
+const ptVolumeName = 'PT_VOLUME_ID';
+const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 const volumeId = ctVolumeId;
 
 const segmentationId = 'MY_SEGMENTATION_ID';
@@ -62,8 +63,8 @@ let segmentationRepresentationByUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Rectangle ROI Threshold Tool',
-  'Here we demonstrate usage of the ROI Threshold tool'
+  'Segmentation Threshold Tool',
+  'Here we demonstrate usage of thresholding segmentations from brushes'
 );
 
 const size = '500px';
@@ -98,7 +99,7 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 instructions.innerText = `
   - Draw a target region with the left click.
-  - Move the sliders to set the number of slices perpendicular to the region to segment, and the thresholding range.
+  - Move the sliders to set the thresholding range for PT and CT.
   - Click Execute Threshold to perform the thresholded segmentation.
 
   Middle Click: Pan
@@ -110,11 +111,13 @@ content.append(instructions);
 
 // ============================= //
 
-// let numSlicesToProject = 3;
 let ctLowerThreshold = -900;
 let ctUpperThreshold = -700;
-const overwrite = false;
-const overlapType = 0;
+const overwrite = true;
+
+let ptLowerThreshold = 0;
+let ptUpperThreshold = 5;
+let overlapType = 0;
 
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
@@ -149,6 +152,7 @@ const optionsValues = [
 ];
 
 // ============================= //
+
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
   onSelectedValueChange: (nameAsStringOrNumber) => {
@@ -176,28 +180,67 @@ addDropdownToToolbar({
   },
 });
 
+addDropdownToToolbar({
+  options: {
+    values: ['All voxels', 'Any voxel'],
+    defaultValue: 'Any voxel',
+  },
+  onSelectedValueChange: (selectedValue) => {
+    if (selectedValue === 'All voxels') {
+      overlapType = 1;
+    } else if (selectedValue === 'Any voxel') {
+      overlapType = 0;
+    }
+  },
+});
+
 addButtonToToolbar({
   title: 'Execute threshold',
   onClick: () => {
+    // Todo: this only works for volumeViewport
     const ctVolume = cache.getVolume(ctVolumeId);
+    const ptVolume = cache.getVolume(ptVolumeId);
     const segmentationVolume = cache.getVolume(segmentationId);
-    console.log(ctVolume.direction);
-    console.log(segmentationVolume.direction);
 
-    const test = csToolsUtils.segmentation.thresholdSegmentationByRange(
+    csToolsUtils.segmentation.thresholdSegmentationByRange(
       segmentationVolume,
-      [{ volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold }],
-      {
-        overwrite,
-        overlapType,
-      }
+      1,
+      [
+        { volume: ctVolume, lower: ctLowerThreshold, upper: ctUpperThreshold },
+        { volume: ptVolume, lower: ptLowerThreshold, upper: ptUpperThreshold },
+      ],
+      overlapType
     );
   },
 });
 
 addSliderToToolbar({
+  title: `PT Lower Thresh: ${ptLowerThreshold}`,
+  range: [0, 10],
+  defaultValue: ptLowerThreshold,
+  onSelectedValueChange: (value) => {
+    ptLowerThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
+    label.innerText = `PT Lower Thresh: ${value}`;
+  },
+});
+
+addSliderToToolbar({
+  title: `PT Upper Thresh: ${ptUpperThreshold}`,
+  range: [0, 10],
+  defaultValue: ptUpperThreshold,
+  onSelectedValueChange: (value) => {
+    ptUpperThreshold = Number(value);
+  },
+  updateLabelOnChange: (value, label) => {
+    label.innerText = `PT Upper Thresh: ${value}`;
+  },
+});
+
+addSliderToToolbar({
   title: `CT Lower Thresh: ${ctLowerThreshold}`,
-  range: [-3024, 1000],
+  range: [-1000, 1000],
   defaultValue: ctLowerThreshold,
   onSelectedValueChange: (value) => {
     ctLowerThreshold = Number(value);
@@ -224,7 +267,7 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   // using volumeLoader.createAndCacheDerivedVolume.
-  await volumeLoader.createAndCacheDerivedVolume(ctVolumeId, {
+  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -318,7 +361,6 @@ async function run() {
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
-
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -349,9 +391,20 @@ async function run() {
     wadoRsRoot,
   });
 
+  const ptImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
+    wadoRsRoot,
+  });
+
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
+  });
+  // Define a volume in memory
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+    imageIds: ptImageIds,
   });
 
   // Add some segmentations based on the source data volume
@@ -403,6 +456,7 @@ async function run() {
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Set the volumes to load
+  ptVolume.load();
   ctVolume.load();
 
   // Set volumes on the viewports
@@ -419,6 +473,14 @@ async function run() {
         volumeId: ctVolumeId,
         callback: setCtTransferFunctionForVolumeActor,
       },
+      {
+        volumeId: ptVolumeId,
+        callback: ({ volumeActor }) =>
+          setPetColorMapTransferFunctionForVolumeActor({
+            volumeActor,
+            preset: perfusionColorMap,
+          }),
+      },
     ],
     [viewportId1, viewportId2, viewportId3]
   );
@@ -432,7 +494,7 @@ async function run() {
       },
     ]);
 
-  segmentationRepresentationByUID = segmentationRepresentationByUIDs;
+  segmentationRepresentationByUID = segmentationRepresentationByUIDs[0];
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
