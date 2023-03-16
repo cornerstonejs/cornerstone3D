@@ -34,7 +34,6 @@ const { Events } = cornerstoneTools.Enums;
 const { MouseBindings } = csToolsEnums;
 
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
 
 document.documentElement.style.userSelect = 'none';
 
@@ -49,19 +48,17 @@ content.style.display = 'flex';
 content.style.flexDirection = 'column';
 content.style.alignItems = 'flex-start';
 
-const element = document.createElement('div');
-const elementWrapper = document.createElement('div');
+const numViewports = 2;
+const baseViewportSize = 400;
+const baseViewportSizePx = `${baseViewportSize}px`;
+const maxViewportSizePx = `${baseViewportSize * numViewports}px`;
 
-// Disable right click context menu so we can have right click tools
-element.oncontextmenu = (e) => e.preventDefault();
+const grid = document.createElement('div');
+grid.style.position = 'relative';
+grid.style.height = baseViewportSizePx;
 
-element.id = 'cornerstone-element';
-
-// It is best to listen for the browser double click event on an ancestor of the viewport
-// element instead of the viewport element itself. This is so that in case CS3D needs to
-// handle the double click first (e.g. edit arrow annotation) and stop its propagation.
-elementWrapper.addEventListener('dblclick', () => {
-  toggleCanvasSize();
+const handleDoubleClick = (element, viewportIndex) => {
+  toggleViewportSize(element, viewportIndex);
 
   browserDoubleClickEventStatus.style.visibility = '';
   const renderEngine = getRenderingEngine(renderingEngineId);
@@ -70,33 +67,87 @@ elementWrapper.addEventListener('dblclick', () => {
   browserDoubleClickEventStatus.innerText =
     "Browser 'dblclick' event detected on a viewport element ancestor.";
   statusDiv.style.backgroundColor = '#00ff00';
-});
+};
 
-element.addEventListener(Events.MOUSE_DOWN, () => {
+const handleMouseDown = () => {
   browserDoubleClickEventStatus.style.visibility = 'hidden';
   statusDiv.style.backgroundColor = null;
-});
+};
 
-element.addEventListener(Events.MOUSE_UP, () => {
+const handleMouseUp = () => {
   browserDoubleClickEventStatus.style.visibility = '';
   browserDoubleClickEventStatus.innerText =
     "Cornerstone 'MOUSE_UP' event detected on the viewport element.";
   statusDiv.style.backgroundColor = '#00ff00';
-});
+};
 
-element.addEventListener(Events.MOUSE_CLICK, () => {
+const handleClick = () => {
   browserDoubleClickEventStatus.style.visibility = '';
   browserDoubleClickEventStatus.innerText =
     "Cornerstone 'MOUSE_CLICK' event detected on the viewport element.";
   statusDiv.style.backgroundColor = '#00ff00';
-});
+};
 
-elementWrapper.appendChild(element);
-content.appendChild(elementWrapper);
+function toggleViewportSize(element: HTMLElement, viewportIndex: number) {
+  if (element.offsetWidth === baseViewportSize) {
+    element.style.left = '0px';
+    element.style.width = maxViewportSizePx;
+    element.style.height = maxViewportSizePx;
+    element.style.zIndex = '1000';
+    grid.style.height = maxViewportSizePx;
+  } else {
+    element.style.left = `${baseViewportSize * viewportIndex}px`;
+    element.style.width = baseViewportSizePx;
+    element.style.height = baseViewportSizePx;
+    element.style.zIndex = '';
+    grid.style.height = baseViewportSizePx;
+  }
+}
+
+const viewportElements: HTMLDivElement[] = [];
+
+for (let viewportIndex = 0; viewportIndex < numViewports; viewportIndex += 1) {
+  const element = document.createElement('div');
+  element.id = `viewport${viewportIndex}`;
+  element.style.width = '100%';
+  element.style.height = '100%';
+
+  const elementWrapper = document.createElement('div');
+
+  elementWrapper.style.position = 'absolute';
+  elementWrapper.style.left = `${400 * viewportIndex}px`;
+  elementWrapper.style.top = `0px`;
+  elementWrapper.style.width = baseViewportSizePx;
+  elementWrapper.style.height = baseViewportSizePx;
+  elementWrapper['theLeft'] = elementWrapper.style.left;
+
+  viewportElements.push(element);
+
+  // Disable right click context menu so we can have right click tools
+  element.oncontextmenu = (e) => e.preventDefault();
+
+  // It is best to listen for the browser double click event on an ancestor of the viewport
+  // element instead of the viewport element itself. This is so that in case CS3D needs to
+  // handle the double click first (e.g. edit arrow annotation) and stop its propagation.
+  elementWrapper.addEventListener(
+    'dblclick',
+    handleDoubleClick.bind(null, elementWrapper, viewportIndex)
+  );
+
+  element.addEventListener(Events.MOUSE_DOWN, handleMouseDown);
+
+  element.addEventListener(Events.MOUSE_UP, handleMouseUp);
+
+  element.addEventListener(Events.MOUSE_CLICK, handleClick);
+
+  elementWrapper.appendChild(element);
+  grid.appendChild(elementWrapper);
+}
+content.appendChild(grid);
 
 // double click status info elements
 const statusDiv = document.createElement('div');
-statusDiv.style.width = element.style.width;
+statusDiv.style.width = maxViewportSizePx;
 statusDiv.style.marginTop = '16px';
 
 content.append(statusDiv);
@@ -107,7 +158,7 @@ statusDiv.append(browserDoubleClickEventStatus);
 
 // instruction elements
 const instructionsDiv = document.createElement('div');
-instructionsDiv.style.width = element.style.width;
+instructionsDiv.style.width = maxViewportSizePx;
 
 content.append(instructionsDiv);
 
@@ -125,21 +176,6 @@ instructions.innerText = `When a double click is detected, the viewport size cha
   Double clicking an arrow annotation to edit its text stops the event from bubbling up.`;
 
 instructionsDiv.append(instructions);
-
-// canvas sizing
-const canvasSizes = ['500px', '750px'];
-
-function toggleCanvasSize() {
-  const canvasSize = canvasSizes.shift();
-  canvasSizes.push(canvasSize);
-
-  element.style.width = canvasSize;
-  element.style.height = canvasSize;
-
-  statusDiv.style.width = canvasSize;
-}
-
-toggleCanvasSize();
 
 // ============================= //
 
@@ -237,34 +273,40 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element,
-    defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
-    },
-  };
+  const viewportIds = ['CT_STACK_0', 'CT_STACK_1'];
 
-  renderingEngine.enableElement(viewportInput);
+  viewportElements.forEach((viewportElement) => {
+    const viewportId = `CT_STACK_${viewportElement.id}`;
 
-  // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineId);
+    // Create a stack viewport
+    const viewportInput = {
+      viewportId,
+      type: ViewportType.STACK,
+      element: viewportElement,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    };
 
-  // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+    renderingEngine.enableElement(viewportInput);
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0]];
+    // Set the tool group on the viewport
+    toolGroup.addViewport(viewportId, renderingEngineId);
 
-  // Set the stack on the viewport
-  viewport.setStack(stack);
+    // Get the stack viewport that was created
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
 
-  // Render the image
-  viewport.render();
+    // Define a stack containing a single image
+    const stack = [imageIds[0]];
+
+    // Set the stack on the viewport
+    viewport.setStack(stack);
+
+    // Render the image
+    viewport.render();
+  });
 }
 
 run();

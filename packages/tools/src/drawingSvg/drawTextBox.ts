@@ -112,7 +112,7 @@ function _drawTextGroup(
     textGroup.setAttribute('transform', `translate(${x} ${y})`);
 
     //
-    const textElement = _createTextElement(options);
+    const textElement = _createTextElement(svgDrawingHelper, options);
     for (let i = 0; i < textLines.length; i++) {
       const textLine = textLines[i];
       const textSpan = _createTextSpan(textLine);
@@ -136,13 +136,16 @@ function _drawTextGroup(
   });
 }
 
-function _createTextElement(options: any): SVGElement {
+function _createTextElement(
+  svgDrawingHelper: SVGDrawingHelper,
+  options: any
+): SVGElement {
   const { color, fontFamily, fontSize } = options;
   const svgns = 'http://www.w3.org/2000/svg';
   const textElement = document.createElementNS(svgns, 'text');
   const noSelectStyle =
     'user-select: none; pointer-events: none; -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);';
-  const dropShadowStyle = 'filter:url(#shadow);';
+  const dropShadowStyle = `filter:url(#shadow-${svgDrawingHelper.svgLayerElement.id});`;
   const combinedStyle = `${noSelectStyle}${dropShadowStyle}`;
 
   // font-size="100"
