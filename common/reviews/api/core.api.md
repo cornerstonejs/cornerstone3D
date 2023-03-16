@@ -54,6 +54,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
+    protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors): void;
+    // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
     flip(flipDirection: FlipDirection): void;
@@ -69,6 +71,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     getImageData(volumeId?: string): IImageData | undefined;
     // (undocumented)
     getIntensityFromWorld(point: Point3): number;
+    // (undocumented)
+    protected _getOrientationVectors(orientation: OrientationAxis | OrientationVectors): OrientationVectors;
     // (undocumented)
     getProperties: () => VolumeViewportProperties;
     // (undocumented)

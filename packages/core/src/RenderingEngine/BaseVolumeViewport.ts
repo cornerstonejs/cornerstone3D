@@ -1,44 +1,45 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache';
+import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import {
+  BlendModes,
+  Events,
+  OrientationAxis,
+  VOILUTFunctionType,
+} from '../enums';
 import ViewportType from '../enums/ViewportType';
-import Viewport from './Viewport';
+import eventTarget from '../eventTarget';
+import { getShouldUseCPURendering } from '../init';
+import { loadVolume } from '../loaders/volumeLoader';
+import type {
+  ActorEntry,
+  FlipDirection,
+  IImageData,
+  IVolumeInput,
+  OrientationVectors,
+  Point2,
+  Point3,
+  VOIRange,
+  VolumeViewportProperties,
+} from '../types';
+import { VoiModifiedEventDetail } from '../types/EventTypes';
+import type { ViewportInput } from '../types/IViewport';
+import type IVolumeViewport from '../types/IVolumeViewport';
+import {
+  actorIsA,
+  createSigmoidRGBTransferFunction,
+  getVoiFromSigmoidRGBTransferFunction,
+  imageIdToURI,
+  triggerEvent,
+} from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
 } from './helpers/volumeNewImageEventDispatcher';
-import { loadVolume } from '../loaders/volumeLoader';
-import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import { getShouldUseCPURendering } from '../init';
-import type {
-  Point2,
-  Point3,
-  IImageData,
-  IVolumeInput,
-  ActorEntry,
-  FlipDirection,
-  VolumeViewportProperties,
-  VOIRange,
-} from '../types';
-import type { ViewportInput } from '../types/IViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
-import {
-  Events,
-  BlendModes,
-  OrientationAxis,
-  VOILUTFunctionType,
-} from '../enums';
-import eventTarget from '../eventTarget';
-import {
-  actorIsA,
-  imageIdToURI,
-  triggerEvent,
-  createSigmoidRGBTransferFunction,
-  getVoiFromSigmoidRGBTransferFunction,
-} from '../utilities';
+import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
-import { VoiModifiedEventDetail } from '../types/EventTypes';
-import { RENDERING_DEFAULTS } from '../constants';
+import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -92,6 +93,22 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  protected applyViewOrientation(
+    orientation: OrientationAxis | OrientationVectors
+  ) {
+    const { viewPlaneNormal, viewUp } =
+      this._getOrientationVectors(orientation);
+    const camera = this.getVtkActiveCamera();
+    camera.setDirectionOfProjection(
+      -viewPlaneNormal[0],
+      -viewPlaneNormal[1],
+      -viewPlaneNormal[2]
+    );
+    camera.setViewUpFrom(viewUp);
+
+    this.resetCamera();
   }
 
   private initializeVolumeNewImageEventDispatcher(): void {
@@ -757,6 +774,31 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return volumeImageURIs.includes(imageURI);
     });
   };
+
+  protected _getOrientationVectors(
+    orientation: OrientationAxis | OrientationVectors
+  ): OrientationVectors {
+    if (typeof orientation === 'object') {
+      if (orientation.viewPlaneNormal && orientation.viewUp) {
+        return orientation;
+      } else {
+        throw new Error(
+          'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
+        );
+      }
+    } else if (
+      typeof orientation === 'string' &&
+      MPR_CAMERA_VALUES[orientation]
+    ) {
+      return MPR_CAMERA_VALUES[orientation];
+    } else {
+      throw new Error(
+        `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
+          MPR_CAMERA_VALUES
+        ).join(', ')}`
+      );
+    }
+  }
 
   /**
    * Reset the camera for the volume viewport
