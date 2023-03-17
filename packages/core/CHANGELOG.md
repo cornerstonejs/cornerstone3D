@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.36.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.0...@cornerstonejs/core@0.36.1) (2023-03-17)
+
+
+### Bug Fixes
+
+* Build issue caused by import changes ([#484](https://github.com/cornerstonejs/cornerstone3D-beta/issues/484)) ([d79cd58](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d79cd582843661cd8cb8c56fea55a9b1c68fd64b))
+
+
+
+
+
 # [0.36.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.35.2...@cornerstonejs/core@0.36.0) (2023-03-16)
 
 
