@@ -7,12 +7,7 @@ import {
 
 import thresholdVolumeByRange from './thresholdVolumeByRange';
 import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsIJKFromRectangleAnnotations';
-
-export type ThresholdInformation = {
-  volume: Types.IImageVolume;
-  lower: number;
-  upper: number;
-};
+import { ThresholdInformation } from './utilities';
 
 export type ThresholdOptions = {
   numSlicesToProject?: number; // number of slices to project before and after current slice
