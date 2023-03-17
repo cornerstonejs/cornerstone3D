@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.3.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.2.2...@cornerstonejs/dicom-image-loader@0.3.0) (2023-03-17)
+
+
+### Features
+
+* **data:** add test color images for dicom image loader ([#488](https://github.com/cornerstonejs/cornerstone3D-beta/issues/488)) ([a47a2cb](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a47a2cbbae6523590a390b5aa8bc87dac5b29105))
+
+
+
+
+
 ## [0.2.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.2.1...@cornerstonejs/dicom-image-loader@0.2.2) (2023-03-06)
 
 
