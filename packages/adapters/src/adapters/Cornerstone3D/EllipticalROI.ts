@@ -137,7 +137,7 @@ class EllipticalROI {
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
-
+        const rotation = data.initialRotation || 0;
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
@@ -145,11 +145,19 @@ class EllipticalROI {
                 "EllipticalROI.getTID300RepresentationArguments: referencedImageId is not defined"
             );
         }
-
-        const top = worldToImageCoords(referencedImageId, handles.points[0]);
-        const bottom = worldToImageCoords(referencedImageId, handles.points[1]);
-        const left = worldToImageCoords(referencedImageId, handles.points[2]);
-        const right = worldToImageCoords(referencedImageId, handles.points[3]);
+        let top, bottom, left, right;
+        // this way when it's restored we can assume the initial rotation is 0.
+        if (rotation == 90 || rotation == 270) {
+            bottom = worldToImageCoords(referencedImageId, handles.points[2]);
+            top = worldToImageCoords(referencedImageId, handles.points[3]);
+            left = worldToImageCoords(referencedImageId, handles.points[0]);
+            right = worldToImageCoords(referencedImageId, handles.points[1]);
+        } else {
+            top = worldToImageCoords(referencedImageId, handles.points[0]);
+            bottom = worldToImageCoords(referencedImageId, handles.points[1]);
+            left = worldToImageCoords(referencedImageId, handles.points[2]);
+            right = worldToImageCoords(referencedImageId, handles.points[3]);
+        }
 
         // find the major axis and minor axis
         const topBottomLength = Math.abs(top[1] - bottom[1]);
