@@ -708,7 +708,13 @@ class StackViewport extends Viewport implements IStackViewport {
    * @returns viewport properties including voi, invert, interpolation type, rotation, flip
    */
   public getProperties = (): StackViewportProperties => {
-    const { voiRange, VOILUTFunction, interpolationType, invert } = this;
+    const {
+      voiRange,
+      VOILUTFunction,
+      interpolationType,
+      invert,
+      voiUpdatedWithSetProperties,
+    } = this;
     const rotation = this.getRotation();
 
     return {
@@ -717,6 +723,7 @@ class StackViewport extends Viewport implements IStackViewport {
       interpolationType,
       invert,
       rotation,
+      isComputedVOI: !voiUpdatedWithSetProperties,
     };
   };
 

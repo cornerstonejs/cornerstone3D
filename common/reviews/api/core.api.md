@@ -2160,6 +2160,7 @@ type StackViewportProperties = {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
+    isComputedVOI?: boolean;
 };
 
 // @public (undocumented)
