@@ -18,6 +18,8 @@ type StackViewportProperties = {
   rotation?: number;
   /** suppress events (optional) */
   suppressEvents?: boolean;
+  /** Indicates if the voi is a computed VOI (not user set) */
+  isComputedVOI?: boolean;
 };
 
 export default StackViewportProperties;
