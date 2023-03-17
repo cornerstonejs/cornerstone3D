@@ -1,4 +1,8 @@
-import { StackViewport, VolumeViewport, utilities } from '@cornerstonejs/core';
+import {
+  StackViewport,
+  utilities,
+  BaseVolumeViewport,
+} from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import { ToolModes } from '../../enums';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
@@ -199,7 +203,7 @@ abstract class BaseTool implements IBaseTool {
   protected getTargetId(viewport: Types.IViewport): string | undefined {
     if (viewport instanceof StackViewport) {
       return `imageId:${viewport.getCurrentImageId()}`;
-    } else if (viewport instanceof VolumeViewport) {
+    } else if (viewport instanceof BaseVolumeViewport) {
       return `volumeId:${this.getTargetVolumeId(viewport)}`;
     } else {
       throw new Error(

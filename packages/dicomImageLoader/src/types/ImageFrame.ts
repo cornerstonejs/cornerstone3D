@@ -1,3 +1,5 @@
+import PixelDataTypedArray from './PixelDataTypedArray';
+
 interface ImageFrame {
   samplesPerPixel: number;
   photometricInterpretation: string;
@@ -16,17 +18,13 @@ interface ImageFrame {
   greenPaletteColorLookupTableData: number[];
   bluePaletteColorLookupTableData: number[];
   // populated later after decoding
-  pixelData:
-    | Float32Array
-    | Int16Array
-    | Uint16Array
-    | Uint8Array
-    | Uint8ClampedArray
-    | undefined;
+  pixelData: PixelDataTypedArray;
   imageData?: ImageData;
   decodeTimeInMS?: number;
   pixelDataLength?: number;
   preScale?: any;
+  minAfterScale?: number;
+  maxAfterScale?: number;
 }
 
 export default ImageFrame;

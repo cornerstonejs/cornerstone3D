@@ -1,10 +1,7 @@
+import { PixelDataTypedArray } from '../../types';
+
 export default function scaleArray(
-  array:
-    | Uint8Array
-    | Float32Array
-    | Int16Array
-    | Uint16Array
-    | Uint8ClampedArray,
+  array: PixelDataTypedArray,
   scalingParameters
 ): boolean {
   const arrayLength = array.length;

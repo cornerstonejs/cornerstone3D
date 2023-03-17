@@ -1,3 +1,4 @@
+import { ImageFrame } from '../types';
 import getMinMax from './getMinMax';
 
 /**
@@ -11,8 +12,13 @@ import getMinMax from './getMinMax';
  * @param {Boolean} strict If 'strict' is true, log to the console a warning if these values do not match.
  * Otherwise, correct them automatically.Default is true.
  */
-export default function calculateMinMax(imageFrame, strict = true) {
-  const minMax = getMinMax(imageFrame.pixelData);
+export default function calculateMinMax(imageFrame: ImageFrame, strict = true) {
+  const minMax =
+    imageFrame.minAfterScale !== undefined ||
+    imageFrame.maxAfterScale !== undefined
+      ? { min: imageFrame.minAfterScale, max: imageFrame.maxAfterScale }
+      : getMinMax(imageFrame.pixelData);
+
   const mustAssign = !(
     isNumber(imageFrame.smallestPixelValue) &&
     isNumber(imageFrame.largestPixelValue)

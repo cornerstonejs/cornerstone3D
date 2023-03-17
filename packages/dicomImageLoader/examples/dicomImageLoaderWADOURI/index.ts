@@ -116,16 +116,6 @@ async function loadAndViewImage(imageId) {
       // Render the image
       viewport.render();
 
-      const imageData = viewport.getImageData();
-
-      const {
-        pixelRepresentation,
-        bitsAllocated,
-        bitsStored,
-        highBit,
-        photometricInterpretation,
-      } = metaData.get('imagePixelModule', imageId);
-
       const image = viewport.csImage;
 
       function getTransferSyntax() {
@@ -227,16 +217,21 @@ function downloadAndView(downloadUrl) {
   loadAndViewImage(url);
 }
 
-const imageButtons = document.getElementsByClassName('imgbtn');
-for (let i = 0; i < imageButtons.length; i++) {
-  const el = imageButtons[i];
-  el.addEventListener('click', function (e) {
-    const img = e.target.innerText;
+function handleImageSelection(event) {
+  const selectedFile = event.target.value;
+  console.log('Selected file:', selectedFile);
+
+  if (selectedFile) {
     downloadAndView(
-      'https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/testImages/' +
-        img
+      'https://raw.githubusercontent.com/cornerstonejs/cornerstone3D-beta/main/packages/dicomImageLoader/testImages/' +
+        selectedFile
     );
-  });
+  }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  const imageSelector = document.getElementById('imageSelector');
+  imageSelector.addEventListener('change', handleImageSelection);
+});
 
 run();

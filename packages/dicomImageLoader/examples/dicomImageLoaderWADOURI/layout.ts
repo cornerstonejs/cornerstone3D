@@ -5,50 +5,42 @@ const html = `
     <div class="page-header">
         <h1>Example of displaying a DICOM P10 image using Cornerstone DICOM Image Loader</h1>
     </div>
-    <h2>CharLS</h2>
-    <button class="imgbtn">
-        CTImage.dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80.dcm
-    </button>
-    <button class="imgbtn">
-        CTImage.dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm
-    </button>
-
-    <h2>libjpeg-turbo 8-bit</h2>
-    <button class="imgbtn">
-        CTImage.dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50.dcm
-    </button>
-
-    <h2>RLE</h2>
-    <button class="imgbtn">
-        CTImage.dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm
-    </button>
-
-    <h2>JPEG Lossless</h2>
-    <button class="imgbtn">
-        CTImage.dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57.dcm
-    </button>
-    <button class="imgbtn">
-        CTImage.dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70.dcm
-    </button>
-
-    <h2>JPEG 2000</h2>
-    <button class="imgbtn">
-        CT1_J2KR
-    </button>
-    <button class="imgbtn">
-        CT2_J2KR
-    </button>
-    <button class="imgbtn">
-        CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm
-    </button>
-    <button class="imgbtn">
-        CTImage.dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm
-    </button>
-
-    <h2>Deflate</h2>
-    <button class="imgbtn">
-        CTImage.dcm_DeflatedExplicitVRLittleEndianTransferSyntax_1.2.840.10008.1.2.1.99.dcm
-    </button>
+   <select id="imageSelector">
+    <option value="" selected>Select an image</option>
+    <optgroup label="CharLS">
+        <option>CTImage.dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80.dcm</option>
+        <option>CTImage.dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm</option>
+    </optgroup>
+    <optgroup label="libjpeg-turbo 8-bit">
+        <option>CTImage.dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50.dcm</option>
+    </optgroup>
+    <optgroup label="RLE">
+        <option>CTImage.dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm</option>
+    </optgroup>
+    <optgroup label="JPEG Lossless">
+        <option>CTImage.dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57.dcm</option>
+        <option>CTImage.dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70.dcm</option>
+    </optgroup>
+    <optgroup label="JPEG 2000">
+        <option>CT1_J2KR</option>
+        <option>CT2_J2KR</option>
+        <option>CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm</option>
+        <option>CTImage.dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm</option>
+    </optgroup>
+    <optgroup label="Deflate">
+        <option>CTImage.dcm_DeflatedExplicitVRLittleEndianTransferSyntax_1.2.840.10008.1.2.1.99.dcm</option>
+    </optgroup>
+    <optgroup label="Color Images">
+        <option>TestPattern_JPEG-Baseline_YBR422.dcm</option>
+        <option>TestPattern_JPEG-Baseline_YBRFull.dcm</option>
+        <option>TestPattern_JPEG-Lossless_RGB.dcm</option>
+        <option>TestPattern_JPEG-LS-Lossless.dcm</option>
+        <option>TestPattern_JPEG-LS-NearLossless.dcm</option>
+        <option>TestPattern_Palette_16.dcm</option>
+        <option>TestPattern_Palette.dcm</option>
+        <option>TestPattern_RGB.dcm</option>
+    </optgroup>
+    </select>
 
     <br>
     <br>

@@ -72,6 +72,7 @@ function decodeJPEGBaseline8BitColor(
 
         imageFrame.smallestPixelValue = minMax.min;
         imageFrame.largestPixelValue = minMax.max;
+        imageFrame.pixelDataLength = imageFrame.pixelData.length;
 
         resolve(imageFrame);
       };
