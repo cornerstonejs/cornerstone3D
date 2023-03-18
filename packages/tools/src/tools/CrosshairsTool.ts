@@ -1108,7 +1108,14 @@ class CrosshairsTool extends AnnotationTool {
 
       let color =
         viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+
       let lineWidth = 1;
+
+      if (/Mobi|Android/i.test(navigator.userAgent)) {
+        // changing the stroke width for mobile devices
+        lineWidth = 2.5;
+      }
+
       const lineActive =
         data.handles.activeOperation !== null &&
         data.handles.activeOperation === OPERATION.DRAG &&
