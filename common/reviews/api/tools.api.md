@@ -4230,7 +4230,7 @@ type ScrollOptions_2 = {
     delta: number;
     volumeId?: string;
     debounceLoading?: boolean;
-    loop: boolean;
+    loop?: boolean;
 };
 
 // @public (undocumented)
