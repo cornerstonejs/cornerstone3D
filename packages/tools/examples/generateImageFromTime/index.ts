@@ -35,6 +35,8 @@ const orientations = [
   Enums.OrientationAxis.SAGITTAL,
   Enums.OrientationAxis.CORONAL,
 ];
+const operations = ['SUM', 'AVERAGE', 'SUBTRACT'];
+let dataOperation = operations[0]
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Volume 4D',
@@ -53,15 +55,26 @@ addButtonToToolbar({
   onClick: () => {
     const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTime(
       volumeForButton,
-      'SUBTRACT',
+      dataOperation,
       {
-        frameNumbers: [1, 40],
-        // imageCoordinate: [-24, 24, -173],
-        maskVolumeId: segmentationId,
+        frameNumbers: [1, 39],
+        imageCoordinate: [-24, 24, -173],
+        // maskVolumeId: segmentationId,
       }
     );
   },
 });
+
+addDropdownToToolbar({
+  options: {
+    values: operations,
+    defaultValue: operations[0],
+  },
+  onSelectedValueChange: (selectedValue) => {
+    dataOperation = selectedValue as string;
+  },
+});
+
 addDropdownToToolbar({
   options: {
     values: orientations,

@@ -54,9 +54,8 @@ function generateImageFromTime(
     operationData = _subData(dataInTime, frames);
   }
 
-  // }
   console.log(operationData);
-  // console.log(dataInTime);
+  console.log(dataInTime);
 
   return operationData;
 }
