@@ -53,10 +53,11 @@ addButtonToToolbar({
   onClick: () => {
     const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTime(
       volumeForButton,
+      'SUBTRACT',
       {
-        frameNumbers: [5, 6, 7],
-        // imageCoordinate: [-24, 24, -173],
-        maskVolumeId: segmentationId,
+        frameNumbers: [5, 40],
+        imageCoordinate: [-24, 24, -173],
+        // maskVolumeId: segmentationId,
       }
     );
   },
