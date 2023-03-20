@@ -35,6 +35,10 @@ const equalsCheck = (a, b) => {
   return JSON.stringify(a) === JSON.stringify(b);
 };
 
+/**
+ * Given the center of a voxel in world coordinates, calculate the voxel
+ * corners in world coords to calculate the voxel overlap in another volume
+ */
 export function getVoxelOverlap(
   imageData,
   dimensions,
@@ -61,47 +65,9 @@ export function getVoxelOverlap(
   return overlapBounds;
 }
 
-export function prepareVolumeInfoList(
-  segmentationVolume,
-  thresholdVolumeInformation
-) {
-  const { spacing: segmentationSpacing } = segmentationVolume;
-  const scalarData = segmentationVolume.getScalarData();
-
-  const volumeInfoList = [];
-  let baseVolumeIdx = 0;
-  for (let i = 0; i < thresholdVolumeInformation.length; i++) {
-    const { imageData, spacing, dimensions } =
-      thresholdVolumeInformation[i].volume;
-
-    const volumeSize =
-      thresholdVolumeInformation[i].volume.getScalarData().length;
-
-    if (
-      volumeSize === scalarData.length &&
-      equalsCheck(spacing, segmentationSpacing)
-    ) {
-      baseVolumeIdx = i;
-    }
-
-    const referenceValues = imageData.getPointData().getScalars().getData();
-    const lower = thresholdVolumeInformation[i].lower;
-    const upper = thresholdVolumeInformation[i].upper;
-
-    volumeInfoList.push({
-      imageData,
-      referenceValues,
-      lower,
-      upper,
-      spacing,
-      dimensions,
-      volumeSize,
-    });
-  }
-
-  return { volumeInfoList, baseVolumeIdx };
-}
-
+/**
+ * Prepare a list of volume information objects for callback functions
+ */
 export function processVolumes(
   segmentationVolume: Types.IImageVolume,
   thresholdVolumeInformation: ThresholdInformation[]

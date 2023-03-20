@@ -76,7 +76,7 @@ function _handleDifferentSizeVolume(
   let total, overlaps, range;
 
   for (let i = 0; i < scalarData.length; i++) {
-    if (scalarData[i] === 1) {
+    if (scalarData[i] === segmentationIndex) {
       const overlapBounds = getVoxelOverlap(
         imageData,
         dimensions,
