@@ -55,9 +55,9 @@ addButtonToToolbar({
       volumeForButton,
       'SUBTRACT',
       {
-        frameNumbers: [5, 40],
-        imageCoordinate: [-24, 24, -173],
-        // maskVolumeId: segmentationId,
+        frameNumbers: [1, 40],
+        // imageCoordinate: [-24, 24, -173],
+        maskVolumeId: segmentationId,
       }
     );
   },
