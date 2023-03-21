@@ -36,7 +36,9 @@ export default function drawLine(
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
   const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
-  const dropShadowStyle = shadow ? 'filter:url(#shadow);' : '';
+  const dropShadowStyle = shadow
+    ? `filter:url(#shadow-${svgDrawingHelper.svgLayerElement.id});`
+    : '';
 
   const attributes = {
     x1: `${start[0]}`,
