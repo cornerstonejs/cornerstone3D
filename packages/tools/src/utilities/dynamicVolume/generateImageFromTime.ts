@@ -9,9 +9,10 @@ function generateImageFromTime(
     maskVolumeId?;
     imageCoordinate?;
   }
-): number[] | number[][] {
+) {
   let dataInTime;
   let operationData;
+  let indexArray;
   const frames = options.frameNumbers || [
     ...Array(dynamicVolume.numTimePoints).keys(),
   ];
@@ -20,19 +21,16 @@ function generateImageFromTime(
     throw new Error('Please provide two or more time points');
   }
 
-  if (!options.maskVolumeId && !options.imageCoordinate) {
-    throw new Error('No ROI provided');
-  }
-
-  if (options.maskVolumeId && options.imageCoordinate) {
-    throw new Error('Please provide only one ROI');
-  }
-
   if (options.maskVolumeId) {
     dataInTime = getDataInTime(dynamicVolume, {
       frameNumbers: frames,
       maskVolumeId: options.maskVolumeId,
     });
+    const segmentationVolume = cache.getVolume(options.maskVolumeId);
+    indexArray = segmentationVolume
+      .getScalarData()
+      .map((_, i) => i)
+      .filter((i) => segmentationVolume.getScalarData()[i] !== 0);
   }
 
   if (options.imageCoordinate) {
@@ -54,10 +52,10 @@ function generateImageFromTime(
     operationData = _subData(dataInTime, frames);
   }
 
-  console.log(operationData);
-  console.log(dataInTime);
+  // console.log(operationData);
+  // console.log(indexArray);
 
-  return operationData;
+  return { data: operationData, index: indexArray };
 }
 
 function _sumData(timeData, frames) {

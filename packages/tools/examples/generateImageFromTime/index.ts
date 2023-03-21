@@ -36,7 +36,7 @@ const orientations = [
   Enums.OrientationAxis.CORONAL,
 ];
 const operations = ['SUM', 'AVERAGE', 'SUBTRACT'];
-let dataOperation = operations[0]
+let dataOperation = operations[0];
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Volume 4D',
@@ -58,10 +58,11 @@ addButtonToToolbar({
       dataOperation,
       {
         frameNumbers: [1, 39],
-        imageCoordinate: [-24, 24, -173],
-        // maskVolumeId: segmentationId,
+        // imageCoordinate: [-24, 24, -173],
+        maskVolumeId: segmentationId,
       }
     );
+    createVolumeFromTimeData(dataInTime);
   },
 });
 
@@ -109,6 +110,7 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
+const computedVolumeId = 'MY_COMPUTED_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
@@ -162,6 +164,30 @@ async function addSegmentationsToState() {
   // Add some data to the segmentations
   createMockEllipsoidSegmentation(segmentationVolume);
 }
+
+async function createVolumeFromTimeData(dataInTime) {
+  // Create a volume of the same resolution as the source data
+  // using volumeLoader.createAndCacheDerivedVolume.
+  // console.log('beep');
+  // const computedVolume = await volumeLoader.createAndCacheDerivedVolume(
+  //   volumeId,
+  //   {
+  //     volumeId: computedVolumeId,
+  //   }
+  // );
+  // // Add the segmentations to state
+  // const data = dataInTime.data;
+  // const index = dataInTime.index;
+  // let i = 0;
+  // index.forEach((voxelIndex) => {
+  //   computedVolume.scalarData[voxelIndex] = data[i];
+  //   i++;
+  // });
+  // // computedVolume.imageData.setPointData();
+  // console.log(computedVolume);
+  // Add some data to the segmentations
+}
+
 /**
  * Runs the demo
  */
