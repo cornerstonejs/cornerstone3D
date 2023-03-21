@@ -7,7 +7,8 @@
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "files": [
-    "dist/"
+    "dist/",
+    "src/"
   ],
   "directories": {
     "test": "test"
