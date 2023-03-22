@@ -33,7 +33,8 @@ async function createVolumeActor(
   props: createVolumeActorInterface,
   element: HTMLDivElement,
   viewportId: string,
-  suppressEvents = false
+  suppressEvents = false,
+  use16BitTexture = false
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -61,7 +62,7 @@ async function createVolumeActor(
   // types of volumes which might not be composed of imageIds would be e.g., nrrd, nifti
   // format volumes
   if (imageVolume.imageIds) {
-    await setDefaultVolumeVOI(volumeActor, imageVolume);
+    await setDefaultVolumeVOI(volumeActor, imageVolume, use16BitTexture);
   }
 
   if (callback) {

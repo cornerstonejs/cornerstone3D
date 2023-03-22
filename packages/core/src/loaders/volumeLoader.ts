@@ -13,6 +13,7 @@ import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import { uuidv4 } from '../utilities';
 import { Point3, Metadata, EventTypes, Mat3 } from '../types';
+import { getConfiguration } from '../init';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -273,6 +274,8 @@ export async function createAndCacheDerivedVolume(
 
   let numBytes, TypedArray;
 
+  const { useNorm16Texture } = getConfiguration().rendering;
+
   // If target buffer is provided
   if (targetBuffer) {
     if (targetBuffer.type === 'Float32Array') {
@@ -281,10 +284,10 @@ export async function createAndCacheDerivedVolume(
     } else if (targetBuffer.type === 'Uint8Array') {
       numBytes = scalarLength;
       TypedArray = Uint8Array;
-    } else if (targetBuffer.type === 'Uint16Array') {
+    } else if (useNorm16Texture && targetBuffer.type === 'Uint16Array') {
       numBytes = scalarLength * 2;
       TypedArray = Uint16Array;
-    } else if (targetBuffer.type === 'Int16Array') {
+    } else if (useNorm16Texture && targetBuffer.type === 'Int16Array') {
       numBytes = scalarLength * 2;
       TypedArray = Uint16Array;
     } else {

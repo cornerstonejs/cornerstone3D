@@ -177,8 +177,20 @@ function cornerstoneStreamingImageVolumeLoader(
         break;
 
       case 16:
+        // Temporary fix for 16 bit images to use Float32
+        // until the new dicom image loader handler the conversion
+        // correctly
+        if (!use16BitDataType) {
+          sizeInBytes = length * 4;
+          scalarData = useSharedArrayBuffer
+            ? createFloat32SharedArray(length)
+            : new Float32Array(length);
+
+          break;
+        }
+
         sizeInBytes = length * 2;
-        if (use16BitDataType && (signed || hasNegativeRescale)) {
+        if (signed || hasNegativeRescale) {
           handleCache(sizeInBytes);
           scalarData = useSharedArrayBuffer
             ? createInt16SharedArray(length)
@@ -186,13 +198,15 @@ function cornerstoneStreamingImageVolumeLoader(
           break;
         }
 
-        if (use16BitDataType && !signed && !hasNegativeRescale) {
+        if (!signed && !hasNegativeRescale) {
           handleCache(sizeInBytes);
           scalarData = useSharedArrayBuffer
             ? createUint16SharedArray(length)
             : new Uint16Array(length);
           break;
         }
+
+        // Default to Float32 again
         sizeInBytes = length * 4;
         handleCache(sizeInBytes);
         scalarData = useSharedArrayBuffer

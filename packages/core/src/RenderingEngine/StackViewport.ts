@@ -6,7 +6,6 @@ import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { getConfiguration } from '../init';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
@@ -179,7 +178,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.scaling = {};
     this.modality = null;
     this.useCPURendering = getShouldUseCPURendering();
-
+    this.use16BitTexture = this._shouldUse16BitTexture();
     this._configureRenderingPipeline();
 
     if (this.useCPURendering) {
@@ -1431,7 +1430,6 @@ class StackViewport extends Viewport implements IStackViewport {
     TypedArray,
   }): void {
     let pixelArray;
-    this.use16BitTexture = this._shouldUse16BitTexture();
     switch (bitsAllocated) {
       case 8:
         pixelArray = new Uint8Array(numVoxels * numComps);
@@ -1739,6 +1737,9 @@ class StackViewport extends Viewport implements IStackViewport {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
+        targetBuffer: {
+          type: this.use16BitTexture ? undefined : 'Float32Array',
+        },
         preScale: {
           enabled: true,
         },
@@ -1823,6 +1824,9 @@ class StackViewport extends Viewport implements IStackViewport {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
+        targetBuffer: {
+          type: this.use16BitTexture ? undefined : 'Float32Array',
+        },
         preScale: {
           enabled: true,
         },
@@ -1990,12 +1994,6 @@ class StackViewport extends Viewport implements IStackViewport {
     if (this._publishCalibratedEvent) {
       this.triggerCalibrationEvent();
     }
-  }
-
-  private _shouldUse16BitTexture() {
-    const { useNorm16Texture, preferSizeOverAccuracy } =
-      getConfiguration().rendering;
-    return useNorm16Texture || preferSizeOverAccuracy;
   }
 
   private _getInitialVOIRange(image: IImage) {
