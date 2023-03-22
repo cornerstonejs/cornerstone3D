@@ -684,7 +684,7 @@ class CircleROITool extends AnnotationTool {
   };
 
   /**
-   * it is used to draw the ellipticalROI annotation in each
+   * it is used to draw the circleROI annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
