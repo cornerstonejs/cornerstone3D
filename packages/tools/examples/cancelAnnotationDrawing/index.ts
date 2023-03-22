@@ -18,6 +18,7 @@ const {
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
+  CircleROITool,
   BidirectionalTool,
   AngleTool,
   ToolGroupManager,
@@ -95,6 +96,7 @@ async function run() {
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
+  cornerstoneTools.addTool(CircleROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(AngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);

@@ -6,6 +6,7 @@ import ArrowAnnotate from "./ArrowAnnotate";
 import Bidirectional from "./Bidirectional";
 import Angle from "./Angle";
 import CobbAngle from "./CobbAngle";
+import CircleROI from "./CircleROI";
 import EllipticalROI from "./EllipticalROI";
 import RectangleROI from "./RectangleROI";
 import Length from "./Length";
@@ -17,6 +18,7 @@ const Cornerstone3D = {
     CobbAngle,
     Angle,
     Length,
+    CircleROI,
     EllipticalROI,
     RectangleROI,
     ArrowAnnotate,

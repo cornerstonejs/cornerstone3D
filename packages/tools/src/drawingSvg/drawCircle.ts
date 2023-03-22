@@ -12,7 +12,8 @@ function drawCircle(
   circleUID: string,
   center: Types.Point2,
   radius: number,
-  options = {}
+  options = {},
+  dataId = ''
 ): void {
   const { color, fill, width, lineWidth } = Object.assign(
     {
@@ -47,6 +48,10 @@ function drawCircle(
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const newCircleElement = document.createElementNS(svgns, 'circle');
+
+    if (dataId !== '') {
+      newCircleElement.setAttribute('data-id', dataId);
+    }
 
     _setNewAttributesIfValid(attributes, newCircleElement);
 

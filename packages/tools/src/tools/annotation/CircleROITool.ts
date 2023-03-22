@@ -3,8 +3,8 @@ import { AnnotationTool } from '../base';
 import {
   getEnabledElement,
   VolumeViewport,
-  triggerEvent,
   eventTarget,
+  triggerEvent,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -14,54 +14,61 @@ import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement';
+} from '../../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
+  drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-  drawRect as drawRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import * as rectangle from '../../utilities/math/rectangle';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-
 import {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
-  ToolProps,
   PublicToolProps,
+  ToolProps,
   InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
+  MouseDragEventType,
+  MouseMoveEventType,
 } from '../../types/EventTypes';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { pointInShapeCallback } from '../../utilities';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import {
+  getCanvasCircleCorners,
+  getCanvasCircleRadius,
+} from '../../utilities/math/circle';
+import { pointInEllipse } from '../../utilities/math/ellipse';
 
 const { transformWorldToIndex } = csUtils;
 
 /**
- * RectangleROIAnnotation let you draw annotations that measures the statistics
- * such as area, max, mean and stdDev of a Rectangular region of interest.
- * You can use RectangleROIAnnotation in all perpendicular views (axial, sagittal, coronal).
+ * CircleROITool let you draw annotations that measures the statistics
+ * such as area, max, mean and stdDev of an elliptical region of interest.
+ * You can use CircleROITool in all perpendicular views (axial, sagittal, coronal).
  * Note: annotation tools in cornerstone3DTools exists in the exact location
  * in the physical 3d space, as a result, by default, all annotations that are
  * drawing in the same frameOfReference will get shared between viewports that
- * are in the same frameOfReference. RectangleROI tool's text box lines are dynamically
+ * are in the same frameOfReference. Circle tool's text box lines are dynamically
  * generated based on the viewport's underlying Modality. For instance, if
  * the viewport is displaying CT, the text box will shown the statistics in Hounsfield units,
  * and if the viewport is displaying PET, the text box will show the statistics in
@@ -72,40 +79,49 @@ const { transformWorldToIndex } = csUtils;
  * ToolState manager and can be accessed from the ToolState by calling getAnnotations
  * or similar methods.
  *
+ * Changing tool configuration (see below) you can make the tool to draw the center
+ * point circle with a given radius.
+ *
  * ```js
- * cornerstoneTools.addTool(RectangleROITool)
+ * cornerstoneTools.addTool(CircleROITool)
  *
  * const toolGroup = ToolGroupManager.createToolGroup('toolGroupId')
  *
- * toolGroup.addTool(RectangleROITool.toolName)
+ * toolGroup.addTool(CircleROITool.toolName)
  *
  * toolGroup.addViewport('viewportId', 'renderingEngineId')
  *
- * toolGroup.setToolActive(RectangleROITool.toolName, {
+ * toolGroup.setToolActive(CircleROITool.toolName, {
  *   bindings: [
  *    {
  *       mouseButton: MouseBindings.Primary, // Left Click
  *     },
  *   ],
  * })
+ *
+ * // draw a circle at the center point with 4px radius.
+ * toolGroup.setToolConfiguration(CircleROITool.toolName, {
+ *   centerPointRadius: 4,
+ * });
  * ```
  *
  * Read more in the Docs section of the website.
  */
-class RectangleROITool extends AnnotationTool {
+class CircleROITool extends AnnotationTool {
   static toolName;
-
+  touchDragCallback: any;
+  mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
   editData: {
     annotation: any;
-    viewportIdsToRender: string[];
+    viewportIdsToRender: Array<string>;
     handleIndex?: number;
     movingTextBox?: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
   } | null;
   isDrawing: boolean;
-  isHandleOutsideImage: boolean;
+  isHandleOutsideImage = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -114,6 +130,9 @@ class RectangleROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        // Radius of the circle to draw  at the center point of the circle.
+        // Set this zero(0) in order not to draw the circle.
+        centerPointRadius: 0,
       },
     }
   ) {
@@ -128,7 +147,7 @@ class RectangleROITool extends AnnotationTool {
 
   /**
    * Based on the current position of the mouse and the current imageId to create
-   * a RectangleROI Annotation and stores it in the annotationManager
+   * a CircleROI Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
    * @returns The annotation object.
@@ -136,10 +155,11 @@ class RectangleROITool extends AnnotationTool {
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
-  ): RectangleROIAnnotation => {
+  ): CircleROIAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
+    const canvasPos = currentPoints.canvas;
 
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
@@ -159,8 +179,8 @@ class RectangleROITool extends AnnotationTool {
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     const annotation = {
-      invalidated: true,
       highlighted: true,
+      invalidated: true,
       metadata: {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
@@ -171,12 +191,6 @@ class RectangleROITool extends AnnotationTool {
       data: {
         label: '',
         handles: {
-          points: [
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-          ],
           textBox: {
             hasMoved: false,
             worldPosition: <Types.Point3>[0, 0, 0],
@@ -187,6 +201,10 @@ class RectangleROITool extends AnnotationTool {
               bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
+          points: [[...worldPos], [...worldPos]] as [
+            Types.Point3, // center
+            Types.Point3 // end
+          ],
           activeHandleIndex: null,
         },
         cachedStats: {},
@@ -203,8 +221,6 @@ class RectangleROITool extends AnnotationTool {
     this.editData = {
       annotation,
       viewportIdsToRender,
-      handleIndex: 3,
-      movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
     };
@@ -232,7 +248,7 @@ class RectangleROITool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: RectangleROIAnnotation,
+    annotation: CircleROIAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -242,32 +258,27 @@ class RectangleROITool extends AnnotationTool {
     const { data } = annotation;
     const { points } = data.handles;
 
-    const canvasPoint1 = viewport.worldToCanvas(points[0]);
-    const canvasPoint2 = viewport.worldToCanvas(points[3]);
+    // For some reason Typescript doesn't understand this, so we need to be
+    // more specific about the type
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p)) as [
+      Types.Point2,
+      Types.Point2
+    ];
 
-    const rect = this._getRectangleImageCoordinates([
-      canvasPoint1,
-      canvasPoint2,
+    const radius = getCanvasCircleRadius(canvasCoordinates);
+    const radiusPoint = getCanvasCircleRadius([
+      canvasCoordinates[0],
+      canvasCoords,
     ]);
 
-    const point = [canvasCoords[0], canvasCoords[1]];
-    const { left, top, width, height } = rect;
-
-    const distanceToPoint = rectangle.distanceToPoint(
-      [left, top, width, height],
-      point as Types.Point2
-    );
-
-    if (distanceToPoint <= proximity) {
-      return true;
-    }
+    if (Math.abs(radiusPoint - radius) < proximity / 2) return true;
 
     return false;
   };
 
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: RectangleROIAnnotation
+    annotation: CircleROIAnnotation
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -285,9 +296,9 @@ class RectangleROITool extends AnnotationTool {
       movingTextBox: false,
     };
 
-    this._activateModify(element);
-
     hideElementCursor(element);
+
+    this._activateModify(element);
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
@@ -299,7 +310,7 @@ class RectangleROITool extends AnnotationTool {
 
   handleSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: RectangleROIAnnotation,
+    annotation: CircleROIAnnotation,
     handle: ToolHandle
   ): void => {
     const eventDetail = evt.detail;
@@ -314,7 +325,9 @@ class RectangleROITool extends AnnotationTool {
     if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true;
     } else {
-      handleIndex = data.handles.points.findIndex((p) => p === handle);
+      const { points } = data.handles;
+
+      handleIndex = points.findIndex((p) => p === handle);
     }
 
     // Find viewports to render on drag.
@@ -353,6 +366,11 @@ class RectangleROITool extends AnnotationTool {
       return;
     }
 
+    // Circle ROI tool should reset its highlight to false on mouse up (as opposed
+    // to other tools that keep it highlighted until the user moves. The reason
+    // is that we use top-left and bottom-right handles to define the circle,
+    // and they are by definition not in the circle on mouse up.
+    annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
@@ -386,9 +404,34 @@ class RectangleROITool extends AnnotationTool {
     }
   };
 
-  _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+  _dragDrawCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const { currentPoints } = eventDetail;
+    const currentCanvasPoints = currentPoints.canvas;
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngine, viewport } = enabledElement;
+    const { canvasToWorld } = viewport;
 
+    //////
+    const { annotation, viewportIdsToRender } = this.editData;
+    const { data } = annotation;
+
+    data.handles.points = [
+      data.handles.points[0], // center stays
+      canvasToWorld(currentCanvasPoints), // end point moves (changing radius)
+    ];
+
+    annotation.invalidated = true;
+
+    this.editData.hasMoved = true;
+
+    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
+
+  _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
+    this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -397,8 +440,7 @@ class RectangleROITool extends AnnotationTool {
     const { data } = annotation;
 
     if (movingTextBox) {
-      // Drag mode - Move the text boxes world position
-      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
+      const { deltaPoints } = eventDetail;
       const worldPosDelta = deltaPoints.world;
 
       const { textBox } = data.handles;
@@ -410,11 +452,11 @@ class RectangleROITool extends AnnotationTool {
 
       textBox.hasMoved = true;
     } else if (handleIndex === undefined) {
-      // Drag mode - Moving tool, so move all points by the world points delta
-      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
+      // Moving tool
+      const { deltaPoints } = eventDetail;
       const worldPosDelta = deltaPoints.world;
 
-      const { points } = data.handles;
+      const points = data.handles.points;
 
       points.forEach((point) => {
         point[0] += worldPosDelta[0];
@@ -423,77 +465,51 @@ class RectangleROITool extends AnnotationTool {
       });
       annotation.invalidated = true;
     } else {
-      // Moving handle.
-      const { currentPoints } = eventDetail;
-      const enabledElement = getEnabledElement(element);
-      const { worldToCanvas, canvasToWorld } = enabledElement.viewport;
-      const worldPos = currentPoints.world;
-
-      const { points } = data.handles;
-
-      // Move this handle.
-      points[handleIndex] = [...worldPos];
-
-      let bottomLeftCanvas;
-      let bottomRightCanvas;
-      let topLeftCanvas;
-      let topRightCanvas;
-
-      let bottomLeftWorld;
-      let bottomRightWorld;
-      let topLeftWorld;
-      let topRightWorld;
-
-      switch (handleIndex) {
-        case 0:
-        case 3:
-          // Moving bottomLeft or topRight
-
-          bottomLeftCanvas = worldToCanvas(points[0]);
-          topRightCanvas = worldToCanvas(points[3]);
-
-          bottomRightCanvas = [topRightCanvas[0], bottomLeftCanvas[1]];
-          topLeftCanvas = [bottomLeftCanvas[0], topRightCanvas[1]];
-
-          bottomRightWorld = canvasToWorld(bottomRightCanvas);
-          topLeftWorld = canvasToWorld(topLeftCanvas);
-
-          points[1] = bottomRightWorld;
-          points[2] = topLeftWorld;
-
-          break;
-        case 1:
-        case 2:
-          // Moving bottomRight or topLeft
-          bottomRightCanvas = worldToCanvas(points[1]);
-          topLeftCanvas = worldToCanvas(points[2]);
-
-          bottomLeftCanvas = <Types.Point2>[
-            topLeftCanvas[0],
-            bottomRightCanvas[1],
-          ];
-          topRightCanvas = <Types.Point2>[
-            bottomRightCanvas[0],
-            topLeftCanvas[1],
-          ];
-
-          bottomLeftWorld = canvasToWorld(bottomLeftCanvas);
-          topRightWorld = canvasToWorld(topRightCanvas);
-
-          points[0] = bottomLeftWorld;
-          points[3] = topRightWorld;
-
-          break;
-      }
+      this._dragHandle(evt);
       annotation.invalidated = true;
     }
-
-    this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
+
+  _dragHandle = (evt: EventTypes.InteractionEventType): void => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { canvasToWorld, worldToCanvas } = enabledElement.viewport;
+
+    const { annotation, handleIndex } = this.editData;
+    const { data } = annotation;
+    const { points } = data.handles;
+
+    const canvasCoordinates = points.map((p) => worldToCanvas(p));
+
+    // Move current point in that direction.
+    // Move other points in opposite direction.
+
+    const { currentPoints } = eventDetail;
+    const currentCanvasPoints = currentPoints.canvas;
+
+    if (handleIndex === 0) {
+      // Dragging center, move the circle ROI
+      const dXCanvas = currentCanvasPoints[0] - canvasCoordinates[0][0];
+      const dYCanvas = currentCanvasPoints[1] - canvasCoordinates[0][1];
+
+      const canvasCenter = currentCanvasPoints as Types.Point2;
+      const canvasEnd = <Types.Point2>[
+        canvasCoordinates[1][0] + dXCanvas,
+        canvasCoordinates[1][1] + dYCanvas,
+      ];
+
+      points[0] = canvasToWorld(canvasCenter);
+      points[1] = canvasToWorld(canvasEnd);
+    } else {
+      // Dragging end point, center stays
+      points[1] = canvasToWorld(currentCanvasPoints);
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -505,7 +521,6 @@ class RectangleROITool extends AnnotationTool {
       resetElementCursor(element);
 
       const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
-
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -533,70 +548,59 @@ class RectangleROITool extends AnnotationTool {
       return annotation.annotationUID;
     }
   };
-  /**
-   * Add event handlers for the modify event loop, and prevent default event prapogation.
-   */
-  _activateDraw = (element) => {
-    state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this._endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.addEventListener(Events.MOUSE_MOVE, this._dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.addEventListener(Events.TOUCH_END, this._endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
-  /**
-   * Add event handlers for the modify event loop, and prevent default event prapogation.
-   */
-  _deactivateDraw = (element) => {
-    state.isInteractingWithTool = false;
-
-    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.removeEventListener(Events.MOUSE_MOVE, this._dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, this._endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
-  /**
-   * Add event handlers for the modify event loop, and prevent default event prapogation.
-   */
   _activateModify = (element) => {
     state.isInteractingWithTool = true;
 
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._dragModifyCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
 
     element.addEventListener(Events.TOUCH_END, this._endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._dragModifyCallback);
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
-  /**
-   * Remove event handlers for the modify event loop, and enable default event propagation.
-   */
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
 
     element.removeEventListener(Events.MOUSE_UP, this._endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._dragModifyCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
 
     element.removeEventListener(Events.TOUCH_END, this._endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._dragModifyCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
+  };
+
+  _activateDraw = (element) => {
+    state.isInteractingWithTool = true;
+
+    element.addEventListener(Events.MOUSE_UP, this._endCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._dragDrawCallback);
+    element.addEventListener(Events.MOUSE_MOVE, this._dragDrawCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
+
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._dragDrawCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
+  };
+
+  _deactivateDraw = (element) => {
+    state.isInteractingWithTool = false;
+
+    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._dragDrawCallback);
+    element.removeEventListener(Events.MOUSE_MOVE, this._dragDrawCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
+
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._dragDrawCallback);
     element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   /**
-   * it is used to draw the rectangleROI annotation in each
+   * it is used to draw the circleROI annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
@@ -627,6 +631,7 @@ class RectangleROITool extends AnnotationTool {
     }
 
     const targetId = this.getTargetId(viewport);
+
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -636,10 +641,10 @@ class RectangleROITool extends AnnotationTool {
     };
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as RectangleROIAnnotation;
+      const annotation = annotations[i] as CircleROIAnnotation;
       const { annotationUID, data } = annotation;
-      const { points, activeHandleIndex } = data.handles;
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+      const { handles } = data;
+      const { points, activeHandleIndex } = handles;
 
       styleSpecifier.annotationUID = annotationUID;
 
@@ -647,13 +652,20 @@ class RectangleROITool extends AnnotationTool {
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      const { viewPlaneNormal, viewUp } = viewport.getCamera();
+      const canvasCoordinates = points.map((p) =>
+        viewport.worldToCanvas(p)
+      ) as [Types.Point2, Types.Point2];
+      const center = canvasCoordinates[0];
+      const radius = getCanvasCircleRadius(canvasCoordinates);
+      const canvasCorners = getCanvasCircleCorners(canvasCoordinates);
+
+      const { centerPointRadius } = this.configuration;
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].unit === undefined
+        data.cachedStats[targetId].areaUnit === undefined
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -662,27 +674,26 @@ class RectangleROITool extends AnnotationTool {
           mean: null,
           stdDev: null,
           areaUnit: null,
+          radius: null,
+          radiusUnit: null,
+          perimeter: null,
         };
 
         this._calculateCachedStats(
           annotation,
-          viewPlaneNormal,
-          viewUp,
+          viewport,
           renderingEngine,
           enabledElement
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
-          viewPlaneNormal,
-          viewUp,
+          viewport,
           renderingEngine,
           enabledElement
         );
-
         // If the invalidated data is as a result of volumeViewport manipulation
-        // of the tools, we need to invalidate the related stackViewports data if
-        // they are not at the referencedImageId, so that
+        // of the tools, we need to invalidate the related viewports data, so that
         // when scrolling to the related slice in which the tool were manipulated
         // we re-render the correct tool position. This is due to stackViewport
         // which doesn't have the full volume at each time, and we are only working
@@ -739,7 +750,6 @@ class RectangleROITool extends AnnotationTool {
 
       if (activeHandleCanvasCoords) {
         const handleGroupUID = '0';
-
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
@@ -751,14 +761,14 @@ class RectangleROITool extends AnnotationTool {
         );
       }
 
-      const dataId = `${annotationUID}-rect`;
-      const rectangleUID = '0';
-      drawRectSvg(
+      const dataId = `${annotationUID}-circle`;
+      const circleUID = '0';
+      drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
-        rectangleUID,
-        canvasCoordinates[0],
-        canvasCoordinates[3],
+        circleUID,
+        center,
+        radius,
         {
           color,
           lineDash,
@@ -766,6 +776,24 @@ class RectangleROITool extends AnnotationTool {
         },
         dataId
       );
+
+      // draw center point, if "centerPointRadius" configuration is valid.
+      if (centerPointRadius > 0) {
+        if (radius > 3 * centerPointRadius) {
+          drawCircleSvg(
+            svgDrawingHelper,
+            annotationUID,
+            `${circleUID}-center`,
+            center,
+            centerPointRadius,
+            {
+              color,
+              lineDash,
+              lineWidth,
+            }
+          );
+        }
+      }
 
       renderStatus = true;
 
@@ -776,8 +804,11 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
+      // Poor man's cached?
+      let canvasTextBoxCoords;
+
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
@@ -812,81 +843,77 @@ class RectangleROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getRectangleImageCoordinates = (
-    points: Array<Types.Point2>
-  ): {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  } => {
-    const [point0, point1] = points;
-
-    return {
-      left: Math.min(point0[0], point1[0]),
-      top: Math.min(point0[1], point1[1]),
-      width: Math.abs(point0[0] - point1[0]),
-      height: Math.abs(point0[1] - point1[1]),
-    };
-  };
-
-  /**
-   * _getTextLines - Returns the Area, mean and std deviation of the area of the
-   * target volume enclosed by the rectangle.
-   *
-   * @param data - The annotation tool-specific data.
-   * @param targetId - The volumeId of the volume to display the stats for.
-   * @param isPreScaled - Whether the viewport is pre-scaled or not.
-   */
-  _getTextLines = (
-    data,
-    targetId: string,
-    isPreScaled: boolean
-  ): string[] | undefined => {
+  _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
-
-    if (mean === undefined) {
-      return;
-    }
+    const {
+      radius,
+      radiusUnit,
+      area,
+      mean,
+      stdDev,
+      max,
+      isEmptyArea,
+      Modality,
+      areaUnit,
+    } = cachedVolumeStats;
 
     const textLines: string[] = [];
     const unit = getModalityUnit(Modality, isPreScaled);
 
-    textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
-    textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
-    textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
-    textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
+    if (radius) {
+      const radiusLine = isEmptyArea
+        ? `Radius: Oblique not supported`
+        : `Radius: ${radius.toFixed(2)} ${radiusUnit}`;
+      textLines.push(radiusLine);
+    }
+
+    if (area) {
+      const areaLine = isEmptyArea
+        ? `Area: Oblique not supported`
+        : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
+      textLines.push(areaLine);
+    }
+
+    if (mean) {
+      textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
+    }
+
+    if (max) {
+      textLines.push(`Max: ${max.toFixed(2)} ${unit}`);
+    }
+
+    if (stdDev) {
+      textLines.push(`Std Dev: ${stdDev.toFixed(2)} ${unit}`);
+    }
 
     return textLines;
   };
 
-  /**
-   * _calculateCachedStats - For each volume in the frame of reference that a
-   * tool instance in particular viewport defines as its target volume, find the
-   * volume coordinates (i,j,k) being probed by the two corners. One of i,j or k
-   * will be constant across the two points. In the other two directions iterate
-   * over the voxels and calculate the first and second-order statistics.
-   *
-   * @param data - The annotation tool-specific data.
-   * @param viewPlaneNormal - The normal vector of the camera.
-   * @param viewUp - The viewUp vector of the camera.
-   */
   _calculateCachedStats = (
     annotation,
-    viewPlaneNormal,
-    viewUp,
+    viewport,
     renderingEngine,
     enabledElement
   ) => {
-    const { data } = annotation;
+    const data = annotation.data;
     const { viewportId, renderingEngineId } = enabledElement;
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[3];
+    const { points } = data.handles;
+
+    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+
+    const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
+      getCanvasCircleCorners(canvasCoordinates)
+    );
+
+    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
+    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
     const { cachedStats } = data;
 
     const targetIds = Object.keys(cachedStats);
+    const worldPos1 = topLeftWorld;
+    const worldPos2 = bottomRightWorld;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -901,8 +928,6 @@ class RectangleROITool extends AnnotationTool {
       }
 
       const { dimensions, imageData, metadata, hasPixelSpacing } = image;
-      const scalarData =
-        'getScalarData' in image ? image.getScalarData() : image.scalarData;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -920,10 +945,6 @@ class RectangleROITool extends AnnotationTool {
       // Some area to do stats over.
 
       if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        this.isHandleOutsideImage = false;
-
-        // Calculate index bounds to iterate over
-
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
 
@@ -933,54 +954,69 @@ class RectangleROITool extends AnnotationTool {
         const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
         const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
+
+        const center = [
+          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
+          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
+          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
+        ] as Types.Point3;
+
+        const ellipseObj = {
+          center,
+          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+        };
+
+        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
           viewPlaneNormal,
           viewUp,
           worldPos1,
           worldPos2
         );
-
-        const area = Math.abs(worldWidth * worldHeight);
+        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
+        const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
         let count = 0;
         let mean = 0;
         let stdDev = 0;
         let max = -Infinity;
 
-        const yMultiple = dimensions[0];
-        const zMultiple = dimensions[0] * dimensions[1];
-
-        //Todo: this can be replaced by pointInShapeCallback....
-        // This is a triple loop, but one of these 3 values will be constant
-        // In the planar view.
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
-
-              if (value > max) {
-                max = value;
-              }
-
-              count++;
-              mean += value;
-            }
+        const meanMaxCalculator = ({ value: newValue }) => {
+          if (newValue > max) {
+            max = newValue;
           }
-        }
+
+          mean += newValue;
+          count += 1;
+        };
+
+        pointInShapeCallback(
+          imageData,
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          meanMaxCalculator,
+          boundsIJK
+        );
 
         mean /= count;
 
-        for (let k = kMin; k <= kMax; k++) {
-          for (let j = jMin; j <= jMax; j++) {
-            for (let i = iMin; i <= iMax; i++) {
-              const value = scalarData[k * zMultiple + j * yMultiple + i];
+        const stdCalculator = ({ value }) => {
+          const valueMinusMean = value - mean;
 
-              const valueMinusMean = value - mean;
+          stdDev += valueMinusMean * valueMinusMean;
+        };
 
-              stdDev += valueMinusMean * valueMinusMean;
-            }
-          }
-        }
+        pointInShapeCallback(
+          imageData,
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          stdCalculator,
+          boundsIJK
+        );
 
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
@@ -989,12 +1025,17 @@ class RectangleROITool extends AnnotationTool {
           Modality: metadata.Modality,
           area,
           mean,
-          stdDev,
           max,
+          stdDev,
+          isEmptyArea,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          radius: worldWidth / 2,
+          radiusUnit: hasPixelSpacing ? 'mm' : 'px',
+          perimeter: 2 * Math.PI * (worldWidth / 2),
         };
       } else {
         this.isHandleOutsideImage = true;
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
         };
@@ -1011,6 +1052,7 @@ class RectangleROITool extends AnnotationTool {
       viewportId,
       renderingEngineId,
     };
+
     triggerEvent(eventTarget, eventType, eventDetail);
 
     return cachedStats;
@@ -1024,5 +1066,5 @@ class RectangleROITool extends AnnotationTool {
   };
 }
 
-RectangleROITool.toolName = 'RectangleROI';
-export default RectangleROITool;
+CircleROITool.toolName = 'CircleROI';
+export default CircleROITool;
