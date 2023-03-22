@@ -57,7 +57,7 @@ import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import { pointInEllipse } from 'tools/src/utilities/math/ellipse';
+import { pointInEllipse } from '../../utilities/math/ellipse';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -674,6 +674,8 @@ class CircleROITool extends AnnotationTool {
           mean: null,
           stdDev: null,
           areaUnit: null,
+          radius: null,
+          radiusUnit: null,
         };
 
         this._calculateCachedStats(
@@ -842,11 +844,27 @@ class CircleROITool extends AnnotationTool {
 
   _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
-      cachedVolumeStats;
+    const {
+      radius,
+      radiusUnit,
+      area,
+      mean,
+      stdDev,
+      max,
+      isEmptyArea,
+      Modality,
+      areaUnit,
+    } = cachedVolumeStats;
 
     const textLines: string[] = [];
     const unit = getModalityUnit(Modality, isPreScaled);
+
+    if (radius) {
+      const radiusLine = isEmptyArea
+        ? `Radius: Oblique not supported`
+        : `Radius: ${radius.toFixed(2)} ${radiusUnit}`;
+      textLines.push(radiusLine);
+    }
 
     if (area) {
       const areaLine = isEmptyArea
@@ -1010,6 +1028,8 @@ class CircleROITool extends AnnotationTool {
           stdDev,
           isEmptyArea,
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
+          radius: worldWidth / 2,
+          radiusUnit: hasPixelSpacing ? 'mm' : 'px',
         };
       } else {
         this.isHandleOutsideImage = true;

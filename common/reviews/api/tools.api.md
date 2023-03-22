@@ -651,7 +651,12 @@ interface CircleROIAnnotation extends Annotation {
             };
         };
         label: string;
-        cachedStats?: ROICachedStats;
+        cachedStats?: ROICachedStats & {
+            [targetId: string]: {
+                radius: number;
+                radiusUnit: string;
+            };
+        };
     };
 }
 
