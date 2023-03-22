@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.55.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.54.1...@cornerstonejs/tools@0.55.0) (2023-03-22)
+
+
+### Features
+
+* **loop:** option to scroll tools ([#494](https://github.com/cornerstonejs/cornerstone3D-beta/issues/494)) ([34d4380](https://github.com/cornerstonejs/cornerstone3D-beta/commit/34d438083e750d12b9fb9cbc6a34b7dca2d6f1d0))
+
+
+
+
+
 ## [0.54.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.54.0...@cornerstonejs/tools@0.54.1) (2023-03-21)
 
 **Note:** Version bump only for package @cornerstonejs/tools
