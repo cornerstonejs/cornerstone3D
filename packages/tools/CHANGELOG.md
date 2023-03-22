@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.56.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.55.2...@cornerstonejs/tools@0.56.0) (2023-03-22)
+
+
+### Features
+
+* Add a CircleROI tool ([#459](https://github.com/cornerstonejs/cornerstone3D-beta/issues/459)) ([1c03ed3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1c03ed3457fbb63bbd87315b90bfed99b1cd09cc))
+
+
+
+
+
 ## [0.55.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.55.1...@cornerstonejs/tools@0.55.2) (2023-03-22)
 
 
