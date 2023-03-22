@@ -151,7 +151,7 @@ describe('Circle Tool: ', () => {
         // Since circle draws from center to out, we are picking a very center
         // point in the image  (strip is 255 from 10-15 in X and from 0-64 in Y)
         const index1 = [12, 30, 0];
-        const index2 = [14, 40, 0];
+        const index2 = [14, 30, 0];
 
         const { imageData } = vp.getImageData();
 
@@ -251,7 +251,7 @@ describe('Circle Tool: ', () => {
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const index1 = [60, 50, 2];
-        const index2 = [65, 60, 2];
+        const index2 = [65, 55, 2];
 
         const { imageData } = vp.getImageData();
 
