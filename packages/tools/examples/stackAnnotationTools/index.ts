@@ -1,9 +1,15 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  getRenderingEngine,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -25,8 +31,10 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { ViewportType } = Enums;
+const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = 'CT_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -46,10 +54,42 @@ element.style.height = '500px';
 
 content.appendChild(element);
 
+const info = document.createElement('div');
+content.appendChild(info);
+
 const instructions = document.createElement('p');
 instructions.innerText = 'Left Click to use selected tool';
+info.appendChild(instructions);
 
-content.append(instructions);
+const rotationInfo = document.createElement('div');
+info.appendChild(rotationInfo);
+
+const flipHorizontalInfo = document.createElement('div');
+info.appendChild(flipHorizontalInfo);
+
+const flipVerticalInfo = document.createElement('div');
+info.appendChild(flipVerticalInfo);
+
+element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
+  // Get the rendering engine
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+
+  // Get the stack viewport
+  const viewport = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportId)
+  );
+
+  if (!viewport) {
+    return;
+  }
+
+  const { flipHorizontal, flipVertical } = viewport.getCamera();
+  const { rotation } = viewport.getProperties();
+
+  rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
+  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
+  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
+});
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -85,6 +125,61 @@ addDropdownToToolbar({
     toolGroup.setToolPassive(selectedToolName);
 
     selectedToolName = <string>newSelectedToolName;
+  },
+});
+
+addButtonToToolbar({
+  title: 'Flip H',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    const { flipHorizontal } = viewport.getCamera();
+    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Flip V',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    const { flipVertical } = viewport.getCamera();
+
+    viewport.setCamera({ flipVertical: !flipVertical });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Delta 90',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+
+    const { rotation } = viewport.getProperties();
+    viewport.setProperties({ rotation: rotation + 90 });
+
+    viewport.render();
   },
 });
 
@@ -148,11 +243,9 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
     type: ViewportType.STACK,
