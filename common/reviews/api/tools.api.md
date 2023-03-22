@@ -684,10 +684,6 @@ export class CircleROITool extends AnnotationTool {
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
-        centerCanvas?: Array<number>;
-        canvasWidth?: number;
-        canvasHeight?: number;
-        originalHandleCanvas?: Array<number>;
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
