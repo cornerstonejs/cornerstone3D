@@ -38,10 +38,15 @@ class StackScrollMouseWheelTool extends BaseTool {
     const delta = direction * (invert ? -1 : 1);
 
     if (viewport instanceof StackViewport) {
-      viewport.scroll(delta, this.configuration.debounceIfNotLoaded, this.configuration.loop);
+      viewport.scroll(
+        delta,
+        this.configuration.debounceIfNotLoaded,
+        this.configuration.loop
+      );
     } else if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport);
       const volumeId = targetId.split('volumeId:')[1];
+      // TODO: add loop implemention for scroll volume.
       scrollVolume(viewport, volumeId, delta);
     } else {
       throw new Error('StackScrollMouseWheelTool: Unsupported viewport type');
