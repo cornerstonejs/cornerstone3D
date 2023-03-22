@@ -8919,22 +8919,6 @@ cornerstone-wado-image-loader@^4.10.2:
     pako "^2.0.4"
     uuid "^9.0.0"
 
-cornerstone-wado-image-loader@^4.8.0:
-  version "4.10.0"
-  resolved "https://registry.npmjs.org/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.10.0.tgz#25c367cfc54a2c92ebbb5c64dba4fe38439112a1"
-  integrity sha512-XZcgB8DpUxnsTA3vU/zbPtB2uFLL4ght70BPrQHykkX/Jlg/r6Ob7ztX2dEEAAb4ELE/d4icfGuSy10Acg/kyw==
-  dependencies:
-    "@babel/eslint-parser" "^7.19.1"
-    "@cornerstonejs/codec-charls" "^1.2.3"
-    "@cornerstonejs/codec-libjpeg-turbo-8bit" "^1.2.2"
-    "@cornerstonejs/codec-openjpeg" "^1.2.2"
-    "@cornerstonejs/codec-openjph" "^2.4.2"
-    coverage-istanbul-loader "^3.0.5"
-    date-format "^4.0.14"
-    dicom-parser "^1.8.9"
-    pako "^2.0.4"
-    uuid "^9.0.0"
-
 cors@~2.8.5:
   version "2.8.5"
   resolved "https://registry.yarnpkg.com/cors/-/cors-2.8.5.tgz#eac11da51592dd86b9f06f6e7ac293b3df875d29"
