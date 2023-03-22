@@ -4230,6 +4230,7 @@ type ScrollOptions_2 = {
     delta: number;
     volumeId?: string;
     debounceLoading?: boolean;
+    loop?: boolean;
 };
 
 // @public (undocumented)
@@ -4560,6 +4561,7 @@ export class StackScrollMouseWheelTool extends BaseTool {
         configuration: {
             invert: boolean;
             debounceIfNotLoaded: boolean;
+            loop: boolean;
         };
     });
     // (undocumented)

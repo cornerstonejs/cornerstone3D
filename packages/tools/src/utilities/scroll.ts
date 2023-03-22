@@ -23,7 +23,7 @@ export default function scroll(
   const { volumeId, delta } = options;
 
   if (viewport instanceof StackViewport) {
-    viewport.scroll(delta, options.debounceLoading);
+    viewport.scroll(delta, options.debounceLoading, options.loop);
   } else if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta);
   } else {
