@@ -676,6 +676,7 @@ class CircleROITool extends AnnotationTool {
           areaUnit: null,
           radius: null,
           radiusUnit: null,
+          perimeter: null,
         };
 
         this._calculateCachedStats(
@@ -1030,6 +1031,7 @@ class CircleROITool extends AnnotationTool {
           areaUnit: hasPixelSpacing ? 'mm' : 'px',
           radius: worldWidth / 2,
           radiusUnit: hasPixelSpacing ? 'mm' : 'px',
+          perimeter: 2 * Math.PI * (worldWidth / 2),
         };
       } else {
         this.isHandleOutsideImage = true;

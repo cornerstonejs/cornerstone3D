@@ -1,4 +1,3 @@
-import { vec3 } from "gl-matrix";
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
@@ -47,14 +46,11 @@ class CircleROI {
             pointsWorld.push(worldPos);
         }
 
-        const center = vec3.fromValues(...pointsWorld[0]);
-        const end = vec3.fromValues(...pointsWorld[1]);
-
         const state = defaultState;
 
         state.annotation.data = {
             handles: {
-                points: [center, end],
+                points: [...pointsWorld],
                 activeHandleIndex: 0,
                 textBox: {
                     hasMoved: false
@@ -97,14 +93,13 @@ class CircleROI {
         const center = worldToImageCoords(referencedImageId, handles.points[0]);
         const end = worldToImageCoords(referencedImageId, handles.points[1]);
 
+        const points = [];
+        points.push({ x: center[0], y: center[1] });
+        points.push({ x: end[0], y: end[1] });
+
         const { area, radius } =
             cachedStats[`imageId:${referencedImageId}`] || {};
-
         const perimeter = 2 * Math.PI * radius;
-        const points = [];
-
-        points.push(center);
-        points.push(end);
 
         return {
             area,

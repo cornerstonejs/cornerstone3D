@@ -655,6 +655,7 @@ interface CircleROIAnnotation extends Annotation {
             [targetId: string]: {
                 radius: number;
                 radiusUnit: string;
+                perimeter: number;
             };
         };
     };

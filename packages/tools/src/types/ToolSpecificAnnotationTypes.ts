@@ -96,7 +96,11 @@ export interface CircleROIAnnotation extends Annotation {
     };
     label: string;
     cachedStats?: ROICachedStats & {
-      [targetId: string]: { radius: number; radiusUnit: string };
+      [targetId: string]: {
+        radius: number;
+        radiusUnit: string;
+        perimeter: number;
+      };
     };
   };
 }
