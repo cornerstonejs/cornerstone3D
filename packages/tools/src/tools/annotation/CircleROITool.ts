@@ -117,10 +117,6 @@ class CircleROITool extends AnnotationTool {
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     movingTextBox?: boolean;
-    centerCanvas?: Array<number>;
-    canvasWidth?: number;
-    canvasHeight?: number;
-    originalHandleCanvas?: Array<number>;
     newAnnotation?: boolean;
     hasMoved?: boolean;
   } | null;
@@ -225,7 +221,6 @@ class CircleROITool extends AnnotationTool {
     this.editData = {
       annotation,
       viewportIdsToRender,
-      centerCanvas: canvasPos,
       newAnnotation: true,
       hasMoved: false,
     };
@@ -327,31 +322,12 @@ class CircleROITool extends AnnotationTool {
     let movingTextBox = false;
     let handleIndex;
 
-    let centerCanvas;
-    let canvasWidth;
-    let canvasHeight;
-    let originalHandleCanvas;
-
     if ((handle as TextBoxHandle).worldPosition) {
       movingTextBox = true;
     } else {
       const { points } = data.handles;
-      const enabledElement = getEnabledElement(element);
-      const { worldToCanvas } = enabledElement.viewport;
 
       handleIndex = points.findIndex((p) => p === handle);
-
-      const pointsCanvas = points.map(worldToCanvas);
-
-      originalHandleCanvas = pointsCanvas[handleIndex];
-
-      canvasWidth = Math.abs(pointsCanvas[2][0] - pointsCanvas[3][0]);
-      canvasHeight = Math.abs(pointsCanvas[0][1] - pointsCanvas[1][1]);
-
-      centerCanvas = [
-        (pointsCanvas[2][0] + pointsCanvas[3][0]) / 2,
-        (pointsCanvas[0][1] + pointsCanvas[1][1]) / 2,
-      ];
     }
 
     // Find viewports to render on drag.
@@ -364,10 +340,6 @@ class CircleROITool extends AnnotationTool {
       annotation,
       viewportIdsToRender,
       handleIndex,
-      canvasWidth,
-      canvasHeight,
-      centerCanvas,
-      originalHandleCanvas,
       movingTextBox,
     };
     this._activateModify(element);
@@ -443,23 +415,12 @@ class CircleROITool extends AnnotationTool {
     const { canvasToWorld } = viewport;
 
     //////
-    const { annotation, viewportIdsToRender, centerCanvas } = this.editData;
+    const { annotation, viewportIdsToRender } = this.editData;
     const { data } = annotation;
 
-    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
-    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
-
-    // Todo: why bottom is -dY, it should be +dY
-    const bottomCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] - dY];
-    const topCanvas = <Types.Point2>[centerCanvas[0], centerCanvas[1] + dY];
-    const leftCanvas = <Types.Point2>[centerCanvas[0] - dX, centerCanvas[1]];
-    const rightCanvas = <Types.Point2>[centerCanvas[0] + dX, centerCanvas[1]];
-
     data.handles.points = [
-      canvasToWorld(bottomCanvas),
-      canvasToWorld(topCanvas),
-      canvasToWorld(leftCanvas),
-      canvasToWorld(rightCanvas),
+      data.handles.points[0], // center stays
+      canvasToWorld(currentCanvasPoints), // end point moves (changing radius)
     ];
 
     annotation.invalidated = true;
@@ -518,18 +479,13 @@ class CircleROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const { canvasToWorld } = enabledElement.viewport;
+    const { canvasToWorld, worldToCanvas } = enabledElement.viewport;
 
-    const {
-      annotation,
-      canvasWidth,
-      canvasHeight,
-      handleIndex,
-      centerCanvas,
-      originalHandleCanvas,
-    } = this.editData;
+    const { annotation, handleIndex } = this.editData;
     const { data } = annotation;
     const { points } = data.handles;
+
+    const canvasCoordinates = points.map((p) => worldToCanvas(p));
 
     // Move current point in that direction.
     // Move other points in opposite direction.
@@ -537,62 +493,22 @@ class CircleROITool extends AnnotationTool {
     const { currentPoints } = eventDetail;
     const currentCanvasPoints = currentPoints.canvas;
 
-    if (handleIndex === 0 || handleIndex === 1) {
-      // Dragging top or bottom point
-      const dYCanvas = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
-      const canvasBottom = <Types.Point2>[
-        centerCanvas[0],
-        centerCanvas[1] - dYCanvas,
-      ];
-      const canvasTop = <Types.Point2>[
-        centerCanvas[0],
-        centerCanvas[1] + dYCanvas,
+    if (handleIndex === 0) {
+      // Dragging center, move the circle ROI
+      const dXCanvas = currentCanvasPoints[0] - canvasCoordinates[0][0];
+      const dYCanvas = currentCanvasPoints[1] - canvasCoordinates[0][1];
+
+      const canvasCenter = currentCanvasPoints as Types.Point2;
+      const canvasEnd = <Types.Point2>[
+        canvasCoordinates[1][0] + dXCanvas,
+        canvasCoordinates[1][1] + dYCanvas,
       ];
 
-      points[0] = canvasToWorld(canvasBottom);
-      points[1] = canvasToWorld(canvasTop);
-
-      const dXCanvas = currentCanvasPoints[0] - originalHandleCanvas[0];
-      const newHalfCanvasWidth = canvasWidth / 2 + dXCanvas;
-      const canvasLeft = <Types.Point2>[
-        centerCanvas[0] - newHalfCanvasWidth,
-        centerCanvas[1],
-      ];
-      const canvasRight = <Types.Point2>[
-        centerCanvas[0] + newHalfCanvasWidth,
-        centerCanvas[1],
-      ];
-
-      points[2] = canvasToWorld(canvasLeft);
-      points[3] = canvasToWorld(canvasRight);
+      points[0] = canvasToWorld(canvasCenter);
+      points[1] = canvasToWorld(canvasEnd);
     } else {
-      // Dragging left or right point
-      const dXCanvas = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
-      const canvasLeft = <Types.Point2>[
-        centerCanvas[0] - dXCanvas,
-        centerCanvas[1],
-      ];
-      const canvasRight = <Types.Point2>[
-        centerCanvas[0] + dXCanvas,
-        centerCanvas[1],
-      ];
-
-      points[2] = canvasToWorld(canvasLeft);
-      points[3] = canvasToWorld(canvasRight);
-
-      const dYCanvas = currentCanvasPoints[1] - originalHandleCanvas[1];
-      const newHalfCanvasHeight = canvasHeight / 2 + dYCanvas;
-      const canvasBottom = <Types.Point2>[
-        centerCanvas[0],
-        centerCanvas[1] - newHalfCanvasHeight,
-      ];
-      const canvasTop = <Types.Point2>[
-        centerCanvas[0],
-        centerCanvas[1] + newHalfCanvasHeight,
-      ];
-
-      points[0] = canvasToWorld(canvasBottom);
-      points[1] = canvasToWorld(canvasTop);
+      // Dragging end point, center stays
+      points[1] = canvasToWorld(currentCanvasPoints);
     }
   };
 
@@ -864,7 +780,7 @@ class CircleROITool extends AnnotationTool {
           drawCircleSvg(
             svgDrawingHelper,
             annotationUID,
-            circleUID,
+            `${circleUID}-center`,
             center,
             centerPointRadius,
             {
@@ -938,7 +854,6 @@ class CircleROITool extends AnnotationTool {
         : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
       textLines.push(areaLine);
     }
-    console.log('CircleROI - area', area, areaUnit);
 
     if (mean) {
       textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
