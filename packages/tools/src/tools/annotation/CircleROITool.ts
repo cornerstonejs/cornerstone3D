@@ -938,6 +938,7 @@ class CircleROITool extends AnnotationTool {
         : `Area: ${area.toFixed(2)} ${areaUnit}\xb2`;
       textLines.push(areaLine);
     }
+    console.log('CircleROI - area', area, areaUnit);
 
     if (mean) {
       textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
@@ -1026,9 +1027,10 @@ class CircleROITool extends AnnotationTool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
+        const worldRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
         const circleObj = {
           center: centerWorld,
-          radius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+          radius: worldRadius,
         };
 
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
@@ -1037,8 +1039,8 @@ class CircleROITool extends AnnotationTool {
           worldPos1,
           worldPos2
         );
-        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2);
+        const isEmptyArea = worldRadius === 0 && worldHeight === 0;
+        const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
         let count = 0;
         let mean = 0;

@@ -1092,7 +1092,7 @@ class EllipticalROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2);
+        const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
         let count = 0;
         let mean = 0;

@@ -940,7 +940,7 @@ class RectangleROITool extends AnnotationTool {
           worldPos2
         );
 
-        const area = worldWidth * worldHeight;
+        const area = Math.abs(worldWidth * worldHeight);
 
         let count = 0;
         let mean = 0;
