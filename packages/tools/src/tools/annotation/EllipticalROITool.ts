@@ -911,7 +911,7 @@ class EllipticalROITool extends AnnotationTool {
           drawCircleSvg(
             svgDrawingHelper,
             annotationUID,
-            ellipseUID,
+            `${ellipseUID}-center`,
             centerPoint,
             centerPointRadius,
             {
