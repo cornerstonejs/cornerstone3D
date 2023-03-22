@@ -52,6 +52,7 @@ import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
  */
 abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
+  use16BitTexture = false;
   private _FrameOfReferenceUID: string;
 
   // Viewport Properties
@@ -62,6 +63,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     super(props);
 
     this.useCPURendering = getShouldUseCPURendering();
+    this.use16BitTexture = this._shouldUse16BitTexture();
 
     if (this.useCPURendering) {
       throw new Error(
@@ -368,7 +370,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents
+        suppressEvents,
+        this.use16BitTexture
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -433,7 +436,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents
+        suppressEvents,
+        this.use16BitTexture
       );
 
       if (visibility === false) {
