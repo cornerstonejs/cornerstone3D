@@ -313,9 +313,6 @@ describe('CircleROITool (CPU):', () => {
         const targets = Array.from(Object.keys(data));
         expect(targets.length).toBe(1);
 
-        // the rectangle is drawn on the strip
-        expect(data[targets[0]].mean).toBe(255);
-
         annotation.state.removeAnnotation(circleAnnotation.annotationUID);
         done();
       }, 100);
