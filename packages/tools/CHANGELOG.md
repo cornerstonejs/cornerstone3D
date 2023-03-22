@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.55.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.55.1...@cornerstonejs/tools@0.55.2) (2023-03-22)
+
+
+### Bug Fixes
+
+* Elliptical roi when in flipped/rotated state ([#479](https://github.com/cornerstonejs/cornerstone3D-beta/issues/479)) ([f0961ae](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f0961ae6f5e912230f2bf17be5acfe30f775bcae))
+
+
+
+
+
 ## [0.55.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.55.0...@cornerstonejs/tools@0.55.1) (2023-03-22)
 
 
