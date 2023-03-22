@@ -1527,6 +1527,7 @@ interface EllipticalROIAnnotation extends Annotation {
         };
         label: string;
         cachedStats?: ROICachedStats;
+        initialRotation: number;
     };
 }
 

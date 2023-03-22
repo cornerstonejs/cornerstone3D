@@ -214,6 +214,7 @@ class EllipticalROITool extends AnnotationTool {
           activeHandleIndex: null,
         },
         cachedStats: {},
+        initialRotation: viewport.getRotation(),
       },
     };
 
@@ -765,9 +766,24 @@ class EllipticalROITool extends AnnotationTool {
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
       ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
-      const canvasCorners = <Array<Types.Point2>>(
-        getCanvasEllipseCorners(canvasCoordinates)
+
+      const rotation = Math.abs(
+        viewport.getRotation() - (data.initialRotation || 0)
       );
+      let canvasCorners;
+
+      if (rotation == 90 || rotation == 270) {
+        canvasCorners = <Array<Types.Point2>>getCanvasEllipseCorners([
+          canvasCoordinates[2], // bottom
+          canvasCoordinates[3], // top
+          canvasCoordinates[0], // left
+          canvasCoordinates[1], // right
+        ]);
+      } else {
+        canvasCorners = <Array<Types.Point2>>(
+          getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
+        );
+      }
 
       const { centerPointRadius } = this.configuration;
 
