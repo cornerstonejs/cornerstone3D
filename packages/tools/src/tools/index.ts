@@ -18,6 +18,7 @@ import ProbeTool from './annotation/ProbeTool';
 import DragProbeTool from './annotation/DragProbeTool';
 import RectangleROITool from './annotation/RectangleROITool';
 import EllipticalROITool from './annotation/EllipticalROITool';
+import CircleROITool from './annotation/CircleROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
@@ -61,6 +62,7 @@ export {
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
+  CircleROITool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   AngleTool,
