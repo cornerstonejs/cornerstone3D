@@ -204,7 +204,8 @@ export default class MeasurementReport {
                     referencedImageId,
                     FrameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
                     label: ""
-                }
+                },
+                data: undefined
             },
             finding,
             findingSites
