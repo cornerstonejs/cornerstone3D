@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.16.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.16.4...docs@0.16.5) (2023-03-22)
+
+
+### Bug Fixes
+
+* **rendering:** should still use Float32 when not 16 bit for scaling issues ([#501](https://github.com/cornerstonejs/cornerstone3D-beta/issues/501)) ([448baf2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/448baf2086ef28b8eedc90ab46e0fee54cf7ac9e))
+
+
+
+
+
 ## [0.16.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.16.3...docs@0.16.4) (2023-03-22)
 
 **Note:** Version bump only for package docs
