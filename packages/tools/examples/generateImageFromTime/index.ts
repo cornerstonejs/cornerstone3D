@@ -17,6 +17,8 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+
 const {
   segmentation,
   SegmentationDisplayTool,
@@ -30,6 +32,7 @@ console.warn(
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
+let viewport;
 const orientations = [
   Enums.OrientationAxis.AXIAL,
   Enums.OrientationAxis.SAGITTAL,
@@ -39,8 +42,8 @@ const operations = ['SUM', 'AVERAGE', 'SUBTRACT'];
 let dataOperation = operations[0];
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume 4D',
-  'Displays a 4D DICOM series in a Volume viewport.'
+  '3D Volume Generation From 4D Data',
+  'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators from a 4D time series.'
 );
 const content = document.getElementById('content');
 const element = document.createElement('div');
@@ -57,7 +60,7 @@ addButtonToToolbar({
       volumeForButton,
       dataOperation,
       {
-        frameNumbers: [1, 39],
+        frameNumbers: [1, 19],
         // imageCoordinate: [-24, 24, -173],
         maskVolumeId: segmentationId,
       }
@@ -110,7 +113,8 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
-const computedVolumeId = 'MY_COMPUTED_ID';
+const computedVolumeName = 'PT_VOLUME_ID';
+const computedVolumeId = `cornerstoneStreamingImageVolume:${computedVolumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
@@ -169,23 +173,30 @@ async function createVolumeFromTimeData(dataInTime) {
   // Create a volume of the same resolution as the source data
   // using volumeLoader.createAndCacheDerivedVolume.
   // console.log('beep');
-  // const computedVolume = await volumeLoader.createAndCacheDerivedVolume(
-  //   volumeId,
-  //   {
-  //     volumeId: computedVolumeId,
-  //   }
-  // );
+  const computedVolume = await volumeLoader.createAndCacheDerivedVolume(
+    volumeId,
+    {
+      volumeId: computedVolumeId,
+    }
+  );
   // // Add the segmentations to state
-  // const data = dataInTime.data;
-  // const index = dataInTime.index;
-  // let i = 0;
-  // index.forEach((voxelIndex) => {
-  //   computedVolume.scalarData[voxelIndex] = data[i];
-  //   i++;
-  // });
+  const data = dataInTime.data;
+  const index = dataInTime.index;
+  let i = 0;
+  index.forEach((voxelIndex) => {
+    computedVolume.scalarData[voxelIndex] = data[i];
+    i++;
+  });
+  volumeLoader.loadVolume(computedVolumeId);
   // // computedVolume.imageData.setPointData();
-  // console.log(computedVolume);
+  // console.log(computedVolume.scalarData[index[0]]);
+  console.log(computedVolume);
   // Add some data to the segmentations
+  console.log(computedVolumeId);
+  viewport.setVolumes([
+    { computedVolumeId, callback: setPetTransferFunctionForVolumeActor },
+  ]);
+  // viewport.render;
 }
 
 /**
@@ -201,14 +212,36 @@ async function run() {
     cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+
+  const { metaDataManager } = cornerstoneWADOImageLoader.wadors;
+
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  let imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
     SeriesInstanceUID:
       '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
     wadoRsRoot: 'https://d28o5kq0jsoob5.cloudfront.net/dicomweb',
   });
+
+  const MAX_NUM_TIMEPOINTS = 40;
+  const numTimePoints = 20;
+  const NUM_IMAGES_PER_TIME_POINT = 235;
+  const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
+  const numImagesToLoad = numTimePoints * NUM_IMAGES_PER_TIME_POINT;
+
+  // Load the last N time points because they have a better image quality
+  // and first ones are white or contains only a few black pixels
+  const firstInstanceNumber = TOTAL_NUM_IMAGES - numImagesToLoad + 1;
+
+  imageIds = imageIds.filter((imageId) => {
+    const instanceMetaData = metaDataManager.get(imageId);
+    const instanceTag = instanceMetaData['00200013'];
+    const instanceNumber = parseInt(instanceTag.Value[0]);
+
+    return instanceNumber >= firstInstanceNumber;
+  });
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
   // Create a stack viewport
@@ -225,13 +258,12 @@ async function run() {
   // Add viewport to toolGroup
   toolGroup.addViewport(viewportId, renderingEngineId);
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
+  console.log(volume);
   // Add segmentation
   await addSegmentationsToState();
   // Set the volume to load

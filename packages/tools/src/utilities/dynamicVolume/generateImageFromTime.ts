@@ -52,9 +52,6 @@ function generateImageFromTime(
     operationData = _subData(dataInTime, frames);
   }
 
-  // console.log(operationData);
-  // console.log(indexArray);
-
   return { data: operationData, index: indexArray };
 }
 
