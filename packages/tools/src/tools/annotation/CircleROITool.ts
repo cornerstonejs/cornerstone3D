@@ -57,7 +57,7 @@ import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import { pointInSphere } from '../../utilities/math/sphere';
+import { pointInEllipse } from 'tools/src/utilities/math/ellipse';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -888,7 +888,6 @@ class CircleROITool extends AnnotationTool {
       getCanvasCircleCorners(canvasCoordinates)
     );
 
-    const centerWorld = viewport.canvasToWorld(canvasCoordinates[0]);
     const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
     const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
     const { cachedStats } = data;
@@ -942,10 +941,17 @@ class CircleROITool extends AnnotationTool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const worldRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
-        const circleObj = {
-          center: centerWorld,
-          radius: worldRadius,
+        const center = [
+          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
+          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
+          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
+        ] as Types.Point3;
+
+        const ellipseObj = {
+          center,
+          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
         };
 
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
@@ -954,7 +960,7 @@ class CircleROITool extends AnnotationTool {
           worldPos1,
           worldPos2
         );
-        const isEmptyArea = worldRadius === 0 && worldHeight === 0;
+        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
         const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
         let count = 0;
@@ -973,7 +979,7 @@ class CircleROITool extends AnnotationTool {
 
         pointInShapeCallback(
           imageData,
-          (pointLPS, pointIJK) => pointInSphere(circleObj, pointLPS),
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
           meanMaxCalculator,
           boundsIJK
         );
@@ -988,7 +994,7 @@ class CircleROITool extends AnnotationTool {
 
         pointInShapeCallback(
           imageData,
-          (pointLPS, pointIJK) => pointInSphere(circleObj, pointLPS),
+          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
           stdCalculator,
           boundsIJK
         );
