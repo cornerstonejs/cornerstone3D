@@ -3,15 +3,21 @@ import { EPSILON } from '../constants';
 // import type { VolumeViewport } from '../RenderingEngine'
 import { ICamera, IImageVolume, IVolumeViewport } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
 
 // One EPSILON part larger multiplier
 const EPSILON_PART = 1 + EPSILON;
+
+const startsWith = (str, starts) =>
+  starts === str.substring(0, Math.min(str.length, starts.length));
 
 // Check if this is a primary volume
 // For now, that means it came from some sort of image loader, but
 // should be specifically designated.
 const isPrimaryVolume = (volume): boolean =>
-  volume.volumeId.indexOf(':') !== -1;
+  !!getVolumeLoaderSchemes().find((scheme) =>
+    startsWith(volume.volumeId, scheme)
+  );
 
 /**
  * Given a volume viewport and camera, find the target volume.
