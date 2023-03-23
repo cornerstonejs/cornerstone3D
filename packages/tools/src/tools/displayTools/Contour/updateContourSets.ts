@@ -1,5 +1,6 @@
 import { cache, Types } from '@cornerstonejs/core';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 
 import {
@@ -7,6 +8,7 @@ import {
   ToolGroupSpecificContourRepresentation,
 } from '../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
+import { getPolyData } from './utils';
 
 export function updateContourSets(
   viewport: Types.IVolumeViewport,
@@ -44,19 +46,6 @@ export function updateContourSets(
     );
   }
 
-  const newVisibility = contourRepresentation.visibility;
-
-  if (cachedConfig.visibility !== newVisibility) {
-    (actor as vtkActor).setVisibility(newVisibility);
-
-    setConfigCache(
-      segmentationRepresentationUID,
-      Object.assign({}, cachedConfig, {
-        visibility: newVisibility,
-      })
-    );
-  }
-
   const mapper = (actor as vtkActor).getMapper();
   const lut = mapper.getLookupTable();
 
@@ -75,22 +64,38 @@ export function updateContourSets(
       segmentsToSetToVisible.push(segmentIndex);
     }
   }
-
   if (segmentsToSetToInvisible.length || segmentsToSetToVisible.length) {
-    const table = vtkDataArray.newInstance({
-      numberOfComponents: 4,
-      size: 4 * geometryIds.length,
-      dataType: 'Uint8Array',
-    });
+    const appendPolyData = vtkAppendPolyData.newInstance();
 
-    geometryIds.forEach((geometryId, index) => {
+    geometryIds.forEach((geometryId) => {
       const geometry = cache.getGeometry(geometryId);
-      const color = geometry.data.getColor();
-      const visibility = segmentsToSetToInvisible.includes(index) ? 0 : 255;
-      table.setTuple(index, [...color, visibility]);
+      const { data: contourSet } = geometry;
+      const { segmentIndex } = contourSet;
+      const color = contourSet.getColor();
+      const visibility = segmentsToSetToInvisible.includes(segmentIndex)
+        ? 0
+        : 255;
+      const polyData = getPolyData(contourSet);
+
+      const size = polyData.getPoints().getNumberOfPoints();
+
+      const scalars = vtkDataArray.newInstance({
+        size: size * 4,
+        numberOfComponents: 4,
+        dataType: 'Uint8Array',
+      });
+      for (let i = 0; i < size; ++i) {
+        scalars.setTuple(i, [...color, visibility]);
+      }
+      polyData.getPointData().setScalars(scalars);
+
+      segmentIndex === 0
+        ? appendPolyData.setInputData(polyData)
+        : appendPolyData.addInputData(polyData);
     });
 
-    lut.setTable(table);
+    const polyDataOutput = appendPolyData.getOutputData();
+    mapper.setInputData(polyDataOutput);
 
     setConfigCache(
       segmentationRepresentationUID,

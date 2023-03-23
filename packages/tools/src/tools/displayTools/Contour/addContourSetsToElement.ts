@@ -1,6 +1,5 @@
 import { cache, Types } from '@cornerstonejs/core';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkLookupTable from '@kitware/vtk.js/Common/Core/LookupTable';
 import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
@@ -8,7 +7,6 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import {
   getPolyData,
   getSegmentSpecificConfig,
-  setScalarsForPolyData,
   validateGeometry,
 } from './utils';
 
@@ -25,14 +23,14 @@ export function addContourSetsToElement(
   contourRepresentationConfig: SegmentationRepresentationConfig,
   contourActorUID: string
 ) {
-  const { segmentationRepresentationUID, segmentsHidden, visibility } =
+  const { segmentationRepresentationUID, segmentsHidden } =
     contourRepresentation;
   const appendPolyData = vtkAppendPolyData.newInstance();
 
   const scalarToColorMap = new Map();
   const segmentSpecificMap = new Map();
 
-  geometryIds.forEach((geometryId, index) => {
+  geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
 
     if (!geometry) {
@@ -42,30 +40,42 @@ export function addContourSetsToElement(
       return;
     }
 
+    const { segmentIndex } = geometry.data;
+
     validateGeometry(geometry);
 
     const segmentSpecificConfig = getSegmentSpecificConfig(
       contourRepresentation,
       geometryId,
-      index + 1 // +1 because the first segment is the background
+      segmentIndex
     );
 
     const contourSet = geometry.data;
     const polyData = getPolyData(contourSet);
-    setScalarsForPolyData(polyData, index);
-
-    if (segmentSpecificConfig) {
-      segmentSpecificMap.set(index, segmentSpecificConfig);
-    }
-
     const color = contourSet.getColor();
 
-    scalarToColorMap.set(index, [
+    const size = polyData.getPoints().getNumberOfPoints();
+
+    const scalars = vtkDataArray.newInstance({
+      size: size * 4,
+      numberOfComponents: 4,
+      dataType: 'Uint8Array',
+    });
+    for (let i = 0; i < size; ++i) {
+      scalars.setTuple(i, [...color, 255]);
+    }
+    polyData.getPointData().setScalars(scalars);
+
+    if (segmentSpecificConfig) {
+      segmentSpecificMap.set(segmentIndex, segmentSpecificConfig);
+    }
+
+    scalarToColorMap.set(segmentIndex, [
       ...color,
-      segmentsHidden.has(index) ? 0 : 255,
+      segmentsHidden.has(segmentIndex) ? 0 : 255,
     ]);
 
-    index === 0
+    segmentIndex === 0
       ? appendPolyData.setInputData(polyData)
       : appendPolyData.addInputData(polyData);
   });
@@ -82,22 +92,6 @@ export function addContourSetsToElement(
   actor.setMapper(mapper);
   actor.getProperty().setLineWidth(outlineWidthActive);
 
-  const lut = vtkLookupTable.newInstance();
-
-  const numberOfColors = scalarToColorMap.size;
-  const table = vtkDataArray.newInstance({
-    numberOfComponents: 4,
-    size: 4 * numberOfColors,
-    dataType: 'Uint8Array',
-  });
-  scalarToColorMap.forEach((color, index) => {
-    table.setTuple(index, color);
-  });
-
-  lut.setTable(table);
-  // lut.setRange(0, numberOfColors - 1);
-  mapper.setLookupTable(lut);
-
   // set the config cache for later update of the contour
   setConfigCache(
     segmentationRepresentationUID,
@@ -105,7 +99,6 @@ export function addContourSetsToElement(
       segmentsHidden: new Set(segmentsHidden),
       segmentSpecificMap,
       outlineWidthActive,
-      visibility,
     })
   );
 

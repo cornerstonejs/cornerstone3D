@@ -1,4 +1,8 @@
-import { getEnabledElementByIds, Types, utilities } from '@cornerstonejs/core';
+import {
+  getEnabledElementByIds,
+  Types,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
@@ -9,7 +13,6 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
-import { deepMerge } from '../../../utilities';
 import { addOrUpdateContours } from './addOrUpdateContourSets';
 import removeContourFromElement from './removeContourFromElement';
 

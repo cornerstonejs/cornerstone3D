@@ -3,14 +3,32 @@ import * as SegmentationState from '../../../stateManagement/segmentation/segmen
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
 import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 
 function getSegmentationIndices(segmentationId) {
-  const volume = cache.getVolume(segmentationId);
-  const scalarData = volume.getScalarData();
+  const segmentation = SegmentationState.getSegmentation(segmentationId);
 
-  const keySet = {};
-  scalarData.forEach((it) => (keySet[it] = it));
-  return Object.keys(keySet).map((it) => parseInt(it, 10));
+  if (segmentation.type === SegmentationRepresentations.Labelmap) {
+    const volume = cache.getVolume(segmentationId);
+    const scalarData = volume.getScalarData();
+
+    const keySet = {};
+    scalarData.forEach((it) => (keySet[it] = it));
+    return Object.keys(keySet).map((it) => parseInt(it, 10));
+  } else if (segmentation.type === SegmentationRepresentations.Contour) {
+    const geometryIds = segmentation.representationData.CONTOUR?.geometryIds;
+
+    if (!geometryIds) {
+      throw new Error(
+        `No geometryIds found for segmentationId ${segmentationId}`
+      );
+    }
+
+    return geometryIds.map((geometryId) => {
+      const geometry = cache.getGeometry(geometryId);
+      return geometry.data.segmentIndex;
+    });
+  }
 }
 
 /**

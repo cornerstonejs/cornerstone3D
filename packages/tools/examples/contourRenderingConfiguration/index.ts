@@ -111,7 +111,7 @@ addToggleButtonToToolbar({
         toolGroupId: toolGroupId3d,
       },
     ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.visibility.setVisibilityForSegmentIndex(
+      segmentation.config.visibility.setSegmentVisibility(
         toolGroupId,
         representationUID,
         segmentIndex,

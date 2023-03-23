@@ -5,6 +5,7 @@ type ContourSetProps = {
   id: string;
   data: ContourData[];
   frameOfReferenceUID: string;
+  segmentIndex: number;
   color?: Point3;
 };
 
@@ -17,6 +18,7 @@ export class ContourSet implements IContourSet {
   readonly sizeInBytes: number;
   readonly frameOfReferenceUID: string;
   private color: Point3 = [200, 0, 0]; // default color
+  readonly segmentIndex: number;
   contours: IContour[];
 
   constructor(props: ContourSetProps) {
@@ -24,24 +26,30 @@ export class ContourSet implements IContourSet {
     this.contours = [];
     this.color = props.color ?? this.color;
     this.frameOfReferenceUID = props.frameOfReferenceUID;
+    this.segmentIndex = props.segmentIndex;
 
     this._createEachContour(props.data);
     this.sizeInBytes = this._getSizeInBytes();
   }
 
   _createEachContour(contourDataArray: ContourData[]): void {
-    for (let i = 0; i < contourDataArray.length; i++) {
+    contourDataArray.forEach((contourData) => {
+      const { points, type, color } = contourData;
+
       const contour = new Contour({
-        id: `${this.id}-${i}`,
+        id: `${this.id}-segment-${this.segmentIndex}`,
         data: {
-          points: contourDataArray[i].points,
-          type: contourDataArray[i].type,
+          points,
+          type,
+          segmentIndex: this.segmentIndex,
+          color: color ?? this.color,
         },
-        color: contourDataArray[i].color ?? this.color,
+        segmentIndex: this.segmentIndex,
+        color: color ?? this.color,
       });
 
       this.contours.push(contour);
-    }
+    });
   }
 
   _getSizeInBytes(): number {

@@ -113,21 +113,3 @@ export function getPolyData(contourSet) {
 
   return polygon;
 }
-
-/**
- * Set the scalars for a polydata to a single value.
- * @param polyData -  the vtkPolyData object that you want to set the scalars for
- * @param scalarValue -  The value to set the scalars to.
- *
- */
-export function setScalarsForPolyData(polyData, scalarValue) {
-  const size = polyData.getPoints().getNumberOfPoints();
-  const scalars = vtkDataArray.newInstance({
-    size: size,
-    numberOfComponents: 1,
-  });
-  for (let i = 0; i < size; ++i) {
-    scalars.setTuple(i, [scalarValue]);
-  }
-  polyData.getPointData().setScalars(scalars);
-}

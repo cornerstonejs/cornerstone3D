@@ -5,6 +5,7 @@ type ContourProps = {
   id: string;
   data: ContourData;
   color: Point3;
+  segmentIndex: number;
 };
 
 /**
@@ -19,6 +20,7 @@ export class Contour implements IContour {
   points: Point3[];
   color: Point3;
   type: ContourType;
+  segmentIndex: number;
 
   constructor(props: ContourProps) {
     const { points, type } = props.data;
@@ -26,6 +28,7 @@ export class Contour implements IContour {
     this.points = points;
     this.type = type;
     this.color = props.color;
+    this.segmentIndex = props.segmentIndex;
 
     this.sizeInBytes = this._getSizeInBytes();
   }
