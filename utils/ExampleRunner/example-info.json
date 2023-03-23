@@ -170,6 +170,10 @@
         "name": "Global Labelmap Segmentation Configuration",
         "description": "Demonstrates how to set a global configuration for segmentation representations"
       },
+      "contourRenderingConfiguration": {
+        "name": "Contour rendering configuration ",
+        "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
+      },
       "labelmapToolGroupSpecificConfiguration": {
         "name": "ToolGroup Specific Labelmap Segmentation Configuration",
         "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"

@@ -18,11 +18,8 @@ export type Color = [number, number, number, number];
 export type ColorLUT = Array<Color>;
 
 export type SegmentSpecificRepresentationConfig = {
-  [key: number]: RepresentationConfig;
+  [key: number | string]: RepresentationConfig;
 };
-/**
- * Segmentation Config
- */
 
 export type RepresentationConfig = {
   /** labelmap configuration */

@@ -12,17 +12,9 @@ function addContourToElement(
   element: HTMLDivElement,
   contour: Types.IContour,
   actorUID: string
-): void {
+): vtkActor {
   const enabledElement = getEnabledElement(element);
-  const { renderingEngine, viewport } = enabledElement;
-  const { id: viewportId } = viewport;
-
-  // Default to true since we are setting a new segmentation, however,
-  // in the event listener, we will make other segmentations visible/invisible
-  // based on the config
-  const visibility = true;
-  const immediateRender = false;
-  const suppressEvents = true;
+  const { viewport } = enabledElement;
 
   const pointList = contour.getPoints();
   const flatPoints = contour.getFlatPointsArray();
@@ -51,33 +43,27 @@ function addContourToElement(
   polygon.setPoints(points);
   polygon.setLines(lines);
 
-  const mapper1 = vtkMapper.newInstance();
-  mapper1.setInputData(polygon);
-  const actor1 = vtkActor.newInstance();
-  actor1.setMapper(mapper1);
-  actor1.getProperty().setLineWidth(4);
-  actor1.getProperty().setColor(colorToUse[0], colorToUse[1], colorToUse[2]);
+  const mapper = vtkMapper.newInstance();
+  mapper.setInputData(polygon);
+  const actor = vtkActor.newInstance();
+  actor.setMapper(mapper);
+  actor.getProperty().setLineWidth(4);
+  actor.getProperty().setColor(colorToUse[0], colorToUse[1], colorToUse[2]);
 
-  viewport.addActor({ actor: actor1, uid: actorUID });
+  viewport.addActor({ actor: actor, uid: actorUID });
+
+  return actor;
 }
 
 function addContourSetToElement(
   element: HTMLDivElement,
   contourSet: Types.IContourSet,
   actorUID: string
-): void {
+): vtkActor {
   const enabledElement = getEnabledElement(element);
-  const { renderingEngine, viewport } = enabledElement;
-  const { id: viewportId } = viewport;
+  const { viewport } = enabledElement;
 
-  // Default to true since we are setting a new segmentation, however,
-  // in the event listener, we will make other segmentations visible/invisible
-  // based on the config
-  const visibility = true;
-  const immediateRender = false;
-  const suppressEvents = true;
-
-  const actor1 = vtkActor.newInstance();
+  const actor = vtkActor.newInstance();
   let color;
 
   const pointArray = [];
@@ -103,7 +89,7 @@ function addContourSetToElement(
     }
 
     const linePoints = Float32Array.from(flatPoints);
-    // add the curent points into the point list
+    // add the current points into the point list
     pointArray.push(...linePoints);
     // add the point indexes into the cell array
     lines.insertNextCell([...pointIndexes]);
@@ -114,22 +100,24 @@ function addContourSetToElement(
   // converts the pointArray into vtkPoints
   points.setData(pointArray, 3);
 
-  // creates the polydata
+  // creates the polyData
   const polygon = vtkPolyData.newInstance();
   polygon.setPoints(points);
   polygon.setLines(lines);
 
-  const mapper1 = vtkMapper.newInstance();
-  mapper1.setInputData(polygon);
-  actor1.setMapper(mapper1);
-  actor1.getProperty().setLineWidth(4);
+  const mapper = vtkMapper.newInstance();
+  mapper.setInputData(polygon);
+  actor.setMapper(mapper);
+  actor.getProperty().setLineWidth(4);
 
   // despite each contour can have its own color, we assign the last color to
   // all contours
   const colorToUse = color.map((c) => c / 255);
-  actor1.getProperty().setColor(colorToUse[0], colorToUse[1], colorToUse[2]);
+  actor.getProperty().setColor(colorToUse[0], colorToUse[1], colorToUse[2]);
 
-  viewport.addActor({ actor: actor1, uid: actorUID });
+  viewport.addActor({ actor: actor, uid: actorUID });
+
+  return actor;
 }
 
 export { addContourToElement, addContourSetToElement };
