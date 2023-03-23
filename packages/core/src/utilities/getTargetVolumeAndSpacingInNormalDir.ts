@@ -7,6 +7,12 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 // One EPSILON part larger multiplier
 const EPSILON_PART = 1 + EPSILON;
 
+// Check if this is a primary volume
+// For now, that means it came from some sort of image loader, but
+// should be specifically designated.
+const isPrimaryVolume = (volume): boolean =>
+  volume.volumeId.indexOf(':') !== -1;
+
 /**
  * Given a volume viewport and camera, find the target volume.
  * The imageVolume is retrieved from cache for the specified targetVolumeId or
@@ -82,8 +88,15 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     actorUID: null,
   };
 
+  const hasPrimaryVolume = imageVolumes.find(isPrimaryVolume);
+
   for (let i = 0; i < imageVolumes.length; i++) {
     const imageVolume = imageVolumes[i];
+
+    if (hasPrimaryVolume && !isPrimaryVolume(imageVolume)) {
+      // Secondary volumes like segmentation don't count towards spacing
+      continue;
+    }
 
     const spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
