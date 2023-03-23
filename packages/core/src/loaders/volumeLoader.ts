@@ -454,6 +454,11 @@ export function registerVolumeLoader(
   volumeLoaders[scheme] = volumeLoader;
 }
 
+/** Gets the array of volume loader schemes */
+export function getVolumeLoaderSchemes(): string[] {
+  return Object.keys(volumeLoaders);
+}
+
 /**
  * Registers a new unknownVolumeLoader and returns the previous one
  *

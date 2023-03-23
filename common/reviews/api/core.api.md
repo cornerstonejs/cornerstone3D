@@ -762,6 +762,9 @@ function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
 
 // @public (undocumented)
+function getVolumeLoaderSchemes(): string[];
+
+// @public (undocumented)
 function getVolumeSliceRangeInfo(viewport: IVolumeViewport, volumeId: string): {
     sliceRange: ActorSliceRange;
     spacingInNormalDirection: number;
@@ -2595,6 +2598,7 @@ declare namespace volumeLoader {
         createAndCacheDerivedVolume,
         createLocalVolume,
         registerVolumeLoader,
+        getVolumeLoaderSchemes,
         registerUnknownVolumeLoader
     }
 }
