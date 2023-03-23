@@ -6,6 +6,7 @@ import {
   getRenderingEngine,
   CONSTANTS,
   utilities,
+  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -31,8 +32,9 @@ console.warn(
 );
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_SAGITTAL_STACK';
-let viewport;
+const viewportId1 = 'CT_SAGITTAL_STACK';
+const viewportId2 = 'COMPUTED_STACK';
+
 const orientations = [
   Enums.OrientationAxis.AXIAL,
   Enums.OrientationAxis.SAGITTAL,
@@ -45,12 +47,33 @@ setTitleAndDescription(
   '3D Volume Generation From 4D Data',
   'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators from a 4D time series.'
 );
+
+const size = '500px';
 const content = document.getElementById('content');
-const element = document.createElement('div');
-element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
-content.appendChild(element);
+const viewportGrid = document.createElement('div');
+// const element = document.createElement('div');
+
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
+
+// element.id = 'cornerstone-element';
+// element.style.width = '500px';
+// element.style.height = '500px';
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
+
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+
+// content.appendChild(element);
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+
+content.appendChild(viewportGrid);
 // ============================= //
 let volumeForButton;
 addButtonToToolbar({
@@ -60,9 +83,9 @@ addButtonToToolbar({
       volumeForButton,
       dataOperation,
       {
-        frameNumbers: [1, 19],
-        // imageCoordinate: [-24, 24, -173],
-        maskVolumeId: segmentationId,
+        frameNumbers: [1, 2],
+        // // imageCoordinate: [-24, 24, -173],
+        // maskVolumeId: segmentationId,
       }
     );
     createVolumeFromTimeData(dataInTime);
@@ -89,7 +112,7 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
+      renderingEngine.getViewport(viewportId1)
     );
     viewport.setOrientation(<Enums.OrientationAxis>selectedValue);
     viewport.render();
@@ -116,6 +139,7 @@ const segmentationId = 'MY_SEGMENTATION_ID';
 const computedVolumeName = 'PT_VOLUME_ID';
 const computedVolumeId = `cornerstoneStreamingImageVolume:${computedVolumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
+let renderingEngine;
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
@@ -180,23 +204,40 @@ async function createVolumeFromTimeData(dataInTime) {
     }
   );
   // // Add the segmentations to state
-  const data = dataInTime.data;
-  const index = dataInTime.index;
-  let i = 0;
-  index.forEach((voxelIndex) => {
-    computedVolume.scalarData[voxelIndex] = data[i];
-    i++;
-  });
+
+  const scalarData = computedVolume.getScalarData();
+  for (let i = 0; i < dataInTime.length; i++) {
+    scalarData[i] = dataInTime[i];
+  }
+
+  const viewportInput2 = {
+    viewportId: viewportId2,
+    type: ViewportType.ORTHOGRAPHIC,
+    element: element2,
+    defaultOptions: {
+      orientation: Enums.OrientationAxis.ACQUISITION,
+      background: <Types.Point3>[0.2, 0, 0.2],
+    },
+  };
+
+  const viewport2 = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportId2)
+  );
+  renderingEngine.enableElement(viewportInput2);
+
   volumeLoader.loadVolume(computedVolumeId);
-  // // computedVolume.imageData.setPointData();
-  // console.log(computedVolume.scalarData[index[0]]);
-  console.log(computedVolume);
-  // Add some data to the segmentations
-  console.log(computedVolumeId);
-  viewport.setVolumes([
-    { computedVolumeId, callback: setPetTransferFunctionForVolumeActor },
+
+  console.log(cache.getVolume(computedVolumeId));
+  console.log(cache.getVolume(volumeId));
+  console.log(cornerstone.cache._volumeCache);
+  debugger;
+  viewport2.setVolumes([
+    {
+      volumeId: computedVolumeId,
+      callback: setPetTransferFunctionForVolumeActor,
+    },
   ]);
-  // viewport.render;
+  viewport2.render;
 }
 
 /**
@@ -225,7 +266,7 @@ async function run() {
   });
 
   const MAX_NUM_TIMEPOINTS = 40;
-  const numTimePoints = 20;
+  const numTimePoints = 3;
   const NUM_IMAGES_PER_TIME_POINT = 235;
   const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
   const numImagesToLoad = numTimePoints * NUM_IMAGES_PER_TIME_POINT;
@@ -243,43 +284,48 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
   // Create a stack viewport
-  const viewportInput = {
-    viewportId,
+  const viewportInput1 = {
+    viewportId: viewportId1,
     type: ViewportType.ORTHOGRAPHIC,
-    element,
+    element: element1,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };
-  renderingEngine.enableElement(viewportInput);
+  renderingEngine.enableElement(viewportInput1);
   // Add viewport to toolGroup
-  toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
   // Get the stack viewport that was created
-  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
+  const viewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportId1)
+  );
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
-  console.log(volume);
+
   // Add segmentation
   await addSegmentationsToState();
+
   // Set the volume to load
   volume.load();
   volumeForButton = volume;
   addTimePointSlider(volume);
+
   // Set the volume on the viewport
   viewport.setVolumes([
     { volumeId, callback: setPetTransferFunctionForVolumeActor },
   ]);
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // await segmentation.addSegmentationRepresentations(toolGroupId, [
+  //   {
+  //     segmentationId,
+  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //   },
+  // ]);
   // Render the image
   viewport.render();
 }

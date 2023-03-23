@@ -8,7 +8,7 @@ function generateImageFromTime(
     frameNumbers?;
     maskVolumeId?;
     imageCoordinate?;
-  }
+  } = {}
 ) {
   let dataInTime;
   let operationData;
@@ -21,38 +21,72 @@ function generateImageFromTime(
     throw new Error('Please provide two or more time points');
   }
 
-  if (options.maskVolumeId) {
-    dataInTime = getDataInTime(dynamicVolume, {
-      frameNumbers: frames,
-      maskVolumeId: options.maskVolumeId,
-    });
-    const segmentationVolume = cache.getVolume(options.maskVolumeId);
-    indexArray = segmentationVolume
-      .getScalarData()
-      .map((_, i) => i)
-      .filter((i) => segmentationVolume.getScalarData()[i] !== 0);
-  }
+  const typedArrays = dynamicVolume.getScalarDataArrays();
 
-  if (options.imageCoordinate) {
-    dataInTime = getDataInTime(dynamicVolume, {
-      frameNumbers: frames,
-      imageCoordinate: options.imageCoordinate,
-    });
-  }
+  const arrayLength = typedArrays[0].length;
+  const finalArray = new Float32Array(arrayLength); // same type (you get this via create and cache)
 
   if (operation === 'SUM') {
-    operationData = _sumData(dataInTime, frames);
-  }
-
-  if (operation === 'AVERAGE') {
-    operationData = _avgData(dataInTime, frames);
+    for (let i = 0; i < typedArrays.length; i++) {
+      const currentArray = typedArrays[i];
+      for (let j = 0; j < arrayLength; j++) {
+        finalArray[j] += currentArray[j];
+      }
+    }
   }
 
   if (operation === 'SUBTRACT') {
-    operationData = _subData(dataInTime, frames);
+    if (frames.length > 2) {
+      throw new Error('Please provide only 2 time points for subtraction.');
+    }
+    for (let j = 0; j < arrayLength; j++) {
+      finalArray[j] += typedArrays[0][j] - typedArrays[1][j];
+    }
   }
 
-  return { data: operationData, index: indexArray };
+  if (operation === 'AVERAGE') {
+    for (let i = 0; i < typedArrays.length; i++) {
+      const currentArray = typedArrays[i];
+      for (let j = 0; j < arrayLength; j++) {
+        finalArray[j] += currentArray[j];
+        if (j === arrayLength - 1) {
+          finalArray[j] = finalArray[j] / typedArrays.length;
+        }
+      }
+    }
+  }
+
+  // Iterate through each array and sum the corresponding elements
+
+  // if (options.maskVolumeId) {
+  //   dataInTime = getDataInTime(dynamicVolume, {
+  //     frameNumbers: frames,
+  //     maskVolumeId: options.maskVolumeId,
+  //   });
+  //   const segmentationVolume = cache.getVolume(options.maskVolumeId);
+  //   indexArray = segmentationVolume
+  //     .getScalarData()
+  //     .map((_, i) => i)
+  //     .filter((i) => segmentationVolume.getScalarData()[i] !== 0);
+  // }
+
+  // if (options.imageCoordinate) {
+  //   dataInTime = getDataInTime(dynamicVolume, {
+  //     frameNumbers: frames,
+  //     imageCoordinate: options.imageCoordinate,
+  //   });
+  // }
+
+  // if (operation === 'SUM') {
+  //   operationData = _sumData(dataInTime, frames);
+  // }
+
+  // if (operation === 'AVERAGE') {
+  //   operationData = _avgData(dataInTime, frames);
+  // }
+
+
+  return finalArray;
 }
 
 function _sumData(timeData, frames) {
