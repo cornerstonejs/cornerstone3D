@@ -70,7 +70,7 @@ export function updateContourSets(
     geometryIds.forEach((geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
-      const { segmentIndex } = contourSet;
+      const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
       const color = contourSet.getColor();
       const visibility = segmentsToSetToInvisible.includes(segmentIndex)
         ? 0

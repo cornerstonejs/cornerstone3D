@@ -18,7 +18,7 @@ export class ContourSet implements IContourSet {
   readonly sizeInBytes: number;
   readonly frameOfReferenceUID: string;
   private color: Point3 = [200, 0, 0]; // default color
-  readonly segmentIndex: number;
+  private segmentIndex: number;
   contours: IContour[];
 
   constructor(props: ContourSetProps) {

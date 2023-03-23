@@ -8,7 +8,6 @@ export interface IContourSet {
   readonly id: string;
   readonly sizeInBytes: number;
   readonly frameOfReferenceUID: string;
-  readonly segmentIndex: number;
   contours: IContour[];
   _createEachContour(data: ContourData[]): void;
   getSizeInBytes(): number;

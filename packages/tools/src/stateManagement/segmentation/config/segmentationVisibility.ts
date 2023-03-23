@@ -26,7 +26,7 @@ function getSegmentationIndices(segmentationId) {
 
     return geometryIds.map((geometryId) => {
       const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
-      return geometry.data.getSegmentIndex();
+      return (geometry.data as Types.IContourSet).getSegmentIndex();
     });
   }
 }
