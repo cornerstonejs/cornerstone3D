@@ -1,4 +1,4 @@
-import { cache } from '@cornerstonejs/core';
+import { cache, Types } from '@cornerstonejs/core';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
 import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
@@ -25,8 +25,8 @@ function getSegmentationIndices(segmentationId) {
     }
 
     return geometryIds.map((geometryId) => {
-      const geometry = cache.getGeometry(geometryId);
-      return geometry.data.segmentIndex;
+      const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
+      return geometry.data.getSegmentIndex();
     });
   }
 }

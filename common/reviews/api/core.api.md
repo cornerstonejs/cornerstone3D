@@ -165,7 +165,8 @@ export { CONSTANTS }
 type ContourData = {
     points: Point3[];
     type: ContourType;
-    color?: Point3;
+    color: Point3;
+    segmentIndex: number;
 };
 
 // @public (undocumented)
@@ -174,6 +175,7 @@ type ContourSetData = {
     data: ContourData[];
     frameOfReferenceUID: string;
     color?: Point3;
+    segmentIndex?: number;
 };
 
 // @public (undocumented)

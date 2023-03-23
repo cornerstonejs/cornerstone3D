@@ -58,6 +58,10 @@ export class ContourSet implements IContourSet {
     }, 0);
   }
 
+  public getSegmentIndex(): number {
+    return this.segmentIndex;
+  }
+
   public getColor(): Point3 {
     // Currently, all contours in a contour set have the same color.
     // This may change in the future.

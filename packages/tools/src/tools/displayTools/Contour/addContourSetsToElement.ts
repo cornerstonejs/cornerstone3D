@@ -40,7 +40,7 @@ export function addContourSetsToElement(
       return;
     }
 
-    const { segmentIndex } = geometry.data;
+    const segmentIndex = geometry.data.getSegmentIndex();
 
     validateGeometry(geometry);
 
