@@ -1,10 +1,4 @@
-import {
-  cache,
-  Enums,
-  getEnabledElementByIds,
-  Types,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElementByIds, Types, utilities } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
@@ -15,10 +9,9 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
-
 import { deepMerge } from '../../../utilities';
+import { addOrUpdateContours } from './addOrUpdateContourSets';
 import removeContourFromElement from './removeContourFromElement';
-import renderContourSet from './renderContourSet';
 
 /**
  * It adds a new segmentation representation to the segmentation state
@@ -124,8 +117,7 @@ async function render(
   representationConfig: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
 ): Promise<void> {
-  const { segmentationId, segmentationRepresentationUID } =
-    representationConfig;
+  const { segmentationId } = representationConfig;
   const segmentation = SegmentationState.getSegmentation(segmentationId);
   const contourData = segmentation.representationData[Representations.Contour];
   const { geometryIds } = contourData;
@@ -136,45 +128,13 @@ async function render(
     );
   }
 
-  geometryIds.forEach((geometryId, index) => {
-    const geometry = cache.getGeometry(geometryId);
-    _validateGeometry(geometry);
-
-    const segmentSpecificConfig = _getSegmentSpecificConfig(
-      representationConfig,
-      geometryId,
-      index + 1 // +1 because the first segment is the background
-    );
-
-    renderContourSet(
-      viewport,
-      geometry.data,
-      segmentationRepresentationUID,
-      representationConfig,
-      segmentSpecificConfig
-    );
-  });
-}
-
-function _getSegmentSpecificConfig(
-  representationConfig: ToolGroupSpecificRepresentation,
-  segmentId: string,
-  index: number
-) {
-  let segmentSpecificConfig =
-    representationConfig.segmentSpecificConfig?.[segmentId];
-
-  if (!segmentSpecificConfig) {
-    // try the index
-    segmentSpecificConfig = representationConfig.segmentSpecificConfig?.[index];
-  }
-
-  if (!segmentSpecificConfig) {
-    // try the default
-    return null;
-  }
-
-  return segmentSpecificConfig.CONTOUR;
+  // add the contour sets to the viewport
+  addOrUpdateContours(
+    viewport,
+    geometryIds,
+    representationConfig,
+    toolGroupConfig
+  );
 }
 
 function _removeContourFromToolGroupViewports(
@@ -199,28 +159,6 @@ function _removeContourFromToolGroupViewports(
       enabledElement.viewport.element,
       segmentationRepresentationUID
     );
-  }
-}
-
-function _validateGeometry(geometry: Types.IGeometry): void {
-  const geometryId = geometry.id;
-
-  if (!geometry) {
-    throw new Error(`No contours found for geometryId ${geometryId}`);
-  }
-
-  if (geometry.type !== Enums.GeometryType.CONTOUR) {
-    // Todo: later we can support converting other geometries to contours
-    throw new Error(
-      `Geometry type ${geometry.type} not supported for rendering.`
-    );
-  }
-
-  if (!geometry.data) {
-    console.warn(
-      `No contours found for geometryId ${geometryId}. Skipping render.`
-    );
-    return;
   }
 }
 

@@ -1,21 +1,21 @@
 import {
-  RenderingEngine,
-  Types,
-  Enums,
-  setVolumesForViewports,
-  volumeLoader,
-  utilities,
-  geometryLoader,
   CONSTANTS,
+  Enums,
+  geometryLoader,
+  RenderingEngine,
+  setVolumesForViewports,
+  Types,
+  utilities,
+  volumeLoader,
 } from '@cornerstonejs/core';
-import {
-  initDemo,
-  createImageIdsAndCacheMetaData,
-  setTitleAndDescription,
-  addToggleButtonToToolbar,
-  addSliderToToolbar,
-} from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import {
+  addSliderToToolbar,
+  addToggleButtonToToolbar,
+  createImageIdsAndCacheMetaData,
+  initDemo,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers';
 import circle from './Circle.json';
 
 // This is for debugging purposes
@@ -101,10 +101,9 @@ addToggleButtonToToolbar({
 });
 
 addToggleButtonToToolbar({
-  title: 'Hide Segment 2',
+  title: 'Hide Segment',
   onClick: (toggle) => {
-    const segmentIndex = 2;
-
+    const segmentIndex = 1;
     [
       { representationUID: planarSegmentationRepresentationUID, toolGroupId },
       {
@@ -112,40 +111,29 @@ addToggleButtonToToolbar({
         toolGroupId: toolGroupId3d,
       },
     ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.setSegmentSpecificConfig(
+      segmentation.config.visibility.setVisibilityForSegmentIndex(
         toolGroupId,
         representationUID,
-        {
-          [segmentIndex]: {
-            // Segment 1 or it can be circle_small
-            CONTOUR: {
-              renderOutline: !toggle,
-            },
-          },
-        }
+        segmentIndex,
+        !toggle
       );
     });
   },
 });
 
 addSliderToToolbar({
-  title: 'Change Segment 2 Thickness For left viewport',
+  title: 'Change Segments Thickness For left viewport',
   range: [0.1, 10],
   defaultValue: 4,
   onSelectedValueChange: (value) => {
-    const segmentIndex = 2;
-    segmentation.config.setSegmentSpecificConfig(
-      toolGroupId,
-      planarSegmentationRepresentationUID,
-      {
-        [segmentIndex]: {
-          // Segment 1 or it can be circle_small
-          CONTOUR: {
-            outlineWidthActive: Number(value),
-          },
+    segmentation.config.setToolGroupSpecificConfig(toolGroupId, {
+      renderInactiveSegmentations: true,
+      representations: {
+        CONTOUR: {
+          outlineWidthActive: Number(value),
         },
-      }
-    );
+      },
+    });
   },
 });
 

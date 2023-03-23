@@ -1,45 +1,49 @@
+import type * as AnnotationStyle from './AnnotationStyle';
 import type {
   Annotation,
   Annotations,
   AnnotationState,
   GroupSpecificAnnotations,
 } from './AnnotationTypes';
+import type BoundsIJK from './BoundsIJK';
+import type * as CINETypes from './CINETypes';
+import { ContourSegmentationData } from './ContourTypes';
+import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
 import type * as EventTypes from './EventTypes';
-import type * as LabelmapTypes from './LabelmapTypes';
-import type IPoints from './IPoints';
-import type ITouchPoints from './ITouchPoints';
+import {
+  FloodFillGetter,
+  FloodFillOptions,
+  FloodFillResult,
+} from './FloodFillTypes';
 import type IDistance from './IDistance';
-import type PlanarBoundingBox from './PlanarBoundingBox';
+import type InteractionTypes from './InteractionTypes';
+import type IPoints from './IPoints';
 import type {
-  SetToolBindingsType,
   IToolBinding,
+  SetToolBindingsType,
   ToolOptionsType,
 } from './ISetToolModeOptions';
+import ISynchronizerEventHandler from './ISynchronizerEventHandler';
+import IToolClassReference from './IToolClassReference';
 import type IToolGroup from './IToolGroup';
-import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes';
-import type * as AnnotationStyle from './AnnotationStyle';
-import type ToolHandle from './ToolHandle';
-import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
-import type InteractionTypes from './InteractionTypes';
-import type { ToolProps, PublicToolProps } from './ToolProps';
-import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
+import type ITouchPoints from './ITouchPoints';
 import type JumpToSliceOptions from './JumpToSliceOptions';
+import type * as LabelmapTypes from './LabelmapTypes';
+import type PlanarBoundingBox from './PlanarBoundingBox';
 import type ScrollOptions from './ScrollOptions';
-import type BoundsIJK from './BoundsIJK';
-import type SVGDrawingHelper from './SVGDrawingHelper';
-import type * as CINETypes from './CINETypes';
 import type {
   Color,
   ColorLUT,
   RepresentationConfig,
+  RepresentationPublicInput,
+  Segmentation,
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
-  Segmentation,
-  ToolGroupSpecificRepresentationState,
+  SegmentationState,
+  ToolGroupSpecificContourRepresentation,
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
-  SegmentationState,
-  RepresentationPublicInput,
+  ToolGroupSpecificRepresentationState,
 } from './SegmentationStateTypes';
 import ISynchronizerEventHandler from './ISynchronizerEventHandler';
 import {
@@ -53,7 +57,6 @@ import IAnnotationManager from './IAnnotationManager';
 import AnnotationGroupSelector from './AnnotationGroupSelector';
 
 export type {
-  // AnnotationState
   Annotation,
   Annotations,
   IAnnotationManager,
@@ -92,6 +95,7 @@ export type {
   RepresentationConfig,
   ToolGroupSpecificRepresentationState,
   ToolGroupSpecificLabelmapRepresentation,
+  ToolGroupSpecificContourRepresentation,
   ToolGroupSpecificRepresentation,
   RepresentationPublicInput,
   Color,

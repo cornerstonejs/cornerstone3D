@@ -1,5 +1,9 @@
 import * as Enums from '../enums';
-import { ContourConfig, ContourSegmentationData } from './ContourTypes';
+import {
+  ContourConfig,
+  ContourRenderingConfig,
+  ContourSegmentationData,
+} from './ContourTypes';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
@@ -123,13 +127,14 @@ export type ToolGroupSpecificLabelmapRepresentation =
 
 export type ToolGroupSpecificContourRepresentation =
   ToolGroupSpecificRepresentationState & {
-    config: LabelmapRenderingConfig;
+    config: ContourRenderingConfig;
     segmentationRepresentationSpecificConfig?: RepresentationConfig;
     segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
   };
 
 export type ToolGroupSpecificRepresentation =
-  ToolGroupSpecificLabelmapRepresentation; // | other ones
+  | ToolGroupSpecificLabelmapRepresentation
+  | ToolGroupSpecificContourRepresentation;
 
 export type ToolGroupSpecificRepresentations =
   Array<ToolGroupSpecificRepresentation>;
@@ -191,10 +196,22 @@ export type ToolGroupSpecificRepresentations =
  *           colorLUTIndex: 0,
  *           visibility: true,
  *           segmentsHidden: Set(),
- *           // LabelmapRenderingConfig
+ *           // rendering config
  *           config: {
  *             "cfun",
  *             "ofun",
+ *           },
+ *           // segmentation representation specific config, has priority over the one in the outer scope
+ *           segmentationRepresentationSpecificConfig: {
+ *             LABELMAP: {
+ *               renderFill: true,
+ *             }
+ *           }
+ *           // segment specific config
+ *           segmentSpecificConfig: {
+ *             1: {
+ *              renderFill: false,
+ *              }
  *           },
  *         },
  *       ],
