@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.36.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.2...@cornerstonejs/core@0.36.3) (2023-03-23)
+
+
+### Bug Fixes
+
+* Segmentation slice range is wrong when nearly orthonormal as well as for segmentation volumes ([#511](https://github.com/cornerstonejs/cornerstone3D-beta/issues/511)) ([cd232e3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cd232e38d7635693a4757598a1cd5e3dfe59cbf4))
+
+
+
+
+
 ## [0.36.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.1...@cornerstonejs/core@0.36.2) (2023-03-22)
 
 
