@@ -12,7 +12,7 @@
     "yarn": ">=1.19.1"
   },
   "scripts": {
-    "api-check": "lerna run api-check ",
+    "api-check": "lerna run api-check",
     "build": "lerna run build --stream",
     "build:umd": "lerna run build:umd --stream",
     "build:update-api:core": "cd packages/core && npm run build:update-api",
