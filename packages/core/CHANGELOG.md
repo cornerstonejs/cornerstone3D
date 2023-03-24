@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.36.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.3...@cornerstonejs/core@0.36.4) (2023-03-24)
+
+
+### Bug Fixes
+
+* add src folder to package json to improve source maps ([#499](https://github.com/cornerstonejs/cornerstone3D-beta/issues/499)) ([aea4406](https://github.com/cornerstonejs/cornerstone3D-beta/commit/aea4406d4e8f1a415399481657373cd2d2d25523))
+
+
+
+
+
 ## [0.36.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.2...@cornerstonejs/core@0.36.3) (2023-03-23)
 
 
