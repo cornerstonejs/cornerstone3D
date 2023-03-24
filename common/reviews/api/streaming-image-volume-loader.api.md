@@ -57,7 +57,8 @@ type CameraModifiedEventDetail = {
 type ContourData = {
     points: Point3[];
     type: ContourType;
-    color?: Point3;
+    color: Point3;
+    segmentIndex: number;
 };
 
 // @public (undocumented)
@@ -66,6 +67,7 @@ type ContourSetData = {
     data: ContourData[];
     frameOfReferenceUID: string;
     color?: Point3;
+    segmentIndex?: number;
 };
 
 // @public (undocumented)
@@ -641,6 +643,8 @@ interface IContourSet {
     getNumberOfPointsInAContour(contourIndex: number): number;
     getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
+    getSegmentIndex(): number;
+    // (undocumented)
     getSizeInBytes(): number;
     getTotalNumberOfPoints(): number;
     // (undocumented)
@@ -669,7 +673,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: IContourSet;
     // (undocumented)
     id: string;
     // (undocumented)

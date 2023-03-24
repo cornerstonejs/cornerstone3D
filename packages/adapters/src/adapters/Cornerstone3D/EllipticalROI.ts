@@ -4,6 +4,8 @@ import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
 import isValidCornerstoneTrackingIdentifier from "./isValidCornerstoneTrackingIdentifier";
 
+type Point3 = [number, number, number];
+
 const { Ellipse: TID300Ellipse } = utilities.TID300;
 
 const ELLIPTICALROI = "EllipticalROI";
@@ -40,7 +42,7 @@ class EllipticalROI {
         // But Cornerstone3D points are ordered as top, bottom, left, right for the
         // ellipse so we need to identify if the majorAxis is horizontal or vertical
         // in the image plane and then choose the correct points to use for the ellipse.
-        const pointsWorld = [];
+        const pointsWorld: Point3[] = [];
         for (let i = 0; i < GraphicData.length; i += 2) {
             const worldPos = imageToWorldCoords(referencedImageId, [
                 GraphicData[i],
@@ -77,8 +79,11 @@ class EllipticalROI {
         const { columnCosines } = imagePlaneModule;
 
         // find which axis is parallel to the columnCosines
-        const columnCosinesVec = vec3.fromValues(...columnCosines);
-
+        const columnCosinesVec = vec3.fromValues(
+            columnCosines[0],
+            columnCosines[1],
+            columnCosines[2]
+        );
         const projectedMajorAxisOnColVec = vec3.dot(
             columnCosinesVec,
             majorAxisVec

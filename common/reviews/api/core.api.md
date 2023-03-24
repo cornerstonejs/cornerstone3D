@@ -923,6 +923,8 @@ interface IContourSet {
     // (undocumented)
     getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
+    getSegmentIndex(): number;
+    // (undocumented)
     getSizeInBytes(): number;
     // (undocumented)
     getTotalNumberOfPoints(): number;
@@ -960,7 +962,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: IContourSet;
     // (undocumented)
     id: string;
     // (undocumented)
