@@ -147,55 +147,55 @@ let volume;
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
-function createMockEllipsoidSegmentation(segmentationVolume) {
-  const scalarData = segmentationVolume.scalarData;
-  const { dimensions } = segmentationVolume;
-  const center = [72, 145, 117.5];
-  const innerRadius = 20;
-  let voxelIndex = 0;
-  for (let z = 0; z < dimensions[2]; z++) {
-    for (let y = 0; y < dimensions[1]; y++) {
-      for (let x = 0; x < dimensions[0]; x++) {
-        const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) +
-            (y - center[1]) * (y - center[1]) +
-            (z - center[2]) * (z - center[2])
-        );
-        if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
-        }
-        voxelIndex++;
-      }
-    }
-  }
-}
-async function addSegmentationsToState() {
-  // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
-      volumeId: segmentationId,
-    }
-  );
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
-        data: {
-          volumeId: segmentationId,
-        },
-      },
-    },
-  ]);
-  // Add some data to the segmentations
-  createMockEllipsoidSegmentation(segmentationVolume);
-}
+// function createMockEllipsoidSegmentation(segmentationVolume) {
+//   const scalarData = segmentationVolume.scalarData;
+//   const { dimensions } = segmentationVolume;
+//   const center = [72, 145, 117.5];
+//   const innerRadius = 20;
+//   let voxelIndex = 0;
+//   for (let z = 0; z < dimensions[2]; z++) {
+//     for (let y = 0; y < dimensions[1]; y++) {
+//       for (let x = 0; x < dimensions[0]; x++) {
+//         const distanceFromCenter = Math.sqrt(
+//           (x - center[0]) * (x - center[0]) +
+//             (y - center[1]) * (y - center[1]) +
+//             (z - center[2]) * (z - center[2])
+//         );
+//         if (distanceFromCenter < innerRadius) {
+//           scalarData[voxelIndex] = 1;
+//         }
+//         voxelIndex++;
+//       }
+//     }
+//   }
+// }
+// async function addSegmentationsToState() {
+//   // Create a segmentation of the same resolution as the source data
+//   // using volumeLoader.createAndCacheDerivedVolume.
+//   const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
+//     volumeId,
+//     {
+//       volumeId: segmentationId,
+//     }
+//   );
+//   // Add the segmentations to state
+//   segmentation.addSegmentations([
+//     {
+//       segmentationId,
+//       representation: {
+//         // The type of segmentation
+//         type: csToolsEnums.SegmentationRepresentations.Labelmap,
+//         // The actual segmentation data, in the case of labelmap this is a
+//         // reference to the source volume of the segmentation.
+//         data: {
+//           volumeId: segmentationId,
+//         },
+//       },
+//     },
+//   ]);
+//   // Add some data to the segmentations
+//   // createMockEllipsoidSegmentation(segmentationVolume);
+// }
 
 async function createVolumeFromTimeData(dataInTime) {
   // Create a volume of the same resolution as the source data
@@ -215,9 +215,14 @@ async function createVolumeFromTimeData(dataInTime) {
     scalarData[i] = dataInTime[i];
   }
 
-  console.log(computedVolume);
+  viewport2.setVolumes([
+    {
+      volumeId: computedVolumeId,
+      callback: setPetTransferFunctionForVolumeActor,
+    },
+  ]);
 
-  viewport2.render;
+  viewport2.render();
 }
 
 /**
@@ -304,7 +309,7 @@ async function run() {
   });
 
   // Add segmentation
-  await addSegmentationsToState();
+  // await addSegmentationsToState();
 
   // Set the volume to load
   volume.load();
@@ -316,12 +321,12 @@ async function run() {
   viewport.setVolumes([
     { volumeId, callback: setPetTransferFunctionForVolumeActor },
   ]);
-  viewport2.setVolumes([
-    {
-      volumeId: computedVolumeId,
-      callback: setPetTransferFunctionForVolumeActor,
-    },
-  ]);
+  // viewport2.setVolumes([
+  //   {
+  //     volumeId: computedVolumeId,
+  //     callback: setPetTransferFunctionForVolumeActor,
+  //   },
+  // ]);
 
   // await segmentation.addSegmentationRepresentations(toolGroupId, [
   //   {
