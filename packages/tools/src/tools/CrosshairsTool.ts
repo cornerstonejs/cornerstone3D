@@ -113,6 +113,11 @@ const EPSILON = 1e-3;
 class CrosshairsTool extends AnnotationTool {
   static toolName;
 
+  // define the stroke width for mobile/web screen
+  private widthStrokeAnnotation = /Mobi|Android/i.test(navigator.userAgent)
+    ? 2.5
+    : 1;
+
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportId: string) => string;
@@ -1109,12 +1114,7 @@ class CrosshairsTool extends AnnotationTool {
       let color =
         viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
 
-      let lineWidth = 1;
-
-      if (/Mobi|Android/i.test(navigator.userAgent)) {
-        // changing the stroke width for mobile devices
-        lineWidth = 2.5;
-      }
+      let lineWidth = this.widthStrokeAnnotation;
 
       const lineActive =
         data.handles.activeOperation !== null &&
