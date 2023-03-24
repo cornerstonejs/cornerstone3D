@@ -5013,6 +5013,7 @@ const toolStyle: ToolStyle;
 // @public (undocumented)
 type ToolStyleConfig = {
     [toolName: string]: AnnotationStyle_2;
+} & {
     global?: AnnotationStyle_2;
 };
 
