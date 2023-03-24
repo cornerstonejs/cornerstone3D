@@ -1,4 +1,3 @@
-import cloneDeep from 'lodash.clonedeep';
 import {
   Annotation,
   Annotations,
@@ -314,14 +313,14 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       const toolSpecificAnnotations =
         frameOfReferenceSpecificAnnotations[toolName];
 
-      return cloneDeep(toolSpecificAnnotations);
+      return structuredClone(toolSpecificAnnotations);
     } else if (groupKey) {
       const frameOfReferenceSpecificAnnotations = annotations[groupKey];
 
-      return cloneDeep(frameOfReferenceSpecificAnnotations);
+      return structuredClone(frameOfReferenceSpecificAnnotations);
     }
 
-    return cloneDeep(annotations);
+    return structuredClone(annotations);
   };
 
   /**
@@ -361,7 +360,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       annotations[groupKey] = <GroupSpecificAnnotations>state;
     } else {
       // Set entire annotations
-      this.annotations = <AnnotationState>cloneDeep(state);
+      this.annotations = <AnnotationState>structuredClone(state);
     }
   };
 

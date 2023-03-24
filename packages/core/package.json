@@ -31,8 +31,7 @@
     "gl-matrix": "^3.4.3"
   },
   "dependencies": {
-    "detect-gpu": "^4.0.45",
-    "lodash.clonedeep": "4.5.0"
+    "detect-gpu": "^4.0.45"
   },
   "devDependencies": {
     "@kitware/vtk.js": "26.5.6",

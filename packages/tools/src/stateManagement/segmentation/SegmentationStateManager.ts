@@ -1,4 +1,3 @@
-import cloneDeep from 'lodash.clonedeep';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
@@ -49,7 +48,7 @@ export default class SegmentationStateManager {
     if (!uid) {
       uid = csUtils.uuidv4();
     }
-    this.state = cloneDeep(initialDefaultState);
+    this.state = structuredClone(initialDefaultState);
     this.uid = uid;
   }
 
@@ -82,7 +81,7 @@ export default class SegmentationStateManager {
    * Reset the state to the default state
    */
   resetState(): void {
-    this.state = cloneDeep(initialDefaultState);
+    this.state = structuredClone(initialDefaultState);
   }
 
   /**
