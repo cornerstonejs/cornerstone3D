@@ -140,6 +140,10 @@ const computedVolumeName = 'PT_VOLUME_ID';
 const computedVolumeId = `cornerstoneStreamingImageVolume:${computedVolumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
 let renderingEngine;
+let viewport;
+let viewport2;
+let computedVolume;
+let volume;
 /**
  * Adds two concentric circles to each axial slice of the demo segmentation.
  */
@@ -196,47 +200,23 @@ async function addSegmentationsToState() {
 async function createVolumeFromTimeData(dataInTime) {
   // Create a volume of the same resolution as the source data
   // using volumeLoader.createAndCacheDerivedVolume.
-  // console.log('beep');
-  const computedVolume = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
-      volumeId: computedVolumeId,
-    }
-  );
-  // // Add the segmentations to state
+
+  // const localVolumeOptions = {
+  //   scalarData: dataInTime,
+  //   metadata: volume.metadata, // Just use the same metadata for the example.
+  //   dimensions: volume.dimensions,
+  //   spacing: volume.spacing,
+  //   origin: volume.origin,
+  //   direction: volume.direction,
+  // };
 
   const scalarData = computedVolume.getScalarData();
   for (let i = 0; i < dataInTime.length; i++) {
     scalarData[i] = dataInTime[i];
   }
 
-  const viewportInput2 = {
-    viewportId: viewportId2,
-    type: ViewportType.ORTHOGRAPHIC,
-    element: element2,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.ACQUISITION,
-      background: <Types.Point3>[0.2, 0, 0.2],
-    },
-  };
+  console.log(computedVolume);
 
-  const viewport2 = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId2)
-  );
-  renderingEngine.enableElement(viewportInput2);
-
-  volumeLoader.loadVolume(computedVolumeId);
-
-  console.log(cache.getVolume(computedVolumeId));
-  console.log(cache.getVolume(volumeId));
-  console.log(cornerstone.cache._volumeCache);
-  debugger;
-  viewport2.setVolumes([
-    {
-      volumeId: computedVolumeId,
-      callback: setPetTransferFunctionForVolumeActor,
-    },
-  ]);
   viewport2.render;
 }
 
@@ -266,7 +246,7 @@ async function run() {
   });
 
   const MAX_NUM_TIMEPOINTS = 40;
-  const numTimePoints = 3;
+  const numTimePoints = 5;
   const NUM_IMAGES_PER_TIME_POINT = 235;
   const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
   const numImagesToLoad = numTimePoints * NUM_IMAGES_PER_TIME_POINT;
@@ -295,17 +275,32 @@ async function run() {
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };
+  const viewportInput2 = {
+    viewportId: viewportId2,
+    type: ViewportType.ORTHOGRAPHIC,
+    element: element2,
+    defaultOptions: {
+      orientation: Enums.OrientationAxis.ACQUISITION,
+      background: <Types.Point3>[0.2, 0, 0.2],
+    },
+  };
+
   renderingEngine.enableElement(viewportInput1);
+  renderingEngine.enableElement(viewportInput2);
   // Add viewport to toolGroup
   toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
+  // toolGroup.addViewport(viewportId2, renderingEngineId);
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId1)
-  );
+  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId1);
+  viewport2 = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId2);
+
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
+  });
+
+  computedVolume = await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+    volumeId: computedVolumeId,
   });
 
   // Add segmentation
@@ -313,6 +308,7 @@ async function run() {
 
   // Set the volume to load
   volume.load();
+  // computedVolume.load();
   volumeForButton = volume;
   addTimePointSlider(volume);
 
@@ -320,13 +316,22 @@ async function run() {
   viewport.setVolumes([
     { volumeId, callback: setPetTransferFunctionForVolumeActor },
   ]);
+  viewport2.setVolumes([
+    {
+      volumeId: computedVolumeId,
+      callback: setPetTransferFunctionForVolumeActor,
+    },
+  ]);
+
   // await segmentation.addSegmentationRepresentations(toolGroupId, [
   //   {
   //     segmentationId,
   //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
   //   },
   // ]);
+
   // Render the image
   viewport.render();
+  viewport2.render();
 }
 run();

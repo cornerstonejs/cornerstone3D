@@ -13,9 +13,11 @@ function generateImageFromTime(
   let dataInTime;
   let operationData;
   let indexArray;
+
   const frames = options.frameNumbers || [
     ...Array(dynamicVolume.numTimePoints).keys(),
   ];
+  const numFrames = frames.length;
 
   if (frames.length <= 1) {
     throw new Error('Please provide two or more time points');
@@ -27,8 +29,9 @@ function generateImageFromTime(
   const finalArray = new Float32Array(arrayLength); // same type (you get this via create and cache)
 
   if (operation === 'SUM') {
-    for (let i = 0; i < typedArrays.length; i++) {
-      const currentArray = typedArrays[i];
+    for (let i = 0; i < numFrames; i++) {
+      const currentArray = typedArrays[frames[i]];
+      console.log(frames[i]);
       for (let j = 0; j < arrayLength; j++) {
         finalArray[j] += currentArray[j];
       }
@@ -45,46 +48,16 @@ function generateImageFromTime(
   }
 
   if (operation === 'AVERAGE') {
-    for (let i = 0; i < typedArrays.length; i++) {
-      const currentArray = typedArrays[i];
+    for (let i = 0; i < numFrames; i++) {
+      const currentArray = typedArrays[frames[i]];
       for (let j = 0; j < arrayLength; j++) {
         finalArray[j] += currentArray[j];
         if (j === arrayLength - 1) {
-          finalArray[j] = finalArray[j] / typedArrays.length;
+          finalArray[j] = finalArray[j] / numFrames;
         }
       }
     }
   }
-
-  // Iterate through each array and sum the corresponding elements
-
-  // if (options.maskVolumeId) {
-  //   dataInTime = getDataInTime(dynamicVolume, {
-  //     frameNumbers: frames,
-  //     maskVolumeId: options.maskVolumeId,
-  //   });
-  //   const segmentationVolume = cache.getVolume(options.maskVolumeId);
-  //   indexArray = segmentationVolume
-  //     .getScalarData()
-  //     .map((_, i) => i)
-  //     .filter((i) => segmentationVolume.getScalarData()[i] !== 0);
-  // }
-
-  // if (options.imageCoordinate) {
-  //   dataInTime = getDataInTime(dynamicVolume, {
-  //     frameNumbers: frames,
-  //     imageCoordinate: options.imageCoordinate,
-  //   });
-  // }
-
-  // if (operation === 'SUM') {
-  //   operationData = _sumData(dataInTime, frames);
-  // }
-
-  // if (operation === 'AVERAGE') {
-  //   operationData = _avgData(dataInTime, frames);
-  // }
-
 
   return finalArray;
 }
