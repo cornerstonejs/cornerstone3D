@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.56.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.56.1...@cornerstonejs/tools@0.56.2) (2023-03-24)
+
+
+### Bug Fixes
+
+* **mobile:** Crosshairs highlighted for mobile ([#493](https://github.com/cornerstonejs/cornerstone3D-beta/issues/493)) ([22309aa](https://github.com/cornerstonejs/cornerstone3D-beta/commit/22309aa2519d4c543ad28920d6ff82906cc8af1c))
+
+
+
+
+
 ## [0.56.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.56.0...@cornerstonejs/tools@0.56.1) (2023-03-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools
