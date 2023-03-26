@@ -2656,6 +2656,8 @@ export class VolumeViewport extends BaseVolumeViewport {
 export class VolumeViewport3D extends BaseVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
+    getCurrentImageIdIndex: () => number | undefined;
+    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
