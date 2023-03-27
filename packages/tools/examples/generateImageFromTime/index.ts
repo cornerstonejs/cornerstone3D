@@ -90,32 +90,6 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Clear image',
-  onClick: () => {
-    const scalarData = computedVolume.getScalarData();
-    for (let i = 0; i < scalarData.length; i++) {
-      scalarData[i] = 0;
-    }
-    console.log(computedVolume.getScalarData()[4160506]);
-
-    viewport2.removeVolumeActors([computedVolumeId]);
-
-    viewport2.render();
-    // console.log('called render again');
-  },
-});
-
-addButtonToToolbar({
-  title: 'Check computed volume',
-  onClick: () => {
-    console.log(viewport2.getActors());
-    console.log(computedVolume.getScalarData()[4160506]);
-
-    // console.log('called render again');
-  },
-});
-
 addDropdownToToolbar({
   options: {
     values: operations,
@@ -170,12 +144,18 @@ let computedVolume;
 
 async function createVolumeFromTimeData(dataInTime) {
   // Fill the scalar data of the computed volume with the operation data
-
   const scalarData = computedVolume.getScalarData();
   for (let i = 0; i < dataInTime.length; i++) {
     scalarData[i] = dataInTime[i];
   }
-  console.log(computedVolume.getScalarData()[4160506]);
+
+  const { imageData, vtkOpenGLTexture } = computedVolume;
+  const numSlices = imageData.getDimensions()[2];
+  const slicesToUpdate = [...Array(numSlices).keys()];
+  slicesToUpdate.forEach((i) => {
+    vtkOpenGLTexture.setUpdatedFrame(i);
+  });
+  imageData.modified();
 
   // Set computed volume to second viewport
   viewport2.setVolumes([
