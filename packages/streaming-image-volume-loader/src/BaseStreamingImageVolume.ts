@@ -353,7 +353,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
           updateTextureAndTriggerEvents(this, imageIdIndex, imageId);
         })
         .catch((err) => {
-          errorCallback(err, imageIdIndex, imageId);
+          errorCallback.call(this, err, imageIdIndex, imageId);
         });
       return;
     };
@@ -575,7 +575,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
             successCallback(imageIdIndex, imageId, scalingParameters);
           },
           (error) => {
-            errorCallback(error, imageIdIndex, imageId);
+            errorCallback.call(this, error, imageIdIndex, imageId);
           }
         );
       };
