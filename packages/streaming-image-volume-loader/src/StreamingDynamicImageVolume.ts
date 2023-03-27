@@ -177,6 +177,8 @@ export default class StreamingDynamicImageVolume
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
   public getImageLoadRequests = (priority: number) => {
-    return this._getTimePointsRequests(priority);
+    // It returns all requests in reversed order because BaseStreamingImageVolume
+    // reverse all requests again otherwise it would load from last to first time point
+    return this._getTimePointsRequests(priority).reverse();
   };
 }

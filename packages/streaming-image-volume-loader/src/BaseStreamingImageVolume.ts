@@ -615,8 +615,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   private _prefetchImageIds(priority: number): void {
     const requests = this.getImageLoadRequests(priority);
 
-    // requests.reverse().forEach((request) => {
-    requests.forEach((request) => {
+    requests.reverse().forEach((request) => {
       if (!request) {
         // there is a cached image for the imageId and no requests will fire
         return;
