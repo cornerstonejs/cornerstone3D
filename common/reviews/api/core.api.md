@@ -1337,7 +1337,7 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     hasPixelSpacing: boolean;
     // (undocumented)
-    imageData?: any;
+    imageData?: vtkImageData;
     // (undocumented)
     get imageIds(): Array<string>;
     set imageIds(newImageIds: Array<string>);
