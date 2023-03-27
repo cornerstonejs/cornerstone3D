@@ -77,18 +77,42 @@ content.appendChild(viewportGrid);
 // ============================= //
 let volumeForButton;
 addButtonToToolbar({
-  title: 'Get Data In Time',
+  title: 'Generate Image',
   onClick: () => {
     const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTime(
       volumeForButton,
       dataOperation,
       {
-        frameNumbers: [1, 2],
-        // // imageCoordinate: [-24, 24, -173],
-        // maskVolumeId: segmentationId,
+        frameNumbers: [0, 1, 3],
       }
     );
     createVolumeFromTimeData(dataInTime);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Clear image',
+  onClick: () => {
+    const scalarData = computedVolume.getScalarData();
+    for (let i = 0; i < scalarData.length; i++) {
+      scalarData[i] = 0;
+    }
+    console.log(computedVolume.getScalarData()[4160506]);
+
+    viewport2.removeVolumeActors([computedVolumeId]);
+
+    viewport2.render();
+    // console.log('called render again');
+  },
+});
+
+addButtonToToolbar({
+  title: 'Check computed volume',
+  onClick: () => {
+    console.log(viewport2.getActors());
+    console.log(computedVolume.getScalarData()[4160506]);
+
+    // console.log('called render again');
   },
 });
 
@@ -118,6 +142,7 @@ addDropdownToToolbar({
     viewport.render();
   },
 });
+
 function addTimePointSlider(volume) {
   addSliderToToolbar({
     title: 'Time Point',
@@ -135,7 +160,6 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 // const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const segmentationId = 'MY_SEGMENTATION_ID';
 const computedVolumeName = 'PT_VOLUME_ID';
 const computedVolumeId = `cornerstoneStreamingImageVolume:${computedVolumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
@@ -143,78 +167,17 @@ let renderingEngine;
 let viewport;
 let viewport2;
 let computedVolume;
-let volume;
-/**
- * Adds two concentric circles to each axial slice of the demo segmentation.
- */
-// function createMockEllipsoidSegmentation(segmentationVolume) {
-//   const scalarData = segmentationVolume.scalarData;
-//   const { dimensions } = segmentationVolume;
-//   const center = [72, 145, 117.5];
-//   const innerRadius = 20;
-//   let voxelIndex = 0;
-//   for (let z = 0; z < dimensions[2]; z++) {
-//     for (let y = 0; y < dimensions[1]; y++) {
-//       for (let x = 0; x < dimensions[0]; x++) {
-//         const distanceFromCenter = Math.sqrt(
-//           (x - center[0]) * (x - center[0]) +
-//             (y - center[1]) * (y - center[1]) +
-//             (z - center[2]) * (z - center[2])
-//         );
-//         if (distanceFromCenter < innerRadius) {
-//           scalarData[voxelIndex] = 1;
-//         }
-//         voxelIndex++;
-//       }
-//     }
-//   }
-// }
-// async function addSegmentationsToState() {
-//   // Create a segmentation of the same resolution as the source data
-//   // using volumeLoader.createAndCacheDerivedVolume.
-//   const segmentationVolume = await volumeLoader.createAndCacheDerivedVolume(
-//     volumeId,
-//     {
-//       volumeId: segmentationId,
-//     }
-//   );
-//   // Add the segmentations to state
-//   segmentation.addSegmentations([
-//     {
-//       segmentationId,
-//       representation: {
-//         // The type of segmentation
-//         type: csToolsEnums.SegmentationRepresentations.Labelmap,
-//         // The actual segmentation data, in the case of labelmap this is a
-//         // reference to the source volume of the segmentation.
-//         data: {
-//           volumeId: segmentationId,
-//         },
-//       },
-//     },
-//   ]);
-//   // Add some data to the segmentations
-//   // createMockEllipsoidSegmentation(segmentationVolume);
-// }
 
 async function createVolumeFromTimeData(dataInTime) {
-  // Create a volume of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-
-  // const localVolumeOptions = {
-  //   scalarData: dataInTime,
-  //   metadata: volume.metadata, // Just use the same metadata for the example.
-  //   dimensions: volume.dimensions,
-  //   spacing: volume.spacing,
-  //   origin: volume.origin,
-  //   direction: volume.direction,
-  // };
+  // Fill the scalar data of the computed volume with the operation data
 
   const scalarData = computedVolume.getScalarData();
   for (let i = 0; i < dataInTime.length; i++) {
     scalarData[i] = dataInTime[i];
   }
+  console.log(computedVolume.getScalarData()[4160506]);
 
+  // Set computed volume to second viewport
   viewport2.setVolumes([
     {
       volumeId: computedVolumeId,
@@ -292,15 +255,16 @@ async function run() {
 
   renderingEngine.enableElement(viewportInput1);
   renderingEngine.enableElement(viewportInput2);
+
   // Add viewport to toolGroup
   toolGroup.addViewport(viewportId1, renderingEngineId);
-  // toolGroup.addViewport(viewportId2, renderingEngineId);
+
   // Get the stack viewport that was created
   viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId1);
   viewport2 = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId2);
 
   // Define a volume in memory
-  volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
 
@@ -308,12 +272,9 @@ async function run() {
     volumeId: computedVolumeId,
   });
 
-  // Add segmentation
-  // await addSegmentationsToState();
-
   // Set the volume to load
   volume.load();
-  // computedVolume.load();
+
   volumeForButton = volume;
   addTimePointSlider(volume);
 
@@ -321,19 +282,6 @@ async function run() {
   viewport.setVolumes([
     { volumeId, callback: setPetTransferFunctionForVolumeActor },
   ]);
-  // viewport2.setVolumes([
-  //   {
-  //     volumeId: computedVolumeId,
-  //     callback: setPetTransferFunctionForVolumeActor,
-  //   },
-  // ]);
-
-  // await segmentation.addSegmentationRepresentations(toolGroupId, [
-  //   {
-  //     segmentationId,
-  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  //   },
-  // ]);
 
   // Render the image
   viewport.render();
