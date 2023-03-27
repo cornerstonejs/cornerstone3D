@@ -273,9 +273,15 @@ class Synchronizer {
     };
 
     viewports.forEach(function (vUid) {
-      const { element } = getRenderingEngine(
+      const renderingEngine = getRenderingEngine(
         vUid.renderingEngineId
       ).getViewport(vUid.viewportId);
+
+      if (!renderingEngine) {
+        return;
+      }
+
+      const { element } = renderingEngine;
 
       element.removeEventListener(
         Enums.Events.ELEMENT_DISABLED,
