@@ -1,5 +1,5 @@
 import getDataInTime from './getDataInTime';
-import generateImageFromTime from './generateImageFromTime';
+import generateImageFromTimeData from './generateImageFromTimeData';
 
 export { getDataInTime };
-export { generateImageFromTime };
+export { generateImageFromTimeData };

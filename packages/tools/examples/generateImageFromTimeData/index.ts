@@ -4,9 +4,6 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  CONSTANTS,
-  utilities,
-  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -21,7 +18,6 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 
 const {
-  segmentation,
   SegmentationDisplayTool,
   utilities: csToolsUtilities,
   Enums: csToolsEnums,
@@ -51,14 +47,10 @@ setTitleAndDescription(
 const size = '500px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
-// const element = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-// element.id = 'cornerstone-element';
-// element.style.width = '500px';
-// element.style.height = '500px';
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 element1.style.width = size;
@@ -79,12 +71,10 @@ let volumeForButton;
 addButtonToToolbar({
   title: 'Generate Image',
   onClick: () => {
-    const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTime(
+    const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTimeData(
       volumeForButton,
       dataOperation,
-      {
-        frameNumbers: [0, 1, 3],
-      }
+      [0, 4]
     );
     createVolumeFromTimeData(dataInTime);
   },
@@ -131,7 +121,6 @@ function addTimePointSlider(volume) {
 // ==================================== //
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-// const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const computedVolumeName = 'PT_VOLUME_ID';

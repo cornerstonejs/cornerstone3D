@@ -1556,7 +1556,8 @@ function drawTextBox(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, 
 
 declare namespace dynamicVolume {
     export {
-        getDataInTime
+        getDataInTime,
+        generateImageFromTimeData
     }
 }
 
@@ -1977,6 +1978,9 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     // (undocumented)
     readonly uid: string;
 }
+
+// @public (undocumented)
+function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: string, frameNumbers?: number[]): Float32Array;
 
 // @public (undocumented)
 function getActiveSegmentationRepresentation(toolGroupId: string): ToolGroupSpecificRepresentation;
