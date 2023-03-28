@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.6.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.5.0...@cornerstonejs/adapters@0.6.0) (2023-03-28)
+
+
+### Features
+
+* **contour api:** add api for contour rendering configuration ([#443](https://github.com/dcmjs-org/dcmjs/issues/443)) ([4ab751d](https://github.com/dcmjs-org/dcmjs/commit/4ab751df4082c56b64e4b97e9d6ca6de3c60c7e5))
+
+
+
+
+
 # [0.5.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.4.2...@cornerstonejs/adapters@0.5.0) (2023-03-22)
 
 
