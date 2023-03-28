@@ -1,5 +1,4 @@
 import { Enums, Types } from '@cornerstonejs/core';
-import { DynamicOperatorType } from 'core/src/enums';
 
 /**
  * Gets the scalar data for a series of time frames from a 4D volume, returns an
