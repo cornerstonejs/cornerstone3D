@@ -2794,6 +2794,7 @@ interface IStreamingVolumeProperties {
     loadStatus: {
         loaded: boolean;
         loading: boolean;
+        cancelled: boolean;
         cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };
@@ -5013,6 +5014,7 @@ const toolStyle: ToolStyle;
 // @public (undocumented)
 type ToolStyleConfig = {
     [toolName: string]: AnnotationStyle_2;
+} & {
     global?: AnnotationStyle_2;
 };
 

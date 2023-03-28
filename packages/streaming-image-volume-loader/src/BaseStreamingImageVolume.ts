@@ -29,6 +29,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   loadStatus: {
     loaded: boolean;
     loading: boolean;
+    cancelled: boolean;
     cachedFrames: Array<boolean>;
     callbacks: Array<(...args: unknown[]) => void>;
   };
@@ -175,6 +176,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
 
     // Set to not loading.
     loadStatus.loading = false;
+    loadStatus.cancelled = true;
 
     // Remove all the callback listeners
     this.clearLoadCallbacks();
@@ -251,8 +253,6 @@ export default class BaseStreamingImageVolume extends ImageVolume {
     const { vtkOpenGLTexture, imageData, metadata, volumeId } = this;
     const { FrameOfReferenceUID } = metadata;
 
-    loadStatus.loading = true;
-
     // SharedArrayBuffer
     const arrayBuffer = scalarData.buffer;
     const numFrames = imageIds.length;
@@ -317,8 +317,13 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       // data loader scheme)
       const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
 
-      // check if we are still loading the volume and we have not canceled loading
-      if (!loadStatus.loading) {
+      // check if the load was cancelled while we were waiting for the image
+      // if so we don't want to do anything
+      if (loadStatus.cancelled) {
+        console.warn(
+          'volume load cancelled, returning for imageIdIndex: ',
+          imageIdIndex
+        );
         return;
       }
 
@@ -613,6 +618,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
   }
 
   private _prefetchImageIds(priority: number): void {
+    // Note: here is the correct location to set the loading flag
+    // since getImageIdsRequest is just grabbing and building requests
+    // and not actually executing them
+    this.loadStatus.loading = true;
+
     const requests = this.getImageLoadRequests(priority);
 
     requests.reverse().forEach((request) => {

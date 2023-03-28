@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.10...@cornerstonejs/streaming-image-volume-loader@0.15.11) (2023-03-28)
+
+
+### Bug Fixes
+
+* **volumeLoad:** should still update texture when loading ([#527](https://github.com/cornerstonejs/cornerstone3D-beta/issues/527)) ([65c71ea](https://github.com/cornerstonejs/cornerstone3D-beta/commit/65c71ea8e5aa2c4dc92ed69c64707a6bdfa206b5))
+
+
+
+
+
 ## [0.15.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.9...@cornerstonejs/streaming-image-volume-loader@0.15.10) (2023-03-27)
 
 
