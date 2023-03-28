@@ -458,4 +458,63 @@ describe('StreamingImageVolume', () => {
       }
     });
   });
+
+  describe('bug : bad transpiler ?', function () {
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    it('should not throw', async function () {
+      imageLoader.registerImageLoader('xxxx', (imageId) => {
+        return {
+          promise: Promise.reject(new Error('simulate loader error')),
+        };
+      });
+      const imageId = 'xxxx:id';
+      const dimensions = [100, 100, 5];
+      const scalarData = new Uint8Array(
+        dimensions[0] * dimensions[1] * dimensions[2]
+      );
+      const volume = new StreamingImageVolume(
+        // ImageVolume properties
+        {
+          volumeId: 'fakeVolumeLoader:VOLUME',
+          metadata: {
+            BitsAllocated: 8,
+            PixelRepresentation: 0,
+            PhotometricInterpretation: 'MONOCHROME1',
+            ImageOrientationPatient: [0, 0, 1, 1, 0, 0, 0, 1, 0],
+            PixelSpacing: [1, 1],
+            Columns: dimensions[0],
+            Rows: dimensions[1],
+          },
+          dimensions: dimensions,
+          spacing: [1, 1, 1],
+          origin: [0, 0, 0],
+          direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+          scalarData,
+          sizeInBytes: scalarData.byteLength,
+        },
+        // Streaming properties
+        {
+          imageIds: [imageId],
+          loadStatus: {
+            loaded: false,
+            loading: false,
+            cachedFrames: [],
+            callbacks: [],
+          },
+        }
+      );
+      let notificationWasCalled = false;
+      volume.load(() => {
+        notificationWasCalled = true;
+      });
+      for (let i = 0; volume.loadStatus.loading && i < 10; i++) {
+        await sleep(1);
+      }
+      await sleep(1);
+      expect(notificationWasCalled).toBeTrue();
+    });
+  });
 });
