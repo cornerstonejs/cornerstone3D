@@ -44,11 +44,11 @@ export function getSegmentSpecificConfig(
  * @param geometry -  The geometry object to be rendered.
  */
 export function validateGeometry(geometry: Types.IGeometry): void {
-  const geometryId = geometry.id;
-
   if (!geometry) {
-    throw new Error(`No contours found for geometryId ${geometryId}`);
+    throw new Error(`No contours found for geometryId ${geometry.id}`);
   }
+
+  const geometryId = geometry.id;
 
   if (geometry.type !== Enums.GeometryType.CONTOUR) {
     throw new Error(
@@ -72,7 +72,7 @@ export function validateGeometry(geometry: Types.IGeometry): void {
  * @param contourSet -  the contour set that you want to convert to polyData
  * @returns A vtkPolyData object
  */
-export function getPolyData(contourSet) {
+export function getPolyData(contourSet: Types.IContourSet) {
   const pointArray = [];
 
   const points = vtkPoints.newInstance();
@@ -87,7 +87,9 @@ export function getPolyData(contourSet) {
     const type = contour.getType();
 
     // creating a point index list that defines a line
-    const pointIndexes = pointList.map((_, i) => i + pointIndex);
+    const pointIndexes = pointList.map(
+      (_, pointListIndex) => pointListIndex + pointIndex
+    );
 
     // if close planar, add the first point index to the list
     if (type === Enums.ContourType.CLOSED_PLANAR) {

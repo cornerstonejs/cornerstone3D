@@ -30,7 +30,7 @@ export function setConfigCache(
   );
 }
 
-export function resetConfigCache(segmentationRepresentationUID: string) {
+export function deleteConfigCache(segmentationRepresentationUID: string) {
   configCachePerSegmentationRepresentationUID.delete(
     segmentationRepresentationUID
   );

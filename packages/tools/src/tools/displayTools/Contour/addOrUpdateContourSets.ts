@@ -7,7 +7,7 @@ import {
 import { addContourSetsToElement } from './addContourSetsToElement';
 import { updateContourSets } from './updateContourSets';
 
-export function addOrUpdateContours(
+export function addOrUpdateContourSets(
   viewport: Types.IVolumeViewport,
   geometryIds: string[],
   contourRepresentation: ToolGroupSpecificContourRepresentation,

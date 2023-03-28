@@ -13,7 +13,7 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
-import { addOrUpdateContours } from './addOrUpdateContourSets';
+import { addOrUpdateContourSets } from './addOrUpdateContourSets';
 import removeContourFromElement from './removeContourFromElement';
 
 /**
@@ -132,7 +132,7 @@ async function render(
   }
 
   // add the contour sets to the viewport
-  addOrUpdateContours(
+  addOrUpdateContourSets(
     viewport,
     geometryIds,
     representationConfig,

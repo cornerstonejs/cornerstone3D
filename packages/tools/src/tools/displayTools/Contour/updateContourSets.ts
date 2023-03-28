@@ -35,7 +35,7 @@ export function updateContourSets(
 
   const newOutlineWithActive = newContourConfig.outlineWidthActive;
 
-  if (cachedConfig.outlineWidthActive !== newOutlineWithActive) {
+  if (cachedConfig?.outlineWidthActive !== newOutlineWithActive) {
     (actor as vtkActor).getProperty().setLineWidth(newOutlineWithActive);
 
     setConfigCache(
@@ -53,7 +53,7 @@ export function updateContourSets(
   const segmentsToSetToVisible = [];
 
   for (const segmentIndex of segmentsHidden) {
-    if (!cachedConfig.segmentsHidden.has(segmentIndex)) {
+    if (!cachedConfig?.segmentsHidden.has(segmentIndex)) {
       segmentsToSetToInvisible.push(segmentIndex);
     }
   }

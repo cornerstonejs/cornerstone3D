@@ -1,6 +1,6 @@
 import { ContourConfig } from '../../../types/ContourTypes';
 
-const defaultLabelmapConfig: ContourConfig = {
+const defaultContourConfig: ContourConfig = {
   renderOutline: true,
   outlineWidthActive: 2,
   outlineWidthInactive: 2,
@@ -9,7 +9,7 @@ const defaultLabelmapConfig: ContourConfig = {
 };
 
 function getDefaultContourConfig(): ContourConfig {
-  return defaultLabelmapConfig;
+  return defaultContourConfig;
 }
 
 export default getDefaultContourConfig;
