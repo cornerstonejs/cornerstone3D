@@ -42,7 +42,7 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Segment Locking',
+  'Labelmap Segment Locking',
   'Here we demonstrate how a segment can be locked such that it cannot be edited by segmentation tools'
 );
 

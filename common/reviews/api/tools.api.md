@@ -872,7 +872,8 @@ export { CONSTANTS }
 type ContourData = {
     points: Point3[];
     type: ContourType;
-    color?: Point3;
+    color: Point3;
+    segmentIndex: number;
 };
 
 // @public (undocumented)
@@ -886,6 +887,7 @@ type ContourSetData = {
     data: ContourData[];
     frameOfReferenceUID: string;
     color?: Point3;
+    segmentIndex?: number;
 };
 
 // @public (undocumented)
@@ -2338,6 +2340,8 @@ interface IContourSet {
     getNumberOfPointsInAContour(contourIndex: number): number;
     getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
+    getSegmentIndex(): number;
+    // (undocumented)
     getSizeInBytes(): number;
     getTotalNumberOfPoints(): number;
     // (undocumented)
@@ -2374,7 +2378,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: IContourSet;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -4946,6 +4950,13 @@ declare namespace ToolGroupManager {
 export { ToolGroupManager }
 
 // @public (undocumented)
+type ToolGroupSpecificContourRepresentation = ToolGroupSpecificRepresentationState & {
+    config: ContourRenderingConfig;
+    segmentationRepresentationSpecificConfig?: RepresentationConfig;
+    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
+};
+
+// @public (undocumented)
 type ToolGroupSpecificLabelmapRepresentation = ToolGroupSpecificRepresentationState & {
     config: LabelmapRenderingConfig;
     segmentationRepresentationSpecificConfig?: RepresentationConfig;
@@ -4953,7 +4964,7 @@ type ToolGroupSpecificLabelmapRepresentation = ToolGroupSpecificRepresentationSt
 };
 
 // @public (undocumented)
-type ToolGroupSpecificRepresentation = ToolGroupSpecificLabelmapRepresentation;
+type ToolGroupSpecificRepresentation = ToolGroupSpecificLabelmapRepresentation | ToolGroupSpecificContourRepresentation;
 
 // @public (undocumented)
 type ToolGroupSpecificRepresentationState = {
@@ -5189,6 +5200,7 @@ declare namespace Types {
         SegmentationRepresentationConfig,
         RepresentationConfig,
         ToolGroupSpecificRepresentationState,
+        ToolGroupSpecificContourRepresentation,
         ToolGroupSpecificLabelmapRepresentation,
         ToolGroupSpecificRepresentation,
         RepresentationPublicInput,

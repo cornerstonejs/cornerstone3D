@@ -12,7 +12,10 @@ import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
-import type { LabelmapConfig } from '../../../types/LabelmapTypes';
+import type {
+  LabelmapConfig,
+  LabelmapRenderingConfig,
+} from '../../../types/LabelmapTypes';
 import {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
@@ -179,7 +182,7 @@ async function render(
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   }
 
-  const { cfun, ofun } = renderingConfig;
+  const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
 
   const renderInactiveSegmentations =
     toolGroupConfig.renderInactiveSegmentations;

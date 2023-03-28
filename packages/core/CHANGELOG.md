@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.37.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.6...@cornerstonejs/core@0.37.0) (2023-03-28)
+
+### Bug Fixes
+
+- **VolumeViewport3D:** implemented getCurrentImageId method ([#529](https://github.com/cornerstonejs/cornerstone3D-beta/issues/529)) ([c6b6ab5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c6b6ab5baa79cc1f2da18e1eccf2cc64a2b7848f))
+
+### Features
+
+- **contour api:** add api for contour rendering configuration ([#443](https://github.com/cornerstonejs/cornerstone3D-beta/issues/443)) ([4ab751d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4ab751df4082c56b64e4b97e9d6ca6de3c60c7e5))
+
 ## [0.36.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.5...@cornerstonejs/core@0.36.6) (2023-03-28)
 
 ### Bug Fixes

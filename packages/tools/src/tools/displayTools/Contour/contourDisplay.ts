@@ -1,6 +1,4 @@
 import {
-  cache,
-  Enums,
   getEnabledElementByIds,
   Types,
   utilities as csUtils,
@@ -15,12 +13,8 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
-
-import {
-  addContourSetToElement,
-  addContourToElement,
-} from './addContourToElement';
-import { default as removeContourFromElement } from './removeContourFromElement';
+import { addOrUpdateContourSets } from './addOrUpdateContourSets';
+import removeContourFromElement from './removeContourFromElement';
 
 /**
  * It adds a new segmentation representation to the segmentation state
@@ -123,17 +117,10 @@ function removeSegmentationRepresentation(
  */
 async function render(
   viewport: Types.IVolumeViewport,
-  representation: ToolGroupSpecificRepresentation,
+  representationConfig: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
 ): Promise<void> {
-  const {
-    colorLUTIndex,
-    active,
-    segmentationId,
-    segmentationRepresentationUID,
-    segmentsHidden,
-  } = representation;
-
+  const { segmentationId } = representationConfig;
   const segmentation = SegmentationState.getSegmentation(segmentationId);
   const contourData = segmentation.representationData[Representations.Contour];
   const { geometryIds } = contourData;
@@ -144,80 +131,13 @@ async function render(
     );
   }
 
-  _renderContourSets(viewport, geometryIds, segmentationRepresentationUID);
-}
-
-function _renderContourSets(
-  viewport,
-  geometryIds,
-  segmentationRepresentationUID
-) {
-  geometryIds.forEach((geometryId) => {
-    const geometry = cache.getGeometry(geometryId);
-    if (!geometry) {
-      throw new Error(`No contours found for geometryId ${geometryId}`);
-    }
-
-    if (geometry.type !== Enums.GeometryType.CONTOUR) {
-      // Todo: later we can support converting other geometries to contours
-      throw new Error(
-        `Geometry type ${geometry.type} not supported for rendering.`
-      );
-    }
-
-    if (!geometry.data) {
-      console.warn(
-        `No contours found for geometryId ${geometryId}. Skipping render.`
-      );
-      return;
-    }
-
-    const contourSet = geometry.data;
-
-    _renderContourSet(viewport, contourSet, segmentationRepresentationUID);
-  });
-}
-
-function _renderContourSet(
-  viewport: Types.IVolumeViewport,
-  contourSet: Types.IContourSet,
-  segmentationRepresentationUID: string,
-  separated = false
-): void {
-  if (separated) {
-    contourSet.getContours().forEach((contour: Types.IContour, index) => {
-      const contourUID = `${segmentationRepresentationUID}_${contourSet.id}_${index}}`;
-      _renderContour(viewport, contour, contourUID);
-    });
-  } else {
-    const contourUID = `${segmentationRepresentationUID}_${contourSet.id}`;
-    const actorUID = contourUID;
-    const actorEntry = viewport.getActor(actorUID);
-
-    if (!actorEntry) {
-      addContourSetToElement(viewport.element, contourSet, actorUID);
-    } else {
-      throw new Error('Not implemented yet. (Update contour)');
-    }
-  }
-
-  viewport.resetCamera();
-  viewport.render();
-}
-
-function _renderContour(
-  viewport: Types.IVolumeViewport,
-  contour: Types.IContour,
-  contourUID: string
-): void {
-  const actorUID = contourUID;
-  const actorEntry = viewport.getActor(actorUID);
-
-  if (!actorEntry) {
-    addContourToElement(viewport.element, contour, actorUID);
-  } else {
-    throw new Error('Not implemented yet. (Update contour)');
-  }
+  // add the contour sets to the viewport
+  addOrUpdateContourSets(
+    viewport,
+    geometryIds,
+    representationConfig,
+    toolGroupConfig
+  );
 }
 
 function _removeContourFromToolGroupViewports(

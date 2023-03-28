@@ -3,159 +3,95 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [0.5.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.4.2...@cornerstonejs/adapters@0.5.0) (2023-03-22)
-
+# [0.6.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.5.0...@cornerstonejs/adapters@0.6.0) (2023-03-28)
 
 ### Features
 
-* Add a CircleROI tool ([#459](https://github.com/dcmjs-org/dcmjs/issues/459)) ([1c03ed3](https://github.com/dcmjs-org/dcmjs/commit/1c03ed3457fbb63bbd87315b90bfed99b1cd09cc))
+-   **contour api:** add api for contour rendering configuration ([#443](https://github.com/dcmjs-org/dcmjs/issues/443)) ([4ab751d](https://github.com/dcmjs-org/dcmjs/commit/4ab751df4082c56b64e4b97e9d6ca6de3c60c7e5))
 
+# [0.5.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.4.2...@cornerstonejs/adapters@0.5.0) (2023-03-22)
 
+### Features
 
-
+-   Add a CircleROI tool ([#459](https://github.com/dcmjs-org/dcmjs/issues/459)) ([1c03ed3](https://github.com/dcmjs-org/dcmjs/commit/1c03ed3457fbb63bbd87315b90bfed99b1cd09cc))
 
 ## [0.4.2](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.4.1...@cornerstonejs/adapters@0.4.2) (2023-03-22)
 
-
 ### Bug Fixes
 
-* Elliptical roi when in flipped/rotated state ([#479](https://github.com/dcmjs-org/dcmjs/issues/479)) ([f0961ae](https://github.com/dcmjs-org/dcmjs/commit/f0961ae6f5e912230f2bf17be5acfe30f775bcae))
-
-
-
-
+-   Elliptical roi when in flipped/rotated state ([#479](https://github.com/dcmjs-org/dcmjs/issues/479)) ([f0961ae](https://github.com/dcmjs-org/dcmjs/commit/f0961ae6f5e912230f2bf17be5acfe30f775bcae))
 
 ## [0.4.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.4.0...@cornerstonejs/adapters@0.4.1) (2023-03-03)
 
-
 ### Bug Fixes
 
-* **adapters:** Measurement reports can throw exceptions that prevent loading ([#458](https://github.com/dcmjs-org/dcmjs/issues/458)) ([7bc7d8a](https://github.com/dcmjs-org/dcmjs/commit/7bc7d8aaeb5aa0df91c24e278665d14f590ec234))
-
-
-
-
+-   **adapters:** Measurement reports can throw exceptions that prevent loading ([#458](https://github.com/dcmjs-org/dcmjs/issues/458)) ([7bc7d8a](https://github.com/dcmjs-org/dcmjs/commit/7bc7d8aaeb5aa0df91c24e278665d14f590ec234))
 
 # [0.4.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.3.2...@cornerstonejs/adapters@0.4.0) (2023-03-03)
 
-
 ### Features
 
-* **dicomImageLoader types:** Add types to the dicom image loader ([#441](https://github.com/dcmjs-org/dcmjs/issues/441)) ([10a3370](https://github.com/dcmjs-org/dcmjs/commit/10a3370b7f23084d1f2c55506079c17dea959659)), closes [#449](https://github.com/dcmjs-org/dcmjs/issues/449) [#450](https://github.com/dcmjs-org/dcmjs/issues/450)
-
-
-
-
+-   **dicomImageLoader types:** Add types to the dicom image loader ([#441](https://github.com/dcmjs-org/dcmjs/issues/441)) ([10a3370](https://github.com/dcmjs-org/dcmjs/commit/10a3370b7f23084d1f2c55506079c17dea959659)), closes [#449](https://github.com/dcmjs-org/dcmjs/issues/449) [#450](https://github.com/dcmjs-org/dcmjs/issues/450)
 
 ## [0.3.2](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.3.1...@cornerstonejs/adapters@0.3.2) (2023-02-17)
 
-
 ### Bug Fixes
 
-* **adapters:** Update the build a little to allow debugging into typescript ([#439](https://github.com/dcmjs-org/dcmjs/issues/439)) ([05e6419](https://github.com/dcmjs-org/dcmjs/commit/05e6419e1a6705f40c367ac4b52c3975f6fd25c6))
-
-
-
-
+-   **adapters:** Update the build a little to allow debugging into typescript ([#439](https://github.com/dcmjs-org/dcmjs/issues/439)) ([05e6419](https://github.com/dcmjs-org/dcmjs/commit/05e6419e1a6705f40c367ac4b52c3975f6fd25c6))
 
 ## [0.3.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.3.0...@cornerstonejs/adapters@0.3.1) (2023-02-16)
 
-
 ### Bug Fixes
 
-* **adapter:** The rectangle encoding of SR ([#437](https://github.com/dcmjs-org/dcmjs/issues/437)) ([bff23ec](https://github.com/dcmjs-org/dcmjs/commit/bff23ecfe551312a1339211ddb7838993514a377))
-
-
-
-
+-   **adapter:** The rectangle encoding of SR ([#437](https://github.com/dcmjs-org/dcmjs/issues/437)) ([bff23ec](https://github.com/dcmjs-org/dcmjs/commit/bff23ecfe551312a1339211ddb7838993514a377))
 
 # [0.3.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.2.1...@cornerstonejs/adapters@0.3.0) (2023-02-08)
 
-
 ### Features
 
-* **adapters:** Add adapters for Rectangle, Angle and fix generate DICOM ([#427](https://github.com/dcmjs-org/dcmjs/issues/427)) ([b8ca75e](https://github.com/dcmjs-org/dcmjs/commit/b8ca75e6ba378f175bd987d07f094f44b41a46cf))
-
-
-
-
+-   **adapters:** Add adapters for Rectangle, Angle and fix generate DICOM ([#427](https://github.com/dcmjs-org/dcmjs/issues/427)) ([b8ca75e](https://github.com/dcmjs-org/dcmjs/commit/b8ca75e6ba378f175bd987d07f094f44b41a46cf))
 
 ## [0.2.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.2.0...@cornerstonejs/adapters@0.2.1) (2023-02-03)
 
-
 ### Bug Fixes
 
-* **adapters:** Update rollup to newer version ([#407](https://github.com/dcmjs-org/dcmjs/issues/407)) ([543675f](https://github.com/dcmjs-org/dcmjs/commit/543675f1269f8b739764291b1c27b40470c48c63))
-
-
-
-
+-   **adapters:** Update rollup to newer version ([#407](https://github.com/dcmjs-org/dcmjs/issues/407)) ([543675f](https://github.com/dcmjs-org/dcmjs/commit/543675f1269f8b739764291b1c27b40470c48c63))
 
 # [0.2.0](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.5...@cornerstonejs/adapters@0.2.0) (2023-01-30)
 
-
 ### Features
 
-* **CobbAngle:** Add CobbAngle tool ([#353](https://github.com/dcmjs-org/dcmjs/issues/353)) ([b9bd701](https://github.com/dcmjs-org/dcmjs/commit/b9bd701df41ae2b8b2afbcf1d092d7587f7b267a))
-
-
-
-
+-   **CobbAngle:** Add CobbAngle tool ([#353](https://github.com/dcmjs-org/dcmjs/issues/353)) ([b9bd701](https://github.com/dcmjs-org/dcmjs/commit/b9bd701df41ae2b8b2afbcf1d092d7587f7b267a))
 
 ## [0.1.5](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.4...@cornerstonejs/adapters@0.1.5) (2023-01-30)
 
-
 ### Bug Fixes
 
-* **build:** Include adapters in circleci config ([#402](https://github.com/dcmjs-org/dcmjs/issues/402)) ([45c8416](https://github.com/dcmjs-org/dcmjs/commit/45c84167b40c6a48bb2c499b6153c200763778a0))
-
-
-
-
+-   **build:** Include adapters in circleci config ([#402](https://github.com/dcmjs-org/dcmjs/issues/402)) ([45c8416](https://github.com/dcmjs-org/dcmjs/commit/45c84167b40c6a48bb2c499b6153c200763778a0))
 
 ## [0.1.4](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.3...@cornerstonejs/adapters@0.1.4) (2023-01-30)
 
-
 ### Bug Fixes
 
-* **build:** adapters build missing files ([#400](https://github.com/dcmjs-org/dcmjs/issues/400)) ([901dd88](https://github.com/dcmjs-org/dcmjs/commit/901dd8815e121f29c50da0b1b9764d90d881114b))
-
-
-
-
+-   **build:** adapters build missing files ([#400](https://github.com/dcmjs-org/dcmjs/issues/400)) ([901dd88](https://github.com/dcmjs-org/dcmjs/commit/901dd8815e121f29c50da0b1b9764d90d881114b))
 
 ## [0.1.3](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.2...@cornerstonejs/adapters@0.1.3) (2023-01-28)
 
-
 ### Bug Fixes
 
-* **build:** Adding exports and files ([#398](https://github.com/dcmjs-org/dcmjs/issues/398)) ([2e8101f](https://github.com/dcmjs-org/dcmjs/commit/2e8101f229aa4c112405cb03558903956fc7e7f8))
-
-
-
-
+-   **build:** Adding exports and files ([#398](https://github.com/dcmjs-org/dcmjs/issues/398)) ([2e8101f](https://github.com/dcmjs-org/dcmjs/commit/2e8101f229aa4c112405cb03558903956fc7e7f8))
 
 ## [0.1.2](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.1...@cornerstonejs/adapters@0.1.2) (2023-01-27)
 
-
 ### Bug Fixes
 
-* **build:** fixing publish of adapters in package json ([#396](https://github.com/dcmjs-org/dcmjs/issues/396)) ([5a45b2f](https://github.com/dcmjs-org/dcmjs/commit/5a45b2f9ebeca9b800642d2735720a8d8400cd12))
-
-
-
-
+-   **build:** fixing publish of adapters in package json ([#396](https://github.com/dcmjs-org/dcmjs/issues/396)) ([5a45b2f](https://github.com/dcmjs-org/dcmjs/commit/5a45b2f9ebeca9b800642d2735720a8d8400cd12))
 
 ## [0.1.1](https://github.com/dcmjs-org/dcmjs/compare/@cornerstonejs/adapters@0.1.0...@cornerstonejs/adapters@0.1.1) (2023-01-27)
 
-
 ### Bug Fixes
 
-* **build:** try to publish adapters ([#395](https://github.com/dcmjs-org/dcmjs/issues/395)) ([191a17b](https://github.com/dcmjs-org/dcmjs/commit/191a17b690d2ac60ad98a4b8ecb8379a92638d67))
-
-
-
-
+-   **build:** try to publish adapters ([#395](https://github.com/dcmjs-org/dcmjs/issues/395)) ([191a17b](https://github.com/dcmjs-org/dcmjs/commit/191a17b690d2ac60ad98a4b8ecb8379a92638d67))
 
 # 0.1.0 (2023-01-27)
 

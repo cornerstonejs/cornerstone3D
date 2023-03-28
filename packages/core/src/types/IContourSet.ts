@@ -11,6 +11,7 @@ export interface IContourSet {
   contours: IContour[];
   _createEachContour(data: ContourData[]): void;
   getSizeInBytes(): number;
+  getSegmentIndex(): number;
   getColor(): any;
   /**
    * This function returns the contours of the image
