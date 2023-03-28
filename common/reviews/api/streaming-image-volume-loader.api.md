@@ -403,6 +403,13 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public
+enum DynamicOperatorType {
+    AVERAGE = 'AVERAGE',
+    SUBTRACT = 'SUBTRACT',
+    SUM = 'SUM',
+}
+
+// @public
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public
