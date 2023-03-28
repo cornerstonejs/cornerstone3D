@@ -42,7 +42,7 @@ let dataOperation = operations[0];
 // ======== Set up page ======== //
 setTitleAndDescription(
   '3D Volume Generation From 4D Data',
-  'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators for a 4D time series.\nEnter the time frames to use separated by spaces (ex: "0 1 3 4") then press "Set Time Frames", or leave blank to use all time frames. \nNote: the index for the time frames starts at 0'
+  'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators for a 4D time series.\nEnter the time frames to use separated by spaces (ex: "0 1 3 4") then press "Set Time Frames". \nNote: the index for the time frames starts at 0'
 );
 
 const size = '500px';
