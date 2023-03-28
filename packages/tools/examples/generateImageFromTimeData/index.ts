@@ -111,18 +111,19 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Set Time Frames',
   onClick: () => {
-    const x = document.getElementById("myText").value.split(' ');
-    for (let i = 0; i < x.length; i++){
-      x[i] = ~~x[i]
+    const x = document.getElementById('myText').value.split(' ');
+    for (let i = 0; i < x.length; i++) {
+      x[i] = ~~x[i];
     }
     timeFrames = x;
-}});
+  },
+});
 
 function addTextInputBox() {
-  const id = 'myText'
-  const title = 'Enter time frames'
+  const id = 'myText';
+  const title = 'Enter time frames';
   const textbox = document.createElement('input');
-  const value = ''
+  const value = '';
   textbox.id = id;
   textbox.innerHTML = title;
   textbox.value = value;
@@ -212,7 +213,8 @@ async function run() {
   const lastTimePoint = 14;
   const NUM_IMAGES_PER_TIME_POINT = 235;
   const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
-  const firstInstanceNumber = (firstTimePoint - 1) * NUM_IMAGES_PER_TIME_POINT + 1;
+  const firstInstanceNumber =
+    (firstTimePoint - 1) * NUM_IMAGES_PER_TIME_POINT + 1;
   const lastInstanceNumber = lastTimePoint * NUM_IMAGES_PER_TIME_POINT;
 
   imageIds = imageIds.filter((imageId) => {
@@ -220,7 +222,10 @@ async function run() {
     const instanceTag = instanceMetaData['00200013'];
     const instanceNumber = parseInt(instanceTag.Value[0]);
 
-    return instanceNumber >= firstInstanceNumber && instanceNumber <= lastInstanceNumber;
+    return (
+      instanceNumber >= firstInstanceNumber &&
+      instanceNumber <= lastInstanceNumber
+    );
   });
 
   // Instantiate a rendering engine
