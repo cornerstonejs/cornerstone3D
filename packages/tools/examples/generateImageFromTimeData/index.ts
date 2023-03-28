@@ -71,10 +71,11 @@ let volumeForButton;
 addButtonToToolbar({
   title: 'Generate Image',
   onClick: () => {
+    console.time('Function #1');
     const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTimeData(
       volumeForButton,
       dataOperation,
-      [0, 4]
+      // [0, 4]
     );
     createVolumeFromTimeData(dataInTime);
   },
@@ -106,6 +107,19 @@ addDropdownToToolbar({
     viewport.render();
   },
 });
+
+function addTextInputBox() {
+  const id = 'myText'
+  const title = 'Enter time frames'
+  const button = document.createElement('textbox');
+
+  button.id = id;
+  button.innerHTML = title;
+  // button.onclick = onClick;
+
+  const container = document.getElementById('demo-toolbar');
+  container.append(button);
+}
 
 function addTimePointSlider(volume) {
   addSliderToToolbar({
@@ -155,6 +169,7 @@ async function createVolumeFromTimeData(dataInTime) {
   ]);
 
   viewport2.render();
+  console.timeEnd('Function #1');
 }
 
 /**
@@ -192,6 +207,7 @@ async function run() {
   // and first ones are white or contains only a few black pixels
   const firstInstanceNumber = TOTAL_NUM_IMAGES - numImagesToLoad + 1;
 
+
   imageIds = imageIds.filter((imageId) => {
     const instanceMetaData = metaDataManager.get(imageId);
     const instanceTag = instanceMetaData['00200013'];
@@ -199,6 +215,7 @@ async function run() {
 
     return instanceNumber >= firstInstanceNumber;
   });
+  // imageIds = imageIds.slice(0, 1175)
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
@@ -246,6 +263,7 @@ async function run() {
 
   volumeForButton = volume;
   addTimePointSlider(volume);
+  addTextInputBox();
 
   // Set the volume on the viewport
   viewport.setVolumes([
