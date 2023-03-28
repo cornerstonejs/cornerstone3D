@@ -8,6 +8,7 @@ import SharedArrayBufferModes from './SharedArrayBufferModes';
 import GeometryType from './GeometryType';
 import ContourType from './ContourType';
 import VOILUTFunctionType from './VOILUTFunctionType';
+import DynamicOperatorType from './DynamicOperatorType';
 
 export {
   Events,
@@ -20,4 +21,5 @@ export {
   GeometryType,
   ContourType,
   VOILUTFunctionType,
+  DynamicOperatorType,
 };

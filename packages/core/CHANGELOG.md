@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.38.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.37.0...@cornerstonejs/core@0.38.0) (2023-03-28)
+
+
+### Features
+
+* **3d from 4d:** 3D image generation from 4D ([#502](https://github.com/cornerstonejs/cornerstone3D-beta/issues/502)) ([9217691](https://github.com/cornerstonejs/cornerstone3D-beta/commit/921769132398756fe192e266bcc9a09b98e0e733))
+
+
+
+
+
 # [0.37.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.6...@cornerstonejs/core@0.37.0) (2023-03-28)
 
 
