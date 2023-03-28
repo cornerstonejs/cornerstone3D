@@ -2,6 +2,7 @@ export default function addSliderToToolbar({
   id,
   title,
   range,
+  step,
   defaultValue,
   container,
   onSelectedValueChange,
@@ -10,6 +11,7 @@ export default function addSliderToToolbar({
   id?: string;
   title: string;
   range: number[];
+  step?: number;
   defaultValue: number;
   container?: HTMLElement;
   onSelectedValueChange: (value: string) => void;
@@ -31,6 +33,10 @@ export default function addSliderToToolbar({
   input.max = String(range[1]);
   input.value = String(defaultValue);
   input.name = title;
+  // add step
+  if (step) {
+    input.step = String(step);
+  }
 
   input.oninput = (evt) => {
     const selectElement = <HTMLSelectElement>evt.target;

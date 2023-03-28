@@ -10,7 +10,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addToggleButtonToToolbar,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -34,15 +33,15 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId1 = 'SEGMENTATION_ID_1';
-const segmentationId2 = 'SEGMENTATION_ID_2';
 const toolGroupId = 'MY_ TOOL_GROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_AXIAL_STACK';
+let segmentationRepresentationUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Global Segmentation Configuration',
-  'Here we demonstrate how to change the global segmentation configuration'
+  'Labelmap Segment specific Configuration',
+  'Here we demonstrate how to change the segment specific segmentation configuration'
 );
 
 const size = '500px';
@@ -66,78 +65,93 @@ function setConfigValue(property, value) {
   renderingEngine.renderViewports([viewportId]);
 }
 
-addToggleButtonToToolbar({
-  title: 'toggle render inactive segmentations',
-  onClick: (toggle) => {
-    const config = segmentation.config.getGlobalConfig();
+let segment1FillAlpha = 0.9;
+let segment2FillAlpha = 0.9;
 
-    config.renderInactiveSegmentations = toggle;
-    segmentation.config.setGlobalConfig(config);
+// addToggleButtonToToolbar({
+//   title: 'toggle outline rendering',
+//   onClick: (toggle) => {
+//     setConfigValue('renderOutline', toggle);
+//   },
+//   defaultToggle: true,
+// });
+// addToggleButtonToToolbar({
+//   title: 'toggle fill rendering',
+//   onClick: (toggle) => {
+//     setConfigValue('renderFill', toggle);
+//   },
+//   defaultToggle: true,
+// });
 
-    const renderingEngine = getRenderingEngine(renderingEngineId);
+// addSliderToToolbar({
+//   title: 'outline width active',
+//   range: [1, 5],
+//   defaultValue: 1,
+//   onSelectedValueChange: (value) => {
+//     setConfigValue('outlineWidthActive', value);
+//   },
+// });
 
-    renderingEngine.renderViewports([viewportId]);
-  },
-  defaultToggle: true,
-});
-addToggleButtonToToolbar({
-  title: 'toggle outline rendering',
-  onClick: (toggle) => {
-    setConfigValue('renderOutline', toggle);
-  },
-  defaultToggle: true,
-});
-addToggleButtonToToolbar({
-  title: 'toggle fill rendering',
-  onClick: (toggle) => {
-    setConfigValue('renderFill', toggle);
-  },
-  defaultToggle: true,
-});
+// addSliderToToolbar({
+//   title: 'outline width inactive',
+//   range: [1, 5],
+//   defaultValue: 1,
+//   onSelectedValueChange: (value) => {
+//     setConfigValue('outlineWidthInactive', value);
+//   },
+// });
 
 addSliderToToolbar({
-  title: 'outline width active',
-  range: [1, 5],
-  defaultValue: 1,
-  onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthActive', value);
-  },
-});
-addSliderToToolbar({
-  title: 'outline alpha active',
+  title: 'fill alpha for Segment 1',
   range: [0, 100],
-  defaultValue: 100,
+  defaultValue: 90,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineOpacity', Number(value) / 100);
-  },
-});
-addSliderToToolbar({
-  title: 'outline width inactive',
-  range: [1, 5],
-  defaultValue: 1,
-  onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthInactive', value);
-  },
-});
-addSliderToToolbar({
-  title: 'fill alpha',
-  range: [0, 100],
-  defaultValue: 50,
-  onSelectedValueChange: (value) => {
-    const mappedValue = Number(value) / 100.0;
+    segment1FillAlpha = Number(value) / 100;
 
-    setConfigValue('fillAlpha', mappedValue);
+    segmentation.config.setSegmentSpecificConfig(
+      toolGroupId,
+      segmentationRepresentationUID,
+      {
+        1: {
+          LABELMAP: {
+            fillAlpha: segment1FillAlpha,
+          },
+        },
+      }
+    );
   },
 });
+
 addSliderToToolbar({
-  title: 'fill alpha inactive',
+  title: 'fill alpha for Segment 2',
   range: [0, 100],
-  defaultValue: 50,
+  defaultValue: 90,
   onSelectedValueChange: (value) => {
-    const mappedValue = Number(value) / 100.0;
-    setConfigValue('fillAlphaInactive', mappedValue);
+    segment2FillAlpha = Number(value) / 100;
+
+    segmentation.config.setSegmentSpecificConfig(
+      toolGroupId,
+      segmentationRepresentationUID,
+      {
+        2: {
+          LABELMAP: {
+            fillAlpha: segment2FillAlpha,
+          },
+        },
+      }
+    );
   },
 });
+
+// addSliderToToolbar({
+//   title: 'fill alpha inactive',
+//   range: [0, 100],
+//   defaultValue: 50,
+//   onSelectedValueChange: (value) => {
+//     const mappedValue = Number(value) / 100.0;
+//     setConfigValue('fillAlphaInactive', mappedValue);
+//   },
+// });
 
 // ============================= //
 
@@ -186,12 +200,6 @@ async function addSegmentationsToState() {
       volumeId: segmentationId1,
     }
   );
-  const segmentationVolume2 = await volumeLoader.createAndCacheDerivedVolume(
-    volumeId,
-    {
-      volumeId: segmentationId2,
-    }
-  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -207,20 +215,10 @@ async function addSegmentationsToState() {
         },
       },
     },
-    {
-      segmentationId: segmentationId2,
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          volumeId: segmentationId2,
-        },
-      },
-    },
   ]);
 
   // Add some data to the segmentations
   fillSegmentationWithCircles(segmentationVolume1, [50, 50]);
-  fillSegmentationWithCircles(segmentationVolume2, [-50, -50]);
 }
 
 /**
@@ -283,16 +281,13 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the segmentation representations to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId: segmentationId1,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-    {
-      segmentationId: segmentationId2,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  [segmentationRepresentationUID] =
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId: segmentationId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);

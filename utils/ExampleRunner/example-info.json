@@ -150,40 +150,44 @@
         "name": "CINE Tool",
         "description": "Demonstrates the usage of the CINE tool"
       },
-      "segmentationRendering": {
+      "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
       },
-      "contourSegmentationRepresentation": {
+      "contourRendering": {
         "name": "Contour Segmentation Representation",
         "description": "Demonstrates how to use the Contour Segmentation Representation"
       },
-      "segmentationSwapping": {
-        "name": "Segmentation Swapping",
+      "labelmapSwapping": {
+        "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
       },
       "planarFreehandROITool": {
         "name": "Freehand ROI Tool",
         "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
       },
-      "globalSegmentationConfiguration": {
-        "name": "Global Segmentation Configuration",
+      "labelmapGlobalConfiguration": {
+        "name": "Global Labelmap Segmentation Configuration",
         "description": "Demonstrates how to set a global configuration for segmentation representations"
       },
-      "toolGroupSpecificSegmentationRepresentationConfiguration": {
-        "name": "ToolGroup Specific Segmentation Configuration",
+      "contourRenderingConfiguration": {
+        "name": "Contour rendering configuration ",
+        "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
+      },
+      "labelmapToolGroupSpecificConfiguration": {
+        "name": "ToolGroup Specific Labelmap Segmentation Configuration",
         "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"
       },
-      "segmentSpecificConfiguration": {
-        "name": "Segment-specific Segmentation Configuration",
+      "labelmapSegmentSpecificConfiguration": {
+        "name": "Labelmap segment-specific Configuration",
         "description": "Demonstrates how to change the configuration of a specific segment"
       },
-      "basicSegmentationTools": {
-        "name": "Segmentation Tools - Brush, Scissors",
+      "labelmapSegmentationTools": {
+        "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
         "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
       },
-      "segmentLocking": {
-        "name": "Segmentation Swapping",
+      "labelmapSegmentLocking": {
+        "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "polyDataActorManipulationTools": {
@@ -236,8 +240,8 @@
         "name": "Volume Viewport Synchronization",
         "description": "Demonstrates how to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
       },
-      "segmentationRenderingDifferentResolutions": {
-        "name": "Rendering Labelmap Segmentations with Different Resolutions",
+      "labelmapRenderingDifferentResolutions": {
+        "name": "Rendering Labelmap with Different Resolutions",
         "description": "Demonstrates that the segmentation resolution need not to be the same as the source data"
       },
       "rectangleROIThreshold": {

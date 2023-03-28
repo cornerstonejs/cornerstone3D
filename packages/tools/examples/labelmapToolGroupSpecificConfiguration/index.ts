@@ -42,8 +42,8 @@ const viewportId2 = 'CT_AXIAL_STACK_2';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Toolgroup Segmentation Configuration',
-  'Here we demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations'
+  'Toolgroup Labelmap Segmentation Configuration',
+  'Here we demonstrate how to change the configuration of how a specific tool group displays labelmap segmentations through via segmentation representations'
 );
 
 const size = '500px';
