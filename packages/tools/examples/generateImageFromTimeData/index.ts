@@ -30,6 +30,7 @@ const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'CT_SAGITTAL_STACK';
 const viewportId2 = 'COMPUTED_STACK';
+let timeFrames;
 
 const orientations = [
   Enums.OrientationAxis.AXIAL,
@@ -41,7 +42,7 @@ let dataOperation = operations[0];
 // ======== Set up page ======== //
 setTitleAndDescription(
   '3D Volume Generation From 4D Data',
-  'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators from a 4D time series.'
+  'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators for a 4D time series.\n Enter in the time frames to use for the operator separated by spaces (ex: "0 1 3 4") then press "Set Time Frames", or leave blank to use all time frames. \nNote: the index for the time frames starts at 0'
 );
 
 const size = '500px';
@@ -71,11 +72,10 @@ let volumeForButton;
 addButtonToToolbar({
   title: 'Generate Image',
   onClick: () => {
-    console.time('Function #1');
     const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTimeData(
       volumeForButton,
       dataOperation,
-      // [0, 4]
+      timeFrames
     );
     createVolumeFromTimeData(dataInTime);
   },
@@ -108,17 +108,27 @@ addDropdownToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Set Time Frames',
+  onClick: () => {
+    const x = document.getElementById("myText").value.split(' ');
+    for (let i = 0; i < x.length; i++){
+      x[i] = ~~x[i]
+    }
+    timeFrames = x;
+}});
+
 function addTextInputBox() {
   const id = 'myText'
   const title = 'Enter time frames'
-  const button = document.createElement('textbox');
-
-  button.id = id;
-  button.innerHTML = title;
-  // button.onclick = onClick;
+  const textbox = document.createElement('input');
+  const value = ''
+  textbox.id = id;
+  textbox.innerHTML = title;
+  textbox.value = value;
 
   const container = document.getElementById('demo-toolbar');
-  container.append(button);
+  container.append(textbox);
 }
 
 function addTimePointSlider(volume) {
@@ -132,6 +142,7 @@ function addTimePointSlider(volume) {
     },
   });
 }
+
 // ==================================== //
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -169,7 +180,6 @@ async function createVolumeFromTimeData(dataInTime) {
   ]);
 
   viewport2.render();
-  console.timeEnd('Function #1');
 }
 
 /**
@@ -198,28 +208,25 @@ async function run() {
   });
 
   const MAX_NUM_TIMEPOINTS = 40;
-  const numTimePoints = 5;
+  const firstTimePoint = 10;
+  const lastTimePoint = 14;
   const NUM_IMAGES_PER_TIME_POINT = 235;
   const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
-  const numImagesToLoad = numTimePoints * NUM_IMAGES_PER_TIME_POINT;
-
-  // Load the last N time points because they have a better image quality
-  // and first ones are white or contains only a few black pixels
-  const firstInstanceNumber = TOTAL_NUM_IMAGES - numImagesToLoad + 1;
-
+  const firstInstanceNumber = (firstTimePoint - 1) * NUM_IMAGES_PER_TIME_POINT + 1;
+  const lastInstanceNumber = lastTimePoint * NUM_IMAGES_PER_TIME_POINT;
 
   imageIds = imageIds.filter((imageId) => {
     const instanceMetaData = metaDataManager.get(imageId);
     const instanceTag = instanceMetaData['00200013'];
     const instanceNumber = parseInt(instanceTag.Value[0]);
 
-    return instanceNumber >= firstInstanceNumber;
+    return instanceNumber >= firstInstanceNumber && instanceNumber <= lastInstanceNumber;
   });
-  // imageIds = imageIds.slice(0, 1175)
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
-  // Create a stack viewport
+
+  // Create a viewport
   const viewportInput1 = {
     viewportId: viewportId1,
     type: ViewportType.ORTHOGRAPHIC,
@@ -262,8 +269,8 @@ async function run() {
   volume.load();
 
   volumeForButton = volume;
-  addTimePointSlider(volume);
   addTextInputBox();
+  addTimePointSlider(volume);
 
   // Set the volume on the viewport
   viewport.setVolumes([
