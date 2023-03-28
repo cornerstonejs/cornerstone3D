@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.36.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.5...@cornerstonejs/core@0.36.6) (2023-03-28)
+
+### Bug Fixes
+
+- **volumeLoad:** should still update texture when loading ([#527](https://github.com/cornerstonejs/cornerstone3D-beta/issues/527)) ([65c71ea](https://github.com/cornerstonejs/cornerstone3D-beta/commit/65c71ea8e5aa2c4dc92ed69c64707a6bdfa206b5))
+
 ## [0.36.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.4...@cornerstonejs/core@0.36.5) (2023-03-26)
 
 **Note:** Version bump only for package @cornerstonejs/core
