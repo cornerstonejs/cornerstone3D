@@ -516,6 +516,16 @@ interface CustomEvent_2<T = any> extends Event {
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
+enum DynamicOperatorType {
+    // (undocumented)
+    AVERAGE = "AVERAGE",
+    // (undocumented)
+    SUBTRACT = "SUBTRACT",
+    // (undocumented)
+    SUM = "SUM"
+}
+
+// @public (undocumented)
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public (undocumented)
@@ -546,7 +556,8 @@ declare namespace Enums {
         SharedArrayBufferModes,
         GeometryType,
         ContourType,
-        VOILUTFunctionType
+        VOILUTFunctionType,
+        DynamicOperatorType
     }
 }
 export { Enums }
