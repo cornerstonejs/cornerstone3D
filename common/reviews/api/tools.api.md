@@ -2794,6 +2794,7 @@ interface IStreamingVolumeProperties {
     loadStatus: {
         loaded: boolean;
         loading: boolean;
+        cancelled: boolean;
         cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };

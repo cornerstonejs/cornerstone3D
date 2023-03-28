@@ -244,6 +244,7 @@ function cornerstoneStreamingImageVolumeLoader(
           // todo: loading and loaded should be on ImageVolume
           loaded: false,
           loading: false,
+          cancelled: false,
           cachedFrames: [],
           callbacks: [],
         },
