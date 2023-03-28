@@ -317,7 +317,8 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       // data loader scheme)
       const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
 
-      // check if we are still loading the volume and we have not canceled loading
+      // check if the load was cancelled while we were waiting for the image
+      // if so we don't want to do anything
       if (loadStatus.cancelled) {
         console.warn(
           'volume load cancelled, returning for imageIdIndex: ',
