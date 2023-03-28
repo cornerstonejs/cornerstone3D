@@ -74,7 +74,7 @@ addButtonToToolbar({
   onClick: () => {
     const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTimeData(
       volumeForButton,
-      dataOperation,
+      <Enums.DynamicOperatorType>dataOperation,
       timeFrames
     );
     createVolumeFromTimeData(dataInTime);

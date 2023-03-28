@@ -1,4 +1,5 @@
-import { Types } from '@cornerstonejs/core';
+import { Enums, Types } from '@cornerstonejs/core';
+import { DynamicOperatorType } from 'core/src/enums';
 
 /**
  * Gets the scalar data for a series of time frames from a 4D volume, returns an
@@ -31,25 +32,27 @@ function generateImageFromTimeData(
   const arrayLength = typedArrays[0].length;
   const finalArray = new Float32Array(arrayLength);
 
-  if (operation === 'SUM') {
+  if (operation === Enums.DynamicOperatorType.SUM) {
     for (let i = 0; i < numFrames; i++) {
       const currentArray = typedArrays[frames[i]];
       for (let j = 0; j < arrayLength; j++) {
         finalArray[j] += currentArray[j];
       }
     }
+    return finalArray;
   }
 
-  if (operation === 'SUBTRACT') {
+  if (operation === Enums.DynamicOperatorType.SUBTRACT) {
     if (frames.length > 2) {
       throw new Error('Please provide only 2 time points for subtraction.');
     }
     for (let j = 0; j < arrayLength; j++) {
-      finalArray[j] += typedArrays[0][j] - typedArrays[1][j];
+      finalArray[j] += typedArrays[frames[0]][j] - typedArrays[frames[1]][j];
     }
+    return finalArray;
   }
 
-  if (operation === 'AVERAGE') {
+  if (operation === Enums.DynamicOperatorType.AVERAGE) {
     for (let i = 0; i < numFrames; i++) {
       const currentArray = typedArrays[frames[i]];
       for (let j = 0; j < arrayLength; j++) {
@@ -59,9 +62,8 @@ function generateImageFromTimeData(
     for (let k = 0; k < arrayLength; k++) {
       finalArray[k] = finalArray[k] / numFrames;
     }
+    return finalArray;
   }
-
-  return finalArray;
 }
 
 export default generateImageFromTimeData;

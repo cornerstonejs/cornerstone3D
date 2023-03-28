@@ -251,6 +251,10 @@
       "scaleOverlayTool": {
         "name": "Scale Overlay Tool",
         "description": "Demonstrates the scale overlay tool for rendering a scale on a viewport showing the real world size of the image."
+      },
+      "generateImageFromTimeData": {
+        "name": "Generate 3D Volume From 4D Data",
+        "description": "Demostrates generating a 3D volume from 4D data using subtract, average or sum."
       }
     }
   }
