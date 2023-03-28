@@ -165,7 +165,8 @@ export { CONSTANTS }
 type ContourData = {
     points: Point3[];
     type: ContourType;
-    color?: Point3;
+    color: Point3;
+    segmentIndex: number;
 };
 
 // @public (undocumented)
@@ -174,6 +175,7 @@ type ContourSetData = {
     data: ContourData[];
     frameOfReferenceUID: string;
     color?: Point3;
+    segmentIndex?: number;
 };
 
 // @public (undocumented)
@@ -924,6 +926,8 @@ interface IContourSet {
     // (undocumented)
     getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
+    getSegmentIndex(): number;
+    // (undocumented)
     getSizeInBytes(): number;
     // (undocumented)
     getTotalNumberOfPoints(): number;
@@ -961,7 +965,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: IContourSet;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -2656,6 +2660,8 @@ export class VolumeViewport extends BaseVolumeViewport {
 // @public (undocumented)
 export class VolumeViewport3D extends BaseVolumeViewport {
     constructor(props: ViewportInput);
+    // (undocumented)
+    getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number | undefined;
     // (undocumented)

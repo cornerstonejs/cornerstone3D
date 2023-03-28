@@ -4,12 +4,14 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addButtonToToolbar,
+  addToggleButtonToToolbar,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -34,11 +36,13 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const segmentationId1 = 'SEGMENTATION_ID_1';
 const segmentationId2 = 'SEGMENTATION_ID_2';
 const toolGroupId = 'MY_ TOOL_GROUP_ID';
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = 'CT_AXIAL_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Swapping segmentations on a viewport',
-  'Here we demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed'
+  'Global Labelmap Segmentation Configuration',
+  'Here we demonstrate how to change the global labelmap configuration'
 );
 
 const size = '500px';
@@ -49,51 +53,89 @@ element.style.width = size;
 element.style.height = size;
 
 content.appendChild(element);
-
-const instructions = document.createElement('p');
-instructions.innerText = `
-  Click the Swap Segmentation button to swap the segmentation being displayed
-`;
-
-content.append(instructions);
 // ============================= //
 
-let segmentationDisplayed = segmentationId1;
-let activeSegmentationRepresentationUID;
+function setConfigValue(property, value) {
+  const config = segmentation.config.getGlobalConfig();
 
-addButtonToToolbar({
-  title: 'Swap Segmentation',
-  onClick: async () => {
-    // Remove the currently displayed segmentation representation
-    segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
-      activeSegmentationRepresentationUID,
-    ]);
+  config.representations.LABELMAP[property] = value;
+  segmentation.config.setGlobalConfig(config);
 
-    if (segmentationDisplayed === segmentationId1) {
-      // Add segmentation 2
-      const [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
-          {
-            segmentationId: segmentationId2,
-            type: csToolsEnums.SegmentationRepresentations.Labelmap,
-          },
-        ]);
+  const renderingEngine = getRenderingEngine(renderingEngineId);
 
-      activeSegmentationRepresentationUID = segmentationRepresentationUID;
-      segmentationDisplayed = segmentationId2;
-    } else {
-      // Add segmentation 1
-      const [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
-          {
-            segmentationId: segmentationId1,
-            type: csToolsEnums.SegmentationRepresentations.Labelmap,
-          },
-        ]);
+  renderingEngine.renderViewports([viewportId]);
+}
 
-      activeSegmentationRepresentationUID = segmentationRepresentationUID;
-      segmentationDisplayed = segmentationId1;
-    }
+addToggleButtonToToolbar({
+  title: 'toggle render inactive segmentations',
+  onClick: (toggle) => {
+    const config = segmentation.config.getGlobalConfig();
+
+    config.renderInactiveSegmentations = toggle;
+    segmentation.config.setGlobalConfig(config);
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    renderingEngine.renderViewports([viewportId]);
+  },
+  defaultToggle: true,
+});
+addToggleButtonToToolbar({
+  title: 'toggle outline rendering',
+  onClick: (toggle) => {
+    setConfigValue('renderOutline', toggle);
+  },
+  defaultToggle: true,
+});
+addToggleButtonToToolbar({
+  title: 'toggle fill rendering',
+  onClick: (toggle) => {
+    setConfigValue('renderFill', toggle);
+  },
+  defaultToggle: true,
+});
+
+addSliderToToolbar({
+  title: 'outline width active',
+  range: [1, 5],
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
+    setConfigValue('outlineWidthActive', value);
+  },
+});
+addSliderToToolbar({
+  title: 'outline alpha active',
+  range: [0, 100],
+  defaultValue: 100,
+  onSelectedValueChange: (value) => {
+    setConfigValue('outlineOpacity', Number(value) / 100);
+  },
+});
+addSliderToToolbar({
+  title: 'outline width inactive',
+  range: [1, 5],
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
+    setConfigValue('outlineWidthInactive', value);
+  },
+});
+addSliderToToolbar({
+  title: 'fill alpha',
+  range: [0, 100],
+  defaultValue: 50,
+  onSelectedValueChange: (value) => {
+    const mappedValue = Number(value) / 100.0;
+
+    setConfigValue('fillAlpha', mappedValue);
+  },
+});
+addSliderToToolbar({
+  title: 'fill alpha inactive',
+  range: [0, 100],
+  defaultValue: 50,
+  onSelectedValueChange: (value) => {
+    const mappedValue = Number(value) / 100.0;
+    setConfigValue('fillAlphaInactive', mappedValue);
   },
 });
 
@@ -217,12 +259,9 @@ async function run() {
   await addSegmentationsToState();
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId = 'CT_AXIAL_STACK';
-
   const viewportInput = {
     viewportId,
     type: ViewportType.ORTHOGRAPHIC,
@@ -243,16 +282,17 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
-  // // Add the first segmentation representation to the toolgroup
-  const [segmentationRepresentationUID] =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId: segmentationId1,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
-
-  activeSegmentationRepresentationUID = segmentationRepresentationUID;
+  // // Add the segmentation representations to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId: segmentationId1,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+    {
+      segmentationId: segmentationId2,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);

@@ -49,7 +49,7 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic manual segmentation tools',
+  'Basic manual labelmap Segmentation tools',
   'Here we demonstrate manual segmentation tools'
 );
 

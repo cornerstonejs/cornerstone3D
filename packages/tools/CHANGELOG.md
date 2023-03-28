@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.57.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.57.0...@cornerstonejs/tools@0.57.1) (2023-03-28)
+
+
+### Bug Fixes
+
+* **tools:** Some older annotations were missing normal ([#528](https://github.com/cornerstonejs/cornerstone3D-beta/issues/528)) ([319822a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/319822acdd99da5f75eb716588ebfe9ec2090e76))
+
+
+
+
+
+# [0.57.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.56.7...@cornerstonejs/tools@0.57.0) (2023-03-28)
+
+
+### Features
+
+* **contour api:** add api for contour rendering configuration ([#443](https://github.com/cornerstonejs/cornerstone3D-beta/issues/443)) ([4ab751d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4ab751df4082c56b64e4b97e9d6ca6de3c60c7e5))
+
+
+
+
+
 ## [0.56.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.56.6...@cornerstonejs/tools@0.56.7) (2023-03-28)
 
 **Note:** Version bump only for package @cornerstonejs/tools

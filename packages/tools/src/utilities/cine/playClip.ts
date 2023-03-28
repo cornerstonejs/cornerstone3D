@@ -5,6 +5,7 @@ import {
   StackViewport,
   VolumeViewport,
   cache,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 
 import { Types } from '@cornerstonejs/core';
@@ -301,7 +302,7 @@ function _getVolumeFromViewport(viewport): Types.IImageVolume {
   const actorEntry = viewport.getDefaultActor();
 
   if (!actorEntry) {
-    console.warn('No actor found');
+    // This can happen during setup/teardown of viewports.
     return;
   }
 
