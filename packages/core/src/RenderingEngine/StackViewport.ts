@@ -1536,11 +1536,15 @@ class StackViewport extends Viewport implements IStackViewport {
     const columnCosines = direction.slice(3, 6);
     const dataType = imageData.getPointData().getScalars().getDataType();
 
+    // using epsilon comparison for float numbers comparison.
+    const isSameXSpacing = isEqual(xSpacing, image.rowPixelSpacing);
+    const isSameYSpacing = isEqual(ySpacing, image.columnPixelSpacing);
+
     // using spacing, size, and direction only for now
     return (
-      (xSpacing === image.rowPixelSpacing ||
+      (isSameXSpacing ||
         (image.rowPixelSpacing === null && xSpacing === 1.0)) &&
-      (ySpacing === image.columnPixelSpacing ||
+      (isSameYSpacing ||
         (image.columnPixelSpacing === null && ySpacing === 1.0)) &&
       xVoxels === image.columns &&
       yVoxels === image.rows &&

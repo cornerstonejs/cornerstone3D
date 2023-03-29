@@ -10,6 +10,14 @@ describe('Cornerstone-render Utilities:', function () {
     expect(isEqual([0, 0, 0], [1, 1, 1])).toBe(false);
     expect(isEqual([0, 0, 0], [0, 0, 0])).toBe(true);
     expect(isEqual([0, 0, 0], [0.0000000001, 0, 0])).toBe(true);
+    expect(isEqual(1, 1)).toBe(true);
+    expect(isEqual(0.1, 0.1)).toBe(true);
+    expect(isEqual(0.1, [0.1])).toBe(false);
+    expect(isEqual([1], 1)).toBe(false);
+    expect(isEqual(0.00001, 0.00002, 0.00001)).toBe(true);
+    expect(isEqual(0.2 + 0.1, 0.3, 0.01)).toBe(true);
+    expect(isEqual(Infinity, Infinity, 0.0001)).toBe(false);
+    expect(isEqual(NaN, NaN, 0.0001)).toBe(false);
   });
 
   it('Should correctly calculate line and plane intersection', () => {
