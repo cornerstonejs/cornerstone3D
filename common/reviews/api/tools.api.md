@@ -1897,7 +1897,9 @@ declare namespace EventTypes_2 {
         MouseDoubleClickEventDetail,
         MouseDoubleClickEventType,
         MouseWheelEventDetail,
-        MouseWheelEventType
+        MouseWheelEventType,
+        VolumeScrollOutOfBoundsEventDetail,
+        VolumeScrollOutOfBoundsEventType
     }
 }
 
@@ -5437,6 +5439,20 @@ export class VolumeRotateMouseWheelTool extends BaseTool {
 
 // @public (undocumented)
 type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
+
+// @public (undocumented)
+type VolumeScrollOutOfBoundsEventDetail = {
+    volumeId: string;
+    viewport: Types_2.IVolumeViewport;
+    desiredStepIndex: number;
+    currentStepIndex: number;
+    delta: number;
+    numScrollSteps: number;
+    currentImageId: string;
+};
+
+// @public (undocumented)
+type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
 // @public
 type VolumeViewportProperties = {

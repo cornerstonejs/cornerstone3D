@@ -620,6 +620,8 @@ export enum EVENTS {
     // (undocumented)
     VOLUME_NEW_IMAGE = "CORNERSTONE_VOLUME_NEW_IMAGE",
     // (undocumented)
+    VOLUME_SCROLL_OUT_OF_BOUNDS = "CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS",
+    // (undocumented)
     VOLUME_VIEWPORT_NEW_VOLUME = "CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME"
 }
 
@@ -791,6 +793,11 @@ function getVolumeViewportsContainingSameVolumes(targetViewport: IVolumeViewport
 function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string): {
     numScrollSteps: number;
     currentStepIndex: number;
+    sliceRangeInfo: {
+        sliceRange: ActorSliceRange;
+        spacingInNormalDirection: number;
+        camera: ICamera;
+    };
 };
 
 // @public (undocumented)
