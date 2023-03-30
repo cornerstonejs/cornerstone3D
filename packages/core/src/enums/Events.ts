@@ -39,6 +39,13 @@ enum Events {
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
   /**
+   * Triggers on the HTML element when viewport modifies its display area
+   *
+   * Make use of {@link EventTypes.DisplayAreaModifiedEvent | DisplayAreaModified Event Type } for typing your event listeners for DISPLAY_AREA_MODIFIED event,
+   * and see what event detail is included in {@link EventTypes.DisplayAreaModifiedEventDetail | DisplayAreaModified Event Detail }
+   */
+  DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
+  /**
    * Triggers on the eventTarget when the element is disabled
    *
    * Make use of {@link EventTypes.ElementDisabledEvent | ElementDisabled Event Type } for typing your event listeners for ELEMENT_DISABLED event,

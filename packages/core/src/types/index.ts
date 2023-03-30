@@ -5,6 +5,7 @@ import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
 import type { IVolume, VolumeScalarData } from './IVolume';
 import type { VOI, VOIRange } from './voi';
+import type DisplayArea from './displayArea';
 import type ImageLoaderFn from './ImageLoaderFn';
 import type IImageVolume from './IImageVolume';
 import type IDynamicImageVolume from './IDynamicImageVolume';
@@ -125,6 +126,7 @@ export type {
   ViewportInputOptions,
   VOIRange,
   VOI,
+  DisplayArea,
   FlipDirection,
   ICachedImage,
   ICachedVolume,

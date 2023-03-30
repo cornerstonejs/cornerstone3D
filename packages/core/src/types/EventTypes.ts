@@ -8,6 +8,8 @@ import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
 import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type DisplayArea from './displayArea';
+
 /**
  * CAMERA_MODIFIED Event's data
  */
@@ -38,6 +40,20 @@ type VoiModifiedEventDetail = {
   volumeId?: string;
   /** VOILUTFunction */
   VOILUTFunction?: VOILUTFunctionType;
+};
+
+/**
+ * DISPLAY_AREA_MODIFIED Event's data
+ */
+type DisplayAreaModifiedEventDetail = {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** new display area */
+  displayArea: DisplayArea;
+  /** Unique ID for the volume in the cache */
+  volumeId?: string;
+  /** Whether displayArea was stored as initial view */
+  storeAsInitialCamera?: boolean;
 };
 
 /**
@@ -260,6 +276,11 @@ type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
 type VoiModifiedEvent = CustomEventType<VoiModifiedEventDetail>;
 
 /**
+ * DISPLAY_AREA_MODIFIED Event type
+ */
+type DisplayAreaModifiedEvent = CustomEventType<DisplayAreaModifiedEventDetail>;
+
+/**
  * ELEMENT_DISABLED Event type
  */
 type ElementDisabledEvent = CustomEventType<ElementDisabledEventDetail>;
@@ -362,6 +383,8 @@ export type {
   CameraModifiedEvent,
   VoiModifiedEvent,
   VoiModifiedEventDetail,
+  DisplayAreaModifiedEvent,
+  DisplayAreaModifiedEventDetail,
   ElementDisabledEvent,
   ElementDisabledEventDetail,
   ElementEnabledEvent,
