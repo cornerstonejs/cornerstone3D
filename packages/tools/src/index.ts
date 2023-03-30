@@ -57,6 +57,7 @@ import {
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  ThresholdPreviewTool,
 } from './tools';
 
 import * as Enums from './enums';
@@ -108,6 +109,7 @@ export {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   BrushTool,
+  ThresholdPreviewTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

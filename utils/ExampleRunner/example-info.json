@@ -186,6 +186,10 @@
         "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
         "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
       },
+      "labelmapThresholdPreviewTool":{
+        "name": "Threshold preview tool",
+        "description": "Demonstrates threshold preview for different HU ranges"
+      },
       "labelmapSegmentLocking": {
         "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"

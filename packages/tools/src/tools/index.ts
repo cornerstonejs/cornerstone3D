@@ -36,6 +36,7 @@ import CircleScissorsTool from './segmentation/CircleScissorsTool';
 import SphereScissorsTool from './segmentation/SphereScissorsTool';
 import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool';
 import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool';
+import ThresholdPreviewTool from './segmentation/ThresholdPreviewTool';
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 
@@ -81,4 +82,5 @@ export {
   ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
+  ThresholdPreviewTool,
 };
