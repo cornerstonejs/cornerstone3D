@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.59.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.59.0...@cornerstonejs/tools@0.59.1) (2023-03-30)
+
+
+### Bug Fixes
+
+* **segmentColor:** should be able to change initial segment color for render ([#535](https://github.com/cornerstonejs/cornerstone3D-beta/issues/535)) ([0a81736](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0a8173671315eff3bf2b52d079cde9a604208fa1))
+
+
+
+
+
 # [0.59.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.58.0...@cornerstonejs/tools@0.59.0) (2023-03-30)
 
 
