@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.59.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.58.0...@cornerstonejs/tools@0.59.0) (2023-03-30)
+
+
+### Features
+
+* **mobile:** modify config for crosshair tool ([#533](https://github.com/cornerstonejs/cornerstone3D-beta/issues/533)) ([50111d2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/50111d20de7d6921ca40813589f6ed0297c4a2f0))
+
+
+
+
+
 # [0.58.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.57.1...@cornerstonejs/tools@0.58.0) (2023-03-28)
 
 
