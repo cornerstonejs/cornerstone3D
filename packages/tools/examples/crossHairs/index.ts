@@ -281,11 +281,19 @@ async function run() {
   // Add Crosshairs tool and configure it to link the three viewports
   // These viewports could use different tool groups. See the PET-CT example
   // for a more complicated used case.
+
+  const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
+
   toolGroup.addTool(CrosshairsTool.toolName, {
     getReferenceLineColor,
     getReferenceLineControllable,
     getReferenceLineDraggableRotatable,
     getReferenceLineSlabThicknessControlsOn,
+    mobile: {
+      enabled: isMobile,
+      opacity: 0.8,
+      handleRadius: 9,
+    },
   });
 
   toolGroup.setToolActive(CrosshairsTool.toolName, {
