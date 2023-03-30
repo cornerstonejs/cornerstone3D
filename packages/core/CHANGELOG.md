@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.39.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.38.0...@cornerstonejs/core@0.39.0) (2023-03-30)
+
+
+### Features
+
+* **scrollEvent:** added out of bounds scroll ([#476](https://github.com/cornerstonejs/cornerstone3D-beta/issues/476)) ([4cf2b63](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4cf2b637da2fc78efcd64acfb2fe5130cf10e368))
+
+
+
+
+
 # [0.38.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.37.0...@cornerstonejs/core@0.38.0) (2023-03-28)
 
 
