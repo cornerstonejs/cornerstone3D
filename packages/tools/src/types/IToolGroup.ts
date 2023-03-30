@@ -17,6 +17,8 @@ export default interface IToolGroup {
   getViewportIds: () => string[];
   /** Get viewports info in the toolGroup*/
   getViewportsInfo: () => Array<Types.IViewportId>;
+  /** Get viewports info in the toolGroup*/
+  getViewports: () => Array<Types.IVolumeViewport>;
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any };
   /** Add a tool to toolGroup with its configuration */

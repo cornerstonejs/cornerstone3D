@@ -127,7 +127,7 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     const thresholdPreviewToolInstance =
-      toolGroup._toolInstances['ThresholdPreview'];
+      toolGroup._toolInstances['LabelmapThresholdPreview'];
 
     thresholdPreviewToolInstance.setConfiguration(threshold);
   },
@@ -148,8 +148,6 @@ addSliderToToolbar({
 
     const threshold = [valueAsStringOrNumber, upperThreshold];
     thresholdPreviewToolInstance.setConfiguration(threshold);
-
-    reutn;
   }, debounceWaitTime),
   updateLabelOnChange: (value, label) => {
     label.innerText = `PT Lower Thresh: ${value}`;

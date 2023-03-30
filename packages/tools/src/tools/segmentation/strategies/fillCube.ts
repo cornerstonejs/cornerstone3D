@@ -34,7 +34,7 @@ function fillCube(
     THRESHOLD_INSIDE_CUBE: { threshold },
   } = strategySpecificConfiguration;
 
-  const { scalarData, imageData } = segmentation;
+  const scalarData = segmentation.getScalarData();
 
   const pointInShape = () => true;
 
@@ -43,11 +43,7 @@ function fillCube(
       return;
     }
 
-    const {
-      THRESHOLD_INSIDE_CUBE: { threshold },
-    } = strategySpecificConfiguration;
-
-    const voxelValue = imageVolume.scalarData[index];
+    const voxelValue = imageVolume.getScalarData()[index];
 
     if (threshold[0] <= voxelValue && voxelValue <= threshold[1]) {
       scalarData[index] = segmentIndex;

@@ -1,3 +1,5 @@
+import { cache } from '@cornerstonejs/core';
+
 import {
   activeSegmentation,
   segmentIndex as segmentIndexController,
@@ -5,15 +7,12 @@ import {
   state as segmentationState,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { PublicToolProps, ToolProps } from 'tools/src/types';
+import { PublicToolProps, ToolProps } from '../../types';
 import { BaseTool } from '../base';
 import { fillInsideCube } from './strategies/fillCube';
-import { cache } from '@cornerstonejs/core';
-
 import { getToolGroup } from '../../store/ToolGroupManager';
-
-import { getEnabledElementByIds } from '@cornerstonejs/core';
-import { LabelmapSegmentationData } from 'tools/src/types/LabelmapTypes';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import { easeInOutBell } from '../../utilities/animationHelpers';
 
 class ThresholdPreviewTool extends BaseTool {
   static toolName;
@@ -103,18 +102,7 @@ class ThresholdPreviewTool extends BaseTool {
     }
 
     // toolGroup Viewports
-    const toolGroupViewports = toolGroup.viewportsInfo.map(
-      ({ renderingEngineId, viewportId }) => {
-        const enabledElement = getEnabledElementByIds(
-          viewportId,
-          renderingEngineId
-        );
-
-        if (enabledElement) {
-          return enabledElement.viewport;
-        }
-      }
-    );
+    const toolGroupViewports = toolGroup.getViewports();
 
     const viewport = toolGroupViewports[0];
 
@@ -216,20 +204,5 @@ class ThresholdPreviewTool extends BaseTool {
   }
 }
 
-export function easeInOutBell(x: number, baseline: number): number {
-  const alpha = 1 - baseline;
-
-  // prettier-ignore
-  if (x < 1 / 4) {
-    return  4 * Math.pow(2 * x, 3) * alpha + baseline;
-  } else if (x < 1 / 2) {
-    return (1 - Math.pow(-4 * x + 2, 3) / 2) * alpha + baseline;
-  } else if (x < 3 / 4) {
-    return (1 - Math.pow(4 * x - 2, 3) / 2) * alpha + baseline;
-  } else {
-    return (- 4 * Math.pow(2 * x - 2, 3)) * alpha + baseline;
-  }
-}
-
-ThresholdPreviewTool.toolName = 'ThresholdPreview';
+ThresholdPreviewTool.toolName = 'LabelmapThresholdPreview';
 export default ThresholdPreviewTool;
