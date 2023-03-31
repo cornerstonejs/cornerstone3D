@@ -3,7 +3,7 @@ import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import WindowLevelTool from './WindowLevelTool';
 import StackScrollTool from './StackScrollTool';
-import StackRotateTool from './StackRotateTool';
+import PlanarRotateTool from './PlanarRotateTool';
 import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
 import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
@@ -18,6 +18,7 @@ import ProbeTool from './annotation/ProbeTool';
 import DragProbeTool from './annotation/DragProbeTool';
 import RectangleROITool from './annotation/RectangleROITool';
 import EllipticalROITool from './annotation/EllipticalROITool';
+import CircleROITool from './annotation/CircleROITool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
@@ -48,7 +49,7 @@ export {
   DragProbeTool,
   WindowLevelTool,
   StackScrollTool,
-  StackRotateTool,
+  PlanarRotateTool,
   StackScrollMouseWheelTool,
   ZoomTool,
   VolumeRotateMouseWheelTool,
@@ -61,6 +62,7 @@ export {
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
+  CircleROITool,
   PlanarFreehandROITool,
   ArrowAnnotateTool,
   AngleTool,

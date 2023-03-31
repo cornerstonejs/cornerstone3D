@@ -85,7 +85,8 @@ class PaintFillTool extends BaseTool {
 
     const { volumeId } = representationData[type] as LabelmapSegmentationData;
     const segmentation = cache.getVolume(volumeId);
-    const { scalarData, dimensions, direction } = segmentation;
+    const { dimensions, direction } = segmentation;
+    const scalarData = segmentation.getScalarData();
 
     const index = transformWorldToIndex(segmentation.imageData, worldPos);
 
@@ -182,7 +183,7 @@ class PaintFillTool extends BaseTool {
   };
 
   private generateHelpers = (
-    scalarData: Float32Array | Uint8Array,
+    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array,
     dimensions: Types.Point3,
     seedIndex3D: Types.Point3,
     fixedDimension = 2

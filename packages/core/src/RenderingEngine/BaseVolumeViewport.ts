@@ -1,45 +1,45 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache';
+import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import {
+  BlendModes,
+  Events,
+  OrientationAxis,
+  VOILUTFunctionType,
+} from '../enums';
 import ViewportType from '../enums/ViewportType';
-import Viewport from './Viewport';
+import eventTarget from '../eventTarget';
+import { getShouldUseCPURendering } from '../init';
+import { loadVolume } from '../loaders/volumeLoader';
+import type {
+  ActorEntry,
+  FlipDirection,
+  IImageData,
+  IVolumeInput,
+  OrientationVectors,
+  Point2,
+  Point3,
+  VOIRange,
+  VolumeViewportProperties,
+} from '../types';
+import { VoiModifiedEventDetail } from '../types/EventTypes';
+import type { ViewportInput } from '../types/IViewport';
+import type IVolumeViewport from '../types/IVolumeViewport';
+import {
+  actorIsA,
+  createSigmoidRGBTransferFunction,
+  getVoiFromSigmoidRGBTransferFunction,
+  imageIdToURI,
+  triggerEvent,
+} from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
 } from './helpers/volumeNewImageEventDispatcher';
-import { loadVolume } from '../loaders/volumeLoader';
-import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import { getShouldUseCPURendering } from '../init';
-import type {
-  Point2,
-  Point3,
-  IImageData,
-  IVolumeInput,
-  ActorEntry,
-  FlipDirection,
-  VolumeViewportProperties,
-  VOIRange,
-} from '../types';
-import type { ViewportInput } from '../types/IViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
-import {
-  Events,
-  BlendModes,
-  OrientationAxis,
-  VOILUTFunctionType,
-} from '../enums';
-import eventTarget from '../eventTarget';
-import {
-  actorIsA,
-  imageIdToURI,
-  triggerEvent,
-  createSigmoidRGBTransferFunction,
-  getVoiFromSigmoidRGBTransferFunction,
-  createLinearRGBTransferFunction,
-} from '../utilities';
+import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
-import { VoiModifiedEventDetail } from '../types/EventTypes';
-import { RENDERING_DEFAULTS } from '../constants';
+import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -52,6 +52,7 @@ import { RENDERING_DEFAULTS } from '../constants';
  */
 abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
+  use16BitTexture = false;
   private _FrameOfReferenceUID: string;
 
   // Viewport Properties
@@ -62,6 +63,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     super(props);
 
     this.useCPURendering = getShouldUseCPURendering();
+    this.use16BitTexture = this._shouldUse16BitTexture();
 
     if (this.useCPURendering) {
       throw new Error(
@@ -93,6 +95,22 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  protected applyViewOrientation(
+    orientation: OrientationAxis | OrientationVectors
+  ) {
+    const { viewPlaneNormal, viewUp } =
+      this._getOrientationVectors(orientation);
+    const camera = this.getVtkActiveCamera();
+    camera.setDirectionOfProjection(
+      -viewPlaneNormal[0],
+      -viewPlaneNormal[1],
+      -viewPlaneNormal[2]
+    );
+    camera.setViewUpFrom(viewUp);
+
+    this.resetCamera();
   }
 
   private initializeVolumeNewImageEventDispatcher(): void {
@@ -214,11 +232,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     let volumeActor;
 
     if (volumeId) {
-      const actorEntry = actorEntries.find((entry: ActorEntry) => {
-        return entry.uid === volumeId;
-      });
-
-      volumeActor = actorEntry?.actor as vtkVolume;
+      volumeActor = this.getActor(volumeId)?.actor as vtkVolume;
     }
 
     // // set it for the first volume (if there are more than one - fusion)
@@ -241,8 +255,18 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
       volumeActor.getProperty().setRGBTransferFunction(0, cfun);
     } else {
-      const cfun = createLinearRGBTransferFunction(voiRangeToUse);
-      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+      // TODO: refactor and make it work for PET series (inverted/colormap)
+      // const cfun = createLinearRGBTransferFunction(voiRangeToUse);
+      // volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+      // Todo: Moving from LINEAR to SIGMOID and back to LINEAR will not
+      // work until we implement it in a different way because the
+      // LINEAR transfer function is not recreated.
+      const { lower, upper } = voiRangeToUse;
+      volumeActor
+        .getProperty()
+        .getRGBTransferFunction(0)
+        .setRange(lower, upper);
     }
 
     if (!suppressEvents) {
@@ -346,7 +370,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents
+        suppressEvents,
+        this.use16BitTexture
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -411,7 +436,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents
+        suppressEvents,
+        this.use16BitTexture
       );
 
       if (visibility === false) {
@@ -752,6 +778,31 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return volumeImageURIs.includes(imageURI);
     });
   };
+
+  protected _getOrientationVectors(
+    orientation: OrientationAxis | OrientationVectors
+  ): OrientationVectors {
+    if (typeof orientation === 'object') {
+      if (orientation.viewPlaneNormal && orientation.viewUp) {
+        return orientation;
+      } else {
+        throw new Error(
+          'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
+        );
+      }
+    } else if (
+      typeof orientation === 'string' &&
+      MPR_CAMERA_VALUES[orientation]
+    ) {
+      return MPR_CAMERA_VALUES[orientation];
+    } else {
+      throw new Error(
+        `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
+          MPR_CAMERA_VALUES
+        ).join(', ')}`
+      );
+    }
+  }
 
   /**
    * Reset the camera for the volume viewport

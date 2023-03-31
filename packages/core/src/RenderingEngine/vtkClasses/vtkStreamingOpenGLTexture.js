@@ -1,5 +1,7 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import HalfFloat from '@kitware/vtk.js/Common/Core/HalfFloat';
+import { getConfiguration } from '../../init';
 
 /**
  * vtkStreamingOpenGLTexture - A dervied class of the core vtkOpenGLTexture.
@@ -21,7 +23,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     depth,
     numComps,
     dataType,
-    data
+    data,
+    preferSizeOverAccuracy
   ) => {
     model.inputDataType = dataType;
     model.inputNumComps = numComps;
@@ -32,7 +35,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       depth,
       numComps,
       dataType,
-      data
+      data,
+      preferSizeOverAccuracy
     );
   };
 
@@ -40,7 +44,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * This function updates the GPU texture memory to match the current
    * representation of data held in RAM.
    *
-   * @param {Float32Array|Uint8Array} data The data array which has been updated.
+   * @param {Float32Array|Uint8Array|Int16Array|Uint16Array} data The data array which has been updated.
    */
   publicAPI.update3DFromRaw = (data) => {
     const { updatedFrames } = model;
@@ -48,7 +52,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     if (!updatedFrames.length) {
       return;
     }
-
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
@@ -62,6 +65,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     } else if (data instanceof Int16Array) {
       bytesPerVoxel = 2;
       TypedArrayConstructor = Int16Array;
+    } else if (data instanceof Uint16Array) {
+      bytesPerVoxel = 2;
+      TypedArrayConstructor = Uint16Array;
     } else if (data instanceof Float32Array) {
       bytesPerVoxel = 4;
       TypedArrayConstructor = Float32Array;
@@ -129,6 +135,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     // Cap to actual frame height:
     blockHeight = Math.min(blockHeight, model.height);
+    const { useNorm16Texture, preferSizeOverAccuracy } =
+      getConfiguration().rendering;
+    // TODO: there is currently a bug in chrome and safari which requires
+    // blockheight = 1 for norm16 textures:
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=1408247
+    // https://bugs.webkit.org/show_bug.cgi?id=252039
+    if (useNorm16Texture && !preferSizeOverAccuracy) {
+      blockHeight = 1;
+    }
 
     const multiRowBlockLength = rowLength * blockHeight;
     const multiRowBlockLengthInBytes = multiRowBlockLength * bytesPerVoxel;
@@ -142,12 +157,27 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     for (let block = 0; block < normalBlocks; block++) {
       const yOffset = block * blockHeight;
 
-      // Dataview of block
-      const dataView = new TypedArrayConstructor(
+      let dataView = new TypedArrayConstructor(
         buffer,
         zOffset + block * multiRowBlockLengthInBytes,
         multiRowBlockLength
       );
+
+      if (
+        model.useHalfFloat &&
+        (TypedArrayConstructor === Uint16Array ||
+          TypedArrayConstructor === Int16Array)
+      ) {
+        // in the case we want to use halfFloat rendering (preferSizeOverAccuracy = true),
+        // we need to convert uint16 and int16 into fp16 format.
+        // This is the step where precision is lost for streaming volume viewport.
+        for (let idx = 0; idx < dataView.length; idx++) {
+          dataView[idx] = HalfFloat.toHalf(dataView[idx]);
+        }
+        if (TypedArrayConstructor === Int16Array) {
+          dataView = new Uint16Array(dataView);
+        }
+      }
 
       gl.texSubImage3D(
         model.target, // target

@@ -151,6 +151,8 @@ class BidirectionalTool extends AnnotationTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation: BidirectionalAnnotation = {
       highlighted: true,
       invalidated: true,
@@ -158,7 +160,7 @@ class BidirectionalTool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -188,7 +190,7 @@ class BidirectionalTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -474,7 +476,7 @@ class BidirectionalTool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(annotation.annotationUID, element);
+      removeAnnotation(annotation.annotationUID);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -1022,7 +1024,7 @@ class BidirectionalTool extends AnnotationTool {
     let renderStatus = true;
     const { viewport } = enabledElement;
     const { element } = viewport;
-    let annotations = getAnnotations(viewport.element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     if (!annotations?.length) {
       return renderStatus;

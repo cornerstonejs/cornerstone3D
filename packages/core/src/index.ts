@@ -9,6 +9,7 @@ import {
 } from './RenderingEngine';
 import RenderingEngine from './RenderingEngine';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
+import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import Viewport from './RenderingEngine/Viewport';
@@ -35,6 +36,8 @@ import {
   setUseSharedArrayBuffer,
   resetUseCPURendering,
   resetUseSharedArrayBuffer,
+  getConfiguration,
+  setConfiguration,
 } from './init';
 
 // Classes
@@ -58,8 +61,12 @@ import {
 export type { Types };
 
 export {
+  // init
   init,
   isCornerstoneInitialized,
+  // configs
+  getConfiguration,
+  setConfiguration,
   // enums
   Enums,
   CONSTANTS,
@@ -69,6 +76,7 @@ export {
   // Rendering Engine
   BaseVolumeViewport,
   VolumeViewport,
+  VolumeViewport3D,
   Viewport,
   StackViewport,
   RenderingEngine,

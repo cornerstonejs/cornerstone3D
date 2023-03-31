@@ -125,8 +125,8 @@ describe('EllipticalROITool (CPU):', () => {
     const addEventListenerForAnnotationRendered = () => {
       element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
         const ellipseAnnotations = annotation.state.getAnnotations(
-          element,
-          EllipticalROITool.toolName
+          EllipticalROITool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(ellipseAnnotations).toBeDefined();
@@ -147,10 +147,7 @@ describe('EllipticalROITool (CPU):', () => {
         // the rectangle is drawn on the strip
         expect(data[targets[0]].mean).toBe(255);
 
-        annotation.state.removeAnnotation(
-          ellipseAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(ellipseAnnotation.annotationUID);
         done();
       });
     };
@@ -300,8 +297,8 @@ describe('EllipticalROITool (CPU):', () => {
 
       setTimeout(() => {
         const ellipseAnnotations = annotation.state.getAnnotations(
-          element,
-          EllipticalROITool.toolName
+          EllipticalROITool.toolName,
+          element
         );
         // Can successfully add Length tool to annotationManager
         expect(ellipseAnnotations).toBeDefined();
@@ -323,10 +320,7 @@ describe('EllipticalROITool (CPU):', () => {
         // the rectangle is drawn on the strip
         expect(data[targets[0]].mean).toBe(255);
 
-        annotation.state.removeAnnotation(
-          ellipseAnnotation.annotationUID,
-          element
-        );
+        annotation.state.removeAnnotation(ellipseAnnotation.annotationUID);
         done();
       }, 100);
     };

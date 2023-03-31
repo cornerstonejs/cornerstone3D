@@ -26,7 +26,8 @@ function eraseRectangle(
     segmentsLocked,
     segmentationId,
   } = operationData;
-  const { imageData, dimensions, scalarData } = segmentation;
+  const { imageData, dimensions } = segmentation;
+  const scalarData = segmentation.getScalarData();
 
   const rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(imageData, world);

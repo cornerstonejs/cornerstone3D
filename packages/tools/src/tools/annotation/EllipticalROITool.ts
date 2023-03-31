@@ -180,6 +180,8 @@ class EllipticalROITool extends AnnotationTool {
       viewUp
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -187,7 +189,7 @@ class EllipticalROITool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -212,10 +214,11 @@ class EllipticalROITool extends AnnotationTool {
           activeHandleIndex: null,
         },
         cachedStats: {},
+        initialRotation: viewport.getRotation(),
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -440,7 +443,7 @@ class EllipticalROITool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(annotation.annotationUID, element);
+      removeAnnotation(annotation.annotationUID);
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -723,7 +726,7 @@ class EllipticalROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     if (!annotations?.length) {
       return renderStatus;
@@ -763,9 +766,24 @@ class EllipticalROITool extends AnnotationTool {
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
       ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
-      const canvasCorners = <Array<Types.Point2>>(
-        getCanvasEllipseCorners(canvasCoordinates)
+
+      const rotation = Math.abs(
+        viewport.getRotation() - (data.initialRotation || 0)
       );
+      let canvasCorners;
+
+      if (rotation == 90 || rotation == 270) {
+        canvasCorners = <Array<Types.Point2>>getCanvasEllipseCorners([
+          canvasCoordinates[2], // bottom
+          canvasCoordinates[3], // top
+          canvasCoordinates[0], // left
+          canvasCoordinates[1], // right
+        ]);
+      } else {
+        canvasCorners = <Array<Types.Point2>>(
+          getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
+        );
+      }
 
       const { centerPointRadius } = this.configuration;
 
@@ -893,7 +911,7 @@ class EllipticalROITool extends AnnotationTool {
           drawCircleSvg(
             svgDrawingHelper,
             annotationUID,
-            ellipseUID,
+            `${ellipseUID}-center`,
             centerPoint,
             centerPointRadius,
             {
@@ -1074,7 +1092,7 @@ class EllipticalROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const area = Math.PI * (worldWidth / 2) * (worldHeight / 2);
+        const area = Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2));
 
         let count = 0;
         let mean = 0;

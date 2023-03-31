@@ -18,6 +18,7 @@ const {
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
+  CircleROITool,
   BidirectionalTool,
   AngleTool,
   ToolGroupManager,
@@ -65,7 +66,7 @@ const cancelToolDrawingAndRemove = (evt) => {
   const { element, key } = evt.detail;
   if (key === 'Escape') {
     const annotationUID = cornerstoneTools.cancelActiveManipulations(element);
-    cornerstoneTools.annotation.state.removeAnnotation(annotationUID, element);
+    cornerstoneTools.annotation.state.removeAnnotation(annotationUID);
   }
 };
 
@@ -95,6 +96,7 @@ async function run() {
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
+  cornerstoneTools.addTool(CircleROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(AngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);

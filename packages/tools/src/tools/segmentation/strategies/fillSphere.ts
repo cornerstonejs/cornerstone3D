@@ -28,13 +28,16 @@ function fillSphere(
     points,
   } = operationData;
 
-  const { scalarData, imageData } = segmentation;
+  const { imageData, dimensions } = segmentation;
+  const scalarData = segmentation.getScalarData();
+  const scalarIndex = [];
 
   const callback = ({ index, value }) => {
     if (segmentsLocked.includes(value)) {
       return;
     }
     scalarData[index] = segmentIndex;
+    scalarIndex.push(index);
   };
 
   pointInSurroundingSphereCallback(
@@ -44,7 +47,18 @@ function fillSphere(
     viewport as Types.IVolumeViewport
   );
 
-  triggerSegmentationDataModified(segmentationId);
+  // Since the scalar indexes start from the top left corner of the cube, the first
+  // slice that needs to be rendered can be calculated from the first mask coordinate
+  // divided by the zMultiple, as well as the last slice for the last coordinate
+  const zMultiple = dimensions[0] * dimensions[1];
+  const minSlice = Math.floor(scalarIndex[0] / zMultiple);
+  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
+  const sliceArray = Array.from(
+    { length: maxSlice - minSlice + 1 },
+    (v, k) => k + minSlice
+  );
+
+  triggerSegmentationDataModified(segmentationId, sliceArray);
 }
 
 /**

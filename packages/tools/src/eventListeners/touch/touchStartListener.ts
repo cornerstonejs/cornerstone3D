@@ -2,7 +2,8 @@ import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import { Swipe } from '../../enums/Touch';
 
-import { EventTypes, ITouchPoints, IPoints } from '../../types';
+import { EventTypes, ITouchPoints, IPoints, IDistance } from '../../types';
+
 import getTouchEventPoints from './getTouchEventPoints';
 import {
   copyPoints,
@@ -27,6 +28,17 @@ const {
   TOUCH_SWIPE,
 } = Events;
 
+interface ITouchTapListnenerState {
+  element: HTMLDivElement;
+  renderingEngineId: string;
+  viewportId: string;
+  startPointsList: ITouchPoints[];
+  tapMaxDistance: number;
+  tapTimeout: ReturnType<typeof setTimeout>;
+  taps: number;
+  tapToleranceMs: number;
+}
+
 interface ITouchStartListenerState {
   element: HTMLDivElement;
   renderingEngineId: string;
@@ -35,24 +47,34 @@ interface ITouchStartListenerState {
   lastPointsList: ITouchPoints[];
 
   // only trigger one touch event in the case the user puts down multiple fingers
-  touchStartTimeout: ReturnType<typeof setTimeout>;
-  touchStartDelay: number; // must be greater than tap delay
   isTouchStart: boolean;
+  startTime: Date;
 
   // handle long press
   pressTimeout: ReturnType<typeof setTimeout>;
   pressDelay: number;
   pressMaxDistance: number;
-
-  // handle taps
-  tapMaxDistance: number;
-  tapTimeout: ReturnType<typeof setTimeout>;
-  taps: number;
+  accumulatedDistance: IDistance;
 
   // handle swipes
-  swipeTimeout: ReturnType<typeof setTimeout>;
   swipeDistanceThreshold: number;
+  swiped: boolean;
+  swipeToleranceMs: number;
 }
+
+const zeroIPoint: IPoints = {
+  page: [0, 0],
+  client: [0, 0],
+  canvas: [0, 0],
+  world: [0, 0, 0],
+};
+
+const zeroIDistance: IDistance = {
+  page: 0,
+  client: 0,
+  canvas: 0,
+  world: 0,
+};
 
 // STATE
 const defaultState: ITouchStartListenerState = {
@@ -61,44 +83,61 @@ const defaultState: ITouchStartListenerState = {
   element: null,
   startPointsList: [
     {
-      page: [0, 0],
-      client: [0, 0],
-      canvas: [0, 0],
-      world: [0, 0, 0],
+      ...zeroIPoint,
       touch: null,
     },
   ],
   lastPointsList: [
     {
-      page: [0, 0],
-      client: [0, 0],
-      canvas: [0, 0],
-      world: [0, 0, 0],
+      ...zeroIPoint,
       touch: null,
     },
   ],
-  // TODO, these default values may need to optimized
-  touchStartTimeout: null,
-  touchStartDelay: 100,
   isTouchStart: false,
+  startTime: null,
 
   pressTimeout: null,
   pressDelay: 700,
   pressMaxDistance: 5,
+  accumulatedDistance: zeroIDistance,
 
+  swipeDistanceThreshold: 48,
+  swiped: false,
+  swipeToleranceMs: 300, // user has 300ms to swipe after touch start or no swipe will trigger
+};
+
+// TODO: these values should be configurable to handle different use cases such
+// as pen, left/right handed, index finger vs thumb, etc. These current values
+// assume thumb usage for single finger and index/middle finger for two finger
+// gestures in an attempt to cover the 90% use case.
+const defaultTapState: ITouchTapListnenerState = {
+  renderingEngineId: undefined,
+  viewportId: undefined,
+  element: null,
+  startPointsList: [
+    {
+      ...zeroIPoint,
+      touch: null,
+    },
+  ],
   taps: 0,
   tapTimeout: null,
-  tapMaxDistance: 3,
-
-  swipeTimeout: null,
-  swipeDistanceThreshold: 70,
+  tapMaxDistance: 24,
+  tapToleranceMs: 300,
 };
 
 let state: ITouchStartListenerState = JSON.parse(JSON.stringify(defaultState));
+let tapState: ITouchTapListnenerState = JSON.parse(
+  JSON.stringify(defaultTapState)
+);
 
 function triggerEventCallback(ele, name, eventDetail) {
   if (runtimeSettings.get('debug')) {
-    console.debug(name, eventDetail);
+    if (name === 'CORNERSTONE_TOOLS_TOUCH_DRAG') {
+      console.debug(name);
+    } else {
+      console.debug(name, eventDetail);
+    }
   }
   return triggerEvent(ele, name, eventDetail);
 }
@@ -128,23 +167,15 @@ function touchStartListener(evt: TouchEvent) {
   const { renderingEngineId, viewportId } = enabledElement;
   state.renderingEngineId = renderingEngineId;
   state.viewportId = viewportId;
-  if (!state.isTouchStart) {
-    // this delay allows us to fire one event in the case of multiple touches
-    // as each individual touch will fire a touchstart event
-    clearTimeout(state.touchStartTimeout);
-    clearTimeout(state.pressTimeout);
-    clearTimeout(state.tapTimeout);
-    state.touchStartTimeout = setTimeout(() => {
-      _onTouchStart(evt);
-    }, state.touchStartDelay);
+  // this prevents multiple start firing
+  if (state.isTouchStart) return;
+  // this will clear on touchstart and touchend
+  clearTimeout(state.pressTimeout);
+  state.pressTimeout = setTimeout(() => _onTouchPress(evt), state.pressDelay);
 
-    // this will clear on tap, touchstart, and touchend
-    state.pressTimeout = setTimeout(() => {
-      _onTouchPress(evt);
-    }, state.pressDelay);
-
-    document.addEventListener('touchend', _onTouchEnd);
-  }
+  _onTouchStart(evt);
+  document.addEventListener('touchmove', _onTouchDrag); // also checks for swipe
+  document.addEventListener('touchend', _onTouchEnd); // also checks for tap
 }
 
 /**
@@ -155,24 +186,21 @@ function touchStartListener(evt: TouchEvent) {
  * @param evt - The touch event (touchstart)
  */
 function _onTouchPress(evt: TouchEvent) {
-  if (
-    getDeltaDistance(state.startPointsList, state.lastPointsList).canvas <
-    state.pressMaxDistance
-  ) {
-    const eventDetail: EventTypes.TouchPressEventDetail = {
-      event: evt, // touchstart native event
-      eventName: TOUCH_PRESS,
-      renderingEngineId: state.renderingEngineId,
-      viewportId: state.viewportId,
-      camera: {},
-      element: state.element,
-      startPointsList: copyPointsList(state.startPointsList),
-      lastPointsList: copyPointsList(state.lastPointsList),
-      startPoints: copyPoints(getMeanTouchPoints(state.startPointsList)),
-      lastPoints: copyPoints(getMeanTouchPoints(state.lastPointsList)),
-    };
-    triggerEventCallback(eventDetail.element, TOUCH_PRESS, eventDetail);
-  }
+  const totalDistance = state.accumulatedDistance.canvas;
+  if (totalDistance > state.pressMaxDistance) return;
+  const eventDetail: EventTypes.TouchPressEventDetail = {
+    event: evt, // touchstart native event
+    eventName: TOUCH_PRESS,
+    renderingEngineId: state.renderingEngineId,
+    viewportId: state.viewportId,
+    camera: {},
+    element: state.element,
+    startPointsList: copyPointsList(state.startPointsList),
+    lastPointsList: copyPointsList(state.lastPointsList),
+    startPoints: copyPoints(getMeanTouchPoints(state.startPointsList)),
+    lastPoints: copyPoints(getMeanTouchPoints(state.lastPointsList)),
+  };
+  triggerEventCallback(eventDetail.element, TOUCH_PRESS, eventDetail);
 }
 
 /**
@@ -183,14 +211,12 @@ function _onTouchPress(evt: TouchEvent) {
  */
 function _onTouchStart(evt: TouchEvent) {
   state.isTouchStart = true;
+  state.startTime = new Date();
   const startPointsList = getTouchEventPoints(evt, state.element);
   const startPoints = getMeanTouchPoints(startPointsList);
-  const deltaPoints = getDeltaPoints(startPointsList, startPointsList);
-  const deltaDistance = getDeltaDistanceBetweenIPoints(
-    startPointsList,
-    startPointsList
-  );
-  // deltaRotation
+  const deltaPoints = zeroIPoint;
+  const deltaDistance = zeroIDistance;
+  // deltaRotation same as deltaDistance but values are theta
   const eventDetail: EventTypes.TouchStartEventDetail = {
     event: evt,
     eventName: TOUCH_START,
@@ -228,8 +254,6 @@ function _onTouchStart(evt: TouchEvent) {
       eventDetail
     );
   }
-
-  document.addEventListener('touchmove', _onTouchDrag);
 }
 
 /**
@@ -248,12 +272,39 @@ function _onTouchDrag(evt: TouchEvent) {
   const deltaPoints =
     currentPointsList.length === lastPointsList.length
       ? getDeltaPoints(currentPointsList, lastPointsList)
-      : getDeltaPoints(currentPointsList, currentPointsList);
+      : zeroIPoint;
 
   const deltaDistance =
     currentPointsList.length === lastPointsList.length
       ? getDeltaDistanceBetweenIPoints(currentPointsList, lastPointsList)
-      : getDeltaDistanceBetweenIPoints(currentPointsList, currentPointsList);
+      : zeroIDistance;
+
+  const totalDistance =
+    currentPointsList.length === lastPointsList.length
+      ? getDeltaDistance(currentPointsList, state.lastPointsList)
+      : zeroIDistance;
+
+  state.accumulatedDistance = {
+    page: state.accumulatedDistance.page + totalDistance.page,
+    client: state.accumulatedDistance.client + totalDistance.client,
+    canvas: state.accumulatedDistance.canvas + totalDistance.canvas,
+    world: state.accumulatedDistance.world + totalDistance.world,
+  };
+
+  /**
+   * this is can be uncommented to make dragging smoother. In the future, these values
+   * should be in a configuration file. There may also need to be different
+   * profiles for left handed and right handed thumb use. These values
+   * are currently optimized for left handed use.
+   *
+   * const clamp = (num) => Math.min(Math.max(num, -15), 10);
+   * const deltaDistanceClamped = \{
+   *     page: clamp(deltaDistance.page),
+   *     client: clamp(deltaDistance.client),
+   *     canvas: clamp(deltaDistance.canvas),
+   *     world: clamp(deltaDistance.world),
+   * \};
+   */
 
   const eventDetail: EventTypes.TouchDragEventDetail = {
     event: evt,
@@ -268,8 +319,8 @@ function _onTouchDrag(evt: TouchEvent) {
     startPointsList: copyPointsList(state.startPointsList),
     lastPointsList: copyPointsList(lastPointsList),
     currentPointsList,
-    deltaPoints,
-    deltaDistance,
+    deltaPoints: deltaPoints,
+    deltaDistance: deltaDistance,
   };
 
   triggerEventCallback(state.element, TOUCH_DRAG, eventDetail);
@@ -290,126 +341,133 @@ function _onTouchDrag(evt: TouchEvent) {
 function _onTouchEnd(evt: TouchEvent): void {
   // in case it was a tap event we don't want to fire the cornerstone normalized
   // touch end event if the touch start never happend
-  clearTimeout(state.touchStartTimeout);
   clearTimeout(state.pressTimeout);
-  clearTimeout(state.tapTimeout);
-  if (state.isTouchStart) {
-    // touch start occured, not a tap
-    const currentPointsList = getTouchEventPoints(evt, state.element);
-    const lastPointsList = _updateTouchEventsLastPoints(
-      state.element,
-      state.lastPointsList
-    );
-    const deltaPoints =
-      currentPointsList.length === lastPointsList.length
-        ? getDeltaPoints(currentPointsList, lastPointsList)
-        : getDeltaPoints(currentPointsList, currentPointsList);
-    const deltaDistance =
-      currentPointsList.length === lastPointsList.length
-        ? getDeltaDistanceBetweenIPoints(currentPointsList, lastPointsList)
-        : getDeltaDistanceBetweenIPoints(currentPointsList, currentPointsList);
-    const eventDetail: EventTypes.TouchEndEventDetail = {
-      event: evt,
-      eventName: TOUCH_END,
-      element: state.element,
-      renderingEngineId: state.renderingEngineId,
-      viewportId: state.viewportId,
-      camera: {},
-      startPointsList: copyPointsList(state.startPointsList),
-      lastPointsList: copyPointsList(lastPointsList),
-      currentPointsList,
-      startPoints: getMeanTouchPoints(state.startPointsList),
-      lastPoints: getMeanTouchPoints(lastPointsList),
-      currentPoints: getMeanTouchPoints(currentPointsList),
-      deltaPoints,
-      deltaDistance,
-    };
-
-    triggerEventCallback(eventDetail.element, TOUCH_END, eventDetail);
-    state = JSON.parse(JSON.stringify(defaultState));
-
-    // Remove our temporary handlers which is only added when normalized touch
-    // start fires
-    document.removeEventListener('touchmove', _onTouchDrag);
-  } else {
-    // a tap occured
-    _onTouchTap(evt);
-  }
-
-  document.removeEventListener('touchend', _onTouchEnd);
-}
-
-function _onTouchTap(evt: TouchEvent): void {
   const currentPointsList = getTouchEventPoints(evt, state.element);
   const lastPointsList = _updateTouchEventsLastPoints(
     state.element,
     state.lastPointsList
   );
+  const deltaPoints =
+    currentPointsList.length === lastPointsList.length
+      ? getDeltaPoints(currentPointsList, lastPointsList)
+      : getDeltaPoints(currentPointsList, currentPointsList);
+  const deltaDistance =
+    currentPointsList.length === lastPointsList.length
+      ? getDeltaDistanceBetweenIPoints(currentPointsList, lastPointsList)
+      : getDeltaDistanceBetweenIPoints(currentPointsList, currentPointsList);
+  const eventDetail: EventTypes.TouchEndEventDetail = {
+    event: evt,
+    eventName: TOUCH_END,
+    element: state.element,
+    renderingEngineId: state.renderingEngineId,
+    viewportId: state.viewportId,
+    camera: {},
+    startPointsList: copyPointsList(state.startPointsList),
+    lastPointsList: copyPointsList(lastPointsList),
+    currentPointsList,
+    startPoints: getMeanTouchPoints(state.startPointsList),
+    lastPoints: getMeanTouchPoints(lastPointsList),
+    currentPoints: getMeanTouchPoints(currentPointsList),
+    deltaPoints,
+    deltaDistance,
+  };
 
+  triggerEventCallback(eventDetail.element, TOUCH_END, eventDetail);
+  _checkTouchTap(evt);
+
+  // reset to default state
+  state = JSON.parse(JSON.stringify(defaultState));
+  document.removeEventListener('touchmove', _onTouchDrag);
+  document.removeEventListener('touchend', _onTouchEnd);
+}
+
+function _checkTouchTap(evt: TouchEvent): void {
+  const currentTime = new Date().getTime();
+  const startTime = state.startTime.getTime();
+  if (currentTime - startTime > tapState.tapToleranceMs) return;
+
+  // first tap, initialize the state
+  if (tapState.taps === 0) {
+    tapState.element = state.element;
+    tapState.renderingEngineId = state.renderingEngineId;
+    tapState.viewportId = state.viewportId;
+    tapState.startPointsList = state.startPointsList;
+  }
+
+  // subsequent tap is on a different element
   if (
-    state.taps > 0 &&
-    getDeltaDistance(currentPointsList, lastPointsList).canvas <
-      state.tapMaxDistance
+    tapState.taps > 0 &&
+    !(
+      tapState.element == state.element &&
+      tapState.renderingEngineId == state.renderingEngineId &&
+      tapState.viewportId == state.viewportId
+    )
   ) {
-    state.taps = state.taps + 1;
+    return;
   }
 
-  if (state.taps === 0) {
-    state.taps = state.taps + 1;
-  }
+  const currentPointsList = getTouchEventPoints(evt, tapState.element);
+  const distanceFromStart = getDeltaDistance(
+    currentPointsList,
+    tapState.startPointsList
+  ).canvas;
 
-  state.lastPointsList = copyPointsList(currentPointsList); // Update the last points
+  // if the tap is too far from starting tap, we can ignore it.
+  // TODO: in the case the user means to tap in two separate areas within the
+  // tapTolerance (300ms), the second tap will not trigger. This is because it
+  // is ignored below for simplicity to track multiple taps (double, triple etc)
+  // in order to support two separate single taps that occur < 300ms on the
+  // screen. One can create the concept of "TapChains". Our current implementation
+  // only supports a single tap chain on the screen. You can think of it as a
+  // region where the user has the option to perform unlimited multitaps as long
+  // as they are < the tapToleranceMs value. So a tap somewhere else on the screen
+  // that is > the tapMaxDistance will start a separate and new "TapChain".
+  if (distanceFromStart > tapState.tapMaxDistance) return;
 
-  state.tapTimeout = setTimeout(() => {
+  clearTimeout(tapState.tapTimeout);
+  tapState.taps += 1;
+
+  tapState.tapTimeout = setTimeout(() => {
     const eventDetail: EventTypes.TouchTapEventDetail = {
       event: evt,
       eventName: TOUCH_TAP,
-      element: state.element,
-      renderingEngineId: state.renderingEngineId,
-      viewportId: state.viewportId,
+      element: tapState.element,
+      renderingEngineId: tapState.renderingEngineId,
+      viewportId: tapState.viewportId,
       camera: {},
       currentPointsList,
       currentPoints: getMeanTouchPoints(currentPointsList),
-      taps: state.taps,
+      taps: tapState.taps,
     };
     triggerEventCallback(eventDetail.element, TOUCH_TAP, eventDetail);
-    state = JSON.parse(JSON.stringify(defaultState));
-  }, state.touchStartDelay - 10);
+    tapState = JSON.parse(JSON.stringify(defaultTapState));
+  }, tapState.tapToleranceMs);
 }
 
 function _checkTouchSwipe(evt: TouchEvent, deltaPoints: IPoints) {
+  const currentTime = new Date().getTime();
+  const startTime = state.startTime.getTime();
+  if (state.swiped || currentTime - startTime > state.swipeToleranceMs) return;
   const [x, y] = deltaPoints.canvas;
-  if (
-    Math.abs(x) > state.swipeDistanceThreshold ||
-    Math.abs(y) > state.swipeDistanceThreshold
-  ) {
-    const eventDetail: EventTypes.TouchSwipeEventDetail = {
-      event: evt,
-      eventName: TOUCH_SWIPE,
-      renderingEngineId: state.renderingEngineId,
-      viewportId: state.viewportId,
-      camera: {},
-      element: state.element,
-      swipe: null,
-    };
+  const eventDetail: EventTypes.TouchSwipeEventDetail = {
+    event: evt,
+    eventName: TOUCH_SWIPE,
+    renderingEngineId: state.renderingEngineId,
+    viewportId: state.viewportId,
+    camera: {},
+    element: state.element,
+    swipe: null,
+  };
+  if (Math.abs(x) > state.swipeDistanceThreshold) {
+    eventDetail.swipe = x > 0 ? Swipe.RIGHT : Swipe.LEFT;
+    triggerEventCallback(eventDetail.element, TOUCH_SWIPE, eventDetail);
+    state.swiped = true;
+  }
 
-    clearTimeout(state.swipeTimeout);
-    state.swipeTimeout = setTimeout(() => {
-      if (Math.abs(x) > Math.abs(y)) {
-        if (x > 0) {
-          eventDetail.swipe = Swipe.RIGHT;
-        } else {
-          eventDetail.swipe = Swipe.LEFT;
-        }
-      } else {
-        if (y > 0) {
-          eventDetail.swipe = Swipe.DOWN;
-        } else {
-          eventDetail.swipe = Swipe.UP;
-        }
-      }
-      triggerEventCallback(eventDetail.element, TOUCH_SWIPE, eventDetail);
-    }, state.touchStartDelay);
+  if (Math.abs(y) > state.swipeDistanceThreshold) {
+    eventDetail.swipe = y > 0 ? Swipe.DOWN : Swipe.UP;
+    triggerEventCallback(eventDetail.element, TOUCH_SWIPE, eventDetail);
+    state.swiped = true;
   }
 }
 

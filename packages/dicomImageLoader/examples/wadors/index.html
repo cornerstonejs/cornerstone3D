@@ -30,7 +30,7 @@
                 <label class="control-label col-sm-1" for="wadoURL">URL</label>
                 <div class="col-sm-8">
                     https://api.hackathon.siim.org/dicomweb/studies/1.3.6.1.4.1.14519.5.2.1.7777.9002.198875685720513246512710453733/series/1.3.6.1.4.1.14519.5.2.1.7777.9002.207203214132667549392101803048/instances/1.3.6.1.4.1.14519.5.2.1.7777.9002.327873213718058651550666129029/frames/1
-                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="https://raw.githubusercontent.com/cornerstonejs/cornerstoneWADOImageLoader/master/testImages/wadors">
+                    <input class="form-control" type="text" id="wadoURL" placeholder="Enter WADO URL" value="https://raw.githubusercontent.com/cornerstonejs/cornerstoneDICOMImageLoader/master/testImages/wadors">
                 </div>
              </div>
             <div class="form-group">
@@ -62,17 +62,17 @@
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
 
-<!-- include the cornerstoneWADOImageLoader library -->
-<script src="../dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
+<!-- include the cornerstoneDICOMImageLoader library -->
+<script src="../dist/cornerstoneDICOMImageLoader.bundle.min.js"></script>
 
 <!-- Lines ONLY required for this example to run without building the project -->
-<script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
+<script>window.cornerstoneDICOMImageLoader || document.write('<script src="https://unpkg.com/@cornerstonejs/dicom-image-loader">\x3C/script>')</script>
 <script src="../utils/initializeWebWorkers.js"></script>
 
 <script>
-    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneDICOMImageLoader.external.cornerstone = cornerstone;
 
-    cornerstoneWADOImageLoader.configure({
+    cornerstoneDICOMImageLoader.configure({
         beforeSend: function(xhr) {
             // Add custom headers here (e.g. auth tokens)
             const apiKey = document.getElementById('apikey').value;
@@ -137,7 +137,7 @@
                 const imageFrameURI = getImageFrameURI(metadataURI, metadata);
                 const imageId = 'wadors:' + imageFrameURI;
 
-                cornerstoneWADOImageLoader.wadors.metaDataManager.add(imageId, metadata);
+                cornerstoneDICOMImageLoader.wadors.metaDataManager.add(imageId, metadata);
 
                 // image enable the dicomImage element and activate a few tools
                 loadAndViewImage(imageId);

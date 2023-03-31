@@ -24,6 +24,7 @@ import type {
 } from '../types';
 import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
+import { getConfiguration } from '../init';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -124,7 +125,7 @@ class Viewport implements IViewport {
    *
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  public getRenderer() {
+  public getRenderer(): any {
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
@@ -1117,6 +1118,12 @@ class Viewport implements IViewport {
     }
 
     return { widthWorld: maxX - minX, heightWorld: maxY - minY };
+  }
+
+  protected _shouldUse16BitTexture() {
+    const { useNorm16Texture, preferSizeOverAccuracy } =
+      getConfiguration().rendering;
+    return useNorm16Texture || preferSizeOverAccuracy;
   }
 
   _getCorners(bounds: Array<number>): Array<number>[] {

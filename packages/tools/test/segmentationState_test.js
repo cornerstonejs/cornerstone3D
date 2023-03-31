@@ -1,6 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
-import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import * as csTools3d from '../src/index';
 
 const {
   cache,
@@ -11,6 +11,7 @@ const {
   setVolumesForViewports,
   eventTarget,
   imageLoader,
+  getEnabledElement,
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
@@ -152,7 +153,6 @@ describe('Segmentation State -- ', () => {
           const segRepresentation = toolGroupSegRepresentations[0];
 
           expect(segRepresentation.active).toBe(true);
-          expect(segRepresentation.visibility).toBe(true);
           expect(segRepresentation.segmentationRepresentationUID).toBeDefined();
           expect(segRepresentation.segmentationId).toBe(segVolumeId);
           expect(segRepresentation.type).toBe(LABELMAP);

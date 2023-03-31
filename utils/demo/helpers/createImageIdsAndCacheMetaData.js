@@ -8,6 +8,7 @@ import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
 import { convertMultiframeImageIds } from './convertMultiframeImageIds';
+import removeInvalidTags from './removeInvalidTags';
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;
@@ -64,13 +65,18 @@ export default async function createImageIdsAndCacheMetaData({
     );
     return imageId;
   });
+
   // if the image ids represent multiframe information, creates a new list with one image id per frame
   // if not multiframe data available, just returns the same list given
   imageIds = convertMultiframeImageIds(imageIds);
+
   imageIds.forEach((imageId) => {
     let instanceMetaData =
       cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
-    instanceMetaData = JSON.parse(JSON.stringify(instanceMetaData));
+
+    // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
+    instanceMetaData = removeInvalidTags(instanceMetaData);
+
     if (instanceMetaData) {
       // Add calibrated pixel spacing
       const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);

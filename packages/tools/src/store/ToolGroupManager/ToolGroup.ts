@@ -6,6 +6,7 @@ import {
   getRenderingEngines,
   getEnabledElementByIds,
   Settings,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { state } from '../index';
@@ -19,7 +20,6 @@ import {
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
-import deepmerge from '../../utilities/deepMerge';
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 
@@ -607,7 +607,7 @@ export default class ToolGroup implements IToolGroup {
     if (overwrite) {
       _configuration = configuration;
     } else {
-      _configuration = deepmerge(
+      _configuration = csUtils.deepMerge(
         this._toolInstances[toolName].configuration,
         configuration
       );

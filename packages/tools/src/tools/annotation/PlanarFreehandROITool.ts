@@ -239,13 +239,15 @@ class PlanarFreehandROITool extends AnnotationTool {
       this.getToolName()
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation: PlanarFreehandROIAnnotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
         toolName: this.getToolName(),
       },
@@ -269,7 +271,7 @@ class PlanarFreehandROITool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
 
@@ -558,7 +560,7 @@ class PlanarFreehandROITool extends AnnotationTool {
     const { element } = viewport;
 
     let annotations = <PlanarFreehandROIAnnotation[]>(
-      getAnnotations(element, this.getToolName())
+      getAnnotations(this.getToolName(), element)
     );
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender

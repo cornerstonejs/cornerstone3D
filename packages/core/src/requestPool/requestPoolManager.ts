@@ -289,9 +289,15 @@ class RequestPoolManager {
     }
 
     if (this.grabDelay !== undefined) {
-      this.timeoutHandle = window.setTimeout(() => {
-        this.startGrabbing();
-      }, this.grabDelay);
+      // Prevents calling setTimeout hundreds of times when hundreds of requests
+      // are added which make it slower and works in an unexpected way when
+      // destroy/clearTimeout is called because only the last handle is stored.
+      if (!this.timeoutHandle) {
+        this.timeoutHandle = window.setTimeout(() => {
+          this.timeoutHandle = null;
+          this.startGrabbing();
+        }, this.grabDelay);
+      }
     } else {
       this.startGrabbing();
     }

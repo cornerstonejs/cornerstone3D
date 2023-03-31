@@ -11,22 +11,24 @@ Touch events are fired when the user touches device with one or more touch point
 2. `TOUCH_START_ACTIVATE`
 3. optional: `TOUCH_PRESS`
 4. optional: `TOUCH_DRAG`
-5. optional: `TOUCH_SWIPE`
-6. `TOUCH_END`
+5. `TOUCH_END`
 
-Every time a user places a finger down and lifts it up, the touch order flow will always follow the above. Touch events are mutually exclusive from click events.
+Every time a user places a finger down and lifts it up, the touch order flow will always follow the above. Touch events are not mutually exclusive from click events.
 
-Other touch events that can occur are the `TOUCH_TAP` event. A `TOUCH_TAP` will not trigger a `TOUCH_START` event flow. If the user taps successively, only one `TOUCH_TAP` event will fire with the count of how many times the user tapped.
+Other touch events that can occur independently are the `TOUCH_TAP` event and `TOUCH_SWIPE` event. A `TOUCH_TAP` will trigger a `TOUCH_START` -> `TOUCH_END` event flow.
+If the user taps successively, only one `TOUCH_TAP` event will fire with the count of how many times the user tapped.
+A `TOUCH_SWIPE` event occurs whenever the user moves more the `48px` in the canvas within a single drag cycle. Additionally, `TOUCH_SWIPE` will only activate if this movement
+occurs within the first `200ms` of touching the screen. If the user moves diagonal, both a `LEFT`/`RIGHT` and `UP`/`DOWN` swipe will trigger.
 
 | EVENT                  | Description                                                                                                                                                                                      |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `TOUCH_START`          | Triggers if the user places their touchpoint down for > 50ms.                                                                                                                                    |
+| `TOUCH_START`          | Triggers if the user places their touchpoint down.                                                                                                                                               |
 | `TOUCH_START_ACTIVATE` | Triggers only if no tools decided to stop propagation from the `TOUCH_START` event. It is useful to differentiate between touching an existing annotaton, vs needing to create a new annotaiton. |
 | `TOUCH_PRESS`          | Triggers if the user places their touchpoint down and does not move it for > 700ms                                                                                                               |
 | `TOUCH_DRAG`           | Triggers anytime the user moves their touchpoint, may occur before `TOUCH_PRESS` since the `TOUCH_PRESS` event will tolerate some motion.                                                        |
-| `TOUCH_SWIPE`          | Triggers alongside `TOUCH_DRAG` if the user moves more than `100px` within a single drag cycle.                                                                                                  |
 | `TOUCH_END`            | Triggers when the user lifts one or more of their touchpoints.                                                                                                                                   |
-| `TOUCH_TAP`            | Triggers when the user makes contact with screen for less than 50ms - 10ms (buffer from the `TOUCH_START` event.)                                                                                |
+| `TOUCH_TAP`            | Triggers when the user makes contact with screen for less than `300ms` and moves less than canvas `48px` from `TOUCH_START`.                                                                     |
+| `TOUCH_SWIPE`          | Triggers when the user user moves more than `48px` within a single drag cycle, less than `200ms` after touching the screen.                                                                      |
 
 ## Multitouch
 

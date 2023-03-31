@@ -12,10 +12,14 @@
     "yarn": ">=1.19.1"
   },
   "scripts": {
-    "api-check": "lerna run api-check ",
+    "api-check": "lerna run api-check",
     "build": "lerna run build --stream",
     "build:umd": "lerna run build:umd --stream",
-    "build:update-api": "lerna run build:update-api",
+    "build:update-api:core": "cd packages/core && npm run build:update-api",
+    "build:update-api:tools": "cd packages/tools && npm run build:update-api",
+    "build:update-api:adapters": "cd packages/adapters && npm run build:update-api",
+    "build:update-api:streaming": "cd packages/streaming-image-volume-loader && npm run build:update-api",
+    "build:update-api": "npm run build:update-api:core && npm run build:update-api:tools && npm run build:update-api:streaming",
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
@@ -68,13 +72,12 @@
     "css-loader": "^5.2.7",
     "cssnano": "^4.1.11",
     "eslint": "^8.17.0",
-    "eslint-loader": "4.0.2",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-jsx-a11y": "6.x",
     "eslint-plugin-prettier": "^3.4.1",
     "eslint-plugin-tsdoc": "^0.2.14",
-    "eslint-webpack-plugin": "^2.6.0",
+    "eslint-webpack-plugin": "^4.0.0",
     "file-loader": "^6.2.0",
     "follow-redirects": "^1.10.0",
     "html-webpack-plugin": "^5.5.0",
@@ -137,5 +140,6 @@
     "not dead",
     "not ie < 11",
     "not op_mini all"
-  ]
+  ],
+  "dependencies": {}
 }

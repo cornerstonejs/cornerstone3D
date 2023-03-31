@@ -3,6 +3,203 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.15.14](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.13...@cornerstonejs/streaming-image-volume-loader@0.15.14) (2023-03-30)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.13](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.12...@cornerstonejs/streaming-image-volume-loader@0.15.13) (2023-03-28)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.11...@cornerstonejs/streaming-image-volume-loader@0.15.12) (2023-03-28)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.10...@cornerstonejs/streaming-image-volume-loader@0.15.11) (2023-03-28)
+
+
+### Bug Fixes
+
+* **volumeLoad:** should still update texture when loading ([#527](https://github.com/cornerstonejs/cornerstone3D-beta/issues/527)) ([65c71ea](https://github.com/cornerstonejs/cornerstone3D-beta/commit/65c71ea8e5aa2c4dc92ed69c64707a6bdfa206b5))
+
+
+
+
+
+## [0.15.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.9...@cornerstonejs/streaming-image-volume-loader@0.15.10) (2023-03-27)
+
+
+### Bug Fixes
+
+* **loading order:** reversed time points requests otherwise it would load from last to first ([#522](https://github.com/cornerstonejs/cornerstone3D-beta/issues/522)) ([c5acf45](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c5acf452bd533931dfe52c9a560cd548fa205672))
+
+
+
+
+
+## [0.15.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.8...@cornerstonejs/streaming-image-volume-loader@0.15.9) (2023-03-27)
+
+
+### Bug Fixes
+
+* **binding:** fix this binding ([#521](https://github.com/cornerstonejs/cornerstone3D-beta/issues/521)) ([1d44728](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1d4472810313f55892e853e90d15c307d0e44130))
+
+
+
+
+
+## [0.15.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.7...@cornerstonejs/streaming-image-volume-loader@0.15.8) (2023-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.6...@cornerstonejs/streaming-image-volume-loader@0.15.7) (2023-03-24)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.5...@cornerstonejs/streaming-image-volume-loader@0.15.6) (2023-03-23)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.4...@cornerstonejs/streaming-image-volume-loader@0.15.5) (2023-03-22)
+
+
+### Bug Fixes
+
+* **rendering:** should still use Float32 when not 16 bit for scaling issues ([#501](https://github.com/cornerstonejs/cornerstone3D-beta/issues/501)) ([448baf2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/448baf2086ef28b8eedc90ab46e0fee54cf7ac9e))
+
+
+
+
+
+## [0.15.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.3...@cornerstonejs/streaming-image-volume-loader@0.15.4) (2023-03-17)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.2...@cornerstonejs/streaming-image-volume-loader@0.15.3) (2023-03-16)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.1...@cornerstonejs/streaming-image-volume-loader@0.15.2) (2023-03-16)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.15.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.0...@cornerstonejs/streaming-image-volume-loader@0.15.1) (2023-03-15)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+# [0.15.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.14.3...@cornerstonejs/streaming-image-volume-loader@0.15.0) (2023-03-13)
+
+
+### Features
+
+* **rendering:** 16 bit texture support with flag ([#420](https://github.com/cornerstonejs/cornerstone3D-beta/issues/420)) ([f14073e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f14073e13836e33f85a1cf7aec566ab782174def))
+
+
+
+
+
+## [0.14.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.14.2...@cornerstonejs/streaming-image-volume-loader@0.14.3) (2023-03-13)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.14.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.14.1...@cornerstonejs/streaming-image-volume-loader@0.14.2) (2023-03-10)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.14.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.14.0...@cornerstonejs/streaming-image-volume-loader@0.14.1) (2023-03-06)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+# [0.14.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.13.0...@cornerstonejs/streaming-image-volume-loader@0.14.0) (2023-03-03)
+
+
+### Features
+
+* **dicomImageLoader types:** Add types to the dicom image loader ([#441](https://github.com/cornerstonejs/cornerstone3D-beta/issues/441)) ([10a3370](https://github.com/cornerstonejs/cornerstone3D-beta/commit/10a3370b7f23084d1f2c55506079c17dea959659)), closes [#449](https://github.com/cornerstonejs/cornerstone3D-beta/issues/449) [#450](https://github.com/cornerstonejs/cornerstone3D-beta/issues/450)
+
+
+
+
+
+# [0.13.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.12.2...@cornerstonejs/streaming-image-volume-loader@0.13.0) (2023-02-28)
+
+
+### Features
+
+* **4D:** added support for 4D data rendering ([#438](https://github.com/cornerstonejs/cornerstone3D-beta/issues/438)) ([975e596](https://github.com/cornerstonejs/cornerstone3D-beta/commit/975e59629125fbf0ba5ea676fa14b71a2b30ca44))
+
+
+
+
+
+## [0.12.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.12.1...@cornerstonejs/streaming-image-volume-loader@0.12.2) (2023-02-23)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.12.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.12.0...@cornerstonejs/streaming-image-volume-loader@0.12.1) (2023-02-22)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
 # [0.12.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.11.8...@cornerstonejs/streaming-image-volume-loader@0.12.0) (2023-02-13)
 
 

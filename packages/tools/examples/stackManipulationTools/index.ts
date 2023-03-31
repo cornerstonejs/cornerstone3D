@@ -17,7 +17,7 @@ const {
   WindowLevelTool,
   StackScrollMouseWheelTool,
   ZoomTool,
-  StackRotateTool,
+  PlanarRotateTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -26,7 +26,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const leftClickTools = [WindowLevelTool.toolName, StackRotateTool.toolName];
+const leftClickTools = [WindowLevelTool.toolName, PlanarRotateTool.toolName];
 const defaultLeftClickTool = leftClickTools[0];
 let currentLeftClickTool = leftClickTools[0];
 
@@ -91,7 +91,7 @@ async function run() {
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackRotateTool);
+  cornerstoneTools.addTool(PlanarRotateTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -101,8 +101,8 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(StackRotateTool.toolName);
+  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: true });
+  toolGroup.addTool(PlanarRotateTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs

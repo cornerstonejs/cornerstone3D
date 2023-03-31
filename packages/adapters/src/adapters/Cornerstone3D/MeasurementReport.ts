@@ -1,5 +1,6 @@
 import { normalizers, data, utilities, derivations } from "dcmjs";
 
+import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { toArray, codeMeaningEquals } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
 
@@ -82,6 +83,7 @@ function getMeasurementGroup(
 }
 
 export default class MeasurementReport {
+    public static CORNERSTONE_3D_TAG = CORNERSTONE_3D_TAG;
     public static MEASUREMENT_BY_TOOLTYPE = {};
     public static CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE = {};
     public static CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE = {};
@@ -202,7 +204,8 @@ export default class MeasurementReport {
                     referencedImageId,
                     FrameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
                     label: ""
-                }
+                },
+                data: undefined
             },
             finding,
             findingSites
@@ -252,7 +255,7 @@ export default class MeasurementReport {
                 "sopCommonModule",
                 imageId
             );
-            const instance = metadataProvider.getInstance(imageId);
+            const instance = metadataProvider.get("instance", imageId);
 
             const { sopInstanceUID, sopClassUID } = sopCommonModule;
             const { SeriesInstanceUID: seriesInstanceUID } = instance;
@@ -374,43 +377,52 @@ export default class MeasurementReport {
         });
 
         measurementGroups.forEach(measurementGroup => {
-            const measurementGroupContentSequence = toArray(
-                measurementGroup.ContentSequence
-            );
-
-            const TrackingIdentifierGroup =
-                measurementGroupContentSequence.find(
-                    contentItem =>
-                        contentItem.ConceptNameCodeSequence.CodeMeaning ===
-                        TRACKING_IDENTIFIER
+            try {
+                const measurementGroupContentSequence = toArray(
+                    measurementGroup.ContentSequence
                 );
 
-            const TrackingIdentifierValue = TrackingIdentifierGroup.TextValue;
+                const TrackingIdentifierGroup =
+                    measurementGroupContentSequence.find(
+                        contentItem =>
+                            contentItem.ConceptNameCodeSequence.CodeMeaning ===
+                            TRACKING_IDENTIFIER
+                    );
 
-            const toolClass =
-                hooks?.getToolClass?.(
+                const TrackingIdentifierValue =
+                    TrackingIdentifierGroup.TextValue;
+
+                const toolClass =
+                    hooks?.getToolClass?.(
+                        measurementGroup,
+                        dataset,
+                        registeredToolClasses
+                    ) ||
+                    registeredToolClasses.find(tc =>
+                        tc.isValidCornerstoneTrackingIdentifier(
+                            TrackingIdentifierValue
+                        )
+                    );
+
+                if (toolClass) {
+                    const measurement = toolClass.getMeasurementData(
+                        measurementGroup,
+                        sopInstanceUIDToImageIdMap,
+                        imageToWorldCoords,
+                        metadata
+                    );
+
+                    console.log(`=== ${toolClass.toolType} ===`);
+                    console.log(measurement);
+
+                    measurementData[toolClass.toolType].push(measurement);
+                }
+            } catch (e) {
+                console.warn(
+                    "Unable to generate tool state for",
                     measurementGroup,
-                    dataset,
-                    registeredToolClasses
-                ) ||
-                registeredToolClasses.find(tc =>
-                    tc.isValidCornerstoneTrackingIdentifier(
-                        TrackingIdentifierValue
-                    )
+                    e
                 );
-
-            if (toolClass) {
-                const measurement = toolClass.getMeasurementData(
-                    measurementGroup,
-                    sopInstanceUIDToImageIdMap,
-                    imageToWorldCoords,
-                    metadata
-                );
-
-                console.log(`=== ${toolClass.toolType} ===`);
-                console.log(measurement);
-
-                measurementData[toolClass.toolType].push(measurement);
             }
         });
 
@@ -419,7 +431,11 @@ export default class MeasurementReport {
         return measurementData;
     }
 
-    static registerTool(toolClass) {
+    /**
+     * Register a new tool type.
+     * @param toolClass to perform I/O to DICOM for this tool
+     */
+    public static registerTool(toolClass) {
         MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE[
             toolClass.utilityToolType
         ] = toolClass;

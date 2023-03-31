@@ -30,11 +30,11 @@ function createMergedLabelmapForIndex(
 
   const labelmap = labelmaps[0];
 
-  const arrayType = labelmap.scalarData.constructor;
-  const outputData = new arrayType(labelmap.scalarData.length);
+  const arrayType = (labelmap.getScalarData() as any).constructor;
+  const outputData = new arrayType(labelmap.getScalarData().length);
 
   labelmaps.forEach((labelmap) => {
-    const { scalarData } = labelmap;
+    const scalarData = labelmap.getScalarData();
     for (let i = 0; i < scalarData.length; i++) {
       if (scalarData[i] === segmentIndex) {
         outputData[i] = segmentIndex;

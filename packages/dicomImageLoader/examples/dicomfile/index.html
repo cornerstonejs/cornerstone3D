@@ -20,10 +20,10 @@
     </div>
     <div id="collapseInfo" class="collapse" style="display:none;">
         <p>
-            This example illustrates how to use the cornerstoneWADOImageLoader to read a DICOM P10
+            This example illustrates how to use the cornerstoneDICOMImageLoader to read a DICOM P10
             SOP instance from the local file system and display it in your web browser using cornerstone.
             Not all transfer syntaxes are currently supported,
-            <a href="https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/docs/TransferSyntaxes.md">
+            <a href="https://github.com/cornerstonejs/cornerstoneDICOMImageLoader/blob/master/docs/TransferSyntaxes.md">
                 click here for the full list.
             </a>
         </p>
@@ -108,18 +108,18 @@
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
 
-<!-- include the cornerstoneWADOImageLoader library -->
-<script src="../../dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
+<!-- include the cornerstoneDICOMImageLoader library -->
+<script src="../../dist/cornerstoneDICOMImageLoader.bundle.min.js"></script>
 
 <!-- uids -->
 <script src="uids.js"></script>
 
 <!-- Lines ONLY required for this example to run without building the project -->
-<script>window.cornerstoneWADOImageLoader || document.write('<script src="https://unpkg.com/cornerstone-wado-image-loader">\x3C/script>')</script>
+<script>window.cornerstoneDICOMImageLoader || document.write('<script src="https://unpkg.com/@cornerstonejs/dicom-image-loader">\x3C/script>')</script>
 <script src="../utils/initializeWebWorkers.js"></script>
 
 <script>
-    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneDICOMImageLoader.external.cornerstone = cornerstone;
 
     // this function gets called once the user drops the file onto the div
     function handleFileSelect(evt) {
@@ -131,7 +131,7 @@
 
         // this UI is only built for a single file so just dump the first one
         file = files[0];
-        const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+        const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
         loadAndViewImage(imageId);
     }
 
@@ -147,7 +147,7 @@
     dropZone.addEventListener('drop', handleFileSelect, false);
 
 
-    cornerstoneWADOImageLoader.configure({
+    cornerstoneDICOMImageLoader.configure({
         beforeSend: function(xhr) {
             // Add custom headers here (e.g. auth tokens)
             //xhr.setRequestHeader('x-auth-token', 'my auth token');
@@ -248,7 +248,7 @@
         // Add the file to the cornerstoneFileImageLoader and get unique
         // number for that file
         const file = e.target.files[0];
-        const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(file);
+        const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
         loadAndViewImage(imageId);
     });
 

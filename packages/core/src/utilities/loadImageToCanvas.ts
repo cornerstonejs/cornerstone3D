@@ -5,6 +5,7 @@ import * as metaData from '../metaData';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvas from './renderToCanvas';
+import { getConfiguration } from '../init';
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the CPU rendering pipeline
@@ -55,13 +56,13 @@ export default function loadImageToCanvas(
       );
     }
 
+    const { useNorm16Texture } = getConfiguration().rendering;
+
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
-        type: 'Float32Array',
-        offset: null,
-        length: null,
+        type: useNorm16Texture ? undefined : 'Float32Array',
       },
       preScale: {
         enabled: true,

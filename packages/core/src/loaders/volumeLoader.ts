@@ -13,6 +13,7 @@ import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import { uuidv4 } from '../utilities';
 import { Point3, Metadata, EventTypes, Mat3 } from '../types';
+import { getConfiguration } from '../init';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -21,12 +22,12 @@ interface VolumeLoaderOptions {
 interface DerivedVolumeOptions {
   volumeId: string;
   targetBuffer?: {
-    type: 'Float32Array' | 'Uint8Array';
+    type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int16Array';
     sharedArrayBuffer?: boolean;
   };
 }
 interface LocalVolumeOptions {
-  scalarData: Float32Array | Uint8Array;
+  scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
   metadata: Metadata;
   dimensions: Point3;
   spacing: Point3;
@@ -34,14 +35,49 @@ interface LocalVolumeOptions {
   direction: Mat3;
 }
 
-function createInternalVTKRepresentation({
-  dimensions,
-  metadata,
-  spacing,
-  direction,
-  origin,
-  scalarData,
-}): vtkImageDataType {
+/**
+ * Adds a single scalar data to a 3D volume
+ */
+function addScalarDataToImageData(
+  imageData: vtkImageDataType,
+  scalarData: Types.VolumeScalarData,
+  dataArrayAttrs
+) {
+  const scalarArray = vtkDataArray.newInstance({
+    name: `Pixels`,
+    values: scalarData,
+    ...dataArrayAttrs,
+  });
+
+  imageData.getPointData().setScalars(scalarArray);
+}
+
+/**
+ * Adds multiple scalar data (time points) to a 4D volume
+ */
+function addScalarDataArraysToImageData(
+  imageData: vtkImageDataType,
+  scalarDataArrays: Types.VolumeScalarData[],
+  dataArrayAttrs
+) {
+  scalarDataArrays.forEach((scalarData, i) => {
+    const vtkScalarArray = vtkDataArray.newInstance({
+      name: `timePoint-${i}`,
+      values: scalarData,
+      ...dataArrayAttrs,
+    });
+
+    imageData.getPointData().addArray(vtkScalarArray);
+  });
+
+  // Set the first as active otherwise nothing is displayed on the screen
+  imageData.getPointData().setActiveScalars('timePoint-0');
+}
+
+function createInternalVTKRepresentation(
+  volume: Types.IImageVolume
+): vtkImageDataType {
+  const { dimensions, metadata, spacing, direction, origin } = volume;
   const { PhotometricInterpretation } = metadata;
 
   let numComponents = 1;
@@ -49,19 +85,26 @@ function createInternalVTKRepresentation({
     numComponents = 3;
   }
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: numComponents,
-    values: scalarData,
-  });
-
   const imageData = vtkImageData.newInstance();
+  const dataArrayAttrs = { numberOfComponents: numComponents };
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
-  imageData.getPointData().setScalars(scalarArray);
+
+  // Add scalar datas to 3D or 4D volume
+  if (volume.isDynamicVolume()) {
+    const scalarDataArrays = (<Types.IDynamicImageVolume>(
+      volume
+    )).getScalarDataArrays();
+
+    addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
+  } else {
+    const scalarData = volume.getScalarData();
+
+    addScalarDataToImageData(imageData, scalarData, dataArrayAttrs);
+  }
 
   return imageData;
 }
@@ -201,7 +244,8 @@ export async function createAndCacheVolume(
  * is given, it will be used to generate the intensity values for the derivedVolume.
  * Finally, it will save the volume in the cache.
  * @param referencedVolumeId - the volumeId from which the new volume will get its metadata
- * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: FLOAT32Array | Uint8Array}, scalarData: if provided}
+ * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: Float32Array | Uint8Array |
+ * Uint16Array | Uint32Array  }, scalarData: if provided}
  *
  * @returns ImageVolume
  */
@@ -224,11 +268,13 @@ export async function createAndCacheDerivedVolume(
     volumeId = uuidv4();
   }
 
-  const { metadata, dimensions, spacing, origin, direction, scalarData } =
-    referencedVolume;
+  const { metadata, dimensions, spacing, origin, direction } = referencedVolume;
+  const scalarData = referencedVolume.getScalarData();
   const scalarLength = scalarData.length;
 
   let numBytes, TypedArray;
+
+  const { useNorm16Texture } = getConfiguration().rendering;
 
   // If target buffer is provided
   if (targetBuffer) {
@@ -238,6 +284,12 @@ export async function createAndCacheDerivedVolume(
     } else if (targetBuffer.type === 'Uint8Array') {
       numBytes = scalarLength;
       TypedArray = Uint8Array;
+    } else if (useNorm16Texture && targetBuffer.type === 'Uint16Array') {
+      numBytes = scalarLength * 2;
+      TypedArray = Uint16Array;
+    } else if (useNorm16Texture && targetBuffer.type === 'Int16Array') {
+      numBytes = scalarLength * 2;
+      TypedArray = Uint16Array;
     } else {
       throw new Error('TargetBuffer should be Float32Array or Uint8Array');
     }
@@ -318,10 +370,15 @@ export function createLocalVolume(
 
   if (
     !scalarData ||
-    !(scalarData instanceof Uint8Array || scalarData instanceof Float32Array)
+    !(
+      scalarData instanceof Uint8Array ||
+      scalarData instanceof Float32Array ||
+      scalarData instanceof Uint16Array ||
+      scalarData instanceof Int16Array
+    )
   ) {
     throw new Error(
-      'To use createLocalVolume you should pass scalarData of type Uint8Array or Float32Array'
+      'To use createLocalVolume you should pass scalarData of type Uint8Array, Uint16Array, Int16Array or Float32Array'
     );
   }
 
@@ -395,6 +452,11 @@ export function registerVolumeLoader(
   volumeLoader: Types.VolumeLoaderFn
 ): void {
   volumeLoaders[scheme] = volumeLoader;
+}
+
+/** Gets the array of volume loader schemes */
+export function getVolumeLoaderSchemes(): string[] {
+  return Object.keys(volumeLoaders);
 }
 
 /**

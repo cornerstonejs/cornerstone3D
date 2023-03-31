@@ -66,8 +66,8 @@
 <!-- include the dicomParser library as the WADO image loader depends on it -->
 <script src="../dicomParser.min.js"></script>
 
-<!-- include the cornerstoneWADOImageLoader library -->
-<script src="../dist/cornerstoneWADOImageLoader.bundle.min.js"></script>
+<!-- include the cornerstoneDICOMImageLoader library -->
+<script src="../dist/cornerstoneDICOMImageLoader.bundle.min.js"></script>
 
 <script src="../dicomfile/uids.js"></script>
 <script src="../utils/initializeWebWorkers.js"></script>
@@ -96,7 +96,7 @@
         }
     }
 
-    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneDICOMImageLoader.external.cornerstone = cornerstone;
 
     const baseUrls = [
         'https://pacsbin-util.s3.amazonaws.com/test-images/htj2k/1.jph.dcm',
@@ -160,7 +160,7 @@
         canvasDiv.addEventListener('click', async function (e) {
             const ee = cornerstone.getEnabledElement(element);
             const { sharedCacheKey: uri } = ee.image;
-            const dataSet = cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.get(uri);
+            const dataSet = cornerstoneDICOMImageLoader.wadouri.dataSetCacheManager.get(uri);
 
             const newDataSet = await dataSet.fetchMore({
                 lengthToFetch: 500000,
@@ -169,10 +169,10 @@
             console.log(newDataSet);
 
             // Not sure how much of this should be handled automatically inside
-            // cornerstoneWADOImageLoader, vs explicitly in user scripts. It
+            // cornerstoneDICOMImageLoader, vs explicitly in user scripts. It
             // would probably be helpful for everything below here to be one
             // function call or automatic upon invoking `fetchMore`.
-            cornerstoneWADOImageLoader.wadouri.dataSetCacheManager.update(uri, newDataSet)
+            cornerstoneDICOMImageLoader.wadouri.dataSetCacheManager.update(uri, newDataSet)
 
             const imageId = "wadouri:" + uri;
 

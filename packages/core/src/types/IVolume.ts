@@ -3,6 +3,8 @@ import type Point3 from './Point3';
 import type Metadata from './Metadata';
 import Mat3 from './Mat3';
 
+type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
+
 /**
  * Cornerstone ImageVolume interface.
  */
@@ -20,7 +22,7 @@ interface IVolume {
   /** volume direction */
   direction: Mat3;
   /** volume scalarData */
-  scalarData: Float32Array | Uint8Array;
+  scalarData: VolumeScalarData | Array<VolumeScalarData>;
   /** volume size in bytes */
   sizeInBytes?: number;
   /** volume image data as vtkImageData */
@@ -40,4 +42,4 @@ interface IVolume {
   };
 }
 
-export default IVolume;
+export { IVolume as default, IVolume, VolumeScalarData };

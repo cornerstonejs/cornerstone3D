@@ -5,7 +5,6 @@ import {
 
 // Lodash/common JS functionality
 import debounce from './debounce';
-import deepMerge from './deepMerge';
 import throttle from './throttle';
 import isObject from './isObject';
 import clip from './clip';
@@ -32,6 +31,7 @@ import * as rectangleROITool from './rectangleROITool';
 import * as stackPrefetch from './stackPrefetch';
 import * as viewport from './viewport';
 import * as touch from './touch';
+import * as dynamicVolume from './dynamicVolume';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';
@@ -42,7 +42,7 @@ export {
   viewportFilters,
   drawing,
   debounce,
-  deepMerge,
+  dynamicVolume,
   throttle,
   orientation,
   isObject,

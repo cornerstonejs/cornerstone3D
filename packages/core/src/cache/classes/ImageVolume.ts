@@ -1,10 +1,25 @@
+import isTypedArray from '../../utilities/isTypedArray';
+import { imageIdToURI } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
-import { IVolume, Metadata, Point3, IImageVolume, Mat3 } from '../../types';
+import {
+  IVolume,
+  VolumeScalarData,
+  Metadata,
+  Point3,
+  IImageVolume,
+  Mat3,
+} from '../../types';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
  */
 export class ImageVolume implements IImageVolume {
+  private _imageIds: Array<string>;
+  private _imageIdsIndexMap = new Map();
+  private _imageURIsIndexMap = new Map();
+  /** volume scalar data 3D or 4D */
+  protected scalarData: VolumeScalarData | Array<VolumeScalarData>;
+
   /** Read-only unique identifier for the volume */
   readonly volumeId: string;
   /** Dimensions of the volume */
@@ -15,8 +30,6 @@ export class ImageVolume implements IImageVolume {
   metadata: Metadata;
   /** volume origin, Note this is an opinionated origin for the volume */
   origin: Point3;
-  /** volume scalar data  */
-  scalarData: Float32Array | Uint8Array;
   /** Whether preScaling has been performed on the volume */
   isPrescaled = false;
   /** volume scaling parameters if it contains scaled data */
@@ -42,8 +55,6 @@ export class ImageVolume implements IImageVolume {
   vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
   /** load status object for the volume */
   loadStatus?: Record<string, any>;
-  /** optional image ids for the volume if it is made of separated images */
-  imageIds?: Array<string>;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
   /** whether the metadata for the pixel spacing is not undefined  */
@@ -72,7 +83,73 @@ export class ImageVolume implements IImageVolume {
     }
   }
 
+  /** return the image ids for the volume if it is made of separated images */
+  public get imageIds(): Array<string> {
+    return this._imageIds;
+  }
+
+  /** updates the image ids */
+  public set imageIds(newImageIds: Array<string>) {
+    this._imageIds = newImageIds;
+    this._reprocessImageIds();
+  }
+
+  private _reprocessImageIds() {
+    this._imageIdsIndexMap.clear();
+    this._imageURIsIndexMap.clear();
+
+    this._imageIds.forEach((imageId, i) => {
+      const imageURI = imageIdToURI(imageId);
+
+      this._imageIdsIndexMap.set(imageId, i);
+      this._imageURIsIndexMap.set(imageURI, i);
+    });
+  }
+
   cancelLoading: () => void;
+
+  /** return true if it is a 4D volume or false if it is 3D volume */
+  public isDynamicVolume(): boolean {
+    return false;
+  }
+
+  /**
+   * Return the scalar data for 3D volumes or the active scalar data
+   * (current time point) for 4D volumes
+   */
+  public getScalarData(): VolumeScalarData {
+    if (isTypedArray(this.scalarData)) {
+      return <VolumeScalarData>this.scalarData;
+    }
+
+    throw new Error('Unknow scalar data type');
+  }
+
+  /**
+   * return the index of a given imageId
+   * @param imageId - imageId
+   * @returns imageId index
+   */
+  public getImageIdIndex(imageId: string): number {
+    return this._imageIdsIndexMap.get(imageId);
+  }
+
+  /**
+   * return the index of a given imageURI
+   * @param imageId - imageURI
+   * @returns imageURI index
+   */
+  public getImageURIIndex(imageURI: string): number {
+    return this._imageURIsIndexMap.get(imageURI);
+  }
+
+  /**
+   * destroy the volume and make it unusable
+   */
+  destroy(): void {
+    this.vtkOpenGLTexture.delete();
+    this.scalarData = null;
+  }
 }
 
 export default ImageVolume;

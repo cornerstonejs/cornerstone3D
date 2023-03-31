@@ -4,6 +4,7 @@
 
 ```ts
 
+import { default as default_2 } from 'packages/core/dist/esm/enums/RequestType';
 import type { mat4 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -56,7 +57,8 @@ type CameraModifiedEventDetail = {
 type ContourData = {
     points: Point3[];
     type: ContourType;
-    color?: Point3;
+    color: Point3;
+    segmentIndex: number;
 };
 
 // @public (undocumented)
@@ -65,6 +67,7 @@ type ContourSetData = {
     data: ContourData[];
     frameOfReferenceUID: string;
     color?: Point3;
+    segmentIndex?: number;
 };
 
 // @public (undocumented)
@@ -74,6 +77,42 @@ enum ContourType {
     // (undocumented)
     OPEN_PLANAR = 'OPEN_PLANAR',
 }
+
+// @public (undocumented)
+type Cornerstone3DConfig = {
+    detectGPU: any;
+    rendering: {
+        // vtk.js supports 8bit integer textures and 32bit float textures.
+        // However, if the client has norm16 textures (it can be seen by visiting
+        // the webGl report at https://webglreport.com/?v=2), vtk will be default
+        // to use it to improve memory usage. However, if the client don't have
+        // it still another level of optimization can happen by setting the
+        // preferSizeOverAccuracy since it will reduce the size of the texture to half
+        // float at the cost of accuracy in rendering. This is a tradeoff that the
+        // client can decide.
+        //
+        // Read more in the following Pull Request:
+        // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
+        // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
+        preferSizeOverAccuracy: boolean;
+        // Whether the EXT_texture_norm16 extension is supported by the browser.
+        // WebGL 2 report (link: https://webglreport.com/?v=2) can be used to check
+        // if the browser supports this extension.
+        // In case the browser supports this extension, instead of using 32bit float
+        // textures, 16bit float textures will be used to reduce the memory usage where
+        // possible.
+        // Norm16 may not work currently due to the two active bugs in chrome + safari
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=1408247
+        // https://bugs.webkit.org/show_bug.cgi?id=252039
+        useNorm16Texture: boolean;
+        useCPURendering: boolean;
+    };
+};
+
+// @public (undocumented)
+export function cornerstoneStreamingDynamicImageVolumeLoader(volumeId: string, options: {
+    imageIds: string[];
+}): IVolumeLoader_2;
 
 // @public (undocumented)
 export function cornerstoneStreamingImageVolumeLoader(volumeId: string, options: {
@@ -364,6 +403,13 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public
+enum DynamicOperatorType {
+    AVERAGE = 'AVERAGE',
+    SUBTRACT = 'SUBTRACT',
+    SUM = 'SUM',
+}
+
+// @public
 type ElementDisabledEvent = CustomEvent_2<ElementDisabledEventDetail>;
 
 // @public
@@ -417,8 +463,9 @@ enum Events {
 
     VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
 
-    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
+    VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
 
+    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
     // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
     // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
     // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
@@ -604,12 +651,22 @@ interface IContourSet {
     getNumberOfPointsInAContour(contourIndex: number): number;
     getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
+    getSegmentIndex(): number;
+    // (undocumented)
     getSizeInBytes(): number;
     getTotalNumberOfPoints(): number;
     // (undocumented)
     readonly id: string;
     // (undocumented)
     readonly sizeInBytes: number;
+}
+
+// @public
+interface IDynamicImageVolume extends IImageVolume {
+    getScalarDataArrays(): VolumeScalarData[];
+    get numTimePoints(): number;
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
 }
 
 // @public
@@ -624,7 +681,7 @@ interface IEnabledElement {
 // @public (undocumented)
 interface IGeometry {
     // (undocumented)
-    data: ContourSet;
+    data: IContourSet;
     // (undocumented)
     id: string;
     // (undocumented)
@@ -730,7 +787,7 @@ interface IImageData {
             suvbw?: number;
         };
     };
-    scalarData: Float32Array;
+    scalarData: Float32Array | Uint16Array | Uint8Array | Int16Array;
     scaling?: Scaling;
     spacing: Point3;
 }
@@ -750,18 +807,22 @@ interface IImageVolume {
     imageId: string,
     imageIdIndex: number
     ) => IImageLoadObject;
+    destroy(): void;
     dimensions: Point3;
     direction: Mat3;
+    getImageIdIndex(imageId: string): number;
+    getImageURIIndex(imageURI: string): number;
+    getScalarData(): VolumeScalarData;
     hasPixelSpacing: boolean;
     imageData?: vtkImageData;
-    imageIds?: Array<string>;
+    imageIds: Array<string>;
+    isDynamicVolume(): boolean;
     isPrescaled: boolean;
     loadStatus?: Record<string, any>;
     metadata: Metadata;
     numVoxels: number;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: any;
     scaling?: {
         PET?: {
             SUVlbmFactor?: number;
@@ -985,9 +1046,11 @@ interface IStreamingImageVolume extends ImageVolume {
 // @public (undocumented)
 interface IStreamingVolumeProperties {
     imageIds: Array<string>;
+
     loadStatus: {
         loaded: boolean;
         loading: boolean;
+        cancelled: boolean;
         cachedFrames: Array<boolean>;
         callbacks: Array<() => void>;
     };
@@ -1056,7 +1119,7 @@ interface IVolume {
     metadata: Metadata;
     origin: Point3;
     referencedVolumeId?: string;
-    scalarData: Float32Array | Uint8Array;
+    scalarData: VolumeScalarData | Array<VolumeScalarData>;
     scaling?: {
         PET?: {
             // @TODO: Do these values exist?
@@ -1305,6 +1368,7 @@ type StackViewportProperties = {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
+    isComputedVOI?: boolean;
 };
 
 // @public (undocumented)
@@ -1318,16 +1382,24 @@ type StackViewportScrollEventDetail = {
 };
 
 // @public (undocumented)
-export class StreamingImageVolume extends ImageVolume {
+export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
     constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
-    cancelLoading: () => void;
+    getImageLoadRequests: (priority: number) => any[];
     // (undocumented)
-    clearLoadCallbacks(): void;
+    getScalarData(): Types.VolumeScalarData;
     // (undocumented)
-    convertToCornerstoneImage(imageId: string, imageIdIndex: number): Types.IImageLoadObject;
+    isDynamicVolume(): boolean;
     // (undocumented)
-    decache(completelyRemove?: boolean): void;
+    get numTimePoints(): number;
+    // (undocumented)
+    get timePointIndex(): number;
+    set timePointIndex(newTimePointIndex: number);
+}
+
+// @public (undocumented)
+export class StreamingImageVolume extends BaseStreamingImageVolume {
+    constructor(imageVolumeProperties: Types.IVolume, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageLoadRequests: (priority: number) => {
         callLoadImage: (imageId: any, imageIdIndex: any, options: any) => Promise<void>;
@@ -1347,20 +1419,13 @@ export class StreamingImageVolume extends ImageVolume {
             };
         };
         priority: number;
-        requestType: Enums.RequestType;
+        requestType: default_2;
         additionalDetails: {
             volumeId: string;
         };
     }[];
     // (undocumented)
-    load: (callback: (...args: unknown[]) => void, priority?: number) => void;
-    // (undocumented)
-    loadStatus: {
-        loaded: boolean;
-        loading: boolean;
-        cachedFrames: Array<boolean>;
-        callbacks: Array<(...args: unknown[]) => void>;
-    };
+    getScalarData(): Types.VolumeScalarData;
 }
 
 // @public
@@ -1503,6 +1568,9 @@ type VolumeNewImageEventDetail = {
     viewportId: string;
     renderingEngineId: string;
 };
+
+// @public (undocumented)
+type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 // @public
 type VolumeViewportProperties = {

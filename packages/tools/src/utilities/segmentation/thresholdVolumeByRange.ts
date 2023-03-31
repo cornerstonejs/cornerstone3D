@@ -1,26 +1,17 @@
 import { Types } from '@cornerstonejs/core';
-import { utilities as csUtils } from '@cornerstonejs/core';
-
 import { pointInShapeCallback } from '../../utilities';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { BoundsIJK } from '../../types';
-import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape';
+import {
+  getVoxelOverlap,
+  processVolumes,
+  ThresholdInformation,
+} from './utilities';
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;
   boundsIJK: BoundsIJK;
   overlapType?: number;
-};
-
-export type ThresholdInformation = {
-  volume: Types.IImageVolume;
-  lower: number;
-  upper: number;
-};
-
-// function used to compare to arrays
-const equalsCheck = (a, b) => {
-  return JSON.stringify(a) === JSON.stringify(b);
 };
 
 /**
@@ -33,7 +24,7 @@ const equalsCheck = (a, b) => {
  * As there is a chance the volumes might have different dimensions and spacing,
  * could be the case of no 1 to 1 mapping. So we need to work with the idea of
  * voxel overlaps (1 to many mappings). We consider all intersections valid, to
- * avoid thecomplexity to calculate a minimum voxel intersection percentage.
+ * avoid the complexity to calculate a minimum voxel intersection percentage.
  * This function, given a voxel center and spacing, calculates the overlap of
  * the voxel with another volume and range check the voxels in the overlap.
  * Three situations can occur: all voxels pass the range check, some voxels pass
@@ -47,11 +38,8 @@ function thresholdVolumeByRange(
   thresholdVolumeInformation: ThresholdInformation[],
   options: ThresholdRangeOptions
 ): Types.IImageVolume {
-  const {
-    scalarData,
-    spacing: segmentationSpacing,
-    imageData: segmentationImageData,
-  } = segmentationVolume;
+  const { imageData: segmentationImageData } = segmentationVolume;
+  const scalarData = segmentationVolume.getScalarData();
 
   const { overwrite, boundsIJK } = options;
   const overlapType = options?.overlapType || 0;
@@ -63,39 +51,12 @@ function thresholdVolumeByRange(
     }
   }
 
-  // prepare a list of volume information objects for callback functions
-  const volumeInfoList = [];
-  let baseVolumeIdx = 0;
-  for (let i = 0; i < thresholdVolumeInformation.length; i++) {
-    const { imageData, spacing, dimensions } =
-      thresholdVolumeInformation[i].volume;
+  const { baseVolumeIdx, volumeInfoList } = processVolumes(
+    segmentationVolume,
+    thresholdVolumeInformation
+  );
 
-    const volumeSize = thresholdVolumeInformation[i].volume.scalarData.length;
-    // discover the index of the volume the segmentation data is based on
-    if (
-      volumeSize === scalarData.length &&
-      equalsCheck(spacing, segmentationSpacing)
-    ) {
-      baseVolumeIdx = i;
-    }
-
-    // prepare information used in callback functions
-    const referenceValues = imageData.getPointData().getScalars().getData();
-    const lower = thresholdVolumeInformation[i].lower;
-    const upper = thresholdVolumeInformation[i].upper;
-
-    volumeInfoList.push({
-      imageData,
-      referenceValues,
-      lower,
-      upper,
-      spacing,
-      dimensions,
-      volumeSize,
-    });
-  }
-
-  // global variables used in calbackOverlap function
+  // global variables used in callbackOverlap function
   let overlaps, total, range;
 
   const testOverlapRange = (volumeInfo, voxelSpacing, voxelCenter) => {
@@ -149,39 +110,6 @@ function thresholdVolumeByRange(
     } else {
       return true;
     }
-  };
-
-  /**
-   * Given the center of a voxel in world coordinates, calculate the voxel
-   * corners in world coords to calculate the voxel overlap in another volume
-   */
-  const getVoxelOverlap = (
-    imageData,
-    dimensions,
-    voxelSpacing,
-    voxelCenter
-  ) => {
-    const voxelCornersWorld = [];
-    for (let i = 0; i < 2; i++) {
-      for (let j = 0; j < 2; j++) {
-        for (let k = 0; k < 2; k++) {
-          const point = voxelCenter;
-          point[0] = point[0] + ((i * 2 - 1) * voxelSpacing[0]) / 2;
-          point[1] = point[1] + ((j * 2 - 1) * voxelSpacing[1]) / 2;
-          point[2] = point[2] + ((k * 2 - 1) * voxelSpacing[2]) / 2;
-          voxelCornersWorld.push(point);
-        }
-      }
-    }
-    const voxelCornersIJK = voxelCornersWorld.map(
-      (world) => csUtils.transformWorldToIndex(imageData, world) as Types.Point3
-    );
-    const overlapBounds = getBoundingBoxAroundShape(
-      voxelCornersIJK,
-      dimensions
-    );
-
-    return overlapBounds;
   };
 
   /**

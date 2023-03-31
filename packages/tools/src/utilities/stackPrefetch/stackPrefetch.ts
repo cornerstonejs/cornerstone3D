@@ -6,7 +6,7 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
-  Types,
+  getConfiguration as getCoreConfiguration,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState } from './state';
 
@@ -243,14 +243,14 @@ function prefetch(element) {
   const requestFn = (imageId, options) =>
     imageLoader.loadAndCacheImage(imageId, options);
 
+  const { useNorm16Texture } = getCoreConfiguration().rendering;
+
   imageIdsToPrefetch.forEach((imageId) => {
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
-        type: 'Float32Array',
-        offset: null,
-        length: null,
+        type: useNorm16Texture ? undefined : 'Float32Array',
       },
       preScale: {
         enabled: true,

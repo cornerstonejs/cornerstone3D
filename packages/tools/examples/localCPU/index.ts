@@ -5,7 +5,7 @@ import htmlSetup from '../local/htmlSetup';
 import uids from '../local/uids';
 
 import initProviders from '../../../../utils/demo/helpers/initProviders';
-import initCornerstoneWADOImageLoader from '../../../../utils/demo/helpers/initCornerstoneWADOImageLoader';
+import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader';
 import initVolumeLoader from './../../../../utils/demo/helpers/initVolumeLoader';
 import { setUseCPURendering } from '@cornerstonejs/core';
 
@@ -62,7 +62,7 @@ document
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initCornerstoneWADOImageLoader();
+  await initCornerstoneDICOMImageLoader();
   await initVolumeLoader();
   await initProviders();
 

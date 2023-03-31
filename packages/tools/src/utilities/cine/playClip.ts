@@ -1,16 +1,25 @@
+import { glMatrix, vec3 } from 'gl-matrix';
 import {
-  utilities,
+  utilities as csUtils,
   getEnabledElement,
   StackViewport,
+  VolumeViewport,
+  cache,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
+
+import { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState } from './state';
 import { CINETypes } from '../../types';
+import scroll from '../scroll';
 
-const { triggerEvent } = utilities;
+const { triggerEvent } = csUtils;
 
 const debounced = true;
 const loop = true;
+const dynamicVolumesPlayingMap = new Map();
+
 /**
  * Starts playing a clip or adjusts the frame rate of an already playing clip.  framesPerSecond is
  * optional and defaults to 30 if not specified.  A negative framesPerSecond will play the clip in reverse.
@@ -37,20 +46,23 @@ function playClip(
     );
   }
 
+  // 4D Cine is enabled by default
+  playClipOptions.dynamicCineEnabled =
+    playClipOptions.dynamicCineEnabled ?? true;
+
   const { viewport } = enabledElement;
-
-  if (!(viewport instanceof StackViewport)) {
-    throw new Error(
-      'playClip: element must be a stack viewport, volume viewport playClip not yet implemented'
-    );
-  }
-
-  const stackData = {
-    targetImageIdIndex: viewport.getTargetImageIdIndex(),
-    imageIds: viewport.getImageIds(),
-  };
-
+  const volume = _getVolumeFromViewport(viewport);
+  const playClipContext = _createCinePlayContext(viewport, playClipOptions);
   let playClipData = getToolState(element);
+
+  const isDynamicCinePlaying =
+    playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume();
+
+  // If user is trying to play CINE for a 4D volume it first needs
+  // to stop CINE that has may be playing for any other viewport.
+  if (isDynamicCinePlaying) {
+    _stopDynamicVolumeCine(element);
+  }
 
   if (!playClipData) {
     playClipData = {
@@ -66,9 +78,13 @@ function playClip(
     };
     addToolState(element, playClipData);
   } else {
-    // Make sure the specified clip is not running before any property update
-    _stopClipWithData(playClipData);
+    // Make sure the specified clip is not running before any property update.
+    // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
+    // prevent stopping a 4D CINE in case it is playing on another viewport.
+    _stopClip(element, isDynamicCinePlaying);
   }
+
+  playClipData.dynamicCineEnabled = playClipOptions.dynamicCineEnabled;
 
   // If a framesPerSecond is specified and is valid, update the playClipData now
   if (
@@ -85,7 +101,8 @@ function playClip(
   if (
     playClipData.ignoreFrameTimeVector !== true &&
     playClipData.frameTimeVector &&
-    playClipData.frameTimeVector.length === stackData.imageIds.length
+    playClipData.frameTimeVector.length === playClipContext.numScrollSteps &&
+    playClipContext.frameTimeVectorEnabled
   ) {
     const { timeouts, isTimeVarying } = _getPlayClipTimeouts(
       playClipData.frameTimeVector,
@@ -98,49 +115,39 @@ function playClip(
 
   // This function encapsulates the frame rendering logic...
   const playClipAction = () => {
-    // Hoisting of context variables
-    const stackData = {
-      targetImageIdIndex: viewport.getTargetImageIdIndex(),
-      imageIds: viewport.getImageIds(),
-    };
-    
-    let newImageIdIndex = stackData.targetImageIdIndex;
-    const imageCount = stackData.imageIds.length;
+    const { numScrollSteps, currentStepIndex } = playClipContext;
+    let newStepIndex = currentStepIndex + (playClipData.reverse ? -1 : 1);
+    const newStepIndexOutOfRange =
+      newStepIndex < 0 || newStepIndex >= numScrollSteps;
 
-    if (playClipData.reverse) {
-      newImageIdIndex--;
-    } else {
-      newImageIdIndex++;
-    }
+    if (!loop && newStepIndexOutOfRange) {
+      // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
+      // prevent stopping a 4D CINE in case it is playing on another viewport.
+      _stopClip(element, isDynamicCinePlaying);
 
-    if (
-      !playClipData.loop &&
-      (newImageIdIndex < 0 || newImageIdIndex >= imageCount)
-    ) {
-      _stopClipWithData(playClipData);
-      const eventDetail = {
-        element,
-      };
+      const eventDetail = { element };
 
       triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, eventDetail);
-
       return;
     }
 
-    // Loop around if we go outside the stack
-    if (newImageIdIndex >= imageCount) {
-      newImageIdIndex = 0;
+    // Loop around if newStepIndex is out of range
+    if (newStepIndex >= numScrollSteps) {
+      newStepIndex = 0;
+    } else if (newStepIndex < 0) {
+      newStepIndex = numScrollSteps - 1;
     }
 
-    if (newImageIdIndex < 0) {
-      newImageIdIndex = imageCount - 1;
-    }
+    const delta = newStepIndex - currentStepIndex;
 
-    if (newImageIdIndex !== stackData.targetImageIdIndex) {
-      const delta = newImageIdIndex - stackData.targetImageIdIndex;
-      viewport.scroll(delta, debounced, loop);
+    if (delta) {
+      playClipContext.scroll(delta);
     }
   };
+
+  if (isDynamicCinePlaying) {
+    dynamicVolumesPlayingMap.set(volume.volumeId, element);
+  }
 
   // If playClipTimeouts array is available, not empty and its elements are NOT uniform ...
   // ... (at least one timeout is different from the others), use alternate setTimeout implementation
@@ -154,7 +161,7 @@ function playClip(
       function playClipTimeoutHandler() {
         playClipData.intervalId = window.setTimeout(
           playClipTimeoutHandler,
-          playClipTimeouts[stackData.targetImageIdIndex]
+          playClipTimeouts[playClipContext.currentStepIndex]
         );
         playClipAction();
       },
@@ -181,16 +188,44 @@ function playClip(
  * @param element - HTML Element
  */
 function stopClip(element: HTMLDivElement): void {
-  const enabledElement = getEnabledElement(element);
-  const { viewport } = enabledElement;
+  _stopClip(element, true);
+}
 
+function _stopClip(element: HTMLDivElement, stopDynamicCine: boolean): void {
+  const enabledElement = getEnabledElement(element);
+  if (!enabledElement) return;
+  const { viewport } = enabledElement;
   const cineToolData = getToolState(viewport.element);
 
-  if (!cineToolData) {
-    return;
+  if (cineToolData) {
+    _stopClipWithData(cineToolData);
   }
 
-  _stopClipWithData(cineToolData);
+  if (stopDynamicCine) {
+    _stopDynamicVolumeCine(element);
+  }
+}
+
+/**
+ * [private] Stops any CINE playing for the dynamic volume loaded on this viewport
+ * @param element - HTML Element
+ */
+function _stopDynamicVolumeCine(element) {
+  const { viewport } = getEnabledElement(element);
+  const volume = _getVolumeFromViewport(viewport);
+
+  // If the current viewport has a 4D volume loaded it may be playing
+  // if it is also loaded on another viewport and user has started CINE
+  // for that one. This guarantees the other viewport will also be stopped.
+  if (volume?.isDynamicVolume()) {
+    const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
+
+    dynamicVolumesPlayingMap.delete(volume.volumeId);
+
+    if (dynamicCineElement && dynamicCineElement !== element) {
+      stopClip(<HTMLDivElement>dynamicCineElement);
+    }
+  }
 }
 
 /**
@@ -247,6 +282,7 @@ function _getPlayClipTimeouts(vector: number[], speed: number) {
 
 /**
  * [private] Performs the heavy lifting of stopping an ongoing animation.
+ * @param element - HTML Element
  * @param playClipData - The data from playClip that needs to be stopped.
  */
 function _stopClipWithData(playClipData) {
@@ -260,6 +296,141 @@ function _stopClipWithData(playClipData) {
       clearInterval(id);
     }
   }
+}
+
+function _getVolumeFromViewport(viewport): Types.IImageVolume {
+  const actorEntry = viewport.getDefaultActor();
+
+  if (!actorEntry) {
+    // This can happen during setup/teardown of viewports.
+    return;
+  }
+
+  const volumeId = actorEntry.uid;
+  return cache.getVolume(volumeId);
+}
+
+function _createStackViewportCinePlayContext(
+  viewport: StackViewport
+): CINETypes.CinePlayContext {
+  const imageIds = viewport.getImageIds();
+
+  return {
+    get numScrollSteps(): number {
+      return imageIds.length;
+    },
+    get currentStepIndex(): number {
+      return viewport.getTargetImageIdIndex();
+    },
+    get frameTimeVectorEnabled(): boolean {
+      // It is always in acquired orientation
+      return true;
+    },
+    scroll(delta: number): void {
+      scroll(viewport, { delta, debounceLoading: debounced });
+    },
+  };
+}
+
+function _createVolumeViewportCinePlayContext(
+  viewport: VolumeViewport,
+  volume: Types.IImageVolume
+): CINETypes.CinePlayContext {
+  const { volumeId } = volume;
+  const cachedScrollInfo = {
+    viewPlaneNormal: vec3.create(),
+    scrollInfo: null,
+  };
+
+  const getScrollInfo = () => {
+    const camera = viewport.getCamera();
+    const updateCache =
+      !cachedScrollInfo.scrollInfo ||
+      !vec3.equals(camera.viewPlaneNormal, cachedScrollInfo.viewPlaneNormal);
+
+    // Number of steps would change only after rotating the volume so it
+    // caches the result and recomputes only when necessary. Until it is
+    // rotated the current frame is updated locally
+    if (updateCache) {
+      const scrollInfo = csUtils.getVolumeViewportScrollInfo(
+        viewport,
+        volumeId
+      );
+
+      cachedScrollInfo.viewPlaneNormal = camera.viewPlaneNormal;
+      cachedScrollInfo.scrollInfo = scrollInfo;
+    }
+
+    return cachedScrollInfo.scrollInfo;
+  };
+
+  return {
+    get numScrollSteps(): number {
+      return getScrollInfo().numScrollSteps;
+    },
+    get currentStepIndex(): number {
+      return getScrollInfo().currentStepIndex;
+    },
+    get frameTimeVectorEnabled(): boolean {
+      const camera = viewport.getCamera();
+      const volumeViewPlaneNormal = volume.direction
+        .slice(6, 9)
+        .map((x) => -x) as Types.Point3;
+      const dot = vec3.dot(volumeViewPlaneNormal, camera.viewPlaneNormal);
+
+      // Check if the volume is in acquired orientation
+      // it may be flipped or rotated in plane
+      return glMatrix.equals(dot, 1);
+    },
+    scroll(delta: number): void {
+      getScrollInfo().currentStepIndex += delta;
+      scroll(viewport, { delta });
+    },
+  };
+}
+
+function _createDynamicVolumeViewportCinePlayContext(
+  volume: Types.IDynamicImageVolume
+): CINETypes.CinePlayContext {
+  return {
+    get numScrollSteps(): number {
+      return volume.numTimePoints;
+    },
+    get currentStepIndex(): number {
+      return volume.timePointIndex;
+    },
+    get frameTimeVectorEnabled(): boolean {
+      // Looping throught time does not uses frameTimeVector
+      return false;
+    },
+    scroll(delta: number): void {
+      // Updating this property (setter) makes it move to the desired time point
+      volume.timePointIndex += delta;
+    },
+  };
+}
+
+function _createCinePlayContext(
+  viewport,
+  playClipOptions: CINETypes.PlayClipOptions
+): CINETypes.CinePlayContext {
+  if (viewport instanceof StackViewport) {
+    return _createStackViewportCinePlayContext(viewport);
+  }
+
+  if (viewport instanceof VolumeViewport) {
+    const volume = _getVolumeFromViewport(viewport);
+
+    if (playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume()) {
+      return _createDynamicVolumeViewportCinePlayContext(
+        <Types.IDynamicImageVolume>volume
+      );
+    }
+
+    return _createVolumeViewportCinePlayContext(viewport, volume);
+  }
+
+  throw new Error('Unknown viewport type');
 }
 
 export { playClip, stopClip };

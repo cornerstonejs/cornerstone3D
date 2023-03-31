@@ -3,6 +3,222 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.39.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.38.0...@cornerstonejs/core@0.39.0) (2023-03-30)
+
+
+### Features
+
+* **scrollEvent:** added out of bounds scroll ([#476](https://github.com/cornerstonejs/cornerstone3D-beta/issues/476)) ([4cf2b63](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4cf2b637da2fc78efcd64acfb2fe5130cf10e368))
+
+
+
+
+
+# [0.38.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.37.0...@cornerstonejs/core@0.38.0) (2023-03-28)
+
+
+### Features
+
+* **3d from 4d:** 3D image generation from 4D ([#502](https://github.com/cornerstonejs/cornerstone3D-beta/issues/502)) ([9217691](https://github.com/cornerstonejs/cornerstone3D-beta/commit/921769132398756fe192e266bcc9a09b98e0e733))
+
+
+
+
+
+# [0.37.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.6...@cornerstonejs/core@0.37.0) (2023-03-28)
+
+
+### Bug Fixes
+
+* **VolumeViewport3D:** implemented getCurrentImageId method ([#529](https://github.com/cornerstonejs/cornerstone3D-beta/issues/529)) ([c6b6ab5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c6b6ab5baa79cc1f2da18e1eccf2cc64a2b7848f))
+
+
+### Features
+
+* **contour api:** add api for contour rendering configuration ([#443](https://github.com/cornerstonejs/cornerstone3D-beta/issues/443)) ([4ab751d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4ab751df4082c56b64e4b97e9d6ca6de3c60c7e5))
+
+
+
+
+
+## [0.36.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.5...@cornerstonejs/core@0.36.6) (2023-03-28)
+
+
+### Bug Fixes
+
+* **volumeLoad:** should still update texture when loading ([#527](https://github.com/cornerstonejs/cornerstone3D-beta/issues/527)) ([65c71ea](https://github.com/cornerstonejs/cornerstone3D-beta/commit/65c71ea8e5aa2c4dc92ed69c64707a6bdfa206b5))
+
+
+
+
+
+## [0.36.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.4...@cornerstonejs/core@0.36.5) (2023-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+
+
+
+
+## [0.36.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.3...@cornerstonejs/core@0.36.4) (2023-03-24)
+
+
+### Bug Fixes
+
+* add src folder to package json to improve source maps ([#499](https://github.com/cornerstonejs/cornerstone3D-beta/issues/499)) ([aea4406](https://github.com/cornerstonejs/cornerstone3D-beta/commit/aea4406d4e8f1a415399481657373cd2d2d25523))
+
+
+
+
+
+## [0.36.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.2...@cornerstonejs/core@0.36.3) (2023-03-23)
+
+
+### Bug Fixes
+
+* Segmentation slice range is wrong when nearly orthonormal as well as for segmentation volumes ([#511](https://github.com/cornerstonejs/cornerstone3D-beta/issues/511)) ([cd232e3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/cd232e38d7635693a4757598a1cd5e3dfe59cbf4))
+
+
+
+
+
+## [0.36.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.1...@cornerstonejs/core@0.36.2) (2023-03-22)
+
+
+### Bug Fixes
+
+* **rendering:** should still use Float32 when not 16 bit for scaling issues ([#501](https://github.com/cornerstonejs/cornerstone3D-beta/issues/501)) ([448baf2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/448baf2086ef28b8eedc90ab46e0fee54cf7ac9e))
+
+
+
+
+
+## [0.36.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.36.0...@cornerstonejs/core@0.36.1) (2023-03-17)
+
+
+### Bug Fixes
+
+* Build issue caused by import changes ([#484](https://github.com/cornerstonejs/cornerstone3D-beta/issues/484)) ([d79cd58](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d79cd582843661cd8cb8c56fea55a9b1c68fd64b))
+
+
+
+
+
+# [0.36.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.35.2...@cornerstonejs/core@0.36.0) (2023-03-16)
+
+
+### Features
+
+* **volume3d:** add orientation to volume viewport 3d ([#482](https://github.com/cornerstonejs/cornerstone3D-beta/issues/482)) ([55d7f44](https://github.com/cornerstonejs/cornerstone3D-beta/commit/55d7f440a5c75f451e7c893665d1c3d5de2cab2e))
+
+
+
+
+
+## [0.35.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.35.1...@cornerstonejs/core@0.35.2) (2023-03-16)
+
+
+### Bug Fixes
+
+* **stackViewport:** check same image was broken after 16 bit texture ([#483](https://github.com/cornerstonejs/cornerstone3D-beta/issues/483)) ([dddfb05](https://github.com/cornerstonejs/cornerstone3D-beta/commit/dddfb05cccc7ba6f8195b26f4f13c755397731ee))
+
+
+
+
+
+## [0.35.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.35.0...@cornerstonejs/core@0.35.1) (2023-03-15)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+
+
+
+
+# [0.35.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.34.0...@cornerstonejs/core@0.35.0) (2023-03-13)
+
+
+### Features
+
+* **rendering:** 16 bit texture support with flag ([#420](https://github.com/cornerstonejs/cornerstone3D-beta/issues/420)) ([f14073e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f14073e13836e33f85a1cf7aec566ab782174def))
+
+
+
+
+
+# [0.34.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.2...@cornerstonejs/core@0.34.0) (2023-03-13)
+
+
+### Features
+
+* **cine:** added support for 4D volumes ([#471](https://github.com/cornerstonejs/cornerstone3D-beta/issues/471)) ([4e62137](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4e62137004a340420d7c5c56c6ad5bebb7a8021c)), closes [#470](https://github.com/cornerstonejs/cornerstone3D-beta/issues/470)
+
+
+
+
+
+## [0.33.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.1...@cornerstonejs/core@0.33.2) (2023-03-10)
+
+
+### Bug Fixes
+
+* **scroll:** Scrolling failed to find the volume with segmentation ([#470](https://github.com/cornerstonejs/cornerstone3D-beta/issues/470)) ([79b8c96](https://github.com/cornerstonejs/cornerstone3D-beta/commit/79b8c96f111563dd0850f72d89e7c43e8b0cbd5c))
+
+
+
+
+
+## [0.33.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.33.0...@cornerstonejs/core@0.33.1) (2023-03-06)
+
+
+### Bug Fixes
+
+* **voi:** stack viewport should prioritize image metadata for windowlevel and not persist ([#454](https://github.com/cornerstonejs/cornerstone3D-beta/issues/454)) ([420c812](https://github.com/cornerstonejs/cornerstone3D-beta/commit/420c8121cb0cdc4c321013ca807c6ca32901d7a6))
+
+
+
+
+
+# [0.33.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.32.0...@cornerstonejs/core@0.33.0) (2023-03-03)
+
+
+### Features
+
+* **dicomImageLoader types:** Add types to the dicom image loader ([#441](https://github.com/cornerstonejs/cornerstone3D-beta/issues/441)) ([10a3370](https://github.com/cornerstonejs/cornerstone3D-beta/commit/10a3370b7f23084d1f2c55506079c17dea959659)), closes [#449](https://github.com/cornerstonejs/cornerstone3D-beta/issues/449) [#450](https://github.com/cornerstonejs/cornerstone3D-beta/issues/450)
+
+
+
+
+
+# [0.32.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.31.2...@cornerstonejs/core@0.32.0) (2023-02-28)
+
+
+### Features
+
+* **4D:** added support for 4D data rendering ([#438](https://github.com/cornerstonejs/cornerstone3D-beta/issues/438)) ([975e596](https://github.com/cornerstonejs/cornerstone3D-beta/commit/975e59629125fbf0ba5ea676fa14b71a2b30ca44))
+
+
+
+
+
+## [0.31.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.31.1...@cornerstonejs/core@0.31.2) (2023-02-23)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+
+
+
+
+## [0.31.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.31.0...@cornerstonejs/core@0.31.1) (2023-02-22)
+
+
+### Bug Fixes
+
+* **voi:** linear transfer function for volume viewport([#444](https://github.com/cornerstonejs/cornerstone3D-beta/issues/444)) ([dcec5eb](https://github.com/cornerstonejs/cornerstone3D-beta/commit/dcec5ebafe3ba929735685a443ff28fe348c09c0))
+
+
+
+
+
 # [0.31.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.30.1...@cornerstonejs/core@0.31.0) (2023-02-13)
 
 

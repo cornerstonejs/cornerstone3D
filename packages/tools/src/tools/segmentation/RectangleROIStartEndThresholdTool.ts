@@ -135,6 +135,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       viewPlaneNormal
     );
 
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -142,7 +144,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         enabledElement,
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
         toolName: this.getToolName(),
         volumeId,
@@ -180,7 +182,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // computed for later export
     this._computeProjectionPoints(annotation, imageVolume);
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -304,16 +306,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const annotations = getAnnotations(
-      enabledElement.viewport.element,
-      this.getToolName()
-    );
+    const { viewport } = enabledElement;
+
+    const annotations = getAnnotations(this.getToolName(), viewport.element);
 
     if (!annotations?.length) {
       return renderStatus;
     }
 
-    const { viewport } = enabledElement;
     const sliceIndex = viewport.getCurrentImageIdIndex();
 
     const styleSpecifier: StyleSpecifier = {

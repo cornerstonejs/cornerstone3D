@@ -455,22 +455,16 @@ class Cache implements ICache {
 
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId);
+      const { volume } = cachedVolume;
 
-      if (!cachedVolume.volume) {
+      if (!volume?.imageIds?.length) {
         return;
       }
 
-      let { imageIds } = cachedVolume.volume;
+      const imageIdIndex = volume.getImageURIIndex(imageIdToUse);
 
-      if (!imageIds || imageIds.length === 0) {
-        continue;
-      }
-
-      imageIds = imageIds.map((id) => imageIdToURI(id));
-
-      const imageIdIndex = imageIds.indexOf(imageIdToUse);
       if (imageIdIndex > -1) {
-        return { volume: cachedVolume.volume, imageIdIndex };
+        return { volume, imageIdIndex };
       }
     }
   }

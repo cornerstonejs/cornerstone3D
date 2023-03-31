@@ -5,13 +5,20 @@ import {
   imageLoader,
   imageLoadPoolManager,
   getShouldUseSharedArrayBuffer,
+  getConfiguration,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import { makeVolumeMetadata, sortImageIdsAndGetSpacing } from './helpers';
 import StreamingImageVolume from './StreamingImageVolume';
 
-const { createUint8SharedArray, createFloat32SharedArray } = utilities;
+const {
+  createUint8SharedArray,
+  createFloat32SharedArray,
+  createUint16SharedArray,
+  createInt16SharedArray,
+} = utilities;
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -42,6 +49,10 @@ function cornerstoneStreamingImageVolumeLoader(
       'ImageIds must be provided to create a streaming image volume'
     );
   }
+
+  const { useNorm16Texture, preferSizeOverAccuracy } =
+    getConfiguration().rendering;
+  const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
 
   async function getStreamingImageVolume() {
     /**
@@ -86,6 +97,19 @@ function cornerstoneStreamingImageVolumeLoader(
 
     const volumeMetadata = makeVolumeMetadata(imageIds);
 
+    // For a streaming volume, the data type cannot rely on cswil to load
+    // the proper array buffer type. This is because the target buffer container
+    // must be decided ahead of time.
+    // TODO: move this logic into CSWIL to avoid logic duplication.
+    // We check if scaling parameters are negative we choose Int16 instead of
+    // Uint16 for cases where BitsAllocated is 16.
+    const imageIdIndex = Math.floor(imageIds.length / 2);
+    const imageId = imageIds[imageIdIndex];
+    const scalingParameters = csUtils.getScalingParameters(imageId);
+    const hasNegativeRescale =
+      scalingParameters.rescaleIntercept < 0 ||
+      scalingParameters.rescaleSlope < 0;
+
     const {
       BitsAllocated,
       PixelRepresentation,
@@ -127,60 +151,77 @@ function cornerstoneStreamingImageVolumeLoader(
       ...scanAxisNormal,
     ] as Types.Mat3;
     const signed = PixelRepresentation === 1;
-
-    // Check if it fits in the cache before we allocate data
-    // TODO Improve this when we have support for more types
-    // NOTE: We use 4 bytes per voxel as we are using Float32.
-    const bytesPerVoxel = BitsAllocated === 16 ? 4 : 1;
-    const sizeInBytesPerComponent =
-      bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2];
-
-    let numComponents = 1;
-    if (PhotometricInterpretation === 'RGB') {
-      numComponents = 3;
-    }
-
-    const sizeInBytes = sizeInBytesPerComponent * numComponents;
-
-    // check if there is enough space in unallocated + image Cache
-    const isCacheable = cache.isCacheable(sizeInBytes);
-    if (!isCacheable) {
-      throw new Error(Enums.Events.CACHE_SIZE_EXCEEDED);
-    }
-
-    cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
-
+    const numComponents = PhotometricInterpretation === 'RGB' ? 3 : 1;
     const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();
     const length = dimensions[0] * dimensions[1] * dimensions[2];
+    const handleCache = (sizeInBytes) => {
+      if (!cache.isCacheable(sizeInBytes)) {
+        throw new Error(Enums.Events.CACHE_SIZE_EXCEEDED);
+      }
+      cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
+    };
 
-    let scalarData;
+    let scalarData, sizeInBytes;
     switch (BitsAllocated) {
       case 8:
         if (signed) {
           throw new Error(
             '8 Bit signed images are not yet supported by this plugin.'
           );
-        } else {
-          scalarData = useSharedArrayBuffer
-            ? createUint8SharedArray(length)
-            : new Uint8Array(length);
         }
-
+        sizeInBytes = length;
+        handleCache(sizeInBytes);
+        scalarData = useSharedArrayBuffer
+          ? createUint8SharedArray(length)
+          : new Uint8Array(length);
         break;
 
       case 16:
+        // Temporary fix for 16 bit images to use Float32
+        // until the new dicom image loader handler the conversion
+        // correctly
+        if (!use16BitDataType) {
+          sizeInBytes = length * 4;
+          scalarData = useSharedArrayBuffer
+            ? createFloat32SharedArray(length)
+            : new Float32Array(length);
+
+          break;
+        }
+
+        sizeInBytes = length * 2;
+        if (signed || hasNegativeRescale) {
+          handleCache(sizeInBytes);
+          scalarData = useSharedArrayBuffer
+            ? createInt16SharedArray(length)
+            : new Int16Array(length);
+          break;
+        }
+
+        if (!signed && !hasNegativeRescale) {
+          handleCache(sizeInBytes);
+          scalarData = useSharedArrayBuffer
+            ? createUint16SharedArray(length)
+            : new Uint16Array(length);
+          break;
+        }
+
+        // Default to Float32 again
+        sizeInBytes = length * 4;
+        handleCache(sizeInBytes);
         scalarData = useSharedArrayBuffer
           ? createFloat32SharedArray(length)
           : new Float32Array(length);
-
         break;
 
       case 24:
+        sizeInBytes = length * numComponents;
+        handleCache(sizeInBytes);
+
         // hacky because we don't support alpha channel in dicom
         scalarData = useSharedArrayBuffer
           ? createUint8SharedArray(length * numComponents)
           : new Uint8Array(length * numComponents);
-
         break;
     }
 
@@ -203,6 +244,7 @@ function cornerstoneStreamingImageVolumeLoader(
           // todo: loading and loaded should be on ImageVolume
           loaded: false,
           loading: false,
+          cancelled: false,
           cachedFrames: [],
           callbacks: [],
         },
@@ -218,8 +260,7 @@ function cornerstoneStreamingImageVolumeLoader(
     promise: streamingImageVolumePromise,
     decache: () => {
       streamingImageVolumePromise.then((streamingImageVolume) => {
-        streamingImageVolume.vtkOpenGLTexture.delete();
-        streamingImageVolume.scalarData = null;
+        streamingImageVolume.destroy();
         streamingImageVolume = null;
       });
     },

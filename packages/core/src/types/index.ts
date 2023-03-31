@@ -1,12 +1,13 @@
 // @see: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#-type-only-imports-and-export
-
+import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
-import type IVolume from './IVolume';
+import type { IVolume, VolumeScalarData } from './IVolume';
 import type { VOI, VOIRange } from './voi';
 import type ImageLoaderFn from './ImageLoaderFn';
 import type IImageVolume from './IImageVolume';
+import type IDynamicImageVolume from './IDynamicImageVolume';
 import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
@@ -74,14 +75,19 @@ import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 
 export type {
+  // config
+  Cornerstone3DConfig,
+  //
   ICamera,
   IStackViewport,
   IVolumeViewport,
   IEnabledElement,
   ICache,
   IVolume,
+  VolumeScalarData,
   IViewportId,
   IImageVolume,
+  IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
   PTScaling,

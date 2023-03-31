@@ -23,12 +23,13 @@ const REQUEST_TYPE = RequestType.Prefetch;
  */
 async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
-  imageVolume: IImageVolume
+  imageVolume: IImageVolume,
+  use16BitTexture: boolean
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
 
   if (!voi) {
-    voi = await getVOIFromMinMax(imageVolume);
+    voi = await getVOIFromMinMax(imageVolume, use16BitTexture);
   }
 
   if (!voi || voi.lower === undefined || voi.upper === undefined) {
@@ -114,8 +115,12 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * @param imageVolume - The image volume that we want to get the VOI from.
  * @returns The VOIRange with lower and upper values
  */
-async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
-  const { scalarData, imageIds } = imageVolume;
+async function getVOIFromMinMax(
+  imageVolume: IImageVolume,
+  use16BitTexture: boolean
+): Promise<VOIRange> {
+  const { imageIds } = imageVolume;
+  const scalarData = imageVolume.getScalarData();
 
   // Get the middle image from the list of imageIds
   const imageIdIndex = Math.floor(imageIds.length / 2);
@@ -129,16 +134,6 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
   const bytesPerImage = scalarData.byteLength / numImages;
   const voxelsPerImage = scalarData.length / numImages;
   const bytePerPixel = scalarData.BYTES_PER_ELEMENT;
-
-  let type;
-
-  if (scalarData instanceof Uint8Array) {
-    type = 'Uint8Array';
-  } else if (scalarData instanceof Float32Array) {
-    type = 'Float32Array';
-  } else {
-    throw new Error('Unsupported array type');
-  }
 
   const scalingParameters: ScalingParameters = {
     rescaleSlope: modalityLutModule.rescaleSlope,
@@ -162,10 +157,7 @@ async function getVOIFromMinMax(imageVolume: IImageVolume): Promise<VOIRange> {
 
   const options = {
     targetBuffer: {
-      arrayBuffer: scalarData.buffer,
-      offset: byteOffset,
-      length: voxelsPerImage,
-      type,
+      type: use16BitTexture ? undefined : 'Float32Array',
     },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,

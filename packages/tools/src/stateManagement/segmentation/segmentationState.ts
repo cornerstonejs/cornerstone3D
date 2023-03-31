@@ -1,10 +1,3 @@
-import { defaultSegmentationStateManager } from './SegmentationStateManager';
-import {
-  triggerSegmentationRepresentationModified,
-  triggerSegmentationModified,
-  triggerSegmentationRepresentationRemoved,
-  triggerSegmentationRemoved,
-} from './triggerSegmentationEvents';
 import type {
   ColorLUT,
   RepresentationConfig,
@@ -15,10 +8,15 @@ import type {
   ToolGroupSpecificRepresentation,
   ToolGroupSpecificRepresentations,
 } from '../../types/SegmentationStateTypes';
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import {
+  triggerSegmentationModified,
+  triggerSegmentationRemoved,
+  triggerSegmentationRepresentationModified,
+  triggerSegmentationRepresentationRemoved,
+} from './triggerSegmentationEvents';
 
 import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
-import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
-import { SegmentationRepresentations } from '../../enums';
 
 /**
  * It returns the defaultSegmentationStateManager.
@@ -385,21 +383,7 @@ function addColorLUT(colorLUT: ColorLUT, index: number): void {
   // Todo: trigger event color LUT added
 }
 
-// Initialize the default configuration
-// Note: when we get other representations, we should set their default representations too.
-const defaultLabelmapConfig = getDefaultLabelmapConfig();
-
-const newGlobalConfig: SegmentationRepresentationConfig = {
-  renderInactiveSegmentations: true,
-  representations: {
-    [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
-  },
-};
-
-setGlobalConfig(newGlobalConfig, true);
-
 export {
-  // state manager
   getDefaultSegmentationStateManager,
   // Segmentation
   getSegmentation,

@@ -108,6 +108,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     );
 
     const { arrowFirst } = this.configuration;
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     const annotation = {
       highlighted: true,
@@ -116,7 +117,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         toolName: this.getToolName(),
         viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
         viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+        FrameOfReferenceUID,
         referencedImageId,
       },
       data: {
@@ -140,7 +141,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       },
     };
 
-    addAnnotation(element, annotation);
+    addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -315,13 +316,13 @@ class ArrowAnnotateTool extends AnnotationTool {
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
     ) {
-      removeAnnotation(annotation.annotationUID, element);
+      removeAnnotation(annotation.annotationUID);
     }
 
     if (newAnnotation) {
       this.configuration.getTextCallback((text) => {
         if (!text) {
-          removeAnnotation(annotation.annotationUID, element);
+          removeAnnotation(annotation.annotationUID);
           triggerAnnotationRenderForViewportIds(
             renderingEngine,
             viewportIdsToRender
@@ -412,15 +413,14 @@ class ArrowAnnotateTool extends AnnotationTool {
   doubleClickCallback = (evt: EventTypes.TouchTapEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     annotations = this.filterInteractableAnnotationsForElement(
       element,
       annotations
     );
 
-    if (!annotations) {
+    if (!annotations?.length) {
       return;
     }
 
@@ -659,7 +659,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    let annotations = getAnnotations(element, this.getToolName());
+    let annotations = getAnnotations(this.getToolName(), element);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
     if (!annotations?.length) {

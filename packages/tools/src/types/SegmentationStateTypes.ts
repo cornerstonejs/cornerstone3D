@@ -1,9 +1,13 @@
 import * as Enums from '../enums';
-import { ContourConfig, ContourSegmentationData } from './ContourTypes';
+import {
+  ContourConfig,
+  ContourRenderingConfig,
+  ContourSegmentationData,
+} from './ContourTypes';
 import type {
   LabelmapConfig,
-  LabelmapSegmentationData,
   LabelmapRenderingConfig,
+  LabelmapSegmentationData,
 } from './LabelmapTypes';
 
 /**
@@ -18,11 +22,8 @@ export type Color = [number, number, number, number];
 export type ColorLUT = Array<Color>;
 
 export type SegmentSpecificRepresentationConfig = {
-  [key: number]: RepresentationConfig;
+  [key: number | string]: RepresentationConfig;
 };
-/**
- * Segmentation Config
- */
 
 export type RepresentationConfig = {
   /** labelmap configuration */
@@ -67,6 +68,7 @@ export type Segmentation = {
    * If there is any derived statistics for the segmentation (e.g., mean, volume, etc)
    */
   cachedStats: { [key: string]: number };
+  segmentLabels: { [key: string]: string };
   /**
    * Representations of the segmentation. Each segmentation "can" be viewed
    * in various representations. For instance, if a DICOM SEG is loaded, the main
@@ -104,10 +106,6 @@ export type ToolGroupSpecificRepresentationState = {
    */
   segmentsHidden: Set<number>;
   /**
-   * Whether the segmentation is visible
-   */
-  visibility: boolean;
-  /**
    * The index of the colorLUT from the state that this segmentationData is
    * using to render
    */
@@ -129,13 +127,14 @@ export type ToolGroupSpecificLabelmapRepresentation =
 
 export type ToolGroupSpecificContourRepresentation =
   ToolGroupSpecificRepresentationState & {
-    config: LabelmapRenderingConfig;
+    config: ContourRenderingConfig;
     segmentationRepresentationSpecificConfig?: RepresentationConfig;
     segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
   };
 
 export type ToolGroupSpecificRepresentation =
-  ToolGroupSpecificLabelmapRepresentation; // | other ones
+  | ToolGroupSpecificLabelmapRepresentation
+  | ToolGroupSpecificContourRepresentation;
 
 export type ToolGroupSpecificRepresentations =
   Array<ToolGroupSpecificRepresentation>;
@@ -197,10 +196,22 @@ export type ToolGroupSpecificRepresentations =
  *           colorLUTIndex: 0,
  *           visibility: true,
  *           segmentsHidden: Set(),
- *           // LabelmapRenderingConfig
+ *           // rendering config
  *           config: {
  *             "cfun",
  *             "ofun",
+ *           },
+ *           // segmentation representation specific config, has priority over the one in the outer scope
+ *           segmentationRepresentationSpecificConfig: {
+ *             LABELMAP: {
+ *               renderFill: true,
+ *             }
+ *           }
+ *           // segment specific config
+ *           segmentSpecificConfig: {
+ *             1: {
+ *              renderFill: false,
+ *              }
  *           },
  *         },
  *       ],

@@ -1,6 +1,5 @@
 import { metaData } from '@cornerstonejs/core';
 import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
-
 /**
  * preloads imageIds metadata in memory
  **/

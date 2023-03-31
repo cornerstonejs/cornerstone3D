@@ -87,25 +87,23 @@ type Annotation = {
 /** Array of annotations */
 type Annotations = Array<Annotation>;
 
-/** FrameOfReferenceSpecificAnnotations which has all annotations from all
- * tools for the each frame of reference.
- */
-type FrameOfReferenceSpecificAnnotations = {
+type GroupSpecificAnnotations = {
   /** Each tool annotations */
-  [key: string]: Annotations;
+  [toolName: string]: Annotations;
 };
 
 /**
  * All frame of reference specific annotations for all tools.
  */
 type AnnotationState = {
-  // Any string key must have type of FrameOfReferenceSpecificAnnotations
-  [key: string]: FrameOfReferenceSpecificAnnotations;
+  /**
+   * A string representing the key that can be used
+   * to retrieve the key-specific annotations. For instance, our default
+   * annotation state key is the FrameOfReferenceUID which is for our default
+   * frameOfReferenceAnnotationManager. You can write your own annotation manager
+   * that works for a different use case and use a different key.
+   */
+  [key: string]: GroupSpecificAnnotations;
 };
 
-export {
-  FrameOfReferenceSpecificAnnotations,
-  AnnotationState,
-  Annotations,
-  Annotation,
-};
+export { Annotation, Annotations, GroupSpecificAnnotations, AnnotationState };

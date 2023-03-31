@@ -177,7 +177,7 @@ class AnnotationRenderingEngine {
     };
 
     // const enabledToolsWithAnnotations = enabledTools.filter((tool) => {
-    //   const annotations = getAnnotations(element, tool.getToolName());
+    //   const annotations = getAnnotations(tool.getToolName(), {FrameOfReferenceUID});
     //   return annotations && annotations.length;
     // });
 

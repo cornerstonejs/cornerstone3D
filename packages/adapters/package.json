@@ -1,9 +1,10 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "0.3.0",
+    "version": "0.6.0",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "src": "src/index.ts",
-    "main": "src/index.ts",
+    "main": "./dist/@cornerstonejs/adapters.es.js",
+    "module": "src/index.ts",
     "files": [
         "dist"
     ],
@@ -23,6 +24,7 @@
         "build": "rollup -c rollup.config.mjs",
         "build:all": "yarn build",
         "build:examples": "npm run build && npx cpx 'dist/**/*.{js,map}' examples/js",
+        "build:update-api": "yarn run build && api-extractor run --local",
         "start": "rollup -c -w",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."
@@ -39,7 +41,7 @@
     "homepage": "https://github.com/cornerstonejs/cornerstone3D-beta/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "dcmjs": "^0.29.4",
+        "dcmjs": "^0.29.5",
         "gl-matrix": "^3.4.3",
         "lodash.clonedeep": "^4.5.0",
         "ndarray": "^1.0.19"

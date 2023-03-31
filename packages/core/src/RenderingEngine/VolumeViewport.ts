@@ -1,20 +1,20 @@
-import { vec3 } from 'gl-matrix';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import { vec3 } from 'gl-matrix';
 
 import cache from '../cache';
-import transformWorldToIndex from '../utilities/transformWorldToIndex';
+import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import { BlendModes, OrientationAxis } from '../enums';
 import type {
-  Point3,
-  IVolumeInput,
   ActorEntry,
   IImageVolume,
+  IVolumeInput,
   OrientationVectors,
+  Point3,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import { RENDERING_DEFAULTS, MPR_CAMERA_VALUES, EPSILON } from '../constants';
-import { BlendModes, OrientationAxis } from '../enums';
-import BaseVolumeViewport from './BaseVolumeViewport';
 import { actorIsA } from '../utilities';
+import transformWorldToIndex from '../utilities/transformWorldToIndex';
+import BaseVolumeViewport from './BaseVolumeViewport';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -35,17 +35,7 @@ class VolumeViewport extends BaseVolumeViewport {
     // if the camera is set to be acquisition axis then we need to skip
     // it for now until the volume is set
     if (orientation && orientation !== OrientationAxis.ACQUISITION) {
-      const { viewPlaneNormal, viewUp } =
-        this._getOrientationVectors(orientation);
-      const camera = this.getVtkActiveCamera();
-      camera.setDirectionOfProjection(
-        -viewPlaneNormal[0],
-        -viewPlaneNormal[1],
-        -viewPlaneNormal[2]
-      );
-      camera.setViewUpFrom(viewUp);
-
-      this.resetCamera();
+      this.applyViewOrientation(orientation);
       return;
     }
 
@@ -144,31 +134,6 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
-  private _getOrientationVectors(
-    orientation: OrientationAxis | OrientationVectors
-  ): OrientationVectors {
-    if (typeof orientation === 'object') {
-      if (orientation.viewPlaneNormal && orientation.viewUp) {
-        return orientation;
-      } else {
-        throw new Error(
-          'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
-        );
-      }
-    } else if (
-      typeof orientation === 'string' &&
-      MPR_CAMERA_VALUES[orientation]
-    ) {
-      return MPR_CAMERA_VALUES[orientation];
-    } else {
-      throw new Error(
-        `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
-          MPR_CAMERA_VALUES
-        ).join(', ')}`
-      );
-    }
-  }
-
   private _getAcquisitionPlaneOrientation(): OrientationVectors {
     const actorEntry = this.getDefaultActor();
 
@@ -242,7 +207,7 @@ class VolumeViewport extends BaseVolumeViewport {
       index[1] * dimensions[0] +
       index[0];
 
-    return volume.scalarData[voxelIndex];
+    return volume.getScalarData()[voxelIndex];
   }
 
   public setBlendMode(

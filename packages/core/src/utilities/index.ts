@@ -13,6 +13,8 @@ import isEqual from './isEqual';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
+import createUint16SharedArray from './createUInt16SharedArray';
+import createInt16SharedArray from './createInt16SharedArray';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
@@ -25,6 +27,8 @@ import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvas from './renderToCanvas';
 import worldToImageCoords from './worldToImageCoords';
 import imageToWorldCoords from './imageToWorldCoords';
+import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
+import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
@@ -36,6 +40,9 @@ import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataPr
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
 import applyPreset from './applyPreset';
+import deepMerge from './deepMerge';
+import getScalingParameters from './getScalingParameters';
+import getScalarDataType from './getScalarDataType';
 
 // name spaces
 import * as planar from './planar';
@@ -58,6 +65,8 @@ export {
   isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,
+  createUint16SharedArray,
+  createInt16SharedArray,
   windowLevel,
   getClosestImageId,
   getSpacingInNormalDirection,
@@ -71,6 +80,8 @@ export {
   renderToCanvas,
   worldToImageCoords,
   imageToWorldCoords,
+  getVolumeSliceRangeInfo,
+  getVolumeViewportScrollInfo,
   getSliceRange,
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
@@ -83,4 +94,7 @@ export {
   getViewportImageCornersInWorld,
   hasNaNValues,
   applyPreset,
+  deepMerge,
+  getScalingParameters,
+  getScalarDataType,
 };

@@ -18,6 +18,7 @@ export type AnnotationStyle = {
 
 export type ToolStyleConfig = {
   [toolName: string]: AnnotationStyle;
+} & {
   global?: AnnotationStyle;
 };
 

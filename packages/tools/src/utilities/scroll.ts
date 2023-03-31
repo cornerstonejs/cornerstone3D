@@ -2,9 +2,11 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
+  eventTarget,
+  EVENTS,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { ScrollOptions } from '../types';
+import { ScrollOptions, EventTypes } from '../types';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
@@ -23,7 +25,7 @@ export default function scroll(
   const { volumeId, delta } = options;
 
   if (viewport instanceof StackViewport) {
-    viewport.scroll(delta, options.debounceLoading);
+    viewport.scroll(delta, options.debounceLoading, options.loop);
   } else if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta);
   } else {
@@ -36,29 +38,15 @@ export function scrollVolume(
   volumeId: string,
   delta: number
 ) {
-  const camera = viewport.getCamera();
+  const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
+    csUtils.getVolumeViewportScrollInfo(viewport, volumeId);
+
+  if (!sliceRangeInfo) {
+    return;
+  }
+
+  const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
   const { focalPoint, viewPlaneNormal, position } = camera;
-  const { spacingInNormalDirection, imageVolume } =
-    csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
-
-  if (!imageVolume) {
-    throw new Error(
-      `Could not find image volume with id ${volumeId} in the viewport`
-    );
-  }
-
-  const actorEntry = viewport.getActor(imageVolume.volumeId);
-
-  if (!actorEntry) {
-    console.warn('No actor found for with actorUID of', imageVolume.volumeId);
-  }
-
-  const volumeActor = actorEntry.actor as Types.VolumeActor;
-  const sliceRange = csUtils.getSliceRange(
-    volumeActor,
-    viewPlaneNormal,
-    focalPoint
-  );
 
   const { newFocalPoint, newPosition } = csUtils.snapFocalPointToSlice(
     focalPoint,
@@ -74,4 +62,30 @@ export function scrollVolume(
     position: newPosition,
   });
   viewport.render();
+
+  const desiredStepIndex = currentStepIndex + delta;
+
+  if (
+    (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
+    viewport.getCurrentImageId() // Check that we are in the plane of acquistion
+  ) {
+    // One common use case of this trigger might be to load the next
+    // volume in a time series or the next segment of a partially loaded volume.
+
+    const VolumeScrollEventDetail = {
+      volumeId,
+      viewport,
+      delta,
+      desiredStepIndex,
+      currentStepIndex,
+      numScrollSteps,
+      currentImageId: viewport.getCurrentImageId(),
+    };
+
+    csUtils.triggerEvent(
+      eventTarget,
+      EVENTS.VOLUME_SCROLL_OUT_OF_BOUNDS,
+      VolumeScrollEventDetail as EventTypes.VolumeScrollOutOfBoundsEventDetail
+    );
+  }
 }
