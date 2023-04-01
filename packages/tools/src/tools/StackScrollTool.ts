@@ -15,19 +15,30 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
 class StackScrollTool extends BaseTool {
   static toolName;
   deltaY: number;
+  deltaX: number;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         invert: false,
+        leftRightMode: false,
         debounceIfNotLoaded: true,
-        loop: false
+        loop: false,
+        stackScrollEnabled: true,
+        mipMode: {
+          enabled: true,
+          invert: false,
+          pixelsPerThickness: 5,
+          minSlabThickness: 5e-2,
+          maxSlabThickness: 30,
+        },
       },
     }
   ) {
     super(toolProps, defaultToolProps);
     this.deltaY = 1;
+    this.deltaX = 1;
   }
 
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
@@ -42,9 +53,16 @@ class StackScrollTool extends BaseTool {
     const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
 
     const targetId = this.getTargetId(viewport);
-    const { debounceIfNotLoaded, invert, loop } = this.configuration;
+    const {
+      debounceIfNotLoaded,
+      invert,
+      loop,
+      leftRightMode,
+      stackScrollEnabled,
+    } = this.configuration;
 
     const deltaPointY = deltaPoints.canvas[1];
+    const deltaPointX = deltaPoints.canvas[0];
 
     let volumeId;
     if (viewport instanceof VolumeViewport) {
@@ -53,24 +71,66 @@ class StackScrollTool extends BaseTool {
 
     const pixelsPerImage = this._getPixelPerImage(viewport);
     const deltaY = deltaPointY + this.deltaY;
+    const deltaX = deltaPointX + this.deltaX;
 
     if (!pixelsPerImage) {
       return;
     }
 
-    if (Math.abs(deltaY) >= pixelsPerImage) {
-      const imageIdIndexOffset = Math.round(deltaY / pixelsPerImage);
+    if (stackScrollEnabled && !leftRightMode) {
+      if (Math.abs(deltaY) >= pixelsPerImage) {
+        const imageIdIndexOffset = Math.round(deltaY / pixelsPerImage);
 
-      scroll(viewport, {
-        delta: invert ? -imageIdIndexOffset : imageIdIndexOffset,
-        volumeId,
-        debounceLoading: debounceIfNotLoaded,
-        loop: loop
-      });
+        scroll(viewport, {
+          delta: invert ? -imageIdIndexOffset : imageIdIndexOffset,
+          volumeId,
+          debounceLoading: debounceIfNotLoaded,
+          loop: loop,
+        });
 
-      this.deltaY = deltaY % pixelsPerImage;
-    } else {
-      this.deltaY = deltaY;
+        this.deltaY = deltaY % pixelsPerImage;
+      } else {
+        this.deltaY = deltaY;
+      }
+    }
+
+    if (stackScrollEnabled && leftRightMode) {
+      if (Math.abs(deltaX) >= pixelsPerImage) {
+        const imageIdIndexOffset = Math.round(deltaX / pixelsPerImage);
+
+        scroll(viewport, {
+          delta: invert ? -imageIdIndexOffset : imageIdIndexOffset,
+          volumeId,
+          debounceLoading: debounceIfNotLoaded,
+          loop: loop,
+        });
+
+        this.deltaX = deltaX % pixelsPerImage;
+      } else {
+        this.deltaX = deltaX;
+      }
+    }
+
+    const { mipMode } = this.configuration;
+    if (!mipMode?.enabled) return;
+    const { pixelsPerThickness, mipModeInvert } = mipMode;
+
+    if (mipMode?.enabled && leftRightMode) {
+      if (Math.abs(deltaY) >= pixelsPerThickness) {
+        this._triggerMIP(viewport, deltaY > 0 ? -1 : 1, mipModeInvert);
+        this.deltaY = deltaY % pixelsPerThickness;
+      } else {
+        this.deltaY = deltaY;
+      }
+    }
+
+    if (mipMode?.enabled && !leftRightMode) {
+      if (Math.abs(deltaX) >= pixelsPerThickness) {
+        this._triggerMIP(viewport, deltaX > 0 ? 1 : -1, mipModeInvert);
+        this.deltaX = deltaX % pixelsPerThickness;
+      } else {
+        this.deltaX = deltaX;
+      }
     }
   }
 
@@ -89,6 +149,28 @@ class StackScrollTool extends BaseTool {
       return numberOfSlices;
     } else if (viewport instanceof StackViewport) {
       return viewport.getImageIds().length;
+    }
+  }
+
+  _triggerMIP(viewport, delta, invert) {
+    const inversionValue = invert ? -1 : 1;
+    const { minSlabThickness, maxSlabThickness } = this.configuration.mipMode;
+    if (viewport instanceof VolumeViewport) {
+      const slabThickness = Math.min(
+        maxSlabThickness,
+        viewport.getSlabThickness() + inversionValue * delta
+      );
+      if (slabThickness <= minSlabThickness) {
+        viewport.setBlendMode(0);
+        viewport.setSlabThickness(minSlabThickness);
+        viewport.render();
+      } else {
+        viewport.setBlendMode(1);
+        viewport.setSlabThickness(
+          slabThickness >= maxSlabThickness ? maxSlabThickness : slabThickness
+        );
+        viewport.render();
+      }
     }
   }
 }
