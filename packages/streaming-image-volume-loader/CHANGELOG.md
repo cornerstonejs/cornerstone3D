@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.16.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.14...@cornerstonejs/streaming-image-volume-loader@0.16.0) (2023-04-01)
+
+
+### Features
+
+* **VolumeViewport:** Add optional flag to assume fallbacks for ZSpacing for volumes ([#435](https://github.com/cornerstonejs/cornerstone3D-beta/issues/435)) ([162f78a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/162f78a5dc45a4182ffd2edbdcbcdcb2a37e101d))
+
+
+
+
+
 ## [0.15.14](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.15.13...@cornerstonejs/streaming-image-volume-loader@0.15.14) (2023-03-30)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

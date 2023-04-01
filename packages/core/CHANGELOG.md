@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.40.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.39.0...@cornerstonejs/core@0.40.0) (2023-04-01)
+
+
+### Features
+
+* **VolumeViewport:** Add optional flag to assume fallbacks for ZSpacing for volumes ([#435](https://github.com/cornerstonejs/cornerstone3D-beta/issues/435)) ([162f78a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/162f78a5dc45a4182ffd2edbdcbcdcb2a37e101d))
+
+
+
+
+
 # [0.39.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.38.0...@cornerstonejs/core@0.39.0) (2023-03-30)
 
 
