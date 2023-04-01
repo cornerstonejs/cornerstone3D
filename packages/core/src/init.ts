@@ -13,6 +13,7 @@ const defaultConfig = {
     preferSizeOverAccuracy: false,
     useCPURendering: false,
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    strictZSpacingForVolumeViewport: true,
   },
   // cache
   // ...
@@ -24,6 +25,7 @@ let config = {
     preferSizeOverAccuracy: false,
     useCPURendering: false,
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    strictZSpacingForVolumeViewport: true,
   },
   // cache
   // ...

@@ -41,7 +41,6 @@ export default async function createImageIdsAndCacheMetaData({
   const client = new api.DICOMwebClient({ url: wadoRsRoot });
   const instances = await client.retrieveSeriesMetadata(studySearchOptions);
   const modality = instances[0][MODALITY].Value[0];
-
   let imageIds = instances.map((instanceMetaData) => {
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
     const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
