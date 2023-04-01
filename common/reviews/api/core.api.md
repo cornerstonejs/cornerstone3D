@@ -193,6 +193,7 @@ type Cornerstone3DConfig = {
         preferSizeOverAccuracy: boolean;
         useNorm16Texture: boolean;
         useCPURendering: boolean;
+        strictZSpacingForVolumeViewport: boolean;
     };
 };
 

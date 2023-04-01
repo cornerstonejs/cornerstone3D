@@ -924,6 +924,7 @@ type Cornerstone3DConfig = {
         // https://bugs.webkit.org/show_bug.cgi?id=252039
         useNorm16Texture: boolean;
         useCPURendering: boolean;
+        strictZSpacingForVolumeViewport: boolean;
     };
 };
 
