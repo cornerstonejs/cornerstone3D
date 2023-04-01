@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { metaData } from '@cornerstonejs/core';
+import { metaData, getConfiguration } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 type SortedImageIdsItem = {
@@ -131,11 +131,13 @@ export default function sortImageIdsAndGetSpacing(
     sortedImageIds[0]
   );
 
+  const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
+
   // We implemented these lines for multiframe dicom files that does not have
   // position for each frame, leading to incorrect calculation of zSpacing = 0
   // If possible, we use the sliceThickness, but we warn about this dicom file
   // weirdness. If sliceThickness is not available, we set to 1 just to render
-  if (zSpacing === 0) {
+  if (zSpacing === 0 && !strictZSpacingForVolumeViewport) {
     if (sliceThickness) {
       console.log('Could not calculate zSpacing. Using sliceThickness');
       zSpacing = sliceThickness;
