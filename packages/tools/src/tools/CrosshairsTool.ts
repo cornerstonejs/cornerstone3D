@@ -181,6 +181,28 @@ class CrosshairsTool extends AnnotationTool {
       defaultReferenceLineSlabThicknessControlsOn;
   }
 
+  resetAnnotations = () => {
+    const viewportsInfo = this._getViewportsInfo();
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      const { viewport } = enabledElement;
+      const { element } = viewport;
+      let annotations = this._getAnnotations(enabledElement);
+      annotations = this.filterInteractableAnnotationsForElement(
+        element,
+        annotations
+      );
+      if (annotations.length) {
+        removeAnnotation(annotations[0].annotationUID);
+      }
+    });
+
+    this.computeToolCenter(viewportsInfo);
+  };
+
   /**
    * Gets the camera from the viewport, and adds crosshairs annotation for the viewport
    * to the annotationManager. If any annotation is found in the annotationManager, it
