@@ -53,7 +53,7 @@ export function updateContourSets(
   const segmentsToSetToVisible = [];
 
   for (const segmentIndex of segmentsHidden) {
-    if (!cachedConfig?.segmentsHidden.has(segmentIndex)) {
+    if (!cachedConfig.segmentsHidden.has(segmentIndex)) {
       segmentsToSetToInvisible.push(segmentIndex);
     }
   }
@@ -64,7 +64,12 @@ export function updateContourSets(
       segmentsToSetToVisible.push(segmentIndex);
     }
   }
-  if (segmentsToSetToInvisible.length || segmentsToSetToVisible.length) {
+
+  const mergedInvisibleSegments = Array.from(cachedConfig.segmentsHidden)
+    .filter((segmentIndex) => !segmentsToSetToVisible.includes(segmentIndex))
+    .concat(segmentsToSetToInvisible);
+
+  if (mergedInvisibleSegments.length || segmentsToSetToVisible.length) {
     const appendPolyData = vtkAppendPolyData.newInstance();
 
     geometryIds.forEach((geometryId) => {
@@ -72,7 +77,7 @@ export function updateContourSets(
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
       const color = contourSet.getColor();
-      const visibility = segmentsToSetToInvisible.includes(segmentIndex)
+      const visibility = mergedInvisibleSegments.includes(segmentIndex)
         ? 0
         : 255;
       const polyData = getPolyData(contourSet);
