@@ -1,6 +1,7 @@
 import isTypedArray from '../../utilities/isTypedArray';
 import { imageIdToURI } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import {
   IVolume,
   VolumeScalarData,
@@ -50,7 +51,7 @@ export class ImageVolume implements IImageVolume {
   /** volume number of voxels */
   numVoxels: number;
   /** volume image data */
-  imageData?: any;
+  imageData?: vtkImageData;
   /** open gl texture for the volume */
   vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
   /** load status object for the volume */
@@ -147,7 +148,12 @@ export class ImageVolume implements IImageVolume {
    * destroy the volume and make it unusable
    */
   destroy(): void {
+    // TODO: GPU memory associated with volume is not cleared.
+    this.vtkOpenGLTexture.releaseGraphicsResources();
+    this.vtkOpenGLTexture.destroyTexture();
     this.vtkOpenGLTexture.delete();
+    this.imageData.delete();
+    this.imageData = null;
     this.scalarData = null;
   }
 }
