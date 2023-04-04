@@ -52,12 +52,7 @@ export function addContourSetsToElement(
 
     const contourSet = geometry.data;
 
-    let polyData = contourSet.getPolyData();
-
-    if (!polyData) {
-      polyData = getPolyData(contourSet);
-      contourSet.setPolyData(polyData);
-    }
+    const polyData = getPolyData(contourSet);
 
     const color = contourSet.getColor();
 

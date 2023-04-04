@@ -100,19 +100,14 @@ export function updateContourSets(
 
   if (affectedSegments.length || hasCustomSegmentSpecificConfig) {
     const appendPolyData = mapper.getInputData();
-    const appendScalarData = appendPolyData
-      .getPointData()
-      .getScalars()
-      .getData();
+    const appendScalars = appendPolyData.getPointData().getScalars();
+    const appendScalarsData = appendScalars.getData();
     // below we will only manipulate the polyData of the contourSets that are affected
     // by picking the correct offset in the scalarData array
-
-    contourSets.forEach((contourSet, index) => {
+    let offset = 0;
+    contourSets.forEach((contourSet) => {
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      // const polyData = contourSet.getPolyData();
       const size = contourSet.getTotalNumberOfPoints();
-      // const scalars = polyData.getPointData().getScalars();
-      // const scalarData = scalars.getData();
 
       if (
         affectedSegments.includes(segmentIndex) ||
@@ -128,26 +123,21 @@ export function updateContourSets(
           visibility = segmentConfig.fillAlpha * 255;
         }
 
-        const offset = index * size * 4;
-
         for (let i = 0; i < size; ++i) {
-          appendScalarData[offset + i * 4] = color[0];
-          appendScalarData[offset + i * 4 + 1] = color[1];
-          appendScalarData[offset + i * 4 + 2] = color[2];
-          appendScalarData[offset + i * 4 + 3] = visibility;
+          appendScalarsData[offset + i * 4] = color[0];
+          appendScalarsData[offset + i * 4 + 1] = color[1];
+          appendScalarsData[offset + i * 4 + 2] = color[2];
+          appendScalarsData[offset + i * 4 + 3] = visibility;
         }
 
         polyDataModified = true;
       }
+
+      offset = offset + size * 4;
     });
 
     if (polyDataModified) {
       appendPolyData.modified();
-      mapper.setInputData(appendPolyData);
-      mapper.modified();
-      actor.modified();
-      // viewport.removeActors([contourActorUID]);
-      viewport.render();
     }
 
     setConfigCache(
