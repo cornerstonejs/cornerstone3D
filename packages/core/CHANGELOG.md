@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.40.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.40.0...@cornerstonejs/core@0.40.1) (2023-04-04)
+
+
+### Bug Fixes
+
+* **memory:** memory leak on deletion ([#531](https://github.com/cornerstonejs/cornerstone3D-beta/issues/531)) ([5788300](https://github.com/cornerstonejs/cornerstone3D-beta/commit/578830013cb7b9474166dfe1f469f7908b39aabe))
+
+
+
+
+
 # [0.40.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.39.0...@cornerstonejs/core@0.40.0) (2023-04-01)
 
 
