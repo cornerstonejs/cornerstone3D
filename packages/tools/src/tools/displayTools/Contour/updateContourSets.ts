@@ -96,15 +96,23 @@ export function updateContourSets(
     segmentSpecificConfigs
   ).some((config) => Object.keys(config).length > 0);
 
-  if (affectedSegments.length || hasCustomSegmentSpecificConfig) {
-    const appendPolyData = vtkAppendPolyData.newInstance();
+  let polyDataModified = false;
 
-    contourSets.forEach((contourSet) => {
+  if (affectedSegments.length || hasCustomSegmentSpecificConfig) {
+    const appendPolyData = mapper.getInputData();
+    const appendScalarData = appendPolyData
+      .getPointData()
+      .getScalars()
+      .getData();
+    // below we will only manipulate the polyData of the contourSets that are affected
+    // by picking the correct offset in the scalarData array
+
+    contourSets.forEach((contourSet, index) => {
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const polyData = contourSet.getPolyData();
-      const size = polyData.getPoints().getNumberOfPoints();
-      const scalars = polyData.getPointData().getScalars();
-      const scalarData = scalars.getData();
+      // const polyData = contourSet.getPolyData();
+      const size = contourSet.getTotalNumberOfPoints();
+      // const scalars = polyData.getPointData().getScalars();
+      // const scalarData = scalars.getData();
 
       if (
         affectedSegments.includes(segmentIndex) ||
@@ -120,23 +128,27 @@ export function updateContourSets(
           visibility = segmentConfig.fillAlpha * 255;
         }
 
+        const offset = index * size * 4;
+
         for (let i = 0; i < size; ++i) {
-          scalarData[i * 4] = color[0];
-          scalarData[i * 4 + 1] = color[1];
-          scalarData[i * 4 + 2] = color[2];
-          scalarData[i * 4 + 3] = visibility;
+          appendScalarData[offset + i * 4] = color[0];
+          appendScalarData[offset + i * 4 + 1] = color[1];
+          appendScalarData[offset + i * 4 + 2] = color[2];
+          appendScalarData[offset + i * 4 + 3] = visibility;
         }
 
-        polyData.getPointData().setScalars(scalars);
+        polyDataModified = true;
       }
-
-      segmentIndex === 0
-        ? appendPolyData.setInputData(polyData)
-        : appendPolyData.addInputData(polyData);
     });
 
-    const polyDataOutput = appendPolyData.getOutputData();
-    mapper.setInputData(polyDataOutput);
+    if (polyDataModified) {
+      appendPolyData.modified();
+      mapper.setInputData(appendPolyData);
+      mapper.modified();
+      actor.modified();
+      // viewport.removeActors([contourActorUID]);
+      viewport.render();
+    }
 
     setConfigCache(
       segmentationRepresentationUID,
