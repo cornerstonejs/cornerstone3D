@@ -1,3 +1,4 @@
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import { Point3, IContourSet, IContour, ContourData } from '../../types';
 import Contour from './Contour';
 
@@ -19,6 +20,7 @@ export class ContourSet implements IContourSet {
   readonly frameOfReferenceUID: string;
   private color: Point3 = [200, 0, 0]; // default color
   private segmentIndex: number;
+  private polyData: vtkPolyData;
   contours: IContour[];
 
   constructor(props: ContourSetProps) {
@@ -136,6 +138,23 @@ export class ContourSet implements IContourSet {
    */
   public getNumberOfPointsInAContour(contourIndex: number): number {
     return this.getPointsInContour(contourIndex).length;
+  }
+
+  /**
+   * vtk polyData associated with the contour set
+   * @returns the vtk polydata object
+   */
+  public getPolyData(): vtkPolyData {
+    return this.polyData;
+  }
+
+  /**
+   * Sets the vtk polyData associated with the contour set
+   * for caching puproses
+   * @param polyData vtk polydata object
+   */
+  public setPolyData(polyData: any): void {
+    this.polyData = polyData;
   }
 
   /**

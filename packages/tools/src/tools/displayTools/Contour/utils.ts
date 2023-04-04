@@ -1,6 +1,5 @@
 import { Enums, Types } from '@cornerstonejs/core';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import { ToolGroupSpecificContourRepresentation } from '../../../types';

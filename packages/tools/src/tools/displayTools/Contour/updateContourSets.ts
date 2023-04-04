@@ -1,5 +1,4 @@
 import { cache, Types } from '@cornerstonejs/core';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 
@@ -8,7 +7,6 @@ import {
   ToolGroupSpecificContourRepresentation,
 } from '../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
-import { getPolyData } from './utils';
 
 export function updateContourSets(
   viewport: Types.IVolumeViewport,
@@ -76,23 +74,30 @@ export function updateContourSets(
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const color = contourSet.getColor();
-      const visibility = mergedInvisibleSegments.includes(segmentIndex)
-        ? 0
-        : 255;
-      const polyData = getPolyData(contourSet);
-
+      const polyData = contourSet.getPolyData();
       const size = polyData.getPoints().getNumberOfPoints();
+      const scalars = polyData.getPointData().getScalars();
+      const scalarData = scalars.getData();
 
-      const scalars = vtkDataArray.newInstance({
-        size: size * 4,
-        numberOfComponents: 4,
-        dataType: 'Uint8Array',
-      });
-      for (let i = 0; i < size; ++i) {
-        scalars.setTuple(i, [...color, visibility]);
+      if (
+        [...mergedInvisibleSegments, ...segmentsToSetToVisible].includes(
+          segmentIndex
+        )
+      ) {
+        const color = contourSet.getColor();
+        const visibility = mergedInvisibleSegments.includes(segmentIndex)
+          ? 0
+          : 255;
+
+        for (let i = 0; i < size; ++i) {
+          scalarData[i * 4] = color[0];
+          scalarData[i * 4 + 1] = color[1];
+          scalarData[i * 4 + 2] = color[2];
+          scalarData[i * 4 + 3] = visibility;
+        }
+
+        polyData.getPointData().setScalars(scalars);
       }
-      polyData.getPointData().setScalars(scalars);
 
       segmentIndex === 0
         ? appendPolyData.setInputData(polyData)

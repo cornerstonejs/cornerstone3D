@@ -1,3 +1,4 @@
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import { ContourData, IContour, Point3 } from './';
 
 /**
@@ -54,4 +55,15 @@ export interface IContourSet {
    * @returns The number of points in the contour.
    */
   getNumberOfPointsInAContour(contourIndex: number): number;
+
+  /**
+   * This function returns the polydata of the contour set.
+   */
+  getPolyData(): vtkPolyData;
+
+  /**
+   * This function sets the polydata of the contour set.
+   * @param polyData - vtk polydata
+   */
+  setPolyData(polyData: vtkPolyData): void;
 }

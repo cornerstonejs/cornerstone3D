@@ -309,27 +309,26 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
    */
   public getProperties = (): VolumeViewportProperties => {
-    const actorEntries = this.getActors();
-    const voiRanges = actorEntries.map((actorEntry) => {
-      const volumeActor = actorEntry.actor as vtkVolume;
-      const volumeId = actorEntry.uid;
-      const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
-      let lower, upper;
-      if (this.VOILUTFunction === 'SIGMOID') {
-        [lower, upper] = getVoiFromSigmoidRGBTransferFunction(cfun);
-      } else {
-        // @ts-ignore: vtk d ts problem
-        [lower, upper] = cfun.getRange();
-      }
-      return {
-        volumeId,
-        voiRange: { lower, upper },
-      };
-    });
-    return {
-      voiRange: voiRanges[0].voiRange, // TODO: handle multiple actors instead of just first.
-      VOILUTFunction: this.VOILUTFunction,
-    };
+    const voiRanges = this.getActors()
+      .map((actorEntry) => {
+        const volumeActor = actorEntry.actor as vtkVolume;
+        const volumeId = actorEntry.uid;
+        const volume = cache.getVolume(volumeId);
+        if (!volume) return null;
+        const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+        const [lower, upper] =
+          this.VOILUTFunction === 'SIGMOID'
+            ? getVoiFromSigmoidRGBTransferFunction(cfun)
+            : // @ts-ignore
+              cfun.getRange();
+        return { volumeId, voiRange: { lower, upper } };
+      })
+      .filter(Boolean);
+
+    const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
+    const VOILUTFunction = this.VOILUTFunction;
+
+    return { voiRange, VOILUTFunction };
   };
 
   /**
