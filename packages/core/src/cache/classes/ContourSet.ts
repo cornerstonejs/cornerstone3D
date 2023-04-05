@@ -21,6 +21,7 @@ export class ContourSet implements IContourSet {
   private color: Point3 = [200, 0, 0]; // default color
   private segmentIndex: number;
   private polyData: vtkPolyData;
+  private centroid: Point3;
   contours: IContour[];
 
   constructor(props: ContourSetProps) {
@@ -52,12 +53,43 @@ export class ContourSet implements IContourSet {
 
       this.contours.push(contour);
     });
+
+    this._updateContourSetCentroid();
+  }
+
+  // Todo: this centroid calculation has limitation in which
+  // the if there are two clusters of points, the centroid will be
+  // the center of the two clusters, not the center of the segment
+  _updateContourSetCentroid(): void {
+    const numberOfPoints = this.getTotalNumberOfPoints();
+    const flatPointsArray = this.getFlatPointsArray();
+
+    const centroid = flatPointsArray.reduce(
+      (centroid, point) => {
+        return [
+          centroid[0] + point[0],
+          centroid[1] + point[1],
+          centroid[2] + point[2],
+        ];
+      },
+      [0, 0, 0]
+    );
+
+    this.centroid = [
+      centroid[0] / numberOfPoints,
+      centroid[1] / numberOfPoints,
+      centroid[2] / numberOfPoints,
+    ];
   }
 
   _getSizeInBytes(): number {
     return this.contours.reduce((sizeInBytes, contour) => {
       return sizeInBytes + contour.sizeInBytes;
     }, 0);
+  }
+
+  public getCentroid(): Point3 {
+    return this.centroid;
   }
 
   public getSegmentIndex(): number {

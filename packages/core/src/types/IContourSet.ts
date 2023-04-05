@@ -13,6 +13,7 @@ export interface IContourSet {
   _createEachContour(data: ContourData[]): void;
   getSizeInBytes(): number;
   getSegmentIndex(): number;
+  getCentroid(): Point3;
   getColor(): any;
   /**
    * This function returns the contours of the image
