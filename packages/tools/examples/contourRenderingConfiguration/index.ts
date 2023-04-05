@@ -122,7 +122,7 @@ addToggleButtonToToolbar({
 });
 
 addToggleButtonToToolbar({
-  title: 'Hide Green  Segment',
+  title: 'Hide Green Segment',
   onClick: (toggle) => {
     const segmentIndex = 2;
     [

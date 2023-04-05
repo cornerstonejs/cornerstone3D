@@ -60,9 +60,9 @@ export class ContourSet implements IContourSet {
   // it will not work for MPR, the reason is that we are finding
   // the centroid of all points but at the end we are picking the
   // closest point to the centroid, which will not work for MPR
-  // Thee reason for picking the closest is rendering issue since
+  // The reason for picking the closest is a rendering issue since
   // the centroid can be not exactly in the middle of the slice
-  // and it might cause the contour to be rendered in the wrong
+  // and it might cause the contour to be rendered in the wrong slice
   // or not rendered at all
   _updateContourSetCentroid(): void {
     const numberOfPoints = this.getTotalNumberOfPoints();
