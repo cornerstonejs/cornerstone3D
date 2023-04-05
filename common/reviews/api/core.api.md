@@ -13,7 +13,6 @@ import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
@@ -948,8 +947,6 @@ interface IContourSet {
     // (undocumented)
     getPointsInContour(contourIndex: number): Point3[];
     // (undocumented)
-    getPolyData(): vtkPolyData;
-    // (undocumented)
     getSegmentIndex(): number;
     // (undocumented)
     getSizeInBytes(): number;
@@ -957,8 +954,6 @@ interface IContourSet {
     getTotalNumberOfPoints(): number;
     // (undocumented)
     readonly id: string;
-    // (undocumented)
-    setPolyData(polyData: vtkPolyData): void;
     // (undocumented)
     readonly sizeInBytes: number;
 }

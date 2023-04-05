@@ -185,23 +185,6 @@ export class ContourSet implements IContourSet {
     return this.getPointsInContour(contourIndex).length;
   }
 
-  /**
-   * vtk polyData associated with the contour set
-   * @returns the vtk polydata object
-   */
-  public getPolyData(): vtkPolyData {
-    return this.polyData;
-  }
-
-  /**
-   * Sets the vtk polyData associated with the contour set
-   * for caching puproses
-   * @param polyData vtk polydata object
-   */
-  public setPolyData(polyData: any): void {
-    this.polyData = polyData;
-  }
-
   private _getDistance(pointA, pointB) {
     return Math.sqrt(
       (pointA[0] - pointB[0]) ** 2 +
