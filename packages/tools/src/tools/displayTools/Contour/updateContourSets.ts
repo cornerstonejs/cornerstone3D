@@ -1,5 +1,4 @@
 import { cache, Types } from '@cornerstonejs/core';
-import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 
 import {

@@ -30,7 +30,6 @@ export class ContourSet implements IContourSet {
     this.color = props.color ?? this.color;
     this.frameOfReferenceUID = props.frameOfReferenceUID;
     this.segmentIndex = props.segmentIndex;
-
     this._createEachContour(props.data);
     this.sizeInBytes = this._getSizeInBytes();
   }
@@ -58,28 +57,42 @@ export class ContourSet implements IContourSet {
   }
 
   // Todo: this centroid calculation has limitation in which
-  // the if there are two clusters of points, the centroid will be
-  // the center of the two clusters, not the center of the segment
+  // it will not work for MPR, the reason is that we are finding
+  // the centroid of all points but at the end we are picking the
+  // closest point to the centroid, which will not work for MPR
+  // Thee reason for picking the closest is rendering issue since
+  // the centroid can be not exactly in the middle of the slice
+  // and it might cause the contour to be rendered in the wrong
+  // or not rendered at all
   _updateContourSetCentroid(): void {
     const numberOfPoints = this.getTotalNumberOfPoints();
     const flatPointsArray = this.getFlatPointsArray();
 
-    const centroid = flatPointsArray.reduce(
-      (centroid, point) => {
-        return [
-          centroid[0] + point[0],
-          centroid[1] + point[1],
-          centroid[2] + point[2],
-        ];
+    const sumOfPoints = flatPointsArray.reduce(
+      (acc, point) => {
+        return [acc[0] + point[0], acc[1] + point[1], acc[2] + point[2]];
       },
       [0, 0, 0]
     );
 
-    this.centroid = [
-      centroid[0] / numberOfPoints,
-      centroid[1] / numberOfPoints,
-      centroid[2] / numberOfPoints,
+    const centroid = [
+      sumOfPoints[0] / numberOfPoints,
+      sumOfPoints[1] / numberOfPoints,
+      sumOfPoints[2] / numberOfPoints,
     ];
+
+    const closestPoint = flatPointsArray.reduce((closestPoint, point) => {
+      const distanceToPoint = this._getDistance(centroid, point);
+      const distanceToClosestPoint = this._getDistance(centroid, closestPoint);
+
+      if (distanceToPoint < distanceToClosestPoint) {
+        return point;
+      } else {
+        return closestPoint;
+      }
+    }, flatPointsArray[0]);
+
+    this.centroid = closestPoint;
   }
 
   _getSizeInBytes(): number {
@@ -189,6 +202,13 @@ export class ContourSet implements IContourSet {
     this.polyData = polyData;
   }
 
+  private _getDistance(pointA, pointB) {
+    return Math.sqrt(
+      (pointA[0] - pointB[0]) ** 2 +
+        (pointA[1] - pointB[1]) ** 2 +
+        (pointA[2] - pointB[2]) ** 2
+    );
+  }
   /**
   public convertToClosedSurface(): ClosedSurface {
     const flatPointsArray = this.getFlatPointsArray();
