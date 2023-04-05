@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.41.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.40.1...@cornerstonejs/core@0.41.0) (2023-04-05)
+
+
+### Features
+
+* **contour:** improved performance and better configuration ([#543](https://github.com/cornerstonejs/cornerstone3D-beta/issues/543)) ([c69c58a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c69c58a171f1dc24d94aded51bbdffa3775c7e6e))
+
+
+
+
+
 ## [0.40.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.40.0...@cornerstonejs/core@0.40.1) (2023-04-04)
 
 
