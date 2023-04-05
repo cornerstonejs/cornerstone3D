@@ -644,6 +644,8 @@ interface IContourSet {
     // (undocumented)
     readonly frameOfReferenceUID: string;
     // (undocumented)
+    getCentroid(): Point3;
+    // (undocumented)
     getColor(): any;
     getContours(): IContour[];
     getFlatPointsArray(): Point3[];

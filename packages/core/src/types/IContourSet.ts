@@ -1,3 +1,4 @@
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import { ContourData, IContour, Point3 } from './';
 
 /**
@@ -12,6 +13,7 @@ export interface IContourSet {
   _createEachContour(data: ContourData[]): void;
   getSizeInBytes(): number;
   getSegmentIndex(): number;
+  getCentroid(): Point3;
   getColor(): any;
   /**
    * This function returns the contours of the image
