@@ -10,6 +10,7 @@ import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/Co
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 declare namespace activeSegmentation {
@@ -2339,6 +2340,8 @@ interface IContourSet {
     // (undocumented)
     readonly frameOfReferenceUID: string;
     // (undocumented)
+    getCentroid(): Point3;
+    // (undocumented)
     getColor(): any;
     getContours(): IContour[];
     getFlatPointsArray(): Point3[];
@@ -2346,6 +2349,7 @@ interface IContourSet {
     getNumberOfPointsArray(): number[];
     getNumberOfPointsInAContour(contourIndex: number): number;
     getPointsInContour(contourIndex: number): Point3[];
+    getPolyData(): vtkPolyData;
     // (undocumented)
     getSegmentIndex(): number;
     // (undocumented)
@@ -2353,6 +2357,7 @@ interface IContourSet {
     getTotalNumberOfPoints(): number;
     // (undocumented)
     readonly id: string;
+    setPolyData(polyData: vtkPolyData): void;
     // (undocumented)
     readonly sizeInBytes: number;
 }
