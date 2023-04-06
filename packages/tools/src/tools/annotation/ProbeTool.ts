@@ -505,7 +505,11 @@ class ProbeTool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const textLines = this._getTextLines(data, targetId, isPreScaled);
+      const { suvbw } =
+        metaData.get('scalingModule', annotation.metadata.referencedImageId) ||
+        {};
+
+      const textLines = this._getTextLines(data, targetId, isPreScaled, suvbw);
       if (textLines) {
         const textCanvasCoordinates = [
           canvasCoordinates[0] + 6,
@@ -530,18 +534,11 @@ class ProbeTool extends AnnotationTool {
   _getTextLines(
     data,
     targetId: string,
-    isPreScaled: boolean
+    isPreScaled: boolean,
+    suvbwScalingFactor?: number
   ): string[] | undefined {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const {
-      index,
-      Modality,
-      value,
-      SUVBw,
-      SUVLbm,
-      SUVBsa,
-      suvbw: suvbwScalingFactor,
-    } = cachedVolumeStats;
+    const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats;
 
     if (value === undefined && SUVBw === undefined) {
       return;
@@ -655,17 +652,10 @@ class ProbeTool extends AnnotationTool {
 
         const values = this._getValueForModality(value, image, modality);
 
-        const { suvbw } =
-          metaData.get(
-            'scalingModule',
-            annotation.metadata.referencedImageId
-          ) || {};
-
         cachedStats[targetId] = {
           index,
           ...values,
           Modality: modality,
-          suvbw,
         };
       } else {
         this.isHandleOutsideImage = true;

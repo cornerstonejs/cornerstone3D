@@ -772,7 +772,11 @@ class RectangleROITool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const textLines = this._getTextLines(data, targetId, isPreScaled);
+      const { suvbw } =
+        metaData.get('scalingModule', annotation.metadata.referencedImageId) ||
+        {};
+
+      const textLines = this._getTextLines(data, targetId, isPreScaled, suvbw);
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -842,11 +846,11 @@ class RectangleROITool extends AnnotationTool {
   _getTextLines = (
     data,
     targetId: string,
-    isPreScaled: boolean
+    isPreScaled: boolean,
+    suvbw?: number
   ): string[] | undefined => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, max, stdDev, Modality, areaUnit, suvbw } =
-      cachedVolumeStats;
+    const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
 
     if (mean === undefined) {
       return;
@@ -987,15 +991,8 @@ class RectangleROITool extends AnnotationTool {
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
 
-        const { suvbw } =
-          metaData.get(
-            'scalingModule',
-            annotation.metadata.referencedImageId
-          ) || {};
-
         cachedStats[targetId] = {
           Modality: metadata.Modality,
-          suvbw,
           area,
           mean,
           stdDev,
