@@ -6,6 +6,7 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -844,14 +845,15 @@ class RectangleROITool extends AnnotationTool {
     isPreScaled: boolean
   ): string[] | undefined => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
+    const { area, mean, max, stdDev, Modality, areaUnit, suvbw } =
+      cachedVolumeStats;
 
     if (mean === undefined) {
       return;
     }
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled);
+    const unit = getModalityUnit(Modality, isPreScaled, suvbw);
 
     textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
     textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
@@ -985,8 +987,15 @@ class RectangleROITool extends AnnotationTool {
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
 
+        const { suvbw } =
+          metaData.get(
+            'scalingModule',
+            annotation.metadata.referencedImageId
+          ) || {};
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
+          suvbw,
           area,
           mean,
           stdDev,

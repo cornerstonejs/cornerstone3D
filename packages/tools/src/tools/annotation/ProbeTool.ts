@@ -8,6 +8,7 @@ import {
   eventTarget,
   utilities as csUtils,
   utilities,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -532,14 +533,22 @@ class ProbeTool extends AnnotationTool {
     isPreScaled: boolean
   ): string[] | undefined {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats;
+    const {
+      index,
+      Modality,
+      value,
+      SUVBw,
+      SUVLbm,
+      SUVBsa,
+      suvbw: suvbwScalingFactor,
+    } = cachedVolumeStats;
 
     if (value === undefined && SUVBw === undefined) {
       return;
     }
 
     const textLines = [];
-    const unit = getModalityUnit(Modality, isPreScaled);
+    const unit = getModalityUnit(Modality, isPreScaled, suvbwScalingFactor);
 
     textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
@@ -646,10 +655,17 @@ class ProbeTool extends AnnotationTool {
 
         const values = this._getValueForModality(value, image, modality);
 
+        const { suvbw } =
+          metaData.get(
+            'scalingModule',
+            annotation.metadata.referencedImageId
+          ) || {};
+
         cachedStats[targetId] = {
           index,
           ...values,
           Modality: modality,
+          suvbw,
         };
       } else {
         this.isHandleOutsideImage = true;

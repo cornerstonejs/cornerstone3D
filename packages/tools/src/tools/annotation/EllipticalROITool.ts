@@ -6,6 +6,7 @@ import {
   eventTarget,
   triggerEvent,
   utilities as csUtils,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -973,11 +974,11 @@ class EllipticalROITool extends AnnotationTool {
 
   _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
-    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
+    const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit, suvbw } =
       cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled);
+    const unit = getModalityUnit(Modality, isPreScaled, suvbw);
 
     if (area) {
       const areaLine = isEmptyArea
@@ -1133,8 +1134,15 @@ class EllipticalROITool extends AnnotationTool {
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
 
+        const { suvbw } =
+          metaData.get(
+            'scalingModule',
+            annotation.metadata.referencedImageId
+          ) || {};
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
+          suvbw,
           area,
           mean,
           max,

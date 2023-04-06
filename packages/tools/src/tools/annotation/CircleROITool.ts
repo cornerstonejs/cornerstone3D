@@ -6,6 +6,7 @@ import {
   eventTarget,
   triggerEvent,
   utilities as csUtils,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -855,10 +856,11 @@ class CircleROITool extends AnnotationTool {
       isEmptyArea,
       Modality,
       areaUnit,
+      suvbw,
     } = cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled);
+    const unit = getModalityUnit(Modality, isPreScaled, suvbw);
 
     if (radius) {
       const radiusLine = isEmptyArea
@@ -1021,8 +1023,15 @@ class CircleROITool extends AnnotationTool {
         stdDev /= count;
         stdDev = Math.sqrt(stdDev);
 
+        const { suvbw } =
+          metaData.get(
+            'scalingModule',
+            annotation.metadata.referencedImageId
+          ) || {};
+
         cachedStats[targetId] = {
           Modality: metadata.Modality,
+          suvbw,
           area,
           mean,
           max,
