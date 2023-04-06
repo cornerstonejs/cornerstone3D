@@ -1838,9 +1838,9 @@ class StackViewport extends Viewport implements IStackViewport {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
-        targetBuffer: {
-          type: this.use16BitTexture ? undefined : 'Float32Array',
-        },
+        // targetBuffer: {
+        //   type: this.use16BitTexture ? undefined : 'Float32Array',
+        // },
         preScale: {
           enabled: true,
         },

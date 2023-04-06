@@ -90,7 +90,7 @@ function setPixelDataType(imageFrame) {
  */
 function removeAFromRGBA(
   pixelData: PixelDataTypedArray,
-  targetBuffer: Uint8ClampedArray
+  targetBuffer: Uint8ClampedArray | Uint8Array
 ) {
   const numPixels = pixelData.length / 4;
 
@@ -264,7 +264,7 @@ function createImage(
           // If we don't need the RGBA but the decoding is done with RGBA (the case
           // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
           // we need to remove the A channel from pixel data
-          const colorBuffer = new Uint8ClampedArray(
+          const colorBuffer = new Uint8Array(
             (imageFrame.pixelData.length / 4) * 3
           );
 
@@ -367,6 +367,7 @@ function createImage(
 
       if (image.color) {
         image.getCanvas = function () {
+          // get canvas is being used in the cpu pass for speed up only
           if (lastImageIdDrawn === imageId) {
             return canvas;
           }
@@ -375,6 +376,14 @@ function createImage(
           canvas.width = image.columns;
           const context = canvas.getContext('2d');
 
+          // Create an ImageData object from the Uint8ClampedArray
+          const imageData = new ImageData(
+            new Uint8ClampedArray(imageFrame.pixelData),
+            image.columns,
+            image.rows
+          );
+
+          imageFrame.imageData = imageData;
           context.putImageData(imageFrame.imageData, 0, 0);
           lastImageIdDrawn = imageId;
 
