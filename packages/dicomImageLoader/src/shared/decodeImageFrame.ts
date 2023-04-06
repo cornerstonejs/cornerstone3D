@@ -371,13 +371,13 @@ function _handlePreScaleSetup(
   _validateScalingParameters(scalingParameters);
 
   const { rescaleSlope, rescaleIntercept } = scalingParameters;
-  const areSlopeAndInterceptIntegers =
-    Number.isInteger(rescaleSlope) && Number.isInteger(rescaleIntercept);
+  const areSlopeAndInterceptNumbers =
+    typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
 
   let scaledMin = minBeforeScale;
   let scaledMax = maxBeforeScale;
 
-  if (areSlopeAndInterceptIntegers) {
+  if (areSlopeAndInterceptNumbers) {
     scaledMin = rescaleSlope * minBeforeScale + rescaleIntercept;
     scaledMax = rescaleSlope * maxBeforeScale + rescaleIntercept;
   }
