@@ -298,17 +298,9 @@ function postProcessDecodedPixels(
     }
   }
 
+  imageFrame.pixelData = pixelDataArray;
   imageFrame.minAfterScale = minAfterScale;
   imageFrame.maxAfterScale = maxAfterScale;
-
-  // Handle cases where the targetBuffer is not backed by a SharedArrayBuffer
-  if (
-    options.targetBuffer &&
-    (!options.targetBuffer.arrayBuffer ||
-      options.targetBuffer.arrayBuffer instanceof ArrayBuffer)
-  ) {
-    imageFrame.pixelData = pixelDataArray;
-  }
 
   const end = new Date().getTime();
   imageFrame.decodeTimeInMS = end - start;
