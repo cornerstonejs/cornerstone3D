@@ -1589,27 +1589,7 @@ class StackViewport extends Viewport implements IStackViewport {
       | Uint16Array
       | Int16Array;
 
-    // if (image.rgba || isRgbaSourceRgbDest(pixelData, scalarData)) {
-    //   if (!image.rgba) {
-    //     console.warn('rgba not specified but data looks rgba ish', image);
-    //   }
-    //   // if image is already cached with rgba for any reason (cpu fallback),
-    //   // we need to convert it to rgb for the pixel data set
-    //   // RGB case
-    //   const numPixels = pixelData.length / 4;
-
-    //   let rgbIndex = 0;
-    //   let index = 0;
-
-    //   for (let i = 0; i < numPixels; i++) {
-    //     scalarData[index++] = pixelData[rgbIndex++]; // red
-    //     scalarData[index++] = pixelData[rgbIndex++]; // green
-    //     scalarData[index++] = pixelData[rgbIndex++]; // blue
-    //     rgbIndex++; // skip alpha
-    //   }
-    // } else {
-    //   scalarData.set(pixelData);
-    // }
+    scalarData.set(pixelData);
 
     // Trigger modified on the VTK Object so the texture is updated
     // TODO: evaluate directly changing things with texSubImage3D later
@@ -1652,6 +1632,51 @@ class StackViewport extends Viewport implements IStackViewport {
         if (this.currentImageIdIndex !== imageIdIndex) {
           return;
         }
+
+        const pixelData = image.getPixelData();
+
+        // handle the case where the pixelData is a Float32Array
+        // CPU path cannot handle it, it should be converted to Uint16Array
+        // and via the Modality LUT we can display it properly
+        if (pixelData instanceof Float32Array) {
+          const floatMinMax = {
+            min: image.maxPixelValue,
+            max: image.minPixelValue,
+          };
+          const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
+          const intRange = 65535;
+          const slope = floatRange / intRange;
+          const intercept = floatMinMax.min;
+          const numPixels = pixelData.length;
+          const intPixelData = new Uint16Array(numPixels);
+
+          let min = 65535;
+
+          let max = 0;
+
+          for (let i = 0; i < numPixels; i++) {
+            const rescaledPixel = Math.floor(
+              (pixelData[i] - intercept) / slope
+            );
+
+            intPixelData[i] = rescaledPixel;
+            min = Math.min(min, rescaledPixel);
+            max = Math.max(max, rescaledPixel);
+          }
+
+          // reset the properties since basically the image has changed
+          image.minPixelValue = min;
+          image.maxPixelValue = max;
+          image.slope = slope;
+          image.intercept = intercept;
+          image.getPixelData = () => intPixelData;
+
+          image.preScale = {
+            ...image.preScale,
+            scaled: false,
+          };
+        }
+
         image.isPreScaled = image.preScale?.scaled;
         this.csImage = image;
 
@@ -1673,6 +1698,11 @@ class StackViewport extends Viewport implements IStackViewport {
           this.modality,
           this._cpuFallbackEnabledElement.viewport.colormap
         );
+
+        const { windowCenter, windowWidth } = viewport.voi;
+        this.voiRange = {
+          ...windowLevelUtil.toLowHighRange(windowWidth, windowCenter),
+        };
 
         this._cpuFallbackEnabledElement.image = image;
         this._cpuFallbackEnabledElement.metadata = {
@@ -1748,9 +1778,6 @@ class StackViewport extends Viewport implements IStackViewport {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
-        targetBuffer: {
-          type: this.use16BitTexture ? undefined : 'Float32Array',
-        },
         preScale: {
           enabled: true,
         },

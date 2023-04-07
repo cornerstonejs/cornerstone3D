@@ -27,6 +27,8 @@ interface ImageFrame {
     scalingParameters?: {
       intercept: number;
       slope: number;
+      modality?: string;
+      suvbw?: number;
     };
     scaled?: boolean;
   };

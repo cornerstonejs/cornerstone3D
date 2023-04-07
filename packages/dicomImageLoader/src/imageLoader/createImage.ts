@@ -29,36 +29,6 @@ function isModalityLUTForDisplay(sopClassUid: string): boolean {
   ); // XRF
 }
 
-function convertToIntPixelData(floatPixelData) {
-  const floatMinMax = getMinMax(floatPixelData);
-  const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
-  const intRange = 65535;
-  const slope = floatRange / intRange;
-  const intercept = floatMinMax.min;
-  const numPixels = floatPixelData.length;
-  const intPixelData = new Uint16Array(numPixels);
-
-  let min = 65535;
-
-  let max = 0;
-
-  for (let i = 0; i < numPixels; i++) {
-    const rescaledPixel = Math.floor((floatPixelData[i] - intercept) / slope);
-
-    intPixelData[i] = rescaledPixel;
-    min = Math.min(min, rescaledPixel);
-    max = Math.max(max, rescaledPixel);
-  }
-
-  return {
-    min,
-    max,
-    intPixelData,
-    slope,
-    intercept,
-  };
-}
-
 /**
  * Helper function to set pixel d2023-03-17-16-35-04.pngata to the right typed array.
  * This is needed because web workers can transfer array buffers but not typed arrays
@@ -164,7 +134,7 @@ function createImage(
     decodeConfig
   );
 
-  const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
+  const { use16BitDataType } = decodeConfig;
 
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
@@ -303,7 +273,7 @@ function createImage(
         imageFrame.largestPixelValue = minMax.max;
       }
 
-      const image = {
+      const image: DICOMLoaderIImage = {
         imageId,
         color: isColorImage,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
@@ -338,37 +308,10 @@ function createImage(
         floatPixelData: undefined,
         imageFrame,
         rgba: isColorImage && useRGBA,
-        getPixelData: undefined,
+        getPixelData: () => imageFrame.pixelData,
         getCanvas: undefined,
         numComps: undefined,
-      } as DICOMLoaderIImage;
-
-      // If pixel data is intrinsically floating 32 array, we convert it to int for
-      // display in cornerstone. For other cases when pixel data is typed as
-      // Float32Array for scaling; this conversion is not needed.
-      if (
-        imageFrame.pixelData instanceof Float32Array &&
-        convertFloatPixelDataToInt
-      ) {
-        const floatPixelData = imageFrame.pixelData;
-        const results = convertToIntPixelData(floatPixelData);
-
-        image.minPixelValue = results.min;
-        image.maxPixelValue = results.max;
-        image.slope = results.slope;
-        image.intercept = results.intercept;
-        image.floatPixelData = floatPixelData;
-        // since we basically undo the pre-scaling, we need to set this to false
-        // so that cornerstone cpu path can apply it again
-        image.preScale = {
-          scaled: false,
-        };
-        /** @todo check as any */
-        image.getPixelData = () => results.intPixelData as any;
-      } else {
-        /** @todo check as any */
-        image.getPixelData = () => imageFrame.pixelData as any;
-      }
+      };
 
       if (image.color) {
         image.getCanvas = function () {
