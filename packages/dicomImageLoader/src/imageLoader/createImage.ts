@@ -358,6 +358,11 @@ function createImage(
         image.slope = results.slope;
         image.intercept = results.intercept;
         image.floatPixelData = floatPixelData;
+        // since we basically undo the pre-scaling, we need to set this to false
+        // so that cornerstone cpu path can apply it again
+        image.preScale = {
+          scaled: false,
+        };
         /** @todo check as any */
         image.getPixelData = () => results.intPixelData as any;
       } else {

@@ -22,7 +22,14 @@ interface ImageFrame {
   imageData?: ImageData;
   decodeTimeInMS?: number;
   pixelDataLength?: number;
-  preScale?: any;
+  preScale?: {
+    enabled?: boolean;
+    scalingParameters?: {
+      intercept: number;
+      slope: number;
+    };
+    scaled?: boolean;
+  };
   minAfterScale?: number;
   maxAfterScale?: number;
 }

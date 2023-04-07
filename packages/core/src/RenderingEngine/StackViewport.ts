@@ -500,11 +500,11 @@ class StackViewport extends Viewport implements IStackViewport {
 
     actor.setMapper(mapper);
 
-    // const { preferSizeOverAccuracy } = getConfiguration().rendering;
+    const { preferSizeOverAccuracy } = getConfiguration().rendering;
 
-    // if (preferSizeOverAccuracy) {
-    //   mapper.setPreferSizeOverAccuracy(true);
-    // }
+    if (preferSizeOverAccuracy) {
+      mapper.setPreferSizeOverAccuracy(true);
+    }
 
     if (imageData.getPointData().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false);
@@ -1652,7 +1652,7 @@ class StackViewport extends Viewport implements IStackViewport {
         if (this.currentImageIdIndex !== imageIdIndex) {
           return;
         }
-
+        debugger;
         image.isPreScaled = image.preScale?.scaled;
         this.csImage = image;
 

@@ -16,7 +16,7 @@ interface IImage {
     /** boolean flag to indicate whether the image has been scaled */
     scaled: boolean;
     /** scaling parameters */
-    scalingParameters: {
+    scalingParameters?: {
       /** modality of the image */
       modality?: string;
       /** rescale slop */
