@@ -124,6 +124,9 @@ async function init(configuration = {}): Promise<boolean> {
   }
 
   setUseSharedArrayBuffer(sharedArrayBufferMode);
+  // config.rendering.useCPURendering = true;
+
+  console.debug('USING CPU RENDERING: ', config.rendering.useCPURendering);
 
   csRenderInitialized = true;
   return csRenderInitialized;

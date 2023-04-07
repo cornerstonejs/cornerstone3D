@@ -508,6 +508,11 @@ export default class BaseStreamingImageVolume extends ImageVolume {
       }
     }
 
+    console.debug(
+      'shared array buffer',
+      arrayBuffer instanceof SharedArrayBuffer
+    );
+
     // 4D datasets load one time point at a time and the frameIndex is
     // the position of the imageId in the current time point while the
     // imageIdIndex is its absolute position in the array that contains

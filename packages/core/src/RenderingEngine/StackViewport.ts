@@ -1652,7 +1652,6 @@ class StackViewport extends Viewport implements IStackViewport {
         if (this.currentImageIdIndex !== imageIdIndex) {
           return;
         }
-        debugger;
         image.isPreScaled = image.preScale?.scaled;
         this.csImage = image;
 
