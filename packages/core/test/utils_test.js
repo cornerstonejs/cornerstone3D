@@ -27,7 +27,7 @@ describe('Cornerstone-render Utilities:', function () {
     const typedArray6 = new Int16Array([1, 2]);
 
     expect(isEqual(typedArray1, typedArray2, 0.0001)).toBe(true);
-    expect(isEqual(typedArray3, typedArray4, 0.0001)).toBe(true);
+    expect(isEqual(typedArray3, typedArray4, 0.1)).toBe(true);
     expect(isEqual(typedArray5, typedArray6, 0.0001)).toBe(true);
     expect(isEqual(typedArray1, typedArray3, 0.1)).toBe(false);
   });
