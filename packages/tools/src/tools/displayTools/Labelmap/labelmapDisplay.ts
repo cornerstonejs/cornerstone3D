@@ -139,10 +139,10 @@ function removeSegmentationRepresentation(
  * Checks if a segmentation data belongs to the same study as the series
  * displayed in a given viewport
  * @param viewport
- * @param segmentationId
+ * @param referencedVolumeId volume id of the segmentation reference series
  * @returns
  */
-function canRenderSegmentationInViewport(viewport, segmentationId) {
+function canRenderSegmentationInViewport(viewport, referencedVolumeId) {
   const defaultActor = viewport.getDefaultActor();
   if (defaultActor) {
     const { uid: defaultActorUID } = defaultActor;
@@ -150,13 +150,8 @@ function canRenderSegmentationInViewport(viewport, segmentationId) {
     const viewportImageIds = volume.imageIds;
 
     if (viewportImageIds) {
-      const segmentation = SegmentationState.getSegmentation(segmentationId);
-      const labelmapData =
-        segmentation.representationData[Representations.Labelmap];
-      const { volumeId: labelmapUID } = labelmapData;
-
-      const labelmap = cache.getVolume(labelmapUID);
-      const segmentationImageIds = labelmap.imageIds;
+      const referencedVolume = cache.getVolume(referencedVolumeId);
+      const segmentationImageIds = referencedVolume.imageIds;
       if (segmentationImageIds) {
         const segmentationSeriesInfo = metaData.get(
           'generalSeriesModule',
@@ -175,6 +170,7 @@ function canRenderSegmentationInViewport(viewport, segmentationId) {
   }
   return false;
 }
+
 /**
  * It takes the enabled element, the segmentation Id, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
@@ -196,9 +192,6 @@ async function render(
     config: renderingConfig,
   } = representation;
 
-  if (!canRenderSegmentationInViewport(viewport, segmentationId)) {
-    return;
-  }
   const segmentation = SegmentationState.getSegmentation(segmentationId);
   const labelmapData =
     segmentation.representationData[Representations.Labelmap];
@@ -210,6 +203,16 @@ async function render(
     throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
+  if (segmentation.referencedVolumeId) {
+    if (
+      !canRenderSegmentationInViewport(
+        viewport,
+        segmentation.referencedVolumeId
+      )
+    ) {
+      return;
+    }
+  }
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
 
   if (!actorEntry) {

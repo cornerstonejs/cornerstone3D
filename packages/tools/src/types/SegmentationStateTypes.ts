@@ -77,6 +77,10 @@ export type Segmentation = {
    * only labelmap representation is supported)
    */
   representationData: SegmentationRepresentationData;
+  /**
+   * volume id of the segmentation reference series
+   */
+  referencedVolumeId: string;
 };
 
 /**
