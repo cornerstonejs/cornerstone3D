@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.41.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.41.0...@cornerstonejs/core@0.41.1) (2023-04-10)
+
+
+### Bug Fixes
+
+* **init:** should only check gl context and not extensions ([#544](https://github.com/cornerstonejs/cornerstone3D-beta/issues/544)) ([be8b9cd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/be8b9cddb4166a3bb2258953c4aedffc4ccd0e33))
+
+
+
+
+
 # [0.41.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.40.1...@cornerstonejs/core@0.41.0) (2023-04-05)
 
 
