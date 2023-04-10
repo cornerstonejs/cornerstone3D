@@ -49,18 +49,10 @@ function _getGLContext(): RenderingContext {
 function _hasActiveWebGLContext() {
   const gl = _getGLContext();
 
-  // Report the result.
-  if (gl && (gl as WebGL2RenderingContext).getExtension) {
-    const ext = (gl as WebGL2RenderingContext).getExtension(
-      'EXT_texture_norm16'
-    );
-
-    if (ext) {
-      return true;
-    }
-  }
-
-  return false;
+  // Check if the context is either WebGLRenderingContext or WebGL2RenderingContext
+  return (
+    gl instanceof WebGLRenderingContext || gl instanceof WebGL2RenderingContext
+  );
 }
 
 function hasSharedArrayBuffer() {
