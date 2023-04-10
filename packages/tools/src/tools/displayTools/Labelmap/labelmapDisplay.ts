@@ -4,6 +4,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import {
   cache,
   getEnabledElementByIds,
+  metaData,
   Types,
   utilities,
 } from '@cornerstonejs/core';
@@ -135,6 +136,46 @@ function removeSegmentationRepresentation(
 }
 
 /**
+ * Checks if a segmentation data belongs to the same study as the series
+ * displayed in a given viewport
+ * @param viewport
+ * @param segmentationId
+ * @returns
+ */
+function canRenderSegmentationInViewport(viewport, segmentationId) {
+  const defaultActor = viewport.getDefaultActor();
+  if (defaultActor) {
+    const { uid: defaultActorUID } = defaultActor;
+    const volume = cache.getVolume(defaultActorUID);
+    const viewportImageIds = volume.imageIds;
+
+    if (viewportImageIds) {
+      const segmentation = SegmentationState.getSegmentation(segmentationId);
+      const labelmapData =
+        segmentation.representationData[Representations.Labelmap];
+      const { volumeId: labelmapUID } = labelmapData;
+
+      const labelmap = cache.getVolume(labelmapUID);
+      const segmentationImageIds = labelmap.imageIds;
+      if (segmentationImageIds) {
+        const segmentationSeriesInfo = metaData.get(
+          'generalSeriesModule',
+          segmentationImageIds[0]
+        );
+        const viewportSeriesInfo = metaData.get(
+          'generalSeriesModule',
+          viewportImageIds[0]
+        );
+        return (
+          segmentationSeriesInfo.studyInstanceUID ===
+          viewportSeriesInfo.studyInstanceUID
+        );
+      }
+    }
+  }
+  return false;
+}
+/**
  * It takes the enabled element, the segmentation Id, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
  * @param enabledElement - The cornerstone enabled element
@@ -155,6 +196,9 @@ async function render(
     config: renderingConfig,
   } = representation;
 
+  if (!canRenderSegmentationInViewport(viewport, segmentationId)) {
+    return;
+  }
   const segmentation = SegmentationState.getSegmentation(segmentationId);
   const labelmapData =
     segmentation.representationData[Representations.Labelmap];
@@ -182,23 +226,25 @@ async function render(
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   }
 
-  const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
+  if (actorEntry) {
+    const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
 
-  const renderInactiveSegmentations =
-    toolGroupConfig.renderInactiveSegmentations;
+    const renderInactiveSegmentations =
+      toolGroupConfig.renderInactiveSegmentations;
 
-  _setLabelmapColorAndOpacity(
-    viewport.id,
-    actorEntry,
-    cfun,
-    ofun,
-    colorLUTIndex,
-    toolGroupConfig.representations[Representations.Labelmap],
-    representation,
-    active,
-    renderInactiveSegmentations,
-    segmentsHidden
-  );
+    _setLabelmapColorAndOpacity(
+      viewport.id,
+      actorEntry,
+      cfun,
+      ofun,
+      colorLUTIndex,
+      toolGroupConfig.representations[Representations.Labelmap],
+      representation,
+      active,
+      renderInactiveSegmentations,
+      segmentsHidden
+    );
+  }
 }
 
 function _setLabelmapColorAndOpacity(
