@@ -1,12 +1,12 @@
 import type { Types } from '@cornerstonejs/core';
-import { getAllIntersectiosnWithPolyline } from './getIntersectionWithPolyline';
+import { getAllIntersectionsWithPolyline } from './getIntersectionWithPolyline';
 
 export default function pointInPolyline(
   points: Types.Point2[],
   point: Types.Point2,
   pointEnd: Types.Point2
 ): boolean {
-  const intersections = getAllIntersectiosnWithPolyline(points, point, [
+  const intersections = getAllIntersectionsWithPolyline(points, point, [
     point[0],
     pointEnd[1],
   ]);

@@ -41,11 +41,12 @@ import {
   InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { drawLinkedTextBox } from '../../drawingSvg';
+import { drawLine, drawCircle, drawLinkedTextBox } from '../../drawingSvg';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 import pointInPolyline from '../../utilities/math/polyline/pointInPolyline';
+import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
@@ -120,6 +121,7 @@ class PlanarFreehandROITool extends AnnotationTool {
   public touchDragCallback: any;
   public mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStatSingleLoopStdDev: any;
   private commonData?: PlanarFreehandROICommonData;
   isDrawing = false;
   isEditingClosed = false;
@@ -755,6 +757,18 @@ class PlanarFreehandROITool extends AnnotationTool {
         kMax = Math.max(kMax, worldPosIndex[2]);
       }
 
+      // Expand bounding box
+      const iDelta = 0.01 * (iMax - iMin);
+      const jDelta = 0.01 * (jMax - jMin);
+      const kDelta = 0.01 * (kMax - kMin);
+
+      iMin = Math.floor(iMin - iDelta);
+      iMax = Math.ceil(iMax + iDelta);
+      jMin = Math.floor(jMin - jDelta);
+      jMax = Math.ceil(jMax + jDelta);
+      kMin = Math.floor(kMin - kDelta);
+      kMax = Math.ceil(kMax + kDelta);
+
       const boundsIJK = [
         [iMin, iMax],
         [jMin, jMax],
@@ -765,48 +779,65 @@ class PlanarFreehandROITool extends AnnotationTool {
       const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
 
       let count = 0;
-      let mean = 0;
-      let stdDev = 0;
+      let sum = 0;
+      let sumSquares = 0;
       let max = -Infinity;
 
-      const meanMaxCalculator = ({ value: newValue }) => {
+      const statCalculator = ({ value: newValue }) => {
         if (newValue > max) {
           max = newValue;
         }
 
-        mean += newValue;
+        sum += newValue;
+        sumSquares += newValue ** 2;
         count += 1;
       };
 
+      let curRow = 0;
+      let intersections = [];
+      let intersectionCounter = 0;
       pointInShapeCallback(
         imageData,
         (pointLPS, pointIJK) => {
+          let result = true;
           const point = viewport.worldToCanvas(pointLPS);
-          return pointInPolyline(canvasCoordinates, point, canvasPosEnd);
+          if (point[1] != curRow) {
+            intersectionCounter = 0;
+            curRow = point[1];
+            intersections = getIntersectionCoordinatesWithPolyline(
+              canvasCoordinates,
+              point,
+              [canvasPosEnd[0], point[1]]
+            );
+            intersections.sort(
+              (function (index) {
+                return function (a, b) {
+                  return a[index] === b[index]
+                    ? 0
+                    : a[index] < b[index]
+                    ? -1
+                    : 1;
+                };
+              })(0)
+            );
+          }
+          if (intersections.length && point[0] > intersections[0][0]) {
+            intersections.shift();
+            intersectionCounter++;
+          }
+          if (intersectionCounter % 2 === 0) {
+            result = false;
+          }
+          return result;
         },
-        meanMaxCalculator,
+        statCalculator,
         boundsIJK
       );
 
-      mean /= count;
+      const mean = sum / count;
 
-      const stdCalculator = ({ value }) => {
-        const valueMinusMean = value - mean;
-
-        stdDev += valueMinusMean * valueMinusMean;
-      };
-
-      pointInShapeCallback(
-        imageData,
-        (pointLPS, pointIJK) => {
-          const point = viewport.worldToCanvas(pointLPS);
-          return pointInPolyline(canvasCoordinates, point, canvasPosEnd);
-        },
-        stdCalculator,
-        boundsIJK
-      );
-
-      stdDev /= count;
+      // https://www.strchr.com/standard_deviation_in_one_pass?allcomments=1
+      let stdDev = sumSquares / count - mean ** 2;
       stdDev = Math.sqrt(stdDev);
 
       cachedStats[targetId] = {
@@ -818,7 +849,6 @@ class PlanarFreehandROITool extends AnnotationTool {
         areaUnit: hasPixelSpacing ? 'mm' : 'px',
       };
     }
-
     return cachedStats;
   };
 
