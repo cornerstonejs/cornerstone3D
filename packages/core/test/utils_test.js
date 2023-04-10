@@ -18,6 +18,18 @@ describe('Cornerstone-render Utilities:', function () {
     expect(isEqual(0.2 + 0.1, 0.3, 0.01)).toBe(true);
     expect(isEqual(Infinity, Infinity, 0.0001)).toBe(false);
     expect(isEqual(NaN, NaN, 0.0001)).toBe(false);
+
+    const typedArray1 = new Float32Array([1.0, 1.2]);
+    const typedArray2 = new Float32Array([1.0, 1.2]);
+    const typedArray3 = new Float64Array([1.0, 1.2]);
+    const typedArray4 = new Float64Array([1.01, 1.202]);
+    const typedArray5 = new Int16Array([1, 2]);
+    const typedArray6 = new Int16Array([1, 2]);
+
+    expect(isEqual(typedArray1, typedArray2, 0.0001)).toBe(true);
+    expect(isEqual(typedArray3, typedArray4, 0.0001)).toBe(true);
+    expect(isEqual(typedArray5, typedArray6, 0.0001)).toBe(true);
+    expect(isEqual(typedArray1, typedArray3, 0.1)).toBe(false);
   });
 
   it('Should correctly calculate line and plane intersection', () => {
