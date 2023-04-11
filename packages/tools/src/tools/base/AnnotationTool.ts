@@ -1,4 +1,10 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  StackViewport,
+  cache,
+  getEnabledElement,
+  metaData,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { vec2 } from 'gl-matrix';
@@ -258,6 +264,31 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         annotation
       ),
     };
+  }
+
+  /**
+   * Returns true if the viewport is scaled to SUV units
+   * @param viewport - The viewport
+   * @param targetId - The annotation targetId
+   * @param imageId - The annotation imageId
+   * @returns
+   */
+  isSuvScaled(
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    targetId: string,
+    imageId?: string
+  ): boolean {
+    if (viewport instanceof BaseVolumeViewport) {
+      const volumeId = targetId.split('volumeId:')[1];
+      const volume = cache.getVolume(volumeId);
+      return volume.scaling?.PET !== undefined;
+    } else if (viewport instanceof StackViewport) {
+      const scalingModule: Types.ScalingParameters | undefined =
+        imageId && metaData.get('scalingModule', imageId);
+      return typeof scalingModule?.suvbw === 'number';
+    } else {
+      throw new Error('Viewport is not a valid type');
+    }
   }
 
   /**

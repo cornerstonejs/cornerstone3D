@@ -187,7 +187,18 @@ class DragProbeTool extends ProbeTool {
 
     const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-    const textLines = this._getTextLines(data, targetId, isPreScaled);
+    const isSuvScaled = this.isSuvScaled(
+      viewport,
+      targetId,
+      annotation.metadata.referencedImageId
+    );
+
+    const textLines = this._getTextLines(
+      data,
+      targetId,
+      isPreScaled,
+      isSuvScaled
+    );
     if (textLines) {
       const textCanvasCoordinates = [
         canvasCoordinates[0] + 6,
