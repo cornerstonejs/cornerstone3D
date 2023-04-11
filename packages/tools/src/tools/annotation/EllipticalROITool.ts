@@ -928,11 +928,16 @@ class EllipticalROITool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const { suvbw } =
-        metaData.get('scalingModule', annotation.metadata.referencedImageId) ||
-        {};
+      const scalingModule: Types.ScalingParameters | undefined =
+        annotation.metadata.referencedImageId &&
+        metaData.get('scalingModule', annotation.metadata.referencedImageId);
 
-      const textLines = this._getTextLines(data, targetId, isPreScaled, suvbw);
+      const textLines = this._getTextLines(
+        data,
+        targetId,
+        isPreScaled,
+        scalingModule?.suvbw
+      );
       if (!textLines || textLines.length === 0) {
         continue;
       }

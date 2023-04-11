@@ -77,6 +77,11 @@ const fakeImageLoader = (imageId) => {
  * @returns metadata based on the imageId and type
  */
 function fakeMetaDataProvider(type, imageId) {
+  if (typeof imageId !== 'string') {
+    throw new Error(
+      `Expected imageId to be of type string, but received ${imageId}`
+    );
+  }
   const imageURI = imageId.split(':')[1];
   const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
     imageURI.split('_').map((v) => parseFloat(v));
