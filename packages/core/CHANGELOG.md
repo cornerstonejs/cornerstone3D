@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.41.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.41.1...@cornerstonejs/core@0.41.2) (2023-04-11)
+
+
+### Bug Fixes
+
+* **StackViewport:** float number comparison to use epsilon when StackViewport is abou… ([#530](https://github.com/cornerstonejs/cornerstone3D-beta/issues/530)) ([abde30b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/abde30b32fb68f019f34fab3ce5489c957466fbf))
+
+
+
+
+
 ## [0.41.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.41.0...@cornerstonejs/core@0.41.1) (2023-04-10)
 
 
