@@ -142,11 +142,7 @@ function removeSegmentationRepresentation(
  * @param referencedVolumeId volume id of the segmentation reference series
  * @returns
  */
-function canRenderSegmentationInViewport(
-  viewport,
-  referencedVolumeId,
-  restrictVisualization
-) {
+function canRenderSegmentationInViewport(viewport, referencedVolumeId) {
   const defaultActor = viewport.getDefaultActor();
   if (defaultActor) {
     const { uid: defaultActorUID } = defaultActor;
@@ -157,31 +153,18 @@ function canRenderSegmentationInViewport(
       const referencedVolume = cache.getVolume(referencedVolumeId);
       const segmentationImageIds = referencedVolume.imageIds;
       if (segmentationImageIds) {
-        const segmentationSeriesInfo = metaData.get(
-          'generalSeriesModule',
-          segmentationImageIds[0]
-        );
         const segmentationImageInfo = metaData.get(
           'imagePlaneModule',
           segmentationImageIds[0]
-        );
-        const viewportSeriesInfo = metaData.get(
-          'generalSeriesModule',
-          viewportImageIds[0]
         );
         const viewportImageInfo = metaData.get(
           'imagePlaneModule',
           viewportImageIds[0]
         );
         if (
-          segmentationSeriesInfo.studyInstanceUID ===
-            viewportSeriesInfo.studyInstanceUID &&
           viewportImageInfo.frameOfReferenceUID ===
-            segmentationImageInfo.frameOfReferenceUID
+          segmentationImageInfo.frameOfReferenceUID
         ) {
-          if (restrictVisualization) {
-            return defaultActorUID === referencedVolumeId;
-          }
           return true;
         }
       }
@@ -212,7 +195,6 @@ async function render(
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
-  const globalConfig = SegmentationState.getGlobalConfig();
   const labelmapData =
     segmentation.representationData[Representations.Labelmap];
   const { volumeId: labelmapUID } = labelmapData;
@@ -227,8 +209,7 @@ async function render(
     if (
       !canRenderSegmentationInViewport(
         viewport,
-        segmentation.referencedVolumeId,
-        globalConfig.restrictVisualizationToReferenceSeries
+        segmentation.referencedVolumeId
       )
     ) {
       return;

@@ -4440,7 +4440,6 @@ type SegmentationRenderedEventType = Types_2.CustomEventType<SegmentationRendere
 type SegmentationRepresentationConfig = {
     renderInactiveSegmentations: boolean;
     representations: RepresentationConfig;
-    restrictVisualizationToReferenceSeries?: boolean;
 };
 
 // @public (undocumented)

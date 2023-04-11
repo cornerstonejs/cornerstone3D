@@ -37,10 +37,6 @@ export type SegmentationRepresentationConfig = {
   renderInactiveSegmentations: boolean;
   /** Representations configuration */
   representations: RepresentationConfig;
-  /**
-   * restricts segmentation visualization to reference series only
-   */
-  restrictVisualizationToReferenceSeries?: boolean;
 };
 
 export type SegmentationRepresentationData = {
