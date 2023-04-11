@@ -136,41 +136,48 @@ function removeSegmentationRepresentation(
 }
 
 /**
- * Checks if a segmentation data belongs to the same study as the series
+ * Checks if a segmentation data have the same frameOfReference as the series
  * displayed in a given viewport
  * @param viewport
  * @param referencedVolumeId volume id of the segmentation reference series
  * @returns
  */
-function canRenderSegmentationInViewport(viewport, referencedVolumeId) {
-  const defaultActor = viewport.getDefaultActor();
-  if (defaultActor) {
-    const { uid: defaultActorUID } = defaultActor;
-    const volume = cache.getVolume(defaultActorUID);
-    const viewportImageIds = volume.imageIds;
+function isSameFrameOfReference(viewport, referencedVolumeId) {
+  // if the referencedVolumeId is not defined, we acted as before to not break
+  // applications as referencedVolumeId is inserted in this change
+  // Can modify that in the future commits
+  if (referencedVolumeId) {
+    const defaultActor = viewport.getDefaultActor();
+    if (defaultActor) {
+      const { uid: defaultActorUID } = defaultActor;
+      const volume = cache.getVolume(defaultActorUID);
+      const viewportImageIds = volume.imageIds;
 
-    if (viewportImageIds) {
-      const referencedVolume = cache.getVolume(referencedVolumeId);
-      const segmentationImageIds = referencedVolume.imageIds;
-      if (segmentationImageIds) {
-        const segmentationImageInfo = metaData.get(
-          'imagePlaneModule',
-          segmentationImageIds[0]
-        );
-        const viewportImageInfo = metaData.get(
-          'imagePlaneModule',
-          viewportImageIds[0]
-        );
-        if (
-          viewportImageInfo.frameOfReferenceUID ===
-          segmentationImageInfo.frameOfReferenceUID
-        ) {
-          return true;
+      if (viewportImageIds) {
+        const referencedVolume = cache.getVolume(referencedVolumeId);
+        const segmentationImageIds = referencedVolume.imageIds;
+        if (segmentationImageIds) {
+          const segmentationImageInfo = metaData.get(
+            'imagePlaneModule',
+            segmentationImageIds[0]
+          );
+          const viewportImageInfo = metaData.get(
+            'imagePlaneModule',
+            viewportImageIds[0]
+          );
+          if (
+            viewportImageInfo.frameOfReferenceUID ===
+            segmentationImageInfo.frameOfReferenceUID
+          ) {
+            return true;
+          }
         }
       }
     }
+    return false;
+  } else {
+    return true;
   }
-  return false;
 }
 
 /**
@@ -205,15 +212,8 @@ async function render(
     throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
-  if (segmentation.referencedVolumeId) {
-    if (
-      !canRenderSegmentationInViewport(
-        viewport,
-        segmentation.referencedVolumeId
-      )
-    ) {
-      return;
-    }
+  if (!isSameFrameOfReference(viewport, segmentation.referencedVolumeId)) {
+    return;
   }
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
 
