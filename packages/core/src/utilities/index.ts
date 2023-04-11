@@ -24,7 +24,8 @@ import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContain
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
 import loadImageToCanvas from './loadImageToCanvas';
-import renderToCanvas from './renderToCanvas';
+import renderToCanvasCPU from './renderToCanvasCPU';
+import renderToCanvasGPU from './renderToCanvasGPU';
 import worldToImageCoords from './worldToImageCoords';
 import imageToWorldCoords from './imageToWorldCoords';
 import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
@@ -77,7 +78,8 @@ export {
   getViewportsWithVolumeId,
   transformWorldToIndex,
   loadImageToCanvas,
-  renderToCanvas,
+  renderToCanvasCPU,
+  renderToCanvasGPU,  
   worldToImageCoords,
   imageToWorldCoords,
   getVolumeSliceRangeInfo,

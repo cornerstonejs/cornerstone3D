@@ -1645,8 +1645,7 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        image.isPreScaled = image.preScale?.scaled;
-        this.csImage = image;
+        this._setCSImage(image);
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1772,9 +1771,7 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        // cornerstone image
-        image.isPreScaled = image.preScale?.scaled;
-        this.csImage = image;
+        this._setCSImage(image);
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1853,6 +1850,22 @@ class StackViewport extends Viewport implements IStackViewport {
       );
     });
   }
+
+  /**
+   * Given the cornerstone image object it will render it in the viewport
+   * This method is used by some utilities, for loading an actual image use
+   * the setStack method and not this one.
+   * @param image - Cornerstone image
+   */
+  public renderImageObject = (image) => {
+    this._setCSImage(image);
+    this._updateActorToDisplayImageId(image);
+  };
+
+  private _setCSImage = (image) => {
+    image.isPreScaled = image.preScale?.scaled;
+    this.csImage = image;
+  };
 
   /**
    * It updates the volume actor with the retrieved cornerstone image.

@@ -4,7 +4,7 @@ import { loadAndCacheImage } from '../loaders/imageLoader';
 import * as metaData from '../metaData';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import renderToCanvas from './renderToCanvas';
+import renderToCanvas from './renderToCanvasGPU';
 import { getConfiguration } from '../init';
 
 /**
@@ -36,8 +36,9 @@ export default function loadImageToCanvas(
       const { modality } = metaData.get('generalSeriesModule', imageId) || {};
 
       image.isPreScaled = image.isPreScaled || image.preScale?.scaled;
-      renderToCanvas(canvas, image, modality);
-      resolve(imageId);
+      renderToCanvas(canvas, image, modality).then(() => {
+        resolve(imageId);
+      });
     }
 
     function errorCallback(error: Error, imageId: string) {
