@@ -37,6 +37,10 @@ export type SegmentationRepresentationConfig = {
   renderInactiveSegmentations: boolean;
   /** Representations configuration */
   representations: RepresentationConfig;
+  /**
+   * restricts segmentation visualization to reference series only
+   */
+  restrictVisualizationToReferenceSeries?: boolean;
 };
 
 export type SegmentationRepresentationData = {
@@ -80,7 +84,7 @@ export type Segmentation = {
   /**
    * volume id of the segmentation reference series
    */
-  referencedVolumeId: string;
+  referencedVolumeId?: string;
 };
 
 /**

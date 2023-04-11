@@ -142,7 +142,11 @@ function removeSegmentationRepresentation(
  * @param referencedVolumeId volume id of the segmentation reference series
  * @returns
  */
-function canRenderSegmentationInViewport(viewport, referencedVolumeId) {
+function canRenderSegmentationInViewport(
+  viewport,
+  referencedVolumeId,
+  restrictVisualization
+) {
   const defaultActor = viewport.getDefaultActor();
   if (defaultActor) {
     const { uid: defaultActorUID } = defaultActor;
@@ -157,14 +161,29 @@ function canRenderSegmentationInViewport(viewport, referencedVolumeId) {
           'generalSeriesModule',
           segmentationImageIds[0]
         );
+        const segmentationImageInfo = metaData.get(
+          'imagePlaneModule',
+          segmentationImageIds[0]
+        );
         const viewportSeriesInfo = metaData.get(
           'generalSeriesModule',
           viewportImageIds[0]
         );
-        return (
-          segmentationSeriesInfo.studyInstanceUID ===
-          viewportSeriesInfo.studyInstanceUID
+        const viewportImageInfo = metaData.get(
+          'imagePlaneModule',
+          viewportImageIds[0]
         );
+        if (
+          segmentationSeriesInfo.studyInstanceUID ===
+            viewportSeriesInfo.studyInstanceUID &&
+          viewportImageInfo.frameOfReferenceUID ===
+            segmentationImageInfo.frameOfReferenceUID
+        ) {
+          if (restrictVisualization) {
+            return defaultActorUID === referencedVolumeId;
+          }
+          return true;
+        }
       }
     }
   }
@@ -193,6 +212,7 @@ async function render(
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
+  const globalConfig = SegmentationState.getGlobalConfig();
   const labelmapData =
     segmentation.representationData[Representations.Labelmap];
   const { volumeId: labelmapUID } = labelmapData;
@@ -207,7 +227,8 @@ async function render(
     if (
       !canRenderSegmentationInViewport(
         viewport,
-        segmentation.referencedVolumeId
+        segmentation.referencedVolumeId,
+        globalConfig.restrictVisualizationToReferenceSeries
       )
     ) {
       return;
