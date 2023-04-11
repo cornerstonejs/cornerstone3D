@@ -8,7 +8,6 @@ import {
   eventTarget,
   utilities as csUtils,
   utilities,
-  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -505,15 +504,17 @@ class ProbeTool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const scalingModule: Types.ScalingParameters | undefined =
-        annotation.metadata.referencedImageId &&
-        metaData.get('scalingModule', annotation.metadata.referencedImageId);
+      const isSuvScaled = this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      );
 
       const textLines = this._getTextLines(
         data,
         targetId,
         isPreScaled,
-        scalingModule?.suvbw
+        isSuvScaled
       );
       if (textLines) {
         const textCanvasCoordinates = [
@@ -540,7 +541,7 @@ class ProbeTool extends AnnotationTool {
     data,
     targetId: string,
     isPreScaled: boolean,
-    suvbwScalingFactor?: number
+    isSuvScaled: boolean
   ): string[] | undefined {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { index, Modality, value, SUVBw, SUVLbm, SUVBsa } = cachedVolumeStats;
@@ -550,7 +551,7 @@ class ProbeTool extends AnnotationTool {
     }
 
     const textLines = [];
-    const unit = getModalityUnit(Modality, isPreScaled, suvbwScalingFactor);
+    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 

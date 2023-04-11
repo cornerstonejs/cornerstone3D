@@ -1,14 +1,14 @@
 function getModalityUnit(
   modality: string,
   isPreScaled: boolean,
-  suvbw?: number
+  isSuvScaled: boolean
 ): string {
   if (modality === 'CT') {
     return 'HU';
   } else if (
     modality === 'PT' &&
     isPreScaled === true &&
-    typeof suvbw === 'number'
+    isSuvScaled === true
   ) {
     return 'SUV';
   } else {

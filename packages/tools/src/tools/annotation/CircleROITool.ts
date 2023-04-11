@@ -6,7 +6,6 @@ import {
   eventTarget,
   triggerEvent,
   utilities as csUtils,
-  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -800,15 +799,17 @@ class CircleROITool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const scalingModule: Types.ScalingParameters | undefined =
-        annotation.metadata.referencedImageId &&
-        metaData.get('scalingModule', annotation.metadata.referencedImageId);
+      const isSuvScaled = this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      );
 
       const textLines = this._getTextLines(
         data,
         targetId,
         isPreScaled,
-        scalingModule?.suvbw
+        isSuvScaled
       );
       if (!textLines || textLines.length === 0) {
         continue;
@@ -857,7 +858,7 @@ class CircleROITool extends AnnotationTool {
     data,
     targetId: string,
     isPreScaled: boolean,
-    suvbw?: number
+    isSuvScaled: boolean
   ): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
     const {
@@ -873,7 +874,7 @@ class CircleROITool extends AnnotationTool {
     } = cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, suvbw);
+    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     if (radius) {
       const radiusLine = isEmptyArea

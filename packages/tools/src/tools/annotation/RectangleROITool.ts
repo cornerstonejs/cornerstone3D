@@ -6,7 +6,6 @@ import {
   triggerEvent,
   eventTarget,
   utilities as csUtils,
-  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -772,15 +771,17 @@ class RectangleROITool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const scalingModule: Types.ScalingParameters | undefined =
-        annotation.metadata.referencedImageId &&
-        metaData.get('scalingModule', annotation.metadata.referencedImageId);
+      const isSuvScaled = this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      );
 
       const textLines = this._getTextLines(
         data,
         targetId,
         isPreScaled,
-        scalingModule?.suvbw
+        isSuvScaled
       );
       if (!textLines || textLines.length === 0) {
         continue;
@@ -852,7 +853,7 @@ class RectangleROITool extends AnnotationTool {
     data,
     targetId: string,
     isPreScaled: boolean,
-    suvbw?: number
+    isSuvScaled: boolean
   ): string[] | undefined => {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { area, mean, max, stdDev, Modality, areaUnit } = cachedVolumeStats;
@@ -862,7 +863,7 @@ class RectangleROITool extends AnnotationTool {
     }
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled, suvbw);
+    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     textLines.push(`Area: ${area.toFixed(2)} ${areaUnit}\xb2`);
     textLines.push(`Mean: ${mean.toFixed(2)} ${unit}`);
