@@ -4,7 +4,6 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import {
   cache,
   getEnabledElementByIds,
-  metaData,
   Types,
   utilities,
 } from '@cornerstonejs/core';
@@ -146,38 +145,28 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
   // if the referencedVolumeId is not defined, we acted as before to not break
   // applications as referencedVolumeId is inserted in this change
   // Can modify that in the future commits
-  if (referencedVolumeId) {
-    const defaultActor = viewport.getDefaultActor();
-    if (defaultActor) {
-      const { uid: defaultActorUID } = defaultActor;
-      const volume = cache.getVolume(defaultActorUID);
-      const viewportImageIds = volume.imageIds;
-
-      if (viewportImageIds) {
-        const referencedVolume = cache.getVolume(referencedVolumeId);
-        const segmentationImageIds = referencedVolume.imageIds;
-        if (segmentationImageIds) {
-          const segmentationImageInfo = metaData.get(
-            'imagePlaneModule',
-            segmentationImageIds[0]
-          );
-          const viewportImageInfo = metaData.get(
-            'imagePlaneModule',
-            viewportImageIds[0]
-          );
-          if (
-            viewportImageInfo.frameOfReferenceUID ===
-            segmentationImageInfo.frameOfReferenceUID
-          ) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  } else {
+  if (!referencedVolumeId) {
     return true;
   }
+  const defaultActor = viewport.getDefaultActor();
+  if (!defaultActor) {
+    return false;
+  }
+  const { uid: defaultActorUID } = defaultActor;
+  const volume = cache.getVolume(defaultActorUID);
+
+  if (volume) {
+    const referencedVolume = cache.getVolume(referencedVolumeId);
+    if (referencedVolume) {
+      if (
+        volume.metadata.FrameOfReferenceUID ===
+        referencedVolume.metadata.FrameOfReferenceUID
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**
