@@ -160,7 +160,9 @@ class Viewport implements IViewport {
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
-    this.setDisplayArea(this.options.displayArea);
+    if (this.options?.displayArea) {
+      this.setDisplayArea(this.options?.displayArea);
+    }
     if (immediate) {
       this.render();
     }
@@ -604,7 +606,7 @@ class Viewport implements IViewport {
   }
 
   public getDisplayArea(): DisplayArea | undefined {
-    return this.options.displayArea;
+    return this.options?.displayArea;
   }
 
   /**
@@ -770,12 +772,12 @@ class Viewport implements IViewport {
 
     if (
       imageData &&
-      this.options.displayArea &&
+      this.options?.displayArea &&
       resetZoom &&
       resetPan &&
       resetToCenter
     ) {
-      this.setDisplayArea(this.options.displayArea);
+      this.setDisplayArea(this.options?.displayArea);
     }
 
     return true;
