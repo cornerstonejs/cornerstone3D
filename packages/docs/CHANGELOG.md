@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.17.21...docs@0.18.0) (2023-04-12)
+
+
+### Features
+
+* added display area to viewport ([#280](https://github.com/cornerstonejs/cornerstone3D-beta/issues/280)) ([ec64803](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ec64803cb8daf9a8678afdbb227583801207ba83))
+
+
+
+
+
 ## [0.17.21](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.17.20...docs@0.17.21) (2023-04-11)
 
 **Note:** Version bump only for package docs
