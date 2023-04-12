@@ -71,6 +71,7 @@ interface ToolConfiguration {
       opacity: number;
       handleRadius: number;
     };
+    jumpThreshold: number;
   };
 }
 
@@ -162,6 +163,7 @@ class CrosshairsTool extends AnnotationTool {
           opacity: 0.8,
           handleRadius: 9,
         },
+        jumpThreshold: 0,
       },
     }
   ) {
@@ -390,6 +392,15 @@ class CrosshairsTool extends AnnotationTool {
 
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
+    if (this.configuration.jumpThreshold) {
+      const distance = vec3.distance(
+        vec3.fromValues(...jumpWorld),
+        vec3.fromValues(...this.toolCenter)
+      );
+      if (distance > this.configuration.jumpThreshold) return;
+    }
+
     this._jump(enabledElement, jumpWorld);
 
     const annotations = this._getAnnotations(enabledElement);
