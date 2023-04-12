@@ -519,6 +519,27 @@ interface CustomEvent_2<T = any> extends Event {
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
+type DisplayArea = {
+    imageArea: [number, number];
+    imageCanvasPoint: {
+        imagePoint: [number, number];
+        canvasPoint: [number, number];
+    };
+    storeAsInitialCamera: boolean;
+};
+
+// @public (undocumented)
+type DisplayAreaModifiedEvent = CustomEvent_2<DisplayAreaModifiedEventDetail>;
+
+// @public (undocumented)
+type DisplayAreaModifiedEventDetail = {
+    viewportId: string;
+    displayArea: DisplayArea;
+    volumeId?: string;
+    storeAsInitialCamera?: boolean;
+};
+
+// @public (undocumented)
 enum DynamicOperatorType {
     // (undocumented)
     AVERAGE = "AVERAGE",
@@ -576,6 +597,8 @@ export enum EVENTS {
     CAMERA_MODIFIED = "CORNERSTONE_CAMERA_MODIFIED",
     // (undocumented)
     CAMERA_RESET = "CORNERSTONE_CAMERA_RESET",
+    // (undocumented)
+    DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
     // (undocumented)
@@ -635,6 +658,8 @@ declare namespace EventTypes {
         CameraModifiedEvent,
         VoiModifiedEvent,
         VoiModifiedEventDetail,
+        DisplayAreaModifiedEvent,
+        DisplayAreaModifiedEventDetail,
         ElementDisabledEvent,
         ElementDisabledEventDetail,
         ElementEnabledEvent,
@@ -1592,6 +1617,8 @@ interface IViewport {
     // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
+    getDisplayArea(): DisplayArea | undefined;
+    // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getPan(): Point2;
@@ -1623,6 +1650,8 @@ interface IViewport {
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
     setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+    // (undocumented)
+    setDisplayArea(displayArea: DisplayArea, callResetCamera?: boolean, suppressEvents?: boolean): any;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     // (undocumented)
@@ -2277,6 +2306,7 @@ declare namespace Types {
         ViewportInputOptions,
         VOIRange,
         VOI,
+        DisplayArea,
         FlipDirection,
         ICachedImage,
         ICachedVolume,
@@ -2408,6 +2438,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getDefaultActor(): ActorEntry;
     // (undocumented)
+    getDisplayArea(): DisplayArea | undefined;
+    // (undocumented)
     _getEdges(bounds: Array<number>): Array<[number[], number[]]>;
     // (undocumented)
     _getFocalPointForResetCamera(centeredFocalPoint: Point3, previousCamera: ICamera, { resetPan, resetToCenter }: {
@@ -2467,6 +2499,10 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected setCameraNoEvent(camera: ICamera): void;
     // (undocumented)
+    setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
+    // (undocumented)
+    protected setFitToCanvasCamera(camera: ICamera): void;
+    // (undocumented)
     protected setInitialCamera(camera: ICamera): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
@@ -2504,6 +2540,7 @@ export class Viewport implements IViewport {
 type ViewportInputOptions = {
     background?: [number, number, number];
     orientation?: OrientationAxis | OrientationVectors;
+    displayArea?: DisplayArea;
     suppressEvents?: boolean;
     parallelProjection?: boolean;
 };
