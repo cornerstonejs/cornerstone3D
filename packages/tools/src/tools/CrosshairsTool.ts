@@ -782,6 +782,9 @@ class CrosshairsTool extends AnnotationTool {
 
     const referenceLines = [];
 
+    // get canvas information for points and lines (canvas box, canvas horizontal distances)
+    const canvasBox = [0, 0, clientWidth, clientHeight];
+
     otherViewportAnnotations.forEach((annotation) => {
       const { data } = annotation;
 
@@ -830,9 +833,6 @@ class CrosshairsTool extends AnnotationTool {
 
       const pointWorld1: Types.Point3 = [0, 0, 0];
       vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1);
-
-      // get canvas information for points and lines (canvas box, canvas horizontal distances)
-      const canvasBox = [0, 0, clientWidth, clientHeight];
 
       const pointCanvas0 = viewport.worldToCanvas(pointWorld0);
 
