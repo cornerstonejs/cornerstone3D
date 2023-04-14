@@ -201,6 +201,51 @@ function postProcessDecodedPixels(
   };
 
   // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+  // if (options.targetBuffer) {
+  //   pixelDataArray = _handleTargetBuffer(
+  //     options,
+  //     imageFrame,
+  //     typedArrayConstructors,
+  //     pixelDataArray
+  //   );
+  // } else {
+  //   // decide on the typed array to use based on pixel data
+  //   // if the target buffer is not specified
+
+  //   if (options.preScale.enabled) {
+  //     const scalingParameters = options.preScale.scalingParameters;
+  //     validateScalingParameters(scalingParameters);
+
+  //     const { rescaleSlope, rescaleIntercept } = scalingParameters;
+  //     const isSlopeAndInterceptIntegers =
+  //       Number.isInteger(rescaleSlope) && Number.isInteger(rescaleIntercept);
+
+  //     const { min: scaledMin, max: scaledMax } = isSlopeAndInterceptIntegers
+  //       ? getScaledMinMax(
+  //           minBeforeScale,
+  //           maxBeforeScale,
+  //           rescaleSlope,
+  //           rescaleIntercept
+  //         )
+  //       : { min: minBeforeScale, max: maxBeforeScale };
+
+  //     const TypedArrayConstructor = getTypedArrayFromMinMax(
+  //       scaledMin,
+  //       scaledMax
+  //     );
+  //     const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
+
+  //     typedArray.set(imageFrame.pixelData, 0);
+  //   } else {
+  //     const TypedArrayConstructor = getTypedArrayFromMinMax(
+  //       minBeforeScale,
+  //       maxBeforeScale
+  //     );
+  //     const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
+
+  //     typedArray.set(imageFrame.pixelData, 0);
+  //   }
+  // }
   if (options.targetBuffer) {
     pixelDataArray = _handleTargetBuffer(
       options,
@@ -208,43 +253,19 @@ function postProcessDecodedPixels(
       typedArrayConstructors,
       pixelDataArray
     );
+  } else if (options.preScale.enabled) {
+    pixelDataArray = _handlePreScaleSetup(
+      options,
+      minBeforeScale,
+      maxBeforeScale,
+      imageFrame
+    );
   } else {
-    // decide on the typed array to use based on pixel data
-    // if the target buffer is not specified
-
-    if (options.preScale.enabled) {
-      const scalingParameters = options.preScale.scalingParameters;
-      validateScalingParameters(scalingParameters);
-
-      const { rescaleSlope, rescaleIntercept } = scalingParameters;
-      const isSlopeAndInterceptIntegers =
-        Number.isInteger(rescaleSlope) && Number.isInteger(rescaleIntercept);
-
-      const { min: scaledMin, max: scaledMax } = isSlopeAndInterceptIntegers
-        ? getScaledMinMax(
-            minBeforeScale,
-            maxBeforeScale,
-            rescaleSlope,
-            rescaleIntercept
-          )
-        : { min: minBeforeScale, max: maxBeforeScale };
-
-      const TypedArrayConstructor = getTypedArrayFromMinMax(
-        scaledMin,
-        scaledMax
-      );
-      const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
-
-      typedArray.set(imageFrame.pixelData, 0);
-    } else {
-      const TypedArrayConstructor = getTypedArrayFromMinMax(
-        minBeforeScale,
-        maxBeforeScale
-      );
-      const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
-
-      typedArray.set(imageFrame.pixelData, 0);
-    }
+    pixelDataArray = _getDefaultPixelDataArray(
+      minBeforeScale,
+      maxBeforeScale,
+      imageFrame
+    );
   }
 
   let minAfterScale = minBeforeScale;
@@ -252,16 +273,14 @@ function postProcessDecodedPixels(
 
   if (options.preScale.enabled) {
     const scalingParameters = options.preScale.scalingParameters;
-    validateScalingParameters(scalingParameters);
+    _validateScalingParameters(scalingParameters);
 
-    const { rescaleSlope, rescaleIntercept } = scalingParameters;
+    const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
     const isSlopeAndInterceptNumbers =
       typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
 
-    if (
-      isSlopeAndInterceptNumbers &&
-      scaleArray(pixelDataArray, scalingParameters)
-    ) {
+    if (isSlopeAndInterceptNumbers) {
+      scaleArray(pixelDataArray, scalingParameters);
       imageFrame.preScale = {
         ...options.preScale,
         scaled: true,
@@ -350,14 +369,39 @@ function _handleTargetBuffer(
   return pixelDataArray;
 }
 
-function getScaledMinMax(min, max, rescaleSlope, rescaleIntercept) {
-  const scaledMin = rescaleSlope * min + rescaleIntercept;
-  const scaledMax = rescaleSlope * max + rescaleIntercept;
+function _handlePreScaleSetup(
+  options,
+  minBeforeScale,
+  maxBeforeScale,
+  imageFrame
+) {
+  const scalingParameters = options.preScale.scalingParameters;
+  _validateScalingParameters(scalingParameters);
 
-  return { min: scaledMin, max: scaledMax };
+  const { rescaleSlope, rescaleIntercept } = scalingParameters;
+  const areSlopeAndInterceptIntegers =
+    Number.isInteger(rescaleSlope) && Number.isInteger(rescaleIntercept);
+
+  let scaledMin = minBeforeScale;
+  let scaledMax = maxBeforeScale;
+
+  if (areSlopeAndInterceptIntegers) {
+    scaledMin = rescaleSlope * minBeforeScale + rescaleIntercept;
+    scaledMax = rescaleSlope * maxBeforeScale + rescaleIntercept;
+  }
+
+  return _getDefaultPixelDataArray(scaledMin, scaledMax, imageFrame);
 }
 
-function validateScalingParameters(scalingParameters) {
+function _getDefaultPixelDataArray(min, max, imageFrame) {
+  const TypedArrayConstructor = getTypedArrayFromMinMax(min, max);
+  const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
+  typedArray.set(imageFrame.pixelData, 0);
+
+  return typedArray;
+}
+
+function _validateScalingParameters(scalingParameters) {
   if (!scalingParameters) {
     throw new Error(
       'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'

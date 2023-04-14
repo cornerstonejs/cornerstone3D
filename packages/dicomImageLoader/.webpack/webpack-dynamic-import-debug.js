@@ -9,6 +9,7 @@ const prodConfig = {
   stats: {
     children: true,
   },
+  devtool: 'eval-source-map',
   output: {
     /*library: {
       //name: '[name]',
