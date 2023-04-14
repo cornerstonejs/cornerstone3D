@@ -219,25 +219,27 @@ async function render(
     actorEntry = viewport.getActor(segmentationRepresentationUID);
   }
 
-  if (actorEntry) {
-    const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
-
-    const renderInactiveSegmentations =
-      toolGroupConfig.renderInactiveSegmentations;
-
-    _setLabelmapColorAndOpacity(
-      viewport.id,
-      actorEntry,
-      cfun,
-      ofun,
-      colorLUTIndex,
-      toolGroupConfig.representations[Representations.Labelmap],
-      representation,
-      active,
-      renderInactiveSegmentations,
-      segmentsHidden
-    );
+  if (!actorEntry) {
+    return;
   }
+
+  const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
+
+  const renderInactiveSegmentations =
+    toolGroupConfig.renderInactiveSegmentations;
+
+  _setLabelmapColorAndOpacity(
+    viewport.id,
+    actorEntry,
+    cfun,
+    ofun,
+    colorLUTIndex,
+    toolGroupConfig.representations[Representations.Labelmap],
+    representation,
+    active,
+    renderInactiveSegmentations,
+    segmentsHidden
+  );
 }
 
 function _setLabelmapColorAndOpacity(
