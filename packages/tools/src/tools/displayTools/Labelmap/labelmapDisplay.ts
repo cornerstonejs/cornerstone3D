@@ -157,13 +157,12 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
 
   if (volume) {
     const referencedVolume = cache.getVolume(referencedVolumeId);
-    if (referencedVolume) {
-      if (
-        volume.metadata.FrameOfReferenceUID ===
+    if (
+      referencedVolume &&
+      volume.metadata.FrameOfReferenceUID ===
         referencedVolume.metadata.FrameOfReferenceUID
-      ) {
-        return true;
-      }
+    ) {
+      return true;
     }
   }
   return false;
