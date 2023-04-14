@@ -77,10 +77,6 @@ export type Segmentation = {
    * only labelmap representation is supported)
    */
   representationData: SegmentationRepresentationData;
-  /**
-   * seriesInstance uid of the segmentation reference series
-   */
-  referenceSeriesInstanceUID?: string;
 };
 
 /**
