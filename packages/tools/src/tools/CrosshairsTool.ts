@@ -1464,78 +1464,49 @@ class CrosshairsTool extends AnnotationTool {
     viewportId: string,
     renderingEngine: Types.IRenderingEngine
   ): void {
-    // 1. Compute the current world bounding box of the viewport from corner to corner
-    // 2. Check if the toolCenter is outside of the world bounding box
-    // 3. If it is outside, pan the viewport to fit in the toolCenter
+    // 1. Check if the toolCenter is outside the viewport
+    // 2. If it is outside, pan the viewport to fit in the toolCenter
 
     const viewport = renderingEngine.getViewport(viewportId);
     const { clientWidth, clientHeight } = viewport.canvas;
-    const topLefWorld = viewport.canvasToWorld([0, 0]);
-    const bottomRightWorld = viewport.canvasToWorld([
-      clientWidth,
-      clientHeight,
-    ]);
-    const topRightWorld = viewport.canvasToWorld([clientWidth, 0]);
-    const bottomLeftWorld = viewport.canvasToWorld([0, clientHeight]);
 
-    // find the minimum and maximum world coordinates in each x,y,z
-    const minX = Math.min(
-      topLefWorld[0],
-      bottomRightWorld[0],
-      topRightWorld[0],
-      bottomLeftWorld[0]
-    );
-    const maxX = Math.max(
-      topLefWorld[0],
-      bottomRightWorld[0],
-      topRightWorld[0],
-      bottomLeftWorld[0]
-    );
-    const minY = Math.min(
-      topLefWorld[1],
-      bottomRightWorld[1],
-      topRightWorld[1],
-      bottomLeftWorld[1]
-    );
-    const maxY = Math.max(
-      topLefWorld[1],
-      bottomRightWorld[1],
-      topRightWorld[1],
-      bottomLeftWorld[1]
-    );
-    const minZ = Math.min(
-      topLefWorld[2],
-      bottomRightWorld[2],
-      topRightWorld[2],
-      bottomLeftWorld[2]
-    );
-    const maxZ = Math.max(
-      topLefWorld[2],
-      bottomRightWorld[2],
-      topRightWorld[2],
-      bottomLeftWorld[2]
-    );
+    const toolCenterCanvas = viewport.worldToCanvas(this.toolCenter);
 
     // pan the viewport to fit the toolCenter in the direction
     // that is out of bounds
-    let deltaPointsWorld;
     const pan = this.configuration.autoPan.panSize;
 
-    if (this.toolCenter[0] < minX - EPSILON) {
-      deltaPointsWorld = [minX - this.toolCenter[0] + pan, 0, 0];
-    } else if (this.toolCenter[0] > maxX + EPSILON) {
-      deltaPointsWorld = [maxX - this.toolCenter[0] - pan, 0, 0];
-    } else if (this.toolCenter[1] < minY - EPSILON) {
-      deltaPointsWorld = [0, minY - this.toolCenter[1] + pan, 0];
-    } else if (this.toolCenter[1] > maxY + EPSILON) {
-      deltaPointsWorld = [0, maxY - this.toolCenter[1] - pan, 0];
-    } else if (this.toolCenter[2] < minZ - EPSILON) {
-      deltaPointsWorld = [0, 0, minZ - this.toolCenter[2] + pan];
-    } else if (this.toolCenter[2] > maxZ + EPSILON) {
-      deltaPointsWorld = [0, 0, maxZ - this.toolCenter[2] - pan];
-    } else {
+    const visiblePointCanvas = <Types.Point2>[
+      toolCenterCanvas[0],
+      toolCenterCanvas[1],
+    ];
+
+    if (toolCenterCanvas[0] < 0) {
+      visiblePointCanvas[0] = pan;
+    } else if (toolCenterCanvas[0] > clientWidth) {
+      visiblePointCanvas[0] = clientWidth - pan;
+    }
+
+    if (toolCenterCanvas[1] < 0) {
+      visiblePointCanvas[1] = pan;
+    } else if (toolCenterCanvas[1] > clientHeight) {
+      visiblePointCanvas[1] = clientHeight - pan;
+    }
+
+    if (
+      visiblePointCanvas[0] === toolCenterCanvas[0] &&
+      visiblePointCanvas[1] === toolCenterCanvas[1]
+    ) {
       return;
     }
+
+    const visiblePointWorld = viewport.canvasToWorld(visiblePointCanvas);
+
+    const deltaPointsWorld = [
+      visiblePointWorld[0] - this.toolCenter[0],
+      visiblePointWorld[1] - this.toolCenter[1],
+      visiblePointWorld[2] - this.toolCenter[2],
+    ];
 
     const camera = viewport.getCamera();
     const { focalPoint, position } = camera;
