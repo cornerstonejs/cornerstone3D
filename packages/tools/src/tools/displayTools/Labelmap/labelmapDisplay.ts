@@ -200,7 +200,7 @@ async function render(
     throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
-  if (!isSameFrameOfReference(viewport, segmentation.referencedVolumeId)) {
+  if (!isSameFrameOfReference(viewport, labelmapData?.referencedVolumeId)) {
     return;
   }
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
