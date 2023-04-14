@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.61.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.4...@cornerstonejs/tools@0.61.5) (2023-04-14)
+
+
+### Bug Fixes
+
+* **crosshairs:** Reference lines are wrongly clipped ([#552](https://github.com/cornerstonejs/cornerstone3D-beta/issues/552)) ([0bc2134](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0bc2134754762c61b72824943c506be7396887b8))
+
+
+
+
+
 ## [0.61.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.3...@cornerstonejs/tools@0.61.4) (2023-04-12)
 
 **Note:** Version bump only for package @cornerstonejs/tools
