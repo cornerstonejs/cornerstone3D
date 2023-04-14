@@ -2551,16 +2551,21 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private setColormapGPU(colormap: IColorMapPreset) {
-    const cfun = vtkColorTransferFunction.newInstance();
-
-    cfun.applyColorMap(colormap);
-    cfun.setMappingRange(0, 5);
-
-    const ActorEntry = this.getActor(this.id);
-
+    const ActorEntry = this.getDefaultActor();
     const actor = ActorEntry.actor as ImageActor;
     const actorProp = actor.getProperty();
-    actorProp.setRGBTransferFunction(0, cfun);
+    const rgbTransferFunction = actorProp.getRGBTransferFunction();
+
+    if (!rgbTransferFunction) {
+      const cfun = vtkColorTransferFunction.newInstance();
+      cfun.applyColorMap(colormap);
+      cfun.setMappingRange(0, 5);
+      actorProp.setRGBTransferFunction(0, cfun);
+    } else {
+      rgbTransferFunction.applyColorMap(colormap);
+      rgbTransferFunction.setMappingRange(0, 5);
+      actorProp.setRGBTransferFunction(0, rgbTransferFunction);
+    }
 
     this.render();
   }
