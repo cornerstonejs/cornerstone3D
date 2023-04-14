@@ -200,52 +200,6 @@ function postProcessDecodedPixels(
     Float32Array,
   };
 
-  // If we have a target buffer, write to that instead. This helps reduce memory duplication.
-  // if (options.targetBuffer) {
-  //   pixelDataArray = _handleTargetBuffer(
-  //     options,
-  //     imageFrame,
-  //     typedArrayConstructors,
-  //     pixelDataArray
-  //   );
-  // } else {
-  //   // decide on the typed array to use based on pixel data
-  //   // if the target buffer is not specified
-
-  //   if (options.preScale.enabled) {
-  //     const scalingParameters = options.preScale.scalingParameters;
-  //     validateScalingParameters(scalingParameters);
-
-  //     const { rescaleSlope, rescaleIntercept } = scalingParameters;
-  //     const isSlopeAndInterceptIntegers =
-  //       Number.isInteger(rescaleSlope) && Number.isInteger(rescaleIntercept);
-
-  //     const { min: scaledMin, max: scaledMax } = isSlopeAndInterceptIntegers
-  //       ? getScaledMinMax(
-  //           minBeforeScale,
-  //           maxBeforeScale,
-  //           rescaleSlope,
-  //           rescaleIntercept
-  //         )
-  //       : { min: minBeforeScale, max: maxBeforeScale };
-
-  //     const TypedArrayConstructor = getTypedArrayFromMinMax(
-  //       scaledMin,
-  //       scaledMax
-  //     );
-  //     const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
-
-  //     typedArray.set(imageFrame.pixelData, 0);
-  //   } else {
-  //     const TypedArrayConstructor = getTypedArrayFromMinMax(
-  //       minBeforeScale,
-  //       maxBeforeScale
-  //     );
-  //     const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
-
-  //     typedArray.set(imageFrame.pixelData, 0);
-  //   }
-  // }
   if (options.targetBuffer) {
     pixelDataArray = _handleTargetBuffer(
       options,
