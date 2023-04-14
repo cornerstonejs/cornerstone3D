@@ -135,6 +135,40 @@ function removeSegmentationRepresentation(
 }
 
 /**
+ * Checks if a segmentation data have the same frameOfReference as the series
+ * displayed in a given viewport
+ * @param viewport
+ * @param referencedVolumeId volume id of the segmentation reference series
+ * @returns
+ */
+function isSameFrameOfReference(viewport, referencedVolumeId) {
+  // if the referencedVolumeId is not defined, we acted as before to not break
+  // applications as referencedVolumeId is inserted in this change
+  // Can modify that in the future commits
+  if (!referencedVolumeId) {
+    return true;
+  }
+  const defaultActor = viewport.getDefaultActor();
+  if (!defaultActor) {
+    return false;
+  }
+  const { uid: defaultActorUID } = defaultActor;
+  const volume = cache.getVolume(defaultActorUID);
+
+  if (volume) {
+    const referencedVolume = cache.getVolume(referencedVolumeId);
+    if (
+      referencedVolume &&
+      volume.metadata.FrameOfReferenceUID ===
+        referencedVolume.metadata.FrameOfReferenceUID
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * It takes the enabled element, the segmentation Id, and the configuration, and
  * it sets the segmentation for the enabled element as a labelmap
  * @param enabledElement - The cornerstone enabled element
@@ -166,6 +200,9 @@ async function render(
     throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
   }
 
+  if (!isSameFrameOfReference(viewport, labelmapData?.referencedVolumeId)) {
+    return;
+  }
   let actorEntry = viewport.getActor(segmentationRepresentationUID);
 
   if (!actorEntry) {
@@ -180,6 +217,10 @@ async function render(
     );
 
     actorEntry = viewport.getActor(segmentationRepresentationUID);
+  }
+
+  if (!actorEntry) {
+    return;
   }
 
   const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
