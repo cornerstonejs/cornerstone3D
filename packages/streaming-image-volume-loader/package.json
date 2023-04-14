@@ -25,12 +25,10 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.42.0",
-    "cornerstone-wado-image-loader": "^4.10.2"
+    "@cornerstonejs/core": "^0.42.0"
   },
   "devDependencies": {
-    "@cornerstonejs/calculate-suv": "1.0.2",
-    "cornerstone-wado-image-loader": "^4.10.2"
+    "@cornerstonejs/calculate-suv": "1.0.2"
   },
   "contributors": [
     {

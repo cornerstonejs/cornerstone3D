@@ -1,4 +1,4 @@
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
   RenderingEngine,
   Types,
@@ -229,7 +229,7 @@ function initViewports(volume, elements) {
 }
 
 async function createVolume(numTimePoints: number): any {
-  const { metaDataManager } = cornerstoneWADOImageLoader.wadors;
+  const { metaDataManager } = cornerstoneDICOMImageLoader.wadors;
 
   if (numTimePoints < 1 || numTimePoints > MAX_NUM_TIMEPOINTS) {
     throw new Error('numTimePoints is out of range');

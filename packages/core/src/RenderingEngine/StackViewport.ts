@@ -56,7 +56,7 @@ import resize from './helpers/cpuFallback/rendering/resize';
 
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { getShouldUseCPURendering } from '../init';
+import { getConfiguration, getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
 import {
   StackViewportNewStackEventDetail,
