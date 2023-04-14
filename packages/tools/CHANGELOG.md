@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.61.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.5...@cornerstonejs/tools@0.61.6) (2023-04-14)
+
+
+### Bug Fixes
+
+* **crosshairs:** Autopan causing infinite loop ([#551](https://github.com/cornerstonejs/cornerstone3D-beta/issues/551)) ([e54dfb3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e54dfb32d24af0f504768976eaa80a84fcfc6af0))
+
+
+
+
+
 ## [0.61.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.4...@cornerstonejs/tools@0.61.5) (2023-04-14)
 
 
