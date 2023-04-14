@@ -500,6 +500,12 @@ class StackViewport extends Viewport implements IStackViewport {
 
     actor.setMapper(mapper);
 
+    const { preferSizeOverAccuracy } = getConfiguration().rendering;
+
+    if (preferSizeOverAccuracy) {
+      mapper.setPreferSizeOverAccuracy(true);
+    }
+
     if (imageData.getPointData().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false);
     }
@@ -1427,33 +1433,35 @@ class StackViewport extends Viewport implements IStackViewport {
     bitsAllocated,
     numComps,
     numVoxels,
-    TypedArray,
+    typedArray,
   }): void {
+    console.debug(typedArray);
     let pixelArray;
-    switch (bitsAllocated) {
-      case 8:
-        pixelArray = new Uint8Array(numVoxels * numComps);
-        break;
-      case 16:
-        if (this.use16BitTexture) {
-          pixelArray = new TypedArray(numVoxels * numComps);
-        } else {
-          pixelArray = new Float32Array(numVoxels * numComps);
-        }
+    this.use16BitTexture = this._shouldUse16BitTexture();
+    // switch (bitsAllocated) {
+    //   case 8:
+    //     pixelArray = new Uint8Array(numVoxels * numComps);
+    //     break;
+    //   case 16:
+    //     if (this.use16BitTexture) {
+    //       pixelArray = new TypedArray(numVoxels * numComps);
+    //     } else {
+    //       pixelArray = new Float32Array(numVoxels * numComps);
+    //     }
 
-        break;
-      case 24:
-        pixelArray = new Uint8Array(numVoxels * 3 * numComps);
+    //     break;
+    //   case 24:
+    //     pixelArray = new Uint8Array(numVoxels * 3 * numComps);
 
-        break;
-      default:
-        console.log('bit allocation not implemented');
-    }
+    //     break;
+    //   default:
+    //     console.log('bit allocation not implemented');
+    // }
 
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
       numberOfComponents: numComps,
-      values: pixelArray,
+      values: typedArray,
     });
 
     this._imageData = vtkImageData.newInstance();
@@ -1581,27 +1589,27 @@ class StackViewport extends Viewport implements IStackViewport {
       | Uint16Array
       | Int16Array;
 
-    if (image.rgba || isRgbaSourceRgbDest(pixelData, scalarData)) {
-      if (!image.rgba) {
-        console.warn('rgba not specified but data looks rgba ish', image);
-      }
-      // if image is already cached with rgba for any reason (cpu fallback),
-      // we need to convert it to rgb for the pixel data set
-      // RGB case
-      const numPixels = pixelData.length / 4;
+    // if (image.rgba || isRgbaSourceRgbDest(pixelData, scalarData)) {
+    //   if (!image.rgba) {
+    //     console.warn('rgba not specified but data looks rgba ish', image);
+    //   }
+    //   // if image is already cached with rgba for any reason (cpu fallback),
+    //   // we need to convert it to rgb for the pixel data set
+    //   // RGB case
+    //   const numPixels = pixelData.length / 4;
 
-      let rgbIndex = 0;
-      let index = 0;
+    //   let rgbIndex = 0;
+    //   let index = 0;
 
-      for (let i = 0; i < numPixels; i++) {
-        scalarData[index++] = pixelData[rgbIndex++]; // red
-        scalarData[index++] = pixelData[rgbIndex++]; // green
-        scalarData[index++] = pixelData[rgbIndex++]; // blue
-        rgbIndex++; // skip alpha
-      }
-    } else {
-      scalarData.set(pixelData);
-    }
+    //   for (let i = 0; i < numPixels; i++) {
+    //     scalarData[index++] = pixelData[rgbIndex++]; // red
+    //     scalarData[index++] = pixelData[rgbIndex++]; // green
+    //     scalarData[index++] = pixelData[rgbIndex++]; // blue
+    //     rgbIndex++; // skip alpha
+    //   }
+    // } else {
+    //   scalarData.set(pixelData);
+    // }
 
     // Trigger modified on the VTK Object so the texture is updated
     // TODO: evaluate directly changing things with texSubImage3D later
@@ -1819,18 +1827,20 @@ class StackViewport extends Viewport implements IStackViewport {
       }
 
       /**
-       * CSWIL will automatically choose the array type when no targetBuffer
-       * is provided. When CSWIL is initialized, the use16bit should match
-       * the settings of cornerstone3D (either preferSizeOverAccuracy or norm16
-       * textures need to be enabled)
+       * If use16bittexture is specified, the CSWIL will automatically choose the
+       * array type when no targetBuffer is provided. When CSWIL is initialized,
+       * the use16bit should match the settings of cornerstone3D (either preferSizeOverAccuracy
+       * or norm16 textures need to be enabled)
+       *
+       * If use16bittexture is not specified, we force the Float32Array for now
        */
       const priority = -5;
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
-        targetBuffer: {
-          type: this.use16BitTexture ? undefined : 'Float32Array',
-        },
+        // targetBuffer: {
+        //   type: this.use16BitTexture ? undefined : 'Float32Array',
+        // },
         preScale: {
           enabled: true,
         },
@@ -1954,7 +1964,7 @@ class StackViewport extends Viewport implements IStackViewport {
       bitsAllocated,
       numComps,
       numVoxels,
-      TypedArray: image.getPixelData().constructor,
+      typedArray: image.getPixelData(),
     });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone

@@ -1,12 +1,14 @@
 import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
+import getTypedArrayFromMinMax from '../shared/getTypedArrayFromMinMax';
 import {
   DICOMLoaderImageOptions,
   MetadataImagePlaneModule,
   MetadataSopCommonModule,
   DICOMLoaderIImage,
   ImageFrame,
+  PixelDataTypedArray,
 } from '../types';
 import convertColorSpace from './convertColorSpace';
 import decodeImageFrame from './decodeImageFrame';
@@ -58,27 +60,23 @@ function convertToIntPixelData(floatPixelData) {
 }
 
 /**
- * Helper function to set pixel data to the right typed array.  This is needed because web workers
- * can transfer array buffers but not typed arrays
- * @param imageFrame
+ * Helper function to set pixel d2023-03-17-16-35-04.pngata to the right typed array.
+ * This is needed because web workers can transfer array buffers but not typed arrays
+ *
+ * Here we are setting the pixel data to the right typed array based on the final
+ * min and max values
  */
-function setPixelDataType(imageFrame, preScale) {
-  const isScaled = preScale?.scaled;
-  const scalingParmeters = preScale?.scalingParameters;
-  const rescaleSlope = scalingParmeters?.rescaleSlope;
-  const rescaleIntercept = scalingParmeters?.rescaleIntercept;
-  const isNegative = rescaleSlope < 0 || rescaleIntercept < 0;
+function setPixelDataType(imageFrame) {
+  const minValue = imageFrame.smallestPixelValue;
+  const maxValue = imageFrame.largestPixelValue;
 
-  if (imageFrame.bitsAllocated === 32) {
-    imageFrame.pixelData = new Float32Array(imageFrame.pixelData);
-  } else if (imageFrame.bitsAllocated === 16) {
-    if (imageFrame.pixelRepresentation === 0 && !(isScaled && isNegative)) {
-      imageFrame.pixelData = new Uint16Array(imageFrame.pixelData);
-    } else {
-      imageFrame.pixelData = new Int16Array(imageFrame.pixelData);
-    }
+  const TypedArray = getTypedArrayFromMinMax(minValue, maxValue);
+
+  if (TypedArray) {
+    const typedArray = new TypedArray(imageFrame.pixelData);
+    imageFrame.pixelData = typedArray;
   } else {
-    imageFrame.pixelData = new Uint8Array(imageFrame.pixelData);
+    throw new Error('Could not apply a typed array to the pixel data');
   }
 }
 
@@ -87,28 +85,23 @@ function setPixelDataType(imageFrame, preScale) {
  * decoding happens with browser API which results in RGBA, but if useRGBA flag
  * is set to false, we want to return RGB
  *
- * @param imageFrame - decoded image in RGBA
+ * @param pixelData - decoded image in RGBA
  * @param targetBuffer - target buffer to write to
  */
 function removeAFromRGBA(
-  imageFrame:
-    | Float32Array // populated later after decoding
-    | Int16Array
-    | Uint16Array
-    | Uint8Array
-    | Uint8ClampedArray,
+  pixelData: PixelDataTypedArray,
   targetBuffer: Uint8ClampedArray
 ) {
-  const numPixels = imageFrame.length / 4;
+  const numPixels = pixelData.length / 4;
 
   let rgbIndex = 0;
 
   let bufferIndex = 0;
 
   for (let i = 0; i < numPixels; i++) {
-    targetBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // red
-    targetBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // green
-    targetBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // blue
+    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // red
+    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // green
+    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // blue
     rgbIndex++; // skip alpha
   }
 
@@ -176,7 +169,6 @@ function createImage(
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
     decodePromise.then(function (imageFrame: ImageFrame) {
-      debugger;
       // if it is desired to skip creating image, return the imageFrame
       // after the decode. This might be useful for some applications
       // that only need the decoded pixel data and not the image object
@@ -187,42 +179,42 @@ function createImage(
       // Decode task, point the image to it here.
       // We can't have done it within the thread incase it was a SharedArrayBuffer.
       let alreadyTyped = false;
-
       if (options.targetBuffer) {
-        let offset: number, length: number;
-        // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+        const {
+          arrayBuffer,
+          type,
+          offset: rawOffset = 0,
+          length: rawLength,
+        } = options.targetBuffer;
 
-        ({ offset, length } = options.targetBuffer);
-        const { arrayBuffer, type } = options.targetBuffer;
+        const imageFrameLength = imageFrame.pixelDataLength;
 
-        let TypedArrayConstructor;
+        const offset = rawOffset;
+        const length =
+          rawLength !== null && rawLength !== undefined
+            ? rawLength
+            : imageFrameLength - offset;
 
-        if (length === null || length === undefined) {
-          length = imageFrame.pixelDataLength;
+        const typedArrayConstructors = {
+          Uint8Array,
+          Uint16Array: use16BitDataType ? Uint16Array : undefined,
+          Int16Array: use16BitDataType ? Int16Array : undefined,
+          Float32Array,
+        };
+
+        if (length !== imageFrame.pixelDataLength) {
+          throw new Error(
+            `target array for image does not have the same length (${length}) as the decoded image length (${imageFrame.pixelDataLength}).`
+          );
         }
 
-        if (offset === null || offset === undefined) {
-          offset = 0;
-        }
+        const TypedArrayConstructor = typedArrayConstructors[type];
 
-        switch (type) {
-          case 'Uint8Array':
-            TypedArrayConstructor = Uint8Array;
-            break;
-          case use16BitDataType && 'Uint16Array':
-            TypedArrayConstructor = Uint16Array;
-            break;
-          case use16BitDataType && 'Int16Array':
-            TypedArrayConstructor = Int16Array;
-            break;
-          case 'Float32Array':
-            TypedArrayConstructor = Float32Array;
-            break;
-          default:
-            throw new Error(
-              'target array for image does not have a valid type.'
-            );
-        }
+        // TypedArray.Set is api level and ~50x faster than copying elements even for
+        // Arrays of different types, which aren't simply memcpy ops.
+        const typedArray = arrayBuffer
+          ? new TypedArrayConstructor(arrayBuffer, offset, length)
+          : new TypedArrayConstructor(imageFrame.pixelData);
 
         if (length !== imageFrame.pixelDataLength) {
           throw new Error(
@@ -230,23 +222,12 @@ function createImage(
           );
         }
 
-        // TypedArray.Set is api level and ~50x faster than copying elements even for
-        // Arrays of different types, which aren't simply memcpy ops.
-        let typedArray;
-
-        if (arrayBuffer) {
-          typedArray = new TypedArrayConstructor(arrayBuffer, offset, length);
-        } else {
-          typedArray = new TypedArrayConstructor(imageFrame.pixelData);
-        }
-
-        // If need to scale, need to scale correct array.
         imageFrame.pixelData = typedArray;
         alreadyTyped = true;
       }
 
       if (!alreadyTyped) {
-        setPixelDataType(imageFrame, imageFrame.preScale);
+        setPixelDataType(imageFrame);
       }
 
       const imagePlaneModule: MetadataImagePlaneModule =

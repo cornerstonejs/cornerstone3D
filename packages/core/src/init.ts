@@ -10,7 +10,7 @@ import { Cornerstone3DConfig } from './types';
 const defaultConfig = {
   detectGPU: {},
   rendering: {
-    preferSizeOverAccuracy: false,
+    preferSizeOverAccuracy: true,
     useCPURendering: false,
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,
@@ -22,7 +22,7 @@ const defaultConfig = {
 let config = {
   detectGPU: {},
   rendering: {
-    preferSizeOverAccuracy: false,
+    preferSizeOverAccuracy: true,
     useCPURendering: false,
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,

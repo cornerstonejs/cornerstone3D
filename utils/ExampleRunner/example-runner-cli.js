@@ -164,8 +164,8 @@ if (configuration.examples) {
   console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
   // run the build for dicom image loader
 
-  shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run webpack:dynamic-import`);
+  // shell.cd('../../dicomImageLoader');
+  // shell.exec(`yarn run webpack:dynamic-import`);
 
   if (buildExample) {
     var exBasePath = null;
