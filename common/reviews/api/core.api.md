@@ -1052,7 +1052,7 @@ interface IImage {
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     // (undocumented)
-    getPixelData: () => Array<number>;
+    getPixelData: () => PixelDataTypedArray;
     // (undocumented)
     height: number;
     // (undocumented)
@@ -1073,8 +1073,8 @@ interface IImage {
     numComps: number;
     // (undocumented)
     preScale?: {
-        scaled: boolean;
-        scalingParameters: {
+        scaled?: boolean;
+        scalingParameters?: {
             modality?: string;
             rescaleSlope?: number;
             rescaleIntercept?: number;

@@ -66,7 +66,6 @@ import {
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
-import isRgbaSourceRgbDest from './helpers/isRgbaSourceRgbDest';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 
 const EPSILON = 1; // Slice Thickness
@@ -503,6 +502,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const { preferSizeOverAccuracy } = getConfiguration().rendering;
 
     if (preferSizeOverAccuracy) {
+      // @ts-ignore for now until vtk is updated
       mapper.setPreferSizeOverAccuracy(true);
     }
 
@@ -1435,28 +1435,9 @@ class StackViewport extends Viewport implements IStackViewport {
     numVoxels,
     typedArray,
   }): void {
-    console.debug(typedArray);
-    let pixelArray;
     this.use16BitTexture = this._shouldUse16BitTexture();
-    // switch (bitsAllocated) {
-    //   case 8:
-    //     pixelArray = new Uint8Array(numVoxels * numComps);
-    //     break;
-    //   case 16:
-    //     if (this.use16BitTexture) {
-    //       pixelArray = new TypedArray(numVoxels * numComps);
-    //     } else {
-    //       pixelArray = new Float32Array(numVoxels * numComps);
-    //     }
 
-    //     break;
-    //   case 24:
-    //     pixelArray = new Uint8Array(numVoxels * 3 * numComps);
-
-    //     break;
-    //   default:
-    //     console.log('bit allocation not implemented');
-    // }
+    // Todo: I guess nothing should be done for use16bit?
 
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
