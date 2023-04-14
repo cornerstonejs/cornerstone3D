@@ -78,9 +78,9 @@ export type Segmentation = {
    */
   representationData: SegmentationRepresentationData;
   /**
-   * volume id of the segmentation reference series
+   * seriesInstance uid of the segmentation reference series
    */
-  referencedVolumeId?: string;
+  referenceSeriesInstanceUID?: string;
 };
 
 /**

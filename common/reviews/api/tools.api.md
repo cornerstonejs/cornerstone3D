@@ -4351,7 +4351,7 @@ type Segmentation = {
         [key: string]: string;
     };
     representationData: SegmentationRepresentationData;
-    referencedVolumeId?: string;
+    referenceSeriesInstanceUID?: string;
 };
 
 declare namespace segmentation {
