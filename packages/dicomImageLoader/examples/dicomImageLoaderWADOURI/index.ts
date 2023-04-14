@@ -1,6 +1,5 @@
 import htmlStr from './layout';
-import dicomImageLoader from '@cornerstonejs/dicomImageLoader';
-import { RenderingEngine, Types, Enums, metaData } from '@cornerstonejs/core';
+import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import uids from '../uids';
 const {
@@ -14,10 +13,7 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 
-import {
-  initDemo,
-  setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
+import { initDemo } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
 console.warn(
