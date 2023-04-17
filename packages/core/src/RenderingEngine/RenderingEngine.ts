@@ -1166,6 +1166,7 @@ class RenderingEngine implements IRenderingEngine {
   ): EventTypes.ImageRenderedEventDetail[] {
     let eventDetail;
 
+    if (viewport.sWidth < 4 || viewport.sHeight < 4) return;
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
       eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
