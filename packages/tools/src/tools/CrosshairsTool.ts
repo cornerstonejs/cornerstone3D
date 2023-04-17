@@ -61,6 +61,7 @@ interface ToolConfiguration {
     getReferenceLineControllable?: (viewportId: string) => boolean;
     getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
     getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
+    referenceLinesCenterGapRadius?: number;
     shadow?: boolean;
     autopan?: {
       enabled: boolean;
@@ -152,6 +153,10 @@ class CrosshairsTool extends AnnotationTool {
           enabled: false,
           panSize: 10,
         },
+        // radius of the area around the intersection of the planes, in which
+        // the reference lines will not be rendered. This is only used when
+        // having 3 viewports in the toolGroup.
+        referenceLinesCenterGapRadius: 20,
         // actorUIDs for slabThickness application, if not defined, the slab thickness
         // will be applied to all actors of the viewport
         filterActorUIDsToSetSlabThickness: [],
@@ -897,11 +902,12 @@ class CrosshairsTool extends AnnotationTool {
         canvasDiagonalLength * 0.15
       );
       const canvasVectorFromCenterStart = vec2.create();
+      const centerGap = this.configuration.referenceLinesCenterGapRadius;
       vec2.scale(
         canvasVectorFromCenterStart,
         canvasUnitVectorFromCenter,
         // Don't put a gap if the the third view is missing
-        otherViewportAnnotations.length === 2 ? canvasDiagonalLength * 0.04 : 0
+        otherViewportAnnotations.length === 2 ? centerGap : 0
       );
 
       // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
