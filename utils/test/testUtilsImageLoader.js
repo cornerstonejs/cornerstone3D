@@ -49,8 +49,8 @@ const fakeImageLoader = (imageId) => {
     windowWidth: 400,
     maxPixelValue: 255,
     minPixelValue: 0,
-    rowPixelSpacing: 1,
-    columnPixelSpacing: 1,
+    rowPixelSpacing: y_spacing,
+    columnPixelSpacing: x_spacing,
     getPixelData: () => pixelData,
     sizeInBytes: rows * columns * 1, // 1 byte for now
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
@@ -124,8 +124,8 @@ function fakeMetaDataProvider(type, imageId) {
       columnCosines: [0, 1, 0],
       imagePositionPatient: [0, 0, 0],
       pixelSpacing: [x_spacing, y_spacing],
-      rowPixelSpacing: x_spacing,
-      columnPixelSpacing: y_spacing,
+      rowPixelSpacing: y_spacing,
+      columnPixelSpacing: x_spacing,
     };
 
     return imagePlaneModule;
