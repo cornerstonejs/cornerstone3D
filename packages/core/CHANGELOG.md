@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.42.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.0...@cornerstonejs/core@0.42.1) (2023-04-17)
+
+
+### Bug Fixes
+
+* **viewport:** Exception on resize to very small window ([#559](https://github.com/cornerstonejs/cornerstone3D-beta/issues/559)) ([5877820](https://github.com/cornerstonejs/cornerstone3D-beta/commit/58778201c3412f4bda867ed7fb42a47e12f725fd))
+
+
+
+
+
 # [0.42.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.41.2...@cornerstonejs/core@0.42.0) (2023-04-12)
 
 
