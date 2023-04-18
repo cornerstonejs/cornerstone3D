@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.62.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.11...@cornerstonejs/tools@0.62.0) (2023-04-18)
+
+
+### Features
+
+* **crosshairs:** Make the reference lines gap configurable ([#557](https://github.com/cornerstonejs/cornerstone3D-beta/issues/557)) ([be91ab8](https://github.com/cornerstonejs/cornerstone3D-beta/commit/be91ab87d89f5e8079e1073a504a07a0d53373a8))
+
+
+
+
+
 ## [0.61.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.10...@cornerstonejs/tools@0.61.11) (2023-04-18)
 
 
