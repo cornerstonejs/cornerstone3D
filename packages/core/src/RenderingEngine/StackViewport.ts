@@ -1543,9 +1543,9 @@ class StackViewport extends Viewport implements IStackViewport {
     // using spacing, size, and direction only for now
     return (
       (isSameXSpacing ||
-        (image.rowPixelSpacing === null && xSpacing === 1.0)) &&
+        (image.columnPixelSpacing === null && xSpacing === 1.0)) &&
       (isSameYSpacing ||
-        (image.columnPixelSpacing === null && ySpacing === 1.0)) &&
+        (image.rowPixelSpacing === null && ySpacing === 1.0)) &&
       xVoxels === image.columns &&
       yVoxels === image.rows &&
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
