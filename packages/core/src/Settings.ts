@@ -11,10 +11,17 @@ const DICTIONARY = Symbol('Dictionary');
  * Settings
  */
 export default class Settings {
-  constructor(base = {}) {
-    const dictionary =
-      base instanceof Settings && DICTIONARY in base ? base[DICTIONARY] : {};
-    Object.seal(Object.defineProperty(this, DICTIONARY, { value: dictionary }));
+  constructor(base?: Settings) {
+    const dictionary = Object.create(
+      (base as object) instanceof Settings && DICTIONARY in (base as object)
+        ? (base as object)[DICTIONARY]
+        : null
+    );
+    Object.seal(
+      Object.defineProperty(this, DICTIONARY, {
+        value: dictionary,
+      })
+    );
   }
 
   set(key: string, value: unknown): boolean {
