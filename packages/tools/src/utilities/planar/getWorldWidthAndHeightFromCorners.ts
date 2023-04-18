@@ -25,8 +25,16 @@ export default function getWorldWidthAndHeightFromCorners(
 
   vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
 
-  const pos1 = vec3.fromValues(...topLeftWorld);
-  const pos2 = vec3.fromValues(...bottomRightWorld);
+  const pos1 = vec3.fromValues(
+    topLeftWorld[0],
+    topLeftWorld[1],
+    topLeftWorld[2]
+  );
+  const pos2 = vec3.fromValues(
+    bottomRightWorld[0],
+    bottomRightWorld[1],
+    bottomRightWorld[2]
+  );
 
   const diagonal = vec3.create();
   vec3.subtract(diagonal, pos1, pos2);

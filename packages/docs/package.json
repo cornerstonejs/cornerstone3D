@@ -6,6 +6,7 @@
   "scripts": {
     "preinstall": "node preinstall.js",
     "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 yarn run prep-examples && docusaurus build",
+    "clean": "rimraf dist build",
     "copy-coverage-to-docs": "cp -R ../../coverage/*Chrome*/. ./static/test-coverage/",
     "copy-examples-to-docs": "cp -R ../../.static-examples/. ./static/live-examples/",
     "docusaurus": "docusaurus",

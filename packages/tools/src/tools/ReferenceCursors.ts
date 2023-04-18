@@ -439,7 +439,11 @@ class ReferenceCursors extends AnnotationDisplayTool {
       if (Math.abs(currentDistance) < 0.5) return;
       const normalizedViewPlane = vec3.normalize(
         vec3.create(),
-        vec3.fromValues(...viewPlaneNormal)
+        vec3.fromValues(
+          viewPlaneNormal[0],
+          viewPlaneNormal[1],
+          viewPlaneNormal[2]
+        )
       );
       const scaledPlaneNormal = vec3.scale(
         vec3.create(),
@@ -448,7 +452,8 @@ class ReferenceCursors extends AnnotationDisplayTool {
       );
       const newFocalPoint = vec3.add(
         vec3.create(),
-        vec3.fromValues(...focalPoint),
+        vec3.fromValues(focalPoint[0], focalPoint[1], focalPoint[2]),
+
         scaledPlaneNormal
       ) as Types.Point3;
       //TODO: make check if new focal point is within bounds of volume

@@ -25,8 +25,8 @@ export default function getWorldWidthAndHeightFromTwoPoints(
 
   vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
 
-  const pos1 = vec3.fromValues(...worldPos1);
-  const pos2 = vec3.fromValues(...worldPos2);
+  const pos1 = vec3.fromValues(worldPos1[0], worldPos1[1], worldPos1[2]);
+  const pos2 = vec3.fromValues(worldPos2[0], worldPos2[1], worldPos2[2]);
 
   const diagonal = vec3.create();
   vec3.subtract(diagonal, pos1, pos2);

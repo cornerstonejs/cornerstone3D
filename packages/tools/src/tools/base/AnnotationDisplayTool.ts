@@ -135,7 +135,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
           // corresponding point on the calibrated image world.
           annotation.data.handles.points = annotation.data.handles.points.map(
             (point) => {
-              const p = vec4.fromValues(...(point as Types.Point3), 1);
+              const p = vec4.fromValues(point[0], point[1], point[2], 1);
               const pCalibrated = vec4.fromValues(0, 0, 0, 1);
               const nonCalibratedIndexVec4 = vec4.create();
               vec4.transformMat4(

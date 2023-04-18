@@ -3,10 +3,15 @@
   "version": "0.61.8",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
-  "types": "dist/esm/index.d.ts",
   "module": "src/index.ts",
+  "types": "dist/esm/index.d.ts",
   "exports": {
-    ".": "./dist/umd/index.js"
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts",
+      "require": "./dist/cjs/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "repository": "https://github.com/cornerstonejs/cornerstone3D-beta",
   "files": [
@@ -21,8 +26,9 @@
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
-    "build:all": "yarn run build:umd && yarn run build:esm",
+    "build:all": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
     "build": "yarn run build:all",
+    "clean": "rimraf dist",
     "api-check": "api-extractor --debug run",
     "build:update-api": "yarn run build && api-extractor run --local",
     "prepublishOnly": "yarn run build",
