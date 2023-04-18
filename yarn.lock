@@ -2295,14 +2295,6 @@
     core-js-pure "^3.20.2"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime-corejs3@^7.15.4":
-  version "7.20.13"
-  resolved "https://registry.npmjs.org/@babel/runtime-corejs3/-/runtime-corejs3-7.20.13.tgz#ad012857db412ab0b5ccf184b67be2cfcc2a1dcf"
-  integrity sha512-p39/6rmY9uvlzRiLZBIB3G9/EBr66LBMcYm7fIDeSBNdRjF2AGD3rFZucUyAgGHC2N+7DdLvVi33uTjSE44FIw==
-  dependencies:
-    core-js-pure "^3.25.1"
-    regenerator-runtime "^0.13.11"
-
 "@babel/runtime-corejs3@^7.18.6":
   version "7.18.9"
   resolved "https://registry.yarnpkg.com/@babel/runtime-corejs3/-/runtime-corejs3-7.18.9.tgz#7bacecd1cb2dd694eacd32a91fcf7021c20770ae"
@@ -8890,15 +8882,10 @@ core-js-pure@^3.20.2:
   resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.22.8.tgz#f2157793b58719196ccf9673cc14f3683adc0957"
   integrity sha512-bOxbZIy9S5n4OVH63XaLVXZ49QKicjowDx/UELyJ68vxfCRpYsbyh/WNZNfEfAk+ekA8vSjt+gCDpvh672bc3w==
 
-core-js-pure@^3.25.1:
-  version "3.27.2"
-  resolved "https://registry.npmjs.org/core-js-pure/-/core-js-pure-3.27.2.tgz#47e9cc96c639eefc910da03c3ece26c5067c7553"
-  integrity sha512-Cf2jqAbXgWH3VVzjyaaFkY1EBazxugUepGymDoeteyYr9ByX51kD2jdHZlsEF/xnJMyN3Prua7mQuzwMg6Zc9A==
-
-core-js@>=3.30.0, core-js@^2.4.0, core-js@^2.6.12, core-js@^3.23.3, core-js@^3.30.0:
-  version "3.30.1"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.30.1.tgz#fc9c5adcc541d8e9fa3e381179433cbf795628ba"
-  integrity sha512-ZNS5nbiSwDTq4hFosEDqm65izl2CWmLz0hARJMyNQBgkUZMIF51cQiMvIQKA6hvuaeWxQDP3hEedM1JZIgTldQ==
+core-js@2.6.12, core-js@^2.4.0, core-js@^2.6.12, core-js@^3.23.3:
+  version "2.6.12"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.6.12.tgz#d9333dfa7b065e347cc5682219d6f690859cc2ec"
+  integrity sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==
 
 core-util-is@1.0.2:
   version "1.0.2"
@@ -9522,16 +9509,17 @@ dateformat@^3.0.0:
   resolved "https://registry.yarnpkg.com/dateformat/-/dateformat-3.0.3.tgz#a6e37499a4d9a9cf85ef5872044d62901c9889ae"
   integrity sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==
 
-dcmjs@^0.24.5:
-  version "0.24.10"
-  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.24.10.tgz#048a12a1905175763274545c17bb38b506cdfd00"
-  integrity sha512-kugEdBqwwTx7lqUxm4jdklkMJiQ8pZ0aqMw9WkszkDU5lDWHyq2kbRccACtcwqygC7j1d36w8uG/vNLMejeMBg==
+dcmjs@^0.24.5, dcmjs@^0.29.5:
+  version "0.29.5"
+  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.29.5.tgz#3e2311fc47aafc70f21e236ad89e2ff9ba6589fd"
+  integrity sha512-CcLo3pwitf9JhhvW3/icCraxUhaIKJRyOys9XJlBBDn5TQskyJzxgveLKejcryHn4DooqlJPeMuM4ixdPFEERQ==
   dependencies:
     "@babel/runtime-corejs2" "^7.17.8"
     gl-matrix "^3.1.0"
     lodash.clonedeep "^4.5.0"
     loglevelnext "^3.0.1"
     ndarray "^1.0.19"
+    pako "^2.0.4"
 
 debug@2.6.9, debug@^2.2.0, debug@^2.3.3, debug@^2.6.0, debug@^2.6.8, debug@^2.6.9:
   version "2.6.9"
@@ -14901,10 +14889,10 @@ karma-webpack@^5.0.0:
     minimatch "^3.0.4"
     webpack-merge "^4.1.5"
 
-karma@^6.3.12:
-  version "6.3.20"
-  resolved "https://registry.yarnpkg.com/karma/-/karma-6.3.20.tgz#12f5c3b0e68f204607cb0a3a78d4751b42ef61a8"
-  integrity sha512-HRNQhMuKOwKpjYlWiJP0DUrJOh+QjaI/DTaD8b9rEm4Il3tJ8MijutVZH4ts10LuUFst/CedwTS6vieCN8yTSw==
+karma@^6.4.1:
+  version "6.4.1"
+  resolved "https://registry.yarnpkg.com/karma/-/karma-6.4.1.tgz#f2253716dd3a41aaa813fa9f54b6ee047e1127d9"
+  integrity sha512-Cj57NKOskK7wtFWSlMvZf459iX+kpYIPXmkNUzP2WAFcA7nhr/ALn5R7sw3w+1udFDcpMx/tuB8d5amgm3ijaA==
   dependencies:
     "@colors/colors" "1.5.0"
     body-parser "^1.19.0"
