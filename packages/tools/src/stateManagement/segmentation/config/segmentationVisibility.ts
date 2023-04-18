@@ -13,7 +13,12 @@ function getSegmentationIndices(segmentationId) {
     const scalarData = volume.getScalarData();
 
     const keySet = {};
-    scalarData.forEach((it) => (keySet[it] = it));
+    for (let i = 0; i < scalarData.length; i++) {
+      const segmentIndex = scalarData[i];
+      if (segmentIndex !== 0 && !keySet[segmentIndex]) {
+        keySet[segmentIndex] = true;
+      }
+    }
     return Object.keys(keySet).map((it) => parseInt(it, 10));
   } else if (segmentation.type === SegmentationRepresentations.Contour) {
     const geometryIds = segmentation.representationData.CONTOUR?.geometryIds;
