@@ -29,6 +29,7 @@
     "dev": "yarn run all-examples",
     "docs": "lerna run docs",
     "docs:watch": "lerna run docs:watch",
+    "build:pack": "yarn build && lerna run pack",
     "preinstall": "node preinstall.js",
     "start": "yarn run dev",
     "test:firefox": "karma start ./karma.conf.js --browsers Firefox",

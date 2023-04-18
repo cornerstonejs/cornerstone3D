@@ -12,9 +12,11 @@
         "example": "examples",
         "build": "dist"
     },
+    "types": "./dist/@cornerstonejs/dts/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/@cornerstonejs/dts/index.d.ts",
+            "require": "./dist/@cornerstonejs/adapters.es.js",
             "import": "./dist/@cornerstonejs/adapters.es.js"
         },
         "./package.json": "./package.json"
@@ -28,7 +30,8 @@
         "build:all": "yarn build",
         "build:examples": "npm run build && npx cpx 'dist/**/*.{js,map}' examples/js",
         "build:update-api": "yarn run build && api-extractor run --local",
-        "clean": "rimraf dist",
+        "clean": "rimraf dist && rimraf *.tgz",
+        "pack": "npm pack",
         "start": "rollup -c -w",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."

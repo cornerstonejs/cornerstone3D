@@ -8,6 +8,7 @@
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
+      "require": "./dist/umd/index.js",
       "types": "./dist/esm/index.d.ts"
     },
     "./package.json": "./package.json"
@@ -27,7 +28,8 @@
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "yarn run build:umd && yarn run build:esm",
     "build": "yarn run build:all",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist && rimraf *.tgz",
+    "pack": "npm pack",
     "api-check": "api-extractor --debug run",
     "build:update-api": "yarn run build && api-extractor run --local",
     "prepublishOnly": "yarn run build",

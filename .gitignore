@@ -3,6 +3,7 @@ node_modules
 
 # builds
 build
+*.tgz
 
 # dist
 .rpt2_cache
