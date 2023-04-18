@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.61.11](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.10...@cornerstonejs/tools@0.61.11) (2023-04-18)
+
+
+### Bug Fixes
+
+* **segmentationVisibility:** Improve performance for `getSegmentationIndices` ([#556](https://github.com/cornerstonejs/cornerstone3D-beta/issues/556)) ([c02d31c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c02d31c739a2b319a5c815bda404a12dcba65bd1))
+
+
+
+
+
 ## [0.61.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.9...@cornerstonejs/tools@0.61.10) (2023-04-18)
 
 
