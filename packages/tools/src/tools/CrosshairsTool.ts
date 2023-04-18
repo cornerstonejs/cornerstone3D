@@ -61,6 +61,7 @@ interface ToolConfiguration {
     getReferenceLineControllable?: (viewportId: string) => boolean;
     getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
     getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
+    referenceLinesCenterGapRadius?: number;
     shadow?: boolean;
     autopan?: {
       enabled: boolean;
@@ -152,6 +153,10 @@ class CrosshairsTool extends AnnotationTool {
           enabled: false,
           panSize: 10,
         },
+        // radius of the area around the intersection of the planes, in which
+        // the reference lines will not be rendered. This is only used when
+        // having 3 viewports in the toolGroup.
+        referenceLinesCenterGapRadius: 20,
         // actorUIDs for slabThickness application, if not defined, the slab thickness
         // will be applied to all actors of the viewport
         filterActorUIDsToSetSlabThickness: [],
@@ -770,6 +775,7 @@ class CrosshairsTool extends AnnotationTool {
     const canvasDiagonalLength = Math.sqrt(
       clientWidth * clientWidth + clientHeight * clientHeight
     );
+    const canvasMinDimensionLength = Math.min(clientWidth, clientHeight);
 
     const data = viewportAnnotation.data;
     const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter);
@@ -878,7 +884,6 @@ class CrosshairsTool extends AnnotationTool {
       //                           Long
       const canvasVectorFromCenterLong = vec2.create();
 
-      // Todo: configuration should provide constants below (100, 0.25, 0.15, 0.04)
       vec2.scale(
         canvasVectorFromCenterLong,
         canvasUnitVectorFromCenter,
@@ -888,20 +893,25 @@ class CrosshairsTool extends AnnotationTool {
       vec2.scale(
         canvasVectorFromCenterMid,
         canvasUnitVectorFromCenter,
-        canvasDiagonalLength * 0.25
+        // to maximize the visibility of the controls, they need to be
+        // placed at most at half the length of the shortest side of the canvas.
+        // Chosen 0.4 to have some margin to the edge.
+        canvasMinDimensionLength * 0.4
       );
       const canvasVectorFromCenterShort = vec2.create();
       vec2.scale(
         canvasVectorFromCenterShort,
         canvasUnitVectorFromCenter,
-        canvasDiagonalLength * 0.15
+        // Chosen 0.2 because is half of 0.4.
+        canvasMinDimensionLength * 0.2
       );
       const canvasVectorFromCenterStart = vec2.create();
+      const centerGap = this.configuration.referenceLinesCenterGapRadius;
       vec2.scale(
         canvasVectorFromCenterStart,
         canvasUnitVectorFromCenter,
         // Don't put a gap if the the third view is missing
-        otherViewportAnnotations.length === 2 ? canvasDiagonalLength * 0.04 : 0
+        otherViewportAnnotations.length === 2 ? centerGap : 0
       );
 
       // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
