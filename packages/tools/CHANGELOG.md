@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.61.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.9...@cornerstonejs/tools@0.61.10) (2023-04-18)
+
+
+### Bug Fixes
+
+* **mouse:** Avoid the delay on double click checking for right click ([#560](https://github.com/cornerstonejs/cornerstone3D-beta/issues/560)) ([2c86500](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2c8650001e19355bf856e8e475121bbd99feb18d))
+
+
+
+
+
 ## [0.61.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.61.8...@cornerstonejs/tools@0.61.9) (2023-04-18)
 
 
