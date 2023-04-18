@@ -3,6 +3,7 @@ node_modules
 
 # builds
 build
+
 # dist
 .rpt2_cache
 
@@ -14,6 +15,7 @@ build
 .env.test.local
 .env.production.local
 .yarn
+.cache
 
 lerna-debug.log
 npm-debug.log*

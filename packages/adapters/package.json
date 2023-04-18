@@ -13,9 +13,12 @@
         "build": "dist"
     },
     "exports": {
-        ".": "./dist/@cornerstonejs/adapters.es.js"
+        ".": {
+            "types": "./dist/@cornerstonejs/dts/index.d.ts",
+            "import": "./dist/@cornerstonejs/adapters.es.js"
+        },
+        "./package.json": "./package.json"
     },
-    "types": "./dist/@cornerstonejs/dts/index.d.ts",
     "publishConfig": {
         "access": "public"
     },
