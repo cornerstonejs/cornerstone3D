@@ -893,12 +893,16 @@ class CrosshairsTool extends AnnotationTool {
       vec2.scale(
         canvasVectorFromCenterMid,
         canvasUnitVectorFromCenter,
+        // to maximize the visibility of the controls, they need to be
+        // placed at most at half the length of the shortest side of the canvas.
+        // Chosen 0.4 to have some margin to the edge.
         canvasMinDimensionLength * 0.4
       );
       const canvasVectorFromCenterShort = vec2.create();
       vec2.scale(
         canvasVectorFromCenterShort,
         canvasUnitVectorFromCenter,
+        // Chosen 0.2 because is half of 0.4.
         canvasMinDimensionLength * 0.2
       );
       const canvasVectorFromCenterStart = vec2.create();
