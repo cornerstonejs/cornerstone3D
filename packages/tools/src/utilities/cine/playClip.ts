@@ -298,16 +298,15 @@ function _stopClipWithData(playClipData) {
   }
 }
 
+function _getVolumesFromViewport(viewport): Types.IImageVolume[] {
+  return viewport.getActors().map((actor) => cache.getVolume(actor.uid));
+}
+
 function _getVolumeFromViewport(viewport): Types.IImageVolume {
-  const actorEntry = viewport.getDefaultActor();
+  const volumes = _getVolumesFromViewport(viewport);
+  const dynamicVolume = volumes.find((volume) => volume.isDynamicVolume());
 
-  if (!actorEntry) {
-    // This can happen during setup/teardown of viewports.
-    return;
-  }
-
-  const volumeId = actorEntry.uid;
-  return cache.getVolume(volumeId);
+  return dynamicVolume ?? volumes[0];
 }
 
 function _createStackViewportCinePlayContext(

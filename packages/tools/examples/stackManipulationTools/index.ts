@@ -61,9 +61,7 @@ addDropdownToToolbar({
     defaultValue: defaultLeftClickTool,
   },
   onSelectedValueChange: (selectedValue) => {
-    console.log('>>>>> selectedValue :: ', selectedValue);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    console.log('>>>>> toolGroup :: ', toolGroup);
 
     toolGroup.setToolPassive(currentLeftClickTool);
 
