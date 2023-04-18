@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.42.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.2...@cornerstonejs/core@0.42.3) (2023-04-18)
+
+
+### Bug Fixes
+
+* **Stack:** swap image row and column pixel spacing + relaxing isequal compar… ([#566](https://github.com/cornerstonejs/cornerstone3D-beta/issues/566)) ([1e95ece](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1e95ece03dce10635d9efe4302aa4de768d14721))
+
+
+
+
+
 ## [0.42.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.1...@cornerstonejs/core@0.42.2) (2023-04-18)
 
 
