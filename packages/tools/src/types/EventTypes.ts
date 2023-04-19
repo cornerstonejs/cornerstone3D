@@ -376,6 +376,10 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail &
       pixelY: number;
       direction: number;
     };
+    /** Pretend to be a drag */
+    deltaPoints: {
+      canvas: [number, number];
+    };
     /** Mouse Points */
     points: IPoints;
   };

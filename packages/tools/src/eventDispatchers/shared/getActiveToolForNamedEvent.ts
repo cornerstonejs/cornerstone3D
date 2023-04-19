@@ -1,5 +1,5 @@
 import { ToolGroupManager } from '../../store';
-import { MouseBindings, ToolModes } from '../../enums';
+import { ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
 import { EventTypes } from '../../types';
 import getMouseModifier from './getMouseModifier';
@@ -8,25 +8,25 @@ const { Active } = ToolModes;
 
 /**
  * Iterate tool group tools until we find a tool that has a "ToolBinding"
- * that matches our MouseEvent's `buttons`. It's possible there will be no match
- * (no active tool for that mouse button combination).
+ * that matches the named event. It's possible there will be no match.
  *
  * @param evt - The event dispatcher mouse event.
  *
  * @returns tool
  */
 export default function getActiveToolForMouseEvent(
-  evt: EventTypes.NormalizedMouseEventType
+  name: string,
+  evt: EventTypes.MouseWheelEventType
 ) {
   // Todo: we should refactor this to use getToolsWithModesForMouseEvent instead
   const { renderingEngineId, viewportId } = evt.detail;
-  const mouseEvent = evt.detail.event;
+  const namedEvent = evt.detail.event;
 
   // If any keyboard modifier key is also pressed - get the mouse version
   // first since it handle combinations, while the key event handles non-modifier
   // keys
   const modifierKey =
-    getMouseModifier(mouseEvent) || keyEventListener.getModifierKey();
+    getMouseModifier(namedEvent) || keyEventListener.getModifierKey();
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,
@@ -49,9 +49,7 @@ export default function getActiveToolForMouseEvent(
       toolOptions.bindings.length &&
       toolOptions.bindings.some((binding) => {
         return (
-          binding.mouseButton ===
-            (mouseEvent ? mouseEvent.buttons : MouseBindings.Primary) &&
-          binding.modifierKey === modifierKey
+          binding.namedEvent === name && binding.modifierKey === modifierKey
         );
       });
 

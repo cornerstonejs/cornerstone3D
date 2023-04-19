@@ -22,12 +22,16 @@ class StackScrollTool extends BaseTool {
       configuration: {
         invert: false,
         debounceIfNotLoaded: true,
-        loop: false
+        loop: false,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
     this.deltaY = 1;
+  }
+
+  mouseWheelCallback(evt): void {
+    this._dragCallback(evt);
   }
 
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
@@ -65,7 +69,7 @@ class StackScrollTool extends BaseTool {
         delta: invert ? -imageIdIndexOffset : imageIdIndexOffset,
         volumeId,
         debounceLoading: debounceIfNotLoaded,
-        loop: loop
+        loop: loop,
       });
 
       this.deltaY = deltaY % pixelsPerImage;

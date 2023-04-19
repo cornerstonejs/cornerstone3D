@@ -330,12 +330,13 @@ export default class ToolGroup implements IToolGroup {
     // modifier keys.
     const bindingsToUse = [...prevBindings, ...newBindings].reduce(
       (unique, binding) => {
-        const TouchBinding = binding.numTouchPoints !== undefined;
-        const MouseBinding = binding.mouseButton !== undefined;
+        const touchBinding = binding.numTouchPoints !== undefined;
+        const mouseBinding = binding.mouseButton !== undefined;
+        const namedBinding = !!binding.namedEvent;
 
         if (
           !unique.some((obj) => hasSameBinding(obj, binding)) &&
-          (TouchBinding || MouseBinding)
+          (touchBinding || mouseBinding || namedBinding)
         ) {
           unique.push(binding);
         }
@@ -671,9 +672,7 @@ function hasSameBinding(
   binding1: IToolBinding,
   binding2: IToolBinding
 ): boolean {
-  if (binding1.mouseButton !== binding2.mouseButton) {
-    return false;
-  }
-
+  if (binding1.mouseButton !== binding2.mouseButton) return false;
+  if (binding1.namedEvent !== binding2.namedEvent) return false;
   return binding1.modifierKey === binding2.modifierKey;
 }

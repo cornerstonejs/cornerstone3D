@@ -2855,6 +2855,7 @@ type IToolBinding = {
     mouseButton?: ToolBindingMouseType;
     modifierKey?: ToolBindingKeyboardType;
     numTouchPoints?: number;
+    namedEvent?: string;
 };
 
 // @public (undocumented)
@@ -3488,6 +3489,9 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail & MouseCustomEvent
         pixelX: number;
         pixelY: number;
         direction: number;
+    };
+    deltaPoints: {
+        canvas: [number, number];
     };
     points: IPoints;
 };
@@ -4721,6 +4725,8 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
+    mouseWheelCallback(evt: any): void;
+    // (undocumented)
     static toolName: any;
     // (undocumented)
     touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
@@ -5550,6 +5556,8 @@ export class ZoomTool extends BaseTool {
     initialMousePosWorld: Types_2.Point3;
     // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    mouseWheelCallback(evt: any): void;
     // (undocumented)
     _panCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)

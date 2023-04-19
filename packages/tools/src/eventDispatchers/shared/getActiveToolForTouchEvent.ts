@@ -2,6 +2,7 @@ import { ToolGroupManager } from '../../store';
 import { MouseBindings, ToolModes } from '../../enums';
 import { EventTypes } from '../../types';
 import getMouseModifier from './getMouseModifier';
+import { keyEventListener } from '../../eventListeners';
 
 const { Active } = ToolModes;
 
@@ -35,7 +36,8 @@ export default function getActiveToolForTouchEvent(
   const numTouchPoints = Object.keys(touchEvent.touches).length;
 
   // If any keyboard modifier key is also pressed
-  const modifierKey = getMouseModifier(touchEvent);
+  const modifierKey =
+    getMouseModifier(touchEvent) || keyEventListener.getModifierKey();
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j];

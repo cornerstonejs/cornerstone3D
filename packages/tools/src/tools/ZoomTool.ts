@@ -79,6 +79,11 @@ class ZoomTool extends BaseTool {
     }
   };
 
+  // Zoom on mouse wheel
+  public mouseWheelCallback(evt): void {
+    this._dragCallback(evt);
+  }
+
   _pinchCallback(evt: EventTypes.InteractionEventType) {
     const pointsList = (evt as EventTypes.TouchStartEventType).detail
       .currentPointsList;

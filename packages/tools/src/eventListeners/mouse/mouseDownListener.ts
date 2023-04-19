@@ -134,7 +134,7 @@ function mouseDownListener(evt: MouseEvent) {
   // on anything except left double click.
   doubleClickState.doubleClickTimeout = setTimeout(
     _doStateMouseDownAndUp,
-    evt.button === 1 ? DOUBLE_CLICK_TOLERANCE_MS : 0
+    evt.buttons === 1 ? DOUBLE_CLICK_TOLERANCE_MS : 0
   );
 
   // First mouse down of a potential double click. So save it and start
@@ -144,7 +144,7 @@ function mouseDownListener(evt: MouseEvent) {
 
   state.element = <HTMLDivElement>evt.currentTarget;
 
-  state.mouseButton = evt.button;
+  state.mouseButton = evt.buttons;
 
   const enabledElement = getEnabledElement(state.element);
   const { renderingEngineId, viewportId } = enabledElement;
