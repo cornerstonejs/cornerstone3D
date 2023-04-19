@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.43.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.3...@cornerstonejs/core@0.43.0) (2023-04-19)
+
+
+### Features
+
+* **cpu event:** added event pre stack new image for cpu ([#565](https://github.com/cornerstonejs/cornerstone3D-beta/issues/565)) ([b91076f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b91076f8fe0856895f04f18e3cb42269dbb0b38d))
+
+
+
+
+
 ## [0.42.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.2...@cornerstonejs/core@0.42.3) (2023-04-18)
 
 
