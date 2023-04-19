@@ -41,18 +41,14 @@ function _convertVolumeToStackViewport(
   const { uid: volumeId } = actorEntry;
   const volume = cache.getVolume(volumeId) as StreamingImageVolume;
 
-  const imageIds = volume.imageIds;
-
   // if this is the first time decaching do it
-  if (!cache.getImageLoadObject(imageIds[0])) {
-    volume.decache();
-  }
+  volume.decache();
 
-  const stack = volume.imageIds;
+  const stack = volume.imageIds.reverse();
 
   // Set the stack on the viewport
-  const currentIndex = Math.floor(stack.length / 2);
-  stackViewport.setStack(stack, currentIndex);
+  // const currentIndex = Math.floor(stack.length / 2);
+  stackViewport.setStack(stack, 0);
 
   // Render the image
   viewport.render();
@@ -82,7 +78,7 @@ async function _convertStackToVolumeViewport(
       type: ViewportType.ORTHOGRAPHIC,
       element,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0.4, 0.2],
       },
     },
