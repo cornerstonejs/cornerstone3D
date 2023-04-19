@@ -1750,6 +1750,14 @@ class StackViewport extends Viewport implements IStackViewport {
         useRGBA: true,
       };
 
+      const eventDetail: EventTypes.PreStackNewImageEventDetail = {
+        imageId,
+        imageIdIndex,
+        viewportId: this.id,
+        renderingEngineId: this.renderingEngineId,
+      };
+      triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
+
       imageLoadPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),
         requestType,
