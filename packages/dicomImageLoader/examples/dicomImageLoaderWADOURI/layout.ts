@@ -1,10 +1,7 @@
 const html = `
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-<div class="container">
-    <div class="page-header">
-        <h1>Example of displaying a DICOM P10 image using Cornerstone DICOM Image Loader</h1>
-    </div>
+<div class="container mt-4">
    <select id="imageSelector">
     <option value="" selected>Select an image</option>
     <optgroup label="CharLS">

@@ -149,7 +149,7 @@ function createImage(
       // Decode task, point the image to it here.
       // We can't have done it within the thread incase it was a SharedArrayBuffer.
       let alreadyTyped = false;
-      if (options.targetBuffer) {
+      if (options.targetBuffer && options.targetBuffer.type) {
         const {
           arrayBuffer,
           type,

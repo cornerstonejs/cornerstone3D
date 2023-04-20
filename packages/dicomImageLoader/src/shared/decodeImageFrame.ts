@@ -200,7 +200,7 @@ function postProcessDecodedPixels(
     Float32Array,
   };
 
-  if (options.targetBuffer) {
+  if (options.targetBuffer && options.targetBuffer.type) {
     pixelDataArray = _handleTargetBuffer(
       options,
       imageFrame,

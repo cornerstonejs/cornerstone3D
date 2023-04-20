@@ -1,5 +1,11 @@
 import htmlStr from './layout';
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  setUseCPURendering,
+  setPreferSizeOverAccuracy,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import uids from '../uids';
 const {
@@ -13,24 +19,48 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 
-import { initDemo } from '../../../../utils/demo/helpers';
+import {
+  addToggleButtonToToolbar,
+  initDemo,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-// read html text string file and render it on the page'
-const html = document.createElement('html');
-html.innerHTML = htmlStr;
-document.body.appendChild(html);
+// add to the script tag
+const div = document.createElement('div');
+div.innerHTML = htmlStr;
+document.getElementById('content').appendChild(div);
+
+setTitleAndDescription(
+  'Example of displaying a DICOM P10 image using Cornerstone DICOM Image Loader',
+  'You can toggle different settings as using CPU or GPU rendering, using preferSizeOverAccuracy setting'
+);
+
+addToggleButtonToToolbar({
+  title: 'Toggle CPU Rendering',
+  defaultToggle: false,
+  onClick(toggle) {
+    toggle ? setUseCPURendering(true) : setUseCPURendering(false);
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Prefer Size Over Accuracy',
+  defaultToggle: false,
+  onClick(toggle) {
+    toggle ? setPreferSizeOverAccuracy(true) : setPreferSizeOverAccuracy(false);
+  },
+});
 
 const { ViewportType } = Enums;
 const element = document.querySelector(
   '#cornerstone-element'
 ) as HTMLDivElement;
 
-const loaded = false;
 const toolGroupId = 'myToolGroup';
 let viewport;
 

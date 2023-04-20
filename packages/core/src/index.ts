@@ -33,6 +33,7 @@ import {
   getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
+  setPreferSizeOverAccuracy,
   setUseSharedArrayBuffer,
   resetUseCPURendering,
   resetUseSharedArrayBuffer,
@@ -113,6 +114,7 @@ export {
   // CPU Rendering
   getShouldUseCPURendering,
   setUseCPURendering,
+  setPreferSizeOverAccuracy,
   resetUseCPURendering,
   // SharedArrayBuffer
   getShouldUseSharedArrayBuffer,

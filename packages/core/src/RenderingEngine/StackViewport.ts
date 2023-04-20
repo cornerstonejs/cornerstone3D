@@ -156,7 +156,12 @@ class StackViewport extends Viewport implements IStackViewport {
   private _cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
   // CPU fallback
   private useCPURendering: boolean;
-  private use16BitTexture = false;
+  // Since WebGL natively supports 8 bit int and Float32, we should check if
+  // extra configuration flags has been set to use native data type
+  // which would save a lot of memory and speed up rendering but it is not
+  // yet widely supported in all hardwares. This feature can be turned on
+  // by setting useNorm16Texture or preferSizeOverAccuracy in the configuration
+  private useNativeDataType = false;
   private cpuImagePixelData: number[];
   private cpuRenderingInvalidated: boolean;
   private csImage: IImage;
@@ -177,16 +182,11 @@ class StackViewport extends Viewport implements IStackViewport {
     this.scaling = {};
     this.modality = null;
     this.useCPURendering = getShouldUseCPURendering();
-    this.use16BitTexture = this._shouldUse16BitTexture();
+    this.useNativeDataType = this._shouldUseNativeDataType();
     this._configureRenderingPipeline();
 
     if (this.useCPURendering) {
-      this._cpuFallbackEnabledElement = {
-        canvas: this.canvas,
-        renderingTools: {},
-        transform: new Transform(),
-        viewport: { rotation: 0 },
-      };
+      this._resetCPUFallbackElement();
     } else {
       const renderer = this.getRenderer();
       const camera = vtkCamera.newInstance();
@@ -215,6 +215,10 @@ class StackViewport extends Viewport implements IStackViewport {
     this.initializeElementDisabledHandler();
   }
 
+  public updateRenderingPipeline = () => {
+    this._configureRenderingPipeline();
+  };
+
   static get useCustomRenderingPipeline(): boolean {
     return getShouldUseCPURendering();
   }
@@ -225,11 +229,27 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   private _configureRenderingPipeline() {
+    this.useNativeDataType = this._shouldUseNativeDataType();
+    this.useCPURendering = getShouldUseCPURendering();
+
     for (const [funcName, functions] of Object.entries(
       this.renderingPipelineFunctions
     )) {
       this[funcName] = this.useCPURendering ? functions.cpu : functions.gpu;
     }
+
+    if (this.useCPURendering) {
+      this._resetCPUFallbackElement();
+    }
+  }
+
+  private _resetCPUFallbackElement() {
+    this._cpuFallbackEnabledElement = {
+      canvas: this.canvas,
+      renderingTools: {},
+      transform: new Transform(),
+      viewport: { rotation: 0 },
+    };
   }
 
   /**
@@ -1435,10 +1455,7 @@ class StackViewport extends Viewport implements IStackViewport {
     numVoxels,
     typedArray,
   }): void {
-    this.use16BitTexture = this._shouldUse16BitTexture();
-
     // Todo: I guess nothing should be done for use16bit?
-
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
       numberOfComponents: numComps,
@@ -1539,7 +1556,7 @@ class StackViewport extends Viewport implements IStackViewport {
       yVoxels === image.rows &&
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
       isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines) &&
-      (!this.use16BitTexture ||
+      (!this.useNativeDataType ||
         dataType === image.getPixelData().constructor.name)
     );
   }
@@ -1845,9 +1862,9 @@ class StackViewport extends Viewport implements IStackViewport {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
-        // targetBuffer: {
-        //   type: this.use16BitTexture ? undefined : 'Float32Array',
-        // },
+        targetBuffer: {
+          type: this.useNativeDataType ? undefined : 'Float32Array',
+        },
         preScale: {
           enabled: true,
         },

@@ -101,6 +101,7 @@ interface IViewport {
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
   _getCorners(bounds: Array<number>): Array<number>[];
+  updateRenderingPipeline: () => void;
 }
 
 /**

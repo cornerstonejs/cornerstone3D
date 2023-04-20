@@ -3438,10 +3438,10 @@
     merge-source-map "^1.1.0"
     schema-utils "^2.7.0"
 
-"@kitware/vtk.js@26.5.6":
-  version "26.5.6"
-  resolved "https://registry.npmjs.org/@kitware/vtk.js/-/vtk.js-26.5.6.tgz#58fb474ce6929c18988c53fc993d02a463fc7ce1"
-  integrity sha512-1bTeo9xMa0hmeuAeRPp6JB98RuF36VCPTlq0A7I/zTmhP4XIsPQf/u468qE8Z3kXSb3RkCCNYo04GgaKlQr5VQ==
+"@kitware/vtk.js@27.2.0":
+  version "27.2.0"
+  resolved "https://registry.npmjs.org/@kitware/vtk.js/-/vtk.js-27.2.0.tgz#284038d71cfed39b51a52926268ebf7f73a4abf7"
+  integrity sha512-TYqZ+pXLZFeL4feEI4ZrRJlj3HQT9po2u0ZzaR7gAaASCDdDtnaQVXLB2yI9tHS5N9vyI+VoHT7BBeW30JeJUg==
   dependencies:
     "@babel/runtime" "7.17.9"
     commander "9.2.0"
