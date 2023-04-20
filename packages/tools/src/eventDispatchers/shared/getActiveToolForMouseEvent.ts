@@ -23,8 +23,8 @@ export default function getActiveToolForMouseEvent(
   const mouseEvent = evt.detail.event;
 
   // If any keyboard modifier key is also pressed - get the mouse version
-  // first since it handle combinations, while the key event handles non-modifier
-  // keys
+  // first since it handles combinations, while the key event handles non-modifier
+  // keys.
   const modifierKey =
     getMouseModifier(mouseEvent) || keyEventListener.getModifierKey();
 
