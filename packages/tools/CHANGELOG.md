@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.63.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.62.2...@cornerstonejs/tools@0.63.0) (2023-04-20)
+
+
+### Features
+
+* **4D:** fixed cine play issue and added getDynamicVolumeInfo method ([#562](https://github.com/cornerstonejs/cornerstone3D-beta/issues/562)) ([f4c2531](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f4c25316eb1c5a6b13edb7c0873c9b0ce7a4e581))
+
+
+
+
+
 ## [0.62.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.62.1...@cornerstonejs/tools@0.62.2) (2023-04-19)
 
 **Note:** Version bump only for package @cornerstonejs/tools
