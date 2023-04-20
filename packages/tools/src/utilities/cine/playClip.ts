@@ -299,7 +299,10 @@ function _stopClipWithData(playClipData) {
 }
 
 function _getVolumesFromViewport(viewport): Types.IImageVolume[] {
-  return viewport.getActors().map((actor) => cache.getVolume(actor.uid));
+  return viewport
+    .getActors()
+    .map((actor) => cache.getVolume(actor.uid))
+    .filter((volume) => !!volume);
 }
 
 function _getVolumeFromViewport(viewport): Types.IImageVolume {
