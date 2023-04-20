@@ -22,7 +22,7 @@ const getMouseModifierKey = (evt) => {
     return (evt.metaKey && kb.AltMeta) || kb.Alt;
   }
   if (evt.metaKey) {
-    kb.Meta;
+    return kb.Meta;
   }
   return undefined;
 };
