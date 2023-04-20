@@ -121,7 +121,6 @@ class PlanarFreehandROITool extends AnnotationTool {
   public touchDragCallback: any;
   public mouseDragCallback: any;
   _throttledCalculateCachedStats: any;
-  _throttledCalculateCachedStatSingleLoopStdDev: any;
   private commonData?: PlanarFreehandROICommonData;
   isDrawing = false;
   isEditingClosed = false;
@@ -849,6 +848,9 @@ class PlanarFreehandROITool extends AnnotationTool {
         areaUnit: hasPixelSpacing ? 'mm' : 'px',
       };
     }
+
+    annotation.invalidated = false;
+
     return cachedStats;
   };
 
