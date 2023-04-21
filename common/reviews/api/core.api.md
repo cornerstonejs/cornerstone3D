@@ -1671,6 +1671,8 @@ interface IViewport {
     // (undocumented)
     type: ViewportType;
     // (undocumented)
+    updateRenderingPipeline: () => void;
+    // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -2046,6 +2048,9 @@ type ScalingParameters = {
 export function setConfiguration(c: Cornerstone3DConfig): void;
 
 // @public (undocumented)
+export function setPreferSizeOverAccuracy(status: boolean): void;
+
+// @public (undocumented)
 export class Settings {
     constructor(base?: Settings);
     // (undocumented)
@@ -2195,6 +2200,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     setUseCPURendering(value: boolean): void;
     // (undocumented)
     unsetColormap: () => void;
+    // (undocumented)
+    updateRenderingPipeline: () => void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
@@ -2515,7 +2522,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     sHeight: number;
     // (undocumented)
-    protected _shouldUse16BitTexture(): boolean;
+    protected _shouldUseNativeDataType(): boolean;
     // (undocumented)
     readonly suppressEvents: boolean;
     // (undocumented)
@@ -2530,6 +2537,8 @@ export class Viewport implements IViewport {
     readonly type: ViewportType;
     // (undocumented)
     protected updateClippingPlanesForActors(updatedCamera: ICamera): void;
+    // (undocumented)
+    updateRenderingPipeline: () => void;
     // (undocumented)
     static get useCustomRenderingPipeline(): boolean;
     // (undocumented)
