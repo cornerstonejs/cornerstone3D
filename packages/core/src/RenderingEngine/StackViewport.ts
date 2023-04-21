@@ -1580,6 +1580,12 @@ class StackViewport extends Viewport implements IStackViewport {
     // 1. Update the pixel data in the vtkImageData object with the pixelData
     //    from the loaded Cornerstone image
     let pixelData = image.getPixelData();
+    const scalars = this._imageData.getPointData().getScalars();
+    const scalarData = scalars.getData() as
+      | Uint8Array
+      | Float32Array
+      | Uint16Array
+      | Int16Array;
 
     // if the color image is loaded with CPU previously, it loads it
     // with RGBA, and here we need to remove the A channel from the
@@ -1610,16 +1616,10 @@ class StackViewport extends Viewport implements IStackViewport {
       // use.
       image.rgba = false;
       image.getPixelData = () => newPixelData;
+      scalarData.set(newPixelData);
+    } else {
+      scalarData.set(pixelData);
     }
-
-    const scalars = this._imageData.getPointData().getScalars();
-    const scalarData = scalars.getData() as
-      | Uint8Array
-      | Float32Array
-      | Uint16Array
-      | Int16Array;
-
-    scalarData.set(pixelData);
 
     // Trigger modified on the VTK Object so the texture is updated
     // TODO: evaluate directly changing things with texSubImage3D later
