@@ -320,6 +320,14 @@ function createImage(
 
       if (image.color) {
         image.getCanvas = function () {
+          // the getCanvas function is used in the CPU rendering path
+          // and it is used to use the canvas api to draw the image
+          // instead of looping through the pixel data and drawing each pixel
+          // to use the canvas api, we need to convert the pixel data to a
+          // Uint8ClampedArray (which is what the canvas api expects)
+          // and then we can use the putImageData api to draw the image
+          // However, if the image already was loaded without the alpha channel
+          // we need to add the alpha channel back in
           if (lastImageIdDrawn === imageId) {
             return canvas;
           }
@@ -328,10 +336,25 @@ function createImage(
           canvas.width = image.columns;
           const context = canvas.getContext('2d');
 
-          // Create an ImageData object from the Uint8ClampedArray
-          // this branch of if is getting used in the cpu rendering using
-          // the getCanvas function hence, we need to create the imageData
-          // from the pixelData
+          // add alpha channel if necessary
+          if (!useRGBA) {
+            const pixelData = imageFrame.pixelData;
+            const numPixels = pixelData.length / 3;
+            const pixelDataWithAlpha = new Uint8Array(numPixels * 4);
+
+            let rgbIndex = 0;
+            let index = 0;
+
+            for (let i = 0; i < numPixels; i++) {
+              pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // red
+              pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // green
+              pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // blue
+              pixelDataWithAlpha[index++] = 255; // alpha
+            }
+
+            imageFrame.pixelData = pixelDataWithAlpha;
+          }
+
           const imageData = new ImageData(
             new Uint8ClampedArray(imageFrame.pixelData),
             image.columns,
