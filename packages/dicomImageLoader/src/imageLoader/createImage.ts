@@ -1,7 +1,7 @@
 import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
-import getTypedArrayFromMinMax from '../shared/getTypedArrayFromMinMax';
+import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
 import {
   DICOMLoaderImageOptions,
   MetadataImagePlaneModule,
@@ -40,7 +40,7 @@ function setPixelDataType(imageFrame) {
   const minValue = imageFrame.smallestPixelValue;
   const maxValue = imageFrame.largestPixelValue;
 
-  const TypedArray = getTypedArrayFromMinMax(minValue, maxValue);
+  const TypedArray = getPixelDataTypeFromMinMax(minValue, maxValue);
 
   if (TypedArray) {
     const typedArray = new TypedArray(imageFrame.pixelData);
@@ -235,6 +235,8 @@ function createImage(
           // If we don't need the RGBA but the decoding is done with RGBA (the case
           // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
           // we need to remove the A channel from pixel data
+          // Note: rendering libraries like vtk expect Uint8Array for RGB images
+          // otherwise they will convert them to Float32Array which might be slow
           const colorBuffer = new Uint8Array(
             (imageFrame.pixelData.length / 4) * 3
           );
@@ -318,7 +320,6 @@ function createImage(
 
       if (image.color) {
         image.getCanvas = function () {
-          // get canvas is being used in the cpu pass for speed up only
           if (lastImageIdDrawn === imageId) {
             return canvas;
           }
@@ -328,6 +329,9 @@ function createImage(
           const context = canvas.getContext('2d');
 
           // Create an ImageData object from the Uint8ClampedArray
+          // this branch of if is getting used in the cpu rendering using
+          // the getCanvas function hence, we need to create the imageData
+          // from the pixelData
           const imageData = new ImageData(
             new Uint8ClampedArray(imageFrame.pixelData),
             image.columns,

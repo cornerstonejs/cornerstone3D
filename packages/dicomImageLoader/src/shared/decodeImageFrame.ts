@@ -14,7 +14,7 @@ import decodeHTJ2K from './decoders/decodeHTJ2K';
 import scaleArray from './scaling/scaleArray';
 import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
 import getMinMax from './getMinMax';
-import getTypedArrayFromMinMax from './getTypedArrayFromMinMax';
+import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
 import isColorImage from './isColorImage';
 
 /**
@@ -354,7 +354,7 @@ function _handlePreScaleSetup(
 }
 
 function _getDefaultPixelDataArray(min, max, imageFrame) {
-  const TypedArrayConstructor = getTypedArrayFromMinMax(min, max);
+  const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
   const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
   typedArray.set(imageFrame.pixelData, 0);
 

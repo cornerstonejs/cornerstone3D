@@ -1450,16 +1450,14 @@ class StackViewport extends Viewport implements IStackViewport {
     direction,
     dimensions,
     spacing,
-    bitsAllocated,
     numComps,
-    numVoxels,
-    typedArray,
+    pixelArray,
   }): void {
     // Todo: I guess nothing should be done for use16bit?
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
       numberOfComponents: numComps,
-      values: typedArray,
+      values: pixelArray,
     });
 
     this._imageData = vtkImageData.newInstance();
@@ -1972,9 +1970,7 @@ class StackViewport extends Viewport implements IStackViewport {
       direction,
       dimensions,
       spacing,
-      bitsAllocated,
       numComps,
-      numVoxels,
       imagePixelModule,
     } = this._getImageDataMetadata(image);
 
@@ -1985,10 +1981,8 @@ class StackViewport extends Viewport implements IStackViewport {
       direction,
       dimensions,
       spacing,
-      bitsAllocated,
       numComps,
-      numVoxels,
-      typedArray: image.getPixelData(),
+      pixelArray: image.getPixelData(),
     });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
