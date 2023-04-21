@@ -15,6 +15,7 @@ import scaleArray from './scaling/scaleArray';
 import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
 import getMinMax from './getMinMax';
 import getTypedArrayFromMinMax from './getTypedArrayFromMinMax';
+import isColorImage from './isColorImage';
 
 /**
  * Decodes the provided image frame.
@@ -200,7 +201,9 @@ function postProcessDecodedPixels(
     Float32Array,
   };
 
-  if (options.targetBuffer && options.targetBuffer.type) {
+  const isColoImage = isColorImage(imageFrame.photometricInterpretation);
+
+  if (options.targetBuffer && options.targetBuffer.type && !isColoImage) {
     pixelDataArray = _handleTargetBuffer(
       options,
       imageFrame,

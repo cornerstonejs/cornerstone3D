@@ -15,7 +15,7 @@ import { default as decodeImageFrame } from './decodeImageFrame-noWorkers';
 import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor';
 import { default as getImageFrame } from './getImageFrame';
 import { default as getMinMax } from '../shared/getMinMax';
-import { default as isColorImage } from './isColorImage';
+import { default as isColorImage } from '../shared/isColorImage';
 import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor';
 import { default as webWorkerManager } from './webWorkerManager';
 import { default as getPixelData } from './wadors/getPixelData';

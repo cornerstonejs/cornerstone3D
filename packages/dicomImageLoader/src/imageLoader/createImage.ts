@@ -15,7 +15,7 @@ import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
-import isColorImageFn from './isColorImage';
+import isColorImageFn from '../shared/isColorImage';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
 let lastImageIdDrawn = '';
@@ -135,6 +135,7 @@ function createImage(
   );
 
   const { use16BitDataType } = decodeConfig;
+  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
@@ -149,7 +150,8 @@ function createImage(
       // Decode task, point the image to it here.
       // We can't have done it within the thread incase it was a SharedArrayBuffer.
       let alreadyTyped = false;
-      if (options.targetBuffer && options.targetBuffer.type) {
+      // We can safely render color image in 8 bit, so no need to convert
+      if (options.targetBuffer && options.targetBuffer.type && !isColorImage) {
         const {
           arrayBuffer,
           type,
@@ -208,7 +210,6 @@ function createImage(
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
-      const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
       if (isColorImage) {
         if (useRGBA) {
@@ -262,7 +263,9 @@ function createImage(
           );
 
           // remove the A from the RGBA of the imageFrame
-          imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
+          imageFrame.pixelData = new Uint8Array(
+            removeAFromRGBA(imageData.data, colorBuffer)
+          );
         }
 
         /** @todo check as any */
