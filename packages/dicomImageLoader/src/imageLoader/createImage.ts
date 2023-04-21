@@ -210,26 +210,23 @@ function createImage(
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
-
+      window.imageFrame = imageFrame;
       if (isColorImage) {
         if (useRGBA) {
           // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
           // because it's using a canvas to load and decode images.
           if (!isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
-            canvas.height = imageFrame.rows;
-            canvas.width = imageFrame.columns;
-
-            const context = canvas.getContext('2d');
-
-            const imageData = context.createImageData(
-              imageFrame.columns,
-              imageFrame.rows
-            );
-
-            convertColorSpace(imageFrame, imageData.data, useRGBA);
-
-            imageFrame.imageData = imageData;
-            imageFrame.pixelData = imageData.data;
+            // canvas.height = imageFrame.rows;
+            // canvas.width = imageFrame.columns;
+            // const context = canvas.getContext('2d');
+            // const imageData = context.createImageData(
+            //   imageFrame.columns,
+            //   imageFrame.rows
+            // );
+            // convertColorSpace(imageFrame, imageData.data, useRGBA);
+            // imageFrame.imageData = imageData;
+            // imageFrame.pixelData = imageData.data;
+            // imageFrame.pixelDataLength = imageData.data.length;
           }
         } else if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
           // If we don't need the RGBA but the decoding is done with RGBA (the case
@@ -246,6 +243,8 @@ function createImage(
             imageFrame.pixelData,
             colorBuffer
           );
+
+          imageFrame.pixelDataLength = imageFrame.pixelData.length;
         } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
@@ -268,6 +267,7 @@ function createImage(
           imageFrame.pixelData = new Uint8Array(
             removeAFromRGBA(imageData.data, colorBuffer)
           );
+          imageFrame.pixelDataLength = imageFrame.pixelData.length;
         }
 
         /** @todo check as any */
@@ -318,6 +318,7 @@ function createImage(
         numComps: undefined,
       };
 
+      window.image = image;
       if (image.color) {
         image.getCanvas = function () {
           // the getCanvas function is used in the CPU rendering path
@@ -332,37 +333,63 @@ function createImage(
             return canvas;
           }
 
-          canvas.height = image.rows;
-          canvas.width = image.columns;
-          const context = canvas.getContext('2d');
+          const width = image.columns;
+          const height = image.rows;
+
+          canvas.height = height;
+          canvas.width = width;
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.createImageData(width, height);
 
           // add alpha channel if necessary
-          if (!useRGBA) {
-            const pixelData = imageFrame.pixelData;
-            const numPixels = pixelData.length / 3;
-            const pixelDataWithAlpha = new Uint8Array(numPixels * 4);
+          // if (!useRGBA) {
+          //   const pixelData = imageFrame.pixelData;
+          //   const numPixels = pixelData.length / 3;
+          //   const pixelDataWithAlpha = new Uint8Array(numPixels * 4);
 
-            let rgbIndex = 0;
-            let index = 0;
+          //   let rgbIndex = 0;
+          //   let index = 0;
 
-            for (let i = 0; i < numPixels; i++) {
-              pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // red
-              pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // green
-              pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // blue
-              pixelDataWithAlpha[index++] = 255; // alpha
+          //   for (let i = 0; i < numPixels; i++) {
+          //     pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // red
+          //     pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // green
+          //     pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // blue
+          //     pixelDataWithAlpha[index++] = 255; // alpha
+          //   }
+
+          //   imageFrame.pixelData = pixelDataWithAlpha;
+          //   imageFrame.pixelDataLength = pixelDataWithAlpha.length;
+          // }
+
+          const arr = imageFrame.pixelData;
+
+          if (arr.length === width * height * 4) {
+            for (let i = 0; i < arr.length; i++) {
+              imageData.data[i] = arr[i];
             }
-
-            imageFrame.pixelData = pixelDataWithAlpha;
+          }
+          // Set pixel data for RGB array
+          else if (arr.length === width * height * 3) {
+            let j = 0;
+            for (let i = 0; i < arr.length; i += 3) {
+              imageData.data[j++] = arr[i];
+              imageData.data[j++] = arr[i + 1];
+              imageData.data[j++] = arr[i + 2];
+              imageData.data[j++] = 255;
+            }
           }
 
-          const imageData = new ImageData(
-            new Uint8ClampedArray(imageFrame.pixelData),
-            image.columns,
-            image.rows
-          );
+          imageFrame.pixelData = imageData.data;
+          imageFrame.pixelDataLength = imageData.data.length;
+
+          // const imageData = new ImageData(
+          //   new Uint8ClampedArray(imageFrame.pixelData),
+          //   image.columns,
+          //   image.rows
+          // );
 
           imageFrame.imageData = imageData;
-          context.putImageData(imageFrame.imageData, 0, 0);
+          ctx.putImageData(imageFrame.imageData, 0, 0);
           lastImageIdDrawn = imageId;
 
           return canvas;
