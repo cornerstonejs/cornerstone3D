@@ -556,6 +556,11 @@ enum GeometryType {
 }
 
 // @public (undocumented)
+export const helpers: {
+    getDynamicVolumeInfo: typeof getDynamicVolumeInfo;
+};
+
+// @public (undocumented)
 interface ICache {
     getCacheSize: () => number;
     getImageLoadObject: (imageId: string) => IImageLoadObject | void;

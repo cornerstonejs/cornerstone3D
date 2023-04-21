@@ -34,6 +34,9 @@ type ViewportDisplayCoords = {
   sHeight: number;
 };
 
+// Rendering engines seem to not like rendering things less than 2 pixels per side
+const VIEWPORT_MIN_SIZE = 2;
+
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
  * them on a large offscreen canvas and transmitting this data back to the screen. This allows us
@@ -1116,6 +1119,8 @@ class RenderingEngine implements IRenderingEngine {
     this._animationFrameHandle = null;
 
     eventDetailArray.forEach((eventDetail) => {
+      // Very small viewports won't have an element
+      if (!eventDetail?.element) return;
       triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
     });
   };
@@ -1166,6 +1171,15 @@ class RenderingEngine implements IRenderingEngine {
   ): EventTypes.ImageRenderedEventDetail[] {
     let eventDetail;
 
+    // Rendering engines start having issues without at least two pixels
+    // in each direction
+    if (
+      viewport.sWidth < VIEWPORT_MIN_SIZE ||
+      viewport.sHeight < VIEWPORT_MIN_SIZE
+    ) {
+      console.log('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      return;
+    }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
       eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;

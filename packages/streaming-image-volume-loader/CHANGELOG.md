@@ -3,6 +3,49 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.17.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.10...@cornerstonejs/streaming-image-volume-loader@0.17.0) (2023-04-20)
+
+
+### Features
+
+* **4D:** fixed cine play issue and added getDynamicVolumeInfo method ([#562](https://github.com/cornerstonejs/cornerstone3D-beta/issues/562)) ([f4c2531](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f4c25316eb1c5a6b13edb7c0873c9b0ce7a4e581))
+
+
+
+
+
+## [0.16.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.9...@cornerstonejs/streaming-image-volume-loader@0.16.10) (2023-04-19)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.8...@cornerstonejs/streaming-image-volume-loader@0.16.9) (2023-04-18)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.7...@cornerstonejs/streaming-image-volume-loader@0.16.8) (2023-04-18)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.6...@cornerstonejs/streaming-image-volume-loader@0.16.7) (2023-04-17)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
 ## [0.16.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.5...@cornerstonejs/streaming-image-volume-loader@0.16.6) (2023-04-12)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

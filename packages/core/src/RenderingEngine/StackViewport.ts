@@ -1541,15 +1541,15 @@ class StackViewport extends Viewport implements IStackViewport {
     const dataType = imageData.getPointData().getScalars().getDataType();
 
     // using epsilon comparison for float numbers comparison.
-    const isSameXSpacing = isEqual(xSpacing, image.rowPixelSpacing);
-    const isSameYSpacing = isEqual(ySpacing, image.columnPixelSpacing);
+    const isSameXSpacing = isEqual(xSpacing, image.columnPixelSpacing);
+    const isSameYSpacing = isEqual(ySpacing, image.rowPixelSpacing);
 
     // using spacing, size, and direction only for now
     return (
       (isSameXSpacing ||
-        (image.rowPixelSpacing === null && xSpacing === 1.0)) &&
+        (image.columnPixelSpacing === null && xSpacing === 1.0)) &&
       (isSameYSpacing ||
-        (image.columnPixelSpacing === null && ySpacing === 1.0)) &&
+        (image.rowPixelSpacing === null && ySpacing === 1.0)) &&
       xVoxels === image.columns &&
       yVoxels === image.rows &&
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
@@ -1798,6 +1798,14 @@ class StackViewport extends Viewport implements IStackViewport {
         },
         useRGBA: true,
       };
+
+      const eventDetail: EventTypes.PreStackNewImageEventDetail = {
+        imageId,
+        imageIdIndex,
+        viewportId: this.id,
+        renderingEngineId: this.renderingEngineId,
+      };
+      triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
       imageLoadPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),

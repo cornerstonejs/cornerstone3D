@@ -53,15 +53,6 @@ export default function isEqual<ValueType>(
     return false;
   }
 
-  // typeof object must have same constructor
-  if (
-    typeof v1 === 'object' &&
-    typeof v2 === 'object' &&
-    v1.constructor !== v2.constructor
-  ) {
-    return false;
-  }
-
   if (isNumberType(v1) && isNumberType(v2)) {
     return areNumbersEqualWithTolerance(v1, v2, tolerance);
   }

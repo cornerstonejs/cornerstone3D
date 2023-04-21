@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.43.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.3...@cornerstonejs/core@0.43.0) (2023-04-19)
+
+
+### Features
+
+* **cpu event:** added event pre stack new image for cpu ([#565](https://github.com/cornerstonejs/cornerstone3D-beta/issues/565)) ([b91076f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b91076f8fe0856895f04f18e3cb42269dbb0b38d))
+
+
+
+
+
+## [0.42.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.2...@cornerstonejs/core@0.42.3) (2023-04-18)
+
+
+### Bug Fixes
+
+* **Stack:** swap image row and column pixel spacing + relaxing isequal compar… ([#566](https://github.com/cornerstonejs/cornerstone3D-beta/issues/566)) ([1e95ece](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1e95ece03dce10635d9efe4302aa4de768d14721))
+
+
+
+
+
+## [0.42.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.1...@cornerstonejs/core@0.42.2) (2023-04-18)
+
+
+### Bug Fixes
+
+* **stackviewport:** swap image row and column pixel spacing ([#561](https://github.com/cornerstonejs/cornerstone3D-beta/issues/561)) ([aede776](https://github.com/cornerstonejs/cornerstone3D-beta/commit/aede776ac6475f47a187db1f2ab5b2700192d466))
+
+
+
+
+
+## [0.42.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.0...@cornerstonejs/core@0.42.1) (2023-04-17)
+
+
+### Bug Fixes
+
+* **viewport:** Exception on resize to very small window ([#559](https://github.com/cornerstonejs/cornerstone3D-beta/issues/559)) ([5877820](https://github.com/cornerstonejs/cornerstone3D-beta/commit/58778201c3412f4bda867ed7fb42a47e12f725fd))
+
+
+
+
+
 # [0.42.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.41.2...@cornerstonejs/core@0.42.0) (2023-04-12)
 
 
