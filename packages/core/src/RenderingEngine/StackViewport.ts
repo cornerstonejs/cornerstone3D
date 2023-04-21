@@ -185,26 +185,9 @@ class StackViewport extends Viewport implements IStackViewport {
     this.useNativeDataType = this._shouldUseNativeDataType();
     this._configureRenderingPipeline();
 
-    if (this.useCPURendering) {
-      this._resetCPUFallbackElement();
-    } else {
-      const renderer = this.getRenderer();
-      const camera = vtkCamera.newInstance();
-      renderer.setActiveCamera(camera);
-
-      const viewPlaneNormal = <Point3>[0, 0, -1];
-      this.initialViewUp = <Point3>[0, -1, 0];
-
-      camera.setDirectionOfProjection(
-        -viewPlaneNormal[0],
-        -viewPlaneNormal[1],
-        -viewPlaneNormal[2]
-      );
-      camera.setViewUp(...this.initialViewUp);
-      camera.setParallelProjection(true);
-      camera.setThicknessFromFocalPoint(0.1);
-      camera.setFreezeFocalPoint(true);
-    }
+    this.useCPURendering
+      ? this._resetCPUFallbackElement()
+      : this._resetGPUViewport();
 
     this.imageIds = [];
     this.currentImageIdIndex = 0;
@@ -215,18 +198,18 @@ class StackViewport extends Viewport implements IStackViewport {
     this.initializeElementDisabledHandler();
   }
 
-  public updateRenderingPipeline = () => {
+  public setUseCPURendering(value: boolean) {
+    this.useCPURendering = value;
     this._configureRenderingPipeline();
-  };
+  }
 
   static get useCustomRenderingPipeline(): boolean {
     return getShouldUseCPURendering();
   }
 
-  public setUseCPURendering(value: boolean) {
-    this.useCPURendering = value;
+  public updateRenderingPipeline = () => {
     this._configureRenderingPipeline();
-  }
+  };
 
   private _configureRenderingPipeline() {
     this.useNativeDataType = this._shouldUseNativeDataType();
@@ -238,9 +221,9 @@ class StackViewport extends Viewport implements IStackViewport {
       this[funcName] = this.useCPURendering ? functions.cpu : functions.gpu;
     }
 
-    if (this.useCPURendering) {
-      this._resetCPUFallbackElement();
-    }
+    this.useCPURendering
+      ? this._resetCPUFallbackElement()
+      : this._resetGPUViewport();
   }
 
   private _resetCPUFallbackElement() {
@@ -250,6 +233,25 @@ class StackViewport extends Viewport implements IStackViewport {
       transform: new Transform(),
       viewport: { rotation: 0 },
     };
+  }
+
+  private _resetGPUViewport() {
+    const renderer = this.getRenderer();
+    const camera = vtkCamera.newInstance();
+    renderer.setActiveCamera(camera);
+
+    const viewPlaneNormal = <Point3>[0, 0, -1];
+    this.initialViewUp = <Point3>[0, -1, 0];
+
+    camera.setDirectionOfProjection(
+      -viewPlaneNormal[0],
+      -viewPlaneNormal[1],
+      -viewPlaneNormal[2]
+    );
+    camera.setViewUp(...this.initialViewUp);
+    camera.setParallelProjection(true);
+    camera.setThicknessFromFocalPoint(0.1);
+    camera.setFreezeFocalPoint(true);
   }
 
   /**
@@ -1590,6 +1592,19 @@ class StackViewport extends Viewport implements IStackViewport {
         newPixelData[i * 3 + 2] = pixelData[i * 4 + 2];
       }
       pixelData = newPixelData;
+
+      //  const numPixels = pixelData.length / 4;
+      //  const pixelDataWithoutAlpha = new Uint8Array(numPixels * 3);
+
+      //  let rgbaIndex = 0;
+      //  let rgbIndex = 0;
+
+      //  for (let i = 0; i < numPixels; i++) {
+      //    pixelDataWithoutAlpha[rgbIndex++] = pixelData[rgbaIndex++]; // red
+      //    pixelDataWithoutAlpha[rgbIndex++] = pixelData[rgbaIndex++]; // green
+      //    pixelDataWithoutAlpha[rgbIndex++] = pixelData[rgbaIndex++]; // blue
+      //    rgbaIndex++; // skip alpha
+      //  }
 
       // modify the image object to have the correct pixel data for later
       // use.
