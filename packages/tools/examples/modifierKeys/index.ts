@@ -48,12 +48,12 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-- Left or Shift/Ctrl click to use the Length tool.
 - Single touch is equivalent to left click.
-- Meta+Left for stack scroll.
+- Left or Meta+Left for stack scroll.
 - Right or Option to use the Window/Level tool.
-- Center or Ctrl or right/left to Pan.
+- Center or Ctrl to Pan.
 - Shift to Zoom.
+- Shift/Ctrl click to use the Length tool.
 - Ctrl/Alt click to use the Bidirectional tool.
 - Shift/Alt + Left click to use the RectangleROI tool.
 `;
@@ -96,6 +96,9 @@ async function run() {
   // This means left click will draw that tool.
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
       {
         mouseButton: MouseBindings.Primary, // Left Click
         modifierKey: KeyboardBindings.Meta,
@@ -153,9 +156,6 @@ async function run() {
   });
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
       {
         mouseButton: MouseBindings.Primary, // Shift + Left Click
         modifierKey: KeyboardBindings.ShiftCtrl,
