@@ -24,7 +24,7 @@ function removeContourFromElement(
   // remove actors whose id has the same prefix as the segmentationRepresentationUID
   const actorUIDsToRemove = actorEntries
     .map(({ uid }) =>
-      uid.startsWith(segmentationRepresentationUID) ? uid : undefined
+      uid.includes(segmentationRepresentationUID) ? uid : undefined
     )
     .filter(Boolean);
 
