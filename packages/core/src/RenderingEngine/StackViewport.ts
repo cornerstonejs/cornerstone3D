@@ -624,7 +624,7 @@ class StackViewport extends Viewport implements IStackViewport {
           calibratedColumnSpacing / imagePlaneModule.columnPixelSpacing,
       };
 
-      // modify imagePlaneModule customization for actor to use calibrated spacing
+      // modify the calibration object to store the actual updated values applied
       calibratedPixelSpacing[2] = calibratedRowSpacing;
       calibratedPixelSpacing[3] = calibratedColumnSpacing;
       // This updates the render copy
@@ -637,7 +637,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const { imageData } = imageDataMetadata;
     const [columnPixelSpacing, rowPixelSpacing] = imageData.getSpacing();
 
-    // modify imagePlaneModule customization for actor to use calibrated spacing
+    // modify the calibration object to store the actual updated values applied
     calibratedPixelSpacing[2] = calibratedRowSpacing;
     calibratedPixelSpacing[3] = calibratedColumnSpacing;
     imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
@@ -2589,15 +2589,12 @@ class StackViewport extends Viewport implements IStackViewport {
       ...imagePlaneModule,
     };
 
-    if (calibratedPixelSpacing) {
-      const [x1, x2, origRowSpacing, origColumnSpacing] =
-        calibratedPixelSpacing;
-      if (origRowSpacing) {
-        newImagePlaneModule.rowPixelSpacing = origRowSpacing;
-      }
-      if (origColumnSpacing) {
-        newImagePlaneModule.columnPixelSpacing = origColumnSpacing;
-      }
+    if (calibratedPixelSpacing?.length === 4) {
+      // Over-ride the image plane module spacing, as the measurement data
+      // has already been created with the calibrated spacing provided from
+      // down below inside calibrateIfNecessary
+      newImagePlaneModule.rowPixelSpacing = calibratedPixelSpacing[2];
+      newImagePlaneModule.columnPixelSpacing = calibratedPixelSpacing[3];
     }
 
     if (!newImagePlaneModule.columnPixelSpacing) {
