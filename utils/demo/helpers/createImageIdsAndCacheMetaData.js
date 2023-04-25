@@ -27,6 +27,7 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
+  SOPInstanceUID,
   wadoRsRoot,
   client = null,
 }) {
@@ -44,7 +45,8 @@ export default async function createImageIdsAndCacheMetaData({
   const modality = instances[0][MODALITY].Value[0];
   let imageIds = instances.map((instanceMetaData) => {
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
-    const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
+    const SOPInstanceUIDToUse =
+      SOPInstanceUID || instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
     const prefix = 'wadors:';
 
@@ -56,7 +58,7 @@ export default async function createImageIdsAndCacheMetaData({
       '/series/' +
       SeriesInstanceUID +
       '/instances/' +
-      SOPInstanceUID +
+      SOPInstanceUIDToUse +
       '/frames/1';
 
     cornerstoneDICOMImageLoader.wadors.metaDataManager.add(

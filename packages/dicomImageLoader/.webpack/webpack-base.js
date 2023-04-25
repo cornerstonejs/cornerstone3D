@@ -25,6 +25,7 @@ module.exports = {
     globalObject: 'this',
     path: outputPath,
     publicPath: 'auto',
+    clean: true,
   },
   devtool: 'source-map',
   externals: {
@@ -54,6 +55,9 @@ module.exports = {
         use: [
           {
             loader: 'worker-loader',
+            options: {
+              filename: '[name].[contenthash].worker.js',
+            },
           },
           // {
           //   loader: 'babel-loader',

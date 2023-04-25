@@ -22,6 +22,7 @@ const config = {
       type: 'module',
     },
     module: true,
+    clean: true,
     //libraryTarget: 'module',
     //globalObject: 'this',
     //chunkFormat: 'module',
