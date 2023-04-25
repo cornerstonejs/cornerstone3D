@@ -8895,6 +8895,22 @@ core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.3.tgz#a6042d3634c2b27e9328f837b965fac83808db85"
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
+cornerstone-wado-image-loader@^4.10.2:
+  version "4.13.1"
+  resolved "https://registry.npmjs.org/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.13.1.tgz#99b90e15834b6e1b5f84f0495270400b18b07e8e"
+  integrity sha512-IKAeI2JLG2HFBFF+ANHYyHxOJmjbys+wfX15flC0bz3D9AhDU1HX34qJMRh+HMMZ/Jcqjc4EJJq1ttR0OwMdig==
+  dependencies:
+    "@babel/eslint-parser" "^7.19.1"
+    "@cornerstonejs/codec-charls" "^1.2.3"
+    "@cornerstonejs/codec-libjpeg-turbo-8bit" "^1.2.2"
+    "@cornerstonejs/codec-openjpeg" "^1.2.2"
+    "@cornerstonejs/codec-openjph" "^2.4.2"
+    coverage-istanbul-loader "^3.0.5"
+    date-format "^4.0.14"
+    dicom-parser "^1.8.9"
+    pako "^2.0.4"
+    uuid "^9.0.0"
+
 cors@~2.8.5:
   version "2.8.5"
   resolved "https://registry.yarnpkg.com/cors/-/cors-2.8.5.tgz#eac11da51592dd86b9f06f6e7ac293b3df875d29"
