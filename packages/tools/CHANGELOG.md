@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.63.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.63.1...@cornerstonejs/tools@0.63.2) (2023-04-25)
+
+
+### Bug Fixes
+
+* **contour:** remove contour was using wrong uid ([#575](https://github.com/cornerstonejs/cornerstone3D-beta/issues/575)) ([a6892a5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a6892a5131dfdfecd5edeed6f9e633742bba2fb6))
+
+
+
+
+
 ## [0.63.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.63.0...@cornerstonejs/tools@0.63.1) (2023-04-24)
 
 
