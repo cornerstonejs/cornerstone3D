@@ -584,8 +584,10 @@ class StackViewport extends Viewport implements IStackViewport {
       return imagePlaneModule;
     }
 
-    const [calibratedRowSpacing, calibratedColumnSpacing] =
-      calibratedPixelSpacing;
+    const {
+      rowPixelSpacing: calibratedRowSpacing,
+      columnPixelSpacing: calibratedColumnSpacing,
+    } = calibratedPixelSpacing;
 
     // Todo: This is necessary in general, but breaks an edge case when an image
     // is calibrated to some other spacing, and it gets calibrated BACK to the
@@ -625,8 +627,7 @@ class StackViewport extends Viewport implements IStackViewport {
       };
 
       // modify the calibration object to store the actual updated values applied
-      calibratedPixelSpacing[2] = calibratedRowSpacing;
-      calibratedPixelSpacing[3] = calibratedColumnSpacing;
+      calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
       // This updates the render copy
       imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
       imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
@@ -638,8 +639,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const [columnPixelSpacing, rowPixelSpacing] = imageData.getSpacing();
 
     // modify the calibration object to store the actual updated values applied
-    calibratedPixelSpacing[2] = calibratedRowSpacing;
-    calibratedPixelSpacing[3] = calibratedColumnSpacing;
+    calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
     imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
     imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
 
@@ -2589,12 +2589,14 @@ class StackViewport extends Viewport implements IStackViewport {
       ...imagePlaneModule,
     };
 
-    if (calibratedPixelSpacing?.length === 4) {
+    if (calibratedPixelSpacing?.appliedSpacing) {
       // Over-ride the image plane module spacing, as the measurement data
       // has already been created with the calibrated spacing provided from
       // down below inside calibrateIfNecessary
-      newImagePlaneModule.rowPixelSpacing = calibratedPixelSpacing[2];
-      newImagePlaneModule.columnPixelSpacing = calibratedPixelSpacing[3];
+      const { rowPixelSpacing, columnPixelSpacing } =
+        calibratedPixelSpacing.appliedSpacing;
+      newImagePlaneModule.rowPixelSpacing = rowPixelSpacing;
+      newImagePlaneModule.columnPixelSpacing = columnPixelSpacing;
     }
 
     if (!newImagePlaneModule.columnPixelSpacing) {
