@@ -28,6 +28,7 @@ export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
   wadoRsRoot,
+  client = null,
 }) {
   const SOP_INSTANCE_UID = '00080018';
   const SERIES_INSTANCE_UID = '0020000E';
@@ -38,7 +39,7 @@ export default async function createImageIdsAndCacheMetaData({
     seriesInstanceUID: SeriesInstanceUID,
   };
 
-  const client = new api.DICOMwebClient({ url: wadoRsRoot });
+  client = client || new api.DICOMwebClient({ url: wadoRsRoot });
   const instances = await client.retrieveSeriesMetadata(studySearchOptions);
   const modality = instances[0][MODALITY].Value[0];
   let imageIds = instances.map((instanceMetaData) => {

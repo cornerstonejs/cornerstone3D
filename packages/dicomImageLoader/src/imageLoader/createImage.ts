@@ -210,23 +210,26 @@ function createImage(
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
-      window.imageFrame = imageFrame;
       if (isColorImage) {
         if (useRGBA) {
           // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
           // because it's using a canvas to load and decode images.
-          if (!isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
-            // canvas.height = imageFrame.rows;
-            // canvas.width = imageFrame.columns;
-            // const context = canvas.getContext('2d');
-            // const imageData = context.createImageData(
-            //   imageFrame.columns,
-            //   imageFrame.rows
-            // );
-            // convertColorSpace(imageFrame, imageData.data, useRGBA);
-            // imageFrame.imageData = imageData;
-            // imageFrame.pixelData = imageData.data;
-            // imageFrame.pixelDataLength = imageData.data.length;
+          if (
+            !isJPEGBaseline8BitColor(imageFrame, transferSyntax) &&
+            imageFrame.photometricInterpretation !== 'RGB'
+          ) {
+            canvas.height = imageFrame.rows;
+            canvas.width = imageFrame.columns;
+            const context = canvas.getContext('2d');
+            const imageData = context.createImageData(
+              imageFrame.columns,
+              imageFrame.rows
+            );
+
+            convertColorSpace(imageFrame, imageData.data, useRGBA);
+            imageFrame.imageData = imageData;
+            imageFrame.pixelData = imageData.data;
+            imageFrame.pixelDataLength = imageData.data.length;
           }
         } else if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
           // If we don't need the RGBA but the decoding is done with RGBA (the case
@@ -341,26 +344,6 @@ function createImage(
           const ctx = canvas.getContext('2d');
           const imageData = ctx.createImageData(width, height);
 
-          // add alpha channel if necessary
-          // if (!useRGBA) {
-          //   const pixelData = imageFrame.pixelData;
-          //   const numPixels = pixelData.length / 3;
-          //   const pixelDataWithAlpha = new Uint8Array(numPixels * 4);
-
-          //   let rgbIndex = 0;
-          //   let index = 0;
-
-          //   for (let i = 0; i < numPixels; i++) {
-          //     pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // red
-          //     pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // green
-          //     pixelDataWithAlpha[index++] = pixelData[rgbIndex++]; // blue
-          //     pixelDataWithAlpha[index++] = 255; // alpha
-          //   }
-
-          //   imageFrame.pixelData = pixelDataWithAlpha;
-          //   imageFrame.pixelDataLength = pixelDataWithAlpha.length;
-          // }
-
           const arr = imageFrame.pixelData;
 
           if (arr.length === width * height * 4) {
@@ -381,12 +364,6 @@ function createImage(
 
           imageFrame.pixelData = imageData.data;
           imageFrame.pixelDataLength = imageData.data.length;
-
-          // const imageData = new ImageData(
-          //   new Uint8ClampedArray(imageFrame.pixelData),
-          //   image.columns,
-          //   image.rows
-          // );
 
           imageFrame.imageData = imageData;
           ctx.putImageData(imageFrame.imageData, 0, 0);
