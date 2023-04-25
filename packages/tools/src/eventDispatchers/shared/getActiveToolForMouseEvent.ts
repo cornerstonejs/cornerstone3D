@@ -22,10 +22,11 @@ export default function getActiveToolForMouseEvent(
   const { renderingEngineId, viewportId } = evt.detail;
   const mouseEvent = evt.detail.event;
 
-  // If any keyboard modifier key is also pressed
-  // Use the actual key if set, otherwise get the key from the mouse event.
+  // If any keyboard modifier key is also pressed - get the mouse version
+  // first since it handles combinations, while the key event handles non-modifier
+  // keys.
   const modifierKey =
-    keyEventListener.getModifierKey() || getMouseModifier(mouseEvent);
+    getMouseModifier(mouseEvent) || keyEventListener.getModifierKey();
 
   const toolGroup = ToolGroupManager.getToolGroupForViewport(
     viewportId,

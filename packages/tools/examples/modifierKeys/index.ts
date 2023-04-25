@@ -16,6 +16,9 @@ const {
   LengthTool,
   RectangleROITool,
   BidirectionalTool,
+  ZoomTool,
+  PanTool,
+  StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -45,10 +48,14 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-- Left click to use the Window/Level tool.
-- Shift + Left click to use the Length tool.
-- Ctrl + Left click to use the Bidirectional tool.
-- Alt/Option + Left click to use the RectangleROI tool.
+- Single touch is equivalent to left click.
+- Left or Meta+Left for stack scroll.
+- Right or Option to use the Window/Level tool.
+- Center or Ctrl to Pan.
+- Shift to Zoom.
+- Shift/Ctrl click to use the Length tool.
+- Ctrl/Alt click to use the Bidirectional tool.
+- Shift/Alt + Left click to use the RectangleROI tool.
 `;
 
 content.append(instructions);
@@ -68,6 +75,9 @@ async function run() {
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(BidirectionalTool);
+  cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -78,15 +88,69 @@ async function run() {
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(BidirectionalTool.toolName);
-
-  // TODO Why doesn't this work?
+  toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
+  toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Meta,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Meta,
+      },
+    ],
+  });
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Alt,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Alt,
+      },
+    ],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary_And_Secondary,
+      },
+      {
+        mouseButton: MouseBindings.Auxiliary, // Right Click
+      },
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Ctrl,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Ctrl,
+      },
+    ],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Shift,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });
@@ -94,23 +158,27 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Shift + Left Click
-        modifierKey: KeyboardBindings.Shift,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.ShiftCtrl,
       },
     ],
   });
   toolGroup.setToolActive(RectangleROITool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Ctrl + Left Click
-        modifierKey: KeyboardBindings.Ctrl,
+        mouseButton: MouseBindings.Primary, // Shift/Alt + Left Click
+        modifierKey: KeyboardBindings.ShiftAlt,
       },
     ],
   });
   toolGroup.setToolActive(BidirectionalTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Alt/Meta + Left Click
-        modifierKey: KeyboardBindings.Alt,
+        mouseButton: MouseBindings.Primary, // Ctrl/Alt + Left Click
+        modifierKey: KeyboardBindings.CtrlAlt,
       },
     ],
   });
@@ -149,11 +217,8 @@ async function run() {
     renderingEngine.getViewport(viewportId)
   );
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0]];
-
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  viewport.setStack(imageIds);
 
   // Render the image
   viewport.render();
