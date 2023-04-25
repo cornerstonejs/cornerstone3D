@@ -624,7 +624,10 @@ class StackViewport extends Viewport implements IStackViewport {
           calibratedColumnSpacing / imagePlaneModule.columnPixelSpacing,
       };
 
-      // modify imagePlaneModule for actor to use calibrated spacing
+      // modify imagePlaneModule customization for actor to use calibrated spacing
+      calibratedPixelSpacing[2] = calibratedRowSpacing;
+      calibratedPixelSpacing[3] = calibratedColumnSpacing;
+      // This updates the render copy
       imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
       imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
       return imagePlaneModule;
@@ -634,6 +637,9 @@ class StackViewport extends Viewport implements IStackViewport {
     const { imageData } = imageDataMetadata;
     const [columnPixelSpacing, rowPixelSpacing] = imageData.getSpacing();
 
+    // modify imagePlaneModule customization for actor to use calibrated spacing
+    calibratedPixelSpacing[2] = calibratedRowSpacing;
+    calibratedPixelSpacing[3] = calibratedColumnSpacing;
     imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
     imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
 
@@ -2574,9 +2580,25 @@ class StackViewport extends Viewport implements IStackViewport {
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
     const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
 
+    const calibratedPixelSpacing = metaData.get(
+      'calibratedPixelSpacing',
+      imageId
+    );
+
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };
+
+    if (calibratedPixelSpacing) {
+      const [x1, x2, origRowSpacing, origColumnSpacing] =
+        calibratedPixelSpacing;
+      if (origRowSpacing) {
+        newImagePlaneModule.rowPixelSpacing = origRowSpacing;
+      }
+      if (origColumnSpacing) {
+        newImagePlaneModule.columnPixelSpacing = origColumnSpacing;
+      }
+    }
 
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;
