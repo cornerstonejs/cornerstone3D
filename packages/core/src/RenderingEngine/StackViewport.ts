@@ -1577,9 +1577,13 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this._imageData.setOrigin(origin);
 
-    // 1. Update the pixel data in the vtkImageData object with the pixelData
-    //    from the loaded Cornerstone image
-    let pixelData = image.getPixelData();
+    // Update the pixel data in the vtkImageData object with the pixelData
+    // from the loaded Cornerstone image
+    this._updatePixelData(image);
+  }
+
+  private _updatePixelData(image: IImage) {
+    const pixelData = image.getPixelData();
     const scalars = this._imageData.getPointData().getScalars();
     const scalarData = scalars.getData() as
       | Uint8Array
@@ -1597,21 +1601,6 @@ class StackViewport extends Viewport implements IStackViewport {
         newPixelData[i * 3 + 1] = pixelData[i * 4 + 1];
         newPixelData[i * 3 + 2] = pixelData[i * 4 + 2];
       }
-      pixelData = newPixelData;
-
-      //  const numPixels = pixelData.length / 4;
-      //  const pixelDataWithoutAlpha = new Uint8Array(numPixels * 3);
-
-      //  let rgbaIndex = 0;
-      //  let rgbIndex = 0;
-
-      //  for (let i = 0; i < numPixels; i++) {
-      //    pixelDataWithoutAlpha[rgbIndex++] = pixelData[rgbaIndex++]; // red
-      //    pixelDataWithoutAlpha[rgbIndex++] = pixelData[rgbaIndex++]; // green
-      //    pixelDataWithoutAlpha[rgbIndex++] = pixelData[rgbaIndex++]; // blue
-      //    rgbaIndex++; // skip alpha
-      //  }
-
       // modify the image object to have the correct pixel data for later
       // use.
       image.rgba = false;
@@ -1730,9 +1719,10 @@ class StackViewport extends Viewport implements IStackViewport {
         );
 
         const { windowCenter, windowWidth } = viewport.voi;
-        this.voiRange = {
-          ...windowLevelUtil.toLowHighRange(windowWidth, windowCenter),
-        };
+        this.voiRange = windowLevelUtil.toLowHighRange(
+          windowWidth,
+          windowCenter
+        );
 
         this._cpuFallbackEnabledElement.image = image;
         this._cpuFallbackEnabledElement.metadata = {

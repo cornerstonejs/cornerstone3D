@@ -71,6 +71,8 @@ function hasSharedArrayBuffer() {
   }
 }
 
+// Todo: commenting this out until proper support for int16 textures
+// are added to browsers, current implementation is buggy
 // function _hasNorm16TextureSupport() {
 //   const gl = _getGLContext();
 
