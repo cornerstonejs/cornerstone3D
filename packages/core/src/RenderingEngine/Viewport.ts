@@ -111,6 +111,7 @@ class Viewport implements IViewport {
   customRenderViewportToCanvas: () => unknown;
   resize: () => void;
   getProperties: () => void;
+  updateRenderingPipeline: () => void;
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
@@ -1222,7 +1223,7 @@ class Viewport implements IViewport {
     return { widthWorld: maxX - minX, heightWorld: maxY - minY };
   }
 
-  protected _shouldUse16BitTexture() {
+  protected _shouldUseNativeDataType() {
     const { useNorm16Texture, preferSizeOverAccuracy } =
       getConfiguration().rendering;
     return useNorm16Texture || preferSizeOverAccuracy;

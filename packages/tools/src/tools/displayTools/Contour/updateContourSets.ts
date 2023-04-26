@@ -34,7 +34,9 @@ export function updateContourSets(
   const newOutlineWithActive = newContourConfig.outlineWidthActive;
 
   if (cachedConfig?.outlineWidthActive !== newOutlineWithActive) {
-    (actor as vtkActor).getProperty().setLineWidth(newOutlineWithActive);
+    (actor as unknown as vtkActor)
+      .getProperty()
+      .setLineWidth(newOutlineWithActive);
 
     setConfigCache(
       segmentationRepresentationUID,
@@ -44,7 +46,7 @@ export function updateContourSets(
     );
   }
 
-  const mapper = (actor as vtkActor).getMapper();
+  const mapper = (actor as unknown as vtkActor).getMapper();
   const lut = mapper.getLookupTable();
 
   const segmentsToSetToInvisible = [];

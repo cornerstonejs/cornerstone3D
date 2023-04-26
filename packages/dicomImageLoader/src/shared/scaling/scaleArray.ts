@@ -1,5 +1,7 @@
+import { PixelDataTypedArray } from '../../types';
+
 export default function scaleArray(
-  array: number[],
+  array: PixelDataTypedArray,
   scalingParameters
 ): boolean {
   const arrayLength = array.length;

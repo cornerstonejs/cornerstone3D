@@ -15,7 +15,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 const {
   SegmentationDisplayTool,
@@ -23,7 +23,7 @@ const {
   Enums: csToolsEnums,
   PanTool,
   StackScrollMouseWheelTool,
-  ZoomTool
+  ZoomTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -223,7 +223,7 @@ async function run() {
     ],
   });
 
-  const { metaDataManager } = cornerstoneWADOImageLoader.wadors;
+  const { metaDataManager } = cornerstoneDICOMImageLoader.wadors;
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   let imageIds = await createImageIdsAndCacheMetaData({

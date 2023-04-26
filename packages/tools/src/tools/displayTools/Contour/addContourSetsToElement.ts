@@ -104,7 +104,10 @@ export function addContourSetsToElement(
 
   actor.setForceOpaque(true);
 
-  viewport.addActor({ uid: contourActorUID, actor });
+  viewport.addActor({
+    uid: contourActorUID,
+    actor: actor as unknown as Types.Actor,
+  });
   viewport.resetCamera();
   viewport.render();
 }
