@@ -1851,8 +1851,8 @@ export { metaData }
 
 // @public (undocumented)
 const metadataProvider: {
-    add: (imageId: string, payload: [number, number]) => void;
-    get: (type: string, imageId: string) => [number, number];
+    add: (imageId: string, payload: CalibratedPixelValue) => void;
+    get: (type: string, imageId: string) => CalibratedPixelValue;
 };
 
 // @public (undocumented)
