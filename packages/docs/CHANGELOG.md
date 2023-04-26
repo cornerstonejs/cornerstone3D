@@ -7,17 +7,9 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 **Note:** Version bump only for package docs
 
-
-
-
-
 ## [0.18.13](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.18.12...docs@0.18.13) (2023-04-25)
 
 **Note:** Version bump only for package docs
-
-
-
-
 
 ## [0.18.12](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.18.11...docs@0.18.12) (2023-04-24)
 
