@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.43.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.43.0...@cornerstonejs/core@0.43.1) (2023-04-26)
+
+
+### Bug Fixes
+
+* **calibration:** Apply the calibration update only once ([#577](https://github.com/cornerstonejs/cornerstone3D-beta/issues/577)) ([0641930](https://github.com/cornerstonejs/cornerstone3D-beta/commit/06419303b5bf8901645f4c74bc25cb8eabf279c8))
+
+
+
+
+
 # [0.43.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.42.3...@cornerstonejs/core@0.43.0) (2023-04-19)
 
 

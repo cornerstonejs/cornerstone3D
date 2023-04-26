@@ -579,7 +579,10 @@ describe('renderingCore -- Stack', () => {
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const imageRenderedCallback = () => {
-        calibratedPixelSpacingMetadataProvider.add(imageId1, [2, 2]);
+        calibratedPixelSpacingMetadataProvider.add(imageId1, {
+          rowPixelSpacing: 2,
+          columnPixelSpacing: 2,
+        });
 
         vp.calibrateSpacing(imageId1);
         element.removeEventListener(

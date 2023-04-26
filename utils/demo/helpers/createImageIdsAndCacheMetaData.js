@@ -82,10 +82,10 @@ export default async function createImageIdsAndCacheMetaData({
       const pixelSpacing = getPixelSpacingInformation(metadata);
 
       if (pixelSpacing) {
-        calibratedPixelSpacingMetadataProvider.add(
-          imageId,
-          pixelSpacing.map((s) => parseFloat(s))
-        );
+        calibratedPixelSpacingMetadataProvider.add(imageId, {
+          rowPixelSpacing: parseFloat(pixelSpacing[0]),
+          columnPixelSpacing: parseFloat(pixelSpacing[1]),
+        });
       }
     }
   });
