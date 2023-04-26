@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.17.1...@cornerstonejs/streaming-image-volume-loader@0.18.0) (2023-04-26)
+
+
+### Features
+
+* **dicomImageLoader:** make cornerstone to use new dicom image loader and handle scaling correctly ([#553](https://github.com/cornerstonejs/cornerstone3D-beta/issues/553)) ([a01687a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a01687ab925c469bf979d6f2089d2e8f31c28e75))
+
+
+
+
+
 ## [0.17.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.17.0...@cornerstonejs/streaming-image-volume-loader@0.17.1) (2023-04-26)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
