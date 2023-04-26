@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.64.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.63.3...@cornerstonejs/tools@0.64.0) (2023-04-26)
+
+
+### Features
+
+* **tools:** Add invert zoom option ([#574](https://github.com/cornerstonejs/cornerstone3D-beta/issues/574)) ([7d41449](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7d4144957af9f261771283c51a1bfa304802e4fd))
+
+
+
+
+
 ## [0.63.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.63.2...@cornerstonejs/tools@0.63.3) (2023-04-26)
 
 
