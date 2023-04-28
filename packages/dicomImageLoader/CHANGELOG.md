@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.5.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.4.0...@cornerstonejs/dicom-image-loader@0.5.0) (2023-04-28)
+
+
+### Features
+
+* **metadata:** adding support for multiframe metadata in wadors and wadouri ([#582](https://github.com/cornerstonejs/cornerstone3D-beta/issues/582)) ([7ae983c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/7ae983ce33c0f08becd8f5cdafa34956c29defd1))
+
+
+
+
+
 # [0.4.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.3.6...@cornerstonejs/dicom-image-loader@0.4.0) (2023-04-26)
 
 
