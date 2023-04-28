@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.20.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.19.2...docs@0.20.0) (2023-04-28)
+
+
+### Features
+
+* **docs:** change dicomImageLoader webpack build process ([#587](https://github.com/cornerstonejs/cornerstone3D-beta/issues/587)) ([2c0b336](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2c0b33602444b553e1f109b1a2cc7358a6de10ba))
+
+
+
+
+
 ## [0.19.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/docs@0.19.1...docs@0.19.2) (2023-04-28)
 
 **Note:** Version bump only for package docs
