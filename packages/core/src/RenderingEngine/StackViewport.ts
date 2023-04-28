@@ -1702,50 +1702,6 @@ class StackViewport extends Viewport implements IStackViewport {
           };
         }
 
-        const pixelData = image.getPixelData();
-
-        // handle the case where the pixelData is a Float32Array
-        // CPU path cannot handle it, it should be converted to Uint16Array
-        // and via the Modality LUT we can display it properly
-        if (pixelData instanceof Float32Array) {
-          const floatMinMax = {
-            min: image.maxPixelValue,
-            max: image.minPixelValue,
-          };
-          const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
-          const intRange = 65535;
-          const slope = floatRange / intRange;
-          const intercept = floatMinMax.min;
-          const numPixels = pixelData.length;
-          const intPixelData = new Uint16Array(numPixels);
-
-          let min = 65535;
-
-          let max = 0;
-
-          for (let i = 0; i < numPixels; i++) {
-            const rescaledPixel = Math.floor(
-              (pixelData[i] - intercept) / slope
-            );
-
-            intPixelData[i] = rescaledPixel;
-            min = Math.min(min, rescaledPixel);
-            max = Math.max(max, rescaledPixel);
-          }
-
-          // reset the properties since basically the image has changed
-          image.minPixelValue = min;
-          image.maxPixelValue = max;
-          image.slope = slope;
-          image.intercept = intercept;
-          image.getPixelData = () => intPixelData;
-
-          image.preScale = {
-            ...image.preScale,
-            scaled: false,
-          };
-        }
-
         this._setCSImage(image);
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
