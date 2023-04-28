@@ -4,6 +4,7 @@ import { combineFrameInstance } from './combineFrameInstance';
 import multiframeMetadata from './retrieveMultiframeMetadata';
 
 let metadataByImageURI = [];
+let multiframeMetadataByImageURI = {};
 
 function add(imageId: string, metadata: WADORSMetaData) {
   const imageURI = imageIdToURI(imageId);
@@ -21,42 +22,51 @@ function add(imageId: string, metadata: WADORSMetaData) {
 function get(imageId: string): WADORSMetaData {
   const imageURI = imageIdToURI(imageId);
 
-  // dealing first with the non multiframe information
-  let metadata = metadataByImageURI[imageURI];
+  // Check if the metadata is already available
+  const metadata = metadataByImageURI[imageURI];
 
-  if (metadata) {
-    if (!metadata.isMultiframe) {
-      return metadata;
-    }
+  if (metadata && !metadata?.isMultiframe) {
+    // Return the metadata for single-frame images
+    return metadata;
   }
 
-  let frame = 1;
+  const cachedMetadata = multiframeMetadataByImageURI[imageURI];
 
-  if (!metadata) {
-    // in this case it could indicate a multiframe imageid
-    // Try to get the first frame metadata, where is stored the multiframe info
-    const firstFrameInfo =
-      multiframeMetadata._retrieveMultiframeMetadata(imageURI);
-
-    metadata = firstFrameInfo.metadata;
-    frame = firstFrameInfo.frame;
+  if (cachedMetadata) {
+    return cachedMetadata;
   }
 
-  if (metadata) {
-    metadata = combineFrameInstance(frame, metadata);
+  // Try to get the metadata for a specific frame of a multiframe image
+  const retrievedMetadata =
+    multiframeMetadata._retrieveMultiframeMetadata(imageURI);
+
+  if (!retrievedMetadata || !retrievedMetadata.metadata) {
+    return;
   }
 
-  return metadata;
+  const { metadata: firstFrameMetadata, frame } = retrievedMetadata;
+
+  if (firstFrameMetadata) {
+    // Combine the metadata from the first frame with the metadata from the specified frame
+    const combined = combineFrameInstance(frame, firstFrameMetadata);
+
+    multiframeMetadataByImageURI[imageURI] = combined;
+
+    return combined;
+  }
 }
 
 function remove(imageId) {
   const imageURI = imageIdToURI(imageId);
 
   metadataByImageURI[imageURI] = undefined;
+
+  multiframeMetadataByImageURI[imageURI] = undefined;
 }
 
 function purge() {
   metadataByImageURI = [];
+  multiframeMetadataByImageURI = {};
 }
 
 export { metadataByImageURI };

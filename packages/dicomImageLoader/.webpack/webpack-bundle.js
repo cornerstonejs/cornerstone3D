@@ -90,7 +90,12 @@ module.exports = {
       },
     ],
   },
-  plugins: [new webpack.ProgressPlugin()],
+  plugins: [
+    new webpack.ProgressPlugin(),
+    new webpack.optimize.LimitChunkCountPlugin({
+      maxChunks: 1,
+    }),
+  ],
   experiments: {
     asyncWebAssembly: true,
   },

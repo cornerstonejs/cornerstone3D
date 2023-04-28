@@ -69,6 +69,9 @@ module.exports = {
         exclude: [/(node_modules)/, /(codecs)/],
         use: {
           loader: 'babel-loader',
+          options: {
+            cacheDirectory: true,
+          },
         },
       },
       {
