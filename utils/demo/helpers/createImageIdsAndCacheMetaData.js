@@ -3,7 +3,7 @@ import dcmjs from 'dcmjs';
 import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
 import { utilities } from '@cornerstonejs/core';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
@@ -27,7 +27,9 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
+  SOPInstanceUID,
   wadoRsRoot,
+  client = null,
 }) {
   const SOP_INSTANCE_UID = '00080018';
   const SERIES_INSTANCE_UID = '0020000E';
@@ -38,12 +40,13 @@ export default async function createImageIdsAndCacheMetaData({
     seriesInstanceUID: SeriesInstanceUID,
   };
 
-  const client = new api.DICOMwebClient({ url: wadoRsRoot });
+  client = client || new api.DICOMwebClient({ url: wadoRsRoot });
   const instances = await client.retrieveSeriesMetadata(studySearchOptions);
   const modality = instances[0][MODALITY].Value[0];
   let imageIds = instances.map((instanceMetaData) => {
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
-    const SOPInstanceUID = instanceMetaData[SOP_INSTANCE_UID].Value[0];
+    const SOPInstanceUIDToUse =
+      SOPInstanceUID || instanceMetaData[SOP_INSTANCE_UID].Value[0];
 
     const prefix = 'wadors:';
 
@@ -55,10 +58,10 @@ export default async function createImageIdsAndCacheMetaData({
       '/series/' +
       SeriesInstanceUID +
       '/instances/' +
-      SOPInstanceUID +
+      SOPInstanceUIDToUse +
       '/frames/1';
 
-    cornerstoneWADOImageLoader.wadors.metaDataManager.add(
+    cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
       imageId,
       instanceMetaData
     );
@@ -71,7 +74,7 @@ export default async function createImageIdsAndCacheMetaData({
 
   imageIds.forEach((imageId) => {
     let instanceMetaData =
-      cornerstoneWADOImageLoader.wadors.metaDataManager.get(imageId);
+      cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
 
     // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
     instanceMetaData = removeInvalidTags(instanceMetaData);
@@ -82,10 +85,10 @@ export default async function createImageIdsAndCacheMetaData({
       const pixelSpacing = getPixelSpacingInformation(metadata);
 
       if (pixelSpacing) {
-        calibratedPixelSpacingMetadataProvider.add(
-          imageId,
-          pixelSpacing.map((s) => parseFloat(s))
-        );
+        calibratedPixelSpacingMetadataProvider.add(imageId, {
+          rowPixelSpacing: parseFloat(pixelSpacing[0]),
+          columnPixelSpacing: parseFloat(pixelSpacing[1]),
+        });
       }
     }
   });

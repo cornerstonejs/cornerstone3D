@@ -18,6 +18,7 @@ const prodConfig = {
     libraryTarget: 'umd',
     globalObject: 'this',
     filename: '[name].min.js',
+    clean: true,
   },
   optimization: {
     // minimize: false,

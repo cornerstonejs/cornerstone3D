@@ -3,6 +3,87 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.17.1...@cornerstonejs/streaming-image-volume-loader@0.18.0) (2023-04-26)
+
+
+### Features
+
+* **dicomImageLoader:** make cornerstone to use new dicom image loader and handle scaling correctly ([#553](https://github.com/cornerstonejs/cornerstone3D-beta/issues/553)) ([a01687a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a01687ab925c469bf979d6f2089d2e8f31c28e75))
+
+
+
+
+
+## [0.17.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.17.0...@cornerstonejs/streaming-image-volume-loader@0.17.1) (2023-04-26)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+# [0.17.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.10...@cornerstonejs/streaming-image-volume-loader@0.17.0) (2023-04-20)
+
+
+### Features
+
+* **4D:** fixed cine play issue and added getDynamicVolumeInfo method ([#562](https://github.com/cornerstonejs/cornerstone3D-beta/issues/562)) ([f4c2531](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f4c25316eb1c5a6b13edb7c0873c9b0ce7a4e581))
+
+
+
+
+
+## [0.16.10](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.9...@cornerstonejs/streaming-image-volume-loader@0.16.10) (2023-04-19)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.8...@cornerstonejs/streaming-image-volume-loader@0.16.9) (2023-04-18)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.7...@cornerstonejs/streaming-image-volume-loader@0.16.8) (2023-04-18)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.6...@cornerstonejs/streaming-image-volume-loader@0.16.7) (2023-04-17)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.5...@cornerstonejs/streaming-image-volume-loader@0.16.6) (2023-04-12)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+
+
+
+
+## [0.16.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.4...@cornerstonejs/streaming-image-volume-loader@0.16.5) (2023-04-11)
+
+
+### Bug Fixes
+
+* **suv display:** fix scaling of non-SUV PT images ([#536](https://github.com/cornerstonejs/cornerstone3D-beta/issues/536)) ([f9182f0](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f9182f076d9d5f3af4989550b9549aeaa2792466))
+
+
+
+
+
 ## [0.16.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.16.3...@cornerstonejs/streaming-image-volume-loader@0.16.4) (2023-04-11)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

@@ -14,6 +14,9 @@
     },
     "tools-advanced": {
       "description": "Advanced usage of Tools library"
+    },
+    "dicom-image-loader": {
+      "description": "usage of cornerstone dicom image loader"
     }
   },
   "examplesByCategory": {
@@ -259,6 +262,12 @@
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
         "description": "Demostrates generating a 3D volume from 4D data using subtract, average or sum."
+      }
+    },
+    "dicom-image-loader": {
+      "dicomImageLoaderWADOURI": {
+        "name": "WADO-URI (DICOM P10)",
+        "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
       }
     }
   }

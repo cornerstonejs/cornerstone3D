@@ -19,6 +19,7 @@ const { getMinMax } = csUtils;
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
  * It implements load method to load the imageIds and insert them into the volume.
+ *
  */
 export default class BaseStreamingImageVolume extends ImageVolume {
   private framesLoaded = 0;

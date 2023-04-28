@@ -2539,14 +2539,6 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.2.tgz#e96721d56f6ec96f7f95c16321d88cc8467d8d81"
   integrity sha512-lgdvBvvNezleY+4pIe2ceUsJzlZe/0PipdeubQ3vZZOz3xxtHHMR1XFCl4fgd8gosR8COHuD7h6q+MwgrwBsng==
 
-"@cornerstonejs/core@^0.31.0":
-  version "0.31.2"
-  resolved "https://registry.npmjs.org/@cornerstonejs/core/-/core-0.31.2.tgz#0087cb4445962c82125ae2dddff49aadcfab634d"
-  integrity sha512-RIxKF/3gGvx8Rca91YlAkUF0DVICedHr6Xis9x8EvOIm+DraP1h3FSQs6bO77FdalAEPGyDjG5U8ZfsAkAXN4g==
-  dependencies:
-    detect-gpu "^4.0.45"
-    lodash.clonedeep "4.5.0"
-
 "@cspotcode/source-map-consumer@0.8.0":
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-consumer/-/source-map-consumer-0.8.0.tgz#33bf4b7b39c178821606f669bbc447a6a629786b"
@@ -3438,10 +3430,10 @@
     merge-source-map "^1.1.0"
     schema-utils "^2.7.0"
 
-"@kitware/vtk.js@26.5.6":
-  version "26.5.6"
-  resolved "https://registry.npmjs.org/@kitware/vtk.js/-/vtk.js-26.5.6.tgz#58fb474ce6929c18988c53fc993d02a463fc7ce1"
-  integrity sha512-1bTeo9xMa0hmeuAeRPp6JB98RuF36VCPTlq0A7I/zTmhP4XIsPQf/u468qE8Z3kXSb3RkCCNYo04GgaKlQr5VQ==
+"@kitware/vtk.js@27.3.1":
+  version "27.3.1"
+  resolved "https://registry.npmjs.org/@kitware/vtk.js/-/vtk.js-27.3.1.tgz#65004b041642663da94e6a488ebb813576e7de7d"
+  integrity sha512-GvAXdOKtDDbkaSdO+UhKnDST4CW1C3fHgaDvA0wn1ZWTLm/6SFAMzarTjpzsVGYCPoEYIhCAAlBQ7K7aDcu3Vg==
   dependencies:
     "@babel/runtime" "7.17.9"
     commander "9.2.0"
@@ -8904,9 +8896,9 @@ core-util-is@~1.0.0:
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
 cornerstone-wado-image-loader@^4.10.2:
-  version "4.10.2"
-  resolved "https://registry.npmjs.org/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.10.2.tgz#139956654324fd2b01fe5b4900d0f4ed8c52633d"
-  integrity sha512-qj9dThELqYCm3jAZfg9qnUl8d76gngOl55kYJabY5lh/dFeVIxno/hYxy3ydE7RtG2c/TUGXb+EMUl0CJSqKBQ==
+  version "4.13.1"
+  resolved "https://registry.npmjs.org/cornerstone-wado-image-loader/-/cornerstone-wado-image-loader-4.13.1.tgz#99b90e15834b6e1b5f84f0495270400b18b07e8e"
+  integrity sha512-IKAeI2JLG2HFBFF+ANHYyHxOJmjbys+wfX15flC0bz3D9AhDU1HX34qJMRh+HMMZ/Jcqjc4EJJq1ttR0OwMdig==
   dependencies:
     "@babel/eslint-parser" "^7.19.1"
     "@cornerstonejs/codec-charls" "^1.2.3"

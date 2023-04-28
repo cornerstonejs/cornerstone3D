@@ -63,7 +63,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     super(props);
 
     this.useCPURendering = getShouldUseCPURendering();
-    this.use16BitTexture = this._shouldUse16BitTexture();
+    this.use16BitTexture = this._shouldUseNativeDataType();
 
     if (this.useCPURendering) {
       throw new Error(

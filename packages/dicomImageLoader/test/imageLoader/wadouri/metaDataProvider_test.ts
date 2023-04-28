@@ -47,7 +47,7 @@ describe('#wadouri > metadataProvider', function () {
     });
   });
 
-  it('should return columnPixelSpacing undefined if pixelSpacing is undefined', function (done) {
+  it('should return rowPixelSpacing undefined if pixelSpacing is undefined', function (done) {
     this.timeout(5000);
     loadImage(imageId).promise.then(() => {
       const imagePlaneModule = external.cornerstone.metaData.get(

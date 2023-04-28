@@ -61,6 +61,7 @@ interface ToolConfiguration {
     getReferenceLineControllable?: (viewportId: string) => boolean;
     getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
     getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
+    referenceLinesCenterGapRadius?: number;
     shadow?: boolean;
     autopan?: {
       enabled: boolean;
@@ -152,6 +153,10 @@ class CrosshairsTool extends AnnotationTool {
           enabled: false,
           panSize: 10,
         },
+        // radius of the area around the intersection of the planes, in which
+        // the reference lines will not be rendered. This is only used when
+        // having 3 viewports in the toolGroup.
+        referenceLinesCenterGapRadius: 20,
         // actorUIDs for slabThickness application, if not defined, the slab thickness
         // will be applied to all actors of the viewport
         filterActorUIDsToSetSlabThickness: [],
@@ -770,6 +775,7 @@ class CrosshairsTool extends AnnotationTool {
     const canvasDiagonalLength = Math.sqrt(
       clientWidth * clientWidth + clientHeight * clientHeight
     );
+    const canvasMinDimensionLength = Math.min(clientWidth, clientHeight);
 
     const data = viewportAnnotation.data;
     const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter);
@@ -781,6 +787,9 @@ class CrosshairsTool extends AnnotationTool {
       );
 
     const referenceLines = [];
+
+    // get canvas information for points and lines (canvas box, canvas horizontal distances)
+    const canvasBox = [0, 0, clientWidth, clientHeight];
 
     otherViewportAnnotations.forEach((annotation) => {
       const { data } = annotation;
@@ -831,9 +840,6 @@ class CrosshairsTool extends AnnotationTool {
       const pointWorld1: Types.Point3 = [0, 0, 0];
       vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1);
 
-      // get canvas information for points and lines (canvas box, canvas horizontal distances)
-      const canvasBox = [0, 0, clientWidth, clientHeight];
-
       const pointCanvas0 = viewport.worldToCanvas(pointWorld0);
 
       const otherViewportCenterCanvas = viewport.worldToCanvas(
@@ -878,7 +884,6 @@ class CrosshairsTool extends AnnotationTool {
       //                           Long
       const canvasVectorFromCenterLong = vec2.create();
 
-      // Todo: configuration should provide constants below (100, 0.25, 0.15, 0.04)
       vec2.scale(
         canvasVectorFromCenterLong,
         canvasUnitVectorFromCenter,
@@ -888,20 +893,25 @@ class CrosshairsTool extends AnnotationTool {
       vec2.scale(
         canvasVectorFromCenterMid,
         canvasUnitVectorFromCenter,
-        canvasDiagonalLength * 0.25
+        // to maximize the visibility of the controls, they need to be
+        // placed at most at half the length of the shortest side of the canvas.
+        // Chosen 0.4 to have some margin to the edge.
+        canvasMinDimensionLength * 0.4
       );
       const canvasVectorFromCenterShort = vec2.create();
       vec2.scale(
         canvasVectorFromCenterShort,
         canvasUnitVectorFromCenter,
-        canvasDiagonalLength * 0.15
+        // Chosen 0.2 because is half of 0.4.
+        canvasMinDimensionLength * 0.2
       );
       const canvasVectorFromCenterStart = vec2.create();
+      const centerGap = this.configuration.referenceLinesCenterGapRadius;
       vec2.scale(
         canvasVectorFromCenterStart,
         canvasUnitVectorFromCenter,
         // Don't put a gap if the the third view is missing
-        otherViewportAnnotations.length === 2 ? canvasDiagonalLength * 0.04 : 0
+        otherViewportAnnotations.length === 2 ? centerGap : 0
       );
 
       // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
@@ -1464,78 +1474,49 @@ class CrosshairsTool extends AnnotationTool {
     viewportId: string,
     renderingEngine: Types.IRenderingEngine
   ): void {
-    // 1. Compute the current world bounding box of the viewport from corner to corner
-    // 2. Check if the toolCenter is outside of the world bounding box
-    // 3. If it is outside, pan the viewport to fit in the toolCenter
+    // 1. Check if the toolCenter is outside the viewport
+    // 2. If it is outside, pan the viewport to fit in the toolCenter
 
     const viewport = renderingEngine.getViewport(viewportId);
     const { clientWidth, clientHeight } = viewport.canvas;
-    const topLefWorld = viewport.canvasToWorld([0, 0]);
-    const bottomRightWorld = viewport.canvasToWorld([
-      clientWidth,
-      clientHeight,
-    ]);
-    const topRightWorld = viewport.canvasToWorld([clientWidth, 0]);
-    const bottomLeftWorld = viewport.canvasToWorld([0, clientHeight]);
 
-    // find the minimum and maximum world coordinates in each x,y,z
-    const minX = Math.min(
-      topLefWorld[0],
-      bottomRightWorld[0],
-      topRightWorld[0],
-      bottomLeftWorld[0]
-    );
-    const maxX = Math.max(
-      topLefWorld[0],
-      bottomRightWorld[0],
-      topRightWorld[0],
-      bottomLeftWorld[0]
-    );
-    const minY = Math.min(
-      topLefWorld[1],
-      bottomRightWorld[1],
-      topRightWorld[1],
-      bottomLeftWorld[1]
-    );
-    const maxY = Math.max(
-      topLefWorld[1],
-      bottomRightWorld[1],
-      topRightWorld[1],
-      bottomLeftWorld[1]
-    );
-    const minZ = Math.min(
-      topLefWorld[2],
-      bottomRightWorld[2],
-      topRightWorld[2],
-      bottomLeftWorld[2]
-    );
-    const maxZ = Math.max(
-      topLefWorld[2],
-      bottomRightWorld[2],
-      topRightWorld[2],
-      bottomLeftWorld[2]
-    );
+    const toolCenterCanvas = viewport.worldToCanvas(this.toolCenter);
 
     // pan the viewport to fit the toolCenter in the direction
     // that is out of bounds
-    let deltaPointsWorld;
     const pan = this.configuration.autoPan.panSize;
 
-    if (this.toolCenter[0] < minX - EPSILON) {
-      deltaPointsWorld = [minX - this.toolCenter[0] + pan, 0, 0];
-    } else if (this.toolCenter[0] > maxX + EPSILON) {
-      deltaPointsWorld = [maxX - this.toolCenter[0] - pan, 0, 0];
-    } else if (this.toolCenter[1] < minY - EPSILON) {
-      deltaPointsWorld = [0, minY - this.toolCenter[1] + pan, 0];
-    } else if (this.toolCenter[1] > maxY + EPSILON) {
-      deltaPointsWorld = [0, maxY - this.toolCenter[1] - pan, 0];
-    } else if (this.toolCenter[2] < minZ - EPSILON) {
-      deltaPointsWorld = [0, 0, minZ - this.toolCenter[2] + pan];
-    } else if (this.toolCenter[2] > maxZ + EPSILON) {
-      deltaPointsWorld = [0, 0, maxZ - this.toolCenter[2] - pan];
-    } else {
+    const visiblePointCanvas = <Types.Point2>[
+      toolCenterCanvas[0],
+      toolCenterCanvas[1],
+    ];
+
+    if (toolCenterCanvas[0] < 0) {
+      visiblePointCanvas[0] = pan;
+    } else if (toolCenterCanvas[0] > clientWidth) {
+      visiblePointCanvas[0] = clientWidth - pan;
+    }
+
+    if (toolCenterCanvas[1] < 0) {
+      visiblePointCanvas[1] = pan;
+    } else if (toolCenterCanvas[1] > clientHeight) {
+      visiblePointCanvas[1] = clientHeight - pan;
+    }
+
+    if (
+      visiblePointCanvas[0] === toolCenterCanvas[0] &&
+      visiblePointCanvas[1] === toolCenterCanvas[1]
+    ) {
       return;
     }
+
+    const visiblePointWorld = viewport.canvasToWorld(visiblePointCanvas);
+
+    const deltaPointsWorld = [
+      visiblePointWorld[0] - this.toolCenter[0],
+      visiblePointWorld[1] - this.toolCenter[1],
+      visiblePointWorld[2] - this.toolCenter[2],
+    ];
 
     const camera = viewport.getCamera();
     const { focalPoint, position } = camera;

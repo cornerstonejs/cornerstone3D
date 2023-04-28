@@ -21,6 +21,9 @@ const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 
+function getRand(min, max) {
+  return Math.random() * (max - min) + min;
+}
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Programmatic Pan and Zoom with initial pan and zoom',
@@ -30,6 +33,7 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
+
 element.style.width = '500px';
 element.style.height = '500px';
 
@@ -65,7 +69,7 @@ addButtonToToolbar({
     );
 
     const zoom = viewport.getZoom();
-    console.log('Current zoom', zoom);
+
     viewport.setZoom(zoom * 1.05);
     viewport.render();
   },
@@ -81,9 +85,7 @@ addButtonToToolbar({
     const viewport = <Types.IVolumeViewport>(
       renderingEngine.getViewport(viewportId)
     );
-    //viewport.resetCamera();
-    viewport.setZoom(1);
-    viewport.setPan([0, 0]);
+    viewport.resetCamera();
     viewport.render();
   },
 });
@@ -101,6 +103,116 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
     viewport.setZoom(viewport.getZoom(), true);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Set LEFT Display Area',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    viewport.setDisplayArea({
+      imageArea: [1, 1],
+      imageCanvasPoint: {
+        imagePoint: [0, 0.5],
+        canvasPoint: [0, 0.5],
+      },
+      storeAsInitialCamera: true,
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Set RIGHT Display Area',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    viewport.setDisplayArea({
+      imageArea: [1, 1],
+      imageCanvasPoint: {
+        imagePoint: [1, 0.5],
+        canvasPoint: [1, 0.5],
+      },
+      storeAsInitialCamera: true,
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Set TOP Display Area',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    viewport.setDisplayArea({
+      imageArea: [1, 1],
+      imageCanvasPoint: {
+        imagePoint: [0.5, 0],
+        canvasPoint: [0.5, 0],
+      },
+      storeAsInitialCamera: true,
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Set BOTTOM Display Area',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    viewport.setDisplayArea({
+      imageArea: [1, 1],
+      imageCanvasPoint: {
+        imagePoint: [0.5, 1],
+        canvasPoint: [0.5, 1],
+      },
+      storeAsInitialCamera: true,
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Set Random Display Area',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = <Types.IVolumeViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    viewport.setDisplayArea({
+      imageArea: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
+      imageCanvasPoint: {
+        imagePoint: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
+        canvasPoint: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
+      },
+      storeAsInitialCamera: false,
+    });
+    viewport.render();
   },
 });
 
@@ -151,11 +263,6 @@ async function run() {
 
   // Render the image
   viewport.render();
-
-  viewport.setZoom(0.8);
-  viewport.setPan([-128, 0]);
-  // Second one should have no affect
-  viewport.setPan([-128, 0]);
 }
 
 run();

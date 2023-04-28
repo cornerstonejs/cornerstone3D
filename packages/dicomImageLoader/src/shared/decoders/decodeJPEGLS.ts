@@ -64,7 +64,6 @@ async function decodeAsync(
   imageInfo
 ): Promise<ImageFrame> {
   try {
-    console.debug('decodeAsync', compressedImageFrame, imageInfo);
     await initialize();
     const decoder = local.decoder;
 
