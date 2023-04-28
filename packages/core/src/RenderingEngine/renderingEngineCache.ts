@@ -36,6 +36,18 @@ const renderingEngineCache = {
     const renderingEngineIds = Object.keys(cache);
     const renderingEngines = renderingEngineIds.map((id) => cache[id]);
 
+    // sort the rendering engines so that the ones that start with _
+    // are at the end of the array
+    renderingEngines.sort((a, b) => {
+      if (a.id[0] === '_' && b.id[0] !== '_') {
+        return 1;
+      } else if (a.id[0] !== '_' && b.id[0] === '_') {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
+
     return renderingEngines;
   },
 };

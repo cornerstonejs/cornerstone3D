@@ -1804,7 +1804,7 @@ function loadAndCacheImages(imageIds: Array<string>, options?: ImageLoaderOption
 function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
-function loadImageToCanvas(canvas: HTMLCanvasElement, imageId: string, requestType?: RequestType, priority?: number): Promise<string>;
+function loadImageToCanvas(canvas: HTMLCanvasElement, imageId: string, requestType?: RequestType, priority?: number, renderingEngineId?: string, useCPURendering?: boolean): Promise<string>;
 
 // @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Types.IImageVolume>;
@@ -2008,7 +2008,10 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-function renderToCanvas(canvas: HTMLCanvasElement, image: IImage, modality?: string): void;
+function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, renderingEngineId?: string): Promise<string>;
+
+// @public (undocumented)
+function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string): Promise<string>;
 
 // @public (undocumented)
 enum RequestType {
@@ -2174,6 +2177,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     modality: string;
     // (undocumented)
     removeAllActors: () => void;
+    // (undocumented)
+    renderImageObject: (image: any) => void;
     // (undocumented)
     resetCamera: (resetPan?: boolean, resetZoom?: boolean) => boolean;
     // (undocumented)
@@ -2376,7 +2381,8 @@ declare namespace utilities {
         getViewportsWithVolumeId,
         transformWorldToIndex,
         loadImageToCanvas,
-        renderToCanvas,
+        renderToCanvasCPU,
+        renderToCanvasGPU,
         worldToImageCoords,
         imageToWorldCoords,
         getVolumeSliceRangeInfo,
@@ -2547,7 +2553,7 @@ export class Viewport implements IViewport {
 
 // @public (undocumented)
 type ViewportInputOptions = {
-    background?: [number, number, number];
+    background?: Point3;
     orientation?: OrientationAxis | OrientationVectors;
     displayArea?: DisplayArea;
     suppressEvents?: boolean;

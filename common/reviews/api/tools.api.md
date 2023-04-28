@@ -5326,7 +5326,7 @@ declare namespace viewportFilters {
 
 // @public
 type ViewportInputOptions = {
-    background?: [number, number, number];
+    background?: Point3;
     orientation?: OrientationAxis | OrientationVectors;
     displayArea?: DisplayArea;
     suppressEvents?: boolean;

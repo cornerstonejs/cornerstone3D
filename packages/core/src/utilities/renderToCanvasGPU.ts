@@ -2,10 +2,11 @@ import getOrCreateCanvas from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
 import StackViewport from '../RenderingEngine/StackViewport';
 import { IImage } from '../types';
-import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
+import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
+import RenderingEngine from '../RenderingEngine';
 
 /**
- * Renders an imageId to a Canvas. This method will handle creation
+ * Renders an cornerstone image to a Canvas. This method will handle creation
  * of a temporary enabledElement, setting the imageId, and rendering the image via
  * a StackViewport, copying the canvas drawing to the given canvas Element, and
  * disabling the created temporary element. SuppressEvents argument is used to
@@ -15,34 +16,28 @@ import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
  * @example
  * ```
  * const canvas = document.getElementById('myCanvas')
- * const imageId = 'myImageId'
  *
- * renderToCanvas(canvas, imageId)
+ * renderToCanvas(canvas, image)
  * ```
- * @param imageId - The imageId to render
  * @param canvas - Canvas element to render to
- * @param renderingEngineId - [Default=null] The rendering engine Id
- * to use, if not provided, will create a new rendering engine with a random Id (this is preferred)
- * @param suppressEvents - [Default = true] boolean to suppress events during render,
- * if undefined, events will be suppressed
+ * @param image - The image to render
+ * @param modality - [Default = undefined] The modality of the image
  * @returns - A promise that resolves when the image has been rendered with the imageId
  */
-export default function renderToCanvas(
+export default function renderToCanvasGPU(
   canvas: HTMLCanvasElement,
   image: IImage,
-  modality?: string
+  modality = undefined,
+  renderingEngineId = '_thumbnails'
 ): Promise<string> {
   if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
     throw new Error('canvas element is required');
   }
 
-  const imageIdToPrint = image.imageId.substring(150, 200);
+  const imageIdToPrint = image.imageId;
   const viewportId = `thumbnailViewport-${imageIdToPrint}`;
-  // const viewportId = `thumbnailViewport`;
   const imageId = image.imageId;
-  // const elementId = `thumbnailViewport-${image.imageId}`;
   const element = document.createElement('div');
-  // element.id = elementId;
   element.style.width = `${canvas.width}px`;
   element.style.height = `${canvas.height}px`;
 
@@ -51,18 +46,25 @@ export default function renderToCanvas(
   element.style.visibility = 'hidden';
   document.body.appendChild(element);
 
-  const renderingEngine = getRenderingEngines()[0];
-  const stackViewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element,
-    defaultOptions: {
-      suppressEvents: true,
-    },
-  };
+  const renderingEngine =
+    (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
+    new RenderingEngine(renderingEngineId);
 
-  renderingEngine.enableElement(stackViewportInput);
-  const viewport = renderingEngine.getViewport(viewportId) as StackViewport;
+  let viewport = renderingEngine.getViewport(viewportId) as StackViewport;
+
+  if (!viewport) {
+    const stackViewportInput = {
+      viewportId,
+      type: ViewportType.STACK,
+      element,
+      defaultOptions: {
+        suppressEvents: true,
+      },
+    };
+    renderingEngine.enableElement(stackViewportInput);
+    viewport = renderingEngine.getViewport(viewportId) as StackViewport;
+  }
+
   return new Promise((resolve) => {
     // Creating a temporary HTML element so that we can
     // enable it and later disable it without losing the canvas context
@@ -82,26 +84,37 @@ export default function renderToCanvas(
       context.drawImage(temporaryCanvas, 0, 0);
       elementRendered = true;
 
-      // Remove the event listener
-      element.removeEventListener(Events.IMAGE_RENDERED, onImageRendered);
-
       // remove based on id
       document.body.removeChild(element);
+      element.removeEventListener(Events.IMAGE_RENDERED, onImageRendered);
+
+      // Ensure pending previous resize calls are done which might have been
+      // triggered by the same disableElement call. This is to avoid potential
+      // grab of the wrong canvas coordinate from the offscreen renderer since
+      // disable might have not finished resizing yet and it will cause weird
+      // copy to on screen from an incorrect location in the offscreen renderer.
+      setTimeout(() => {
+        renderingEngine.disableElement(viewportId);
+      }, 0);
       resolve(imageId);
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
     viewport.renderImageObject(image);
 
-    // if (modality === 'PT') {
-    viewport.setProperties({
-      voiRange: {
-        lower: image.minPixelValue,
-        upper: image.maxPixelValue,
-      },
-    });
-    // }
+    if (modality === 'PT' && !_isPTImagePreScaledWithSUV(image)) {
+      viewport.setProperties({
+        voiRange: {
+          lower: image.minPixelValue,
+          upper: image.maxPixelValue,
+        },
+      });
+    }
 
     viewport.render();
   });
 }
+
+const _isPTImagePreScaledWithSUV = (image: IImage) => {
+  return image.preScale.scaled && image.preScale.scalingParameters.suvbw;
+};
