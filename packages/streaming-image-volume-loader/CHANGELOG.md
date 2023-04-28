@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.19.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.18.0...@cornerstonejs/streaming-image-volume-loader@0.19.0) (2023-04-28)
+
+
+### Features
+
+* **streaming-image-volume:** add caching for image load object ([#567](https://github.com/cornerstonejs/cornerstone3D-beta/issues/567)) ([c721ecd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c721ecd0a2724fa04c01704a33239e68eac5d0f1))
+
+
+
+
+
 # [0.18.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.17.1...@cornerstonejs/streaming-image-volume-loader@0.18.0) (2023-04-26)
 
 
