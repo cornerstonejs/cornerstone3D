@@ -69,12 +69,16 @@ function combineFrameInstance(frameNumber, instance) {
       frameNumber
     );
 
-    return Object.assign(
-      rest,
-      { '00280008': NumberOfFrames },
-      ...Object.values(shared),
-      ...Object.values(perFrame)
-    );
+    const newInstance = Object.assign(instance, { frameNumber });
+
+    // merge the shared first then the per frame to override
+    [...shared, ...perFrame].forEach((item) => {
+      Object.entries(item).forEach(([key, value]) => {
+        newInstance[key] = value;
+      });
+    });
+
+    return Object.assign(rest, { '00280008': NumberOfFrames }, newInstance);
   }
 
   return instance;

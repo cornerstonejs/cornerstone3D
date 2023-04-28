@@ -4,12 +4,17 @@ import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
 import metaDataManager from '../metaDataManager';
 import getValue from './getValue';
-//import fixNMMetadata from './fixNMMetadata';
 import {
   getMultiframeInformation,
   getFrameInformation,
 } from '../combineFrameInstance';
 import multiframeMetadata from '../retrieveMultiframeMetadata';
+import {
+  extractOrientationFromMetadata,
+  extractPositionFromMetadata,
+} from './extractPositioningFromMetadata';
+import { getImageTypeSubItemFromMetadata } from './NMHelpers';
+import isNMReconstructable from '../../isNMReconstructable';
 
 function metaDataProvider(type, imageId) {
   if (type === 'multiframeModule') {
@@ -83,10 +88,28 @@ function metaDataProvider(type, imageId) {
     };
   }
 
+  if (type === 'nmMultiframeGeometryModule') {
+    const modality = getValue(metaData['00080060']);
+    const imageSubType = getImageTypeSubItemFromMetadata(metaData, 2);
+
+    return {
+      modality,
+      imageType: getValue(metaData['00080008']),
+      imageSubType,
+      imageOrientationPatient: extractOrientationFromMetadata(metaData),
+      imagePositionPatient: extractPositionFromMetadata(metaData),
+      sliceThickness: getNumberValue(metaData['00180050']),
+      pixelSpacing: getNumberValues(metaData['00280030'], 2),
+      numberOfFrames: getNumberValue(metaData['00280008']),
+      isNMReconstructable:
+        isNMReconstructable(imageSubType) && modality.includes('NM'),
+    };
+  }
+
   if (type === 'imagePlaneModule') {
     //metaData = fixNMMetadata(metaData);
-    const imageOrientationPatient = getNumberValues(metaData['00200037'], 6);
-    const imagePositionPatient = getNumberValues(metaData['00200032'], 3);
+    const imageOrientationPatient = extractOrientationFromMetadata(metaData);
+    const imagePositionPatient = extractPositionFromMetadata(metaData);
     const pixelSpacing = getNumberValues(metaData['00280030'], 2);
 
     let columnPixelSpacing = null;
