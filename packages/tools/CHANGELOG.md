@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.65.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.65.0...@cornerstonejs/tools@0.65.1) (2023-04-28)
+
+
+### Bug Fixes
+
+* **annotations:** fix triggering of 'ANNOTATION_ADDED' event multiple times ([#570](https://github.com/cornerstonejs/cornerstone3D-beta/issues/570)) ([#584](https://github.com/cornerstonejs/cornerstone3D-beta/issues/584)) ([f8e75f3](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f8e75f3d236da91c2710b4742ff2c2047e3e0e3c))
+
+
+
+
+
 # [0.65.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.64.0...@cornerstonejs/tools@0.65.0) (2023-04-26)
 
 
