@@ -29,18 +29,20 @@ import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
  */
 export default function renderToCanvas(
   canvas: HTMLCanvasElement,
-  image: IImage
+  image: IImage,
+  modality?: string
 ): Promise<string> {
   if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
     throw new Error('canvas element is required');
   }
 
-  // const viewportId = `thumbnailViewport-${image.imageId}`;
-  const viewportId = `thumbnailViewport-${image.imageId}`;
+  const imageIdToPrint = image.imageId.substring(150, 200);
+  const viewportId = `thumbnailViewport-${imageIdToPrint}`;
+  // const viewportId = `thumbnailViewport`;
   const imageId = image.imageId;
-
+  // const elementId = `thumbnailViewport-${image.imageId}`;
   const element = document.createElement('div');
-  element.id = viewportId;
+  // element.id = elementId;
   element.style.width = `${canvas.width}px`;
   element.style.height = `${canvas.height}px`;
 
@@ -63,20 +65,43 @@ export default function renderToCanvas(
   const viewport = renderingEngine.getViewport(viewportId) as StackViewport;
   return new Promise((resolve) => {
     // Creating a temporary HTML element so that we can
-    // enable it and later disable it without loosing the canvas context
+    // enable it and later disable it without losing the canvas context
+    let elementRendered = false;
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    // Create a named function to handle the event
+    const onImageRendered = (eventDetail) => {
+      if (elementRendered) {
+        return;
+      }
+
       // get the canvas element that is the child of the div
       const temporaryCanvas = getOrCreateCanvas(element);
 
       // Copy the temporary canvas to the given canvas
       const context = canvas.getContext('2d');
       context.drawImage(temporaryCanvas, 0, 0);
+      elementRendered = true;
+
+      // Remove the event listener
+      element.removeEventListener(Events.IMAGE_RENDERED, onImageRendered);
+
+      // remove based on id
       document.body.removeChild(element);
       resolve(imageId);
-    });
+    };
 
+    element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
     viewport.renderImageObject(image);
+
+    // if (modality === 'PT') {
+    viewport.setProperties({
+      voiRange: {
+        lower: image.minPixelValue,
+        upper: image.maxPixelValue,
+      },
+    });
+    // }
+
     viewport.render();
   });
 }
