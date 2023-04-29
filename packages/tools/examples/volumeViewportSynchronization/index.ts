@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addToggleButtonToToolbar,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -24,6 +25,7 @@ const {
   ZoomTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
+  StackScrollTool,
   Enums: csToolsEnums,
   synchronizers,
   SynchronizerManager,
@@ -97,6 +99,33 @@ Toggle the controls to add viewports to the synchronization groups.
 
 content.append(instructions);
 // ============================= //
+const toolGroupId = 'TOOL_GROUP_ID';
+const leftClickTools = [WindowLevelTool.toolName, StackScrollTool.toolName];
+const defaultLeftClickTool = leftClickTools[0];
+let currentLeftClickTool = leftClickTools[0];
+addDropdownToToolbar({
+  options: {
+    values: leftClickTools,
+    defaultValue: defaultLeftClickTool,
+  },
+  onSelectedValueChange: (selectedValue) => {
+    console.log('>>>>> selectedValue :: ', selectedValue);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    console.log('>>>>> toolGroup :: ', toolGroup);
+
+    toolGroup.setToolPassive(currentLeftClickTool);
+
+    toolGroup.setToolActive(<string>selectedValue, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
+
+    currentLeftClickTool = selectedValue;
+  },
+});
 
 const SynchronizerButtonInfo = [
   { viewportLabel: 'A', viewportId: viewportIds[0] },
@@ -151,12 +180,11 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const toolGroupId = 'TOOL_GROUP_ID';
-
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -164,10 +192,20 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName, { volumeId });
+  toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName, {
+    leftRightMode: false,
+    mipMode: {
+      enabled: true,
+      invert: false,
+      pixelsPerThickness: 5,
+      minSlabThickness: 5e-2,
+      maxSlabThickness: 30,
+    },
+  });
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
