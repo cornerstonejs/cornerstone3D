@@ -12,9 +12,9 @@
     "yarn": ">=1.19.1"
   },
   "scripts": {
-    "api-check": "lerna run api-check",
-    "build": "lerna run build --stream",
-    "build:umd": "lerna run build:umd --stream",
+    "api-check": "npx lerna run api-check",
+    "build": "npx lerna run build --stream",
+    "build:umd": "npx lerna run build:umd --stream",
     "build:update-api:core": "cd packages/core && npm run build:update-api",
     "build:update-api:tools": "cd packages/tools && npm run build:update-api",
     "build:update-api:adapters": "cd packages/adapters && npm run build:update-api",
@@ -24,10 +24,10 @@
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
     "serve-static-examples": "npx serve .static-examples",
-    "build:all": "lerna run build:all",
+    "build:all": "npx lerna run build:all",
     "dev": "yarn run all-examples",
-    "docs": "lerna run docs",
-    "docs:watch": "lerna run docs:watch",
+    "docs": "npx lerna run docs",
+    "docs:watch": "npx lerna run docs:watch",
     "preinstall": "node preinstall.js",
     "start": "yarn run dev",
     "test:firefox": "karma start ./karma.conf.js --browsers Firefox",
@@ -37,7 +37,7 @@
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
     "lint": "eslint --quiet -c .eslintrc.json packages/**/src",
-    "webpack:watch": "lerna run webpack:watch"
+    "webpack:watch": "npx lerna run webpack:watch"
   },
   "devDependencies": {
     "@babel/core": "^7.16.12",
@@ -93,7 +93,7 @@
     "karma-junit-reporter": "^2.0.1",
     "karma-spec-reporter": "0.0.33",
     "karma-webpack": "^5.0.0",
-    "lerna": "^4.0.0",
+    "lerna": "^6.6.1",
     "lint-staged": "^10.5.4",
     "netlify-cli": "^9.13.3",
     "path-browserify": "^1.0.1",
