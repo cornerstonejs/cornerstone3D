@@ -1342,10 +1342,33 @@
   resolved "https://registry.npmjs.org/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.2.tgz#e96721d56f6ec96f7f95c16321d88cc8467d8d81"
   integrity sha512-lgdvBvvNezleY+4pIe2ceUsJzlZe/0PipdeubQ3vZZOz3xxtHHMR1XFCl4fgd8gosR8COHuD7h6q+MwgrwBsng==
 
-"@cspotcode/source-map-support@^0.8.0":
-  version "0.8.1"
-  resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
-  integrity sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==
+"@cornerstonejs/core@file:packages/core":
+  version "0.44.0"
+  dependencies:
+    detect-gpu "^4.0.45"
+    lodash.clonedeep "4.5.0"
+
+"@cornerstonejs/streaming-image-volume-loader@file:packages/streaming-image-volume-loader":
+  version "0.19.0"
+  dependencies:
+    "@cornerstonejs/core" "file:../../../../Library/Caches/Yarn/v6/npm-@cornerstonejs-streaming-image-volume-loader-0.19.0-56b3ab26-1faf-4ae4-a47b-7898ee629cce-1682989432248/node_modules/@cornerstonejs/core"
+
+"@cornerstonejs/tools@file:packages/tools":
+  version "0.66.0"
+  dependencies:
+    "@cornerstonejs/core" "file:../../../../Library/Caches/Yarn/v6/npm-@cornerstonejs-tools-0.66.0-c5173da7-dda7-4e1d-bfda-01f2304936a3-1682989432249/node_modules/@cornerstonejs/core"
+    lodash.clonedeep "4.5.0"
+    lodash.get "^4.4.2"
+
+"@cspotcode/source-map-consumer@0.8.0":
+  version "0.8.0"
+  resolved "https://registry.npmjs.org/@cspotcode/source-map-consumer/-/source-map-consumer-0.8.0.tgz#33bf4b7b39c178821606f669bbc447a6a629786b"
+  integrity sha512-41qniHzTU8yAGbCp04ohlmSrZf8bkf/iJsl3V0dRGsQN/5GFfx+LbCSsCpp2gqrqjTVg/K6O8ycoV35JIwAzAg==
+
+"@cspotcode/source-map-support@0.7.0":
+  version "0.7.0"
+  resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.7.0.tgz#4789840aa859e46d2f3173727ab707c66bf344f5"
+  integrity sha512-X4xqRHqN8ACt2aHVe51OxeA2HjbcL4MqFqXkrmQszJ1NOUuUu5u6Vqx/0lZSVNku7velL5FC/s5uEAj1lsBMhA==
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
@@ -8193,18 +8216,7 @@ dateformat@^3.0.0:
   resolved "https://registry.npmjs.org/dateformat/-/dateformat-3.0.3.tgz#a6e37499a4d9a9cf85ef5872044d62901c9889ae"
   integrity sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==
 
-dcmjs@^0.24.4:
-  version "0.24.10"
-  resolved "https://registry.npmjs.org/dcmjs/-/dcmjs-0.24.10.tgz#048a12a1905175763274545c17bb38b506cdfd00"
-  integrity sha512-kugEdBqwwTx7lqUxm4jdklkMJiQ8pZ0aqMw9WkszkDU5lDWHyq2kbRccACtcwqygC7j1d36w8uG/vNLMejeMBg==
-  dependencies:
-    "@babel/runtime-corejs2" "^7.17.8"
-    gl-matrix "^3.1.0"
-    lodash.clonedeep "^4.5.0"
-    loglevelnext "^3.0.1"
-    ndarray "^1.0.19"
-
-dcmjs@^0.29.5:
+dcmjs@^0.29.6:
   version "0.29.6"
   resolved "https://registry.npmjs.org/dcmjs/-/dcmjs-0.29.6.tgz#6ca1543e74bae29657d1f7f2273407e23266c011"
   integrity sha512-xMULkeFpxFNV8JZwWMOW3j1uL3iAe8r3pytlyWnlTxYc/OZ9KSu4wmQMVMBAgmY0GYpeWlji7GMRArVh8ISKhA==

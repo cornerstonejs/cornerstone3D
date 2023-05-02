@@ -16,6 +16,7 @@
   "scripts": {
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",
+    "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
     "build": "yarn run build:all",
@@ -25,7 +26,10 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.44.2"
+    "@cornerstonejs/core": "file:../core"
+  },
+  "devDependencies": {
+    "@cornerstonejs/calculate-suv": "1.0.2"
   },
   "contributors": [
     {

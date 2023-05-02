@@ -16,6 +16,8 @@
     "build": "npx lerna run build --stream",
     "build:esm": "npx lerna run build:esm --stream",
     "build:umd": "npx lerna run build:umd --stream",
+    "build:esm": "npx lerna run build:esm --stream",
+    "watch": "npx lerna watch -- lerna run build --scope=$LERNA_PACKAGE_NAME --include-dependents",
     "build:update-api:core": "cd packages/core && npm run build:update-api",
     "build:update-api:tools": "cd packages/tools && npm run build:update-api",
     "build:update-api:adapters": "cd packages/adapters && npm run build:update-api",

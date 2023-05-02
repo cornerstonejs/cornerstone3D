@@ -1,4 +1,3 @@
-import adaptersSR from "./adapters";
-export { adaptersSR };
+import { adaptersSR, adaptersSEG } from "./adapters";
 
-export default adaptersSR;
+export { adaptersSR, adaptersSEG };
