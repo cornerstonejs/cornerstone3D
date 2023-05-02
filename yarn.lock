@@ -8571,13 +8571,6 @@ detab@2.0.4:
   dependencies:
     repeat-string "^1.5.4"
 
-detect-gpu@^4.0.45:
-  version "4.0.50"
-  resolved "https://registry.npmjs.org/detect-gpu/-/detect-gpu-4.0.50.tgz#ba9df7e6b8416b1160303811015102bbad283aa0"
-  integrity sha512-T67HE5+ONONN8rPXCBJPupyCg2QT8+l2NUUMuPxAppsMJBDPG/Jg0URLs6GyDzLm2niUE+oncIHSuy3VinoPeQ==
-  dependencies:
-    webgl-constants "^1.1.1"
-
 detect-gpu@^5.0.22:
   version "5.0.22"
   resolved "https://registry.npmjs.org/detect-gpu/-/detect-gpu-5.0.22.tgz#c79308f63ed3a2e504acadbeec769084ef9eb950"
@@ -12749,7 +12742,12 @@ jake@^10.8.5:
     filelist "^1.0.1"
     minimatch "^3.0.4"
 
-jasmine-core@^4.1.0, jasmine-core@^4.6.0:
+jasmine-core@^3.6.0:
+  version "3.99.1"
+  resolved "https://registry.npmjs.org/jasmine-core/-/jasmine-core-3.99.1.tgz#5bfa4b2d76618868bfac4c8ff08bb26fffa4120d"
+  integrity sha512-Hu1dmuoGcZ7AfyynN3LsfruwMbxMALMka+YtZeGoLuDEySVmVAPaonkNoBRIw/ectu8b9tVQCJNgp4a4knp+tg==
+
+jasmine-core@^4.6.0:
   version "4.6.0"
   resolved "https://registry.npmjs.org/jasmine-core/-/jasmine-core-4.6.0.tgz#6884fc3d5b66bf293e422751eed6d6da217c38f5"
   integrity sha512-O236+gd0ZXS8YAjFx8xKaJ94/erqUliEkJTDedyE7iHvv4ZVqi+q+8acJxu05/WJDKm512EUNn809In37nWlAQ==
@@ -13474,12 +13472,12 @@ karma-coverage@^2.2.0:
     istanbul-reports "^3.0.5"
     minimatch "^3.0.4"
 
-karma-jasmine@^5.1.0:
-  version "5.1.0"
-  resolved "https://registry.npmjs.org/karma-jasmine/-/karma-jasmine-5.1.0.tgz#3af4558a6502fa16856a0f346ec2193d4b884b2f"
-  integrity sha512-i/zQLFrfEpRyQoJF9fsCdTMOF5c2dK7C7OmsuKg2D0YSsuZSfQDiLuaiktbuio6F2wiCsZSnSnieIQ0ant/uzQ==
+karma-jasmine@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/karma-jasmine/-/karma-jasmine-4.0.2.tgz#386db2a3e1acc0af5265c711f673f78f1e4938de"
+  integrity sha512-ggi84RMNQffSDmWSyyt4zxzh2CQGwsxvYYsprgyR1j8ikzIduEdOlcLvXjZGwXG/0j41KUXOWsUCBfbEHPWP9g==
   dependencies:
-    jasmine-core "^4.1.0"
+    jasmine-core "^3.6.0"
 
 karma-junit-reporter@^2.0.1:
   version "2.0.1"
