@@ -4,6 +4,7 @@ import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_scrolled from './groundTruth/volumeURI_100_100_10_1_1_1_0_scrolled.png';
 import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_64_0_20_1_1_0_scrolled.png';
+import * as imageURI_64_64_15_5_3_2_0 from './groundTruth/imageURI_64_64_15_5_3_2_0.png';
 import * as imageURI_64_64_10_5_3_2_0 from './groundTruth/imageURI_64_64_10_5_3_2_0.png';
 
 const {
@@ -19,12 +20,7 @@ const {
 const { Events, ViewportType, InterpolationType } = Enums;
 
 const { registerVolumeLoader } = volumeLoader;
-const {
-  StackScrollMouseWheelTool,
-  ZoomTool,
-  ToolGroupManager,
-  Enums: { MouseBindings },
-} = csTools3d;
+const { StackScrollMouseWheelTool, ZoomTool, ToolGroupManager } = csTools3d;
 
 const {
   fakeImageLoader,
@@ -80,17 +76,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
       debounceIfNotLoaded: false,
     });
-    this.stackToolGroup.addTool(ZoomTool.toolName, {
-      debounceIfNotLoaded: false,
-    });
     this.stackToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    this.stackToolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Secondary, // Right Click
-        },
-      ],
-    });
 
     this.renderingEngine = new RenderingEngine(renderingEngineId);
     imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
@@ -273,7 +259,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     }
   });
 
-  it('Should successfully scroll through stack of images of non square spacing', function (done) {
+  fit('Should successfully scroll through stack of images and then go back', function (done) {
     const element = createViewport(
       this.renderingEngine,
       ViewportType.STACK,
@@ -287,6 +273,8 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     const vp = this.renderingEngine.getViewport(viewportId);
 
     let handlerRun = false;
+    let pageX1;
+    let pageY1;
     function renderEventHandler() {
       if (handlerRun) return;
       handlerRun = true;
@@ -298,11 +286,14 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       const { imageData } = vp.getImageData();
 
       const {
-        pageX: pageX1,
-        pageY: pageY1,
+        pageX,
+        pageY,
         clientX: clientX1,
         clientY: clientY1,
       } = createNormalizedMouseEvent(imageData, index1, element, vp);
+
+      pageX1 = pageX;
+      pageY1 = pageY;
 
       const {
         pageX: pageX2,
@@ -353,16 +344,48 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     }
 
     function attachEventHandler() {
-      const canvas = vp.getCanvas();
-
       element.addEventListener(
         Events.IMAGE_RENDERED,
         function secondImageRendered() {
           // Second render is as a result of scrolling
-          const image = canvas.toDataURL('image/png');
           element.removeEventListener(
             Events.IMAGE_RENDERED,
             secondImageRendered
+          );
+
+          // Scroll back
+          setTimeout(() => {
+            const evt = new WheelEvent('wheel', {
+              target: element,
+              pageX: pageX1,
+              pageY: pageY1,
+              deltaX: 0,
+              deltaY: -12,
+              deltaMode: 0,
+              wheelDelta: 36,
+              wheelDeltaX: 0,
+              wheelDeltaY: 36,
+            });
+
+            attachThirdImageRenderedHandler();
+
+            element.dispatchEvent(evt);
+          }, 500);
+        }
+      );
+    }
+
+    function attachThirdImageRenderedHandler() {
+      const canvas = vp.getCanvas();
+
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        function thirdImageRendered() {
+          // Third render is as a result of scrolling back
+          const image = canvas.toDataURL('image/png');
+          element.removeEventListener(
+            Events.IMAGE_RENDERED,
+            thirdImageRendered
           );
 
           compareImages(
