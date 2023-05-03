@@ -259,7 +259,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     }
   });
 
-  fit('Should successfully scroll through stack of images and then go back', function (done) {
+  it('Should successfully scroll through stack of images and then go back', function (done) {
     const element = createViewport(
       this.renderingEngine,
       ViewportType.STACK,
