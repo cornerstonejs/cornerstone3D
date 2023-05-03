@@ -324,78 +324,78 @@ describe('StreamingImageVolume', () => {
     });
   });
 
-  describe('StreamingImageVolume Cached Image', function () {
-    beforeAll(function () {
-      const { imageIds, imageLoader } = setupLoaders();
+  // describe('StreamingImageVolume Cached Image', function () {
+  // beforeAll(function () {
+  //   const { imageIds, imageLoader } = setupLoaders();
 
-      this.imageIds = imageIds;
-      this.imageLoader = imageLoader;
-    });
+  //   this.imageIds = imageIds;
+  //   this.imageLoader = imageLoader;
+  // });
 
-    afterEach(function () {
-      cache.purgeCache();
-    });
+  // afterEach(function () {
+  //   cache.purgeCache();
+  // });
 
-    // Todo: comment for now
-    // it('load: leverages images already in the cache for loading a volume', async function () {
-    //   const volumeId = 'fakeVolumeLoader:VOLUME'
+  // Todo: comment for now
+  // it('load: leverages images already in the cache for loading a volume', async function () {
+  //   const volumeId = 'fakeVolumeLoader:VOLUME'
 
-    //   const imageIds = [
-    //     'fakeImageLoader:imageId1',
-    //     'fakeImageLoader:imageId2',
-    //     'fakeImageLoader:imageId3',
-    //     'fakeImageLoader:imageId4',
-    //     'fakeImageLoader:imageId5',
-    //   ]
+  //   const imageIds = [
+  //     'fakeImageLoader:imageId1',
+  //     'fakeImageLoader:imageId2',
+  //     'fakeImageLoader:imageId3',
+  //     'fakeImageLoader:imageId4',
+  //     'fakeImageLoader:imageId5',
+  //   ]
 
-    //   // loading the images first
-    //   await imageLoader.loadAndCacheImages(imageIds)
+  //   // loading the images first
+  //   await imageLoader.loadAndCacheImages(imageIds)
 
-    //   // only cached images so far
-    //   expect(cache.getCacheSize()).toBe(50000)
-    //   expect(cache.getImageLoadObject(imageIds[0])).toBeDefined()
+  //   // only cached images so far
+  //   expect(cache.getCacheSize()).toBe(50000)
+  //   expect(cache.getImageLoadObject(imageIds[0])).toBeDefined()
 
-    //   // caching volume
-    //   await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
-    //     imageIds: this.imageIds,
-    //   })
+  //   // caching volume
+  //   await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
+  //     imageIds: this.imageIds,
+  //   })
 
-    //   expect(cache.getCacheSize()).toBe(100000)
+  //   expect(cache.getCacheSize()).toBe(100000)
 
-    //   // loading the volume
-    //   const volume = cache.getVolume(volumeId)
-    //   const prefetch = false
-    //   const callback = undefined
-    //   // adding requests to the pool manager
-    //   volume.load(callback, prefetch)
+  //   // loading the volume
+  //   const volume = cache.getVolume(volumeId)
+  //   const prefetch = false
+  //   const callback = undefined
+  //   // adding requests to the pool manager
+  //   volume.load(callback, prefetch)
 
-    //   // awaiting all promises for images after requested to be copied over
-    //   for (let imageId of imageIds) {
-    //     const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
-    //     const image = await cachedImage.promise
-    //   }
-    //   const pool = cornerstone.imageLoadPoolManager.getRequestPool()
+  //   // awaiting all promises for images after requested to be copied over
+  //   for (let imageId of imageIds) {
+  //     const cachedImage = cornerstone.cache.getImageLoadObject(imageId)
+  //     const image = await cachedImage.promise
+  //   }
+  //   const pool = cornerstone.imageLoadPoolManager.getRequestPool()
 
-    //   // expect no requests to be added to the request manager, since images
-    //   // were already cached in the image cache
-    //   let requests = Object.values(pool['prefetch']).flat()
-    //   expect(requests.length).toBe(0)
+  //   // expect no requests to be added to the request manager, since images
+  //   // were already cached in the image cache
+  //   let requests = Object.values(pool['prefetch']).flat()
+  //   expect(requests.length).toBe(0)
 
-    //   // Getting the volume to check for voxel intensities
-    //   const volumeImage = volume.imageData
+  //   // Getting the volume to check for voxel intensities
+  //   const volumeImage = volume.imageData
 
-    //   // first slice (z=0) voxels to be all 1
-    //   let worldPos = volumeImage.indexToWorld([0, 0, 0])
-    //   let intensity = volume.imageData.getScalarValueFromWorld(worldPos)
-    //   expect(intensity).toBe(1)
+  //   // first slice (z=0) voxels to be all 1
+  //   let worldPos = volumeImage.indexToWorld([0, 0, 0])
+  //   let intensity = volume.imageData.getScalarValueFromWorld(worldPos)
+  //   expect(intensity).toBe(1)
 
-    //   // 5th slice (z=4) voxels to be all 5
-    //   worldPos = volumeImage.indexToWorld([0, 0, 4])
-    //   intensity = volume.imageData.getScalarValueFromWorld(worldPos)
+  //   // 5th slice (z=4) voxels to be all 5
+  //   worldPos = volumeImage.indexToWorld([0, 0, 4])
+  //   intensity = volume.imageData.getScalarValueFromWorld(worldPos)
 
-    //   expect(intensity).toBe(5)
-    // })
-  });
+  //   expect(intensity).toBe(5)
+  // })
+  // });
 
   describe('CornerstoneVolumeStreaming Streaming --- ', function () {
     beforeEach(function () {

@@ -40,7 +40,7 @@
     "@svgr/webpack": "^6.2.1",
     "clsx": "^1.1.1",
     "dcmjs": "^0.24.4",
-    "detect-gpu": "^4.0.45",
+    "detect-gpu": "^5.0.22",
     "dicom-parser": "^1.8.11",
     "dicomweb-client": "^0.8.4",
     "docusaurus-plugin-copy": "^0.1.1",

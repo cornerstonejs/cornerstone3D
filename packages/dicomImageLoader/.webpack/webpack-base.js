@@ -28,14 +28,18 @@ module.exports = {
     clean: true,
   },
   devtool: 'source-map',
-  externals: {
-    'dicom-parser': {
-      commonjs: 'dicom-parser',
-      commonjs2: 'dicom-parser',
-      amd: 'dicom-parser',
-      root: 'dicomParser',
+  externals: [
+    '@cornerstonejs/core',
+    'uuid',
+    {
+      'dicom-parser': {
+        commonjs: 'dicom-parser',
+        commonjs2: 'dicom-parser',
+        amd: 'dicom-parser',
+        root: 'dicomParser',
+      },
     },
-  },
+  ],
   resolve: {
     extensions: ['.ts', '.js'],
     fallback: {
@@ -87,6 +91,9 @@ module.exports = {
   // experiments: {
   //   asyncWebAssembly: true,
   // },
-  plugins: [new ESLintPlugin(), new webpack.ProgressPlugin()],
-  // plugins: [new webpack.ProgressPlugin(), new BundleAnalyzerPlugin()],
+  plugins: [
+    new ESLintPlugin(),
+    new webpack.ProgressPlugin(),
+    // new BundleAnalyzerPlugin(),
+  ],
 };

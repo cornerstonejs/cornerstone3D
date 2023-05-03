@@ -1,6 +1,7 @@
 const { merge } = require('webpack-merge');
 const path = require('path');
 const webpackCommon = require('./../../../.webpack/webpack.common.js');
+const webpackBundleAnalyzer = require('webpack-bundle-analyzer');
 const pkg = require('./../package.json');
 
 module.exports = (env, argv) => {
@@ -32,7 +33,6 @@ module.exports = (env, argv) => {
       minimize: true,
     },
     externals: [
-      /\b(vtk.js)/,
       {
         '@cornerstonejs/core': {
           root: 'cornerstone3D',
@@ -54,5 +54,7 @@ module.exports = (env, argv) => {
         },
       },
     ],
+
+    // plugins: [new webpackBundleAnalyzer.BundleAnalyzerPlugin()],
   });
 };

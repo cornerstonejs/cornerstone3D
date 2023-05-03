@@ -1,6 +1,8 @@
 const { merge } = require('webpack-merge');
 const path = require('path');
 const webpackCommon = require('./../../../.webpack/webpack.common.js');
+const webpackBundleAnalyzer = require('webpack-bundle-analyzer');
+
 const SRC_DIR = path.join(__dirname, '../src');
 const DIST_DIR = path.join(__dirname, '../dist');
 
@@ -32,5 +34,24 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: true,
     },
+    externals: [
+      {
+        'detect-gpu': {
+          root: 'window',
+          commonjs: 'detect-gpu',
+          commonjs2: 'detect-gpu',
+          amd: 'detect-gpu',
+        },
+      },
+      {
+        'lodash.clonedeep': {
+          root: 'window',
+          commonjs: 'lodash.clonedeep',
+          commonjs2: 'lodash.clonedeep',
+          amd: 'lodash.clonedeep',
+        },
+      },
+    ],
+    // plugins: [new webpackBundleAnalyzer.BundleAnalyzerPlugin()],
   });
 };
