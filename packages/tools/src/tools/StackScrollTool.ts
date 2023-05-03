@@ -22,7 +22,7 @@ class StackScrollTool extends BaseTool {
       configuration: {
         invert: false,
         debounceIfNotLoaded: true,
-        loop: false
+        loop: false,
       },
     }
   ) {
@@ -65,7 +65,7 @@ class StackScrollTool extends BaseTool {
         delta: invert ? -imageIdIndexOffset : imageIdIndexOffset,
         volumeId,
         debounceLoading: debounceIfNotLoaded,
-        loop: loop
+        loop: loop,
       });
 
       this.deltaY = deltaY % pixelsPerImage;
