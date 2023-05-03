@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.44.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.44.1...@cornerstonejs/core@0.44.2) (2023-05-03)
+
+### Bug Fixes
+
+- **scroll:** was not able to scroll back ([#593](https://github.com/cornerstonejs/cornerstone3D-beta/issues/593)) ([f934e21](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f934e21769655ea82b9cdc0cf1f34a40a5d87d82))
+
 ## [0.44.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.44.0...@cornerstonejs/core@0.44.1) (2023-05-03)
 
 **Note:** Version bump only for package @cornerstonejs/core
