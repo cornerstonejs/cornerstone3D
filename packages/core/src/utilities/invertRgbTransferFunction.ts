@@ -21,7 +21,7 @@ export default function invertRgbTransferFunction(
   rgbTransferFunction: any
 ): void {
   // cut in case there is no function at all
-  if (rgbTransferFunction) {
+  if (!rgbTransferFunction) {
     return;
   }
 
