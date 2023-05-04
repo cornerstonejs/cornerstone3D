@@ -162,10 +162,13 @@ if (configuration.examples) {
 
   // say name of running example
   console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
-  // run the build for dicom image loader
 
-  // shell.cd('../../dicomImageLoader');
-  // shell.exec(`yarn run webpack:dynamic-import`);
+  // run the build for dicom image loader
+  const currentWD = process.cwd();
+  // run the build for dicom image loader
+  shell.cd('../../dicomImageLoader');
+  shell.exec(`yarn run webpack:dynamic-import`);
+  shell.cd(currentWD);
 
   if (buildExample) {
     var exBasePath = null;

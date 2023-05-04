@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "0.65.1",
+  "version": "0.66.4",
   "description": "Cornerstone3D Tools",
   "main": "dist/umd/index.js",
   "types": "dist/esm/index.d.ts",
@@ -26,20 +26,17 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^0.44.0",
+    "@cornerstonejs/core": "^0.44.3",
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "^4.4.2"
   },
   "peerDependencies": {
     "@kitware/vtk.js": "27.3.1",
-    "@types/d3-array": "^3.0.3",
+    "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
-    "d3-array": "^3.0.3",
+    "d3-array": "^3.2.3",
     "d3-interpolate": "^3.0.1",
     "gl-matrix": "^3.4.3"
-  },
-  "devDependencies": {
-    "@kitware/vtk.js": "27.3.1"
   },
   "contributors": [
     {

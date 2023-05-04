@@ -221,8 +221,7 @@ async function run() {
   const stack = imageIds;
 
   // Set the stack on the viewport
-  const currentIndex = Math.floor(stack.length / 2);
-  viewport.setStack(stack, currentIndex);
+  viewport.setStack(stack, 0);
 
   // Render the image
   viewport.render();
