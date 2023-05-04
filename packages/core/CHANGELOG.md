@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.44.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.44.2...@cornerstonejs/core@0.44.3) (2023-05-04)
+
+### Bug Fixes
+
+- **exception:** js exception when setting invertRgbTransferFunction. safe program… ([#595](https://github.com/cornerstonejs/cornerstone3D-beta/issues/595)) ([4ab5d1e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4ab5d1e5e0c448065d4e7637afe40ce43d7e593c))
+
 ## [0.44.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.44.1...@cornerstonejs/core@0.44.2) (2023-05-03)
 
 ### Bug Fixes
