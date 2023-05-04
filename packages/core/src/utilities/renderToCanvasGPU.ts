@@ -17,7 +17,7 @@ import RenderingEngine from '../RenderingEngine';
  * ```
  * const canvas = document.getElementById('myCanvas')
  *
- * renderToCanvas(canvas, image)
+ * renderToCanvasGPU(canvas, image)
  * ```
  * @param canvas - Canvas element to render to
  * @param image - The image to render
@@ -35,7 +35,7 @@ export default function renderToCanvasGPU(
   }
 
   const imageIdToPrint = image.imageId;
-  const viewportId = `thumbnailViewport-${imageIdToPrint}`;
+  const viewportId = `renderGPUViewport-${imageIdToPrint}`;
   const imageId = image.imageId;
   const element = document.createElement('div');
   element.style.width = `${canvas.width}px`;
@@ -44,6 +44,7 @@ export default function renderToCanvasGPU(
   // Todo: we should be able to use the temporary element without appending
   // it to the DOM
   element.style.visibility = 'hidden';
+  element.style.position = 'absolute';
   document.body.appendChild(element);
 
   const renderingEngine =

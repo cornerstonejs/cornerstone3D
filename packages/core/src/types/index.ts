@@ -74,6 +74,7 @@ import type {
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
+import type RGB from './RGB';
 
 export type {
   // config
@@ -156,4 +157,6 @@ export type {
   ContourData,
   IContourSet,
   IContour,
+  // Color
+  RGB,
 };

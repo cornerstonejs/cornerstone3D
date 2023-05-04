@@ -4278,6 +4278,9 @@ function resetAnnotationManager(): void;
 // @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
 
+// @public
+type RGB = [number, number, number];
+
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
     // (undocumented)
@@ -5326,7 +5329,7 @@ declare namespace viewportFilters {
 
 // @public
 type ViewportInputOptions = {
-    background?: Point3;
+    background?: RGB;
     orientation?: OrientationAxis | OrientationVectors;
     displayArea?: DisplayArea;
     suppressEvents?: boolean;

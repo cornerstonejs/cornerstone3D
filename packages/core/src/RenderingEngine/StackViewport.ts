@@ -1931,10 +1931,20 @@ class StackViewport extends Viewport implements IStackViewport {
   }
 
   /**
-   * Given the cornerstone image object it will render it in the viewport
-   * This method is used by some utilities, for loading an actual image use
-   * the setStack method and not this one.
-   * @param image - Cornerstone image
+   * Renders the given Cornerstone image object in the viewport.
+   * This method is intended to be used by utilities to render
+   * an individual image, rather than by applications that want to display
+   * a complete image stack. If you want to load and display a complete
+   * image stack, use the setStack method instead of this one.
+   *
+   * The rendered image will appear in the viewport's element.
+   * Use this method if you have other means of loading and the
+   * cornerstone image object is already available.
+   *
+   * If you don't understand the difference between this method and
+   * setStack, you probably want to use setStack.
+   *
+   * @param image - The Cornerstone image object to render.
    */
   public renderImageObject = (image) => {
     this._setCSImage(image);

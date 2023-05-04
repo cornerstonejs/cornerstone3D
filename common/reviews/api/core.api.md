@@ -2030,6 +2030,9 @@ export function resetUseCPURendering(): void;
 export function resetUseSharedArrayBuffer(): void;
 
 // @public (undocumented)
+type RGB = [number, number, number];
+
+// @public (undocumented)
 function scaleRGBTransferFunction(rgbTransferFunction: any, scalingFactor: number): void;
 
 // @public (undocumented)
@@ -2343,7 +2346,8 @@ declare namespace Types {
         ContourSetData,
         ContourData,
         IContourSet,
-        IContour
+        IContour,
+        RGB
     }
 }
 export { Types }
@@ -2553,7 +2557,7 @@ export class Viewport implements IViewport {
 
 // @public (undocumented)
 type ViewportInputOptions = {
-    background?: Point3;
+    background?: RGB;
     orientation?: OrientationAxis | OrientationVectors;
     displayArea?: DisplayArea;
     suppressEvents?: boolean;
