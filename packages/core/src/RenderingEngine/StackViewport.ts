@@ -1665,7 +1665,14 @@ class StackViewport extends Viewport implements IStackViewport {
         // handle the case where the pixelData is a Float32Array
         // CPU path cannot handle it, it should be converted to Uint16Array
         // and via the Modality LUT we can display it properly
-        if (pixelData instanceof Float32Array) {
+        const preScale = image.preScale;
+        const scalingParams = preScale?.scalingParameters;
+
+        const scaledWithNonIntegers =
+          (preScale?.scaled && scalingParams?.rescaleIntercept % 1 !== 0) ||
+          scalingParams?.rescaleSlope % 1 !== 0;
+
+        if (pixelData instanceof Float32Array && scaledWithNonIntegers) {
           const floatMinMax = {
             min: image.maxPixelValue,
             max: image.minPixelValue,

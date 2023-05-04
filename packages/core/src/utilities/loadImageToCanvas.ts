@@ -8,6 +8,15 @@ import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import { getConfiguration } from '../init';
 
+interface LoadImageOptions {
+  canvas: HTMLCanvasElement;
+  imageId: string;
+  requestType?: RequestType;
+  priority?: number;
+  renderingEngineId?: string;
+  useCPURendering?: boolean;
+}
+
 /**
  * Loads and renders an imageId to a Canvas. It will use the GPU rendering pipeline
  * for image by default but you can force the CPU rendering pipeline by setting the
@@ -29,13 +38,17 @@ import { getConfiguration } from '../init';
  * @returns - A promise that resolves when the image has been rendered with the imageId
  */
 export default function loadImageToCanvas(
-  canvas: HTMLCanvasElement,
-  imageId: string,
-  requestType = RequestType.Thumbnail,
-  priority = -5,
-  renderingEngineId = '_thumbnails',
-  useCPURendering = false
+  options: LoadImageOptions
 ): Promise<string> {
+  const {
+    canvas,
+    imageId,
+    requestType = RequestType.Thumbnail,
+    priority = -5,
+    renderingEngineId = '_thumbnails',
+    useCPURendering = false,
+  } = options;
+
   const renderFn = useCPURendering ? renderToCanvasCPU : renderToCanvasGPU;
 
   return new Promise((resolve, reject) => {

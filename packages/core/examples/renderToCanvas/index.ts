@@ -1,8 +1,16 @@
-import { RenderingEngine, Types, Enums, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Types,
+  Enums,
+  utilities,
+  setUseCPURendering,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addToggleButtonToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -15,14 +23,13 @@ const { ViewportType } = Enums;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Render to Canvas',
-  'This example uses both viewportAPI and also simple renderToCanva to render an image'
+  'This example uses both viewportAPI and also simple renderToCanvas to render an image. The left viewport is using the viewportAPI and the right viewport is using renderToCanvas.'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
@@ -32,16 +39,40 @@ element1.style.height = size;
 
 const canvas = document.createElement('canvas');
 
-canvas.style.position = 'absolute';
-canvas.style.width = '100%';
-canvas.style.height = '100%';
+canvas.width = 500;
+canvas.height = 500;
 
 viewportGrid.appendChild(element1);
-element1.appendChild(canvas);
+viewportGrid.appendChild(canvas);
 
 content.appendChild(viewportGrid);
 
 // ============================= //
+let load;
+let useCPURendering = false;
+
+addToggleButtonToToolbar({
+  id: 'cpuRendering',
+  title: 'CPU Rendering',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    if (toggle) {
+      setUseCPURendering(true);
+      useCPURendering = true;
+    } else {
+      setUseCPURendering(false);
+      useCPURendering = false;
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'load',
+  title: 'Load',
+  onClick: () => {
+    load();
+  },
+});
 
 /**
  * Runs the demo
@@ -77,19 +108,25 @@ async function run() {
     },
   ];
 
-  renderingEngine.setViewports(viewportInputArray);
+  load = async () => {
+    renderingEngine.setViewports(viewportInputArray);
 
-  // Get the stack viewport that was created
-  const viewport1 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[0])
-  );
+    // Get the stack viewport that was created
+    const viewport1 = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportIds[0])
+    );
 
-  const imageId = imageIds[100];
+    const imageId = imageIds[100];
 
-  utilities.loadImageToCanvas(canvas, imageId);
+    utilities.loadImageToCanvas({ canvas, imageId, useCPURendering });
 
-  viewport1.setStack([imageId]);
-  renderingEngine.renderViewports(viewportIds);
+    // To simulate a delay in loading the image since the loading
+    // mechanisms are different for the two viewports
+    setTimeout(() => {
+      viewport1.setStack([imageId]);
+      renderingEngine.renderViewports(viewportIds);
+    }, 200);
+  };
 }
 
 run();
