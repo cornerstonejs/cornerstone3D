@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.66.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.66.2...@cornerstonejs/tools@0.66.3) (2023-05-04)
+
+### Bug Fixes
+
+- **planarFreehandROITool:** proper handling of pure movements on y-axis ([#590](https://github.com/cornerstonejs/cornerstone3D-beta/issues/590)) ([33635fa](https://github.com/cornerstonejs/cornerstone3D-beta/commit/33635fad566ccbb9c5b0441957726c11aab80901))
+
 ## [0.66.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.66.1...@cornerstonejs/tools@0.66.2) (2023-05-03)
 
 ### Bug Fixes
