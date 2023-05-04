@@ -27,7 +27,7 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
-  SOPInstanceUID,
+  SOPInstanceUID = null,
   wadoRsRoot,
   client = null,
 }) {

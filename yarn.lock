@@ -2539,6 +2539,23 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.2.tgz#e96721d56f6ec96f7f95c16321d88cc8467d8d81"
   integrity sha512-lgdvBvvNezleY+4pIe2ceUsJzlZe/0PipdeubQ3vZZOz3xxtHHMR1XFCl4fgd8gosR8COHuD7h6q+MwgrwBsng==
 
+"@cornerstonejs/core@^0.43.1":
+  version "0.43.1"
+  resolved "https://registry.npmjs.org/@cornerstonejs/core/-/core-0.43.1.tgz#b51e3310156136e4407d56b1be9fc981022ae4dd"
+  integrity sha512-TT2EZHWFblkwYnMqiUWYCwtwzWEseXy819YnquWU8OzzsF14k/2JAQPvw8FB0ephv/LoVyXZPC/zARA6U30weg==
+  dependencies:
+    detect-gpu "^4.0.45"
+    lodash.clonedeep "4.5.0"
+
+"@cornerstonejs/tools@^0.63.0":
+  version "0.63.3"
+  resolved "https://registry.npmjs.org/@cornerstonejs/tools/-/tools-0.63.3.tgz#a66df8e8a3dc0c1bd5224d85db5d2231ab946f12"
+  integrity sha512-cgs/6OYcp3p+RSEOb77gR61eziTfb6Y0uK/GrdpgEet3InhFohJCst1TI8rbrHJd4wUX2VDzXHIm5gf6TlwRsA==
+  dependencies:
+    "@cornerstonejs/core" "^0.43.1"
+    lodash.clonedeep "4.5.0"
+    lodash.get "^4.4.2"
+
 "@cspotcode/source-map-consumer@0.8.0":
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-consumer/-/source-map-consumer-0.8.0.tgz#33bf4b7b39c178821606f669bbc447a6a629786b"
