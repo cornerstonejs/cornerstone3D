@@ -3,7 +3,8 @@ import {
     Types,
     Enums,
     setVolumesForViewports,
-    volumeLoader
+    volumeLoader,
+    cache
 } from "@cornerstonejs/core";
 import {
     initDemo,
@@ -45,8 +46,8 @@ const imageIds = wadoURICreateImageIds();
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-    "Labelmap Rendering over source data",
-    "Here we demonstrate rendering of a mock ellipsoid labelmap over source data"
+    "DICOM SEG Export",
+    "Here we demonstrate how to export a DICOM SEG from a Cornerstone3D volume."
 );
 
 const size = "500px";
@@ -79,9 +80,19 @@ addButtonToToolbar({
     title: "Create SEG",
     onClick: async () => {
         const viewport = renderingEngine.getViewport(viewportId1);
-        debugger;
 
-        const segBlob = Cornerstone3D.Segmentation.generateSegmentation();
+        const volume = cache.getVolume(volumeId);
+        const imageIds = volume.imageIds;
+
+        const images = imageIds.map(imageId => {
+            return cache.getImageLoadObject(imageId);
+        });
+
+        const segBlob = Cornerstone3D.Segmentation.generateSegmentation(
+            images,
+            segmentation,
+            { SeriesInstanceUID: ctSeriesInstanceUID }
+        );
 
         //Create a URL for the binary.
         const objectUrl = URL.createObjectURL(segBlob);
