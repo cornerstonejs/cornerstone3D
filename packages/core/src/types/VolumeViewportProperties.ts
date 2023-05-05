@@ -13,6 +13,8 @@ type VolumeViewportProperties = {
   invert?: boolean;
   /** color maps  */
   colormap?: string;
+  /** 3d preset */
+  preset?: string;
 };
 
 export default VolumeViewportProperties;

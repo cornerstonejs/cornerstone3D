@@ -3,7 +3,11 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
 import cache from '../cache';
-import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import {
+  MPR_CAMERA_VALUES,
+  RENDERING_DEFAULTS,
+  VIEWPORT_PRESETS,
+} from '../constants';
 import {
   BlendModes,
   Events,
@@ -30,6 +34,7 @@ import type { ViewportInput } from '../types/IViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import {
   actorIsA,
+  applyPreset,
   createSigmoidRGBTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
   imageIdToURI,
@@ -405,10 +410,12 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * Sets the properties for the volume viewport on the volume
    * (if fusion, it sets it for the first volume in the fusion)
    *
-   * @param voiRange - Sets the lower and upper voi
-   * @param VOILUTFunction - Sets the voi mode (LINEAR, or SAMPLED_SIGMOID)
-   * @param invert - Inverts the color transfer function
-   * @param colormap - Sets the colormap
+   * @param VolumeViewportProperties - The properties to set
+   * @param [VolumeViewportProperties.voiRange] - Sets the lower and upper voi
+   * @param [VolumeViewportProperties.VOILUTFunction] - Sets the voi mode (LINEAR, or SAMPLED_SIGMOID)
+   * @param [VolumeViewportProperties.invert] - Inverts the color transfer function
+   * @param [VolumeViewportProperties.colormap] - Sets the colormap
+   * @param [VolumeViewportProperties.preset] - Sets the colormap
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
@@ -418,6 +425,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       VOILUTFunction,
       invert,
       colormap,
+      preset,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -446,6 +454,39 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (colormap && this.getActors().length > 1) {
       this.setOpacityFunction(colormap, volumeId, suppressEvents);
     }
+
+    if (preset !== undefined) {
+      this.setPreset(preset, volumeId, suppressEvents);
+    }
+  }
+
+  /**
+   * Sets the specified preset for the volume with the given ID
+   *
+   * @param presetName - The name of the preset to apply (e.g., "CT-Bone").
+   * @param volumeId - The ID of the volume to set the preset for.
+   * @param suppressEvents - If `true`, events will not be emitted during the preset application.
+   *
+   * @returns void
+   */
+  private setPreset(presetName, volumeId, suppressEvents) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+
+    const { volumeActor } = applicableVolumeActorInfo;
+
+    const preset = VIEWPORT_PRESETS.find((preset) => {
+      return preset.name === presetName;
+    });
+
+    if (!preset) {
+      return;
+    }
+
+    applyPreset(volumeActor, preset);
   }
 
   private setOpacityFunction(
