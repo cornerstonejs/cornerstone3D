@@ -40,12 +40,14 @@ export default function renderToCanvasGPU(
   const element = document.createElement('div');
   element.style.width = `${canvas.width}px`;
   element.style.height = `${canvas.height}px`;
-
-  // Todo: we should be able to use the temporary element without appending
-  // it to the DOM
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
+
   document.body.appendChild(element);
+
+  // add id to the element so we can find it later, and fix the : which is not allowed in css
+  const uniqueId = viewportId.split(':').join('-');
+  element.setAttribute('viewport-id-for-remove', uniqueId);
 
   const renderingEngine =
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
@@ -86,7 +88,6 @@ export default function renderToCanvasGPU(
       elementRendered = true;
 
       // remove based on id
-      document.body.removeChild(element);
       element.removeEventListener(Events.IMAGE_RENDERED, onImageRendered);
 
       // Ensure pending previous resize calls are done which might have been
@@ -96,6 +97,14 @@ export default function renderToCanvasGPU(
       // copy to on screen from an incorrect location in the offscreen renderer.
       setTimeout(() => {
         renderingEngine.disableElement(viewportId);
+
+        // remove all the elements that has the same id
+        const elements = document.querySelectorAll(
+          `[viewport-id-for-remove="${uniqueId}"]`
+        );
+        elements.forEach((element) => {
+          element.remove();
+        });
       }, 0);
       resolve(imageId);
     };

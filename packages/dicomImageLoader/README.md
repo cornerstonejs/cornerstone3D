@@ -115,6 +115,9 @@ path is relative to the `node_modules` folder in the OHIF Viewer.
 Note 2: For other http servers like IIS, you need to configure it to serve WASM
 files with the correct MIME type.
 
+## Loading
+
+![Alt text](assets/load.png)
 
 ## Backlog
 
