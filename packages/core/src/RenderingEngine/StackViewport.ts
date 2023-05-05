@@ -2054,7 +2054,11 @@ class StackViewport extends Viewport implements IStackViewport {
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
-    this.setVOI(this._getInitialVOIRange(image));
+    // we have recreated the Actor, and need to reevaluate the voiRange
+    // So we copy the previously applied voiRange, and clear the this.voiRange.
+    const voiRange = this._getInitialVOIRange(image);
+    this.voiRange = null;
+    this.setVOI(voiRange);
     this.setInvertColor(
       imagePixelModule.photometricInterpretation === 'MONOCHROME1'
     );
