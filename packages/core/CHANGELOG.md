@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.45.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.44.3...@cornerstonejs/core@0.45.0) (2023-05-05)
+
+### Features
+
+- **renderCanvasGPU:** use gpu to in the renderToCanvas utility ([#586](https://github.com/cornerstonejs/cornerstone3D-beta/issues/586)) ([0b69c86](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0b69c86c6709a32b2d987eee3e81552d8e7adb1b))
+
 ## [0.44.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.44.2...@cornerstonejs/core@0.44.3) (2023-05-04)
 
 ### Bug Fixes
