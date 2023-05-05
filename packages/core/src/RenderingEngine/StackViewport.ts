@@ -2126,6 +2126,10 @@ class StackViewport extends Viewport implements IStackViewport {
       return false;
     }
 
+    if (!this.csImage.preScale?.scalingParameters?.suvbw) {
+      return false;
+    }
+
     return true;
   }
 
