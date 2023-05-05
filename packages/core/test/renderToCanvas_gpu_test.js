@@ -64,7 +64,7 @@ describe('renderToCanvas -- GPU', () => {
     });
   });
 
-  it('Should render one stack viewport of square size properly: nearest', function (done) {
+  it('Should render two viewports one with setStack and one with renderToCanvas', function (done) {
     const width = 256;
     const height = 256;
     const element = createViewport(this.renderingEngine, AXIAL, width, height);
@@ -112,7 +112,7 @@ describe('renderToCanvas -- GPU', () => {
     }
   });
 
-  it('Should render one stack viewport of square size properly: nearest', function (done) {
+  it('Should render two viewports one with setStack and one with renderToCanvas: color images', function (done) {
     const width = 256;
     const height = 256;
     const element = createViewport(this.renderingEngine, AXIAL, width, height);
