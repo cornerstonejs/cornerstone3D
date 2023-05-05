@@ -9,6 +9,10 @@ type VolumeViewportProperties = {
   voiRange?: VOIRange;
   /** VOILUTFunction type which is LINEAR or SAMPLED_SIGMOID */
   VOILUTFunction?: VOILUTFunctionType;
+  /** whether to invert the viewport color */
+  invert?: boolean;
+  /** color maps  */
+  colormap?: string;
 };
 
 export default VolumeViewportProperties;

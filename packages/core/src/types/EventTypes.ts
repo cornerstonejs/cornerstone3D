@@ -40,6 +40,8 @@ type VoiModifiedEventDetail = {
   volumeId?: string;
   /** VOILUTFunction */
   VOILUTFunction?: VOILUTFunctionType;
+  /** inverted */
+  invert?: boolean;
 };
 
 /**

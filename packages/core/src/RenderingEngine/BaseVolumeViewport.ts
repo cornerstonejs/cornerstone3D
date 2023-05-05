@@ -1,4 +1,6 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
 import cache from '../cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
@@ -31,6 +33,7 @@ import {
   createSigmoidRGBTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
   imageIdToURI,
+  invertRgbTransferFunction,
   triggerEvent,
 } from '../utilities';
 import { createVolumeActor } from './helpers';
@@ -40,6 +43,7 @@ import volumeNewImageEventDispatcher, {
 import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -54,6 +58,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
   use16BitTexture = false;
   private _FrameOfReferenceUID: string;
+  private inverted = false;
 
   // Viewport Properties
   // TODO: similar to setVoi, this is only applicable to first volume
@@ -207,6 +212,134 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
+   * Sets the colormap for the volume with the given ID and optionally suppresses events.
+   *
+   * @param colormap - The colormap to apply (e.g., "hsv").
+   * @param volumeId - The ID of the volume to set the colormap for.
+   * @param suppressEvents - If `true`, events will not be emitted during the colormap a
+   *
+   * @returns void
+   */
+  private setColormap(
+    colormap: string,
+    volumeId: string,
+    suppressEvents?: boolean
+  ) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+
+    const { volumeActor } = applicableVolumeActorInfo;
+    const volumeIdToUse = applicableVolumeActorInfo.volumeId;
+
+    const mapper = volumeActor.getMapper();
+    mapper.setSampleDistance(1.0);
+
+    const cfun = this._getOrCreateColorTransferFunction(volumeIdToUse);
+
+    // Todo:if we have a custom colormap, use it
+    const preset = vtkColorMaps.getPresetByName(colormap);
+    cfun.applyColorMap(preset);
+
+    // Note: mapping range is set via setVOI
+
+    volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+
+    // Todo: add support for suppress events
+  }
+
+  /**
+   * Sets the inversion for the volume transfer function
+   *
+   * @param invert - Should the transfer function be inverted?
+   * @param volumeId - volumeId
+   * @param suppressEvents - If `true`, events will not be published
+   *
+   * @returns void
+   */
+  private setInvert(
+    invert: boolean,
+    volumeId?: string,
+    suppressEvents?: boolean
+  ) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+
+    const volumeIdToUse = applicableVolumeActorInfo.volumeId;
+
+    const cfun = this._getOrCreateColorTransferFunction(volumeIdToUse);
+    invertRgbTransferFunction(cfun);
+
+    this.inverted = invert;
+
+    const { voiRange } = this.getProperties();
+
+    if (!suppressEvents) {
+      const eventDetail: VoiModifiedEventDetail = {
+        viewportId: this.id,
+        range: voiRange,
+        volumeId: volumeIdToUse,
+        VOILUTFunction: this.VOILUTFunction,
+        invert: this.inverted,
+      };
+
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    }
+  }
+
+  private _getOrCreateColorTransferFunction(
+    volumeId: string
+  ): vtkColorTransferFunction {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      return null;
+    }
+
+    const { volumeActor } = applicableVolumeActorInfo;
+
+    const rgbTransferFunction = volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0);
+
+    if (rgbTransferFunction) {
+      return rgbTransferFunction;
+    }
+
+    const newRGBTransferFunction = vtkColorTransferFunction.newInstance();
+    volumeActor.getProperty().setRGBTransferFunction(0, newRGBTransferFunction);
+
+    return newRGBTransferFunction;
+  }
+
+  private _getOrCreateOpacityTransferFunction(
+    volumeId: string
+  ): vtkPiecewiseFunction {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      return null;
+    }
+
+    const { volumeActor } = applicableVolumeActorInfo;
+    const scalarOpacity = volumeActor.getProperty().getScalarOpacity(0);
+
+    if (scalarOpacity) {
+      return scalarOpacity;
+    }
+
+    const newScalarOpacity = vtkPiecewiseFunction.newInstance();
+    volumeActor.getProperty().setScalarOpacity(0, newScalarOpacity);
+
+    return newScalarOpacity;
+  }
+
+  /**
    * Sets the properties for the volume viewport on the volume
    * (if fusion, it sets it for the first volume in the fusion)
    *
@@ -219,27 +352,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     volumeId?: string,
     suppressEvents = false
   ): void {
-    if (volumeId !== undefined && !this.getActor(volumeId)) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
       return;
     }
 
-    const actorEntries = this.getActors();
-
-    if (!actorEntries.length) {
-      return;
-    }
-
-    let volumeActor;
-
-    if (volumeId) {
-      volumeActor = this.getActor(volumeId)?.actor as vtkVolume;
-    }
-
-    // // set it for the first volume (if there are more than one - fusion)
-    if (!volumeActor) {
-      volumeActor = actorEntries[0].actor as vtkVolume;
-      volumeId = actorEntries[0].uid;
-    }
+    const { volumeActor } = applicableVolumeActorInfo;
+    const volumeIdToUse = applicableVolumeActorInfo.volumeId;
 
     let voiRangeToUse = voiRange;
     if (typeof voiRangeToUse === 'undefined') {
@@ -273,7 +393,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       const eventDetail: VoiModifiedEventDetail = {
         viewportId: this.id,
         range: voiRange,
-        volumeId: volumeId,
+        volumeId: volumeIdToUse,
         VOILUTFunction: this.VOILUTFunction,
       };
 
@@ -287,14 +407,27 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    *
    * @param voiRange - Sets the lower and upper voi
    * @param VOILUTFunction - Sets the voi mode (LINEAR, or SAMPLED_SIGMOID)
+   * @param invert - Inverts the color transfer function
+   * @param colormap - Sets the colormap
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
    */
   public setProperties(
-    { voiRange, VOILUTFunction }: VolumeViewportProperties = {},
+    {
+      voiRange,
+      VOILUTFunction,
+      invert,
+      colormap,
+    }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
   ): void {
+    // Note: colormap should always be done first, since we can then
+    // modify the voiRange
+    if (typeof colormap === 'string') {
+      this.setColormap(colormap, volumeId, suppressEvents);
+    }
+
     if (voiRange) {
       this.setVOI(voiRange, volumeId, suppressEvents);
     }
@@ -302,6 +435,46 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (VOILUTFunction) {
       this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
     }
+
+    if (invert !== undefined && this.inverted !== invert) {
+      this.setInvert(invert, volumeId, suppressEvents);
+    }
+
+    // if there is colormap and the viewport is displaying more than one volume
+    // it means that we are in fusion mode and we need to set the opacity function
+    // to make the fusion work
+    if (colormap && this.getActors().length > 1) {
+      this.setOpacityFunction(colormap, volumeId, suppressEvents);
+    }
+  }
+
+  private setOpacityFunction(
+    colormap: string,
+    volumeId?: string,
+    suppressEvents = false
+  ): void {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+
+    const { volumeActor } = applicableVolumeActorInfo;
+
+    // Create scalar opacity function
+    const ofun = this._getOrCreateOpacityTransferFunction(volumeId);
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
+
+    const range = volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .getRange();
+
+    ofun.addPoint(range[0], 0.0);
+    // Todo: this is a hack to make the fusion work for PT, we should
+    // make it configurable
+    ofun.addPoint(range[1] * 0.1, 0.9);
+    ofun.addPoint(range[1], 1.0);
   }
 
   /**
@@ -328,7 +501,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
     const VOILUTFunction = this.VOILUTFunction;
 
-    return { voiRange, VOILUTFunction };
+    return { voiRange, VOILUTFunction, invert: this.inverted };
   };
 
   /**
@@ -498,6 +671,32 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    */
   public setOrientation(orientation: OrientationAxis, immediate = true): void {
     console.warn('Method "setOrientation" needs implementation');
+  }
+
+  private _getApplicableVolumeActor(volumeId?: string) {
+    if (volumeId !== undefined && !this.getActor(volumeId)) {
+      return;
+    }
+
+    const actorEntries = this.getActors();
+
+    if (!actorEntries.length) {
+      return;
+    }
+
+    let volumeActor;
+
+    if (volumeId) {
+      volumeActor = this.getActor(volumeId)?.actor as vtkVolume;
+    }
+
+    // // set it for the first volume (if there are more than one - fusion)
+    if (!volumeActor) {
+      volumeActor = actorEntries[0].actor as vtkVolume;
+      volumeId = actorEntries[0].uid;
+    }
+
+    return { volumeActor, volumeId };
   }
 
   private async _isValidVolumeInputArray(
