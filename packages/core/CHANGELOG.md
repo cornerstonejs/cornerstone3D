@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.45.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.45.0...@cornerstonejs/core@0.45.1) (2023-05-05)
+
+### Bug Fixes
+
+- **invalidated stack:** GPU rendering - inheriting voiRange when recreating the default actor ([#598](https://github.com/cornerstonejs/cornerstone3D-beta/issues/598)) ([457746a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/457746ae9b25cc95dcc048269ee46277aac97b1f))
+
 # [0.45.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.44.3...@cornerstonejs/core@0.45.0) (2023-05-05)
 
 ### Features
