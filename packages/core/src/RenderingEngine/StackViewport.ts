@@ -1222,7 +1222,8 @@ class StackViewport extends Viewport implements IStackViewport {
       this.voiRange &&
       this.voiRange.lower === voiRange.lower &&
       this.voiRange.upper === voiRange.upper &&
-      !forceRecreateLUTFunction
+      !forceRecreateLUTFunction &&
+      !this.stackInvalidated
     ) {
       return;
     }
@@ -2054,11 +2055,7 @@ class StackViewport extends Viewport implements IStackViewport {
     // @ts-ignore: vtkjs incorrect typing
     activeCamera.setFreezeFocalPoint(true);
 
-    // we have recreated the Actor, and need to reevaluate the voiRange
-    // So we copy the previously applied voiRange, and clear the this.voiRange.
-    const voiRange = this._getInitialVOIRange(image);
-    this.voiRange = null;
-    this.setVOI(voiRange);
+    this.setVOI(this._getInitialVOIRange(image));
     this.setInvertColor(
       imagePixelModule.photometricInterpretation === 'MONOCHROME1'
     );
