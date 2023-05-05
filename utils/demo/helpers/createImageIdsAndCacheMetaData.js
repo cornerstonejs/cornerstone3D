@@ -27,7 +27,7 @@ const { calibratedPixelSpacingMetadataProvider } = utilities;
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
-  SOPInstanceUID,
+  SOPInstanceUID = null,
   wadoRsRoot,
   client = null,
 }) {
@@ -114,15 +114,19 @@ export default async function createImageIdsAndCacheMetaData({
       }
     });
     if (InstanceMetadataArray.length) {
-      const suvScalingFactors = calculateSUVScalingFactors(
-        InstanceMetadataArray
-      );
-      InstanceMetadataArray.forEach((instanceMetadata, index) => {
-        ptScalingMetaDataProvider.addInstance(
-          imageIds[index],
-          suvScalingFactors[index]
+      try {
+        const suvScalingFactors = calculateSUVScalingFactors(
+          InstanceMetadataArray
         );
-      });
+        InstanceMetadataArray.forEach((instanceMetadata, index) => {
+          ptScalingMetaDataProvider.addInstance(
+            imageIds[index],
+            suvScalingFactors[index]
+          );
+        });
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 

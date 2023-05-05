@@ -1665,7 +1665,14 @@ class StackViewport extends Viewport implements IStackViewport {
         // handle the case where the pixelData is a Float32Array
         // CPU path cannot handle it, it should be converted to Uint16Array
         // and via the Modality LUT we can display it properly
-        if (pixelData instanceof Float32Array) {
+        const preScale = image.preScale;
+        const scalingParams = preScale?.scalingParameters;
+
+        const scaledWithNonIntegers =
+          (preScale?.scaled && scalingParams?.rescaleIntercept % 1 !== 0) ||
+          scalingParams?.rescaleSlope % 1 !== 0;
+
+        if (pixelData instanceof Float32Array && scaledWithNonIntegers) {
           const floatMinMax = {
             min: image.maxPixelValue,
             max: image.minPixelValue,
@@ -1704,8 +1711,7 @@ class StackViewport extends Viewport implements IStackViewport {
           };
         }
 
-        image.isPreScaled = image.preScale?.scaled;
-        this.csImage = image;
+        this._setCSImage(image);
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1842,9 +1848,7 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        // cornerstone image
-        image.isPreScaled = image.preScale?.scaled;
-        this.csImage = image;
+        this._setCSImage(image);
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1925,6 +1929,32 @@ class StackViewport extends Viewport implements IStackViewport {
       );
     });
   }
+
+  /**
+   * Renders the given Cornerstone image object in the viewport.
+   * This method is intended to be used by utilities to render
+   * an individual image, rather than by applications that want to display
+   * a complete image stack. If you want to load and display a complete
+   * image stack, use the setStack method instead of this one.
+   *
+   * The rendered image will appear in the viewport's element.
+   * Use this method if you have other means of loading and the
+   * cornerstone image object is already available.
+   *
+   * If you don't understand the difference between this method and
+   * setStack, you probably want to use setStack.
+   *
+   * @param image - The Cornerstone image object to render.
+   */
+  public renderImageObject = (image) => {
+    this._setCSImage(image);
+    this._updateActorToDisplayImageId(image);
+  };
+
+  private _setCSImage = (image) => {
+    image.isPreScaled = image.preScale?.scaled;
+    this.csImage = image;
+  };
 
   /**
    * It updates the volume actor with the retrieved cornerstone image.
@@ -2093,6 +2123,10 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private _isCurrentImagePTPrescaled() {
     if (this.modality !== 'PT' || !this.csImage.isPreScaled) {
+      return false;
+    }
+
+    if (!this.csImage.preScale?.scalingParameters?.suvbw) {
       return false;
     }
 

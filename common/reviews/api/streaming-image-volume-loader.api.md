@@ -1352,6 +1352,9 @@ enum RequestType {
     Thumbnail = 'thumbnail',
 }
 
+// @public
+type RGB = [number, number, number];
+
 // @public (undocumented)
 type Scaling = {
     PET?: PTScaling;
@@ -1473,7 +1476,7 @@ type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public
 type ViewportInputOptions = {
-    background?: [number, number, number];
+    background?: RGB;
     orientation?: OrientationAxis | OrientationVectors;
     displayArea?: DisplayArea;
     suppressEvents?: boolean;

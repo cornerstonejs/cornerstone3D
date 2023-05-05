@@ -327,13 +327,17 @@ class RenderingEngine implements IRenderingEngine {
       }
     });
 
-    this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
+    if (vtkDrivenViewports.length) {
+      this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
+    }
 
-    this._resizeUsingCustomResizeHandler(
-      customRenderingViewports,
-      keepCamera,
-      immediate
-    );
+    if (customRenderingViewports.length) {
+      this._resizeUsingCustomResizeHandler(
+        customRenderingViewports,
+        keepCamera,
+        immediate
+      );
+    }
   }
 
   /**
