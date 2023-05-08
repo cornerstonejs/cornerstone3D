@@ -165,7 +165,7 @@ type ColormapPublic = {
 type ColormapRegistration = {
     ColorSpace: string;
     Name: string;
-    RGBPoints: number[];
+    RGBPoints: RGB[];
 };
 
 // @public (undocumented)
@@ -2261,10 +2261,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public (undocumented)
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -2335,6 +2332,7 @@ declare namespace Types {
         IViewport,
         StackViewportProperties,
         VolumeViewportProperties,
+        ViewportProperties,
         PublicViewportInput,
         VolumeActor,
         Actor,
@@ -2625,6 +2623,13 @@ interface ViewportPreset {
 }
 
 // @public (undocumented)
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
+
+// @public (undocumented)
 enum ViewportType {
     // (undocumented)
     ORTHOGRAPHIC = "orthographic",
@@ -2785,10 +2790,7 @@ export class VolumeViewport3D extends BaseVolumeViewport {
 }
 
 // @public (undocumented)
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type VolumeViewportProperties = ViewportProperties & {
     colormap?: ColormapPublic;
     preset?: string;
 };

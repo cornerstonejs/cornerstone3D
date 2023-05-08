@@ -848,7 +848,7 @@ type ColormapPublic = {
 type ColormapRegistration = {
     ColorSpace: string;
     Name: string;
-    RGBPoints: number[];
+    RGBPoints: RGB[];
 };
 
 declare namespace config {
@@ -4760,10 +4760,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -5376,6 +5373,13 @@ interface ViewportPreset {
     specularPower: string;
 }
 
+// @public
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
+
 declare namespace visibility {
     export {
         setAnnotationVisibility,
@@ -5512,10 +5516,7 @@ type VolumeScrollOutOfBoundsEventDetail = {
 type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
 // @public
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type VolumeViewportProperties = ViewportProperties & {
     colormap?: ColormapPublic;
     preset?: string;
 };

@@ -63,7 +63,7 @@ type ColormapPublic = {
 type ColormapRegistration = {
     ColorSpace: string;
     Name: string;
-    RGBPoints: number[];
+    RGBPoints: RGB[];
 };
 
 // @public (undocumented)
@@ -1420,10 +1420,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -1522,6 +1519,13 @@ interface ViewportPreset {
     // (undocumented)
     specularPower: string;
 }
+
+// @public
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
 
 // @public
 enum ViewportType {
@@ -1634,10 +1638,7 @@ type VolumeNewImageEventDetail = {
 type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 // @public
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type VolumeViewportProperties = ViewportProperties & {
     colormap?: ColormapPublic;
     preset?: string;
 };
