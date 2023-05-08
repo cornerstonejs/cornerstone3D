@@ -1222,7 +1222,8 @@ class StackViewport extends Viewport implements IStackViewport {
       this.voiRange &&
       this.voiRange.lower === voiRange.lower &&
       this.voiRange.upper === voiRange.upper &&
-      !forceRecreateLUTFunction
+      !forceRecreateLUTFunction &&
+      !this.stackInvalidated
     ) {
       return;
     }
