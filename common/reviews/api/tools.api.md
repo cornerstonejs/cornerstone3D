@@ -3628,7 +3628,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[];
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
