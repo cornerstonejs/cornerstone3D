@@ -1,5 +1,6 @@
 import { VOIRange } from './voi';
 import VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import { ColormapPublic } from './Colormap';
 
 /**
  * Stack Viewport Properties
@@ -12,7 +13,7 @@ type VolumeViewportProperties = {
   /** whether to invert the viewport color */
   invert?: boolean;
   /** color maps  */
-  colormap?: string;
+  colormap?: ColormapPublic;
   /** 3d preset */
   preset?: string;
 };

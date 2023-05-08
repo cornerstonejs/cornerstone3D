@@ -1,17 +1,13 @@
-const _colormaps = new Map();
+import { ColormapRegistration } from '../types';
 
-type Colormap = {
-  ColorSpace: string;
-  Name: string;
-  RGBPoints: number[];
-};
+const _colormaps = new Map();
 
 /**
  * Register a colormap
  * @param name - name of the colormap
  * @param colormap - colormap object
  */
-function registerColormap(colormap: Colormap) {
+function registerColormap(colormap: ColormapRegistration) {
   _colormaps.set(colormap.Name, colormap);
 }
 
