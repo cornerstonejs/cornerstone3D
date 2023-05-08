@@ -54,6 +54,19 @@ type CameraModifiedEventDetail = {
 };
 
 // @public (undocumented)
+type ColormapPublic = {
+    name: string;
+    opacityMapping?: number[][];
+};
+
+// @public (undocumented)
+type ColormapRegistration = {
+    ColorSpace: string;
+    Name: string;
+    RGBPoints: number[];
+};
+
+// @public (undocumented)
 type ContourData = {
     points: Point3[];
     type: ContourType;
@@ -1332,6 +1345,9 @@ type PreStackNewImageEventDetail = {
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
+    suvbw?: number;
+    suvlbm?: number;
+    suvbsa?: number;
 };
 
 // @public (undocumented)
@@ -1540,6 +1556,7 @@ type VoiModifiedEventDetail = {
     range: VOIRange;
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
 };
 
 // @public (undocumented)
@@ -1620,6 +1637,9 @@ type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 type VolumeViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+    colormap?: ColormapPublic;
+    preset?: string;
 };
 
 // (No @packageDocumentation comment for this package)

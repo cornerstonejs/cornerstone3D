@@ -838,6 +838,19 @@ declare namespace color {
 // @public (undocumented)
 type ColorLUT = Array<Color>;
 
+// @public (undocumented)
+type ColormapPublic = {
+    name: string;
+    opacityMapping?: number[][];
+};
+
+// @public (undocumented)
+type ColormapRegistration = {
+    ColorSpace: string;
+    Name: string;
+    RGBPoints: number[];
+};
+
 declare namespace config {
     export {
         getState,
@@ -3804,6 +3817,9 @@ export class ProbeTool extends AnnotationTool {
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
+    suvbw?: number;
+    suvlbm?: number;
+    suvbsa?: number;
 };
 
 // @public (undocumented)
@@ -5393,6 +5409,7 @@ type VoiModifiedEventDetail = {
     range: VOIRange;
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
 };
 
 // @public (undocumented)
@@ -5498,6 +5515,9 @@ type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutO
 type VolumeViewportProperties = {
     voiRange?: VOIRange;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+    colormap?: ColormapPublic;
+    preset?: string;
 };
 
 // @public (undocumented)
