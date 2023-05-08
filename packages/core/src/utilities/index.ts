@@ -48,6 +48,7 @@ import getScalarDataType from './getScalarDataType';
 // name spaces
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
+import * as colormap from './colormap';
 
 export {
   csUtils as invertRgbTransferFunction,
@@ -79,7 +80,7 @@ export {
   transformWorldToIndex,
   loadImageToCanvas,
   renderToCanvasCPU,
-  renderToCanvasGPU,  
+  renderToCanvasGPU,
   worldToImageCoords,
   imageToWorldCoords,
   getVolumeSliceRangeInfo,
@@ -99,4 +100,5 @@ export {
   deepMerge,
   getScalingParameters,
   getScalarDataType,
+  colormap,
 };

@@ -40,6 +40,7 @@ import {
   imageIdToURI,
   invertRgbTransferFunction,
   triggerEvent,
+  colormap as colormapUtils,
 } from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
@@ -237,22 +238,39 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     const { volumeActor } = applicableVolumeActorInfo;
-    const volumeIdToUse = applicableVolumeActorInfo.volumeId;
 
     const mapper = volumeActor.getMapper();
     mapper.setSampleDistance(1.0);
 
-    const cfun = this._getOrCreateColorTransferFunction(volumeIdToUse);
+    const cfun = vtkColorTransferFunction.newInstance();
+    let colormapObj = colormapUtils.getColormap(colormap);
 
-    // Todo:if we have a custom colormap, use it
-    const preset = vtkColorMaps.getPresetByName(colormap);
-    cfun.applyColorMap(preset);
+    if (!colormapObj) {
+      colormapObj = vtkColorMaps.getPresetByName(colormap);
+    }
 
-    // Note: mapping range is set via setVOI
+    if (!colormapObj) {
+      throw new Error(`Colormap ${colormap} not found`);
+    }
 
+    const range = volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .getRange();
+
+    cfun.applyColorMap(colormapObj);
+    cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
 
-    // Todo: add support for suppress events
+    // const ofun = vtkPiecewiseFunction.newInstance();
+
+    // ofun.addPoint(range[0], 0.0);
+    // // Todo: this is a hack to make the fusion work for PT, we should
+    // // make it configurable
+    // ofun.addPoint(0.1, 0.9);
+    // ofun.addPoint(range[1], 1.0);
+
+    // volumeActor.getProperty().setScalarOpacity(0, ofun);
   }
 
   /**
@@ -320,28 +338,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     volumeActor.getProperty().setRGBTransferFunction(0, newRGBTransferFunction);
 
     return newRGBTransferFunction;
-  }
-
-  private _getOrCreateOpacityTransferFunction(
-    volumeId: string
-  ): vtkPiecewiseFunction {
-    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
-
-    if (!applicableVolumeActorInfo) {
-      return null;
-    }
-
-    const { volumeActor } = applicableVolumeActorInfo;
-    const scalarOpacity = volumeActor.getProperty().getScalarOpacity(0);
-
-    if (scalarOpacity) {
-      return scalarOpacity;
-    }
-
-    const newScalarOpacity = vtkPiecewiseFunction.newInstance();
-    volumeActor.getProperty().setScalarOpacity(0, newScalarOpacity);
-
-    return newScalarOpacity;
   }
 
   /**
@@ -502,9 +498,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     const { volumeActor } = applicableVolumeActorInfo;
 
-    // Create scalar opacity function
-    const ofun = this._getOrCreateOpacityTransferFunction(volumeId);
-    volumeActor.getProperty().setScalarOpacity(0, ofun);
+    const ofun = vtkPiecewiseFunction.newInstance();
 
     const range = volumeActor
       .getProperty()
@@ -514,8 +508,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     ofun.addPoint(range[0], 0.0);
     // Todo: this is a hack to make the fusion work for PT, we should
     // make it configurable
-    ofun.addPoint(range[1] * 0.1, 0.9);
+    ofun.addPoint(0.1, 0.9);
     ofun.addPoint(range[1], 1.0);
+
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
   }
 
   /**
