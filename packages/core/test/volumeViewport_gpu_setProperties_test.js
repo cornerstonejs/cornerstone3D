@@ -59,7 +59,7 @@ describe('Volume Viewport SetProperties -- ', () => {
     cornerstone3D.setUseCPURendering(false);
   });
 
-  describe('should do something--- ', function () {
+  describe('should be able to use set Properties for volume viewport --- ', function () {
     beforeEach(function () {
       cache.purgeCache();
 
@@ -83,7 +83,7 @@ describe('Volume Viewport SetProperties -- ', () => {
       });
     });
 
-    it('should successfully do something ', function (done) {
+    it('should successfully modify the viewoprt with invert and setVOI', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.CORONAL

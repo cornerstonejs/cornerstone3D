@@ -551,7 +551,7 @@ export default class BaseStreamingImageVolume extends ImageVolume {
         typeof scalingParameters.rescaleIntercept === 'number';
 
       /**
-       * So this is has limitation right now, but we need to somehow indicates
+       * So this is has limitation right now, but we need to somehow indicate
        * whether the volume has been scaled with the scaling parameters or not.
        * However, each slice can have different scaling parameters but it is rare
        * that rescale slope and intercept be unknown for one slice and known for

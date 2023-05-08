@@ -1,7 +1,9 @@
+import RGB from './RGB';
+
 type ColormapRegistration = {
   ColorSpace: string;
   Name: string;
-  RGBPoints: number[];
+  RGBPoints: RGB[];
 };
 
 type ColormapPublic = {
