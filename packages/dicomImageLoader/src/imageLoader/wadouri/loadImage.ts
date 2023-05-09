@@ -24,6 +24,8 @@ function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
 }
 
 /**
+ * Given the dataSetPromise and imageId this will return a promise to be
+ * resolved with an image object containing the loaded image.
  *
  * @param dataSetPromise - A promise that resolves to a DataSet object.
  * @param imageId - The imageId of the image to be loaded.
@@ -34,7 +36,7 @@ function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
  * @param sharedCacheKey -  A key to be used to cache the loaded image.
  * @param options - Options to be used when loading the image.
  * @param callbacks - Callbacks to be called when the image is loaded.
- * @returns
+ * @returns An object containing a promise to be resolved with the loaded image
  */
 function loadImageFromPromise(
   dataSetPromise: Promise<DataSet>,
