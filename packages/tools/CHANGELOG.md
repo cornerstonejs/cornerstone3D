@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.67.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.67.0...@cornerstonejs/tools@0.67.1) (2023-05-09)
+
+### Bug Fixes
+
+- **multiframe:** fix frameNumber for pixelData and windowlevel issue ([#603](https://github.com/cornerstonejs/cornerstone3D-beta/issues/603)) ([6bf51b1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6bf51b148bbff008bf0bc63b8de4fa375eaad625))
+
 # [0.67.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.66.7...@cornerstonejs/tools@0.67.0) (2023-05-09)
 
 ### Features
