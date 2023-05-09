@@ -838,6 +838,19 @@ declare namespace color {
 // @public (undocumented)
 type ColorLUT = Array<Color>;
 
+// @public (undocumented)
+type ColormapPublic = {
+    name: string;
+    opacityMapping?: OpacityMapping[];
+};
+
+// @public (undocumented)
+type ColormapRegistration = {
+    ColorSpace: string;
+    Name: string;
+    RGBPoints: RGB[];
+};
+
 declare namespace config {
     export {
         getState,
@@ -3615,7 +3628,7 @@ export class PlanarFreehandROITool extends AnnotationTool {
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
-    _getTextLines: (data: any, targetId: string, isPreScaled: boolean) => string[];
+    _getTextLines: (data: any, targetId: string, isPreScaled: boolean, isSuvScaled: boolean) => string[];
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
@@ -3811,6 +3824,9 @@ export class ProbeTool extends AnnotationTool {
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
+    suvbw?: number;
+    suvlbm?: number;
+    suvbsa?: number;
 };
 
 // @public (undocumented)
@@ -4751,10 +4767,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -5367,6 +5380,13 @@ interface ViewportPreset {
     specularPower: string;
 }
 
+// @public
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
+
 declare namespace visibility {
     export {
         setAnnotationVisibility,
@@ -5400,6 +5420,7 @@ type VoiModifiedEventDetail = {
     range: VOIRange;
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
 };
 
 // @public (undocumented)
@@ -5502,9 +5523,9 @@ type VolumeScrollOutOfBoundsEventDetail = {
 type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
 // @public
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
+type VolumeViewportProperties = ViewportProperties & {
+    colormap?: ColormapPublic;
+    preset?: string;
 };
 
 // @public (undocumented)

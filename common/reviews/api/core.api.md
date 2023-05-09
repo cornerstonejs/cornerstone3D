@@ -92,7 +92,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
-    setProperties({ voiRange, VOILUTFunction }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void;
     // (undocumented)
@@ -146,6 +146,27 @@ function cancelLoadImage(imageId: string): void;
 
 // @public (undocumented)
 function cancelLoadImages(imageIds: Array<string>): void;
+
+declare namespace colormap {
+    export {
+        getColormap,
+        getColormapNames,
+        registerColormap
+    }
+}
+
+// @public (undocumented)
+type ColormapPublic = {
+    name: string;
+    opacityMapping?: OpacityMapping[];
+};
+
+// @public (undocumented)
+type ColormapRegistration = {
+    ColorSpace: string;
+    Name: string;
+    RGBPoints: RGB[];
+};
 
 // @public (undocumented)
 const colormapsData: CPUFallbackColormapsData;
@@ -725,6 +746,12 @@ function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlan
 
 // @public (undocumented)
 function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
+
+// @public (undocumented)
+function getColormap(name: any): any;
+
+// @public (undocumented)
+function getColormapNames(): any[];
 
 // @public (undocumented)
 export function getConfiguration(): Cornerstone3DConfig;
@@ -1923,6 +1950,9 @@ type PreStackNewImageEventDetail = {
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
+    suvbw?: number;
+    suvlbm?: number;
+    suvbsa?: number;
 };
 
 // @public (undocumented)
@@ -1935,6 +1965,9 @@ type PublicViewportInput = {
     type: ViewportType;
     defaultOptions?: ViewportInputOptions;
 };
+
+// @public (undocumented)
+function registerColormap(colormap: ColormapRegistration): void;
 
 // @public (undocumented)
 export function registerImageLoader(scheme: string, imageLoader: ImageLoaderFn): void;
@@ -2228,10 +2261,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public (undocumented)
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -2302,6 +2332,7 @@ declare namespace Types {
         IViewport,
         StackViewportProperties,
         VolumeViewportProperties,
+        ViewportProperties,
         PublicViewportInput,
         VolumeActor,
         Actor,
@@ -2347,7 +2378,9 @@ declare namespace Types {
         ContourData,
         IContourSet,
         IContour,
-        RGB
+        RGB,
+        ColormapPublic,
+        ColormapRegistration
     }
 }
 export { Types }
@@ -2405,7 +2438,8 @@ declare namespace utilities {
         applyPreset,
         deepMerge,
         getScalingParameters,
-        getScalarDataType
+        getScalarDataType,
+        colormap
     }
 }
 export { utilities }
@@ -2589,6 +2623,13 @@ interface ViewportPreset {
 }
 
 // @public (undocumented)
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
+
+// @public (undocumented)
 enum ViewportType {
     // (undocumented)
     ORTHOGRAPHIC = "orthographic",
@@ -2623,6 +2664,7 @@ type VoiModifiedEventDetail = {
     range: VOIRange;
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
 };
 
 // @public (undocumented)
@@ -2748,9 +2790,9 @@ export class VolumeViewport3D extends BaseVolumeViewport {
 }
 
 // @public (undocumented)
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
+type VolumeViewportProperties = ViewportProperties & {
+    colormap?: ColormapPublic;
+    preset?: string;
 };
 
 declare namespace windowLevel {

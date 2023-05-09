@@ -75,6 +75,8 @@ import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 import type RGB from './RGB';
+import { ColormapPublic, ColormapRegistration } from './Colormap';
+import type { ViewportProperties } from './ViewportProperties';
 
 export type {
   // config
@@ -107,6 +109,7 @@ export type {
   IViewport,
   StackViewportProperties,
   VolumeViewportProperties,
+  ViewportProperties,
   PublicViewportInput,
   VolumeActor,
   Actor,
@@ -159,4 +162,6 @@ export type {
   IContour,
   // Color
   RGB,
+  ColormapPublic,
+  ColormapRegistration,
 };
