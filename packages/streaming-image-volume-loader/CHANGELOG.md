@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.20.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.19.5...@cornerstonejs/streaming-image-volume-loader@0.20.0) (2023-05-09)
+
+### Features
+
+- **VolumeViewport:** add colormap preset and invert to volume viewport ([#602](https://github.com/cornerstonejs/cornerstone3D-beta/issues/602)) ([f28a392](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f28a3923bba958ed1991dad40ce88d162daa1a6f))
+
 ## [0.19.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.19.4...@cornerstonejs/streaming-image-volume-loader@0.19.5) (2023-05-05)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

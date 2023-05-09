@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.46.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.45.1...@cornerstonejs/core@0.46.0) (2023-05-09)
+
+### Features
+
+- **VolumeViewport:** add colormap preset and invert to volume viewport ([#602](https://github.com/cornerstonejs/cornerstone3D-beta/issues/602)) ([f28a392](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f28a3923bba958ed1991dad40ce88d162daa1a6f))
+
 ## [0.45.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.45.0...@cornerstonejs/core@0.45.1) (2023-05-05)
 
 ### Bug Fixes

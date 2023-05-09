@@ -61,7 +61,7 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
    * Therefore, we follow the majority of other viewers and we set the min/max
    * for the scaled PT to be 0, 5
    */
-  if (generalSeriesModule.modality === 'PT' && imageVolume.isPrescaled) {
+  if (_isCurrentImagePTPrescaled(generalSeriesModule.modality, imageVolume)) {
     return {
       lower: 0,
       upper: 5,
@@ -222,6 +222,18 @@ function _getImageScalarDataFromImageVolume(
   imageScalarData.set(volumeBufferView);
 
   return imageScalarData;
+}
+
+function _isCurrentImagePTPrescaled(modality, imageVolume) {
+  if (modality !== 'PT' || !imageVolume.isPreScaled) {
+    return false;
+  }
+
+  if (!imageVolume.scaling?.PT.suvbw) {
+    return false;
+  }
+
+  return true;
 }
 
 export default setDefaultVolumeVOI;
