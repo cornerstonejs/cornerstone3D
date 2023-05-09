@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.67.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.66.7...@cornerstonejs/tools@0.67.0) (2023-05-09)
+
+### Features
+
+- **PlanarFreehandROI stats:** PlanarFreehandROI stats ([#326](https://github.com/cornerstonejs/cornerstone3D-beta/issues/326)) ([9240862](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9240862f56241ba35b920b951fb867443d068833))
+- **VolumeViewport:** add colormap preset and invert to volume viewport ([#602](https://github.com/cornerstonejs/cornerstone3D-beta/issues/602)) ([f28a392](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f28a3923bba958ed1991dad40ce88d162daa1a6f))
+
 ## [0.66.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.66.6...@cornerstonejs/tools@0.66.7) (2023-05-06)
 
 ### Bug Fixes
