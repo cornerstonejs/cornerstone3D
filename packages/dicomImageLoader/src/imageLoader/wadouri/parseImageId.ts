@@ -2,6 +2,7 @@ export interface CornerstoneImageUrl {
   scheme: string;
   url: string;
   frame: number;
+  pixelDataFrame: number;
 }
 
 function parseImageId(imageId: string): CornerstoneImageUrl {
@@ -14,16 +15,27 @@ function parseImageId(imageId: string): CornerstoneImageUrl {
   let frame;
 
   if (frameIndex !== -1) {
-    const frameStr = url.substr(frameIndex + 6);
+    const frameStr = url.substring(frameIndex + 6);
 
     frame = parseInt(frameStr, 10);
-    url = url.substr(0, frameIndex - 1);
+    url = url.substring(0, frameIndex - 1);
   }
 
+  const scheme = imageId.substring(0, firstColonIndex);
+  /**
+   * Why we adjust frameNumber? since in the above we are extracting the
+   * frame number from the imageId (from the metadata), and the frame number
+   * starts from 1, but in the loader which uses the dicomParser
+   * the frame number starts from 0.
+   */
+
+  const adjustedFrame = frame !== undefined ? frame - 1 : undefined;
+
   return {
-    scheme: imageId.substr(0, firstColonIndex),
+    scheme,
     url,
     frame,
+    pixelDataFrame: adjustedFrame,
   };
 }
 

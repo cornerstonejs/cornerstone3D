@@ -5551,11 +5551,14 @@ export class WindowLevelTool extends BaseTool {
         upper: number;
     };
     // (undocumented)
-    getPTNewRange({ deltaPointsCanvas, lower, upper, clientHeight }: {
+    getPTScaledNewRange({ deltaPointsCanvas, lower, upper, clientHeight, viewport, volumeId, isPreScaled, }: {
         deltaPointsCanvas: any;
         lower: any;
         upper: any;
         clientHeight: any;
+        viewport: any;
+        volumeId: any;
+        isPreScaled: any;
     }): {
         lower: any;
         upper: any;

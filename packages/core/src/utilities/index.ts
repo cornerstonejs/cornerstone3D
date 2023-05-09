@@ -44,6 +44,7 @@ import applyPreset from './applyPreset';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
+import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 
 // name spaces
 import * as planar from './planar';
@@ -89,6 +90,7 @@ export {
   snapFocalPointToSlice,
   getImageSliceDataForVolumeViewport,
   isImageActor,
+  isPTPrescaledWithSUV,
   actorIsA,
   getViewportsWithImageURI,
   getClosestStackImageIndexForPoint,
