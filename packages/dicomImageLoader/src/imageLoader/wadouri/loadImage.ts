@@ -23,6 +23,19 @@ function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
   };
 }
 
+/**
+ *
+ * @param dataSetPromise - A promise that resolves to a DataSet object.
+ * @param imageId - The imageId of the image to be loaded.
+ * @param frame - The frame number to be loaded in case of multiframe. it should
+ * be noted that this is used to extract the pixelData from dicomParser and
+ * dicomParser is 0-based index (the first pixelData is frame 0); however,
+ * in metadata and imageId frame is 1-based index (the first frame is frame 1).
+ * @param sharedCacheKey -  A key to be used to cache the loaded image.
+ * @param options - Options to be used when loading the image.
+ * @param callbacks - Callbacks to be called when the image is loaded.
+ * @returns
+ */
 function loadImageFromPromise(
   dataSetPromise: Promise<DataSet>,
   imageId: string,
@@ -179,7 +192,7 @@ function loadImage(
     return loadImageFromDataSet(
       dataSet,
       imageId,
-      parsedImageId.frame,
+      parsedImageId.pixelDataFrame,
       parsedImageId.url,
       options
     );

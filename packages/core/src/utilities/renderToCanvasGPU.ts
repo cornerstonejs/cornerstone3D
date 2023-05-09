@@ -112,6 +112,9 @@ export default function renderToCanvasGPU(
     element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
     viewport.renderImageObject(image);
 
+    // force a reset camera to center the image
+    viewport.resetCamera();
+
     if (modality === 'PT' && !_isPTImagePreScaledWithSUV(image)) {
       viewport.setProperties({
         voiRange: {
