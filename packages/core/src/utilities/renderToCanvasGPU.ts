@@ -4,6 +4,7 @@ import StackViewport from '../RenderingEngine/StackViewport';
 import { IImage } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
+import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation
@@ -115,7 +116,7 @@ export default function renderToCanvasGPU(
     // force a reset camera to center the image
     viewport.resetCamera();
 
-    if (modality === 'PT' && !_isPTImagePreScaledWithSUV(image)) {
+    if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
       viewport.setProperties({
         voiRange: {
           lower: image.minPixelValue,
@@ -127,7 +128,3 @@ export default function renderToCanvasGPU(
     viewport.render();
   });
 }
-
-const _isPTImagePreScaledWithSUV = (image: IImage) => {
-  return image.preScale.scaled && image.preScale.scalingParameters.suvbw;
-};
