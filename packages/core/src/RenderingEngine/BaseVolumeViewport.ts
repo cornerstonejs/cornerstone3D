@@ -275,8 +275,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
 
     // add custom opacity points
-    opacityMapping.forEach(([point, opacity]) => {
-      ofun.addPoint(point, opacity);
+    opacityMapping.forEach(({ opacity, value }) => {
+      ofun.addPoint(value, opacity);
     });
   }
 

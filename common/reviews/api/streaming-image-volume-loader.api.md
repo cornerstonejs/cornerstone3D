@@ -56,7 +56,7 @@ type CameraModifiedEventDetail = {
 // @public (undocumented)
 type ColormapPublic = {
     name: string;
-    opacityMapping?: number[][];
+    opacityMapping?: OpacityMapping[];
 };
 
 // @public (undocumented)

@@ -6,6 +6,13 @@ type ColormapRegistration = {
   RGBPoints: RGB[];
 };
 
+type OpacityMapping = {
+  /** value to map to opacity */
+  value: number;
+  /** opacity value */
+  opacity: number;
+};
+
 type ColormapPublic = {
   /** name of the colormap */
   name: string;
@@ -18,7 +25,7 @@ type ColormapPublic = {
    * the points in the middle to be mapped to different opacities
    * instead of a linear mapping from 0 to 1.
    */
-  opacityMapping?: number[][];
+  opacityMapping?: OpacityMapping[];
 };
 
 export type { ColormapRegistration, ColormapPublic };
