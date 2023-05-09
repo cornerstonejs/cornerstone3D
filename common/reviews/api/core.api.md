@@ -1527,6 +1527,9 @@ function isImageActor(actorEntry: Types.ActorEntry): boolean;
 function isOpposite(v1: Point3, v2: Point3, tolerance?: number): boolean;
 
 // @public (undocumented)
+const isPTPrescaledWithSUV: (image: IImage) => number;
+
+// @public (undocumented)
 interface IStackViewport extends IViewport {
     // (undocumented)
     calibrateSpacing(imageId: string): void;
@@ -2428,6 +2431,7 @@ declare namespace utilities {
         snapFocalPointToSlice,
         getImageSliceDataForVolumeViewport,
         isImageActor,
+        isPTPrescaledWithSUV,
         actorIsA,
         getViewportsWithImageURI,
         getClosestStackImageIndexForPoint,
