@@ -2559,7 +2559,6 @@ class StackViewport extends Viewport implements IStackViewport {
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();
       const voiRange = this._getVOIRangeForCurrentImage();
-
       cfun.applyColorMap(colormap);
       cfun.setMappingRange(voiRange.lower, voiRange.upper);
       actorProp.setRGBTransferFunction(0, cfun);
