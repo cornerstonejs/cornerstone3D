@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.46.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.46.1...@cornerstonejs/core@0.46.2) (2023-05-10)
+
+### Bug Fixes
+
+- **renderToCanvas:** device pixel ratio should get included as well ([#604](https://github.com/cornerstonejs/cornerstone3D-beta/issues/604)) ([249957f](https://github.com/cornerstonejs/cornerstone3D-beta/commit/249957fbd91225882ac28e05c27e2bd27b51662e))
+
 ## [0.46.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.46.0...@cornerstonejs/core@0.46.1) (2023-05-09)
 
 ### Bug Fixes
