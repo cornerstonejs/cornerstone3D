@@ -44,6 +44,17 @@ export default function renderToCanvasGPU(
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
 
+  // Up-sampling the provided canvas to match the device pixel ratio
+  // since we use device pixel ratio to determine the size of the canvas
+  // inside the rendering engine.
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const originalWidth = canvas.width;
+  const originalHeight = canvas.height;
+  canvas.width = originalWidth * devicePixelRatio;
+  canvas.height = originalHeight * devicePixelRatio;
+  canvas.style.width = `${originalWidth}px`;
+  canvas.style.height = `${originalHeight}px`;
+
   document.body.appendChild(element);
 
   // add id to the element so we can find it later, and fix the : which is not allowed in css
@@ -85,7 +96,18 @@ export default function renderToCanvasGPU(
 
       // Copy the temporary canvas to the given canvas
       const context = canvas.getContext('2d');
-      context.drawImage(temporaryCanvas, 0, 0);
+      context.drawImage(
+        temporaryCanvas,
+        0,
+        0,
+        temporaryCanvas.width,
+        temporaryCanvas.height, // source dimensions
+        0,
+        0,
+        canvas.width,
+        canvas.height // destination dimensions
+      );
+
       elementRendered = true;
 
       // remove based on id
