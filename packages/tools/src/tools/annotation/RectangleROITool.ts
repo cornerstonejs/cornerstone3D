@@ -653,7 +653,7 @@ class RectangleROITool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].unit === undefined
+        data.cachedStats[targetId].areaUnit === undefined
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
