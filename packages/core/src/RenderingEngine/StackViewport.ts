@@ -6,7 +6,6 @@ import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
@@ -41,6 +40,7 @@ import {
   IStackViewport,
   VolumeActor,
   Mat3,
+  ColormapRegistration,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -270,7 +270,7 @@ class StackViewport extends Viewport implements IStackViewport {
    * @param colormap - The colormap data to use.
    */
   public setColormap: (
-    colormap: CPUFallbackColormapData | IColorMapPreset
+    colormap: CPUFallbackColormapData | ColormapRegistration
   ) => void;
 
   /**
@@ -2657,7 +2657,7 @@ class StackViewport extends Viewport implements IStackViewport {
     this.render();
   }
 
-  private setColormapGPU(colormap: IColorMapPreset) {
+  private setColormapGPU(colormap: ColormapRegistration) {
     const ActorEntry = this.getDefaultActor();
     const actor = ActorEntry.actor as ImageActor;
     const actorProp = actor.getProperty();
