@@ -148,9 +148,8 @@ class RenderingEngine implements IRenderingEngine {
 
     // 1.a) If there is a found viewport, we remove the viewport and create a new viewport
     if (viewport) {
+      console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
-      // todo: if only removing the viewport, make sure resize also happens
-      // this._removeViewport(viewportId)
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.

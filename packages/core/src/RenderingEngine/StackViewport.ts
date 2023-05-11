@@ -1494,6 +1494,8 @@ class StackViewport extends Viewport implements IStackViewport {
     imageIds: Array<string>,
     currentImageIdIndex = 0
   ): Promise<string> {
+    this._throwIfDestroyed();
+
     this.imageIds = imageIds;
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
@@ -1525,6 +1527,19 @@ class StackViewport extends Viewport implements IStackViewport {
     triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
 
     return imageId;
+  }
+
+  /**
+   * Throws an error if you are using a destroyed instance of the stack viewport
+   */
+  private _throwIfDestroyed() {
+    if (this.isDisabled) {
+      throw new Error(
+        'The stack viewport has been destroyed and is no longer usable. Renderings will not be performed. If you ' +
+          'are using the same viewportId and has re-enabled the viewport, you need to grab the new viewport instance ' +
+          'using renderingEngine.getViewport(viewportId), instead of using your lexical reference to the viewport instance.'
+      );
+    }
   }
 
   /**
@@ -2278,6 +2293,8 @@ class StackViewport extends Viewport implements IStackViewport {
    * provided imageIds in setStack
    */
   public async setImageIdIndex(imageIdIndex: number): Promise<string> {
+    this._throwIfDestroyed();
+
     // If we are already on this imageId index, stop here
     if (this.currentImageIdIndex === imageIdIndex) {
       return this.getCurrentImageId();

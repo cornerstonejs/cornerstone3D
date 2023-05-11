@@ -5,6 +5,7 @@ import {
   eventTarget,
   EVENTS,
   utilities as csUtils,
+  getEnabledElement,
 } from '@cornerstonejs/core';
 import { ScrollOptions, EventTypes } from '../types';
 
@@ -21,6 +22,20 @@ export default function scroll(
   viewport: Types.IStackViewport | Types.IVolumeViewport,
   options: ScrollOptions
 ): void {
+  // check if viewport is disabled then throw error
+  const enabledElement = getEnabledElement(viewport.element);
+
+  if (!enabledElement) {
+    throw new Error('Scroll::Viewport is not enabled (it might be disabled)');
+  }
+
+  if (
+    viewport instanceof StackViewport &&
+    viewport.getImageIds().length === 0
+  ) {
+    throw new Error('Scroll::Stack Viewport has no images');
+  }
+
   const { type: viewportType } = viewport;
   const { volumeId, delta } = options;
 
