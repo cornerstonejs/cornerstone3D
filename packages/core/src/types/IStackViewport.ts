@@ -7,6 +7,7 @@ import Point2 from './Point2';
 import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
+import { ColormapRegistration } from './Colormap';
 
 /**
  * Interface for Stack Viewport
@@ -130,7 +131,7 @@ export default interface IStackViewport extends IViewport {
    * Sets the colormap for the current viewport.
    * @param colormap - The colormap data to use.
    */
-  setColormap(colormap: CPUFallbackColormapData): void;
+  setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
   /**
    * It sets the colormap to the default colormap.
    */

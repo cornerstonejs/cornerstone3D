@@ -6,6 +6,7 @@ import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
@@ -39,6 +40,7 @@ import {
   IStackViewport,
   VolumeActor,
   Mat3,
+  ColormapRegistration,
 } from '../types';
 import { ViewportInput } from '../types/IViewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -267,7 +269,9 @@ class StackViewport extends Viewport implements IStackViewport {
    * Sets the colormap for the current viewport.
    * @param colormap - The colormap data to use.
    */
-  public setColormap: (colormap: CPUFallbackColormapData) => void;
+  public setColormap: (
+    colormap: CPUFallbackColormapData | ColormapRegistration
+  ) => void;
 
   /**
    * If the user has selected CPU rendering, return the CPU camera, otherwise
@@ -2653,10 +2657,24 @@ class StackViewport extends Viewport implements IStackViewport {
     this.render();
   }
 
-  private setColormapGPU(colormap: CPUFallbackColormapData) {
-    // TODO -> vtk has full colormaps which are piecewise and frankly better?
-    // Do we really want a pre defined 256 color map just for the sake of harmonization?
-    throw new Error('setColorMapGPU not implemented.');
+  private setColormapGPU(colormap: ColormapRegistration) {
+    const ActorEntry = this.getDefaultActor();
+    const actor = ActorEntry.actor as ImageActor;
+    const actorProp = actor.getProperty();
+    const rgbTransferFunction = actorProp.getRGBTransferFunction();
+
+    if (!rgbTransferFunction) {
+      const cfun = vtkColorTransferFunction.newInstance();
+      const voiRange = this._getVOIRangeForCurrentImage();
+      cfun.applyColorMap(colormap);
+      cfun.setMappingRange(voiRange.lower, voiRange.upper);
+      actorProp.setRGBTransferFunction(0, cfun);
+    } else {
+      rgbTransferFunction.applyColorMap(colormap);
+      actorProp.setRGBTransferFunction(0, rgbTransferFunction);
+    }
+
+    this.render();
   }
 
   private unsetColormapGPU() {
