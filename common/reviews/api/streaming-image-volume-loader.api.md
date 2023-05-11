@@ -55,6 +55,19 @@ type CameraModifiedEventDetail = {
 };
 
 // @public (undocumented)
+type ColormapPublic = {
+    name: string;
+    opacityMapping?: OpacityMapping[];
+};
+
+// @public (undocumented)
+type ColormapRegistration = {
+    ColorSpace: string;
+    Name: string;
+    RGBPoints: RGB[];
+};
+
+// @public (undocumented)
 type ContourData = {
     points: Point3[];
     type: ContourType;
@@ -404,6 +417,27 @@ interface CustomEvent_2<T = any> extends Event {
     ): void;
 }
 
+// @public (undocumented)
+type DisplayArea = {
+    imageArea: [number, number]; // areaX, areaY
+    imageCanvasPoint: {
+        imagePoint: [number, number]; // imageX, imageY
+        canvasPoint: [number, number]; // canvasX, canvasY
+    };
+    storeAsInitialCamera: boolean;
+};
+
+// @public
+type DisplayAreaModifiedEvent = CustomEvent_2<DisplayAreaModifiedEventDetail>;
+
+// @public
+type DisplayAreaModifiedEventDetail = {
+    viewportId: string;
+    displayArea: DisplayArea;
+    volumeId?: string;
+    storeAsInitialCamera?: boolean;
+};
+
 // @public
 enum DynamicOperatorType {
     AVERAGE = 'AVERAGE',
@@ -437,6 +471,7 @@ enum Events {
     CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
 
     CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
+    DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
     ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
     ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
     GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
@@ -479,6 +514,8 @@ declare namespace EventTypes {
         CameraModifiedEvent,
         VoiModifiedEvent,
         VoiModifiedEventDetail,
+        DisplayAreaModifiedEvent,
+        DisplayAreaModifiedEventDetail,
         ElementDisabledEvent,
         ElementDisabledEventDetail,
         ElementEnabledEvent,
@@ -531,6 +568,11 @@ enum GeometryType {
     // (undocumented)
     CONTOUR = 'contour',
 }
+
+// @public (undocumented)
+export const helpers: {
+    getDynamicVolumeInfo: typeof getDynamicVolumeInfo;
+};
 
 // @public (undocumented)
 interface ICache {
@@ -645,6 +687,8 @@ interface IContourSet {
     // (undocumented)
     readonly frameOfReferenceUID: string;
     // (undocumented)
+    getCentroid(): Point3;
+    // (undocumented)
     getColor(): any;
     getContours(): IContour[];
     getFlatPointsArray(): Point3[];
@@ -715,7 +759,7 @@ interface IImage {
     columns: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
-    getPixelData: () => Array<number>;
+    getPixelData: () => PixelDataTypedArray;
     height: number;
     imageId: string;
     intercept: number;
@@ -727,8 +771,8 @@ interface IImage {
     modalityLUT?: CPUFallbackLUT;
     numComps: number;
     preScale?: {
-        scaled: boolean;
-        scalingParameters: {
+        scaled?: boolean;
+        scalingParameters?: {
             modality?: string;
             rescaleSlope?: number;
             rescaleIntercept?: number;
@@ -1077,6 +1121,7 @@ interface IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     getDefaultActor(): ActorEntry;
+    getDisplayArea(): DisplayArea | undefined;
     getFrameOfReferenceUID: () => string;
     getPan(): Point2;
     getRenderer(): void;
@@ -1093,6 +1138,11 @@ interface IViewport {
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
     setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+    setDisplayArea(
+    displayArea: DisplayArea,
+    callResetCamera?: boolean,
+    suppressEvents?: boolean
+    );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
@@ -1102,6 +1152,8 @@ interface IViewport {
     sx: number;
     sy: number;
     type: ViewportType;
+    // (undocumented)
+    updateRenderingPipeline: () => void;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -1294,6 +1346,9 @@ type PreStackNewImageEventDetail = {
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
+    suvbw?: number;
+    suvlbm?: number;
+    suvbsa?: number;
 };
 
 // @public (undocumented)
@@ -1313,6 +1368,9 @@ enum RequestType {
     Prefetch = 'prefetch',
     Thumbnail = 'thumbnail',
 }
+
+// @public
+type RGB = [number, number, number];
 
 // @public (undocumented)
 type Scaling = {
@@ -1363,10 +1421,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -1435,8 +1490,9 @@ type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public
 type ViewportInputOptions = {
-    background?: [number, number, number];
+    background?: RGB;
     orientation?: OrientationAxis | OrientationVectors;
+    displayArea?: DisplayArea;
     suppressEvents?: boolean;
     parallelProjection?: boolean;
 };
@@ -1464,6 +1520,13 @@ interface ViewportPreset {
     // (undocumented)
     specularPower: string;
 }
+
+// @public
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
 
 // @public
 enum ViewportType {
@@ -1498,6 +1561,7 @@ type VoiModifiedEventDetail = {
     range: VOIRange;
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
 };
 
 // @public (undocumented)
@@ -1575,9 +1639,9 @@ type VolumeNewImageEventDetail = {
 type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 // @public
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
+type VolumeViewportProperties = ViewportProperties & {
+    colormap?: ColormapPublic;
+    preset?: string;
 };
 
 // (No @packageDocumentation comment for this package)

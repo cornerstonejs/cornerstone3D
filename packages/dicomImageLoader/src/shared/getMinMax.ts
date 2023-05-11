@@ -1,4 +1,4 @@
-import { ByteArray } from 'dicom-parser';
+import { PixelDataTypedArray } from '../types';
 
 /**
  * Calculate the minimum and maximum values in an Array
@@ -6,7 +6,7 @@ import { ByteArray } from 'dicom-parser';
  * @param {Number[]} storedPixelData
  * @return {{min: Number, max: Number}}
  */
-function getMinMax(storedPixelData: ByteArray | number[]): {
+function getMinMax(storedPixelData: PixelDataTypedArray): {
   min: number;
   max: number;
 } {

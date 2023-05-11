@@ -89,7 +89,6 @@ function combineFrameInstanceDataset(frameNumber, dataSet) {
     PerFrameFunctionalGroupsSequence,
     SharedFunctionalGroupsSequence,
     otherElements,
-    otherAttributtes,
   } = getMultiframeInformation(dataSet);
 
   if (PerFrameFunctionalGroupsSequence || NumberOfFrames > 1) {
@@ -100,14 +99,16 @@ function combineFrameInstanceDataset(frameNumber, dataSet) {
     );
 
     // creating a new copy of the dataset to remove the two multiframe dicom tags
-    const newDataset = {
-      ...otherAttributtes,
+    const newElements = {
       elements: {
         ...otherElements,
         ...shared,
         ...perFrame,
       },
     };
+
+    const clonedDataset = Object.create(dataSet);
+    const newDataset = Object.assign(clonedDataset, newElements);
 
     return newDataset;
   }

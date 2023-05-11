@@ -88,12 +88,12 @@ function addAnnotation(
   // annotation added event for that element.
   if (annotationGroupSelector instanceof HTMLDivElement) {
     triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
+  } else {
+    // if no element is provided, render all viewports that have the
+    // same frame of reference.
+    // Todo: we should do something else here for other types of annotation managers.
+    triggerAnnotationAddedForFOR(annotation);
   }
-
-  // if no element is provided, render all viewports that have the
-  // same frame of reference.
-  // Todo: we should do something else here for other types of annotation managers.
-  triggerAnnotationAddedForFOR(annotation);
 
   return annotation.annotationUID;
 }

@@ -1,19 +1,21 @@
 import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
+import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
 import {
   DICOMLoaderImageOptions,
   MetadataImagePlaneModule,
   MetadataSopCommonModule,
   DICOMLoaderIImage,
   ImageFrame,
+  PixelDataTypedArray,
 } from '../types';
 import convertColorSpace from './convertColorSpace';
 import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
-import isColorImageFn from './isColorImage';
+import isColorImageFn from '../shared/isColorImage';
 import isJPEGBaseline8BitColor from './isJPEGBaseline8BitColor';
 
 let lastImageIdDrawn = '';
@@ -27,58 +29,24 @@ function isModalityLUTForDisplay(sopClassUid: string): boolean {
   ); // XRF
 }
 
-function convertToIntPixelData(floatPixelData) {
-  const floatMinMax = getMinMax(floatPixelData);
-  const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
-  const intRange = 65535;
-  const slope = floatRange / intRange;
-  const intercept = floatMinMax.min;
-  const numPixels = floatPixelData.length;
-  const intPixelData = new Uint16Array(numPixels);
-
-  let min = 65535;
-
-  let max = 0;
-
-  for (let i = 0; i < numPixels; i++) {
-    const rescaledPixel = Math.floor((floatPixelData[i] - intercept) / slope);
-
-    intPixelData[i] = rescaledPixel;
-    min = Math.min(min, rescaledPixel);
-    max = Math.max(max, rescaledPixel);
-  }
-
-  return {
-    min,
-    max,
-    intPixelData,
-    slope,
-    intercept,
-  };
-}
-
 /**
- * Helper function to set pixel data to the right typed array.  This is needed because web workers
- * can transfer array buffers but not typed arrays
- * @param imageFrame
+ * Helper function to set pixel d2023-03-17-16-35-04.pngata to the right typed array.
+ * This is needed because web workers can transfer array buffers but not typed arrays
+ *
+ * Here we are setting the pixel data to the right typed array based on the final
+ * min and max values
  */
-function setPixelDataType(imageFrame, preScale) {
-  const isScaled = preScale?.scaled;
-  const scalingParmeters = preScale?.scalingParameters;
-  const rescaleSlope = scalingParmeters?.rescaleSlope;
-  const rescaleIntercept = scalingParmeters?.rescaleIntercept;
-  const isNegative = rescaleSlope < 0 || rescaleIntercept < 0;
+function setPixelDataType(imageFrame) {
+  const minValue = imageFrame.smallestPixelValue;
+  const maxValue = imageFrame.largestPixelValue;
 
-  if (imageFrame.bitsAllocated === 32) {
-    imageFrame.pixelData = new Float32Array(imageFrame.pixelData);
-  } else if (imageFrame.bitsAllocated === 16) {
-    if (imageFrame.pixelRepresentation === 0 && !(isScaled && isNegative)) {
-      imageFrame.pixelData = new Uint16Array(imageFrame.pixelData);
-    } else {
-      imageFrame.pixelData = new Int16Array(imageFrame.pixelData);
-    }
+  const TypedArray = getPixelDataTypeFromMinMax(minValue, maxValue);
+
+  if (TypedArray) {
+    const typedArray = new TypedArray(imageFrame.pixelData);
+    imageFrame.pixelData = typedArray;
   } else {
-    imageFrame.pixelData = new Uint8Array(imageFrame.pixelData);
+    throw new Error('Could not apply a typed array to the pixel data');
   }
 }
 
@@ -87,28 +55,23 @@ function setPixelDataType(imageFrame, preScale) {
  * decoding happens with browser API which results in RGBA, but if useRGBA flag
  * is set to false, we want to return RGB
  *
- * @param imageFrame - decoded image in RGBA
+ * @param pixelData - decoded image in RGBA
  * @param targetBuffer - target buffer to write to
  */
 function removeAFromRGBA(
-  imageFrame:
-    | Float32Array // populated later after decoding
-    | Int16Array
-    | Uint16Array
-    | Uint8Array
-    | Uint8ClampedArray,
-  targetBuffer: Uint8ClampedArray
+  pixelData: PixelDataTypedArray,
+  targetBuffer: Uint8ClampedArray | Uint8Array
 ) {
-  const numPixels = imageFrame.length / 4;
+  const numPixels = pixelData.length / 4;
 
   let rgbIndex = 0;
 
   let bufferIndex = 0;
 
   for (let i = 0; i < numPixels; i++) {
-    targetBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // red
-    targetBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // green
-    targetBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // blue
+    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // red
+    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // green
+    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // blue
     rgbIndex++; // skip alpha
   }
 
@@ -124,11 +87,7 @@ function createImage(
   // whether to use RGBA for color images, default true as cs-legacy uses RGBA
   // but we don't need RGBA in cs3d, and it's faster, and memory-efficient
   // in cs3d
-  let useRGBA = true;
-
-  if (options.useRGBA !== undefined) {
-    useRGBA = options.useRGBA;
-  }
+  const useRGBA = options.useRGBA;
 
   // always preScale the pixel array unless it is asked not to
   options.preScale = {
@@ -171,12 +130,12 @@ function createImage(
     decodeConfig
   );
 
-  const { convertFloatPixelDataToInt, use16BitDataType } = decodeConfig;
+  const { use16BitDataType } = decodeConfig;
+  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
     decodePromise.then(function (imageFrame: ImageFrame) {
-      debugger;
       // if it is desired to skip creating image, return the imageFrame
       // after the decode. This might be useful for some applications
       // that only need the decoded pixel data and not the image object
@@ -187,42 +146,43 @@ function createImage(
       // Decode task, point the image to it here.
       // We can't have done it within the thread incase it was a SharedArrayBuffer.
       let alreadyTyped = false;
+      // We can safely render color image in 8 bit, so no need to convert
+      if (options.targetBuffer && options.targetBuffer.type && !isColorImage) {
+        const {
+          arrayBuffer,
+          type,
+          offset: rawOffset = 0,
+          length: rawLength,
+        } = options.targetBuffer;
 
-      if (options.targetBuffer) {
-        let offset: number, length: number;
-        // If we have a target buffer, write to that instead. This helps reduce memory duplication.
+        const imageFrameLength = imageFrame.pixelDataLength;
 
-        ({ offset, length } = options.targetBuffer);
-        const { arrayBuffer, type } = options.targetBuffer;
+        const offset = rawOffset;
+        const length =
+          rawLength !== null && rawLength !== undefined
+            ? rawLength
+            : imageFrameLength - offset;
 
-        let TypedArrayConstructor;
+        const typedArrayConstructors = {
+          Uint8Array,
+          Uint16Array: use16BitDataType ? Uint16Array : undefined,
+          Int16Array: use16BitDataType ? Int16Array : undefined,
+          Float32Array,
+        };
 
-        if (length === null || length === undefined) {
-          length = imageFrame.pixelDataLength;
+        if (length !== imageFrame.pixelDataLength) {
+          throw new Error(
+            `target array for image does not have the same length (${length}) as the decoded image length (${imageFrame.pixelDataLength}).`
+          );
         }
 
-        if (offset === null || offset === undefined) {
-          offset = 0;
-        }
+        const TypedArrayConstructor = typedArrayConstructors[type];
 
-        switch (type) {
-          case 'Uint8Array':
-            TypedArrayConstructor = Uint8Array;
-            break;
-          case use16BitDataType && 'Uint16Array':
-            TypedArrayConstructor = Uint16Array;
-            break;
-          case use16BitDataType && 'Int16Array':
-            TypedArrayConstructor = Int16Array;
-            break;
-          case 'Float32Array':
-            TypedArrayConstructor = Float32Array;
-            break;
-          default:
-            throw new Error(
-              'target array for image does not have a valid type.'
-            );
-        }
+        // TypedArray.Set is api level and ~50x faster than copying elements even for
+        // Arrays of different types, which aren't simply memcpy ops.
+        const typedArray = arrayBuffer
+          ? new TypedArrayConstructor(arrayBuffer, offset, length)
+          : new TypedArrayConstructor(imageFrame.pixelData);
 
         if (length !== imageFrame.pixelDataLength) {
           throw new Error(
@@ -230,23 +190,12 @@ function createImage(
           );
         }
 
-        // TypedArray.Set is api level and ~50x faster than copying elements even for
-        // Arrays of different types, which aren't simply memcpy ops.
-        let typedArray;
-
-        if (arrayBuffer) {
-          typedArray = new TypedArrayConstructor(arrayBuffer, offset, length);
-        } else {
-          typedArray = new TypedArrayConstructor(imageFrame.pixelData);
-        }
-
-        // If need to scale, need to scale correct array.
         imageFrame.pixelData = typedArray;
         alreadyTyped = true;
       }
 
       if (!alreadyTyped) {
-        setPixelDataType(imageFrame, imageFrame.preScale);
+        setPixelDataType(imageFrame);
       }
 
       const imagePlaneModule: MetadataImagePlaneModule =
@@ -257,33 +206,34 @@ function createImage(
         cornerstone.metaData.get('modalityLutModule', imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
         cornerstone.metaData.get('sopCommonModule', imageId) || {};
-      const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
-
       if (isColorImage) {
         if (useRGBA) {
           // JPEGBaseline (8 bits) is already returning the pixel data in the right format (rgba)
           // because it's using a canvas to load and decode images.
-          if (!isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
+          if (
+            !isJPEGBaseline8BitColor(imageFrame, transferSyntax) &&
+            imageFrame.photometricInterpretation !== 'RGB'
+          ) {
             canvas.height = imageFrame.rows;
             canvas.width = imageFrame.columns;
-
             const context = canvas.getContext('2d');
-
             const imageData = context.createImageData(
               imageFrame.columns,
               imageFrame.rows
             );
 
             convertColorSpace(imageFrame, imageData.data, useRGBA);
-
             imageFrame.imageData = imageData;
             imageFrame.pixelData = imageData.data;
+            imageFrame.pixelDataLength = imageData.data.length;
           }
         } else if (isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
           // If we don't need the RGBA but the decoding is done with RGBA (the case
           // for JPEG Baseline 8 bit color), AND the option specifies to use RGB (no RGBA)
           // we need to remove the A channel from pixel data
-          const colorBuffer = new Uint8ClampedArray(
+          // Note: rendering libraries like vtk expect Uint8Array for RGB images
+          // otherwise they will convert them to Float32Array which might be slow
+          const colorBuffer = new Uint8Array(
             (imageFrame.pixelData.length / 4) * 3
           );
 
@@ -292,6 +242,8 @@ function createImage(
             imageFrame.pixelData,
             colorBuffer
           );
+
+          imageFrame.pixelDataLength = imageFrame.pixelData.length;
         } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
@@ -311,7 +263,10 @@ function createImage(
           );
 
           // remove the A from the RGBA of the imageFrame
-          imageFrame.pixelData = removeAFromRGBA(imageData.data, colorBuffer);
+          imageFrame.pixelData = new Uint8Array(
+            removeAFromRGBA(imageData.data, colorBuffer)
+          );
+          imageFrame.pixelDataLength = imageFrame.pixelData.length;
         }
 
         /** @todo check as any */
@@ -322,7 +277,7 @@ function createImage(
         imageFrame.largestPixelValue = minMax.max;
       }
 
-      const image = {
+      const image: DICOMLoaderIImage = {
         imageId,
         color: isColorImage,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
@@ -357,44 +312,57 @@ function createImage(
         floatPixelData: undefined,
         imageFrame,
         rgba: isColorImage && useRGBA,
-        getPixelData: undefined,
+        getPixelData: () => imageFrame.pixelData,
         getCanvas: undefined,
         numComps: undefined,
-      } as DICOMLoaderIImage;
+      };
 
-      // If pixel data is intrinsically floating 32 array, we convert it to int for
-      // display in cornerstone. For other cases when pixel data is typed as
-      // Float32Array for scaling; this conversion is not needed.
-      if (
-        imageFrame.pixelData instanceof Float32Array &&
-        convertFloatPixelDataToInt
-      ) {
-        const floatPixelData = imageFrame.pixelData;
-        const results = convertToIntPixelData(floatPixelData);
-
-        image.minPixelValue = results.min;
-        image.maxPixelValue = results.max;
-        image.slope = results.slope;
-        image.intercept = results.intercept;
-        image.floatPixelData = floatPixelData;
-        /** @todo check as any */
-        image.getPixelData = () => results.intPixelData as any;
-      } else {
-        /** @todo check as any */
-        image.getPixelData = () => imageFrame.pixelData as any;
-      }
-
+      window.image = image;
       if (image.color) {
         image.getCanvas = function () {
+          // the getCanvas function is used in the CPU rendering path
+          // and it is used to use the canvas api to draw the image
+          // instead of looping through the pixel data and drawing each pixel
+          // to use the canvas api, we need to convert the pixel data to a
+          // Uint8ClampedArray (which is what the canvas api expects)
+          // and then we can use the putImageData api to draw the image
+          // However, if the image already was loaded without the alpha channel
+          // we need to add the alpha channel back in
           if (lastImageIdDrawn === imageId) {
             return canvas;
           }
 
-          canvas.height = image.rows;
-          canvas.width = image.columns;
-          const context = canvas.getContext('2d');
+          const width = image.columns;
+          const height = image.rows;
 
-          context.putImageData(imageFrame.imageData, 0, 0);
+          canvas.height = height;
+          canvas.width = width;
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.createImageData(width, height);
+
+          const arr = imageFrame.pixelData;
+
+          if (arr.length === width * height * 4) {
+            for (let i = 0; i < arr.length; i++) {
+              imageData.data[i] = arr[i];
+            }
+          }
+          // Set pixel data for RGB array
+          else if (arr.length === width * height * 3) {
+            let j = 0;
+            for (let i = 0; i < arr.length; i += 3) {
+              imageData.data[j++] = arr[i];
+              imageData.data[j++] = arr[i + 1];
+              imageData.data[j++] = arr[i + 2];
+              imageData.data[j++] = 255;
+            }
+          }
+
+          imageFrame.pixelData = imageData.data;
+          imageFrame.pixelDataLength = imageData.data.length;
+
+          imageFrame.imageData = imageData;
+          ctx.putImageData(imageFrame.imageData, 0, 0);
           lastImageIdDrawn = imageId;
 
           return canvas;

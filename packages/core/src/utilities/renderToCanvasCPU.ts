@@ -11,11 +11,12 @@ import drawImageSync from '../RenderingEngine/helpers/cpuFallback/drawImageSync'
  * @param image - Cornerstone image object
  * @param canvas - Canvas element to render to
  */
-export default function renderToCanvas(
+export default function renderToCanvasCPU(
   canvas: HTMLCanvasElement,
   image: IImage,
-  modality?: string
-): void {
+  modality?: string,
+  renderingEngineId?: string
+): Promise<string> {
   const viewport = getDefaultViewport(canvas, image, modality);
 
   const enabledElement: CPUFallbackEnabledElement = {
@@ -28,5 +29,8 @@ export default function renderToCanvas(
   enabledElement.transform = calculateTransform(enabledElement);
 
   const invalidated = true;
-  drawImageSync(enabledElement, invalidated);
+  return new Promise((resolve, reject) => {
+    drawImageSync(enabledElement, invalidated);
+    resolve(image.imageId);
+  });
 }

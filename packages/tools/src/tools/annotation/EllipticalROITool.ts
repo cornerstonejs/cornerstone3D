@@ -927,7 +927,18 @@ class EllipticalROITool extends AnnotationTool {
 
       const isPreScaled = isViewportPreScaled(viewport, targetId);
 
-      const textLines = this._getTextLines(data, targetId, isPreScaled);
+      const isSuvScaled = this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      );
+
+      const textLines = this._getTextLines(
+        data,
+        targetId,
+        isPreScaled,
+        isSuvScaled
+      );
       if (!textLines || textLines.length === 0) {
         continue;
       }
@@ -971,13 +982,18 @@ class EllipticalROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _getTextLines = (data, targetId: string, isPreScaled: boolean): string[] => {
+  _getTextLines = (
+    data,
+    targetId: string,
+    isPreScaled: boolean,
+    isSuvScaled: boolean
+  ): string[] => {
     const cachedVolumeStats = data.cachedStats[targetId];
     const { area, mean, stdDev, max, isEmptyArea, Modality, areaUnit } =
       cachedVolumeStats;
 
     const textLines: string[] = [];
-    const unit = getModalityUnit(Modality, isPreScaled);
+    const unit = getModalityUnit(Modality, isPreScaled, isSuvScaled);
 
     if (area) {
       const areaLine = isEmptyArea

@@ -58,7 +58,7 @@ import resize from './helpers/cpuFallback/rendering/resize';
 
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { getShouldUseCPURendering } from '../init';
+import { getConfiguration, getShouldUseCPURendering } from '../init';
 import RequestType from '../enums/RequestType';
 import {
   StackViewportNewStackEventDetail,
@@ -68,7 +68,6 @@ import {
 import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
-import isRgbaSourceRgbDest from './helpers/isRgbaSourceRgbDest';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 
 const EPSILON = 1; // Slice Thickness
@@ -159,7 +158,12 @@ class StackViewport extends Viewport implements IStackViewport {
   private _cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
   // CPU fallback
   private useCPURendering: boolean;
-  private use16BitTexture = false;
+  // Since WebGL natively supports 8 bit int and Float32, we should check if
+  // extra configuration flags has been set to use native data type
+  // which would save a lot of memory and speed up rendering but it is not
+  // yet widely supported in all hardwares. This feature can be turned on
+  // by setting useNorm16Texture or preferSizeOverAccuracy in the configuration
+  private useNativeDataType = false;
   private cpuImagePixelData: number[];
   private cpuRenderingInvalidated: boolean;
   private csImage: IImage;
@@ -180,34 +184,12 @@ class StackViewport extends Viewport implements IStackViewport {
     this.scaling = {};
     this.modality = null;
     this.useCPURendering = getShouldUseCPURendering();
-    this.use16BitTexture = this._shouldUse16BitTexture();
+    this.useNativeDataType = this._shouldUseNativeDataType();
     this._configureRenderingPipeline();
 
-    if (this.useCPURendering) {
-      this._cpuFallbackEnabledElement = {
-        canvas: this.canvas,
-        renderingTools: {},
-        transform: new Transform(),
-        viewport: { rotation: 0 },
-      };
-    } else {
-      const renderer = this.getRenderer();
-      const camera = vtkCamera.newInstance();
-      renderer.setActiveCamera(camera);
-
-      const viewPlaneNormal = <Point3>[0, 0, -1];
-      this.initialViewUp = <Point3>[0, -1, 0];
-
-      camera.setDirectionOfProjection(
-        -viewPlaneNormal[0],
-        -viewPlaneNormal[1],
-        -viewPlaneNormal[2]
-      );
-      camera.setViewUp(...this.initialViewUp);
-      camera.setParallelProjection(true);
-      camera.setThicknessFromFocalPoint(0.1);
-      camera.setFreezeFocalPoint(true);
-    }
+    this.useCPURendering
+      ? this._resetCPUFallbackElement()
+      : this._resetGPUViewport();
 
     this.imageIds = [];
     this.currentImageIdIndex = 0;
@@ -218,21 +200,60 @@ class StackViewport extends Viewport implements IStackViewport {
     this.initializeElementDisabledHandler();
   }
 
-  static get useCustomRenderingPipeline(): boolean {
-    return getShouldUseCPURendering();
-  }
-
   public setUseCPURendering(value: boolean) {
     this.useCPURendering = value;
     this._configureRenderingPipeline();
   }
 
+  static get useCustomRenderingPipeline(): boolean {
+    return getShouldUseCPURendering();
+  }
+
+  public updateRenderingPipeline = () => {
+    this._configureRenderingPipeline();
+  };
+
   private _configureRenderingPipeline() {
+    this.useNativeDataType = this._shouldUseNativeDataType();
+    this.useCPURendering = getShouldUseCPURendering();
+
     for (const [funcName, functions] of Object.entries(
       this.renderingPipelineFunctions
     )) {
       this[funcName] = this.useCPURendering ? functions.cpu : functions.gpu;
     }
+
+    this.useCPURendering
+      ? this._resetCPUFallbackElement()
+      : this._resetGPUViewport();
+  }
+
+  private _resetCPUFallbackElement() {
+    this._cpuFallbackEnabledElement = {
+      canvas: this.canvas,
+      renderingTools: {},
+      transform: new Transform(),
+      viewport: { rotation: 0 },
+    };
+  }
+
+  private _resetGPUViewport() {
+    const renderer = this.getRenderer();
+    const camera = vtkCamera.newInstance();
+    renderer.setActiveCamera(camera);
+
+    const viewPlaneNormal = <Point3>[0, 0, -1];
+    this.initialViewUp = <Point3>[0, -1, 0];
+
+    camera.setDirectionOfProjection(
+      -viewPlaneNormal[0],
+      -viewPlaneNormal[1],
+      -viewPlaneNormal[2]
+    );
+    camera.setViewUp(...this.initialViewUp);
+    camera.setParallelProjection(true);
+    camera.setThicknessFromFocalPoint(0.1);
+    camera.setFreezeFocalPoint(true);
   }
 
   /**
@@ -504,6 +525,13 @@ class StackViewport extends Viewport implements IStackViewport {
 
     actor.setMapper(mapper);
 
+    const { preferSizeOverAccuracy } = getConfiguration().rendering;
+
+    if (preferSizeOverAccuracy) {
+      // @ts-ignore for now until vtk is updated
+      mapper.setPreferSizeOverAccuracy(true);
+    }
+
     if (imageData.getPointData().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false);
     }
@@ -588,8 +616,10 @@ class StackViewport extends Viewport implements IStackViewport {
       return imagePlaneModule;
     }
 
-    const [calibratedRowSpacing, calibratedColumnSpacing] =
-      calibratedPixelSpacing;
+    const {
+      rowPixelSpacing: calibratedRowSpacing,
+      columnPixelSpacing: calibratedColumnSpacing,
+    } = calibratedPixelSpacing;
 
     // Todo: This is necessary in general, but breaks an edge case when an image
     // is calibrated to some other spacing, and it gets calibrated BACK to the
@@ -628,7 +658,9 @@ class StackViewport extends Viewport implements IStackViewport {
           calibratedColumnSpacing / imagePlaneModule.columnPixelSpacing,
       };
 
-      // modify imagePlaneModule for actor to use calibrated spacing
+      // modify the calibration object to store the actual updated values applied
+      calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
+      // This updates the render copy
       imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
       imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
       return imagePlaneModule;
@@ -638,6 +670,8 @@ class StackViewport extends Viewport implements IStackViewport {
     const { imageData } = imageDataMetadata;
     const [columnPixelSpacing, rowPixelSpacing] = imageData.getSpacing();
 
+    // modify the calibration object to store the actual updated values applied
+    calibratedPixelSpacing.appliedSpacing = calibratedPixelSpacing;
     imagePlaneModule.rowPixelSpacing = calibratedRowSpacing;
     imagePlaneModule.columnPixelSpacing = calibratedColumnSpacing;
 
@@ -1192,7 +1226,8 @@ class StackViewport extends Viewport implements IStackViewport {
       this.voiRange &&
       this.voiRange.lower === voiRange.lower &&
       this.voiRange.upper === voiRange.upper &&
-      !forceRecreateLUTFunction
+      !forceRecreateLUTFunction &&
+      !this.stackInvalidated
     ) {
       return;
     }
@@ -1428,36 +1463,16 @@ class StackViewport extends Viewport implements IStackViewport {
     direction,
     dimensions,
     spacing,
-    bitsAllocated,
     numComps,
-    numVoxels,
-    TypedArray,
+    pixelArray,
   }): void {
-    let pixelArray;
-    switch (bitsAllocated) {
-      case 8:
-        pixelArray = new Uint8Array(numVoxels * numComps);
-        break;
-      case 16:
-        if (this.use16BitTexture) {
-          pixelArray = new TypedArray(numVoxels * numComps);
-        } else {
-          pixelArray = new Float32Array(numVoxels * numComps);
-        }
+    const values = new pixelArray.constructor(pixelArray.length);
 
-        break;
-      case 24:
-        pixelArray = new Uint8Array(numVoxels * 3 * numComps);
-
-        break;
-      default:
-        console.log('bit allocation not implemented');
-    }
-
+    // Todo: I guess nothing should be done for use16bit?
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
       numberOfComponents: numComps,
-      values: pixelArray,
+      values: values,
     });
 
     this._imageData = vtkImageData.newInstance();
@@ -1540,17 +1555,21 @@ class StackViewport extends Viewport implements IStackViewport {
     const columnCosines = direction.slice(3, 6);
     const dataType = imageData.getPointData().getScalars().getDataType();
 
+    // using epsilon comparison for float numbers comparison.
+    const isSameXSpacing = isEqual(xSpacing, image.columnPixelSpacing);
+    const isSameYSpacing = isEqual(ySpacing, image.rowPixelSpacing);
+
     // using spacing, size, and direction only for now
     return (
-      (xSpacing === image.rowPixelSpacing ||
-        (image.rowPixelSpacing === null && xSpacing === 1.0)) &&
-      (ySpacing === image.columnPixelSpacing ||
-        (image.columnPixelSpacing === null && ySpacing === 1.0)) &&
+      (isSameXSpacing ||
+        (image.columnPixelSpacing === null && xSpacing === 1.0)) &&
+      (isSameYSpacing ||
+        (image.rowPixelSpacing === null && ySpacing === 1.0)) &&
       xVoxels === image.columns &&
       yVoxels === image.rows &&
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
       isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines) &&
-      (!this.use16BitTexture ||
+      (!this.useNativeDataType ||
         dataType === image.getPixelData().constructor.name)
     );
   }
@@ -1571,8 +1590,12 @@ class StackViewport extends Viewport implements IStackViewport {
 
     this._imageData.setOrigin(origin);
 
-    // 1. Update the pixel data in the vtkImageData object with the pixelData
-    //    from the loaded Cornerstone image
+    // Update the pixel data in the vtkImageData object with the pixelData
+    // from the loaded Cornerstone image
+    this._updatePixelData(image);
+  }
+
+  private _updatePixelData(image: IImage) {
     const pixelData = image.getPixelData();
     const scalars = this._imageData.getPointData().getScalars();
     const scalarData = scalars.getData() as
@@ -1581,24 +1604,21 @@ class StackViewport extends Viewport implements IStackViewport {
       | Uint16Array
       | Int16Array;
 
-    if (image.rgba || isRgbaSourceRgbDest(pixelData, scalarData)) {
-      if (!image.rgba) {
-        console.warn('rgba not specified but data looks rgba ish', image);
+    // if the color image is loaded with CPU previously, it loads it
+    // with RGBA, and here we need to remove the A channel from the
+    // pixel data.
+    if (image.color && image.rgba) {
+      const newPixelData = new Uint8Array(image.columns * image.rows * 3);
+      for (let i = 0; i < image.columns * image.rows; i++) {
+        newPixelData[i * 3] = pixelData[i * 4];
+        newPixelData[i * 3 + 1] = pixelData[i * 4 + 1];
+        newPixelData[i * 3 + 2] = pixelData[i * 4 + 2];
       }
-      // if image is already cached with rgba for any reason (cpu fallback),
-      // we need to convert it to rgb for the pixel data set
-      // RGB case
-      const numPixels = pixelData.length / 4;
-
-      let rgbIndex = 0;
-      let index = 0;
-
-      for (let i = 0; i < numPixels; i++) {
-        scalarData[index++] = pixelData[rgbIndex++]; // red
-        scalarData[index++] = pixelData[rgbIndex++]; // green
-        scalarData[index++] = pixelData[rgbIndex++]; // blue
-        rgbIndex++; // skip alpha
-      }
+      // modify the image object to have the correct pixel data for later
+      // use.
+      image.rgba = false;
+      image.getPixelData = () => newPixelData;
+      scalarData.set(newPixelData);
     } else {
       scalarData.set(pixelData);
     }
@@ -1645,8 +1665,58 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        image.isPreScaled = image.preScale?.scaled;
-        this.csImage = image;
+        const pixelData = image.getPixelData();
+
+        // handle the case where the pixelData is a Float32Array
+        // CPU path cannot handle it, it should be converted to Uint16Array
+        // and via the Modality LUT we can display it properly
+        const preScale = image.preScale;
+        const scalingParams = preScale?.scalingParameters;
+
+        const scaledWithNonIntegers =
+          (preScale?.scaled && scalingParams?.rescaleIntercept % 1 !== 0) ||
+          scalingParams?.rescaleSlope % 1 !== 0;
+
+        if (pixelData instanceof Float32Array && scaledWithNonIntegers) {
+          const floatMinMax = {
+            min: image.maxPixelValue,
+            max: image.minPixelValue,
+          };
+          const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
+          const intRange = 65535;
+          const slope = floatRange / intRange;
+          const intercept = floatMinMax.min;
+          const numPixels = pixelData.length;
+          const intPixelData = new Uint16Array(numPixels);
+
+          let min = 65535;
+
+          let max = 0;
+
+          for (let i = 0; i < numPixels; i++) {
+            const rescaledPixel = Math.floor(
+              (pixelData[i] - intercept) / slope
+            );
+
+            intPixelData[i] = rescaledPixel;
+            min = Math.min(min, rescaledPixel);
+            max = Math.max(max, rescaledPixel);
+          }
+
+          // reset the properties since basically the image has changed
+          image.minPixelValue = min;
+          image.maxPixelValue = max;
+          image.slope = slope;
+          image.intercept = intercept;
+          image.getPixelData = () => intPixelData;
+
+          image.preScale = {
+            ...image.preScale,
+            scaled: false,
+          };
+        }
+
+        this._setCSImage(image);
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1665,6 +1735,12 @@ class StackViewport extends Viewport implements IStackViewport {
           image,
           this.modality,
           this._cpuFallbackEnabledElement.viewport.colormap
+        );
+
+        const { windowCenter, windowWidth } = viewport.voi;
+        this.voiRange = windowLevelUtil.toLowHighRange(
+          windowWidth,
+          windowCenter
         );
 
         this._cpuFallbackEnabledElement.image = image;
@@ -1741,14 +1817,19 @@ class StackViewport extends Viewport implements IStackViewport {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
-        targetBuffer: {
-          type: this.use16BitTexture ? undefined : 'Float32Array',
-        },
         preScale: {
           enabled: true,
         },
         useRGBA: true,
       };
+
+      const eventDetail: EventTypes.PreStackNewImageEventDetail = {
+        imageId,
+        imageIdIndex,
+        viewportId: this.id,
+        renderingEngineId: this.renderingEngineId,
+      };
+      triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
       imageLoadPoolManager.addRequest(
         sendRequest.bind(this, imageId, imageIdIndex, options),
@@ -1772,9 +1853,7 @@ class StackViewport extends Viewport implements IStackViewport {
           return;
         }
 
-        // cornerstone image
-        image.isPreScaled = image.preScale?.scaled;
-        this.csImage = image;
+        this._setCSImage(image);
 
         const eventDetail: EventTypes.StackNewImageEventDetail = {
           image,
@@ -1819,17 +1898,19 @@ class StackViewport extends Viewport implements IStackViewport {
       }
 
       /**
-       * CSWIL will automatically choose the array type when no targetBuffer
-       * is provided. When CSWIL is initialized, the use16bit should match
-       * the settings of cornerstone3D (either preferSizeOverAccuracy or norm16
-       * textures need to be enabled)
+       * If use16bittexture is specified, the CSWIL will automatically choose the
+       * array type when no targetBuffer is provided. When CSWIL is initialized,
+       * the use16bit should match the settings of cornerstone3D (either preferSizeOverAccuracy
+       * or norm16 textures need to be enabled)
+       *
+       * If use16bittexture is not specified, we force the Float32Array for now
        */
       const priority = -5;
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId };
       const options = {
         targetBuffer: {
-          type: this.use16BitTexture ? undefined : 'Float32Array',
+          type: this.useNativeDataType ? undefined : 'Float32Array',
         },
         preScale: {
           enabled: true,
@@ -1853,6 +1934,32 @@ class StackViewport extends Viewport implements IStackViewport {
       );
     });
   }
+
+  /**
+   * Renders the given Cornerstone image object in the viewport.
+   * This method is intended to be used by utilities to render
+   * an individual image, rather than by applications that want to display
+   * a complete image stack. If you want to load and display a complete
+   * image stack, use the setStack method instead of this one.
+   *
+   * The rendered image will appear in the viewport's element.
+   * Use this method if you have other means of loading and the
+   * cornerstone image object is already available.
+   *
+   * If you don't understand the difference between this method and
+   * setStack, you probably want to use setStack.
+   *
+   * @param image - The Cornerstone image object to render.
+   */
+  public renderImageObject = (image) => {
+    this._setCSImage(image);
+    this._updateActorToDisplayImageId(image);
+  };
+
+  private _setCSImage = (image) => {
+    image.isPreScaled = image.preScale?.scaled;
+    this.csImage = image;
+  };
 
   /**
    * It updates the volume actor with the retrieved cornerstone image.
@@ -1938,9 +2045,7 @@ class StackViewport extends Viewport implements IStackViewport {
       direction,
       dimensions,
       spacing,
-      bitsAllocated,
       numComps,
-      numVoxels,
       imagePixelModule,
     } = this._getImageDataMetadata(image);
 
@@ -1951,10 +2056,8 @@ class StackViewport extends Viewport implements IStackViewport {
       direction,
       dimensions,
       spacing,
-      bitsAllocated,
       numComps,
-      numVoxels,
-      TypedArray: image.getPixelData().constructor,
+      pixelArray: image.getPixelData(),
     });
 
     // Set the scalar data of the vtkImageData object from the Cornerstone
@@ -2025,6 +2128,10 @@ class StackViewport extends Viewport implements IStackViewport {
 
   private _isCurrentImagePTPrescaled() {
     if (this.modality !== 'PT' || !this.csImage.isPreScaled) {
+      return false;
+    }
+
+    if (!this.csImage.preScale?.scalingParameters?.suvbw) {
       return false;
     }
 
@@ -2580,9 +2687,24 @@ class StackViewport extends Viewport implements IStackViewport {
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
     const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
 
+    const calibratedPixelSpacing = metaData.get(
+      'calibratedPixelSpacing',
+      imageId
+    );
+
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
     };
+
+    if (calibratedPixelSpacing?.appliedSpacing) {
+      // Over-ride the image plane module spacing, as the measurement data
+      // has already been created with the calibrated spacing provided from
+      // down below inside calibrateIfNecessary
+      const { rowPixelSpacing, columnPixelSpacing } =
+        calibratedPixelSpacing.appliedSpacing;
+      newImagePlaneModule.rowPixelSpacing = rowPixelSpacing;
+      newImagePlaneModule.columnPixelSpacing = columnPixelSpacing;
+    }
 
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;

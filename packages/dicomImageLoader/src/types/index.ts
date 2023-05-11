@@ -1,4 +1,5 @@
 import ImageFrame from './ImageFrame';
+import PixelDataTypedArray from './PixelDataTypedArray';
 import {
   LoaderXhrRequestError,
   LoaderXhrRequestParams,
@@ -74,4 +75,5 @@ export {
   WebWorkerDeferredObject,
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
+  PixelDataTypedArray,
 };

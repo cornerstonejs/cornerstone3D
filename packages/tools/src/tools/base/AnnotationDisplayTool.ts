@@ -89,7 +89,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
       columnScale,
       imageId,
       imageData: calibratedImageData,
-      worldToIndex: noneCalibratedWorldToIndex,
+      worldToIndex: nonCalibratedWorldToIndex,
     } = evt.detail;
 
     const { viewport } = getEnabledElement(element);
@@ -141,7 +141,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
               vec4.transformMat4(
                 nonCalibratedIndexVec4,
                 p,
-                noneCalibratedWorldToIndex
+                nonCalibratedWorldToIndex
               );
               const calibratedIndex = [
                 columnScale * nonCalibratedIndexVec4[0],

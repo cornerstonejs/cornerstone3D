@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "0.3.0",
+  "version": "0.6.4",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -62,36 +62,12 @@
     "webpack:watch": "webpack --progress --watch  --config .webpack",
     "prepublishOnly": "yarn run build"
   },
-  "devDependencies": {
-    "@babel/plugin-proposal-object-rest-spread": "^7.14.7",
-    "@babel/runtime-corejs3": "^7.15.4",
-    "@types/emscripten": "^1.39.6",
-    "@types/jasmine": "^4.3.1",
-    "@types/karma": "^6.3.3",
-    "chai": "^4.3.4",
-    "concat": "^1.0.3",
-    "core-js": "^3.26.1",
-    "coveralls": "^3.1.1",
-    "docdash": "^1.2.0",
-    "exports-loader": "^3.0.0",
-    "fs-extra": "^10.0.0",
-    "jsdoc": "^3.6.7",
-    "karma-mocha": "^2.0.1",
-    "lodash": "^4.17.21",
-    "mocha": "^9.1.1",
-    "open-cli": "^7.0.1",
-    "puppeteer": "^10.2.0",
-    "shx": "^0.3.3"
-  },
   "dependencies": {
-    "@babel/eslint-parser": "^7.19.1",
     "@cornerstonejs/codec-charls": "^1.2.3",
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.2",
-    "@cornerstonejs/core": "^0.31.0",
-    "coverage-istanbul-loader": "^3.0.5",
-    "date-format": "^4.0.14",
+    "@cornerstonejs/core": "^0.46.2",
     "dicom-parser": "^1.8.9",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"

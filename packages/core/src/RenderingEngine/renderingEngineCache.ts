@@ -36,6 +36,21 @@ const renderingEngineCache = {
     const renderingEngineIds = Object.keys(cache);
     const renderingEngines = renderingEngineIds.map((id) => cache[id]);
 
+    // sort the rendering engines so that the ones that start with _
+    // are at the end of the array. The reason is for not breaking
+    // the code that used getRenderingEngines(), but since we moved
+    // the renderToCanvas utility to use GPU hence it needs a
+    // rendering engine and we don't want to use the default one.
+    renderingEngines.sort((a, b) => {
+      if (a.id[0] === '_' && b.id[0] !== '_') {
+        return 1;
+      } else if (a.id[0] !== '_' && b.id[0] === '_') {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
+
     return renderingEngines;
   },
 };

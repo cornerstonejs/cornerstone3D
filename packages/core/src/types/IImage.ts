@@ -2,6 +2,14 @@ import CPUFallbackLUT from './CPUFallbackLUT';
 import CPUFallbackColormap from './CPUFallbackColormap';
 import CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
 
+type PixelDataTypedArray =
+  | Float32Array
+  | Int16Array
+  | Uint16Array
+  | Uint8Array
+  | Int8Array
+  | Uint8ClampedArray;
+
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
  */
@@ -14,9 +22,9 @@ interface IImage {
   /** preScale object */
   preScale?: {
     /** boolean flag to indicate whether the image has been scaled */
-    scaled: boolean;
+    scaled?: boolean;
     /** scaling parameters */
-    scalingParameters: {
+    scalingParameters?: {
       /** modality of the image */
       modality?: string;
       /** rescale slop */
@@ -42,7 +50,7 @@ interface IImage {
   /** voiLUTFunction from metadata */
   voiLUTFunction: string;
   /** function that returns the pixelData as an array */
-  getPixelData: () => Array<number>;
+  getPixelData: () => PixelDataTypedArray;
   getCanvas: () => HTMLCanvasElement;
   /** image number of rows */
   rows: number;

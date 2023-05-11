@@ -1,5 +1,6 @@
 import { getGPUTier } from 'detect-gpu';
 import { SharedArrayBufferModes } from './enums';
+import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 let useSharedArrayBuffer = true;
 let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
@@ -10,8 +11,9 @@ import { Cornerstone3DConfig } from './types';
 const defaultConfig = {
   detectGPU: {},
   rendering: {
-    preferSizeOverAccuracy: false,
     useCPURendering: false,
+    // GPU rendering options
+    preferSizeOverAccuracy: false,
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,
   },
@@ -22,8 +24,9 @@ const defaultConfig = {
 let config = {
   detectGPU: {},
   rendering: {
-    preferSizeOverAccuracy: false,
     useCPURendering: false,
+    // GPU rendering options
+    preferSizeOverAccuracy: false,
     useNorm16Texture: false, // _hasNorm16TextureSupport(),
     strictZSpacingForVolumeViewport: true,
   },
@@ -49,18 +52,10 @@ function _getGLContext(): RenderingContext {
 function _hasActiveWebGLContext() {
   const gl = _getGLContext();
 
-  // Report the result.
-  if (gl && (gl as WebGL2RenderingContext).getExtension) {
-    const ext = (gl as WebGL2RenderingContext).getExtension(
-      'EXT_texture_norm16'
-    );
-
-    if (ext) {
-      return true;
-    }
-  }
-
-  return false;
+  // Check if the context is either WebGLRenderingContext or WebGL2RenderingContext
+  return (
+    gl instanceof WebGLRenderingContext || gl instanceof WebGL2RenderingContext
+  );
 }
 
 function hasSharedArrayBuffer() {
@@ -76,21 +71,23 @@ function hasSharedArrayBuffer() {
   }
 }
 
-function _hasNorm16TextureSupport() {
-  const gl = _getGLContext();
+// Todo: commenting this out until proper support for int16 textures
+// are added to browsers, current implementation is buggy
+// function _hasNorm16TextureSupport() {
+//   const gl = _getGLContext();
 
-  if (gl) {
-    const ext = (gl as WebGL2RenderingContext).getExtension(
-      'EXT_texture_norm16'
-    );
+//   if (gl) {
+//     const ext = (gl as WebGL2RenderingContext).getExtension(
+//       'EXT_texture_norm16'
+//     );
 
-    if (ext) {
-      return true;
-    }
-  }
+//     if (ext) {
+//       return true;
+//     }
+//   }
 
-  return false;
-}
+//   return false;
+// }
 
 /**
  * Initialize the cornerstone-core. If the browser has a webgl context and
@@ -148,6 +145,13 @@ async function init(configuration = {}): Promise<boolean> {
 function setUseCPURendering(status: boolean): void {
   config.rendering.useCPURendering = status;
   csRenderInitialized = true;
+  _updateRenderingPipelinesForAllViewports();
+}
+
+function setPreferSizeOverAccuracy(status: boolean): void {
+  config.rendering.preferSizeOverAccuracy = status;
+  csRenderInitialized = true;
+  _updateRenderingPipelinesForAllViewports();
 }
 
 /**
@@ -158,6 +162,7 @@ function setUseCPURendering(status: boolean): void {
  */
 function resetUseCPURendering(): void {
   config.rendering.useCPURendering = !_hasActiveWebGLContext();
+  _updateRenderingPipelinesForAllViewports();
 }
 
 /**
@@ -233,6 +238,20 @@ function getConfiguration(): Cornerstone3DConfig {
 
 function setConfiguration(c: Cornerstone3DConfig) {
   config = c;
+  _updateRenderingPipelinesForAllViewports();
+}
+
+/**
+ * Update rendering pipelines for all viewports in all rendering engines.
+ * @returns {void}
+ * @category Initialization
+ */
+function _updateRenderingPipelinesForAllViewports(): void {
+  getRenderingEngines().forEach((engine) =>
+    engine
+      .getViewports()
+      .forEach((viewport) => viewport.updateRenderingPipeline?.())
+  );
 }
 
 export {
@@ -242,6 +261,7 @@ export {
   isCornerstoneInitialized,
   setUseCPURendering,
   setUseSharedArrayBuffer,
+  setPreferSizeOverAccuracy,
   resetUseCPURendering,
   resetUseSharedArrayBuffer,
   getConfiguration,

@@ -14,6 +14,9 @@
     },
     "tools-advanced": {
       "description": "Advanced usage of Tools library"
+    },
+    "dicom-image-loader": {
+      "description": "usage of cornerstone dicom image loader"
     }
   },
   "examplesByCategory": {
@@ -85,6 +88,10 @@
       "dynamicCINETool": {
         "name": "Load a dynamic 4D data",
         "description": "Demonstrates how you can render 4D data with cornerstone 3d"
+      },
+      "renderToCanvas": {
+        "name": "Render To Canvas",
+        "description": "Demonstrates how to use the api to render to a canvas directly"
       }
     },
     "core-advanced": {
@@ -259,6 +266,12 @@
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
         "description": "Demostrates generating a 3D volume from 4D data using subtract, average or sum."
+      }
+    },
+    "dicom-image-loader": {
+      "dicomImageLoaderWADOURI": {
+        "name": "WADO-URI (DICOM P10)",
+        "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
       }
     }
   }

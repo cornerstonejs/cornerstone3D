@@ -18,6 +18,12 @@ type PTScaling = {
   suvbwToSuvlbm?: number;
   /** suv body weight to suv body surface area */
   suvbwToSuvbsa?: number;
+  /** SUV body weight */
+  suvbw?: number;
+  /** SUV lean body mass */
+  suvlbm?: number;
+  /** SUV body surface area */
+  suvbsa?: number;
 };
 
 type Scaling = {
