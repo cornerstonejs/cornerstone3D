@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.47.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.46.2...@cornerstonejs/core@0.47.0) (2023-05-12)
+
+### Bug Fixes
+
+- **stackViewport:** better error handling for disabled viewports ([#605](https://github.com/cornerstonejs/cornerstone3D-beta/issues/605)) ([2b144a2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2b144a2ae58d27d51935a674497437cabb7a4a3d))
+
+### Features
+
+- **stackViewport colormap:** setColormapGPU implementation for Stack Viewport ([#549](https://github.com/cornerstonejs/cornerstone3D-beta/issues/549)) ([e282149](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e28214940b71a023fd563d9ab4742562355782ef))
+
 ## [0.46.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.46.1...@cornerstonejs/core@0.46.2) (2023-05-10)
 
 ### Bug Fixes

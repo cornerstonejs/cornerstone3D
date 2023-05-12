@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.67.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.67.2...@cornerstonejs/tools@0.67.3) (2023-05-12)
+
+### Bug Fixes
+
+- **stackViewport:** better error handling for disabled viewports ([#605](https://github.com/cornerstonejs/cornerstone3D-beta/issues/605)) ([2b144a2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2b144a2ae58d27d51935a674497437cabb7a4a3d))
+
 ## [0.67.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.67.1...@cornerstonejs/tools@0.67.2) (2023-05-10)
 
 **Note:** Version bump only for package @cornerstonejs/tools
