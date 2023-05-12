@@ -1536,8 +1536,8 @@ class StackViewport extends Viewport implements IStackViewport {
     if (this.isDisabled) {
       throw new Error(
         'The stack viewport has been destroyed and is no longer usable. Renderings will not be performed. If you ' +
-          'are using the same viewportId and has re-enabled the viewport, you need to grab the new viewport instance ' +
-          'using renderingEngine.getViewport(viewportId), instead of using your lexical reference to the viewport instance.'
+          'are using the same viewportId and have re-enabled the viewport, you need to grab the new viewport instance ' +
+          'using renderingEngine.getViewport(viewportId), instead of using your lexical scoped reference to the viewport instance.'
       );
     }
   }
