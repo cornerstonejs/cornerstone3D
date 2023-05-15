@@ -95,8 +95,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
         worldPos,
-        viewPlaneNormal,
-        viewUp
+        viewPlaneNormal
       );
     }
 

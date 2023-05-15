@@ -742,7 +742,7 @@ enum GeometryType {
 }
 
 // @public (undocumented)
-function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3, viewUp: Point3): string;
+function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3): string;
 
 // @public (undocumented)
 function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
