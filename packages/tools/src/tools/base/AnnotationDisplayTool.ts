@@ -189,8 +189,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
       referencedImageId = utilities.getClosestImageId(
         imageVolume,
         worldPos,
-        viewPlaneNormal,
-        viewUp
+        viewPlaneNormal
       );
     }
 
