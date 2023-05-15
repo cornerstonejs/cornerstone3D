@@ -336,18 +336,12 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /**
-   * Uses viewport camera and volume actor to decide if the viewport
-   * is looking at the volume in the direction of acquisition (imageIds).
-   * If so, it uses the origin and focalPoint to calculate the slice index.
+   * Uses the origin and focalPoint to calculate the slice index.
    * Todo: This only works if the imageIds are properly sorted
    *
    * @returns The slice index
    */
   public getCurrentImageIdIndex = (): number | undefined => {
-    if (!this.getCurrentImageId()) {
-      return;
-    }
-
     const { viewPlaneNormal, focalPoint } = this.getCamera();
 
     // Todo: handle scenario of fusion of multiple volumes
