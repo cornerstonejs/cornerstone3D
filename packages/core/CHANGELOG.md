@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.47.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.47.0...@cornerstonejs/core@0.47.1) (2023-05-15)
+
+### Bug Fixes
+
+- **Circle and VolumeViewport:** fixes to ensure measurements are rendered properly ([#609](https://github.com/cornerstonejs/cornerstone3D-beta/issues/609)) ([293e6b1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/293e6b18e9d9306043aac8e23a5955b6e44fad0d))
+
 # [0.47.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.46.2...@cornerstonejs/core@0.47.0) (2023-05-12)
 
 ### Bug Fixes
