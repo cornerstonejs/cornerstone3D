@@ -12,7 +12,7 @@ import type {
   Point3,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import { actorIsA } from '../utilities';
+import { actorIsA, getClosestImageId } from '../utilities';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import BaseVolumeViewport from './BaseVolumeViewport';
 
@@ -344,7 +344,27 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns The slice index
    */
   public getCurrentImageIdIndex = (): number | undefined => {
-    return this._getImageIdIndex();
+    if (!this.getCurrentImageId()) {
+      return;
+    }
+
+    const { viewPlaneNormal, focalPoint } = this.getCamera();
+
+    // Todo: handle scenario of fusion of multiple volumes
+    // we cannot only check number of actors, because we might have
+    // segmentations ...
+    const { origin, spacing } = this.getImageData();
+
+    // how many steps are from the origin to the focal point in the
+    // normal direction
+    const spacingInNormal = spacing[2];
+    const sub = vec3.create();
+    vec3.sub(sub, focalPoint, origin);
+    const distance = vec3.dot(sub, viewPlaneNormal);
+
+    // divide by the spacing in the normal direction to get the
+    // number of steps, and subtract 1 to get the index
+    return Math.round(Math.abs(distance) / spacingInNormal);
   };
 
   /**
@@ -356,10 +376,12 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns ImageId
    */
   public getCurrentImageId = (): string | undefined => {
-    const index = this._getImageIdIndex();
-
-    if (isNaN(index)) {
-      return;
+    if (this.getActors().length > 1) {
+      console.warn(
+        `Using the first/default actor of ${
+          this.getActors().length
+        } actors for getCurrentImageId.`
+      );
     }
 
     const actorEntry = this.getDefaultActor();
@@ -374,44 +396,9 @@ class VolumeViewport extends BaseVolumeViewport {
       return;
     }
 
-    const imageIds = volume.imageIds;
-
-    return imageIds[index];
-  };
-
-  private _getImageIdIndex = () => {
     const { viewPlaneNormal, focalPoint } = this.getCamera();
 
-    // Todo: handle scenario of fusion of multiple volumes
-    // we cannot only check number of actors, because we might have
-    // segmentations ...
-    const { direction, origin, spacing } = this.getImageData();
-
-    // get the last 3 components of the direction - axis normal
-    const dir = direction.slice(direction.length - 3);
-
-    const dot = Math.abs(
-      dir[0] * viewPlaneNormal[0] +
-        dir[1] * viewPlaneNormal[1] +
-        dir[2] * viewPlaneNormal[2]
-    );
-
-    // if dot is not 1 or -1 return null since it means
-    // viewport is not looking at the image acquisition plane
-    if (dot - 1 > EPSILON) {
-      return;
-    }
-
-    // how many steps are from the origin to the focal point in the
-    // normal direction
-    const spacingInNormal = spacing[2];
-    const sub = vec3.create();
-    vec3.sub(sub, focalPoint, origin);
-    const distance = vec3.dot(sub, viewPlaneNormal);
-
-    // divide by the spacing in the normal direction to get the
-    // number of steps, and subtract 1 to get the index
-    return Math.round(Math.abs(distance) / spacingInNormal);
+    return getClosestImageId(volume, focalPoint, viewPlaneNormal);
   };
 
   getRotation = (): number => 0;
