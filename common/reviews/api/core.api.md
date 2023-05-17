@@ -766,6 +766,9 @@ export function getEnabledElementByIds(viewportId: string, renderingEngineId: st
 export function getEnabledElements(): IEnabledElement[];
 
 // @public (undocumented)
+function getImageLegacy(element: HTMLDivElement): Types.IImage | undefined;
+
+// @public (undocumented)
 function getImageSliceDataForVolumeViewport(viewport: IVolumeViewport): ImageSliceData;
 
 // @public (undocumented)
@@ -1551,6 +1554,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
+    getImage: () => IImage;
+    // (undocumented)
     getImageData(): IImageData | CPUIImageData;
     // (undocumented)
     getImageIds: () => string[];
@@ -2197,6 +2202,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string | undefined;
     // (undocumented)
+    getImage: () => IImage;
+    // (undocumented)
     getImageData: () => IImageData | CPUIImageData;
     // (undocumented)
     getImageIds: () => Array<string>;
@@ -2443,7 +2450,8 @@ declare namespace utilities {
         deepMerge,
         getScalingParameters,
         getScalarDataType,
-        colormap
+        colormap,
+        getImageLegacy
     }
 }
 export { utilities }

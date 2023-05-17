@@ -8,6 +8,7 @@ import Point3 from './Point3';
 import { Scaling } from './ScalingParameters';
 import StackViewportProperties from './StackViewportProperties';
 import { ColormapRegistration } from './Colormap';
+import IImage from './IImage';
 
 /**
  * Interface for Stack Viewport
@@ -84,6 +85,10 @@ export default interface IStackViewport extends IViewport {
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
    */
   getImageData(): IImageData | CPUIImageData;
+  /**
+   * Returns the raw/loaded image being shown inside the stack viewport.
+   */
+  getImage: () => IImage;
   /**
    * Reset the viewport properties to the default values
    */

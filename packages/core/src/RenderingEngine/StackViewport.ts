@@ -509,6 +509,13 @@ class StackViewport extends Viewport implements IStackViewport {
   };
 
   /**
+   * Returns the raw/loaded image being shown inside the stack viewport.
+   */
+  public getImage = (): IImage => {
+    return this.csImage;
+  };
+
+  /**
    * Creates imageMapper based on the provided vtkImageData and also creates
    * the imageSliceActor and connects it to the imageMapper.
    * For color stack images, it sets the independent components to be false which

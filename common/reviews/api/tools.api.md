@@ -2804,6 +2804,7 @@ interface IStackViewport extends IViewport {
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
     getFrameOfReferenceUID: () => string;
+    getImage: () => IImage;
     getImageData(): IImageData | CPUIImageData;
     getImageIds: () => string[];
     getProperties: () => StackViewportProperties;
