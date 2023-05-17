@@ -25,7 +25,10 @@ import { state } from '../../store';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { AnnotationCompletedEventDetail } from '../../types/EventTypes';
+import {
+  AnnotationCompletedEventDetail,
+  AnnotationModifiedEventDetail,
+} from '../../types/EventTypes';
 
 import {
   resetElementCursor,
@@ -310,7 +313,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
+    const { viewportId, renderingEngineId, renderingEngine } = enabledElement;
 
     if (
       this.isHandleOutsideImage &&
@@ -346,6 +349,16 @@ class ArrowAnnotateTool extends AnnotationTool {
           viewportIdsToRender
         );
       });
+    } else {
+      const eventType = Events.ANNOTATION_MODIFIED;
+
+      const eventDetail: AnnotationModifiedEventDetail = {
+        annotation,
+        viewportId,
+        renderingEngineId,
+      };
+
+      triggerEvent(eventTarget, eventType, eventDetail);
     }
 
     this.editData = null;
