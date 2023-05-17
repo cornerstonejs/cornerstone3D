@@ -69,21 +69,13 @@ import cache from '../cache';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
+import {
+  PixelDataTypedArray,
+  ImagePixelModule,
+  ImagePlaneModule,
+} from '../types';
 
 const EPSILON = 1; // Slice Thickness
-
-interface ImagePixelModule {
-  bitsAllocated: number;
-  bitsStored: number;
-  samplesPerPixel: number;
-  highBit: number;
-  photometricInterpretation: string;
-  pixelRepresentation: string;
-  windowWidth: number | number[];
-  windowCenter: number | number[];
-  voiLUTFunction: VOILUTFunctionType;
-  modality: string;
-}
 
 interface ImageDataMetaData {
   bitsAllocated: number;
@@ -93,25 +85,9 @@ interface ImageDataMetaData {
   dimensions: Point3;
   spacing: Point3;
   numVoxels: number;
-  imagePlaneModule: unknown;
+  imagePlaneModule: ImagePlaneModule;
   imagePixelModule: ImagePixelModule;
 }
-
-interface ImagePlaneModule {
-  columnCosines?: Point3;
-  columnPixelSpacing?: number;
-  imageOrientationPatient?: Float32Array;
-  imagePositionPatient?: Point3;
-  pixelSpacing?: Point2;
-  rowCosines?: Point3;
-  rowPixelSpacing?: number;
-  sliceLocation?: number;
-  sliceThickness?: number;
-  frameOfReferenceUID: string;
-  columns: number;
-  rows: number;
-}
-
 // TODO This needs to be exposed as its published to consumers.
 type CalibrationEvent = {
   rowScale: number;
@@ -164,7 +140,7 @@ class StackViewport extends Viewport implements IStackViewport {
   // yet widely supported in all hardwares. This feature can be turned on
   // by setting useNorm16Texture or preferSizeOverAccuracy in the configuration
   private useNativeDataType = false;
-  private cpuImagePixelData: number[];
+  private cpuImagePixelData: PixelDataTypedArray;
   private cpuRenderingInvalidated: boolean;
   private csImage: IImage;
 
@@ -1750,49 +1726,7 @@ class StackViewport extends Viewport implements IStackViewport {
 
         triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
-        const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
-
-        const viewport = getDefaultViewport(
-          this.canvas,
-          image,
-          this.modality,
-          this._cpuFallbackEnabledElement.viewport.colormap
-        );
-
-        const { windowCenter, windowWidth } = viewport.voi;
-        this.voiRange = windowLevelUtil.toLowHighRange(
-          windowWidth,
-          windowCenter
-        );
-
-        this._cpuFallbackEnabledElement.image = image;
-        this._cpuFallbackEnabledElement.metadata = {
-          ...metadata,
-        };
-        this.cpuImagePixelData = image.getPixelData();
-
-        const viewportSettingToUse = Object.assign(
-          {},
-          viewport,
-          this._cpuFallbackEnabledElement.viewport
-        );
-
-        // Important: this.stackInvalidated is different than cpuRenderingInvalidated. The
-        // former is being used to maintain the previous state of the viewport
-        // in the same stack, the latter is used to trigger drawImageSync
-        this._cpuFallbackEnabledElement.viewport = this.stackInvalidated
-          ? viewport
-          : viewportSettingToUse;
-
-        // used the previous state of the viewport, then stackInvalidated is set to false
-        this.stackInvalidated = false;
-
-        // new viewport is set to the current viewport, then cpuRenderingInvalidated is set to true
-        this.cpuRenderingInvalidated = true;
-
-        this._cpuFallbackEnabledElement.transform = calculateTransform(
-          this._cpuFallbackEnabledElement
-        );
+        this._updateToDisplayImageCPU(image);
 
         // Todo: trigger an event to allow applications to hook into END of loading state
         // Currently we use loadHandlerManagers for this
@@ -1975,13 +1909,61 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   public renderImageObject = (image) => {
     this._setCSImage(image);
-    this._updateActorToDisplayImageId(image);
+
+    const renderFn = this.useCPURendering
+      ? this._updateToDisplayImageCPU
+      : this._updateActorToDisplayImageId;
+
+    renderFn.call(this, image);
   };
 
   private _setCSImage = (image) => {
     image.isPreScaled = image.preScale?.scaled;
     this.csImage = image;
   };
+
+  private _updateToDisplayImageCPU(image: IImage) {
+    const metadata = this._getImageDataMetadata(image) as ImageDataMetaData;
+
+    const viewport = getDefaultViewport(
+      this.canvas,
+      image,
+      this.modality,
+      this._cpuFallbackEnabledElement.viewport.colormap
+    );
+
+    const { windowCenter, windowWidth } = viewport.voi;
+    this.voiRange = windowLevelUtil.toLowHighRange(windowWidth, windowCenter);
+
+    this._cpuFallbackEnabledElement.image = image;
+    this._cpuFallbackEnabledElement.metadata = {
+      ...metadata,
+    };
+    this.cpuImagePixelData = image.getPixelData();
+
+    const viewportSettingToUse = Object.assign(
+      {},
+      viewport,
+      this._cpuFallbackEnabledElement.viewport
+    );
+
+    // Important: this.stackInvalidated is different than cpuRenderingInvalidated. The
+    // former is being used to maintain the previous state of the viewport
+    // in the same stack, the latter is used to trigger drawImageSync
+    this._cpuFallbackEnabledElement.viewport = this.stackInvalidated
+      ? viewport
+      : viewportSettingToUse;
+
+    // used the previous state of the viewport, then stackInvalidated is set to false
+    this.stackInvalidated = false;
+
+    // new viewport is set to the current viewport, then cpuRenderingInvalidated is set to true
+    this.cpuRenderingInvalidated = true;
+
+    this._cpuFallbackEnabledElement.transform = calculateTransform(
+      this._cpuFallbackEnabledElement
+    );
+  }
 
   /**
    * It updates the volume actor with the retrieved cornerstone image.
