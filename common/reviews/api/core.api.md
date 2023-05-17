@@ -1548,13 +1548,13 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
+    getCornerstoneImage: () => IImage;
+    // (undocumented)
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
-    // (undocumented)
-    getImage: () => IImage;
     // (undocumented)
     getImageData(): IImageData | CPUIImageData;
     // (undocumented)
@@ -2194,6 +2194,8 @@ export class StackViewport extends Viewport implements IStackViewport {
     // (undocumented)
     getCamera: () => ICamera;
     // (undocumented)
+    getCornerstoneImage: () => IImage;
+    // (undocumented)
     getCurrentImageId: () => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
@@ -2201,8 +2203,6 @@ export class StackViewport extends Viewport implements IStackViewport {
     getDefaultActor: () => ActorEntry;
     // (undocumented)
     getFrameOfReferenceUID: () => string | undefined;
-    // (undocumented)
-    getImage: () => IImage;
     // (undocumented)
     getImageData: () => IImageData | CPUIImageData;
     // (undocumented)

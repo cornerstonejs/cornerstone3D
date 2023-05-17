@@ -511,7 +511,7 @@ class StackViewport extends Viewport implements IStackViewport {
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
    */
-  public getImage = (): IImage => {
+  public getCornerstoneImage = (): IImage => {
     return this.csImage;
   };
 

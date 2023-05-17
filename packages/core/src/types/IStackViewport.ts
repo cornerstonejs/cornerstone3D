@@ -88,7 +88,7 @@ export default interface IStackViewport extends IViewport {
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
    */
-  getImage: () => IImage;
+  getCornerstoneImage: () => IImage;
   /**
    * Reset the viewport properties to the default values
    */

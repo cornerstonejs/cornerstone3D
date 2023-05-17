@@ -23,7 +23,7 @@ function getImageLegacy(element: HTMLDivElement): Types.IImage | undefined {
     );
   }
 
-  return viewport.getImage();
+  return viewport.getCornerstoneImage();
 }
 
 export default getImageLegacy;
