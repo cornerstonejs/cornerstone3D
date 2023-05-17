@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.47.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.47.1...@cornerstonejs/core@0.47.2) (2023-05-17)
+
+### Bug Fixes
+
+- **utilities:** added getImageLegacy for migrations of cornerstone legacy's getImage ([#613](https://github.com/cornerstonejs/cornerstone3D-beta/issues/613)) ([c4aa974](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c4aa9747270d3a8551887d8bb503e88ff7f3e142))
+
 ## [0.47.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.47.0...@cornerstonejs/core@0.47.1) (2023-05-15)
 
 ### Bug Fixes

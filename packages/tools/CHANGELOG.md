@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.67.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.67.4...@cornerstonejs/tools@0.67.5) (2023-05-17)
+
+### Bug Fixes
+
+- **arrowTool:** trigger ANNOTATION_MODIFIED event on ArrowAnnotate Tool ([#610](https://github.com/cornerstonejs/cornerstone3D-beta/issues/610)) ([b67c3b8](https://github.com/cornerstonejs/cornerstone3D-beta/commit/b67c3b860196d0d54021d1652b5a128ad97a62d4))
+
 ## [0.67.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/tools@0.67.3...@cornerstonejs/tools@0.67.4) (2023-05-15)
 
 ### Bug Fixes
