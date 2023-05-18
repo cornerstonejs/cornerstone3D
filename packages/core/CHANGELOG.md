@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.47.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.47.2...@cornerstonejs/core@0.47.3) (2023-05-18)
+
+### Bug Fixes
+
+- **VolumeViewport:** added null actorEntry check in VolumeViewport.getCurrentImageId ([#618](https://github.com/cornerstonejs/cornerstone3D-beta/issues/618)) ([e5fd29b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/e5fd29ba3708e655c6f3eb1ab04b7b6268496884))
+
 ## [0.47.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/core@0.47.1...@cornerstonejs/core@0.47.2) (2023-05-17)
 
 ### Bug Fixes
