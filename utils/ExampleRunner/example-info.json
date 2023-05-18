@@ -98,6 +98,10 @@
       "volumePriorityLoading": {
         "name": "Prioritizing Slices during Volume Loading",
         "description": "Demonstrates how to customize the slice loading order using the streaming-image volume loader"
+      },
+      "programaticPanZoom": {
+        "name": "Programmatic Pan/Zoom",
+        "description": "Demonstrates how to programmatically pan/zoom a stack viewport. It can be used for setting initial display area and presentation state."
       }
     },
     "tools-basic": {

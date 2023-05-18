@@ -1,5 +1,6 @@
 import { ByteArray } from 'dicom-parser';
 import { ImageFrame } from '../../types';
+import external from '../../externalModules';
 
 function convertLUTto8Bit(lut: number[], shift: number) {
   const numEntries = lut.length;
@@ -26,9 +27,40 @@ export default function (
 ): void {
   const numPixels = imageFrame.columns * imageFrame.rows;
   const pixelData = imageFrame.pixelData;
-  const rData = imageFrame.redPaletteColorLookupTableData;
-  const gData = imageFrame.greenPaletteColorLookupTableData;
-  const bData = imageFrame.bluePaletteColorLookupTableData;
+  let rData = imageFrame.redPaletteColorLookupTableData;
+
+  if (!rData) {
+    // request from metadata provider since it might grab it from bulkdataURI
+    rData = external.cornerstone.metaData.get(
+      'imagePixelModule',
+      imageFrame.imageId
+    )?.redPaletteColorLookupTableData;
+  }
+
+  let gData = imageFrame.greenPaletteColorLookupTableData;
+
+  if (!gData) {
+    gData = external.cornerstone.metaData.get(
+      'imagePixelModule',
+      imageFrame.imageId
+    )?.greenPaletteColorLookupTableData;
+  }
+
+  let bData = imageFrame.bluePaletteColorLookupTableData;
+
+  if (!bData) {
+    bData = external.cornerstone.metaData.get(
+      'imagePixelModule',
+      imageFrame.imageId
+    )?.bluePaletteColorLookupTableData;
+  }
+
+  if (!rData || !gData || !bData) {
+    throw new Error(
+      'The image does not have a complete color palette. R, G, and B palette data are required.'
+    );
+  }
+
   const len = imageFrame.redPaletteColorLookupTableData.length;
 
   let palIndex = 0;
