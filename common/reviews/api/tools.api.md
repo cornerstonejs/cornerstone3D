@@ -5588,6 +5588,8 @@ export class ZoomTool extends BaseTool {
     // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
+    mouseUpCallback: () => void;
+    // (undocumented)
     _panCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     _pinchCallback(evt: EventTypes_2.InteractionEventType): void;
@@ -5595,6 +5597,8 @@ export class ZoomTool extends BaseTool {
     preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     preTouchStartCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    setInitialMousePosition: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     static toolName: any;
     // (undocumented)

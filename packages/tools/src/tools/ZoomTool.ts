@@ -42,7 +42,7 @@ class ZoomTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
+  setInitialMousePosition = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const worldPos = currentPoints.world;
@@ -64,6 +64,10 @@ class ZoomTool extends BaseTool {
     dirVec = vec3.normalize(vec3.create(), dirVec);
 
     this.dirVec = dirVec as Types.Point3;
+  };
+
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
+    this.setInitialMousePosition(evt);
 
     // we should not return true here, returning true in the preMouseDownCallback
     // means that the event is handled by the tool and no other methods
@@ -71,6 +75,16 @@ class ZoomTool extends BaseTool {
     // and clicking on an annotation will not manipulate the annotation, but will
     // instead zoom the image (which is not what we want), so we return false here
     return false;
+  };
+
+  mouseUpCallback = (): void => {
+    this.initialMousePosWorld = null;
+
+    // we should not return true here, returning true in the preMouseDownCallback
+    // means that the event is handled by the tool and no other methods
+    // can claim the event, which will result in a bug where having Zoom on primary
+    // and clicking on an annotation will not manipulate the annotation, but will
+    // instead zoom the image (which is not what we want), so we return false here
   };
 
   preTouchStartCallback = (evt: EventTypes.InteractionEventType): boolean => {
@@ -116,6 +130,9 @@ class ZoomTool extends BaseTool {
 
   // Takes ICornerstoneEvent, Mouse or Touch
   _dragCallback(evt: EventTypes.InteractionEventType) {
+    if (!this.initialMousePosWorld) {
+      this.setInitialMousePosition(evt);
+    }
     const { element } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
