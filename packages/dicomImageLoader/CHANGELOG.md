@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.6.9](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.6.8...@cornerstonejs/dicom-image-loader@0.6.9) (2023-05-18)
+
+### Bug Fixes
+
+- **cpu:** could not render if switched to cpu in the middle ([#615](https://github.com/cornerstonejs/cornerstone3D-beta/issues/615)) ([6b1d588](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6b1d588616dd7b7ab3358583414728a13225156a))
+
 ## [0.6.8](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/dicom-image-loader@0.6.7...@cornerstonejs/dicom-image-loader@0.6.8) (2023-05-18)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
