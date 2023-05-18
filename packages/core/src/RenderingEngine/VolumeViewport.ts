@@ -379,7 +379,8 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     const actorEntry = this.getDefaultActor();
-    if (!actorIsA(actorEntry, 'vtkVolume')) {
+
+    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
