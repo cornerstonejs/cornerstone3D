@@ -406,12 +406,13 @@ export default class ToolGroup implements IToolGroup {
       }
     );
 
+    const defaultMousePrimary = this.getDefaultMousePrimary();
+
     // Remove the primary button bindings without modifiers, if they exist
     toolOptions.bindings = toolOptions.bindings.filter(
       (binding) =>
-        binding.mouseButton !== MouseBindings.Primary || binding.modifierKey
+        binding.mouseButton !== defaultMousePrimary || binding.modifierKey
     );
-
     // If there are other bindings, set the tool to be active
     let mode = Passive;
     if (toolOptions.bindings.length !== 0) {
@@ -620,6 +621,10 @@ export default class ToolGroup implements IToolGroup {
     return true;
   }
 
+  public getDefaultMousePrimary(): MouseBindings {
+    return MouseBindings.Primary;
+  }
+
   /**
    * Get the configuration of tool. It returns only the config for the given path (in case exists).
    * ConfigurationPath is the the path of the property to get separated by '.'.
@@ -650,9 +655,11 @@ export default class ToolGroup implements IToolGroup {
    * @returns A boolean value.
    */
   private _hasMousePrimaryButtonBinding(toolOptions) {
+    const defaultMousePrimary = this.getDefaultMousePrimary();
+
     return toolOptions?.bindings?.some(
       (binding) =>
-        binding.mouseButton === MouseBindings.Primary &&
+        binding.mouseButton === defaultMousePrimary &&
         binding.modifierKey === undefined
     );
   }

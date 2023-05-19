@@ -38,6 +38,7 @@ export default function getActiveToolForTouchEvent(
   // If any keyboard modifier key is also pressed
   const modifierKey =
     getMouseModifier(touchEvent) || keyEventListener.getModifierKey();
+  const defaultMousePrimary = toolGroup.getDefaultMousePrimary();
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j];
@@ -55,7 +56,7 @@ export default function getActiveToolForTouchEvent(
         (binding) =>
           (binding.numTouchPoints === numTouchPoints ||
             (numTouchPoints === 1 &&
-              binding.mouseButton === MouseBindings.Primary)) &&
+              binding.mouseButton === defaultMousePrimary)) &&
           binding.modifierKey === modifierKey
       );
 

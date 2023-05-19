@@ -1,5 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
-import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions';
+import {
+  SetToolBindingsType,
+  ToolOptionsType,
+  IToolBinding,
+} from './ISetToolModeOptions';
 
 /**
  * ToolGroup interface
@@ -68,5 +72,8 @@ export default interface IToolGroup {
   };
   getToolConfiguration: {
     (toolName: string, configurationPath: string): any;
+  };
+  getDefaultMousePrimary: {
+    (): MouseBindings;
   };
 }
