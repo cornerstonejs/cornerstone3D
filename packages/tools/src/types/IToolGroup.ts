@@ -4,7 +4,7 @@ import {
   ToolOptionsType,
   IToolBinding,
 } from './ISetToolModeOptions';
-
+import { MouseBindings } from '../enums';
 /**
  * ToolGroup interface
  */

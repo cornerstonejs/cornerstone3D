@@ -621,6 +621,10 @@ export default class ToolGroup implements IToolGroup {
     return true;
   }
 
+  /**
+   * Returns the default mouse primary button.
+   *
+   */
   public getDefaultMousePrimary(): MouseBindings {
     return MouseBindings.Primary;
   }
