@@ -116,7 +116,7 @@ class RenderingEngine implements IRenderingEngine {
    * 3) Adds the viewport
    *
    *
-   * ```typescript
+   * ```
    * renderingEngine.enableElement({
    *  viewportId: viewportId,
    *  type: ViewportType.ORTHOGRAPHIC,
