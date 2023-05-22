@@ -2893,6 +2893,10 @@ interface IToolGroup {
         (): undefined | string;
     };
     // (undocumented)
+    getDefaultMousePrimary: {
+        (): MouseBindings;
+    };
+    // (undocumented)
     getToolConfiguration: {
         (toolName: string, configurationPath: string): any;
     };
