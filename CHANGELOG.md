@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [0.102.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v0.101.0...v0.102.0) (2023-05-22)
+
+- feat(version1)!: publish version 1.0 (#624) ([117cdb7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/117cdb79bbcf005b78f7c26e2b38d3f63a455e12)), closes [#624](https://github.com/cornerstonejs/cornerstone3D-beta/issues/624)
+
+### BREAKING CHANGES
+
+- breaking change bump major
+
 # 0.101.0 (2023-05-22)
 
 ### Bug Fixes
