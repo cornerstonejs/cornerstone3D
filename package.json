@@ -30,6 +30,7 @@
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
     "preinstall": "node preinstall.js",
+    "prepare": "husky install",
     "start": "yarn run dev",
     "test:firefox": "karma start ./karma.conf.js --browsers Firefox",
     "test:dev": "karma start",
