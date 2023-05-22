@@ -150,6 +150,7 @@ class RenderingEngine implements IRenderingEngine {
     if (viewport) {
       console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
+      console.log('Viewport disabled');
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
