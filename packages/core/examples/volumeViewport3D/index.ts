@@ -1,6 +1,7 @@
 import {
   CONSTANTS,
   Enums,
+  getOrCreateCanvas,
   RenderingEngine,
   setVolumesForViewports,
   Types,
@@ -14,6 +15,7 @@ import {
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import { TF_Panel } from './tf_ui/TF_panel';
 
 // This is for debugging purposes
 console.warn(
@@ -121,10 +123,10 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
-    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -156,6 +158,20 @@ async function run() {
 
   // Set the volume to load
   volume.load();
+
+  const canvas = getOrCreateCanvas(element1);
+  const options = {
+    parent: canvas,
+    container: canvas.parentElement,
+    panel: {
+      isCollapsible: true,
+    },
+  };
+
+  const tf_panel = new TF_Panel(options);
+  tf_panel.registerCallback(() => {
+    console.debug('changed');
+  });
 
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
     () => {
