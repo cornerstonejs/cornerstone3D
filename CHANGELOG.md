@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.0...v1.1.1) (2023-05-23)
+
+### Bug Fixes
+
+- **husky:** husky config ([#627](https://github.com/cornerstonejs/cornerstone3D-beta/issues/627)) ([d99d77e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d99d77e3d612ba24936d430a8e5a29ee4fefeb9c))
+
 # [1.1.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v0.103.0...v1.1.0) (2023-05-22)
 
 ### Features
