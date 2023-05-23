@@ -29,7 +29,7 @@ export class Color {
    * remove callbacks owned by owner
    */
   removeCallback(owner) {
-    for (var i = 0; i < this.callbacks.length; i++) {
+    for (let i = 0; i < this.callbacks.length; i++) {
       if (this.callbacks[i].owner === owner) {
         this.callbacks.splice(i, 1);
       }
@@ -43,10 +43,10 @@ export class Color {
   fireChange(caller) {
     if (caller === undefined) caller = null;
 
-    for (var index = 0; index < this.callbacks.length; index++) {
-      var callbackObject = this.callbacks[index];
-      var owner = callbackObject.owner;
-      var callback = callbackObject.callback;
+    for (let index = 0; index < this.callbacks.length; index++) {
+      const callbackObject = this.callbacks[index];
+      const owner = callbackObject.owner;
+      const callback = callbackObject.callback;
       if (owner !== caller) {
         callback(this);
       }
@@ -65,17 +65,17 @@ export class Color {
     if (caller === undefined) caller = null;
     col = Color.parseColor(col);
     //check keys in col object
-    var vars = Object.keys(col).join('');
+    const vars = Object.keys(col).join('');
     //test if string of keys contain 'rgb' or 'hsv'
-    var setRGB = /[rgb]/i.test(vars);
-    var setHSV = /[hsv]/i.test(vars);
+    const setRGB = /[rgb]/i.test(vars);
+    const setHSV = /[hsv]/i.test(vars);
 
     if (vars.length == 0 || setRGB === setHSV) {
       console.err('invalid params in color setter: cannot assign');
       return;
     }
 
-    var self = this;
+    const self = this;
     //assign each component to the respective color parameter
     Object.keys(col).forEach(function (key) {
       if (setRGB) self.rgb[key] = col[key];
@@ -122,7 +122,7 @@ export class Color {
         //RGB(A) (would discard alpha value)
         //} else if( col.startsWith( 'rgb' ) ) {
       } else if (col.lastIndexOf('rgb', 0) === 0) {
-        var parsedNumbers = col
+        const parsedNumbers = col
           .match(/^\d+|\d+\b|\d+(?=\w)/g)
           .map(function (v) {
             return +v;
@@ -170,12 +170,12 @@ export class Color {
       console.error('HEXtoRGB: argument is not type of string');
     }
     // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
     hex = hex.replace(shorthandRegex, function (m, r, g, b) {
       return r + r + g + g + b + b;
     });
 
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
       ? this.RGB(
           parseInt(result[1], 16),
@@ -195,7 +195,7 @@ export class Color {
    * @constructor
    */
   static HSVtoRGB = function (h, s, v) {
-    var r, g, b, i, f, p, q, t;
+    let r, g, b, i, f, p, q, t;
     if (arguments.length === 1) {
       (s = h.s), (v = h.v), (h = h.h);
     }
@@ -243,7 +243,7 @@ export class Color {
     if (arguments.length === 1) {
       (g = r.g), (b = r.b), (r = r.r);
     }
-    var max = Math.max(r, g, b),
+    let max = Math.max(r, g, b),
       min = Math.min(r, g, b),
       d = max - min,
       h,
@@ -279,10 +279,10 @@ export class CP_widget {
   constructor(options) {
     if (options === undefined) options = null;
 
-    var container = options.container || document.body;
+    const container = options.container || document.body;
     this.container = container;
-    var panel = new Panel({ container: container });
-    var parent = null;
+    const panel = new Panel({ container: container });
+    const parent = null;
     this.color = new Color();
 
     panel.dom.id = 'cp-panel';
@@ -303,7 +303,7 @@ export class CP_widget {
 
     this.SVPicker = this.createSVPicker(this.color, options.svPicker);
     this.HPicker = this.createHPicker(this.color, options.hPicker);
-    var inputFields = this.createInputFields(this.color);
+    const inputFields = this.createInputFields(this.color);
 
     this.SVPicker.style.backgroundColor = '#FF0000';
   }
@@ -343,7 +343,7 @@ export class CP_widget {
    * @returns {Element}
    */
   createSVPicker = function (color, options) {
-    var SVPicker = document.createElement('div');
+    const SVPicker = document.createElement('div');
     SVPicker.className = 'field';
     SVPicker.width = options.size;
     SVPicker.height = options.size;
@@ -362,7 +362,7 @@ export class CP_widget {
     ); // +
     this.panel.dom.appendChild(SVPicker);
 
-    var HGradientCanvas = document.createElement('canvas');
+    const HGradientCanvas = document.createElement('canvas');
     HGradientCanvas.width = SVPicker.width;
     HGradientCanvas.height = SVPicker.height;
     HGradientCanvas.setAttribute(
@@ -380,9 +380,9 @@ export class CP_widget {
     );
 
     SVPicker.appendChild(HGradientCanvas);
-    var HGradientContext = HGradientCanvas.getContext('2d');
+    const HGradientContext = HGradientCanvas.getContext('2d');
 
-    var gradient = HGradientContext.createLinearGradient(
+    let gradient = HGradientContext.createLinearGradient(
       0,
       0,
       SVPicker.width,
@@ -393,7 +393,7 @@ export class CP_widget {
     HGradientContext.fillStyle = gradient;
     HGradientContext.fillRect(0, 0, SVPicker.width, SVPicker.height);
 
-    var VGradientCanvas = document.createElement('canvas');
+    const VGradientCanvas = document.createElement('canvas');
     VGradientCanvas.width = SVPicker.width;
     VGradientCanvas.height = SVPicker.height;
     VGradientCanvas.setAttribute(
@@ -414,7 +414,7 @@ export class CP_widget {
     );
 
     SVPicker.appendChild(VGradientCanvas);
-    var VGradientContext = VGradientCanvas.getContext('2d');
+    const VGradientContext = VGradientCanvas.getContext('2d');
 
     gradient = VGradientContext.createLinearGradient(0, SVPicker.height, 0, 0); //vertical gradient
     gradient.addColorStop(0, '#000');
@@ -422,7 +422,7 @@ export class CP_widget {
     VGradientContext.fillStyle = gradient;
     VGradientContext.fillRect(0, 0, SVPicker.width, SVPicker.height);
 
-    var SVPickerCursor = document.createElement('div');
+    const SVPickerCursor = document.createElement('div');
     SVPickerCursor.className = 'handle';
     SVPickerCursor.width = options.cursorRadius * 2;
     SVPickerCursor.height = options.cursorRadius * 2;
@@ -445,30 +445,30 @@ export class CP_widget {
     );
     SVPicker.appendChild(SVPickerCursor);
 
-    var pickSV = function (e) {
+    const pickSV = function (e) {
       console.log('pick SV');
       e.preventDefault();
       e.stopPropagation();
 
-      var pos = UI.getRelativePosition(e.clientX, e.clientY, SVPicker);
+      const pos = UI.getRelativePosition(e.clientX, e.clientY, SVPicker);
 
       pos.x = clamp(pos.x, 0, SVPicker.width);
       pos.y = clamp(pos.y, 0, SVPicker.height);
 
-      var saturation = pos.x / SVPicker.width;
-      var value = 1 - pos.y / SVPicker.height;
+      const saturation = pos.x / SVPicker.width;
+      const value = 1 - pos.y / SVPicker.height;
 
       color.set({ s: saturation, v: value }, SVPicker);
 
-      var cursorX = pos.x - options.cursorRadius;
-      var cursorY = pos.y - options.cursorRadius;
+      const cursorX = pos.x - options.cursorRadius;
+      const cursorY = pos.y - options.cursorRadius;
 
       SVPickerCursor.style.left = cursorX + 'px';
       SVPickerCursor.style.top = cursorY + 'px';
       return false;
     };
 
-    var cp_widget = this;
+    const cp_widget = this;
 
     function onMouseUp() {
       //remove mousemove function
@@ -495,16 +495,16 @@ export class CP_widget {
     SVPicker.addEventListener('mousedown', onMouseDown);
 
     SVPicker.update = function (color) {
-      var hsv = color.getHSV();
-      var rgb = Color.HSVtoRGB(hsv.h, 1, 1);
+      const hsv = color.getHSV();
+      const rgb = Color.HSVtoRGB(hsv.h, 1, 1);
       SVPicker.style.backgroundColor =
         'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
 
-      var xPos = hsv.s * SVPicker.width;
-      var yPos = (1 - hsv.v) * SVPicker.height;
+      const xPos = hsv.s * SVPicker.width;
+      const yPos = (1 - hsv.v) * SVPicker.height;
 
-      var cursorX = xPos - options.cursorRadius;
-      var cursorY = yPos - options.cursorRadius;
+      const cursorX = xPos - options.cursorRadius;
+      const cursorY = yPos - options.cursorRadius;
 
       SVPickerCursor.style.left = cursorX + 'px';
       SVPickerCursor.style.top = cursorY + 'px';
@@ -516,7 +516,7 @@ export class CP_widget {
   };
 
   createHPicker = function (color, options) {
-    var HPicker = document.createElement('div');
+    const HPicker = document.createElement('div');
     HPicker.className = 'field';
     HPicker.width = options.width;
     HPicker.height = options.height;
@@ -535,7 +535,7 @@ export class CP_widget {
         'px;'
     );
 
-    var HPickerCanvas = document.createElement('canvas');
+    const HPickerCanvas = document.createElement('canvas');
     HPickerCanvas.setAttribute(
       'style',
       'float:left;' +
@@ -548,9 +548,14 @@ export class CP_widget {
     );
     HPickerCanvas.width = HPicker.width;
     HPickerCanvas.height = HPicker.height;
-    var HPickerContext = HPickerCanvas.getContext('2d');
+    const HPickerContext = HPickerCanvas.getContext('2d');
 
-    var gradient = HPickerContext.createLinearGradient(0, HPicker.height, 0, 0); //horizontal gradient
+    const gradient = HPickerContext.createLinearGradient(
+      0,
+      HPicker.height,
+      0,
+      0
+    ); //horizontal gradient
     gradient.addColorStop(1.0, '#f00');
     gradient.addColorStop(0.83, '#f0f');
     gradient.addColorStop(0.67, '#00f');
@@ -565,7 +570,7 @@ export class CP_widget {
 
     this.panel.dom.appendChild(HPicker);
 
-    var HPickerCursor = document.createElement('div');
+    const HPickerCursor = document.createElement('div');
     HPickerCursor.className = 'handle';
     HPickerCursor.width = HPicker.width;
     HPickerCursor.height = options.cursorHeight;
@@ -583,24 +588,24 @@ export class CP_widget {
     );
     HPicker.appendChild(HPickerCursor);
 
-    var pickHue = function (e) {
+    const pickHue = function (e) {
       console.log('pick hue');
       e.preventDefault();
       e.stopPropagation();
 
-      var pos = UI.getRelativePosition(null, e.clientY, HPicker);
+      const pos = UI.getRelativePosition(null, e.clientY, HPicker);
       pos.y = clamp(pos.y, 0, HPicker.height);
 
-      var hue = 1 - pos.y / HPicker.height;
+      const hue = 1 - pos.y / HPicker.height;
       color.set({ h: hue }, HPicker);
 
-      var cursorY = pos.y - HPickerCursor.height / 2;
+      const cursorY = pos.y - HPickerCursor.height / 2;
       HPickerCursor.style.top = cursorY + 'px';
 
       return false;
     };
 
-    var cp_widget = this;
+    const cp_widget = this;
 
     function onMouseUp() {
       //remove mousemove function
@@ -627,10 +632,10 @@ export class CP_widget {
     HPicker.addEventListener('mousedown', onMouseDown);
 
     HPicker.update = function (color) {
-      var hue = color.getHSV().h;
+      const hue = color.getHSV().h;
 
-      var yPos = (1 - hue) * HPicker.height;
-      var cursorY = yPos - HPickerCursor.height / 2;
+      const yPos = (1 - hue) * HPicker.height;
+      const cursorY = yPos - HPickerCursor.height / 2;
       HPickerCursor.style.top = cursorY + 'px';
     };
 
@@ -639,7 +644,7 @@ export class CP_widget {
   };
 
   createInputFields = function (color) {
-    var inputContainer = document.createElement('div');
+    const inputContainer = document.createElement('div');
     inputContainer.height = 20;
     this.panel.dom.appendChild(inputContainer);
     inputContainer.setAttribute(
@@ -647,21 +652,21 @@ export class CP_widget {
       'float: left;' + 'height: ' + inputContainer.height + 'px;'
     );
 
-    var inputWidth = Math.max(Math.floor(this.SVPicker.width / 3 - 5), 22);
+    const inputWidth = Math.max(Math.floor(this.SVPicker.width / 3 - 5), 22);
 
-    var inputStyle =
+    const inputStyle =
       'margin-top: 4px;' + 'height: 12px;' + 'width:' + inputWidth + 'px;';
 
-    var inputs = ['r', 'g', 'b'];
-    var range = [0, 255];
+    const inputs = ['r', 'g', 'b'];
+    const range = [0, 255];
 
     function inputEvent() {
-      var value = Number(this.value);
+      let value = Number(this.value);
 
       //constrain input to valid numbers
       value = clamp(value, range[0], range[1]);
       if (value !== this.value) this.value = value;
-      var components = {};
+      const components = {};
       components[this.name] = value;
       color.set(components, inputContainer);
       //console.log('input changed to: ' + this.value + ' ' + this.name );
@@ -678,8 +683,8 @@ export class CP_widget {
       );
     }
 
-    for (var num = 0; num < inputs.length; num++) {
-      var input = document.createElement('input');
+    for (let num = 0; num < inputs.length; num++) {
+      const input = document.createElement('input');
       input.type = 'number';
       input.min = range[0];
       input.max = range[1];
@@ -698,7 +703,7 @@ export class CP_widget {
     }
 
     inputContainer.update = function (color) {
-      var rgb = color.getRGB();
+      const rgb = color.getRGB();
       inputs[0].value = rgb.r;
       inputs[1].value = rgb.g;
       inputs[2].value = rgb.b;

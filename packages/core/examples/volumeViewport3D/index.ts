@@ -45,7 +45,7 @@ setTitleAndDescription(
   'Here we demonstrate how to 3D render a volume.'
 );
 
-const size = '500px';
+const size = '700px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
