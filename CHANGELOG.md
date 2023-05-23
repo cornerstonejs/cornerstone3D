@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.3...v1.1.4) (2023-05-23)
+
+### Bug Fixes
+
+- **windowLevel:** should not double scale for window level ([#619](https://github.com/cornerstonejs/cornerstone3D-beta/issues/619)) ([479eba7](https://github.com/cornerstonejs/cornerstone3D-beta/commit/479eba77cb050b90984e2b1f51d63b29854a6d40))
+
 ## [1.1.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.2...v1.1.3) (2023-05-23)
 
 ### Bug Fixes
