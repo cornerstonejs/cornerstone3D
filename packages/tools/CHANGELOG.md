@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.2...v1.1.3) (2023-05-23)
+
+### Bug Fixes
+
+- **expose:** api default mouse primary ([#622](https://github.com/cornerstonejs/cornerstone3D-beta/issues/622)) ([94be45b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/94be45b501c57435f1a451517200624e32187a02))
+
 ## [1.1.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.1...v1.1.2) (2023-05-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools
