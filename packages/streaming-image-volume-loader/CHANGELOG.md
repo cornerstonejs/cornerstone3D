@@ -3,6 +3,90 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.3...v1.1.4) (2023-05-23)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+## [1.1.3](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.2...v1.1.3) (2023-05-23)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+## [1.1.2](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.1...v1.1.2) (2023-05-23)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+## [1.1.1](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.0...v1.1.1) (2023-05-23)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+# [1.1.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v0.103.0...v1.1.0) (2023-05-22)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+# [0.103.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v0.102.0...v0.103.0) (2023-05-22)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+# [0.102.0](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v0.101.0...v0.102.0) (2023-05-22)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+# 0.101.0 (2023-05-22)
+
+### Bug Fixes
+
+- annotation unit hydration bug and more color image support ([#151](https://github.com/cornerstonejs/cornerstone3D-beta/issues/151)) ([4f157dc](https://github.com/cornerstonejs/cornerstone3D-beta/commit/4f157dc5d7a8d0d80abb5b68c35ed17cb5f349ed))
+- annotations throwing error when stack and volume viewports are converted ([#195](https://github.com/cornerstonejs/cornerstone3D-beta/issues/195)) ([ed23f05](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ed23f05b23063769942328f9e6797d792767ec49))
+- Attempt to fix build issues [@haehn](https://github.com/haehn) has reported ([#144](https://github.com/cornerstonejs/cornerstone3D-beta/issues/144)) ([2a7ec92](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2a7ec9271e012929682aa5c0a860cd65d0d5c02d))
+- Attempt to resolve incompatible peerDeps situation ([#98](https://github.com/cornerstonejs/cornerstone3D-beta/issues/98)) ([00f141b](https://github.com/cornerstonejs/cornerstone3D-beta/commit/00f141bfa9f9a4b37c016d726a6d31f2330e2e44))
+- **binding:** fix this binding ([#521](https://github.com/cornerstonejs/cornerstone3D-beta/issues/521)) ([1d44728](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1d4472810313f55892e853e90d15c307d0e44130))
+- convert RGBA to RGB for GPU rendering if cached ([#152](https://github.com/cornerstonejs/cornerstone3D-beta/issues/152)) ([fb8aa36](https://github.com/cornerstonejs/cornerstone3D-beta/commit/fb8aa36374c4bdf06d9d6da1f2df128c68dbc7da))
+- Correct module property for ESM builds in package.json ([#66](https://github.com/cornerstonejs/cornerstone3D-beta/issues/66)) ([d53b857](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d53b8575aa8b93907f8bf127f36d9dfc10821478))
+- drag probe appearing unnecessarily on all viewports ([#204](https://github.com/cornerstonejs/cornerstone3D-beta/issues/204)) ([c292c05](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c292c05eecf17a6edbdcab5aa5a604304ef3d2e5))
+- fixes the memory leak for volumes ([#253](https://github.com/cornerstonejs/cornerstone3D-beta/issues/253)) ([c863126](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c863126fc1df3fa989e15da1a7eae43cf94b24d0))
+- htj2k and keymodifier ([#313](https://github.com/cornerstonejs/cornerstone3D-beta/issues/313)) ([48bd8a1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/48bd8a14b81e31cba9f3237b0b68b7082bd66892))
+- **loading order:** reversed time points requests otherwise it would load from last to first ([#522](https://github.com/cornerstonejs/cornerstone3D-beta/issues/522)) ([c5acf45](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c5acf452bd533931dfe52c9a560cd548fa205672))
+- missing bind for the callLoadImage function ([#380](https://github.com/cornerstonejs/cornerstone3D-beta/issues/380)) ([fd96060](https://github.com/cornerstonejs/cornerstone3D-beta/commit/fd96060f3bc1e62bc73b22db0973c84513f1e9d9))
+- no need for wadors header provider in the demo ([#356](https://github.com/cornerstonejs/cornerstone3D-beta/issues/356)) ([92891cf](https://github.com/cornerstonejs/cornerstone3D-beta/commit/92891cf4fd8f502b1dd0908702e46fb3556bacd7))
+- Remove resemblejs from dependencies, add detect-gpu, clonedeep, CWIL ([#73](https://github.com/cornerstonejs/cornerstone3D-beta/issues/73)) ([db65d50](https://github.com/cornerstonejs/cornerstone3D-beta/commit/db65d50a5c7488f323ab2424cf9d750055b2e6d5))
+- **rendering:** should still use Float32 when not 16 bit for scaling issues ([#501](https://github.com/cornerstonejs/cornerstone3D-beta/issues/501)) ([448baf2](https://github.com/cornerstonejs/cornerstone3D-beta/commit/448baf2086ef28b8eedc90ab46e0fee54cf7ac9e))
+- streaming loader package json for entries ([#357](https://github.com/cornerstonejs/cornerstone3D-beta/issues/357)) ([9a5fbf1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9a5fbf1cb60193b4be987e828f29201133bc9106))
+- **StreamingImageVolume:** scaling bug for undefined parameters ([#376](https://github.com/cornerstonejs/cornerstone3D-beta/issues/376)) ([a366d9d](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a366d9decaad125dc566315e0ae2bf882762d8ba))
+- **suv display:** fix scaling of non-SUV PT images ([#536](https://github.com/cornerstonejs/cornerstone3D-beta/issues/536)) ([f9182f0](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f9182f076d9d5f3af4989550b9549aeaa2792466))
+- **volumeLoad:** should still update texture when loading ([#527](https://github.com/cornerstonejs/cornerstone3D-beta/issues/527)) ([65c71ea](https://github.com/cornerstonejs/cornerstone3D-beta/commit/65c71ea8e5aa2c4dc92ed69c64707a6bdfa206b5))
+- wadouri metadata was not using scaling parameters properly ([#159](https://github.com/cornerstonejs/cornerstone3D-beta/issues/159)) ([d21aba5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d21aba56f1e0a8730088d89a4dfde8358d978a60))
+- Webpack externals were not properly defined ([70499a5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/70499a55c5824b3f94920ffd48411118e6fe4bb8))
+
+### Features
+
+- **4D:** added support for 4D data rendering ([#438](https://github.com/cornerstonejs/cornerstone3D-beta/issues/438)) ([975e596](https://github.com/cornerstonejs/cornerstone3D-beta/commit/975e59629125fbf0ba5ea676fa14b71a2b30ca44))
+- **4D:** fixed cine play issue and added getDynamicVolumeInfo method ([#562](https://github.com/cornerstonejs/cornerstone3D-beta/issues/562)) ([f4c2531](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f4c25316eb1c5a6b13edb7c0873c9b0ce7a4e581))
+- Add a basic Brush tool ([6358b12](https://github.com/cornerstonejs/cornerstone3D-beta/commit/6358b126c9d03bd349f864cec53d22c92f8b1405))
+- add multiframe example ([#331](https://github.com/cornerstonejs/cornerstone3D-beta/issues/331)) ([327f17a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/327f17a551f869c8f454566782be720367291235))
+- Add segmentSpecificConfiguration and add outlineOpacity config for Segmentation ([#285](https://github.com/cornerstonejs/cornerstone3D-beta/issues/285)) ([92fb495](https://github.com/cornerstonejs/cornerstone3D-beta/commit/92fb49594cfc3219f761e905ba765acaddbe1e1a))
+- add support for WADO-URI Streaming Volume Loading ([#354](https://github.com/cornerstonejs/cornerstone3D-beta/issues/354)) ([a1e4a36](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a1e4a36e92870ca65c7b9cc1b738aa219686e861))
+- Add VOLUME_NEW_IMAGE event and Add jumpToSlice and default VOI for volume viewport ([#104](https://github.com/cornerstonejs/cornerstone3D-beta/issues/104)) ([d36a23a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/d36a23a4eaf5bafcc8dddc0ab796065098df616a))
+- **dicomImageLoader types:** Add types to the dicom image loader ([#441](https://github.com/cornerstonejs/cornerstone3D-beta/issues/441)) ([10a3370](https://github.com/cornerstonejs/cornerstone3D-beta/commit/10a3370b7f23084d1f2c55506079c17dea959659)), closes [#449](https://github.com/cornerstonejs/cornerstone3D-beta/issues/449) [#450](https://github.com/cornerstonejs/cornerstone3D-beta/issues/450)
+- **dicomImageLoader:** make cornerstone to use new dicom image loader and handle scaling correctly ([#553](https://github.com/cornerstonejs/cornerstone3D-beta/issues/553)) ([a01687a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/a01687ab925c469bf979d6f2089d2e8f31c28e75))
+- improved example runner to handle casing and partial match ([#347](https://github.com/cornerstonejs/cornerstone3D-beta/issues/347)) ([9e8fa12](https://github.com/cornerstonejs/cornerstone3D-beta/commit/9e8fa122f766c1fceff4e3d4fe3cd0f68963c92b))
+- option to use Arraybuffer for volume loader instead of sharedArrayBuffer ([#358](https://github.com/cornerstonejs/cornerstone3D-beta/issues/358)) ([ab8237c](https://github.com/cornerstonejs/cornerstone3D-beta/commit/ab8237cf6b9672e4837ec27b73b75d38e85305f0))
+- orientation on volumeViewport can be optional ([#203](https://github.com/cornerstonejs/cornerstone3D-beta/issues/203)) ([749dcb5](https://github.com/cornerstonejs/cornerstone3D-beta/commit/749dcb59414c1aff2dffdca582fb3df0e4ca5ed7))
+- remove unnecessary event firing for annotations ([#123](https://github.com/cornerstonejs/cornerstone3D-beta/issues/123)) ([03551d9](https://github.com/cornerstonejs/cornerstone3D-beta/commit/03551d9f9269b7bfd3d828dad4f8f38ef51703d1))
+- **rendering:** 16 bit texture support with flag ([#420](https://github.com/cornerstonejs/cornerstone3D-beta/issues/420)) ([f14073e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f14073e13836e33f85a1cf7aec566ab782174def))
+- **streaming-image-volume:** add caching for image load object ([#567](https://github.com/cornerstonejs/cornerstone3D-beta/issues/567)) ([c721ecd](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c721ecd0a2724fa04c01704a33239e68eac5d0f1))
+- **voi:** added support for sigmoid voiLUTFunction for StackViewport and VolumeViewport ([#224](https://github.com/cornerstonejs/cornerstone3D-beta/issues/224)) ([2fcec22](https://github.com/cornerstonejs/cornerstone3D-beta/commit/2fcec22fc7a27cad75d41713339f7e030d653f80))
+- **volumeLoader:** no need for streaming-wadors imageLoader anymore since streaming volume loader will use cswil wadors image loader ([#340](https://github.com/cornerstonejs/cornerstone3D-beta/issues/340)) ([0b5f785](https://github.com/cornerstonejs/cornerstone3D-beta/commit/0b5f785041a6f92443b58f6d72c8c965a29b35fc))
+- **VolumeViewport:** add colormap preset and invert to volume viewport ([#602](https://github.com/cornerstonejs/cornerstone3D-beta/issues/602)) ([f28a392](https://github.com/cornerstonejs/cornerstone3D-beta/commit/f28a3923bba958ed1991dad40ce88d162daa1a6f))
+- **VolumeViewport:** Add optional flag to assume fallbacks for ZSpacing for volumes ([#435](https://github.com/cornerstonejs/cornerstone3D-beta/issues/435)) ([162f78a](https://github.com/cornerstonejs/cornerstone3D-beta/commit/162f78a5dc45a4182ffd2edbdcbcdcb2a37e101d))
+
+## [0.20.7](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.20.6...@cornerstonejs/streaming-image-volume-loader@0.20.7) (2023-05-18)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
+## [0.20.6](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.20.5...@cornerstonejs/streaming-image-volume-loader@0.20.6) (2023-05-18)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
 ## [0.20.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/@cornerstonejs/streaming-image-volume-loader@0.20.4...@cornerstonejs/streaming-image-volume-loader@0.20.5) (2023-05-17)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

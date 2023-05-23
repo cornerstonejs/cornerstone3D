@@ -32,6 +32,7 @@ function getImageFrame(imageId: string): ImageFrame {
     bluePaletteColorLookupTableData:
       imagePixelModule.bluePaletteColorLookupTableData,
     pixelData: undefined, // populated later after decoding
+    imageId,
   };
 }
 

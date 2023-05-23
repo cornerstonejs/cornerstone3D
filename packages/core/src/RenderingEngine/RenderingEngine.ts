@@ -116,7 +116,7 @@ class RenderingEngine implements IRenderingEngine {
    * 3) Adds the viewport
    *
    *
-   * ```typescript
+   * ```
    * renderingEngine.enableElement({
    *  viewportId: viewportId,
    *  type: ViewportType.ORTHOGRAPHIC,
@@ -150,6 +150,7 @@ class RenderingEngine implements IRenderingEngine {
     if (viewport) {
       console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
+      console.log(`Viewport ${viewportId} disabled`);
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
