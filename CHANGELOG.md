@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.5](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.4...v1.1.5) (2023-05-23)
+
+### Bug Fixes
+
+- **event:** Interactions between double click and multi mouse button ([#616](https://github.com/cornerstonejs/cornerstone3D-beta/issues/616)) ([3be68c1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/3be68c166ade016793ae8d8c6dbe7bd15dfd07ac))
+
 ## [1.1.4](https://github.com/cornerstonejs/cornerstone3D-beta/compare/v1.1.3...v1.1.4) (2023-05-23)
 
 ### Bug Fixes
