@@ -1,3 +1,4 @@
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import { Point3, IContourSet, IContour, ContourData } from '../../types';
 import Contour from './Contour';
 
@@ -19,6 +20,8 @@ export class ContourSet implements IContourSet {
   readonly frameOfReferenceUID: string;
   private color: Point3 = [200, 0, 0]; // default color
   private segmentIndex: number;
+  private polyData: vtkPolyData;
+  private centroid: Point3;
   contours: IContour[];
 
   constructor(props: ContourSetProps) {
@@ -27,7 +30,6 @@ export class ContourSet implements IContourSet {
     this.color = props.color ?? this.color;
     this.frameOfReferenceUID = props.frameOfReferenceUID;
     this.segmentIndex = props.segmentIndex;
-
     this._createEachContour(props.data);
     this.sizeInBytes = this._getSizeInBytes();
   }
@@ -50,12 +52,57 @@ export class ContourSet implements IContourSet {
 
       this.contours.push(contour);
     });
+
+    this._updateContourSetCentroid();
+  }
+
+  // Todo: this centroid calculation has limitation in which
+  // it will not work for MPR, the reason is that we are finding
+  // the centroid of all points but at the end we are picking the
+  // closest point to the centroid, which will not work for MPR
+  // The reason for picking the closest is a rendering issue since
+  // the centroid can be not exactly in the middle of the slice
+  // and it might cause the contour to be rendered in the wrong slice
+  // or not rendered at all
+  _updateContourSetCentroid(): void {
+    const numberOfPoints = this.getTotalNumberOfPoints();
+    const flatPointsArray = this.getFlatPointsArray();
+
+    const sumOfPoints = flatPointsArray.reduce(
+      (acc, point) => {
+        return [acc[0] + point[0], acc[1] + point[1], acc[2] + point[2]];
+      },
+      [0, 0, 0]
+    );
+
+    const centroid = [
+      sumOfPoints[0] / numberOfPoints,
+      sumOfPoints[1] / numberOfPoints,
+      sumOfPoints[2] / numberOfPoints,
+    ];
+
+    const closestPoint = flatPointsArray.reduce((closestPoint, point) => {
+      const distanceToPoint = this._getDistance(centroid, point);
+      const distanceToClosestPoint = this._getDistance(centroid, closestPoint);
+
+      if (distanceToPoint < distanceToClosestPoint) {
+        return point;
+      } else {
+        return closestPoint;
+      }
+    }, flatPointsArray[0]);
+
+    this.centroid = closestPoint;
   }
 
   _getSizeInBytes(): number {
     return this.contours.reduce((sizeInBytes, contour) => {
       return sizeInBytes + contour.sizeInBytes;
     }, 0);
+  }
+
+  public getCentroid(): Point3 {
+    return this.centroid;
   }
 
   public getSegmentIndex(): number {
@@ -138,6 +185,13 @@ export class ContourSet implements IContourSet {
     return this.getPointsInContour(contourIndex).length;
   }
 
+  private _getDistance(pointA, pointB) {
+    return Math.sqrt(
+      (pointA[0] - pointB[0]) ** 2 +
+        (pointA[1] - pointB[1]) ** 2 +
+        (pointA[2] - pointB[2]) ** 2
+    );
+  }
   /**
   public convertToClosedSurface(): ClosedSurface {
     const flatPointsArray = this.getFlatPointsArray();

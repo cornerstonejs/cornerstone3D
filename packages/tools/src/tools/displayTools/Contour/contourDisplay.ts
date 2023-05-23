@@ -15,6 +15,7 @@ import {
 } from '../../../types/SegmentationStateTypes';
 import { addOrUpdateContourSets } from './addOrUpdateContourSets';
 import removeContourFromElement from './removeContourFromElement';
+import { deleteConfigCache } from './contourConfigCache';
 
 /**
  * It adds a new segmentation representation to the segmentation state
@@ -96,6 +97,8 @@ function removeSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
   );
+
+  deleteConfigCache(segmentationRepresentationUID);
 
   if (renderImmediate) {
     const viewportsInfo = getToolGroup(toolGroupId).getViewportsInfo();

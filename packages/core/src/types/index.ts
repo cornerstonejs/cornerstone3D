@@ -5,6 +5,7 @@ import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
 import type { IVolume, VolumeScalarData } from './IVolume';
 import type { VOI, VOIRange } from './voi';
+import type DisplayArea from './displayArea';
 import type ImageLoaderFn from './ImageLoaderFn';
 import type IImageVolume from './IImageVolume';
 import type IDynamicImageVolume from './IDynamicImageVolume';
@@ -73,6 +74,12 @@ import type {
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
+import type RGB from './RGB';
+import { ColormapPublic, ColormapRegistration } from './Colormap';
+import type { ViewportProperties } from './ViewportProperties';
+import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type { ImagePixelModule } from './ImagePixelModule';
+import type { ImagePlaneModule } from './ImagePlaneModule';
 
 export type {
   // config
@@ -105,6 +112,7 @@ export type {
   IViewport,
   StackViewportProperties,
   VolumeViewportProperties,
+  ViewportProperties,
   PublicViewportInput,
   VolumeActor,
   Actor,
@@ -125,6 +133,7 @@ export type {
   ViewportInputOptions,
   VOIRange,
   VOI,
+  DisplayArea,
   FlipDirection,
   ICachedImage,
   ICachedVolume,
@@ -154,4 +163,12 @@ export type {
   ContourData,
   IContourSet,
   IContour,
+  // Color
+  RGB,
+  ColormapPublic,
+  ColormapRegistration,
+  // PixelData
+  PixelDataTypedArray,
+  ImagePixelModule,
+  ImagePlaneModule,
 };

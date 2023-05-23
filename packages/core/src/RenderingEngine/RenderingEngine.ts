@@ -34,6 +34,9 @@ type ViewportDisplayCoords = {
   sHeight: number;
 };
 
+// Rendering engines seem to not like rendering things less than 2 pixels per side
+const VIEWPORT_MIN_SIZE = 2;
+
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
  * them on a large offscreen canvas and transmitting this data back to the screen. This allows us
@@ -113,7 +116,7 @@ class RenderingEngine implements IRenderingEngine {
    * 3) Adds the viewport
    *
    *
-   * ```typescript
+   * ```
    * renderingEngine.enableElement({
    *  viewportId: viewportId,
    *  type: ViewportType.ORTHOGRAPHIC,
@@ -145,9 +148,9 @@ class RenderingEngine implements IRenderingEngine {
 
     // 1.a) If there is a found viewport, we remove the viewport and create a new viewport
     if (viewport) {
+      console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
-      // todo: if only removing the viewport, make sure resize also happens
-      // this._removeViewport(viewportId)
+      console.log(`Viewport ${viewportId} disabled`);
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
@@ -324,13 +327,17 @@ class RenderingEngine implements IRenderingEngine {
       }
     });
 
-    this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
+    if (vtkDrivenViewports.length) {
+      this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
+    }
 
-    this._resizeUsingCustomResizeHandler(
-      customRenderingViewports,
-      keepCamera,
-      immediate
-    );
+    if (customRenderingViewports.length) {
+      this._resizeUsingCustomResizeHandler(
+        customRenderingViewports,
+        keepCamera,
+        immediate
+      );
+    }
   }
 
   /**
@@ -502,6 +509,7 @@ class RenderingEngine implements IRenderingEngine {
       options = {
         background: [0, 0, 0],
         orientation: null,
+        displayArea: null,
       };
 
       if (type === ViewportType.ORTHOGRAPHIC) {
@@ -1115,6 +1123,8 @@ class RenderingEngine implements IRenderingEngine {
     this._animationFrameHandle = null;
 
     eventDetailArray.forEach((eventDetail) => {
+      // Very small viewports won't have an element
+      if (!eventDetail?.element) return;
       triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
     });
   };
@@ -1165,6 +1175,15 @@ class RenderingEngine implements IRenderingEngine {
   ): EventTypes.ImageRenderedEventDetail[] {
     let eventDetail;
 
+    // Rendering engines start having issues without at least two pixels
+    // in each direction
+    if (
+      viewport.sWidth < VIEWPORT_MIN_SIZE ||
+      viewport.sHeight < VIEWPORT_MIN_SIZE
+    ) {
+      console.log('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      return;
+    }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
       eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;

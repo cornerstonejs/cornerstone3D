@@ -2,9 +2,12 @@ import {
   StackViewport,
   Types,
   VolumeViewport,
+  eventTarget,
+  EVENTS,
   utilities as csUtils,
+  getEnabledElement,
 } from '@cornerstonejs/core';
-import { ScrollOptions } from '../types';
+import { ScrollOptions, EventTypes } from '../types';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
@@ -19,6 +22,20 @@ export default function scroll(
   viewport: Types.IStackViewport | Types.IVolumeViewport,
   options: ScrollOptions
 ): void {
+  // check if viewport is disabled then throw error
+  const enabledElement = getEnabledElement(viewport.element);
+
+  if (!enabledElement) {
+    throw new Error('Scroll::Viewport is not enabled (it might be disabled)');
+  }
+
+  if (
+    viewport instanceof StackViewport &&
+    viewport.getImageIds().length === 0
+  ) {
+    throw new Error('Scroll::Stack Viewport has no images');
+  }
+
   const { type: viewportType } = viewport;
   const { volumeId, delta } = options;
 
@@ -36,7 +53,8 @@ export function scrollVolume(
   volumeId: string,
   delta: number
 ) {
-  const sliceRangeInfo = csUtils.getVolumeSliceRangeInfo(viewport, volumeId);
+  const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
+    csUtils.getVolumeViewportScrollInfo(viewport, volumeId);
 
   if (!sliceRangeInfo) {
     return;
@@ -59,4 +77,30 @@ export function scrollVolume(
     position: newPosition,
   });
   viewport.render();
+
+  const desiredStepIndex = currentStepIndex + delta;
+
+  if (
+    (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
+    viewport.getCurrentImageId() // Check that we are in the plane of acquistion
+  ) {
+    // One common use case of this trigger might be to load the next
+    // volume in a time series or the next segment of a partially loaded volume.
+
+    const VolumeScrollEventDetail = {
+      volumeId,
+      viewport,
+      delta,
+      desiredStepIndex,
+      currentStepIndex,
+      numScrollSteps,
+      currentImageId: viewport.getCurrentImageId(),
+    };
+
+    csUtils.triggerEvent(
+      eventTarget,
+      EVENTS.VOLUME_SCROLL_OUT_OF_BOUNDS,
+      VolumeScrollEventDetail as EventTypes.VolumeScrollOutOfBoundsEventDetail
+    );
+  }
 }

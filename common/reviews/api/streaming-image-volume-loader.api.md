@@ -54,6 +54,19 @@ type CameraModifiedEventDetail = {
 };
 
 // @public (undocumented)
+type ColormapPublic = {
+    name: string;
+    opacityMapping?: OpacityMapping[];
+};
+
+// @public (undocumented)
+type ColormapRegistration = {
+    ColorSpace: string;
+    Name: string;
+    RGBPoints: RGB[];
+};
+
+// @public (undocumented)
 type ContourData = {
     points: Point3[];
     type: ContourType;
@@ -106,6 +119,7 @@ type Cornerstone3DConfig = {
         // https://bugs.webkit.org/show_bug.cgi?id=252039
         useNorm16Texture: boolean;
         useCPURendering: boolean;
+        strictZSpacingForVolumeViewport: boolean;
     };
 };
 
@@ -183,40 +197,8 @@ interface CPUFallbackEnabledElement {
         dimensions?: Point3;
         spacing?: Point3;
         origin?: Point3;
-        imagePlaneModule?: {
-            frameOfReferenceUID: string;
-            rows: number;
-            columns: number;
-            imageOrientationPatient: number[];
-            rowCosines: Point3;
-            columnCosines: Point3;
-            imagePositionPatient: number[];
-            sliceThickness?: number;
-            sliceLocation?: number;
-            pixelSpacing: Point2;
-            rowPixelSpacing: number;
-            columnPixelSpacing: number;
-        };
-        imagePixelModule?: {
-            samplesPerPixel: number;
-            photometricInterpretation: string;
-            rows: number;
-            columns: number;
-            bitsAllocated: number;
-            bitsStored: number;
-            highBit: number;
-            pixelRepresentation: number;
-            planarConfiguration?: number;
-            pixelAspectRatio?: number;
-            smallestPixelValue?: number;
-            largestPixelValue?: number;
-            redPaletteColorLookupTableDescriptor?: number[];
-            greenPaletteColorLookupTableDescriptor?: number[];
-            bluePaletteColorLookupTableDescriptor?: number[];
-            redPaletteColorLookupTableData: number[];
-            greenPaletteColorLookupTableData: number[];
-            bluePaletteColorLookupTableData: number[];
-        };
+        imagePlaneModule?: ImagePlaneModule;
+        imagePixelModule?: ImagePixelModule;
     };
     // (undocumented)
     needsRedraw?: boolean;
@@ -364,7 +346,7 @@ type CPUIImageData = {
     origin: Point3;
     imageData: CPUImageData;
     metadata: { Modality: string };
-    scalarData: number[];
+    scalarData: PixelDataTypedArray;
     scaling: Scaling;
     hasPixelSpacing?: boolean;
     preScale?: {
@@ -386,7 +368,7 @@ type CPUImageData = {
     getIndexToWorld?: () => Point3;
     getSpacing?: () => Point3;
     getDirection?: () => Mat3;
-    getScalarData?: () => number[];
+    getScalarData?: () => PixelDataTypedArray;
     getDimensions?: () => Point3;
 };
 
@@ -401,6 +383,27 @@ interface CustomEvent_2<T = any> extends Event {
     detailArg: T
     ): void;
 }
+
+// @public (undocumented)
+type DisplayArea = {
+    imageArea: [number, number]; // areaX, areaY
+    imageCanvasPoint: {
+        imagePoint: [number, number]; // imageX, imageY
+        canvasPoint: [number, number]; // canvasX, canvasY
+    };
+    storeAsInitialCamera: boolean;
+};
+
+// @public
+type DisplayAreaModifiedEvent = CustomEvent_2<DisplayAreaModifiedEventDetail>;
+
+// @public
+type DisplayAreaModifiedEventDetail = {
+    viewportId: string;
+    displayArea: DisplayArea;
+    volumeId?: string;
+    storeAsInitialCamera?: boolean;
+};
 
 // @public
 enum DynamicOperatorType {
@@ -435,6 +438,7 @@ enum Events {
     CAMERA_MODIFIED = 'CORNERSTONE_CAMERA_MODIFIED',
 
     CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
+    DISPLAY_AREA_MODIFIED = 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
     ELEMENT_DISABLED = 'CORNERSTONE_ELEMENT_DISABLED',
     ELEMENT_ENABLED = 'CORNERSTONE_ELEMENT_ENABLED',
     GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
@@ -463,8 +467,9 @@ enum Events {
 
     VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
 
-    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
+    VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
 
+    VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
     // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
     // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
     // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
@@ -476,6 +481,8 @@ declare namespace EventTypes {
         CameraModifiedEvent,
         VoiModifiedEvent,
         VoiModifiedEventDetail,
+        DisplayAreaModifiedEvent,
+        DisplayAreaModifiedEventDetail,
         ElementDisabledEvent,
         ElementDisabledEventDetail,
         ElementEnabledEvent,
@@ -528,6 +535,11 @@ enum GeometryType {
     // (undocumented)
     CONTOUR = 'contour',
 }
+
+// @public (undocumented)
+export const helpers: {
+    getDynamicVolumeInfo: typeof getDynamicVolumeInfo;
+};
 
 // @public (undocumented)
 interface ICache {
@@ -642,6 +654,8 @@ interface IContourSet {
     // (undocumented)
     readonly frameOfReferenceUID: string;
     // (undocumented)
+    getCentroid(): Point3;
+    // (undocumented)
     getColor(): any;
     getContours(): IContour[];
     getFlatPointsArray(): Point3[];
@@ -712,7 +726,7 @@ interface IImage {
     columns: number;
     // (undocumented)
     getCanvas: () => HTMLCanvasElement;
-    getPixelData: () => Array<number>;
+    getPixelData: () => PixelDataTypedArray;
     height: number;
     imageId: string;
     intercept: number;
@@ -724,8 +738,8 @@ interface IImage {
     modalityLUT?: CPUFallbackLUT;
     numComps: number;
     preScale?: {
-        scaled: boolean;
-        scalingParameters: {
+        scaled?: boolean;
+        scalingParameters?: {
             modality?: string;
             rescaleSlope?: number;
             rescaleIntercept?: number;
@@ -893,6 +907,58 @@ type ImageLoadProgressEventDetail = {
     percent: number;
 };
 
+// @public (undocumented)
+interface ImagePixelModule {
+    // (undocumented)
+    bitsAllocated: number;
+    // (undocumented)
+    bitsStored: number;
+    // (undocumented)
+    highBit: number;
+    // (undocumented)
+    modality: string;
+    // (undocumented)
+    photometricInterpretation: string;
+    // (undocumented)
+    pixelRepresentation: string;
+    // (undocumented)
+    samplesPerPixel: number;
+    // (undocumented)
+    voiLUTFunction: VOILUTFunctionType;
+    // (undocumented)
+    windowCenter: number | number[];
+    // (undocumented)
+    windowWidth: number | number[];
+}
+
+// @public (undocumented)
+interface ImagePlaneModule {
+    // (undocumented)
+    columnCosines?: Point3;
+    // (undocumented)
+    columnPixelSpacing?: number;
+    // (undocumented)
+    columns: number;
+    // (undocumented)
+    frameOfReferenceUID: string;
+    // (undocumented)
+    imageOrientationPatient?: Float32Array;
+    // (undocumented)
+    imagePositionPatient?: Point3;
+    // (undocumented)
+    pixelSpacing?: Point2;
+    // (undocumented)
+    rowCosines?: Point3;
+    // (undocumented)
+    rowPixelSpacing?: number;
+    // (undocumented)
+    rows: number;
+    // (undocumented)
+    sliceLocation?: number;
+    // (undocumented)
+    sliceThickness?: number;
+}
+
 // @public
 type ImageRenderedEvent = CustomEvent_2<ElementEnabledEventDetail>;
 
@@ -1005,6 +1071,7 @@ interface IStackViewport extends IViewport {
         renderingEngineId: string;
     };
     getCamera(): ICamera;
+    getCornerstoneImage: () => IImage;
     getCurrentImageId: () => string;
     getCurrentImageIdIndex: () => number;
     getFrameOfReferenceUID: () => string;
@@ -1021,7 +1088,7 @@ interface IStackViewport extends IViewport {
     resize: () => void;
     scaling: Scaling;
     setCamera(cameraInterface: ICamera): void;
-    setColormap(colormap: CPUFallbackColormapData): void;
+    setColormap(colormap: CPUFallbackColormapData | ColormapRegistration): void;
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     setProperties(
         { voiRange, invert, interpolationType, rotation }: StackViewportProperties,
@@ -1074,6 +1141,7 @@ interface IViewport {
     // (undocumented)
     _getCorners(bounds: Array<number>): Array<number>[];
     getDefaultActor(): ActorEntry;
+    getDisplayArea(): DisplayArea | undefined;
     getFrameOfReferenceUID: () => string;
     getPan(): Point2;
     getRenderer(): void;
@@ -1090,6 +1158,11 @@ interface IViewport {
     reset(immediate: boolean): void;
     setActors(actors: Array<ActorEntry>): void;
     setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+    setDisplayArea(
+    displayArea: DisplayArea,
+    callResetCamera?: boolean,
+    suppressEvents?: boolean
+    );
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     setPan(pan: Point2, storeAsInitialCamera?: boolean);
     setZoom(zoom: number, storeAsInitialCamera?: boolean);
@@ -1099,6 +1172,8 @@ interface IViewport {
     sx: number;
     sy: number;
     type: ViewportType;
+    // (undocumented)
+    updateRenderingPipeline: () => void;
     worldToCanvas: (worldPos: Point3) => Point2;
 }
 
@@ -1264,6 +1339,15 @@ type OrientationVectors = {
     viewUp: Point3;
 };
 
+// @public (undocumented)
+type PixelDataTypedArray =
+| Float32Array
+| Int16Array
+| Uint16Array
+| Uint8Array
+| Int8Array
+| Uint8ClampedArray;
+
 // @public
 type Plane = [number, number, number, number];
 
@@ -1291,6 +1375,9 @@ type PreStackNewImageEventDetail = {
 type PTScaling = {
     suvbwToSuvlbm?: number;
     suvbwToSuvbsa?: number;
+    suvbw?: number;
+    suvlbm?: number;
+    suvbsa?: number;
 };
 
 // @public (undocumented)
@@ -1310,6 +1397,9 @@ enum RequestType {
     Prefetch = 'prefetch',
     Thumbnail = 'thumbnail',
 }
+
+// @public
+type RGB = [number, number, number];
 
 // @public (undocumented)
 type Scaling = {
@@ -1360,10 +1450,7 @@ type StackViewportNewStackEventDetail = {
 };
 
 // @public
-type StackViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
-    invert?: boolean;
+type StackViewportProperties = ViewportProperties & {
     interpolationType?: InterpolationType;
     rotation?: number;
     suppressEvents?: boolean;
@@ -1432,8 +1519,9 @@ type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public
 type ViewportInputOptions = {
-    background?: [number, number, number];
+    background?: RGB;
     orientation?: OrientationAxis | OrientationVectors;
+    displayArea?: DisplayArea;
     suppressEvents?: boolean;
     parallelProjection?: boolean;
 };
@@ -1461,6 +1549,13 @@ interface ViewportPreset {
     // (undocumented)
     specularPower: string;
 }
+
+// @public
+type ViewportProperties = {
+    voiRange?: VOIRange;
+    VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
+};
 
 // @public
 enum ViewportType {
@@ -1495,6 +1590,7 @@ type VoiModifiedEventDetail = {
     range: VOIRange;
     volumeId?: string;
     VOILUTFunction?: VOILUTFunctionType;
+    invert?: boolean;
 };
 
 // @public (undocumented)
@@ -1572,9 +1668,9 @@ type VolumeNewImageEventDetail = {
 type VolumeScalarData = Float32Array | Uint8Array | Uint16Array | Int16Array;
 
 // @public
-type VolumeViewportProperties = {
-    voiRange?: VOIRange;
-    VOILUTFunction?: VOILUTFunctionType;
+type VolumeViewportProperties = ViewportProperties & {
+    colormap?: ColormapPublic;
+    preset?: string;
 };
 
 // (No @packageDocumentation comment for this package)

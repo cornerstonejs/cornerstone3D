@@ -1,10 +1,11 @@
 {
-  "version": "independent",
+  "version": "1.1.0",
   "packages": [
     "packages/adapters",
     "packages/core",
     "packages/tools",
-    "packages/streaming-image-volume-loader"
+    "packages/streaming-image-volume-loader",
+    "packages/dicomImageLoader"
   ],
   "npmClient": "yarn",
   "useWorkspaces": true,
@@ -18,7 +19,8 @@
       "conventionalCommits": true,
       "createRelease": "github",
       "yes": true,
-      "message": "chore(release): publish [skip ci]"
+      "message": "chore(release): publish [skip ci]",
+      "forcePublish": true
     }
   }
 }
