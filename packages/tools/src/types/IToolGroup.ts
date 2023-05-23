@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions';
-
+import { MouseBindings } from '../enums';
 /**
  * ToolGroup interface
  */
@@ -68,5 +68,8 @@ export default interface IToolGroup {
   };
   getToolConfiguration: {
     (toolName: string, configurationPath: string): any;
+  };
+  getDefaultMousePrimary: {
+    (): MouseBindings;
   };
 }
