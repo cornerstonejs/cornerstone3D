@@ -130,12 +130,11 @@ export class Panel {
     const container = options.container || document.body;
     container.appendChild(dom);
     this.dom = dom;
-    this.top = 0;
+    this.bottom = 0;
     this.left = 0;
   }
 
   toggle() {
-    debugger;
     this.dom.style.visibility =
       this.dom.style.visibility === 'hidden' ? 'visible' : 'hidden';
   }

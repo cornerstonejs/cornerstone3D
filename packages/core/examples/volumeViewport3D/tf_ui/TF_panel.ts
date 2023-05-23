@@ -29,19 +29,34 @@ export class TF_Panel {
       collapsiblePanel.dom.id = 'tf-collapsible';
       collapsiblePanel.dom.className += ' unselectable';
       collapsiblePanel.dom.style.position = 'absolute';
-      collapsiblePanel.moveTo(0, 0);
-      collapsiblePanel.dom.style.transform = 'translateX(-100%)';
-
       const collapsibleText = document.createElement('div');
       collapsibleText.innerHTML = 'Transfer Function Editor';
-      collapsibleText.style.transform = 'rotate(-90deg)';
       collapsibleText.style.width = this.options.panel.height + 'px';
       collapsibleText.style.height = '16px';
       collapsibleText.style.boxShadow = '0px 0px 0px 1px #333 inset';
       collapsibleText.style.padding = '4px 0px';
-      collapsibleText.style.transformOrigin = 'right top';
       collapsibleText.style.textAlign = 'center';
       collapsiblePanel.dom.appendChild(collapsibleText);
+
+      const positionToUse = this.options.panel.position || 'bottom';
+      if (positionToUse === 'top') {
+        collapsiblePanel.moveTo(0, 0);
+        collapsiblePanel.dom.style.transform = 'translateX(-100%)';
+
+        collapsibleText.style.transform = 'rotate(-90deg)';
+
+        collapsibleText.style.transformOrigin = 'right top';
+      } else if (positionToUse === 'bottom') {
+        collapsiblePanel.moveTo(
+          0,
+          container.clientHeight - collapsiblePanel.dom.clientWidth
+        );
+        collapsiblePanel.dom.style.transform = 'translateX(-100%)';
+
+        collapsibleText.style.transform = 'rotate(-90deg)';
+
+        collapsibleText.style.transformOrigin = 'right top';
+      }
     }
     //parent dom element of TF panel
     const panel = new Panel({ container: container });
