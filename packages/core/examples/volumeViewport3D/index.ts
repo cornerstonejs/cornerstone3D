@@ -165,6 +165,7 @@ async function run() {
     container: canvas.parentElement,
     panel: {
       isCollapsible: true,
+      background: '#090c29',
     },
   };
 

@@ -1,4 +1,4 @@
-import { Panel, clamp } from './ui';
+import { Panel, clamp, UI } from './ui';
 /**
  * Color operates in two color spaces: HSV and RGB
  * HSV colors are in a { hue ∈ [ 0, 1 ], saturation ∈ [ 0, 1 ], value ∈ [ 0, 1 ] } domain

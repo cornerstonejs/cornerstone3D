@@ -1016,6 +1016,7 @@ export class TF_widget {
     }
 
     function onMouseDown(e) {
+      e.stopPropagation();
       if (e.which !== 1) {
         //left mouse button
         return false;
@@ -1120,6 +1121,8 @@ export class TF_widget {
     }
 
     function onOutlineMouseDown(e) {
+      e.stopPropagation();
+
       if (e.shiftKey) {
         onOutlineClick(e);
       }
@@ -1181,6 +1184,8 @@ export class TF_widget {
     const boundMouseMoveRight = onHandlesMouseMove.bind(handleRight);
     const updateWidgetBound = this.updateWidget.bind(self);
     function onHandlesMouseDownLeft(e) {
+      e.stopPropagation();
+
       document.addEventListener('mousemove', boundMouseMoveLeft);
       document.addEventListener('mouseup', function () {
         document.removeEventListener('mousemove', boundMouseMoveLeft);
@@ -1190,6 +1195,8 @@ export class TF_widget {
     }
 
     function onHandlesMouseDownRight(e) {
+      e.stopPropagation();
+
       document.addEventListener('mousemove', boundMouseMoveRight);
       document.addEventListener('mouseup', function () {
         document.removeEventListener('mousemove', boundMouseMoveRight);
@@ -1202,6 +1209,7 @@ export class TF_widget {
      * update control points by scaling range of points when dragging vertical edge of widget
      */
     function onHandlesMouseMove(e) {
+      e.stopPropagation();
       const mouse = UI.getRelativePosition(e.clientX, e.clientY, parent.dom);
 
       const value = mouse.x / parent.width;
@@ -1316,6 +1324,8 @@ export class TF_widget {
 
     /* moves control point handles on mousemove while mouse down */
     function moveHandle(e) {
+      e.preventDefault();
+      e.stopPropagation();
       const mouse = UI.getRelativePosition(
         e.clientX,
         e.clientY,
@@ -1340,6 +1350,7 @@ export class TF_widget {
 
     function onMouseDown(e) {
       e.preventDefault();
+      e.stopPropagation();
       if (e.shiftKey) {
         self.deleteControlPoint(controlPoint);
         updateWidgetBound();
