@@ -61,6 +61,7 @@ element1.style.width = size;
 element1.style.height = size;
 
 viewportGrid.appendChild(element1);
+let viewport;
 
 content.appendChild(viewportGrid);
 
@@ -75,14 +76,9 @@ addDropdownToToolbar({
     defaultValue: 'CT-Bone',
   },
   onSelectedValueChange: (presetName) => {
-    const volumeActor = renderingEngine
-      .getViewport(viewportId)
-      .getDefaultActor().actor as Types.VolumeActor;
-
-    utilities.applyPreset(
-      volumeActor,
-      CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === presetName)
-    );
+    viewport.setProperties({
+      preset: presetName,
+    });
 
     renderingEngine.render();
   },
@@ -209,7 +205,7 @@ async function run() {
     return { colorString, opacityString };
   }
 
-  const viewport = renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport(viewportId);
 
   const tf_panel = new TF_Panel(options);
   tf_panel.registerCallback(() => {
@@ -241,7 +237,7 @@ async function run() {
       interpolation: '1',
     };
 
-    utilities.applyPreset(volumeActor, newPreset);
+    viewport.setProperties({ preset: newPreset });
 
     viewport.render();
   });
@@ -250,10 +246,9 @@ async function run() {
     () => {
       volumeActor = viewport.getDefaultActor().actor as Types.VolumeActor;
 
-      utilities.applyPreset(
-        volumeActor,
-        CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-      );
+      viewport.setProperties({
+        preset: 'CT-Bone',
+      });
 
       viewport.render();
 
