@@ -22,6 +22,7 @@ export class TF_Panel {
     this.callbacks = [];
 
     const container = options.container || parent.parentElement || null;
+    const positionToUse = this.options.panel.position || 'bottom';
 
     let collapsiblePanel;
     if (this.options.panel.isCollapsible) {
@@ -38,7 +39,6 @@ export class TF_Panel {
       collapsibleText.style.textAlign = 'center';
       collapsiblePanel.dom.appendChild(collapsibleText);
 
-      const positionToUse = this.options.panel.position || 'bottom';
       if (positionToUse === 'top') {
         collapsiblePanel.moveTo(0, 0);
         collapsiblePanel.dom.style.transform = 'translateX(-100%)';
@@ -85,8 +85,14 @@ export class TF_Panel {
     }
 
     panel.dom.id = 'tf-panel';
-    panel.addClass('overlay');
+
+    if (positionToUse === 'top') {
+      panel.addClass('overlay-top');
+    } else if (positionToUse === 'bottom') {
+      panel.addClass('overlay-bottom');
+    }
     panel.addClass('unselectable');
+
     panel.dom.style.left = this.options.panel.isCollapsible ? '24px' : '0px';
     panel.dom.style.background = options.panel.background;
     panel.dom.style.border = options.panel.border;
@@ -113,7 +119,10 @@ export class TF_Panel {
     svgContext.setAttribute('width', panel.width);
     svgContext.setAttribute('height', panel.height);
     svgContext.setAttribute('id', 'tf-svg');
-    svgContext.setAttribute('class', 'overlay unselectable');
+    svgContext.setAttribute(
+      'class',
+      `${positionToUse === 'top' ? 'overlay-top' : 'overlay-bottom'}`
+    );
     svgContext.setAttribute('z-index', 100);
     this.panel.svgContext = svgContext;
     this.panel.dom.appendChild(svgContext);
@@ -124,7 +133,7 @@ export class TF_Panel {
 
     for (let index = 0; index < this.options.widgets.length; index++) {
       const widgetOptions = this.options.widgets[index];
-      this.addWidget(widgetOptions);
+      this.addWidget({ ...widgetOptions, position: positionToUse });
     }
     if (this.options.widgets.length === 0) {
       this.addWidget(); //add one default widget
@@ -852,10 +861,17 @@ export class TF_widget {
 
     canvas.width = parent.width;
     canvas.height = parent.height;
-    canvas.className = 'tf-widget-canvas overlay';
+    canvas.className = `tf-widget-canvas ${
+      options.position === 'top' ? 'overlay-top' : 'overlay-bottom'
+    }`;
     canvas.style.opacity = options.globalOpacity;
     //insert canvases below UI svg context
     container.insertBefore(canvas, parent.svgContext);
+
+    // don't propagate mouse events to parent for the canvas
+    canvas.addEventListener('mousedown', function (event) {
+      event.stopPropagation();
+    });
 
     this.controlPoints = [];
 
